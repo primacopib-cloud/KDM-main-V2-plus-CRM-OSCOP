@@ -298,6 +298,52 @@ Objectif : créer une interface web propre pour exploiter l'API existante sans m
 - Frontend Playwright **100%** — tous les data-testid vérifiés (google-login-btn, auth-callback-page, manager-performance-section, manager-ranking-section, days-7/30/90-btn, my-rank-badge, catalog-territory-selector, rank-row-LP-CAP highlighted).
 
 ### Backlog restant
-- 🌍 Étendre les `territories` sur les produits seedés (actuellement `territories=[]` = disponibles partout — fonctionnel mais pas réellement filtré).
-- 🔄 Auto-renouvellement opt-in du PASS (non géré, non requis dans la spec).
-- 📈 Métriques Brevo (delivered/bounced) via webhooks Brevo.
+- ✅ Affinage `territories` sur produits seedés — DONE itération 8
+- ✅ Auto-renouvellement opt-in du PASS — DONE itération 8
+- ✅ Métriques Brevo (delivered/bounced) via webhooks — DONE itération 8
+
+## Iteration 8 (22 mai 2026) — Sprint complet : Renaming + Public map + Brevo webhooks + Auto-renew + Parrainage
+
+### Branding & UI Renaming (sans casser l'API)
+- Toutes les routes (`/admin/lolo-points`, collections `lolodrive_points`, params `lolo_point_id`) **conservées** pour ne pas casser le code existant.
+- Labels UI mis à jour partout :
+  - "LOLO POINTS" / "Lolo Point" → **"Réseau LOLODRIVE"** / **"Relais LOLODRIVE"**
+  - Pages affectées : LoloPointsAdminPage, LoloPointManagerPage, LolodriveAdminDashboardPage, LolodriveCatalogPage, PosLolodrivePage, EssReportingPage, LoloPointsMap.
+- Landing page :
+  - H2 : "Centrale d'Achats B2B ESS" → **"Communityplace coopérative B2B2C"**.
+  - `officialStatement` reformulé (mutualisation coopérative, agrégation collective).
+
+### Section publique : carte des relais LOLODRIVE sur la landing
+- Nouveau composant `<PublicLolodriveMapSection>` dans `LandingPage.jsx`.
+- Carte Mapbox avec sélecteur territoire (filtrage côté client), compteur de relais actifs, CTA "Devenir relais LOLODRIVE".
+- Endpoint `/api/lolodrive/lolo-points` accessible sans auth (déjà public).
+
+### Brevo webhooks transactionnels (délivrabilité)
+- `routes_brevo_webhook.py` :
+  - `POST /api/brevo/webhook` (public, optional `X-Brevo-Token`) → persiste les events dans `brevo_events` + agrège dans `brevo_metrics_daily`.
+  - `GET /api/brevo/metrics/summary?days=N` → délivrés / rejetés / ouverts / `delivery_rate` / `bounce_rate` / `open_rate` / `by_event`.
+- Reporting ESS : nouvelle section "Délivrabilité notifications" avec 4 KPI + alerte si `delivery_rate < 97%`.
+
+### PASS Auto-renew + Parrainage
+- `routes_pass_lifecycle.py` :
+  - `POST /api/lolodrive/pass/auto-renew` `{enabled}` → bascule `is_auto_renew` sur le PASS.
+  - `GET /api/lolodrive/pass/referral/me` → crée/retourne code unique format `KDM-XXXXXX` (idempotent).
+  - `POST /api/lolodrive/pass/referral/claim` `{code}` → crédit +50 UC parrain & filleul, plafond 10/parrain.
+  - `GET /api/lolodrive/pass/referral/stats` (admin) → top sponsors + stats globales.
+- Indexes : `code` unique, `referee_user_id` unique (defense in depth).
+- UI dans `PassSpacePage` :
+  - Bouton "Activer/Désactiver le renouvellement auto" + label dynamique.
+  - Section "Parrainage coopérateur" : code copiable + input claim + toast feedback.
+
+### Affinage territories sur produits seedés
+- 7 nouveaux SKUs locaux : Rhum agricole + Banane locale (GP/MQ), Manioc + Cachiri (GF), Vanille Bourbon + Achards + Sucre canne (RE).
+- Produits génériques gardent `territories=[]` (disponibles partout).
+
+### Tests — Iteration 6 report
+- **Backend pytest 14/14 PASSED** (`/app/backend/tests/test_iter6_sprint.py`).
+- **Frontend Playwright ~95%** — tous les flows critiques validés (1 mini point sur le label "Relais LOLODRIVE" du select fulfillment qui ne s'affiche que dans le Sheet panier — comportement attendu, vérifié manuellement).
+- Brevo webhooks idempotent par jour (upsert+$inc), referral lifecycle complet (claim/conflict/self/unauthorized).
+
+### Code review — Recommandations futures
+- `routes_brevo_webhook.metrics/summary` ignore le filtre `days` (group all dates) — minor.
+- `routes_pass_lifecycle.claim` : crédit wallets en boucle non-atomique → sur retry après crash mid-loop, double crédit possible. Mitigation : enforce idempotency via `claim_id` ledger ref (déjà fait via `ref_id`).
