@@ -296,3 +296,85 @@ class TestCRM:
     def test_rebuild_from_lolodrive(self, admin_token):
         r = requests.post(f"{BASE_URL}/api/crm/sync/rebuild-from-lolodrive", headers=H(admin_token))
         assert r.status_code == 200, r.text
+
+
+# ============= ITERATION 2 NEW ENDPOINTS =============
+class TestDemoEndpoints:
+    """New demo simulators + savings endpoint added in iteration 2."""
+
+    def test_simulate_pass_activation(self, marie_token):
+        r = requests.post(f"{BASE_URL}/api/lolodrive/demo/simulate-pass-activation", headers=H(marie_token))
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data.get("ok") is True
+        assert data.get("uc_granted") == 600
+        assert "ends_at" in data
+        # Verify PASS is now active
+        r2 = requests.get(f"{BASE_URL}/api/lolodrive/pass/me", headers=H(marie_token))
+        assert r2.status_code == 200
+        p = (r2.json().get("pass") or {})
+        assert p.get("status") in ["ACTIVE", "active"], f"PASS not active after activation: {p}"
+
+    def test_my_savings(self, marie_token):
+        r = requests.get(f"{BASE_URL}/api/lolodrive/me/savings", headers=H(marie_token))
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert "savings_cents" in data
+        assert "essential_items" in data
+        assert "orders_count" in data
+        assert isinstance(data["savings_cents"], int)
+        assert isinstance(data["essential_items"], int)
+        assert isinstance(data["orders_count"], int)
+        assert data["orders_count"] >= 0
+
+    def test_simulate_order_payment(self, marie_token):
+        # Create a DRAFT order first
+        prods = _extract_list(requests.get(f"{BASE_URL}/api/lolodrive/catalog/products", headers=H(marie_token)).json(), "products")
+        essential = next(p for p in prods if (p.get("catalog_type") or p.get("type")) == "ESSENTIAL")
+        oc = requests.post(f"{BASE_URL}/api/lolodrive/orders",
+                           json={"items": [{"sku": essential["sku"], "qty": 1}], "fulfillment_type": "DRIVE"},
+                           headers=H(marie_token))
+        assert oc.status_code in [200, 201], oc.text
+        oc_data = oc.json()
+        order = oc_data.get("order") if isinstance(oc_data, dict) and "order" in oc_data else oc_data
+        order_id = order["id"]
+        # Only test if order is in DRAFT/PENDING_PAYMENT state
+        if order.get("status") not in ["DRAFT", "PENDING_PAYMENT"]:
+            pytest.skip(f"order created in status {order.get('status')}, cannot test simulate-order-payment")
+        r = requests.post(f"{BASE_URL}/api/lolodrive/demo/simulate-order-payment/{order_id}", headers=H(marie_token))
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data.get("ok") is True
+        assert data.get("status") == "PAID"
+
+
+class TestKPIPeriods:
+    """KPI overview with different periods."""
+
+    def test_kpi_7d(self, admin_token):
+        from datetime import datetime, timedelta
+        f = (datetime.utcnow() - timedelta(days=7)).isoformat()
+        r = requests.get(f"{BASE_URL}/api/lolodrive/admin/kpi/overview?from_date={f}", headers=H(admin_token))
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert "orders" in data
+        assert "count" in data["orders"]
+        assert "revenue_cents" in data["orders"]
+        assert "drive" in data["orders"]
+        assert "delivery" in data["orders"]
+        assert "lolo_point" in data["orders"]
+        assert "paid_uc" in data["orders"]
+        assert "wallet" in data
+        assert "debited_uc" in data["wallet"]
+
+    def test_kpi_30d(self, admin_token):
+        from datetime import datetime, timedelta
+        f = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        r = requests.get(f"{BASE_URL}/api/lolodrive/admin/kpi/overview?from_date={f}", headers=H(admin_token))
+        assert r.status_code == 200, r.text
+
+    def test_kpi_90d(self, admin_token):
+        from datetime import datetime, timedelta
+        f = (datetime.utcnow() - timedelta(days=90)).isoformat()
+        r = requests.get(f"{BASE_URL}/api/lolodrive/admin/kpi/overview?from_date={f}", headers=H(admin_token))
+        assert r.status_code == 200, r.text

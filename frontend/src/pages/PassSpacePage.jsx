@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Ticket, Wallet, Sparkles, ShoppingBag, Clock, CheckCircle2,
-  RefreshCw, Plus, ArrowDownRight, ArrowUpRight, Zap,
+  Ticket, Wallet, Sparkles, ShoppingBag, Clock,
+  RefreshCw, Plus, ArrowDownRight, ArrowUpRight, AlertTriangle,
+  CheckCircle2, ArrowRight, Zap,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { Button } from '../components/ui/button';
@@ -16,11 +17,12 @@ export default function PassSpacePage() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [savings, setSavings] = useState(null);
   const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rechargeOpen, setRechargeOpen] = useState(false);
   const [selectedPack, setSelectedPack] = useState('STANDARD');
+  const [activating, setActivating] = useState(false);
 
   useEffect(() => {
     if (!authAPI.isAuthenticated()) {
@@ -33,16 +35,16 @@ export default function PassSpacePage() {
   const load = async () => {
     try {
       setLoading(true);
-      const [pass, wallet, o, c] = await Promise.all([
+      const [pass, wallet, o, sv] = await Promise.all([
         lolodriveAPI.myPass(),
         lolodriveAPI.myWallet(),
         lolodriveAPI.myOrders(),
-        lolodriveAPI.catalogProducts(),
+        lolodriveAPI.mySavings().catch(() => null),
       ]);
       setData({ ...pass, wallet: wallet.wallet });
       setLedger(wallet.ledger || []);
       setOrders(o.orders || []);
-      setProducts(c.products || []);
+      setSavings(sv);
     } catch (e) {
       toast.error(e.message);
     } finally {
@@ -50,24 +52,24 @@ export default function PassSpacePage() {
     }
   };
 
-  const activatePass = async () => {
+  const activatePassDemo = async () => {
+    setActivating(true);
     try {
-      const r = await lolodriveAPI.passIntent();
-      toast.success('PaymentIntent PASS créé. (Démo Stripe test)');
-      // For demo: simulate webhook by waiting 1.5s
-      toast.info('En production : redirection Stripe Elements pour saisie CB.');
-      console.log('client_secret:', r.client_secret);
+      const r = await lolodriveAPI.simulatePassActivation();
+      toast.success(`PASS activé ! ${r.uc_granted} UC crédités. Valable jusqu'au ${new Date(r.ends_at).toLocaleDateString('fr-FR')}.`);
+      load();
     } catch (e) {
       toast.error(e.message);
+    } finally {
+      setActivating(false);
     }
   };
 
   const recharge = async () => {
     try {
-      const r = await lolodriveAPI.rechargeIntent(selectedPack);
-      toast.success(`Recharge ${selectedPack} initiée. Client secret généré.`);
+      await lolodriveAPI.rechargeIntent(selectedPack);
+      toast.success(`Recharge ${selectedPack} initiée. (Démo Stripe : intent créé, paiement non débité)`);
       setRechargeOpen(false);
-      console.log('client_secret:', r.client_secret);
     } catch (e) {
       toast.error(e.message);
     }
@@ -78,10 +80,13 @@ export default function PassSpacePage() {
     return Math.max(0, Math.ceil((new Date(data.pass.ends_at) - new Date()) / (1000 * 60 * 60 * 24)));
   };
 
+  const days = remainingDays();
+  const expirationLevel = days <= 3 ? 'critical' : days <= 7 ? 'warning' : 'ok';
+
   return (
     <LolodriveLayout
       title="Mon Espace PASS"
-      subtitle="Pass Vie Chère, wallet UC, mes commandes et activité."
+      subtitle="PASS Vie Chère, wallet UC, mes commandes et économies réalisées."
       actions={
         <Button variant="outline" size="sm" onClick={load} data-testid="refresh-btn">
           <RefreshCw className="w-4 h-4 mr-2" /> Actualiser
@@ -91,26 +96,50 @@ export default function PassSpacePage() {
       {loading && <div className="text-center text-white/50 py-12">Chargement…</div>}
       {!loading && data && (
         <>
-          {/* PASS state */}
+          {/* Hero PASS state */}
           <SectionCard className="mb-6 relative overflow-hidden">
             <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full blur-3xl opacity-30"
               style={{ background: data.active ? '#D9B35A' : '#666' }} />
             {data.active ? (
               <div className="relative flex flex-wrap gap-6 items-start justify-between">
                 <div>
-                  <Badge color="#D9B35A">PASS Vie Chère actif</Badge>
-                  <div className="mt-3 text-4xl font-bold tracking-tight">
-                    {data.wallet.balance_uc} <span className="text-base text-white/40 font-normal">UC</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge color="#D9B35A">PASS Vie Chère actif</Badge>
+                    {expirationLevel === 'critical' && (
+                      <Badge color="#ef4444">
+                        <AlertTriangle className="w-3 h-3 mr-1 inline" />
+                        Expire bientôt
+                      </Badge>
+                    )}
                   </div>
-                  <div className="text-sm text-white/50 mt-1">
-                    Expire dans <span className="text-[#D9B35A] font-medium">{remainingDays()} jours</span> ·{' '}
-                    {new Date(data.pass.ends_at).toLocaleDateString('fr-FR')}
+                  <div className="mt-3 text-5xl font-bold tracking-tight">
+                    {data.wallet.balance_uc}
+                    <span className="text-base text-white/40 font-normal ml-2">UC disponibles</span>
                   </div>
-                  <div className="text-xs text-white/40 mt-2">
-                    Pas de renouvellement automatique. Vous serez notifié avant expiration.
+                  <div className="text-sm mt-2 flex items-center gap-3 flex-wrap">
+                    <span className={
+                      expirationLevel === 'critical' ? 'text-red-400 font-semibold' :
+                      expirationLevel === 'warning' ? 'text-amber-400 font-semibold' :
+                      'text-white/50'
+                    }>
+                      <Clock className="w-3 h-3 inline mr-1" />
+                      Expire dans {days} jours
+                    </span>
+                    <span className="text-white/40">
+                      ({new Date(data.pass.ends_at).toLocaleDateString('fr-FR')})
+                    </span>
+                  </div>
+                  <div className="text-xs text-white/40 mt-2 max-w-md">
+                    Pas de renouvellement automatique. À l'expiration, votre PASS sera désactivé.
+                    Les UC non utilisés ne sont pas remboursables (unité d'usage interne).
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  <Button asChild variant="outline" data-testid="goto-catalogue-btn">
+                    <Link to="/catalogue-lolodrive">
+                      <ShoppingBag className="w-4 h-4 mr-2" /> Voir le catalogue
+                    </Link>
+                  </Button>
                   <Dialog open={rechargeOpen} onOpenChange={setRechargeOpen}>
                     <DialogTrigger asChild>
                       <Button data-testid="open-recharge-btn"
@@ -120,8 +149,11 @@ export default function PassSpacePage() {
                     </DialogTrigger>
                     <DialogContent className="bg-[#15151c] border-white/10 text-white">
                       <DialogHeader>
-                        <DialogTitle>Choisir un pack UC</DialogTitle>
+                        <DialogTitle>Recharger mon wallet UC</DialogTitle>
                       </DialogHeader>
+                      <p className="text-xs text-white/50 mb-2">
+                        Le wallet UC est rechargeable uniquement si votre PASS est actif. Aucun renouvellement automatique.
+                      </p>
                       <RadioGroup value={selectedPack} onValueChange={setSelectedPack} className="space-y-2">
                         {[
                           { id: 'MINI', label: 'Mini', amount: '20 €', uc: '200 UC' },
@@ -138,7 +170,7 @@ export default function PassSpacePage() {
                             <div className="flex-1">
                               <div className="font-medium flex items-center gap-2">
                                 {p.label}
-                                {p.bonus && <Badge color="#D9B35A">Bonus</Badge>}
+                                {p.bonus && <Badge color="#D9B35A">Bonus +20 UC</Badge>}
                               </div>
                               <div className="text-xs text-white/40">{p.amount} → {p.uc}</div>
                             </div>
@@ -157,14 +189,26 @@ export default function PassSpacePage() {
               <div className="relative">
                 <Badge color="#666">PASS inactif</Badge>
                 <h2 className="text-2xl font-bold mt-3">Activez votre PASS Vie Chère</h2>
-                <p className="text-sm text-white/60 mt-1 mb-4">
-                  60 € = 600 UC, valable 30 jours. Accès aux prix PASS sur les produits ESSENTIELS.
-                  Sans renouvellement automatique.
+                <p className="text-sm text-white/60 mt-1 mb-4 max-w-2xl">
+                  <strong>60 € = 600 UC</strong>, valable 30 jours. Accès aux prix PASS sur les produits ESSENTIELS,
+                  paiement en UC sur l'ensemble du catalogue. Sans renouvellement automatique : vous restez maître de votre engagement.
                 </p>
-                <Button onClick={activatePass} size="lg" data-testid="activate-pass-btn"
-                  style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
-                  <Ticket className="w-4 h-4 mr-2" /> Activer mon PASS pour 60 €
-                </Button>
+                <div className="flex gap-2 flex-wrap">
+                  <Button onClick={activatePassDemo} size="lg" disabled={activating} data-testid="activate-pass-demo-btn"
+                    style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
+                    <Zap className="w-4 h-4 mr-2" />
+                    {activating ? 'Activation...' : 'Activer mon PASS (mode démo)'}
+                  </Button>
+                  <Button onClick={async () => {
+                    try { await lolodriveAPI.passIntent(); toast.info('Stripe PaymentIntent créé. En production, formulaire CB s\'ouvrirait.'); }
+                    catch (e) { toast.error(e.message); }
+                  }} variant="outline" data-testid="activate-pass-stripe-btn">
+                    <ShoppingBag className="w-4 h-4 mr-2" /> Payer 60 € par CB (Stripe)
+                  </Button>
+                </div>
+                <p className="text-[11px] text-white/30 mt-3">
+                  Mode démo : active le PASS sans paiement réel. Utile pour démonstrations et tests.
+                </p>
               </div>
             )}
           </SectionCard>
@@ -172,18 +216,38 @@ export default function PassSpacePage() {
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <KpiCard testId="kpi-balance" label="Solde UC" value={data.wallet.balance_uc} icon={Wallet} accent="#D9B35A" />
-            <KpiCard testId="kpi-orders" label="Mes commandes" value={orders.length} icon={ShoppingBag} accent="#10b981" />
-            <KpiCard testId="kpi-essentials" label="Produits ESSENTIELS" value={products.filter(p => p.catalog_type === 'ESSENTIAL').length} icon={Sparkles} accent="#7c3aed" />
-            <KpiCard testId="kpi-savings" label="Statut PASS" value={data.active ? 'ACTIF' : 'INACTIF'} sub={data.active ? `${remainingDays()}j restants` : 'Activez pour économiser'} icon={Ticket} accent={data.active ? '#10b981' : '#ef4444'} />
+            <KpiCard
+              testId="kpi-savings"
+              label="Économies réalisées"
+              value={fmtEUR(savings?.savings_cents || 0)}
+              sub={savings ? `sur ${savings.essential_items} produit(s) essentiel(s)` : ''}
+              icon={Sparkles}
+              accent="#10b981"
+            />
+            <KpiCard testId="kpi-orders" label="Mes commandes" value={orders.length} sub={`${orders.filter(o => o.status === 'FULFILLED').length} retirée(s)`} icon={ShoppingBag} accent="#7c3aed" />
+            <KpiCard
+              testId="kpi-status"
+              label="Statut PASS"
+              value={data.active ? 'ACTIF' : 'INACTIF'}
+              sub={data.active ? `${days}j restants` : 'Activez pour économiser'}
+              icon={Ticket}
+              accent={data.active ? (expirationLevel === 'critical' ? '#ef4444' : '#10b981') : '#666'}
+            />
           </div>
 
           {/* Wallet ledger */}
-          <SectionCard title="Historique du wallet" className="mb-6">
+          <SectionCard
+            title="Historique du wallet UC"
+            action={<span className="text-xs text-white/40">{ledger.length} mouvement(s)</span>}
+            className="mb-6"
+          >
             {ledger.length === 0 && (
-              <div className="text-sm text-white/40 py-4 text-center">Aucun mouvement encore.</div>
+              <div className="text-sm text-white/40 py-4 text-center">
+                Aucun mouvement encore. Activez votre PASS pour commencer.
+              </div>
             )}
             <div className="space-y-2">
-              {ledger.map((l) => (
+              {ledger.slice(0, 8).map((l) => (
                 <div key={l.id} data-testid={`ledger-${l.id}`}
                   className="flex items-center justify-between gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
                   <div className="flex items-center gap-3">
@@ -194,7 +258,7 @@ export default function PassSpacePage() {
                         : <ArrowDownRight className="w-4 h-4 text-red-400" />}
                     </div>
                     <div>
-                      <div className="text-sm font-medium">{l.reason}</div>
+                      <div className="text-sm font-medium">{reasonLabel(l.reason)}</div>
                       <div className="text-xs text-white/40">
                         {new Date(l.created_at).toLocaleString('fr-FR')}
                       </div>
@@ -209,30 +273,46 @@ export default function PassSpacePage() {
           </SectionCard>
 
           {/* Orders */}
-          <SectionCard title="Mes commandes récentes"
-            action={<Link to="/catalogue-lolodrive" className="text-xs text-[#D9B35A] hover:underline">+ Nouvelle commande</Link>}>
+          <SectionCard
+            title="Mes commandes récentes"
+            action={
+              <Link to="/catalogue-lolodrive" className="text-xs text-[#D9B35A] hover:underline flex items-center gap-1" data-testid="goto-catalogue-link">
+                + Nouvelle commande <ArrowRight className="w-3 h-3" />
+              </Link>
+            }
+          >
             {orders.length === 0 && (
-              <div className="text-sm text-white/40 py-4 text-center">Aucune commande pour le moment.</div>
+              <div className="text-sm text-white/40 py-8 text-center">
+                Aucune commande pour le moment.
+                <div className="mt-2">
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/catalogue-lolodrive">Découvrir le catalogue</Link>
+                  </Button>
+                </div>
+              </div>
             )}
             <div className="space-y-2">
               {orders.slice(0, 8).map((o) => (
                 <div key={o.id} data-testid={`order-${o.id}`}
                   className="flex items-center justify-between gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#7c3aed]/20">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#7c3aed]/20 shrink-0">
                       <ShoppingBag className="w-4 h-4 text-[#a78bfa]" />
                     </div>
-                    <div>
-                      <div className="text-sm font-medium">{o.order_number}</div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium font-mono truncate">{o.order_number}</div>
                       <div className="text-xs text-white/40">
                         {o.fulfillment_type} · {o.items?.length || 0} article(s) ·{' '}
                         {new Date(o.created_at).toLocaleDateString('fr-FR')}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <div className="font-bold text-sm">{fmtEUR(o.total_cents)}</div>
-                    <Badge color={statusColor(o.status)}>{o.status}</Badge>
+                    <div className="flex gap-1 justify-end mt-0.5">
+                      {o.pay_with_uc && <Badge color="#D9B35A">UC</Badge>}
+                      <Badge color={statusColor(o.status)}>{o.status}</Badge>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -243,6 +323,13 @@ export default function PassSpacePage() {
     </LolodriveLayout>
   );
 }
+
+const reasonLabel = (r) => ({
+  PASS_ACTIVATION: 'Activation PASS',
+  PASS_ACTIVATION_DEMO: 'Activation PASS (démo)',
+  RECHARGE: 'Recharge wallet',
+  ORDER_PAY_UC: 'Paiement commande en UC',
+}[r] || r);
 
 const statusColor = (s) => {
   if (s === 'FULFILLED') return '#10b981';

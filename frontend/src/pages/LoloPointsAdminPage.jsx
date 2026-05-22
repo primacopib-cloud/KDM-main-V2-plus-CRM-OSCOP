@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Store, Plus, MapPin, RefreshCw, Calculator, TrendingUp } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
+import Phase2Banner from '../components/Phase2Banner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -105,6 +106,7 @@ export default function LoloPointsAdminPage() {
         </>
       }
     >
+      <Phase2Banner module="LOLO POINTS" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <KpiCard testId="kpi-total-points" label="Lolo Points actifs" value={points.length} icon={Store} accent="#7c3aed" />
         <KpiCard testId="kpi-cities" label="Villes couvertes" value={new Set(points.map(p => p.city)).size} icon={MapPin} accent="#10b981" />

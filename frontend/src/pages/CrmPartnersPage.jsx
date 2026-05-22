@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { HeartHandshake, Building2, Activity, Briefcase, RefreshCw, Search, Plus, Tag } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge } from '../components/LolodriveLayout';
+import Phase2Banner from '../components/Phase2Banner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -60,6 +61,7 @@ export default function CrmPartnersPage() {
         </Button>
       }
     >
+      <Phase2Banner module="CRM Partenaires O'SCOP" />
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <KpiCard testId="kpi-contacts" label="Contacts" value={contacts.length} icon={HeartHandshake} accent="#ec4899" />
         <KpiCard testId="kpi-orgs" label="Organisations" value={orgs.length} icon={Building2} accent="#3b82f6" />

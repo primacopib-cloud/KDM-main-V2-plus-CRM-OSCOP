@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Sparkles, Plus, Calendar, Zap, Users, RefreshCw, Building2 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge } from '../components/LolodriveLayout';
+import Phase2Banner from '../components/Phase2Banner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -137,6 +138,7 @@ export default function LoloHourAdminPage() {
       }
     >
       {/* KPIs */}
+      <Phase2Banner module="LOLO HOUR" />
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         {EVENT_TYPES.map((t) => (
           <KpiCard key={t} testId={`kpi-${t}`} label={t.replace('_', ' ')} value={byType[t] || 0}

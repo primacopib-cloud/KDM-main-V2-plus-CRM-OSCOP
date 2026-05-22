@@ -673,6 +673,76 @@ async def admin_create_product(request: RegisterProduct, admin: dict = Depends(r
     await db.lolodrive_products.update_one({"sku": doc["sku"]}, {"$set": doc}, upsert=True)
     return {k: v for k, v in doc.items() if k != "_id"}
 
+
+# =======================
+# DEMO simulators (no Stripe webhook required)
+# =======================
+
+@lolodrive_router.post("/demo/simulate-pass-activation")
+async def demo_simulate_pass_activation(user: dict = Depends(get_current_user)):
+    """DEMO ONLY: simulate webhook payment_intent.succeeded for PASS activation.
+    Active le PASS pour l'utilisateur courant + crédite 600 UC sans passer par Stripe.
+    Aucune valeur fiscale. À utiliser uniquement en mode démo/test.
+    """
+    user_id = user["id"]
+    starts_at = datetime.utcnow()
+    ends_at = starts_at + timedelta(days=PASS_DAYS)
+    await db.lolodrive_passes.update_one(
+        {"user_id": user_id},
+        {"$set": {"status": "ACTIVE", "starts_at": starts_at, "ends_at": ends_at, "price_cents": PASS_PRICE_CENTS, "uc_granted": PASS_UC, "is_auto_renew": False, "demo_activation": True, "updated_at": datetime.utcnow()}, "$setOnInsert": {"id": str(uuid.uuid4()), "created_at": datetime.utcnow()}},
+        upsert=True,
+    )
+    wallet = await get_or_create_wallet(user_id)
+    await db.lolodrive_wallets.update_one({"id": wallet["id"]}, {"$inc": {"balance_uc": PASS_UC}, "$set": {"updated_at": datetime.utcnow()}})
+    await db.lolodrive_wallet_ledger.insert_one({"id": str(uuid.uuid4()), "wallet_id": wallet["id"], "type": "CREDIT", "amount_uc": PASS_UC, "reason": "PASS_ACTIVATION_DEMO", "created_at": datetime.utcnow()})
+    await emit_crm_event("pass.activated", {"user_id": user_id, "pass_price_cents": PASS_PRICE_CENTS, "uc_granted": PASS_UC, "ends_at": ends_at, "demo": True})
+    return {"ok": True, "ends_at": ends_at, "uc_granted": PASS_UC, "demo": True}
+
+
+@lolodrive_router.post("/demo/simulate-order-payment/{order_id}")
+async def demo_simulate_order_payment(order_id: str, user: dict = Depends(get_current_user)):
+    """DEMO ONLY: passe une commande à PAID sans déclencher Stripe webhook."""
+    order = await db.lolodrive_orders.find_one({"id": order_id, "user_id": user["id"]})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande introuvable")
+    if order["status"] not in [OrderStatus.DRAFT.value, OrderStatus.PENDING_PAYMENT.value]:
+        raise HTTPException(status_code=400, detail="Commande non payable")
+    await db.lolodrive_orders.update_one(
+        {"id": order_id},
+        {"$set": {"status": OrderStatus.PAID.value, "demo_paid": True, "updated_at": datetime.utcnow()}},
+    )
+    await emit_crm_event("order.paid", {"user_id": user["id"], "order_id": order_id, "demo": True})
+    return {"ok": True, "order_id": order_id, "status": OrderStatus.PAID.value, "demo": True}
+
+
+@lolodrive_router.get("/me/savings")
+async def my_savings(user: dict = Depends(get_current_user)):
+    """Calcule les économies réalisées par l'utilisateur grâce au PASS sur ses commandes ESSENTIELS."""
+    orders = await db.lolodrive_orders.find({
+        "user_id": user["id"],
+        "status": {"$in": ["PAID", "PREPARING", "READY", "FULFILLED"]},
+    }).to_list(1000)
+    skus = {it["sku"] for o in orders for it in (o.get("items") or [])}
+    products = await db.lolodrive_products.find({"sku": {"$in": list(skus)}}, {"_id": 0}).to_list(1000)
+    prices = {p["sku"]: p for p in products}
+    savings = 0
+    essential_items = 0
+    for o in orders:
+        for it in (o.get("items") or []):
+            p = prices.get(it["sku"])
+            if not p:
+                continue
+            if p.get("catalog_type") != "ESSENTIAL":
+                continue
+            pub = p.get("price_public_cents", 0)
+            paid = it.get("unit_cents", pub)
+            qty = it.get("qty", 1)
+            diff = max(0, pub - paid) * qty
+            savings += diff
+            essential_items += qty
+    return {"savings_cents": savings, "essential_items": essential_items, "orders_count": len(orders)}
+
+
 @lolodrive_router.post("/admin/init-defaults")
 async def init_defaults(admin: dict = Depends(require_admin)):
     """Initialise config, zones, produits exemples et indexes si nécessaire."""

@@ -845,6 +845,13 @@ export const lolodriveAPI = {
     if (toDate) q.append('to_date', toDate);
     return apiCall(`/lolodrive/admin/kpi/overview${q.toString() ? `?${q.toString()}` : ''}`);
   },
+
+  // Demo simulators (no Stripe webhook required)
+  simulatePassActivation: () =>
+    apiCall('/lolodrive/demo/simulate-pass-activation', { method: 'POST' }),
+  simulateOrderPayment: (orderId) =>
+    apiCall(`/lolodrive/demo/simulate-order-payment/${orderId}`, { method: 'POST' }),
+  mySavings: () => apiCall('/lolodrive/me/savings'),
 };
 
 // ============================================================

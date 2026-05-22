@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 2 testing complete. Backend pytest 30/30 PASSED (24 existing + 6 new: 3 demo simulators + 3 KPI periods). Frontend: /pass, /lolodrive Dashboard, /pos all 3 enriched screens render correctly with all required data-testids; 4 Phase 2 light pages (/admin/lolo-points, /admin/lolo-hour, /crm, /reporting-impact) all show phase2-banner. POS auto-refresh stable after 17s. E2E flow validated visually (Marie has PASS actif 1362 UC, savings 9.20€ on 17 essentiels, 16 orders, ledger shows libellés humanisés 'Activation PASS (démo) +600 UC' / 'Paiement commande en UC -36 UC'; admin dashboard shows revenue split Drive 11/Livraison 0/Lolo Point 1, Engagement PASS 83% UC / panier 4.67€ / 438 UC débités, POS activity panel with recent orders).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "favorites side-call (carried over from iter1)", "issue": "GET /api/user-prefs/favorites/ids returns 401 on every protected page, producing 16 console errors per session", "affected_selectors": []}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lolodrive_oscoop.py",
+    "/app/test_reports/pytest/lolodrive_iter2.xml"
+  ],
+  "action_items": [
+    "Optional: guard /api/user-prefs/favorites/ids call so it doesn't fire for users without favorites feature, or have backend return [] for 401 instead of erroring (carried over from iter1)"
+  ],
+  "critical_code_review_comments": [
+    "routes_lolodrive_oscoop.py is now 831 lines; demo simulators block is clearly tagged but consider splitting into separate routers (pass/orders/pos/admin/demo) if growth continues",
+    "/api/lolodrive/me/savings computes savings using order line unit_cents vs product price_public_cents. If older orders don't persist unit_cents, savings will fall back to 0 — verified working with seeded data (9.20€)",
+    "demo/simulate-pass-activation grants 600 UC every time it's called (no idempotency check on already-active PASS); fine for demo but could be abused — consider a guard or rate limit if exposed in production",
+    "demo/simulate-order-payment skips real Stripe payment record creation; ok for demo, but make sure /demo/* endpoints are disabled in production env",
+    "Phase2Banner is rendered correctly on all 4 secondary pages with consistent styling and data-testid"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lolodrive_oscoop.py"
+  ],
+  "success_rate": {"backend": "100% (30/30)", "frontend": "100% (all 6 critical screens + 4 phase2 banners verified)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; marie@example.com / Demo2026! ; pos@lolodrive.fr / Demo2026! (from /app/memory/test_credentials.md). Note: login route is /connexion, NOT /login",
+  "seed_data_creation": "Used existing seed. Marie now has 13 ledger movements (16 orders) and 1362 UC after tests. Re-run /app/backend/seed_lolodrive.py if wallet balance approaches 0.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Login route is /connexion (not /login). 6 new tests added: TestDemoEndpoints (3) + TestKPIPeriods (3). All iteration 2 features validated end-to-end. The only persistent issue is the favorites 401 (carried over from iteration 1, non-blocking). POS polling at 15s confirmed stable. Phase 2 banner appears on /admin/lolo-points, /admin/lolo-hour, /crm, /reporting-impact. The dashboard /lolodrive shows 4 'Phase 2 · léger' badges on quick-links."
+}

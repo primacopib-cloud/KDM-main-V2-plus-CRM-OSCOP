@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Leaf, Ticket, Store, Building2, ShoppingBag, Wallet, RefreshCw, Download, HeartHandshake, Briefcase } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
+import Phase2Banner from '../components/Phase2Banner';
 import { Button } from '../components/ui/button';
 import { crmAPI, lolodriveAPI } from '../services/api';
 import { toast } from 'sonner';
@@ -58,6 +59,7 @@ export default function EssReportingPage() {
 
       {!loading && impact && kpi && (
         <>
+          <Phase2Banner module="Reporting impact ESS" />
           {/* Hero */}
           <SectionCard className="mb-6 relative overflow-hidden">
             <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full blur-3xl opacity-30 bg-emerald-400" />
