@@ -552,7 +552,7 @@ async def create_delivery_request(request: DeliveryRequest):
         )
     
     if request.delivery_type == "EXW":
-        message = f"Commande prête pour retrait au point LOGI'SCOP"
+        message = "Commande prête pour retrait au point LOGI'SCOP"
     else:
         slot_label = next((s["label"] for s in DELIVERY_SLOTS if s["id"] == request.slot), request.slot)
         message = f"Livraison programmée - Créneau: {slot_label}"

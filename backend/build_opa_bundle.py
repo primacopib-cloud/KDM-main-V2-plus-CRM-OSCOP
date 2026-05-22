@@ -272,7 +272,7 @@ async def main():
     print("=" * 60)
     
     # Connect to MongoDB
-    print(f"\n[1/5] Connecting to MongoDB...")
+    print("\n[1/5] Connecting to MongoDB...")
     client = AsyncIOMotorClient(MONGO_URL)
     db = client[DB_NAME]
     
@@ -285,14 +285,14 @@ async def main():
         sys.exit(1)
     
     # Create bundle directory
-    print(f"\n[2/5] Creating bundle directories...")
+    print("\n[2/5] Creating bundle directories...")
     BUNDLE_DIR.mkdir(parents=True, exist_ok=True)
     policy_dst = BUNDLE_DIR / "policy"
     policy_dst.mkdir(parents=True, exist_ok=True)
     print(f"  ✓ Created {BUNDLE_DIR}")
     
     # Generate data.json
-    print(f"\n[3/5] Generating data.json from MongoDB...")
+    print("\n[3/5] Generating data.json from MongoDB...")
     try:
         data = await generate_data_json(db)
         data_file = BUNDLE_DIR / "data.json"
@@ -309,7 +309,7 @@ async def main():
         sys.exit(1)
     
     # Copy policies
-    print(f"\n[4/5] Copying policy files...")
+    print("\n[4/5] Copying policy files...")
     if not copy_policies(POLICY_SRC_DIR, policy_dst):
         print("  ✗ Some policy files are missing!")
         sys.exit(1)
@@ -319,7 +319,7 @@ async def main():
     print("  ✓ Created .manifest")
     
     # Create tarball
-    print(f"\n[5/5] Creating bundle tarball...")
+    print("\n[5/5] Creating bundle tarball...")
     create_tarball(BUNDLE_DIR, OUT_TGZ)
     size = OUT_TGZ.stat().st_size / 1024
     print(f"  ✓ Created {OUT_TGZ} ({size:.1f} KB)")
@@ -328,11 +328,11 @@ async def main():
     print("\n" + "=" * 60)
     print("✅ Bundle generation complete!")
     print("=" * 60)
-    print(f"\nFiles:")
+    print("\nFiles:")
     print(f"  - data.json: {BUNDLE_DIR / 'data.json'}")
     print(f"  - policies:  {policy_dst}")
     print(f"  - bundle:    {OUT_TGZ}")
-    print(f"\nTo use with OPA:")
+    print("\nTo use with OPA:")
     print(f"  opa run --server --bundle {OUT_TGZ}")
     
     # Cleanup

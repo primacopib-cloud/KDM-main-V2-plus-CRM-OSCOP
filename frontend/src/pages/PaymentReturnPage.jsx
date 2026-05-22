@@ -53,6 +53,8 @@ export default function PaymentReturnPage() {
 
     poll();
     return () => { cancelled = true; };
+    // sessionId is the trigger; helpers (lolodriveAPI) and constants (MAX_ATTEMPTS, POLL_INTERVAL_MS) are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   const nextRoute = () => {

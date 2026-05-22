@@ -9,9 +9,9 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test credentials
-ADMIN_EMAIL = "admin@kdmarche-oscop.fr"
-ADMIN_PASSWORD = "AdminKDM2025!"
+# Test credentials (loaded from env / .env.test — never hard-code prod values)
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@kdmarche-oscop.fr")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "AdminKDM2025!")
 
 # Test product ID (Riz long grain 5kg)
 TEST_PRODUCT_ID = "a497f8dd-f948-4631-8783-3750659b27b5"

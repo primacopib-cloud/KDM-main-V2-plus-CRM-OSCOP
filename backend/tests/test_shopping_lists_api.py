@@ -10,9 +10,9 @@ import uuid
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test credentials
-TEST_EMAIL = "admin@kdmarche-oscop.fr"
-TEST_PASSWORD = "AdminKDM2025!"
+# Test credentials (loaded from env / .env.test — never hard-code prod values)
+TEST_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@kdmarche-oscop.fr")
+TEST_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "AdminKDM2025!")
 
 # Test product ID (from previous tests)
 TEST_PRODUCT_ID = "a497f8dd-f948-4631-8783-3750659b27b5"
@@ -211,7 +211,7 @@ class TestShoppingListsCRUD:
             names = [lst["name"] for lst in data]
             assert names == sorted(names), "Lists should be sorted by name ascending"
         
-        print(f"✓ Sort by name works")
+        print("✓ Sort by name works")
     
     def test_get_single_shopping_list(self):
         """GET /api/shopping-lists/{id} - Get single list with details"""
@@ -254,7 +254,7 @@ class TestShoppingListsCRUD:
         # Product should be enriched with name, sku, etc.
         assert "product_name" in item
         
-        print(f"✓ GET single list works with enriched product data")
+        print("✓ GET single list works with enriched product data")
         
         # Cleanup
         requests.delete(f"{BASE_URL}/api/shopping-lists/{list_id}", headers=self.headers)

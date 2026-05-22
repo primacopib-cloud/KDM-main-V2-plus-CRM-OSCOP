@@ -123,11 +123,11 @@ def generate_contract_reference() -> str:
 
 
 def generate_verification_code() -> str:
-    """Generate a verification code for signature"""
+    """Generate a verification code for signature using cryptographic randomness"""
     now = datetime.now()
     chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-    import random
-    random_part = ''.join(random.choices(chars, k=6))
+    import secrets as _secrets
+    random_part = ''.join(_secrets.choice(chars) for _ in range(6))
     return f"LSC-{now.strftime('%Y%m%d')}-{random_part}"
 
 

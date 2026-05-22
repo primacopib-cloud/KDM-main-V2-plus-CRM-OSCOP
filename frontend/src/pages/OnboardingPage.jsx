@@ -148,6 +148,8 @@ export default function OnboardingPage() {
     };
     
     init();
+    // Init runs once on mount; navigate, helpers (authAPI, orgsAPIV2, documentsAPI, toast) are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   // Form validation

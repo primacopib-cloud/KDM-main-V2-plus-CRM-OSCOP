@@ -116,6 +116,8 @@ export default function WalletPage() {
       toast.error('Paiement annulé');
       navigate('/wallet', { replace: true });
     }
+    // navigate + pollPaymentStatus are stable refs from this scope; only re-run when query string changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // Copy to clipboard
@@ -210,6 +212,9 @@ export default function WalletPage() {
     };
 
     init();
+    // Init runs once on mount; navigate is the only stable dep that's reasonable to track.
+    // Other refs (authAPI, walletAPIV2, zonesAPIV2, paymentAPI, toast) are module-level singletons.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   // Refresh wallet

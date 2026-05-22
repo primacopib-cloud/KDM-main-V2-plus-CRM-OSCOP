@@ -539,7 +539,7 @@ export default function SuperAdminPage() {
               </div>
               <div className="p-4 space-y-3 max-h-[300px] overflow-y-auto">
                 {alerts.length > 0 ? (
-                  alerts.map((alert, idx) => <AlertCard key={idx} alert={alert} />)
+                  alerts.map((alert, idx) => <AlertCard key={alert.id || alert.code || `alert-${idx}`} alert={alert} />)
                 ) : (
                   <div className="text-center py-6 text-white/40">
                     <CheckCircle2 className="w-8 h-8 mx-auto mb-2" />
@@ -559,7 +559,7 @@ export default function SuperAdminPage() {
               </div>
               <div className="p-4 max-h-[400px] overflow-y-auto">
                 {activities.length > 0 ? (
-                  activities.map((activity, idx) => <ActivityItem key={idx} activity={activity} />)
+                  activities.map((activity, idx) => <ActivityItem key={activity.id || activity.timestamp || `act-${idx}`} activity={activity} />)
                 ) : (
                   <div className="text-center py-6 text-white/40">
                     <Clock className="w-8 h-8 mx-auto mb-2" />

@@ -10,8 +10,8 @@ import requests
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://plan-builder-75.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "admin@kdmarche-oscop.fr"
-ADMIN_PASSWORD = "AdminKDM2025!"
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@kdmarche-oscop.fr")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "AdminKDM2025!")
 
 
 # ---------- Fixtures ----------
@@ -25,7 +25,7 @@ def admin_token():
             token = data.get("access_token") or data.get("token") or (data.get("user") or {}).get("token")
             if token:
                 return token
-    pytest.skip(f"Cannot authenticate admin user via /auth/login or /login")
+    pytest.skip("Cannot authenticate admin user via /auth/login or /login")
 
 
 @pytest.fixture(scope="session")
@@ -107,7 +107,7 @@ class TestSubscriptionPlans:
         body = r.json()
         plans_list = body["plans"] if isinstance(body, dict) and "plans" in body else body
         public_ids = [p.get("id") for p in plans_list]
-        assert plan_id in public_ids, f"new plan not in public /api/subscriptions"
+        assert plan_id in public_ids, "new plan not in public /api/subscriptions"
 
         # PATCH
         r = requests.patch(

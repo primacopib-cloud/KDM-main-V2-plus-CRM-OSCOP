@@ -71,8 +71,8 @@ const OffersPage = () => {
                 </div>
                 
                 <ul className="m-0 p-0 list-none grid gap-2.5 relative mt-4">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex gap-2.5 items-start text-white/75 text-[13px]">
+                  {plan.features.map((feature) => (
+                    <li key={`${plan.id}-${feature}`} className="flex gap-2.5 items-start text-white/75 text-[13px]">
                       <div className={`icon-dot ${plan.popular ? 'gold' : 'green'} mt-0.5`}></div>
                       <span>{feature}</span>
                     </li>
@@ -120,8 +120,8 @@ const OffersPage = () => {
               <div>
                 <h3 className="font-semibold text-white/90 mb-4 text-sm uppercase tracking-wider">Les crédits financent :</h3>
                 <ul className="space-y-3">
-                  {walletCreditsUsage.map((item, index) => (
-                    <li key={index} className="flex items-center gap-3">
+                  {walletCreditsUsage.map((item) => (
+                    <li key={item} className="flex items-center gap-3">
                       <div className="check-icon"></div>
                       <span className="text-white/75 text-sm">{item}</span>
                     </li>

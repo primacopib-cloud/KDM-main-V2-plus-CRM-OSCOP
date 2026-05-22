@@ -375,8 +375,8 @@ const RegisterPage = () => {
                     <span className="ribbon text-xs">{selectedPlan.price}€ HT/mois</span>
                   </div>
                   <ul className="text-sm text-white/70 space-y-1">
-                    {selectedPlan.features.slice(0, 3).map((f, i) => (
-                      <li key={i}>• {f}</li>
+                    {selectedPlan.features.slice(0, 3).map((f) => (
+                      <li key={`${selectedPlan.id}-${f}`}>• {f}</li>
                     ))}
                   </ul>
                 </div>

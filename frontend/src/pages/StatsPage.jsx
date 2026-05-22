@@ -157,7 +157,7 @@ const StatsPage = () => {
               <div className="space-y-3">
                 {recentOrders.map((order, index) => (
                   <div 
-                    key={index}
+                    key={order.id || order.order_id || `order-${order.date}-${index}`}
                     className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] transition-colors"
                   >
                     <div className="flex items-center gap-4">
@@ -209,7 +209,7 @@ const StatsPage = () => {
             ) : (
               <div className="space-y-3">
                 {creditsHistory.slice(0, 8).map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02]">
+                  <div key={item.id || `credit-${item.date || ''}-${index}`} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02]">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                         item.type === 'added' ? 'bg-[#57D19A]/20' : 'bg-red-500/20'
@@ -245,8 +245,8 @@ const StatsPage = () => {
               Évolution Mensuelle
             </h3>
             <div className="grid grid-cols-6 gap-4">
-              {monthlyStats.slice(0, 6).reverse().map((month, index) => (
-                <div key={index} className="text-center">
+              {monthlyStats.slice(0, 6).reverse().map((month) => (
+                <div key={month.month || month.label} className="text-center">
                   <div className="h-24 flex items-end justify-center mb-2">
                     <div 
                       className="w-8 rounded-t-lg bg-gradient-to-t from-[#D9B35A] to-[#F2D07A]"

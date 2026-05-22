@@ -328,7 +328,7 @@ export default function PosLolodrivePage() {
                 {!compact && o.items?.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-white/5 grid sm:grid-cols-2 gap-2">
                     {o.items.map((it, idx) => (
-                      <div key={idx} className="text-xs text-white/60 flex justify-between gap-2">
+                      <div key={`${o.id || o.order_id || 'order'}-item-${idx}-${it.product_id || it.name}`} className="text-xs text-white/60 flex justify-between gap-2">
                         <span className="truncate">
                           <span className="text-white/80 font-medium">{it.qty}× </span>
                           {it.name}

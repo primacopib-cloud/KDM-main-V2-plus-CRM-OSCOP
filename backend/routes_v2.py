@@ -431,7 +431,7 @@ async def submit_application(
         "id": str(uuid.uuid4()),
         "type": "org_submitted",
         "title": "Nouvelle demande d'adhésion B2B",
-        "message": f"Une nouvelle demande d'adhésion attend validation",
+        "message": "Une nouvelle demande d'adhésion attend validation",
         "data": {"application_id": app_id, "org_id": app["org_id"]},
         "target_roles": ["oscop_super_admin", "oscop_compliance_admin"],
         "is_read": False,

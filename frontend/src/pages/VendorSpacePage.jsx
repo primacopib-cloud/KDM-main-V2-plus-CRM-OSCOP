@@ -557,6 +557,8 @@ const VendorSpacePage = () => {
       setLoading(false);
     };
     loadData();
+    // Fetchers are stable closures over `statusFilter`; including them as deps would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
   const handleProductSuccess = () => {
@@ -717,7 +719,7 @@ const VendorSpacePage = () => {
                 {dashboard?.recent_orders?.length > 0 ? (
                   <div className="space-y-2">
                     {dashboard.recent_orders.map((order, idx) => (
-                      <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <div key={order.id || order.order_id || `vendor-order-${idx}`} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                         <div>
                           <p className="font-medium">{order.id}</p>
                           <p className="text-sm text-gray-500">{order.created_at?.split('T')[0]}</p>

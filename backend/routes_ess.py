@@ -18,7 +18,14 @@ from datetime import datetime, timezone, timedelta
 import uuid
 import logging
 import os
+import secrets
 from pathlib import Path
+
+from routes_logistics_shared import (
+    DEFAULT_ROUTE_POLICY,
+    ESS_ROUTE_TARIFFS,
+    DELIVERY_POLICY,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,63 +43,8 @@ def set_ess_database(database):
 
 
 # ============== ROUTE POLICY DATA ==============
-
-# Default route policy (fallback if DB is empty)
-DEFAULT_ROUTE_POLICY = {
-    "GUADELOUPE": {
-        "ess_route_enabled": True,
-        "window_required": True,
-        "min_reliability_score": 60,
-        "max_daily_capacity": 120,
-        "priority_rules": [
-            {"code": "COMPLIANCE_OK", "weight": 40},
-            {"code": "RELIABLE_PICKUPS", "weight": 30},
-            {"code": "LOW_INCIDENTS", "weight": 20},
-            {"code": "RECENT_LATE_CANCEL", "weight": -30}
-        ]
-    },
-    "MARTINIQUE": {
-        "ess_route_enabled": True,
-        "window_required": True,
-        "min_reliability_score": 60,
-        "max_daily_capacity": 100,
-        "priority_rules": [
-            {"code": "COMPLIANCE_OK", "weight": 40},
-            {"code": "RELIABLE_PICKUPS", "weight": 30},
-            {"code": "LOW_INCIDENTS", "weight": 20},
-            {"code": "RECENT_LATE_CANCEL", "weight": -30}
-        ]
-    },
-    "GUYANE": {
-        "ess_route_enabled": True,
-        "window_required": True,
-        "min_reliability_score": 50,
-        "max_daily_capacity": 60,
-        "priority_rules": [
-            {"code": "COMPLIANCE_OK", "weight": 40},
-            {"code": "RELIABLE_PICKUPS", "weight": 30},
-            {"code": "LOW_INCIDENTS", "weight": 20}
-        ]
-    },
-    "REUNION": {
-        "ess_route_enabled": True,
-        "window_required": True,
-        "min_reliability_score": 60,
-        "max_daily_capacity": 80,
-        "priority_rules": [
-            {"code": "COMPLIANCE_OK", "weight": 40},
-            {"code": "RELIABLE_PICKUPS", "weight": 30},
-            {"code": "LOW_INCIDENTS", "weight": 20}
-        ]
-    },
-    "MAYOTTE": {
-        "ess_route_enabled": False,  # Not yet available in Mayotte
-        "window_required": True,
-        "min_reliability_score": 50,
-        "max_daily_capacity": 40,
-        "priority_rules": []
-    }
-}
+# Constants moved to routes_logistics_shared.py to break the circular
+# import between routes_ess and routes_v1_logiscop.
 
 
 async def get_route_policy(zone_code: str) -> dict:
@@ -115,45 +67,6 @@ async def get_route_policy(zone_code: str) -> dict:
             return policy
     
     return DEFAULT_ROUTE_POLICY.get(zone_code, {})
-
-# ESS Route Tariffs (reduced due to mutualization)
-ESS_ROUTE_TARIFFS = {
-    "GUADELOUPE": {
-        "base_rate_cents": 180,  # Reduced from standard
-        "rate_per_kg_cents": 35,
-        "rate_per_carton_cents": 120,
-        "vat_rate": 8.5,
-        "estimated_days": "2-4"
-    },
-    "MARTINIQUE": {
-        "base_rate_cents": 200,
-        "rate_per_kg_cents": 38,
-        "rate_per_carton_cents": 130,
-        "vat_rate": 8.5,
-        "estimated_days": "2-4"
-    },
-    "GUYANE": {
-        "base_rate_cents": 350,
-        "rate_per_kg_cents": 60,
-        "rate_per_carton_cents": 200,
-        "vat_rate": 0,  # Exonerated
-        "estimated_days": "4-6"
-    },
-    "REUNION": {
-        "base_rate_cents": 250,
-        "rate_per_kg_cents": 45,
-        "rate_per_carton_cents": 150,
-        "vat_rate": 8.5,
-        "estimated_days": "3-5"
-    },
-    "MAYOTTE": {
-        "base_rate_cents": 300,
-        "rate_per_kg_cents": 55,
-        "rate_per_carton_cents": 180,
-        "vat_rate": 0,  # Exonerated
-        "estimated_days": "5-7"
-    }
-}
 
 
 # ============== PYDANTIC MODELS ==============
@@ -311,7 +224,6 @@ def calculate_ess_route_cost(zone_code: str, weight_kg: float, cartons: int) -> 
 def calculate_standard_cost(zone_code: str, weight_kg: float) -> int:
     """Calculate standard delivery cost for comparison"""
     # Standard rates are higher than ESS Route
-    from routes_v1_logiscop import DELIVERY_POLICY
     policy = DELIVERY_POLICY.get(zone_code[:3] if zone_code.isalpha() else zone_code)
     if not policy:
         return 0
@@ -498,8 +410,9 @@ async def list_available_tours(zone_code: str, days_ahead: int = 14):
             
             for window_code, start, end in windows:
                 tour_id = generate_tour_id(zone_code, tour_date, window_code)
-                import random
-                booked = random.randint(10, int(max_capacity * 0.7))
+                # Mock booked count for demo data — uses cryptographic randomness
+                upper_bound = max(1, int(max_capacity * 0.7) - 10 + 1)
+                booked = 10 + secrets.randbelow(upper_bound)
                 available = max_capacity - booked
                 
                 tours.append(TourInfo(
@@ -538,12 +451,12 @@ async def get_tour_details(tour_id: str):
     windows = {"AM": ("08:00", "12:00"), "PM": ("14:00", "18:00")}
     start, end = windows.get(window_code, ("08:00", "12:00"))
     
-    policy = ROUTE_POLICY.get(zone_code, {})
+    policy = DEFAULT_ROUTE_POLICY.get(zone_code, {})
     max_capacity = policy.get("max_daily_capacity", 100)
     
     # Check if tour exists in DB (for now, generate mock data)
-    import random
-    booked = random.randint(10, int(max_capacity * 0.8))
+    upper_bound = max(1, int(max_capacity * 0.8) - 10 + 1)
+    booked = 10 + secrets.randbelow(upper_bound)
     
     return TourInfo(
         tour_id=tour_id,

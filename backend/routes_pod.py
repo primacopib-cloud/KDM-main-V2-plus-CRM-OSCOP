@@ -135,11 +135,11 @@ def generate_bl_number() -> str:
 
 
 def generate_pod_verification_code() -> str:
-    """Generate a verification code for POD"""
+    """Generate a verification code for POD using cryptographic randomness"""
     now = datetime.now()
     chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-    import random
-    random_part = ''.join(random.choices(chars, k=6))
+    import secrets as _secrets
+    random_part = ''.join(_secrets.choice(chars) for _ in range(6))
     return f"POD-{now.strftime('%Y%m%d')}-{random_part}"
 
 

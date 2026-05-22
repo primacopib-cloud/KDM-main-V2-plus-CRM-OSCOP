@@ -14,7 +14,7 @@ import logging
 import uuid
 import hashlib
 import hmac
-import random
+import secrets
 import string
 
 # Import email service for sending OTP via email (backup/alternative to SMS)
@@ -132,8 +132,8 @@ class SignatureStatusResponse(BaseModel):
 # ============== HELPER FUNCTIONS ==============
 
 def generate_otp() -> str:
-    """Generate a 6-digit OTP code"""
-    return ''.join(random.choices(string.digits, k=OTP_LENGTH))
+    """Generate a 6-digit OTP code using cryptographic randomness"""
+    return ''.join(secrets.choice(string.digits) for _ in range(OTP_LENGTH))
 
 
 def hash_otp(otp: str, salt: str) -> str:
@@ -174,8 +174,6 @@ async def send_sms_otp(phone: str, otp: str, signer_name: str, document_type: st
     Currently sends via email (SendGrid) as SMS provider not yet integrated
     TODO: Integrate Twilio or OVH SMS for production
     """
-    message = f"KDMARCHE - Code de signature: {otp}. Valable {OTP_EXPIRY_MINUTES} min. Ne partagez jamais ce code."
-    
     # Log for development/testing
     logger.info(f"[SMS OTP] To: {phone} | Code: {otp} | Document: {document_type}")
     

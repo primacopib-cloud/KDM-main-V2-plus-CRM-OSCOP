@@ -16,6 +16,8 @@ import uuid
 import logging
 import math
 
+from routes_logistics_shared import DELIVERY_POLICY
+
 logger = logging.getLogger(__name__)
 
 # Router with v1 prefix
@@ -32,80 +34,10 @@ def set_v1_logiscop_database(database):
 
 
 # ============== DELIVERY POLICY DATA ==============
-# Configuration des zones pour la politique de livraison LOGI'SCOP
-
-DELIVERY_POLICY = {
-    "971": {  # Guadeloupe
-        "zone_name": "Guadeloupe",
-        "delivery_enabled": True,
-        "pickup_required": True,
-        "min_weight_kg": 0,
-        "max_weight_kg": 1000,
-        "min_value_cents": 0,
-        "express_enabled": True,
-        "base_rate_cents": 250,
-        "rate_per_kg_cents": 45,
-        "rate_per_m3_cents": 8500,
-        "vat_rate": 8.5,
-        "estimated_days": "3-5"
-    },
-    "972": {  # Martinique
-        "zone_name": "Martinique",
-        "delivery_enabled": True,
-        "pickup_required": True,
-        "min_weight_kg": 0,
-        "max_weight_kg": 1000,
-        "min_value_cents": 0,
-        "express_enabled": True,
-        "base_rate_cents": 280,
-        "rate_per_kg_cents": 50,
-        "rate_per_m3_cents": 9000,
-        "vat_rate": 8.5,
-        "estimated_days": "3-5"
-    },
-    "973": {  # Guyane
-        "zone_name": "Guyane",
-        "delivery_enabled": True,
-        "pickup_required": True,
-        "min_weight_kg": 5,  # Minimum pour Guyane
-        "max_weight_kg": 500,
-        "min_value_cents": 10000,  # Minimum 100€
-        "express_enabled": False,
-        "base_rate_cents": 450,
-        "rate_per_kg_cents": 75,
-        "rate_per_m3_cents": 15000,
-        "vat_rate": 0,  # Exonéré
-        "estimated_days": "5-7"
-    },
-    "974": {  # La Réunion
-        "zone_name": "La Réunion",
-        "delivery_enabled": True,
-        "pickup_required": True,
-        "min_weight_kg": 0,
-        "max_weight_kg": 800,
-        "min_value_cents": 0,
-        "express_enabled": True,
-        "base_rate_cents": 320,
-        "rate_per_kg_cents": 55,
-        "rate_per_m3_cents": 11000,
-        "vat_rate": 8.5,
-        "estimated_days": "4-6"
-    },
-    "976": {  # Mayotte
-        "zone_name": "Mayotte",
-        "delivery_enabled": True,
-        "pickup_required": True,
-        "min_weight_kg": 2,
-        "max_weight_kg": 300,
-        "min_value_cents": 5000,  # Minimum 50€
-        "express_enabled": False,
-        "base_rate_cents": 380,
-        "rate_per_kg_cents": 65,
-        "rate_per_m3_cents": 12000,
-        "vat_rate": 0,  # Exonéré
-        "estimated_days": "5-7"
-    },
-}
+# DELIVERY_POLICY moved to routes_logistics_shared.py to break the circular
+# import between routes_ess and routes_v1_logiscop.
+# It is re-exported via the `from routes_logistics_shared import DELIVERY_POLICY`
+# at the top of this file for backwards compatibility with other modules.
 
 # Frais de préparation LOGI'SCOP
 PREPARATION_FEES = {

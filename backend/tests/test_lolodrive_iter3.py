@@ -9,10 +9,10 @@ import websocket  # websocket-client
 from urllib.parse import urlparse
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://coop-dashboard-8.preview.emergentagent.com").rstrip("/")
-ADMIN_EMAIL = "admin@kdmarche-oscop.fr"
-ADMIN_PASSWORD = "AdminKDM2025!"
-MARIE_EMAIL = "marie@example.com"
-MARIE_PASSWORD = "Demo2026!"
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@kdmarche-oscop.fr")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "AdminKDM2025!")
+MARIE_EMAIL = os.environ.get("TEST_MARIE_EMAIL", "marie@example.com")
+MARIE_PASSWORD = os.environ.get("TEST_MARIE_PASSWORD", "Demo2026!")
 
 
 def H(token):

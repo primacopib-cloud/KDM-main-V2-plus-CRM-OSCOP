@@ -128,9 +128,11 @@ def generate_sample_tours(zone_code: str, zone_prefix: str, max_capacity: int, d
         for window_code, start, end in windows:
             tour_id = f"TOUR-{zone_prefix}-{tour_date.year}W{week_num:02d}-{day_abbr}-{window_code}"
             
-            # Simulate some bookings (random between 20-70% capacity)
-            import random
-            booked = random.randint(int(max_capacity * 0.2), int(max_capacity * 0.7))
+            # Simulate some bookings (random between 20-70% capacity) using cryptographic randomness
+            import secrets as _secrets
+            lower = int(max_capacity * 0.2)
+            upper = max(1, int(max_capacity * 0.7) - lower + 1)
+            booked = lower + _secrets.randbelow(upper)
             
             tours.append({
                 "zone_code": zone_code,
@@ -151,7 +153,7 @@ async def main():
     print("=" * 60)
     
     # Connect to MongoDB
-    print(f"\n[1/5] Connecting to MongoDB...")
+    print("\n[1/5] Connecting to MongoDB...")
     client = AsyncIOMotorClient(MONGO_URL)
     db = client[DB_NAME]
     
@@ -165,7 +167,7 @@ async def main():
     now = datetime.now(timezone.utc)
     
     # Create indexes
-    print(f"\n[2/5] Creating indexes...")
+    print("\n[2/5] Creating indexes...")
     await db.kdm_route_policy.create_index("zone_code", unique=True)
     await db.kdm_route_priority_rules.create_index([("zone_code", 1), ("code", 1)], unique=True)
     await db.kdm_route_capacity.create_index([("zone_code", 1), ("tour_id", 1)], unique=True)
@@ -173,7 +175,7 @@ async def main():
     print("  ✓ Indexes created")
     
     # Seed route_policy
-    print(f"\n[3/5] Seeding kdm_route_policy...")
+    print("\n[3/5] Seeding kdm_route_policy...")
     for policy in ROUTE_POLICIES:
         policy["created_at"] = now
         policy["updated_at"] = now
@@ -187,7 +189,7 @@ async def main():
         print(f"  ✓ {policy['zone_code']}: ESS Route {status}, capacity={policy['max_daily_capacity']}")
     
     # Seed priority_rules
-    print(f"\n[4/5] Seeding kdm_route_priority_rules...")
+    print("\n[4/5] Seeding kdm_route_priority_rules...")
     for rule in PRIORITY_RULES:
         rule["is_active"] = True
         rule["created_at"] = now
@@ -201,7 +203,7 @@ async def main():
     print(f"  ✓ {len(PRIORITY_RULES)} priority rules created")
     
     # Seed route_capacity (sample tours)
-    print(f"\n[5/5] Seeding kdm_route_capacity (sample tours)...")
+    print("\n[5/5] Seeding kdm_route_capacity (sample tours)...")
     
     zone_configs = [
         ("GUADELOUPE", "GP", 60),
@@ -236,7 +238,7 @@ async def main():
     rules_count = await db.kdm_route_priority_rules.count_documents({})
     capacity_count = await db.kdm_route_capacity.count_documents({})
     
-    print(f"\nCollections:")
+    print("\nCollections:")
     print(f"  - kdm_route_policy: {policy_count} documents")
     print(f"  - kdm_route_priority_rules: {rules_count} documents")
     print(f"  - kdm_route_capacity: {capacity_count} documents")

@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 os.environ.setdefault('MONGO_URL','mongodb://mock:27017')
 os.environ.setdefault('DB_NAME','kdm_test')
 os.environ.setdefault('JWT_SECRET_KEY','kdmarche-oscop-b2b-ess-secret-key-2025')
@@ -16,25 +17,30 @@ from auth import get_password_hash
 import server
 from server import app, db
 
+# Test admin password is configurable via env so it isn't hard-coded.
+_TEST_ADMIN_PASSWORD = os.environ.get('TEST_ADMIN_PASSWORD', 'AdminKDM2025!')
+
+
 @app.on_event('startup')
 async def seed_test_users_and_data():
     # ensure admin user required by tests
-    existing = await db.users.find_one({'email':'admin@kdmarche-oscop.fr'})
+    existing = await db.users.find_one({'email': 'admin@kdmarche-oscop.fr'})
     if not existing:
+        now = datetime.now(timezone.utc)
         await db.users.insert_one({
             'id': 'admin-test-id',
-            'email':'admin@kdmarche-oscop.fr',
-            'password_hash': get_password_hash('AdminKDM2025!'),
-            'company_name':'KDM Admin',
-            'siret':'00000000000000',
-            'contact_name':'Admin',
-            'phone':'0590000000',
-            'subscription':'ess-impact-pro',
-            'credits':10000,
+            'email': 'admin@kdmarche-oscop.fr',
+            'password_hash': get_password_hash(_TEST_ADMIN_PASSWORD),
+            'company_name': 'KDM Admin',
+            'siret': '00000000000000',
+            'contact_name': 'Admin',
+            'phone': '0590000000',
+            'subscription': 'ess-impact-pro',
+            'credits': 10000,
             'is_admin': True,
             'role': 'admin',
-            'created_at': __import__('datetime').datetime.utcnow(),
-            'updated_at': __import__('datetime').datetime.utcnow(),
+            'created_at': now,
+            'updated_at': now,
         })
 
 

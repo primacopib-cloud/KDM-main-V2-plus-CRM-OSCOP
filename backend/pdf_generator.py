@@ -240,7 +240,7 @@ def generate_offer_pdf() -> BytesIO:
         body_style
     ))
     story.append(Paragraph(
-        f"© 2025 Centrale d'Achats B2B ESS - KDMARCHE & O'SCOP",
+        "© 2025 Centrale d'Achats B2B ESS - KDMARCHE & O'SCOP",
         body_style
     ))
     
