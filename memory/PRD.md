@@ -373,6 +373,42 @@ Objectif : créer une interface web propre pour exploiter l'API existante sans m
 - Validé : days clamp (0/-5 → 1, 9999 → 365), auto-renew throttle (1er run sent=1, immediate retrigger sent=0), idempotency (3× upsert → 1 crédit), payment_transactions tagged `auto_renew=true`.
 
 ### Backlog restant
-- 🛡️ Stripe Subscriptions natives (rebill auto réel) — actuellement "soft" via lien email. Nécessite migration vers Stripe SubscriptionSchedule.
-- 🖼️ Image OG personnalisée hostée sur le CDN Emergent (actuellement Unsplash générique Caraïbes).
-- 🌐 i18n : extraire les labels FR pour préparer l'export en EN/ES (marchés DOM hispanophones futurs ?).
+- ✅ Image OG personnalisée hostée sur CDN Emergent — DONE iter 10
+- ✅ Carte Mapbox actionnable (clic → fiche → CTA pré-sélection) — DONE iter 10
+- ✅ Stripe LIVE key configurée + protection STRIPE_MODE — DONE iter 10
+- 🛡️ Stripe Subscriptions natives (rebill auto réel via Stripe SubscriptionSchedule) — encore reporté.
+- 🌐 i18n : labels FR → EN/ES (DOM hispanophones).
+
+## Iteration 10 (22 mai 2026) — Sprint Design Premium + UX Commercial
+
+### Design system premium
+- **`/app/frontend/src/index.css`** : nouvelle palette CSS variables (Or métallisé `#D4AF37`, Vert lime `#8CC63E`, Violet premium `#6C4C8E`, Bleu logistique `#0B4D87`, Orange énergie `#FF7A00`, Rose magenta, Beige perle, Rouge corail).
+- Polices : **Playfair Display** (titres premium éditorial), **Montserrat** (body) — chargées via Google Fonts.
+- Tailwind utility classes : `.text-or-metallise`, `.bg-bleu-logistique`, `.bg-gradient-or`, `.bg-gradient-cooperatif`, etc.
+- Composant `.separator-premium` (ligne fine + dot or). `LolodriveLayout` H1 utilise désormais `font-display`.
+- Shadcn HSL tokens : primary → Or métallisé (46 65% 52%), accent → Vert lime (86 53% 51%), destructive → Rouge corail.
+- Gradient `btn-gold` mis à jour avec Or métallisé.
+
+### Carte actionnable + funnel pré-sélection
+- `LandingPage.jsx::PublicLolodriveMapSection` : modal détail au clic marker (titre Playfair Display, chips DRIVE/LIVRAISON, adresse, zone, CTA "Activer mon PASS ici"). Fermeture par bouton ou clic backdrop.
+- Persistance `localStorage.kdm_preselected_point = {id, code, name, territory}` au clic CTA.
+- `LolodriveCatalogPage.jsx` : `useState` lazy initializer lit `localStorage.kdm_preselected_point` au mount → pré-sélection automatique du point au moment de l'achat PASS.
+- Reset auto si le point pré-sélectionné n'est plus dans la liste filtrée par territoire.
+
+### OG image personnalisée
+- `public/index.html` : og:image + twitter:image pointent désormais sur l'artifact charte graphique premium hébergé sur le CDN Emergent (`customer-assets.emergentagent.com`). Validé HTTP 200 image/png 1.77 MB.
+
+### Stripe LIVE key + protection STRIPE_MODE
+- `.env` : ajout `STRIPE_LIVE_KEY` (sk_live_...) + `STRIPE_MODE=test` (default = test/sandbox).
+- `routes_lolodrive_checkout._stripe_api_key()` et `pass_auto_renew._stripe()` honorent `STRIPE_MODE`. Default = test pour fail-safe (aucune charge réelle accidentelle).
+- Nouvel endpoint admin `GET /api/lolodrive/admin/stripe/mode` → expose le mode actif + préfixe 12 chars de la clé + `live_key_configured` flag + warning. Sécurisé par `require_admin` (401 sans auth, 403 sans rôle admin).
+
+### Tests — Iteration 8 report
+- **Backend 7/7 iter8 + 15/15 iter7 + 21/22 iter6 régression = 43/44 PASSED** (1 état seed referral non lié à iter8).
+- **Frontend 11/11 critical UI checks PASSED** (Playfair Display computed, OG meta sur charte premium, modal relais, localStorage pré-sélection).
+- 1 nit a11y mineur fixé : titre modal `h4 → h3`.
+
+### Backlog restant pour la suite
+- 🛡️ Stripe Subscriptions natives (rebill réel via SubscriptionSchedule).
+- 🌐 i18n FR → EN/ES.
+- 🎨 Charte étendue : appliquer Bleu logistique sur les pages LOGI'SCOP futures, Vert lime sur les CTA O'SCOP cooperative.

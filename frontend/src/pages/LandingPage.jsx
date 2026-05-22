@@ -320,7 +320,7 @@ const PublicLolodriveMapSection = () => {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="text-[11px] uppercase tracking-wider text-or-metallise mb-1">Relais LOLODRIVE</div>
-                  <h4 className="text-2xl font-display font-bold leading-tight">{selected.name}</h4>
+                  <h3 className="text-2xl font-display font-bold leading-tight">{selected.name}</h3>
                   <div className="font-mono text-xs text-white/40 mt-1">{selected.code} · {selected.territory}</div>
                 </div>
                 <button onClick={() => setSelected(null)} className="text-white/40 hover:text-white text-xl leading-none px-2" data-testid="close-relay-detail">×</button>
