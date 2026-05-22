@@ -1441,6 +1441,14 @@ from routes_google_auth import router as google_auth_router, set_google_auth_dat
 set_google_auth_database(db)
 app.include_router(google_auth_router)
 
+# Stripe Reconciliation (admin-only) — aggregated payments across KDMARCHE + O'SCOP accounts
+from routes_stripe_reconciliation import (
+    reconciliation_router as stripe_reconciliation_router,
+    set_reconciliation_database,
+)
+set_reconciliation_database(db)
+app.include_router(stripe_reconciliation_router)
+
 # Brevo transactional webhooks (delivered/bounced metrics)
 from routes_brevo_webhook import router as brevo_webhook_router, set_brevo_webhook_database, setup_brevo_webhook_indexes
 set_brevo_webhook_database(db)

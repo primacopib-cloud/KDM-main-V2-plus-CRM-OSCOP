@@ -63,6 +63,7 @@ const getNavItems = (userRole, isAdmin) => {
     { href: '/admin/plans', label: 'Plans & Crédits', icon: CreditCard },
     { href: '/admin-v2', label: 'Admin Orgs', icon: Building2 },
     { href: '/admin/produits', label: 'Validation Produits', icon: Package },
+    { href: '/admin/stripe-reconciliation', label: 'Réconciliation Stripe', icon: CreditCard },
   ];
 
   if (isAdmin) {

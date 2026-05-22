@@ -101,6 +101,25 @@ Exigences produit étendues :
 
 **Validation** : Backend redémarre OK (Health 200, login admin OK, ESS endpoints OK), frontend lint propre, tous les pages public + admin testées via screenshot.
 
+### Iter 11 (22 mai 2026) — Réconciliation Stripe Admin (DONE)
+**Demande utilisateur** : page admin "Réconciliation Stripe" avec commandes/PASS/recharges par jour, totaux par compte, lien Stripe Dashboard, export CSV pour comptable.
+
+**Implémenté** :
+- 🆕 Backend : `/app/backend/routes_stripe_reconciliation.py`
+  - `GET /api/admin/stripe/reconciliation` : agrégation Mongo par jour + par kind + totaux par compte (oscop/kdmarche)
+  - `GET /api/admin/stripe/reconciliation/export.csv` : export CSV `;`-delimited (compatible Excel FR) — colonnes: date, session_id, account, kind, montant EUR/cents, user, email, ref pack/order, applied_by
+  - Filtre date range (date_from/date_to, défaut J-30 → aujourd'hui)
+  - Sécurité : admin-only (`is_admin` requis), 403 sinon
+- 🆕 Frontend : `/app/frontend/src/pages/StripeReconciliationPage.jsx`
+  - Route `/admin/stripe-reconciliation`
+  - Filtres date du/au + bouton Actualiser + Export CSV (download direct)
+  - 3 cartes totaux : Global / O'SCOP (bleu logistique) / KDMARCHE (or métallisé) avec lien externe vers Stripe Dashboard
+  - Graphique stacked bar quotidien (Recharts) avec tooltip FR
+  - 2 cartes "Détail par produit" : PASS / Recharges / Commandes par compte
+  - Badge "MODE LIVE" (vert) / "MODE TEST" (rouge) selon `STRIPE_MODE`
+- 🔗 Lien ajouté dans NavBar admin
+- ✅ Validation : screenshot OK, totaux corrects (60€ PASS test affiché), CSV téléchargeable, 403 pour non-admin
+
 ## 4. Backlog
 
 ### P1 — Internationalisation
