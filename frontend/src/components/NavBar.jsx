@@ -129,9 +129,10 @@ const NavBar = ({ variant = 'default' }) => {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300`}
       style={{
-        background: isScrolled ? 'rgba(7,10,16,0.95)' : 'rgba(7,10,16,0.85)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)'
+        background: isScrolled ? 'rgba(255,253,247,0.96)' : 'rgba(255,253,247,0.86)',
+        backdropFilter: 'blur(14px)',
+        borderBottom: '1px solid rgba(212,175,55,0.32)',
+        boxShadow: isScrolled ? '0 8px 24px rgba(11,77,135,0.06)' : 'none'
       }}
     >
       <div className="max-w-[1400px] mx-auto px-4 lg:px-6">
@@ -237,8 +238,9 @@ const NavBar = ({ variant = 'default' }) => {
                     <div 
                       className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden shadow-xl z-50"
                       style={{
-                        background: 'rgba(15,20,30,0.98)',
-                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: '#FFFFFF',
+                        border: '1px solid rgba(212,175,55,0.34)',
+                        boxShadow: '0 18px 48px rgba(11,77,135,0.18), 0 4px 12px rgba(31,42,58,0.08)',
                         backdropFilter: 'blur(20px)'
                       }}
                     >
@@ -352,9 +354,10 @@ const NavBar = ({ variant = 'default' }) => {
           <div 
             className="lg:hidden rounded-2xl mb-4 p-4 absolute left-4 right-4 top-16"
             style={{
-              background: 'rgba(10,15,25,0.98)',
+              background: '#FFFFFF',
               backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              border: '1px solid rgba(212,175,55,0.36)',
+              boxShadow: '0 24px 56px rgba(11,77,135,0.18)',
               maxHeight: 'calc(100vh - 100px)',
               overflowY: 'auto'
             }}

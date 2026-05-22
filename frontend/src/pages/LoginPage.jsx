@@ -41,9 +41,9 @@ const LoginPage = () => {
       className="min-h-screen flex items-center justify-center p-4"
       style={{
         background: `
-          radial-gradient(900px 420px at 20% -10%, rgba(217,179,90,0.22), transparent 55%),
-          radial-gradient(820px 460px at 88% 0%, rgba(87,209,154,0.16), transparent 55%),
-          linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)
+          radial-gradient(1100px 540px at 12% -5%, rgba(212,175,55,0.20), transparent 60%),
+          radial-gradient(1000px 520px at 92% 5%, rgba(108,76,142,0.10), transparent 60%),
+          linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)
         `
       }}
     >

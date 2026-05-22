@@ -26,9 +26,9 @@ const Header = () => {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300`}
       style={{
-        background: 'rgba(7,10,16,0.85)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)'
+        background: 'rgba(255,253,247,0.86)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(212,175,55,0.32)'
       }}
     >
       <div className="max-w-[1160px] mx-auto px-5">
@@ -103,9 +103,10 @@ const Header = () => {
           <div 
             className="md:hidden rounded-2xl mt-2 p-6 absolute left-4 right-4"
             style={{
-              background: 'rgba(7,10,16,0.95)',
+              background: '#FFFFFF',
               backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.12)'
+              border: '1px solid rgba(212,175,55,0.34)',
+              boxShadow: '0 18px 48px rgba(11,77,135,0.16)'
             }}
           >
             <nav className="flex flex-col gap-4">

@@ -387,7 +387,7 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}>
         <RefreshCw className="w-8 h-8 animate-spin text-[#D9B35A]" />
       </div>
     );
@@ -395,7 +395,7 @@ export default function CheckoutPage() {
 
   if (orderCreated) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}>
         <div className="text-center max-w-md mx-auto p-8">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
             <CheckCircle2 className="w-10 h-10 text-emerald-400" />
@@ -419,14 +419,14 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)' }} data-testid="checkout-page">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }} data-testid="checkout-page">
       {/* Header */}
       <header 
         className="sticky top-0 z-50"
         style={{
-          background: 'rgba(7,10,16,0.85)',
+          background: 'rgba(255,253,247,0.86)',
           backdropFilter: 'blur(10px)',
-          borderBottom: '1px solid rgba(255,255,255,0.08)'
+          borderBottom: '1px solid rgba(212,175,55,0.32)'
         }}
       >
         <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between">

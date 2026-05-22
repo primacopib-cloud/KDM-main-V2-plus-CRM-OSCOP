@@ -347,21 +347,21 @@ export default function BuyerSpacePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}>
         <RefreshCw className="w-8 h-8 animate-spin text-[#D9B35A]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)' }} data-testid="buyer-space-page">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }} data-testid="buyer-space-page">
       {/* Header */}
       <header 
         className="sticky top-0 z-50"
         style={{
-          background: 'rgba(7,10,16,0.85)',
+          background: 'rgba(255,253,247,0.86)',
           backdropFilter: 'blur(10px)',
-          borderBottom: '1px solid rgba(255,255,255,0.08)'
+          borderBottom: '1px solid rgba(212,175,55,0.32)'
         }}
       >
         <div className="max-w-[1280px] mx-auto px-5 py-3 flex items-center justify-between">

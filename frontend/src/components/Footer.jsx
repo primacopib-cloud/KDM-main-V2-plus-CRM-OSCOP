@@ -5,7 +5,12 @@ import { Mail, Phone, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Lea
 
 const Footer = () => {
   return (
-    <footer style={{ background: 'rgba(5,7,12,0.95)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+    <footer style={{
+      background: 'linear-gradient(180deg, #FBF6EE 0%, #F2E6D3 100%)',
+      borderTop: '3px solid transparent',
+      borderImage: 'linear-gradient(90deg, #B8941E 0%, #D4AF37 50%, #B8941E 100%) 1',
+      color: '#1F2A3A'
+    }}>
       <div className="max-w-[1160px] mx-auto px-5 py-16">
         <div className="grid md:grid-cols-4 gap-12">
           {/* Brand */}

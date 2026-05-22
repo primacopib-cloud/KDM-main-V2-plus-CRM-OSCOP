@@ -44,7 +44,7 @@ export default function AuthCallbackPage() {
     <div
       data-testid="auth-callback-page"
       className="min-h-screen flex items-center justify-center p-4 text-white"
-      style={{ background: 'linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}
     >
       <div className="text-center max-w-md">
         {!error ? (

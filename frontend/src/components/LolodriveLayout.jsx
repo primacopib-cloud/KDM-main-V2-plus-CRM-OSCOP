@@ -18,9 +18,9 @@ export default function LolodriveLayout({ title, subtitle, children, actions }) 
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-screen text-anthracite" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 100%)' }}>
       {/* Top bar */}
-      <header className="border-b border-white/[0.08] bg-black/30 backdrop-blur-xl sticky top-0 z-30">
+      <header className="border-b sticky top-0 z-30 backdrop-blur-xl" style={{ background: 'rgba(255,253,247,0.92)', borderColor: 'rgba(212,175,55,0.32)' }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             <div
@@ -63,11 +63,11 @@ export default function LolodriveLayout({ title, subtitle, children, actions }) 
             <div>
               <h1
                 className="text-3xl sm:text-4xl font-display font-bold tracking-tight bg-clip-text text-transparent"
-                style={{ backgroundImage: 'linear-gradient(135deg, #D4AF37 0%, #fff 70%)' }}
+                style={{ backgroundImage: 'linear-gradient(135deg, #B8941E 0%, #D4AF37 50%, #0B4D87 100%)' }}
               >
                 {title}
               </h1>
-              {subtitle && <p className="text-white/50 mt-2 text-sm max-w-2xl">{subtitle}</p>}
+              {subtitle && <p className="mt-2 text-sm max-w-2xl" style={{ color: 'rgba(31,42,58,0.6)' }}>{subtitle}</p>}
             </div>
             {actions && <div className="flex gap-2 flex-wrap">{actions}</div>}
           </div>

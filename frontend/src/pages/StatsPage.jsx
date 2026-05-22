@@ -44,7 +44,7 @@ const StatsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}>
         <Loader2 className="w-8 h-8 animate-spin text-[#D9B35A]" />
       </div>
     );
@@ -56,14 +56,14 @@ const StatsPage = () => {
   const monthlyStats = stats?.monthly_stats || [];
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}>
       {/* Header */}
       <header 
         className="sticky top-0 z-50"
         style={{
-          background: 'rgba(7,10,16,0.85)',
+          background: 'rgba(255,253,247,0.86)',
           backdropFilter: 'blur(10px)',
-          borderBottom: '1px solid rgba(255,255,255,0.08)'
+          borderBottom: '1px solid rgba(212,175,55,0.32)'
         }}
       >
         <div className="max-w-[1160px] mx-auto px-5 py-3 flex items-center justify-between">
@@ -128,7 +128,7 @@ const StatsPage = () => {
 
           <div className="glass-panel-soft rounded-[18px] p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(212,175,55,0.34)' }}>
                 <CreditCard className="w-5 h-5 text-white/70" />
               </div>
             </div>

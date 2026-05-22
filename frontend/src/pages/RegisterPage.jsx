@@ -97,7 +97,7 @@ const RegisterPage = () => {
         background: `
           radial-gradient(900px 420px at 20% -10%, rgba(217,179,90,0.22), transparent 55%),
           radial-gradient(820px 460px at 88% 0%, rgba(87,209,154,0.16), transparent 55%),
-          linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)
+          linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)
         `
       }}
     >

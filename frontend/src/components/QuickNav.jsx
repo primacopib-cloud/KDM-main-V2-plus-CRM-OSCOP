@@ -22,9 +22,9 @@ export default function QuickNav({ showBack = true, backTo = '/espace-acheteur',
     <div 
       className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-2 py-1.5 rounded-full flex items-center gap-1"
       style={{
-        background: 'rgba(10,15,25,0.95)',
+        background: 'rgba(255,253,247,0.96)',
         backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255,255,255,0.1)',
+        border: '1px solid rgba(212,175,55,0.32)',
         boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
       }}
     >

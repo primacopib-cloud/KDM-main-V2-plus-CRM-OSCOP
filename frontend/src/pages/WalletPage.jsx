@@ -359,7 +359,7 @@ export default function WalletPage() {
 
   if (loading || paymentChecking) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}>
         <Loader2 className="w-8 h-8 animate-spin text-[#D9B35A]" />
         {paymentChecking && (
           <p className="text-white/60 text-sm">Vérification du paiement en cours...</p>
@@ -369,14 +369,14 @@ export default function WalletPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%)' }} data-testid="wallet-page">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }} data-testid="wallet-page">
       {/* Header - Ultra compact */}
       <header 
         className="sticky top-0 z-50"
         style={{
-          background: 'rgba(7,10,16,0.95)',
+          background: 'rgba(255,253,247,0.96)',
           backdropFilter: 'blur(10px)',
-          borderBottom: '1px solid rgba(255,255,255,0.08)'
+          borderBottom: '1px solid rgba(212,175,55,0.32)'
         }}
       >
         <div className="max-w-[1160px] mx-auto px-4 py-1 flex items-center justify-between h-10">

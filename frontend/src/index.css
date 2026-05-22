@@ -20,19 +20,22 @@
   --kdm-or-metallise: #D4AF37;        /* premium accent */
   --kdm-argent: #C0C0C0;              /* secondary */
 
-  /* Tokens app (rétrocompat avec les anciens noms) */
-  --bg: #070A10;
-  --panel: rgba(255,255,255,0.06);
-  --panel2: rgba(255,255,255,0.09);
-  --text: rgba(255,255,255,0.92);
-  --muted: rgba(255,255,255,0.72);
-  --soft: rgba(255,255,255,0.12);
-  --line: rgba(255,255,255,0.14);
+  /* Tokens app — LIGHT PREMIUM */
+  --bg: #FBF6EE;
+  --bg-2: #F7EFDF;
+  --panel: rgba(255,255,255,0.78);
+  --panel2: rgba(255,255,255,0.92);
+  --text: #1F2A3A;                     /* anthracite-bleuté pour lisibilité */
+  --muted: rgba(31,42,58,0.65);
+  --soft: rgba(31,42,58,0.10);
+  --line: rgba(212,175,55,0.32);       /* hairline or */
   --gold: #D4AF37;                     /* aligné Or métallisé */
   --gold2: #E6C25A;                    /* highlight */
+  --gold-deep: #B8941E;
   --green: #8CC63E;                    /* aligné Vert lime */
   --danger: #FF5A4A;                   /* aligné Rouge corail */
-  --shadow: 0 18px 60px rgba(0,0,0,0.55);
+  --shadow: 0 18px 60px rgba(11,77,135,0.08), 0 2px 6px rgba(31,42,58,0.06);
+  --shadow-gold: 0 18px 40px rgba(212,175,55,0.18);
   --radius: 18px;
   --radius2: 26px;
 
@@ -45,12 +48,13 @@ body {
   margin: 0;
   font-family: var(--font-body);
   background:
-    radial-gradient(900px 420px at 20% -10%, rgba(212,175,55,0.18), transparent 55%),
-    radial-gradient(820px 460px at 88% 0%, rgba(108,76,142,0.14), transparent 55%),
-    radial-gradient(800px 520px at 60% 120%, rgba(140,198,62,0.08), transparent 65%),
-    linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%);
+    radial-gradient(1200px 600px at 8% -5%, rgba(212,175,55,0.18), transparent 60%),
+    radial-gradient(1100px 540px at 95% 0%, rgba(212,175,55,0.14), transparent 60%),
+    radial-gradient(900px 540px at 50% 110%, rgba(108,76,142,0.06), transparent 65%),
+    linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%);
+  background-attachment: fixed;
   color: var(--text);
-  line-height: 1.45;
+  line-height: 1.5;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -61,6 +65,13 @@ h1, h2, h3, .font-display {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.01em;
+  color: var(--kdm-bleu-logistique);
+}
+
+h4, h5, h6 {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--text);
 }
 
 /* Tailwind utility helpers for the new palette */
@@ -69,12 +80,15 @@ h1, h2, h3, .font-display {
 .text-violet-premium { color: var(--kdm-violet-premium); }
 .text-or-metallise { color: var(--kdm-or-metallise); }
 .text-vert-lime { color: var(--kdm-vert-lime); }
+.text-anthracite { color: var(--kdm-anthracite); }
 .bg-bleu-logistique { background-color: var(--kdm-bleu-logistique); }
 .bg-orange-energie { background-color: var(--kdm-orange-energie); }
 .bg-violet-premium { background-color: var(--kdm-violet-premium); }
 .bg-or-metallise { background-color: var(--kdm-or-metallise); }
 .bg-vert-lime { background-color: var(--kdm-vert-lime); }
+.bg-beige-perle { background-color: var(--kdm-beige-perle); }
 .border-or-metallise { border-color: var(--kdm-or-metallise); }
+.border-beige-perle { border-color: var(--kdm-beige-perle); }
 
 /* Or métallisé gradient — rubans/séparateurs premium */
 .bg-gradient-or {
@@ -83,6 +97,9 @@ h1, h2, h3, .font-display {
 .bg-gradient-cooperatif {
   background: linear-gradient(135deg, #0B4D87 0%, #6C4C8E 50%, #FF7A00 100%);
 }
+.bg-gradient-perle {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FBF6EE 60%, #F2E6D3 100%);
+}
 
 /* Premium separator — fine ribbon with gold dot */
 .separator-premium {
@@ -90,39 +107,56 @@ h1, h2, h3, .font-display {
 }
 .separator-premium::before, .separator-premium::after {
   content: ''; flex: 1; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.55), transparent);
 }
 .separator-premium .dot {
   width: 8px; height: 8px; background: var(--kdm-or-metallise); transform: rotate(45deg);
 }
 
-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+/* Premium ribbon — top-corner gold ribbon (matches the charte image) */
+.premium-ribbon-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #B8941E 0%, #D4AF37 25%, #F2D07A 50%, #D4AF37 75%, #B8941E 100%);
+  z-index: 9999;
+  pointer-events: none;
 }
 
-/* Custom scrollbar */
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+  background: rgba(212,175,55,0.10);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--kdm-bleu-logistique);
+}
+
+/* Custom scrollbar — premium gold */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.02);
+  background: rgba(242,230,211,0.45);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-  border-radius: 4px;
+  background: linear-gradient(180deg, #D4AF37, #B8941E);
+  border-radius: 6px;
+  border: 2px solid rgba(242,230,211,0.45);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.25);
+  background: linear-gradient(180deg, #E6C25A, #D4AF37);
 }
 
 /* Selection */
 ::selection {
   background-color: rgba(212,175,55,0.35);
-  color: white;
+  color: var(--kdm-anthracite);
 }
 
 /* Smooth scroll */
@@ -132,24 +166,25 @@ html {
 
 @layer base {
   :root {
-    --background: 220 20% 4%;
-    --foreground: 0 0% 92%;
-    --card: 220 15% 8%;
-    --card-foreground: 0 0% 92%;
-    --popover: 220 15% 8%;
-    --popover-foreground: 0 0% 92%;
-    --primary: 46 65% 52%;          /* Or métallisé #D4AF37 */
-    --primary-foreground: 220 20% 4%;
-    --secondary: 220 10% 15%;
-    --secondary-foreground: 0 0% 92%;
-    --muted: 220 10% 15%;
-    --muted-foreground: 0 0% 72%;
-    --accent: 86 53% 51%;           /* Vert lime #8CC63E */
-    --accent-foreground: 220 20% 4%;
-    --destructive: 6 100% 64%;      /* Rouge corail #FF5A4A */
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
+    /* Shadcn tokens — LIGHT PREMIUM */
+    --background: 38 60% 96%;             /* perle clair */
+    --foreground: 217 30% 18%;            /* anthracite-bleuté */
+    --card: 0 0% 100%;
+    --card-foreground: 217 30% 18%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 217 30% 18%;
+    --primary: 46 65% 52%;                /* Or métallisé #D4AF37 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 38 50% 92%;              /* beige perle clair */
+    --secondary-foreground: 217 30% 18%;
+    --muted: 38 30% 90%;
+    --muted-foreground: 217 15% 40%;
+    --accent: 86 53% 51%;                 /* Vert lime #8CC63E */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 6 100% 64%;            /* Rouge corail #FF5A4A */
+    --destructive-foreground: 0 0% 100%;
+    --border: 38 35% 84%;                 /* hairline beige */
+    --input: 38 35% 88%;
     --ring: 46 65% 52%;
     --radius: 0.75rem;
   }
@@ -171,8 +206,13 @@ html {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 6px rgba(87,209,154,0.14); }
-  50% { box-shadow: 0 0 0 10px rgba(87,209,154,0.08); }
+  0%, 100% { box-shadow: 0 0 0 6px rgba(140,198,62,0.18); }
+  50% { box-shadow: 0 0 0 10px rgba(140,198,62,0.10); }
+}
+
+@keyframes shimmer-gold {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .animate-fade-in {
@@ -183,7 +223,165 @@ html {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+.shimmer-gold {
+  background: linear-gradient(90deg, #D4AF37 0%, #F2D07A 50%, #D4AF37 100%);
+  background-size: 200% 100%;
+  animation: shimmer-gold 3s linear infinite;
+}
+
 /* Transitions */
 button, a, input, select, textarea {
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
+
+/* === LIGHT PREMIUM THEME OVERRIDES =================================
+ * Re-maps Tailwind dark utilities (text-white/X, bg-white/X, border-white/X)
+ * and arbitrary dark hex backgrounds onto light premium tokens.
+ * Keeps existing JSX intact (no per-page rewrite required).
+ * =================================================================== */
+
+/* Text — was white/X on dark, now anthracite/X on light */
+.text-white { color: var(--text) !important; }
+.text-white\/95 { color: rgba(31,42,58,0.95) !important; }
+.text-white\/92 { color: rgba(31,42,58,0.92) !important; }
+.text-white\/90 { color: rgba(31,42,58,0.92) !important; }
+.text-white\/86 { color: rgba(31,42,58,0.86) !important; }
+.text-white\/85 { color: rgba(31,42,58,0.85) !important; }
+.text-white\/80 { color: rgba(31,42,58,0.82) !important; }
+.text-white\/75 { color: rgba(31,42,58,0.75) !important; }
+.text-white\/72 { color: rgba(31,42,58,0.72) !important; }
+.text-white\/70 { color: rgba(31,42,58,0.70) !important; }
+.text-white\/65 { color: rgba(31,42,58,0.62) !important; }
+.text-white\/60 { color: rgba(31,42,58,0.58) !important; }
+.text-white\/55 { color: rgba(31,42,58,0.55) !important; }
+.text-white\/50 { color: rgba(31,42,58,0.52) !important; }
+.text-white\/40 { color: rgba(31,42,58,0.42) !important; }
+.text-white\/35 { color: rgba(31,42,58,0.40) !important; }
+.text-white\/30 { color: rgba(31,42,58,0.34) !important; }
+.text-white\/20 { color: rgba(31,42,58,0.26) !important; }
+
+/* Hover variants */
+.hover\:text-white:hover { color: var(--text) !important; }
+.hover\:text-white\/90:hover { color: rgba(31,42,58,0.90) !important; }
+
+/* But preserve white text on solid colored buttons / gradient bars */
+.bg-gradient-cooperatif, .bg-gradient-or, .bg-bleu-logistique,
+.bg-violet-premium, .bg-rose-magenta, .bg-orange-energie,
+.bg-vert-lime, .bg-or-metallise, .bg-red-500, .bg-red-600,
+.bg-emerald-500, .bg-emerald-600, .bg-green-500, .bg-green-600,
+.bg-blue-500, .bg-blue-600, .bg-purple-500, .bg-purple-600,
+.bg-violet-500, .bg-violet-600, .bg-pink-500, .bg-pink-600 {
+  color: #FFFFFF;
+}
+.bg-gradient-cooperatif .text-white,
+.bg-gradient-cooperatif .text-white\/90,
+.bg-gradient-or .text-white,
+.bg-bleu-logistique .text-white,
+.bg-violet-premium .text-white,
+.bg-red-500 .text-white,
+.bg-emerald-500 .text-white,
+.bg-blue-500 .text-white,
+.bg-violet-500 .text-white {
+  color: #FFFFFF !important;
+}
+
+/* Backgrounds — was white/[0.0X] on dark, now subtle anthracite tint on light */
+.bg-white\/\[0\.02\] { background-color: rgba(11,77,135,0.025) !important; }
+.bg-white\/\[0\.03\] { background-color: rgba(11,77,135,0.03) !important; }
+.bg-white\/\[0\.04\] { background-color: rgba(255,255,255,0.55) !important; backdrop-filter: blur(6px); }
+.bg-white\/\[0\.06\] { background-color: rgba(255,255,255,0.65) !important; backdrop-filter: blur(8px); }
+.bg-white\/\[0\.08\] { background-color: rgba(255,255,255,0.78) !important; backdrop-filter: blur(8px); }
+.bg-white\/5 { background-color: rgba(255,255,255,0.55) !important; }
+.bg-white\/10 { background-color: rgba(255,255,255,0.78) !important; }
+.bg-white\/15 { background-color: rgba(255,255,255,0.85) !important; }
+.bg-white\/20 { background-color: rgba(255,255,255,0.92) !important; }
+.hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(212,175,55,0.10) !important; }
+.hover\:bg-white\/\[0\.08\]:hover { background-color: rgba(212,175,55,0.14) !important; }
+.hover\:bg-white\/10:hover { background-color: rgba(212,175,55,0.14) !important; }
+.hover\:bg-white\/5:hover { background-color: rgba(212,175,55,0.08) !important; }
+
+/* Borders — was white/X, now soft anthracite hairlines */
+.border-white\/5 { border-color: rgba(31,42,58,0.08) !important; }
+.border-white\/8 { border-color: rgba(31,42,58,0.10) !important; }
+.border-white\/10 { border-color: rgba(212,175,55,0.28) !important; }
+.border-white\/12 { border-color: rgba(212,175,55,0.30) !important; }
+.border-white\/15 { border-color: rgba(212,175,55,0.34) !important; }
+.border-white\/20 { border-color: rgba(212,175,55,0.40) !important; }
+.border-white\/\[0\.08\] { border-color: rgba(31,42,58,0.10) !important; }
+.border-white\/\[0\.10\] { border-color: rgba(31,42,58,0.12) !important; }
+.divide-white\/10 > * + * { border-color: rgba(212,175,55,0.28) !important; }
+
+/* Hardcoded dark hex backgrounds (Tailwind arbitrary values) → cream/white */
+.bg-\[\#070A10\],
+.bg-\[\#0A0F1A\],
+.bg-\[\#05070C\],
+.bg-\[\#060913\],
+.bg-\[\#0a0a0f\],
+.bg-\[\#0a0d14\],
+.bg-\[\#0c0f15\],
+.bg-\[\#0d1117\],
+.bg-\[\#0f141f\],
+.bg-\[\#0A0E17\],
+.bg-\[\#0A0F18\],
+.bg-\[\#15192B\],
+.bg-\[\#0F1320\],
+.bg-\[\#0E1320\] {
+  background-color: #FBF6EE !important;
+  color: var(--text);
+}
+
+.bg-black { background-color: rgba(31,42,58,0.04) !important; color: var(--text); }
+.bg-black\/20 { background-color: rgba(31,42,58,0.04) !important; }
+.bg-black\/30 { background-color: rgba(212,175,55,0.06) !important; }
+.bg-black\/40 { background-color: rgba(31,42,58,0.06) !important; }
+.bg-black\/50 { background-color: rgba(31,42,58,0.08) !important; }
+
+/* Modal/Dialog overlay — keep dim but lighter */
+.bg-black\/80 { background-color: rgba(31,42,58,0.55) !important; }
+
+/* Form inputs — light premium */
+input, select, textarea {
+  background-color: #FFFFFF;
+  color: var(--text);
+  border-color: rgba(212,175,55,0.30);
+}
+input::placeholder, textarea::placeholder {
+  color: rgba(31,42,58,0.45);
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--kdm-or-metallise);
+  outline: 2px solid rgba(212,175,55,0.20);
+  outline-offset: 0;
+}
+
+/* Force specific Shadcn dialog content readable on light */
+[role="dialog"] [data-slot="dialog-content"],
+[role="dialog"] .DialogContent,
+.bg-popover { background-color: #FFFFFF !important; color: var(--text) !important; }
+
+/* Tone down red badges — keep red bg but ensure white text */
+.bg-red-500, .bg-red-600 { color: #FFFFFF !important; }
+
+/* Premium card surface (used on most pages with glass-panel) */
+.surface-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+  border: 1px solid rgba(212,175,55,0.30);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius2);
+}
+
+/* Premium gold corner ornament */
+.gold-corner-tl::before,
+.gold-corner-tr::before,
+.gold-corner-bl::before,
+.gold-corner-br::before {
+  content: '';
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+}
+.gold-corner-tl::before { top: 0; left: 0; border-top: 3px solid var(--kdm-or-metallise); border-left: 3px solid var(--kdm-or-metallise); border-top-left-radius: 14px; }
+.gold-corner-tr::before { top: 0; right: 0; border-top: 3px solid var(--kdm-or-metallise); border-right: 3px solid var(--kdm-or-metallise); border-top-right-radius: 14px; }
+.gold-corner-bl::before { bottom: 0; left: 0; border-bottom: 3px solid var(--kdm-or-metallise); border-left: 3px solid var(--kdm-or-metallise); border-bottom-left-radius: 14px; }
+.gold-corner-br::before { bottom: 0; right: 0; border-bottom: 3px solid var(--kdm-or-metallise); border-right: 3px solid var(--kdm-or-metallise); border-bottom-right-radius: 14px; }
