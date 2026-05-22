@@ -103,3 +103,64 @@ Objectif : créer une interface web propre pour exploiter l'API existante sans m
 - Frontend 100% — 6 écrans critiques + 4 banners Phase 2 vérifiés
 - Parcours E2E complet validé : activation PASS → commande → paiement → POS → retrait → KPI admin
 
+
+---
+
+## Iteration 3 (22 mai 2026) — Stripe réel + WS POS + alertes opérationnelles
+
+### Backend (5 ajouts majeurs)
+- **`routes_lolodrive_checkout.py`** (nouveau) :
+  - `POST /api/lolodrive/checkout/pass-session` — Stripe Checkout hosted pour PASS 60 €
+  - `POST /api/lolodrive/checkout/recharge-session` — packs MINI/STANDARD/MAXI
+  - `POST /api/lolodrive/checkout/order-session` — paiement commande
+  - `GET /api/lolodrive/checkout/status/{session_id}` — polling idempotent
+  - `POST /api/webhook/stripe` — webhook officiel (signature validée)
+  - Collection `payment_transactions` (idempotence)
+- **`POST /api/lolodrive/pos/orders/{id}/cancel`** — annulation avec refund UC optionnel
+- **`GET /api/lolodrive/admin/kpi/dashboard`** — UC en circulation, UC consommées, CA jour/mois, Top 5 produits, Alertes
+- **WebSocket `/api/ws/notifications`** (préfixe corrigé) avec broadcast `lolodrive_pos_event`
+- Seed/index : `payment_transactions.session_id` unique
+
+### Frontend (5 ajouts/refactos)
+- **`PaymentReturnPage`** (`/paiement/retour`) : polling status + animation succès/échec
+- **`StripeCheckoutButton`** : redirige vers Stripe hosted (real test mode)
+- **`useLolodriveWebSocket`** hook : reconnect 3s, ping 25s
+- **POS** : indicateur Wifi/WifiOff temps réel, bouton "Annuler" + dialog avec refund UC
+- **Dashboard** : 4 nouveaux KPIs + section Alertes + Top produits
+- **FavoriteButton** : 401 silencieux (no console pollution)
+
+### Tests Iteration 3
+- Backend pytest 41/41 PASSED (30 régression + 11 nouveaux : 5 Stripe + 1 webhook + 3 POS cancel + 1 KPI dashboard + 1 WebSocket)
+- Frontend 100% (0 console errors)
+- Parcours E2E complet validé : activation PASS → commande → paiement CB/UC → préparation POS → retrait → KPI admin
+
+### Récap Phase 1 MVP - 3 écrans critiques COMPLETS
+
+#### Dashboard admin (`/lolodrive`)
+- PASS actifs / Commandes période (7/30/90j) / LOLO POINTS / LOLO HOUR
+- CA aujourd'hui / CA mois / UC en circulation / UC consommées
+- Alertes opérationnelles
+- Top 5 produits (30j)
+- Répartition revenus Drive / Livraison / Lolo Point
+- Engagement PASS (conversion, panier moyen, UC débités)
+- Activité POS temps réel
+- Accès rapide modules
+
+#### Espace PASS client (`/pass`)
+- Statut PASS + couleur expiration J-7/J-3
+- Solde UC + date expiration
+- Recharger UC (Stripe Checkout réel)
+- Activer PASS (Stripe Checkout réel + mode démo)
+- Catalogue essentiel (via lien `/catalogue-lolodrive`)
+- Historique commandes
+- Historique UC ledger
+- Économies réalisées (calculé serveur)
+
+#### POS LOLODRIVE (`/pos`)
+- Commandes à préparer / prêtes / retirées / annulées
+- Scan / recherche par n° commande
+- WebSocket temps réel + fallback polling 30s
+- Notification son sur nouvelle PAID
+- Boutons workflow : Préparer / Marquer prêt / Remettre / Annuler+refund UC
+- Vue compacte togglable
+
