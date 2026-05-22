@@ -164,3 +164,49 @@ Objectif : créer une interface web propre pour exploiter l'API existante sans m
 - Boutons workflow : Préparer / Marquer prêt / Remettre / Annuler+refund UC
 - Vue compacte togglable
 
+
+---
+
+## Iteration 4 (22 mai 2026) — Phase 2 complète : LOLO HOUR / LOLO POINTS / CRM / Reporting
+
+### Backend (15 nouveaux endpoints)
+- **LOLO HOUR** :
+  - `GET /api/lolodrive/events?scope=upcoming|live|ended|all` filtré + `reservations_count` + `remaining_stock`
+  - `GET /api/lolodrive/events/{id}` détail (linked_products enrichis avec name/image/public_price)
+  - `POST /api/lolodrive/events/{id}/reserve` (PASS requis si pass_only, limit/user, stock global)
+  - `DELETE /api/lolodrive/events/{id}/reserve`
+  - `GET /api/lolodrive/admin/events/{id}/reservations` (enrichi user_name/email)
+  - `POST /api/lolodrive/admin/events/{id}/products` (linked_products + flash prices)
+- **LOLO POINTS gérant** :
+  - `GET /api/lolodrive/manager/my-point`
+  - `GET /api/lolodrive/manager/my-orders`
+  - `GET /api/lolodrive/manager/my-payout-preview`
+- **Reporting** :
+  - `GET /api/lolodrive/admin/kpi/timeseries?metric={revenue|orders|uc_consumed|pass_activations}&days=N` (agg MongoDB par jour)
+- **CRM** :
+  - `PATCH /api/crm/opportunities/{id}/stage` (drag-drop)
+  - `PATCH /api/crm/tasks/{id}/status`
+  - `PATCH /api/crm/dossiers/{id}/status`
+
+### Frontend (4 pages réécrites + 1 nouvelle)
+1. **`/admin/lolo-hour`** : tabs Planifiés/Live/Terminés, barres de stock, dialog "Détail" avec liste réservations, dialog "Lier produits" avec saisie flash price + UC
+2. **`/lolo-point/dashboard`** (NEW) : page gérant — vue de SON point, ses commandes + filtres + commissions plafonnées
+3. **`/crm`** : Kanban drag-and-drop natif HTML5 (7 colonnes pipeline), 4 dialogs création (contact/org/opp/tâche), toggle tasks done
+4. **`/reporting-impact`** : 4 graphes Recharts (AreaChart CA, BarChart commandes, LineChart UC, BarChart PASS), sélecteur période 7/30/90j, export PDF via print + Export JSON, styles `@media print` dédiés
+
+### Documentation
+- `README.md` : section **Webhook Stripe en production** (config dashboard Stripe + STRIPE_WEBHOOK_SECRET)
+- Phase2Banner retiré de LOLO HOUR / CRM / Reporting (devenues complètes)
+
+### Tests Iteration 4
+- Backend pytest **66/66 PASSED** (25 nouveaux iter4 + 41 régression iter1+2+3)
+- Frontend 100% (tous les data-testid iter4 vérifiés, 0 console errors)
+- 0 issues critiques / 0 mineures
+
+### Phase 2 livraison complète
+- ✅ LOLO HOUR — créer événements, stock, prix flash, accès PASS, réservations
+- ✅ LOLO POINTS — gérer points relais, gérants dédiés (login), commandes du point, rémunération plafonnée
+- ✅ CRM partenaires — pipeline drag&drop + contacts/orgs/oppos/dossiers/tâches étendus
+- ✅ Reporting ESS avancé — graphes Recharts + export PDF + rapports investisseurs
+- ✅ Webhook Stripe — déjà implémenté + instructions config prod documentées
+
