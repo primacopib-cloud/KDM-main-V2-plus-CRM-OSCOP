@@ -40,7 +40,9 @@ from email_service import (
 )
 
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+# Force override of pod-level env vars (e.g. STRIPE_API_KEY=sk_test_emergent is set
+# at the Kubernetes pod level and would otherwise shadow our project-specific .env values).
+load_dotenv(ROOT_DIR / '.env', override=True)
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']

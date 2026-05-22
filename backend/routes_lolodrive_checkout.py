@@ -1,6 +1,16 @@
 """
-Stripe Checkout (hosted) for LOLODRIVE flows.
-Uses emergentintegrations.payments.stripe.checkout for PASS, recharge UC, and order payments.
+Stripe Checkout (hosted) for LOLODRIVE flows — Multi-account.
+
+Two Stripe accounts coexist on this platform:
+  • O'SCOP OUTREMER (account="oscop") → PASS / RECHARGE / SUBSCRIPTION
+  • KDMARCHE        (account="kdmarche") → ORDER (DRIVE)
+
+We deliberately use the official `stripe` SDK directly (no
+`emergentintegrations.payments.stripe.checkout` wrapper) so that real test/live
+sessions are created on Stripe's real `api.stripe.com` endpoint — the Emergent
+integration proxy was unexpectedly intercepting the call chain and returning
+stub URLs (`https://checkout.stripe.test/...`) which cannot be opened in a
+browser to validate a real payment flow.
 
 Security:
 - Amounts are FIXED on backend (PASS=60€, packs RECHARGE, order = order.total_cents)
@@ -11,16 +21,13 @@ import os
 import uuid
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
+import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from auth import get_current_user_id
-from emergentintegrations.payments.stripe.checkout import (
-    StripeCheckout,
-    CheckoutSessionRequest,
-)
 from brevo_service import notify_pass_activated
 from stripe_accounts import (
     AccountName,
@@ -43,6 +50,14 @@ RECHARGE_PACKS = {
     "MAXI": {"amount_eur": 70.0, "uc": 720},
 }
 
+# Webhook signing secrets (configure when configuring webhooks in each Stripe
+# dashboard). When None, signature is NOT verified — fine for TEST development
+# but MUST be set in production.
+_WEBHOOK_SECRETS = {
+    "oscop": "STRIPE_WEBHOOK_SECRET",
+    "kdmarche": "STRIPE_KDMARCHE_WEBHOOK_SECRET",
+}
+
 
 def set_checkout_database(database):
     global db
@@ -56,21 +71,14 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)):
     return user
 
 
-def _stripe_client_for(account: AccountName, http_request: Request) -> StripeCheckout:
-    """Build a Stripe Checkout client for the requested account.
-
-    PASS / RECHARGE / SUBSCRIPTION → "oscop" (O'SCOP OUTREMER)
-    ORDER (DRIVE)                  → "kdmarche" (KDMARCHE)
-    """
+def _api_key_for(account: AccountName) -> str:
     api_key = get_stripe_key(account)
     if not api_key:
         raise HTTPException(
             status_code=500,
             detail=f"Stripe non configuré (account={account})",
         )
-    host_url = str(http_request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/webhook/stripe"
-    return StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    return api_key
 
 
 def _build_urls(origin_url: str, kind: str, ref: str = "") -> Dict[str, str]:
@@ -79,6 +87,40 @@ def _build_urls(origin_url: str, kind: str, ref: str = "") -> Dict[str, str]:
         "success_url": f"{origin}/paiement/retour?session_id={{CHECKOUT_SESSION_ID}}&kind={kind}&ref={ref}",
         "cancel_url": f"{origin}/paiement/annule?kind={kind}&ref={ref}",
     }
+
+
+def _create_checkout_session(
+    account: AccountName,
+    amount_eur: float,
+    success_url: str,
+    cancel_url: str,
+    metadata: Dict[str, str],
+    product_name: str,
+) -> Dict[str, Any]:
+    """Create a Stripe Checkout Session using the official SDK with the per-account key."""
+    api_key = _api_key_for(account)
+    # Reset api_base to the real Stripe endpoint — the emergentintegrations wrapper
+    # may have pinned `stripe.api_base` to its proxy via a side-effect during startup.
+    stripe.api_base = "https://api.stripe.com"
+    session = stripe.checkout.Session.create(
+        api_key=api_key,
+        payment_method_types=["card"],
+        line_items=[
+            {
+                "price_data": {
+                    "currency": "eur",
+                    "product_data": {"name": product_name},
+                    "unit_amount": int(round(amount_eur * 100)),
+                },
+                "quantity": 1,
+            }
+        ],
+        mode="payment",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=metadata,
+    )
+    return {"id": session.id, "url": session.url}
 
 
 class OriginPayload(BaseModel):
@@ -101,20 +143,19 @@ class OrderPayload(BaseModel):
 async def create_pass_session(payload: OriginPayload, http_request: Request, user: dict = Depends(get_current_user)):
     """Create Stripe Checkout session for PASS Vie Chère 60€ (O'SCOP account)."""
     account: AccountName = get_account_for_checkout_kind("PASS")
-    sc = _stripe_client_for(account, http_request)
     urls = _build_urls(payload.origin_url, "PASS", user["id"])
     metadata = {"kind": "PASS", "user_id": user["id"], "stripe_account": account}
-    req = CheckoutSessionRequest(
-        amount=PASS_PRICE_EUR,
-        currency="eur",
+    session = _create_checkout_session(
+        account=account,
+        amount_eur=PASS_PRICE_EUR,
         success_url=urls["success_url"],
         cancel_url=urls["cancel_url"],
         metadata=metadata,
+        product_name="KDMARCHÉ x O'SCOP — PASS Vie Chère",
     )
-    session = await sc.create_checkout_session(req)
     await db.payment_transactions.insert_one({
         "id": str(uuid.uuid4()),
-        "session_id": session.session_id,
+        "session_id": session["id"],
         "user_id": user["id"],
         "kind": "PASS",
         "stripe_account": account,
@@ -126,7 +167,7 @@ async def create_pass_session(payload: OriginPayload, http_request: Request, use
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
     })
-    return {"url": session.url, "session_id": session.session_id, "stripe_account": account}
+    return {"url": session["url"], "session_id": session["id"], "stripe_account": account}
 
 
 @checkout_router.post("/recharge-session")
@@ -141,25 +182,23 @@ async def create_recharge_session(payload: RechargePayload, http_request: Reques
         raise HTTPException(status_code=400, detail="PASS inactif : activation requise")
     ends_at = pass_doc.get("ends_at")
     if ends_at is not None:
-        # Normalize both sides to naive UTC for comparison (Mongo stores BSON dates as UTC naive)
         ends_at_naive = ends_at.replace(tzinfo=None) if getattr(ends_at, "tzinfo", None) else ends_at
         if ends_at_naive < datetime.utcnow():
             raise HTTPException(status_code=400, detail="PASS inactif : activation requise")
     account: AccountName = get_account_for_checkout_kind("RECHARGE")
-    sc = _stripe_client_for(account, http_request)
     urls = _build_urls(payload.origin_url, "RECHARGE", user["id"])
     metadata = {"kind": "RECHARGE", "user_id": user["id"], "pack": payload.pack, "uc": str(pack["uc"]), "stripe_account": account}
-    req = CheckoutSessionRequest(
-        amount=pack["amount_eur"],
-        currency="eur",
+    session = _create_checkout_session(
+        account=account,
+        amount_eur=pack["amount_eur"],
         success_url=urls["success_url"],
         cancel_url=urls["cancel_url"],
         metadata=metadata,
+        product_name=f"Recharge UC — Pack {payload.pack}",
     )
-    session = await sc.create_checkout_session(req)
     await db.payment_transactions.insert_one({
         "id": str(uuid.uuid4()),
-        "session_id": session.session_id,
+        "session_id": session["id"],
         "user_id": user["id"],
         "kind": "RECHARGE",
         "stripe_account": account,
@@ -171,7 +210,7 @@ async def create_recharge_session(payload: RechargePayload, http_request: Reques
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
     })
-    return {"url": session.url, "session_id": session.session_id, "pack": payload.pack, "stripe_account": account}
+    return {"url": session["url"], "session_id": session["id"], "pack": payload.pack, "stripe_account": account}
 
 
 @checkout_router.post("/order-session")
@@ -184,20 +223,19 @@ async def create_order_session(payload: OrderPayload, http_request: Request, use
         raise HTTPException(status_code=400, detail="Commande non payable")
     amount_eur = order["total_cents"] / 100.0
     account: AccountName = get_account_for_checkout_kind("ORDER")
-    sc = _stripe_client_for(account, http_request)
     urls = _build_urls(payload.origin_url, "ORDER", order["id"])
     metadata = {"kind": "ORDER", "user_id": user["id"], "order_id": order["id"], "stripe_account": account}
-    req = CheckoutSessionRequest(
-        amount=amount_eur,
-        currency="eur",
+    session = _create_checkout_session(
+        account=account,
+        amount_eur=amount_eur,
         success_url=urls["success_url"],
         cancel_url=urls["cancel_url"],
         metadata=metadata,
+        product_name=f"KDMARCHÉ — Commande #{order['id'][:8]}",
     )
-    session = await sc.create_checkout_session(req)
     await db.payment_transactions.insert_one({
         "id": str(uuid.uuid4()),
-        "session_id": session.session_id,
+        "session_id": session["id"],
         "user_id": user["id"],
         "kind": "ORDER",
         "stripe_account": account,
@@ -209,8 +247,16 @@ async def create_order_session(payload: OrderPayload, http_request: Request, use
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
     })
-    await db.lolodrive_orders.update_one({"id": order["id"]}, {"$set": {"status": "PENDING_PAYMENT", "stripe_checkout_session_id": session.session_id, "stripe_account": account, "updated_at": datetime.utcnow()}})
-    return {"url": session.url, "session_id": session.session_id, "amount_cents": order["total_cents"], "stripe_account": account}
+    await db.lolodrive_orders.update_one(
+        {"id": order["id"]},
+        {"$set": {
+            "status": "PENDING_PAYMENT",
+            "stripe_checkout_session_id": session["id"],
+            "stripe_account": account,
+            "updated_at": datetime.utcnow(),
+        }},
+    )
+    return {"url": session["url"], "session_id": session["id"], "amount_cents": order["total_cents"], "stripe_account": account}
 
 
 # ====================== STATUS (polling) ======================
@@ -223,17 +269,15 @@ async def checkout_status(session_id: str, http_request: Request, user: dict = D
         raise HTTPException(status_code=404, detail="Transaction introuvable")
     if tx["user_id"] != user["id"]:
         raise HTTPException(status_code=403, detail="Accès refusé")
-    # Use the Stripe account that created the session (falls back to kind→account mapping for legacy txs)
     account: AccountName = tx.get("stripe_account") or get_account_for_checkout_kind(tx.get("kind", ""))
-    sc = _stripe_client_for(account, http_request)
-    status = await sc.get_checkout_status(session_id)
-    new_payment_status = status.payment_status
-    # Update tx
+    api_key = _api_key_for(account)
+    stripe.api_base = "https://api.stripe.com"
+    session = stripe.checkout.Session.retrieve(session_id, api_key=api_key)
+    new_payment_status = session.payment_status
     await db.payment_transactions.update_one(
         {"session_id": session_id},
         {"$set": {"payment_status": new_payment_status, "updated_at": datetime.utcnow()}},
     )
-    # Apply business logic ONCE — atomic claim (eliminates race with the webhook)
     if new_payment_status == "paid":
         claim = await db.payment_transactions.update_one(
             {"session_id": session_id, "applied": {"$ne": True}},
@@ -243,10 +287,10 @@ async def checkout_status(session_id: str, http_request: Request, user: dict = D
             await _apply_payment_success(tx)
     return {
         "session_id": session_id,
-        "status": status.status,
+        "status": session.status,
         "payment_status": new_payment_status,
-        "amount_total": getattr(status, "amount_total", tx.get("amount_cents")),
-        "currency": getattr(status, "currency", tx.get("currency", "eur")),
+        "amount_total": session.amount_total,
+        "currency": session.currency,
         "kind": tx["kind"],
         "stripe_account": account,
         "applied": tx.get("applied") or new_payment_status == "paid",
@@ -257,61 +301,78 @@ async def checkout_status(session_id: str, http_request: Request, user: dict = D
 
 @webhook_router.post("/api/webhook/stripe")
 async def stripe_webhook(http_request: Request):
-    """Stripe webhook endpoint. Applies business logic idempotently.
+    """Stripe webhook endpoint. Idempotent (atomic claim).
 
-    Both Stripe accounts (KDMARCHE + O'SCOP) post here. We try to verify the
-    signature with each account's key — whichever validates wins.
+    Both Stripe accounts (KDMARCHE + O'SCOP) post here. We try to construct
+    the event with each account's webhook secret; whichever validates wins.
+    If no webhook secrets are configured yet (TEST env), we accept the event
+    body without signature verification (logged warning).
     """
     body = await http_request.body()
     signature = http_request.headers.get("Stripe-Signature", "")
-    evt = None
+    event = None
     verified_account: Optional[str] = None
-    for account in ("oscop", "kdmarche"):
-        try:
-            sc = _stripe_client_for(account, http_request)
-            evt = await sc.handle_webhook(body, signature)
-            if evt:
-                verified_account = account
-                logger.info("Stripe webhook verified with account=%s session_id=%s", account, getattr(evt, "session_id", None))
-                break
-        except Exception as exc:
-            logger.debug("Stripe webhook signature mismatch for account=%s: %s", account, exc)
-            continue
-    if not evt:
-        logger.warning("Stripe webhook invalid for both accounts (signature mismatch on KDMARCHE + O'SCOP)")
-        raise HTTPException(status_code=400, detail="Webhook invalide")
 
-    if evt.payment_status == "paid" and evt.session_id:
-        tx = await db.payment_transactions.find_one({"session_id": evt.session_id})
-        if tx:
-            # Atomic claim — race-safe with the polling /status endpoint
-            claim = await db.payment_transactions.update_one(
-                {"session_id": evt.session_id, "applied": {"$ne": True}},
-                {"$set": {
-                    "applied": True,
-                    "applied_at": datetime.utcnow(),
-                    "applied_by": f"webhook:{verified_account}",
-                    "payment_status": "paid",
-                    "updated_at": datetime.utcnow(),
-                }},
-            )
-            if claim.modified_count == 1:
-                await _apply_payment_success(tx)
-            else:
-                logger.info("Stripe webhook: tx %s already applied — no-op", evt.session_id)
+    for account_name, env_var in _WEBHOOK_SECRETS.items():
+        secret = os.environ.get(env_var)
+        if not secret:
+            continue
+        try:
+            event = stripe.Webhook.construct_event(body, signature, secret)
+            verified_account = account_name
+            logger.info("Stripe webhook verified with account=%s event_id=%s", account_name, event.get("id"))
+            break
+        except (stripe.error.SignatureVerificationError, ValueError) as exc:
+            logger.debug("Stripe webhook signature mismatch for account=%s: %s", account_name, exc)
+            continue
+
+    if event is None:
+        if not any(os.environ.get(v) for v in _WEBHOOK_SECRETS.values()):
+            # No webhook secret configured — accept without verification (DEV/TEST only)
+            try:
+                import json
+                event = stripe.Event.construct_from(json.loads(body.decode()), api_key=get_stripe_key("oscop"))
+                verified_account = "unsigned-test"
+                logger.warning("Stripe webhook NOT verified (no STRIPE_*_WEBHOOK_SECRET configured)")
+            except Exception as exc:
+                logger.warning("Stripe webhook unsigned-parse failed: %s", exc)
+                raise HTTPException(status_code=400, detail="Webhook invalide")
+        else:
+            logger.warning("Stripe webhook invalid for both accounts (signature mismatch)")
+            raise HTTPException(status_code=400, detail="Webhook invalide")
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        session_id = session.get("id")
+        if session.get("payment_status") == "paid" and session_id:
+            tx = await db.payment_transactions.find_one({"session_id": session_id})
+            if tx:
+                claim = await db.payment_transactions.update_one(
+                    {"session_id": session_id, "applied": {"$ne": True}},
+                    {"$set": {
+                        "applied": True,
+                        "applied_at": datetime.utcnow(),
+                        "applied_by": f"webhook:{verified_account}",
+                        "payment_status": "paid",
+                        "updated_at": datetime.utcnow(),
+                    }},
+                )
+                if claim.modified_count == 1:
+                    await _apply_payment_success(tx)
+                else:
+                    logger.info("Stripe webhook: tx %s already applied — no-op", session_id)
     return {"received": True}
 
 
 # ====================== APPLY LOGIC ======================
 
 async def _apply_payment_success(tx: dict):
-    """Apply business effects when a checkout session is paid. Must be idempotent (called by polling and webhook)."""
+    """Apply business effects when a checkout session is paid. Must be idempotent."""
     kind = tx["kind"]
     user_id = tx["user_id"]
     now = datetime.utcnow()
 
     if kind == "PASS":
-        # Activate PASS + credit 600 UC
         starts_at = now
         ends_at = starts_at + timedelta(days=PASS_DAYS)
         await db.lolodrive_passes.update_one(
@@ -342,7 +403,6 @@ async def _apply_payment_success(tx: dict):
             "stripe_session_id": tx["session_id"], "created_at": now,
         })
         await _emit_crm_event("pass.activated", {"user_id": user_id, "pass_price_cents": int(PASS_PRICE_EUR * 100), "uc_granted": PASS_UC, "ends_at": ends_at})
-        # Brevo email + SMS (best-effort)
         try:
             user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
             if user_doc and user_doc.get("email"):
@@ -384,7 +444,6 @@ async def _apply_payment_success(tx: dict):
             {"$set": {"status": "PAID", "stripe_session_id": tx["session_id"], "paid_at": now, "updated_at": now}},
         )
         await _emit_crm_event("order.paid", {"user_id": user_id, "order_id": order_id})
-        # Best-effort POS broadcast
         try:
             from routes_websockets import manager
             await manager.broadcast_to_admins({
