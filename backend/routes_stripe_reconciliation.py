@@ -77,6 +77,7 @@ async def stripe_reconciliation(
         raise HTTPException(status_code=400, detail="date_from doit être ≤ date_to")
 
     # Mongo aggregate: only applied transactions (paid + business logic run)
+    # We do TWO passes: one for paid amounts, one for refunds (refund_status in {full, partial}).
     pipeline = [
         {"$match": {
             "applied": True,
@@ -92,6 +93,23 @@ async def stripe_reconciliation(
     ]
     rows = await db.payment_transactions.aggregate(pipeline).to_list(20000)
 
+    # Refunds: refunded_at within range, regardless of when paid
+    refund_pipeline = [
+        {"$match": {
+            "refund_status": {"$in": ["full", "partial"]},
+            "refunded_at": {"$gte": dt_from, "$lte": dt_to},
+        }},
+        {"$project": {
+            "_id": 0,
+            "stripe_account": {"$ifNull": ["$stripe_account", "oscop"]},
+            "kind": "$kind",
+            "refund_amount_cents": "$refund_amount_cents",
+            "refund_status": "$refund_status",
+            "day": {"$dateToString": {"format": "%Y-%m-%d", "date": "$refunded_at"}},
+        }},
+    ]
+    refund_rows = await db.payment_transactions.aggregate(refund_pipeline).to_list(20000)
+
     # Build all-zero matrix so the frontend chart has every day in range
     days = []
     cursor = dt_from
@@ -102,9 +120,10 @@ async def stripe_reconciliation(
     accounts = ["oscop", "kdmarche"]
     kinds = ["PASS", "RECHARGE", "ORDER"]
 
-    by_day = {d: {a: {"amount_cents": 0, "count": 0} for a in accounts} for d in days}
+    by_day = {d: {a: {"amount_cents": 0, "count": 0, "refund_cents": 0, "refund_count": 0} for a in accounts} for d in days}
     by_kind = {a: {k: {"amount_cents": 0, "count": 0} for k in kinds} for a in accounts}
     totals = {a: {"amount_cents": 0, "count": 0} for a in accounts}
+    refund_totals = {a: {"full_cents": 0, "full_count": 0, "partial_cents": 0, "partial_count": 0} for a in accounts}
 
     for r in rows:
         a = r["stripe_account"] if r["stripe_account"] in accounts else "oscop"
@@ -119,6 +138,21 @@ async def stripe_reconciliation(
         totals[a]["amount_cents"] += amt
         totals[a]["count"] += 1
 
+    for r in refund_rows:
+        a = r["stripe_account"] if r["stripe_account"] in accounts else "oscop"
+        d = r["day"]
+        amt = int(r.get("refund_amount_cents") or 0)
+        status = r.get("refund_status")
+        if d in by_day:
+            by_day[d][a]["refund_cents"] += amt
+            by_day[d][a]["refund_count"] += 1
+        if status == "full":
+            refund_totals[a]["full_cents"] += amt
+            refund_totals[a]["full_count"] += 1
+        elif status == "partial":
+            refund_totals[a]["partial_cents"] += amt
+            refund_totals[a]["partial_count"] += 1
+
     # Convert by_day dict into a list ordered chronologically (for charts)
     by_day_list = []
     for d in days:
@@ -127,6 +161,11 @@ async def stripe_reconciliation(
             entry[f"{a}_cents"] = by_day[d][a]["amount_cents"]
             entry[f"{a}_count"] = by_day[d][a]["count"]
             entry[f"{a}_eur"] = round(by_day[d][a]["amount_cents"] / 100, 2)
+            entry[f"{a}_refund_cents"] = by_day[d][a]["refund_cents"]
+            entry[f"{a}_refund_count"] = by_day[d][a]["refund_count"]
+            entry[f"{a}_refund_eur"] = round(by_day[d][a]["refund_cents"] / 100, 2)
+            # Net amount per account per day (paid - refunded), negative possible
+            entry[f"{a}_net_eur"] = round((by_day[d][a]["amount_cents"] - by_day[d][a]["refund_cents"]) / 100, 2)
         by_day_list.append(entry)
 
     # Stripe dashboard URLs (deep-link to the right account dashboard, filtered)
@@ -149,6 +188,17 @@ async def stripe_reconciliation(
                 "amount_cents": totals[a]["amount_cents"],
                 "amount_eur": round(totals[a]["amount_cents"] / 100, 2),
                 "count": totals[a]["count"],
+                "refund_full_cents": refund_totals[a]["full_cents"],
+                "refund_full_eur": round(refund_totals[a]["full_cents"] / 100, 2),
+                "refund_full_count": refund_totals[a]["full_count"],
+                "refund_partial_cents": refund_totals[a]["partial_cents"],
+                "refund_partial_eur": round(refund_totals[a]["partial_cents"] / 100, 2),
+                "refund_partial_count": refund_totals[a]["partial_count"],
+                "net_cents": totals[a]["amount_cents"] - refund_totals[a]["full_cents"] - refund_totals[a]["partial_cents"],
+                "net_eur": round(
+                    (totals[a]["amount_cents"] - refund_totals[a]["full_cents"] - refund_totals[a]["partial_cents"]) / 100,
+                    2,
+                ),
             }
             for a in accounts
         },
@@ -208,6 +258,11 @@ async def stripe_reconciliation_csv(
         "user_email",
         "pack_or_order_id",
         "applied_by",
+        "refund_status",
+        "refund_amount_eur",
+        "refund_amount_cents",
+        "refunded_at",
+        "net_amount_eur",
     ])
 
     async for tx in cursor:
@@ -222,6 +277,11 @@ async def stripe_reconciliation_csv(
                 user_email = u.get("email", "")
         meta = tx.get("metadata") or {}
         pack_or_order = meta.get("pack") or meta.get("order_id") or ""
+        refund_status = tx.get("refund_status") or ""
+        refund_cents = int(tx.get("refund_amount_cents") or 0)
+        refunded_at = tx.get("refunded_at")
+        refunded_at_str = refunded_at.strftime("%Y-%m-%d %H:%M:%S") if refunded_at else ""
+        net_cents = amt_cents - refund_cents
         writer.writerow([
             applied_at_str,
             tx.get("session_id", ""),
@@ -234,6 +294,11 @@ async def stripe_reconciliation_csv(
             user_email,
             pack_or_order,
             tx.get("applied_by", ""),
+            refund_status,
+            f"{refund_cents / 100:.2f}" if refund_cents else "",
+            refund_cents if refund_cents else "",
+            refunded_at_str,
+            f"{net_cents / 100:.2f}",
         ])
 
     buf.seek(0)
