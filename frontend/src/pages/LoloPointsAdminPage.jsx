@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Store, Plus, MapPin, RefreshCw, Calculator, TrendingUp, Map as MapIcon, List } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import Phase2Banner from '../components/Phase2Banner';
@@ -23,23 +23,30 @@ export default function LoloPointsAdminPage() {
   const [payoutPoint, setPayoutPoint] = useState(null);
   const [payoutResult, setPayoutResult] = useState(null);
 
-  const load = async () => {
+  // Load points whenever territory changes
+  const loadPoints = useCallback(async () => {
     try {
       setLoading(true);
-      const [pts, terr] = await Promise.all([
-        lolodriveAPI.listLoloPoints({ territory }),
-        territories.length === 0 ? lolodriveAPI.listTerritories() : Promise.resolve({ territories }),
-      ]);
+      const pts = await lolodriveAPI.listLoloPoints({ territory });
       setPoints(pts.points || []);
-      if (terr.territories) setTerritories(terr.territories);
     } catch (e) {
       toast.error(e.message);
     } finally {
       setLoading(false);
     }
-  };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [territory]);
+  }, [territory]);
+
+  // Load territories once on mount
+  useEffect(() => {
+    lolodriveAPI.listTerritories()
+      .then((terr) => { if (terr.territories) setTerritories(terr.territories); })
+      .catch((e) => toast.error(e.message));
+  }, []);
+
+  useEffect(() => { loadPoints(); }, [loadPoints]);
+
+  // Public alias used by buttons / dialogs (refresh + re-fetch points)
+  const load = loadPoints;
 
   const filteredPoints = useMemo(() => points, [points]);
   const citiesCovered = useMemo(() => new Set(filteredPoints.map((p) => p.city).filter(Boolean)).size, [filteredPoints]);

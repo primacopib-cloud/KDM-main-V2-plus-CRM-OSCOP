@@ -170,6 +170,24 @@ Exigences produit étendues :
 - ✅ Brevo webhook sans token → 401, token invalide → 401, header valide → 200, query param valide → 200.
 - ✅ Screenshot UI conforme à la charte (badges, couleurs, hover, tableau responsive).
 
+### Iter 14 (22 mai 2026) — Refactor React hooks deps (zéro `eslint-disable`) (DONE)
+**Demande utilisateur** : éliminer les 8 `eslint-disable-next-line react-hooks/exhaustive-deps` documentés dans le code.
+
+**Refactors appliqués** :
+- `WalletPage.jsx` — `pollPaymentStatus` enveloppé `useCallback([navigate])`, effet payment-return `[searchParams, navigate, pollPaymentStatus]`.
+- `VendorSpacePage.jsx` — `fetchDashboard`/`fetchProducts`/`fetchCountries` en `useCallback` typés sur leurs deps réelles (`vendorId`, `statusFilter`), effet de chargement `[fetchDashboard, fetchProducts, fetchCountries]`.
+- `LoloPointsMap.jsx` — territory initial capturé via `useRef(territory).current`, deps `[]` honnêtes (effet `flyTo` séparé sur `[territory]` existait déjà).
+- `PaymentReturnPage.jsx` — disable retiré : tous les refs internes (`lolodriveAPI`, constantes, setters) sont module-level / stables, deps `[sessionId]` correctes.
+- `OnboardingPage.jsx` — disable retiré : pareil, deps `[navigate]` correctes.
+- `LoloPointsAdminPage.jsx` — `load()` scindé en deux effets : `useEffect([])` charge les territoires une fois ; `loadPoints` en `useCallback([territory])` charge les points sur changement de territoire. Alias `load = loadPoints` conservé pour boutons "Actualiser".
+- `LandingPage.jsx` (`PublicLolodriveMapSection`) — scindé en deux effets : territoires une fois, points sur `[territory]`.
+- `LolodriveCatalogPage.jsx` — scindé : territoires une fois ; catalogue + lolo-points sur `[navigate, filter, territory]`, reset de `selectedPoint` via setter functional `setSelectedPoint(prev => …)` pour éviter la dep instable.
+
+**Validation** :
+- ✅ `grep -rn eslint-disable.*exhaustive-deps src/` → **zéro occurrence** restante.
+- ✅ ESLint global propre sur `/app/frontend/src`.
+- ✅ Smoke tests sur les 6 pages affectées + Landing : aucune erreur console, comportement préservé.
+
 ## 4. Backlog
 
 ### P1 — Internationalisation

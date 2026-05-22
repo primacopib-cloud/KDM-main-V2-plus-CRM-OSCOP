@@ -243,15 +243,18 @@ const PublicLolodriveMapSection = () => {
   const [territory, setTerritory] = useState(null);
   const [selected, setSelected] = useState(null);
 
+  // Load territories once on mount
   useEffect(() => {
-    Promise.all([
-      lolodriveAPI.listLoloPoints({ territory: territory || undefined }).catch(() => ({ points: [] })),
-      territories.length === 0 ? lolodriveAPI.listTerritories().catch(() => ({ territories: [] })) : Promise.resolve({ territories }),
-    ]).then(([p, t]) => {
-      setPoints(p.points || []);
-      if (t.territories) setTerritories(t.territories);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    lolodriveAPI.listTerritories()
+      .then((t) => setTerritories(t.territories || []))
+      .catch(() => {});
+  }, []);
+
+  // Load points whenever territory changes
+  useEffect(() => {
+    lolodriveAPI.listLoloPoints({ territory: territory || undefined })
+      .then((p) => setPoints(p.points || []))
+      .catch(() => setPoints([]));
   }, [territory]);
 
   const activateHere = (point) => {

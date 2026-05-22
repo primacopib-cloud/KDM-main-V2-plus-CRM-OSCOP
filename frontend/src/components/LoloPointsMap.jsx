@@ -26,11 +26,13 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
   const mapRef = useRef(null);
   const markersRef = useRef([]);
 
-  // Initial map setup (run once)
+  // Initial map setup (run once with the territory present at mount)
+  // We capture the initial territory in a ref so the effect deps can be empty without lying.
+  const initialTerritoryRef = useRef(territory);
   useEffect(() => {
     if (!TOKEN) return;
     if (mapRef.current || !containerRef.current) return;
-    const init = TERRITORY_DEFAULTS[territory] || TERRITORY_DEFAULTS.GP;
+    const init = TERRITORY_DEFAULTS[initialTerritoryRef.current] || TERRITORY_DEFAULTS.GP;
     mapRef.current = new mapboxgl.Map({
       container: containerRef.current,
       style: 'mapbox://styles/mapbox/dark-v11',
@@ -43,7 +45,6 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
       mapRef.current?.remove();
       mapRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Recenter on territory change

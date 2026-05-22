@@ -53,8 +53,8 @@ export default function PaymentReturnPage() {
 
     poll();
     return () => { cancelled = true; };
-    // sessionId is the trigger; helpers (lolodriveAPI) and constants (MAX_ATTEMPTS, POLL_INTERVAL_MS) are stable.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // `lolodriveAPI` is a module-level singleton; `MAX_ATTEMPTS`/`POLL_INTERVAL_MS` are module constants.
+    // State setters are React-stable. Only `sessionId` is a real dep.
   }, [sessionId]);
 
   const nextRoute = () => {

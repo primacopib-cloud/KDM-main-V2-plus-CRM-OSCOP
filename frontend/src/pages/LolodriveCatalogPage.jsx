@@ -28,33 +28,39 @@ export default function LolodriveCatalogPage() {
   const [territory, setTerritory] = useState(getInitialTerritory());
   const [loading, setLoading] = useState(true);
 
+  // Load territories once on mount
+  useEffect(() => {
+    lolodriveAPI.listTerritories()
+      .then((tr) => { if (tr.territories) setTerritories(tr.territories); })
+      .catch(() => {});
+  }, []);
+
+  // Load catalog products + lolo points whenever filter/territory change (also gates on auth)
   useEffect(() => {
     if (!authAPI.isAuthenticated()) {
       navigate('/connexion');
       return;
     }
+    let cancelled = false;
     (async () => {
       try {
-        const [c, lp, tr] = await Promise.all([
+        const [c, lp] = await Promise.all([
           lolodriveAPI.catalogProducts(filter || undefined, territory || undefined),
           lolodriveAPI.listLoloPoints({ territory: territory || undefined }),
-          territories.length === 0 ? lolodriveAPI.listTerritories() : Promise.resolve({ territories }),
         ]);
+        if (cancelled) return;
         setProducts(c.products || []);
         setPassActive(c.pass_active);
         setLoloPoints(lp.points || []);
-        if (tr.territories) setTerritories(tr.territories);
         // Reset selected point if no longer in filtered list
-        if (selectedPoint && !(lp.points || []).some((p) => p.code === selectedPoint)) {
-          setSelectedPoint('');
-        }
+        setSelectedPoint((prev) => (prev && !(lp.points || []).some((p) => p.code === prev) ? '' : prev));
       } catch (e) {
-        toast.error(e.message);
+        if (!cancelled) toast.error(e.message);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { cancelled = true; };
   }, [navigate, filter, territory]);
 
   const add = (sku) => setCart({ ...cart, [sku]: (cart[sku] || 0) + 1 });
