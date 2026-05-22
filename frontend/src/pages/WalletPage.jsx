@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -104,32 +104,8 @@ export default function WalletPage() {
   const [sepaEmail, setSepaEmail] = useState('');
   const [sepaLoading, setSepaLoading] = useState(false);
 
-  // Check for payment return
-  useEffect(() => {
-    const paymentStatus = searchParams.get('payment');
-    const sessionId = searchParams.get('session_id');
-    
-    if (paymentStatus === 'success' && sessionId) {
-      setPaymentChecking(true);
-      pollPaymentStatus(sessionId);
-    } else if (paymentStatus === 'cancelled') {
-      toast.error('Paiement annulé');
-      navigate('/wallet', { replace: true });
-    }
-    // navigate + pollPaymentStatus are stable refs from this scope; only re-run when query string changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  // Copy to clipboard
-  const copyToClipboard = (text, field) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
-    toast.success('Copié !');
-  };
-
-  // Poll payment status
-  const pollPaymentStatus = async (sessionId, attempts = 0) => {
+  // Poll payment status (stable: only depends on `navigate`)
+  const pollPaymentStatus = useCallback(async (sessionId, attempts = 0) => {
     const maxAttempts = 10;
     const pollInterval = 2000;
 
@@ -142,7 +118,7 @@ export default function WalletPage() {
 
     try {
       const status = await paymentAPI.getStatus(sessionId);
-      
+
       if (status.payment_status === 'paid' && status.credited) {
         setPaymentChecking(false);
         toast.success(`${status.credits} crédits ajoutés avec succès !`);
@@ -165,9 +141,31 @@ export default function WalletPage() {
       toast.error('Erreur vérification paiement');
       navigate('/wallet', { replace: true });
     }
+  }, [navigate]);
+
+  // Check for payment return
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const sessionId = searchParams.get('session_id');
+
+    if (paymentStatus === 'success' && sessionId) {
+      setPaymentChecking(true);
+      pollPaymentStatus(sessionId);
+    } else if (paymentStatus === 'cancelled') {
+      toast.error('Paiement annulé');
+      navigate('/wallet', { replace: true });
+    }
+  }, [searchParams, navigate, pollPaymentStatus]);
+
+  // Copy to clipboard
+  const copyToClipboard = (text, field) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+    toast.success('Copié !');
   };
 
-  // Load data
+  // Load data — runs once on mount; `navigate` is stable (react-router)
   useEffect(() => {
     const init = async () => {
       if (!authAPI.isAuthenticated()) {
@@ -179,11 +177,11 @@ export default function WalletPage() {
       try {
         const userData = await authAPI.getMe();
         setUser(userData);
-        
+
         // Load Stripe packages
         const packagesData = await paymentAPI.getPackages().catch(() => ({ packages: [] }));
         setPackages(packagesData.packages || []);
-        
+
         // Get org ID from user's membership
         const orgIdValue = userData.org_id || userData.organization_id;
         if (orgIdValue) {
@@ -202,7 +200,6 @@ export default function WalletPage() {
           setAllZones(zonesData);
           setEntitledZones(entitlementsData);
         }
-
       } catch (error) {
         console.error('Init error:', error);
         toast.error('Erreur de chargement');
@@ -212,9 +209,6 @@ export default function WalletPage() {
     };
 
     init();
-    // Init runs once on mount; navigate is the only stable dep that's reasonable to track.
-    // Other refs (authAPI, walletAPIV2, zonesAPIV2, paymentAPI, toast) are module-level singletons.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   // Refresh wallet

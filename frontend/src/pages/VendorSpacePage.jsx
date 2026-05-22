@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   Package, Plus, FileText, Upload, CheckCircle2, Clock, XCircle,
@@ -508,7 +508,7 @@ const VendorSpacePage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   // Fetch dashboard data
-  const fetchDashboard = async () => {
+  const fetchDashboard = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/api/vendor/dashboard/${vendorId}`);
       if (response.ok) {
@@ -518,15 +518,15 @@ const VendorSpacePage = () => {
     } catch (error) {
       console.error('Error fetching dashboard:', error);
     }
-  };
+  }, [vendorId]);
 
   // Fetch products
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
-      const url = statusFilter === 'all' 
+      const url = statusFilter === 'all'
         ? `${API_URL}/api/vendor/products/${vendorId}`
         : `${API_URL}/api/vendor/products/${vendorId}?status=${statusFilter}`;
-      
+
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
@@ -535,10 +535,10 @@ const VendorSpacePage = () => {
     } catch (error) {
       console.error('Error fetching products:', error);
     }
-  };
+  }, [vendorId, statusFilter]);
 
   // Fetch countries
-  const fetchCountries = async () => {
+  const fetchCountries = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/api/vendor/countries`);
       if (response.ok) {
@@ -548,7 +548,7 @@ const VendorSpacePage = () => {
     } catch (error) {
       console.error('Error fetching countries:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -557,9 +557,7 @@ const VendorSpacePage = () => {
       setLoading(false);
     };
     loadData();
-    // Fetchers are stable closures over `statusFilter`; including them as deps would loop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
+  }, [fetchDashboard, fetchProducts, fetchCountries]);
 
   const handleProductSuccess = () => {
     fetchDashboard();
