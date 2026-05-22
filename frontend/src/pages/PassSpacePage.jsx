@@ -20,6 +20,9 @@ export default function PassSpacePage() {
   const [orders, setOrders] = useState([]);
   const [savings, setSavings] = useState(null);
   const [ledger, setLedger] = useState([]);
+  const [referral, setReferral] = useState(null);
+  const [claimCode, setClaimCode] = useState('');
+  const [autoRenewBusy, setAutoRenewBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [rechargeOpen, setRechargeOpen] = useState(false);
   const [selectedPack, setSelectedPack] = useState('STANDARD');
@@ -36,16 +39,18 @@ export default function PassSpacePage() {
   const load = async () => {
     try {
       setLoading(true);
-      const [pass, wallet, o, sv] = await Promise.all([
+      const [pass, wallet, o, sv, ref] = await Promise.all([
         lolodriveAPI.myPass(),
         lolodriveAPI.myWallet(),
         lolodriveAPI.myOrders(),
         lolodriveAPI.mySavings().catch(() => null),
+        lolodriveAPI.getMyReferralCode().catch(() => null),
       ]);
       setData({ ...pass, wallet: wallet.wallet });
       setLedger(wallet.ledger || []);
       setOrders(o.orders || []);
       setSavings(sv);
+      setReferral(ref);
     } catch (e) {
       toast.error(e.message);
     } finally {
@@ -82,6 +87,40 @@ export default function PassSpacePage() {
   const remainingDays = () => {
     if (!data?.pass?.ends_at) return 0;
     return Math.max(0, Math.ceil((new Date(data.pass.ends_at) - new Date()) / (1000 * 60 * 60 * 24)));
+  };
+
+  const toggleAutoRenew = async () => {
+    if (!data?.pass) return;
+    setAutoRenewBusy(true);
+    try {
+      const r = await lolodriveAPI.setPassAutoRenew(!data.pass.is_auto_renew);
+      toast.success(r.is_auto_renew ? 'Renouvellement automatique activé' : 'Renouvellement automatique désactivé');
+      load();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setAutoRenewBusy(false);
+    }
+  };
+
+  const claimReferral = async () => {
+    if (!claimCode.trim()) return;
+    try {
+      const r = await lolodriveAPI.claimReferralCode(claimCode.trim());
+      toast.success(`Code accepté ! ${r.bonus_uc_each} UC crédités sur votre wallet.`);
+      setClaimCode('');
+      load();
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
+  const copyReferral = () => {
+    if (!referral?.code) return;
+    navigator.clipboard.writeText(referral.code).then(
+      () => toast.success(`Code ${referral.code} copié`),
+      () => toast.error('Copie impossible')
+    );
   };
 
   const days = remainingDays();
@@ -134,8 +173,24 @@ export default function PassSpacePage() {
                     </span>
                   </div>
                   <div className="text-xs text-white/40 mt-2 max-w-md">
-                    Pas de renouvellement automatique. À l'expiration, votre PASS sera désactivé.
-                    Les UC non utilisés ne sont pas remboursables (unité d'usage interne).
+                    {data.pass.is_auto_renew ? (
+                      <>Renouvellement automatique <strong className="text-emerald-400">activé</strong>. À l'expiration, un nouveau PASS sera proposé.</>
+                    ) : (
+                      <>Pas de renouvellement automatique. À l'expiration, votre PASS sera désactivé. Les UC non utilisés ne sont pas remboursables (unité d'usage interne).</>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleAutoRenew}
+                      disabled={autoRenewBusy}
+                      data-testid="toggle-auto-renew-btn"
+                      className="text-xs"
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1.5" />
+                      {data.pass.is_auto_renew ? 'Désactiver le renouvellement auto' : 'Activer le renouvellement auto'}
+                    </Button>
                   </div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
@@ -324,6 +379,48 @@ export default function PassSpacePage() {
               ))}
             </div>
           </SectionCard>
+
+          {/* Parrainage coopérateur */}
+          {referral && (
+            <SectionCard
+              title="Parrainage coopérateur"
+              action={<Badge color="#7c3aed">+{referral.bonus_uc_per_use} UC parrain & filleul</Badge>}
+              data-testid="referral-section"
+            >
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="rounded-lg p-4 bg-[#7c3aed]/[0.08] border border-[#7c3aed]/30">
+                  <div className="text-xs text-white/50 mb-1">Mon code</div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <code data-testid="referral-code" className="text-lg font-mono font-bold text-[#a78bfa] tracking-wider">{referral.code}</code>
+                    <Button size="sm" variant="outline" onClick={copyReferral} data-testid="copy-referral-btn" className="text-xs h-7">Copier</Button>
+                  </div>
+                  <div className="text-xs text-white/50">
+                    Utilisations : <strong>{referral.uses}/{referral.max_uses}</strong> — chaque filleul vous fait gagner <strong>{referral.bonus_uc_per_use} UC</strong>.
+                  </div>
+                </div>
+                <div className="rounded-lg p-4 bg-white/[0.03] border border-white/[0.08]">
+                  <div className="text-xs text-white/50 mb-1">J'ai un code de parrainage</div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={claimCode}
+                      onChange={(e) => setClaimCode(e.target.value.toUpperCase())}
+                      placeholder="KDM-XXXXXX"
+                      data-testid="claim-code-input"
+                      className="flex-1 px-3 py-2 text-sm bg-white/[0.04] border border-white/10 rounded-md font-mono uppercase"
+                    />
+                    <Button onClick={claimReferral} data-testid="claim-referral-btn"
+                      style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
+                      Activer
+                    </Button>
+                  </div>
+                  <div className="text-[11px] text-white/40 mt-2">
+                    Limite : un code par compte. Vous recevez {referral.bonus_uc_per_use} UC dès activation.
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+          )}
         </>
       )}
     </LolodriveLayout>

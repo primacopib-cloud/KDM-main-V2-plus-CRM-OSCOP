@@ -68,7 +68,7 @@ export default function LolodriveCatalogPage() {
 
   const checkout = async (payInUC) => {
     if (cartItems.length === 0) return toast.error('Panier vide');
-    if (fulfillment === 'LOLO_POINT' && !selectedPoint) return toast.error('Choisir un Lolo Point');
+    if (fulfillment === 'LOLO_POINT' && !selectedPoint) return toast.error('Choisir un relais LOLODRIVE');
     try {
       const order = await lolodriveAPI.createOrder({
         fulfillment_type: fulfillment,
@@ -153,14 +153,14 @@ export default function LolodriveCatalogPage() {
                     <SelectContent>
                       <SelectItem value="DRIVE">Drive</SelectItem>
                       <SelectItem value="DELIVERY">Livraison</SelectItem>
-                      <SelectItem value="LOLO_POINT">Lolo Point</SelectItem>
+                      <SelectItem value="LOLO_POINT">Relais LOLODRIVE</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 {fulfillment === 'LOLO_POINT' && (
                   <Select value={selectedPoint} onValueChange={setSelectedPoint}>
                     <SelectTrigger className="bg-white/[0.04] border-white/10" data-testid="lolo-point-select">
-                      <SelectValue placeholder="Choisir un Lolo Point" />
+                      <SelectValue placeholder="Choisir un relais LOLODRIVE" />
                     </SelectTrigger>
                     <SelectContent>
                       {loloPoints.map((p) => (

@@ -14,7 +14,7 @@ const TERRITORY_DEFAULTS = {
 };
 
 /**
- * Carte interactive des Lolo Points (Mapbox GL).
+ * Carte interactive des relais LOLODRIVE (Mapbox GL).
  * Props :
  *   - points: [{id, name, code, lat, lng, city, territory, status}, ...]
  *   - territory: 'GP' | 'MQ' | 'GF' | 'RE' | null  → recadre la vue

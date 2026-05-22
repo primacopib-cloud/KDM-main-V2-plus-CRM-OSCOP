@@ -20,6 +20,7 @@ export default function EssReportingPage() {
   const [orders, setOrders] = useState([]);
   const [ucConsumed, setUcConsumed] = useState([]);
   const [passActivations, setPassActivations] = useState([]);
+  const [brevoMetrics, setBrevoMetrics] = useState(null);
   const [days, setDays] = useState('30');
   const [loading, setLoading] = useState(true);
 
@@ -27,13 +28,14 @@ export default function EssReportingPage() {
     try {
       setLoading(true);
       const d = parseInt(days);
-      const [i, k, r, o, u, pa] = await Promise.all([
+      const [i, k, r, o, u, pa, bm] = await Promise.all([
         crmAPI.impactSummary(),
         lolodriveAPI.kpiOverview(),
         lolodriveAPI.kpiTimeseries('revenue', d),
         lolodriveAPI.kpiTimeseries('orders', d),
         lolodriveAPI.kpiTimeseries('uc_consumed', d),
         lolodriveAPI.kpiTimeseries('pass_activations', d),
+        lolodriveAPI.brevoMetricsSummary(d).catch(() => null),
       ]);
       setImpact(i);
       setKpi(k);
@@ -41,6 +43,7 @@ export default function EssReportingPage() {
       setOrders(o.points || []);
       setUcConsumed(u.points || []);
       setPassActivations(pa.points || []);
+      setBrevoMetrics(bm);
     } catch (e) {
       toast.error(e.message);
     } finally {
@@ -207,6 +210,28 @@ export default function EssReportingPage() {
             <KpiCard testId="kpi-pass-total" label="PASS activés" value={passActivations.reduce((a, p) => a + p.value, 0)} icon={Ticket} accent="#ec4899" />
           </div>
 
+          {/* Délivrabilité Brevo (Email + SMS transactionnels) */}
+          {brevoMetrics && (
+            <SectionCard
+              title="Délivrabilité notifications"
+              action={<Badge color="#06b6d4">Brevo (Email + SMS)</Badge>}
+              className="mb-6"
+              data-testid="brevo-metrics-section"
+            >
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <KpiCard testId="brevo-delivered" label="Délivrés" value={brevoMetrics.delivered} icon={TrendingUp} accent="#10b981" />
+                <KpiCard testId="brevo-bounced" label="Rejetés (bounce)" value={brevoMetrics.bounced} icon={TrendingUp} accent="#ef4444" />
+                <KpiCard testId="brevo-opened" label="Ouverts" value={brevoMetrics.opened} icon={TrendingUp} accent="#06b6d4" />
+                <KpiCard testId="brevo-rate" label="Taux délivrance" value={brevoMetrics.delivery_rate != null ? `${(brevoMetrics.delivery_rate * 100).toFixed(1)}%` : '—'} sub="seuil ESS ≥ 97%" icon={TrendingUp} accent="#D9B35A" />
+              </div>
+              {brevoMetrics.delivery_rate != null && brevoMetrics.delivery_rate < 0.97 && (
+                <div className="mt-3 text-xs text-amber-300/90 italic border-l-2 border-amber-500/60 pl-3" data-testid="brevo-warn">
+                  Taux de délivrance sous le seuil ESS de 97% — vérifier les bounces et la propreté de la base.
+                </div>
+              )}
+            </SectionCard>
+          )}
+
           {/* Conformité */}
           <div className="rounded-2xl p-5 border border-emerald-500/30 bg-emerald-500/[0.04]">
             <div className="flex items-start gap-3">
@@ -215,7 +240,7 @@ export default function EssReportingPage() {
                 <div className="font-semibold text-sm mb-2 text-emerald-400">Conformité ESS</div>
                 <ul className="text-xs text-white/70 space-y-1 list-disc list-inside">
                   <li>Non-spéculation : les UC sont une unité d'usage interne, jamais convertibles en sortie.</li>
-                  <li>Gouvernance coopérative : commissions LOLO POINTS plafonnées (1 200 €/mois et 6% du volume).</li>
+                  <li>Gouvernance coopérative : commissions du Réseau LOLODRIVE plafonnées (1 200 €/mois et 6% du volume).</li>
                   <li>Mutualisation : tournées ESS regroupées entre territoires DOM.</li>
                   <li>Référence légale : prix en euros sur factures et reporting fiscal.</li>
                   <li>Données impact mises à jour en temps réel depuis le moteur transactionnel V2.</li>

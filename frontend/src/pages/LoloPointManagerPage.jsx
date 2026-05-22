@@ -49,7 +49,7 @@ export default function LoloPointManagerPage() {
       setRanking(rk);
     } catch (e) {
       if (e.message?.includes('Aucun')) {
-        toast.error('Vous n\'êtes assigné à aucun Lolo Point. Contactez l\'administrateur.');
+        toast.error('Vous n\'êtes assigné à aucun relais LOLODRIVE. Contactez l\'administrateur.');
       } else {
         toast.error(e.message);
       }
@@ -69,7 +69,7 @@ export default function LoloPointManagerPage() {
 
   return (
     <LolodriveLayout
-      title={point ? `Lolo Point ${point.name}` : 'Mon Lolo Point'}
+      title={point ? `Relais LOLODRIVE — ${point.name}` : 'Mon relais LOLODRIVE'}
       subtitle="Tableau de bord gérant — commandes du jour, commissions, contributions."
       actions={
         <Button variant="outline" size="sm" onClick={load} data-testid="refresh-btn">
@@ -83,9 +83,9 @@ export default function LoloPointManagerPage() {
         <SectionCard>
           <div className="text-center py-12">
             <Store className="w-12 h-12 mx-auto mb-3 text-white/30" />
-            <h2 className="text-xl font-bold mb-2">Aucun Lolo Point assigné</h2>
+            <h2 className="text-xl font-bold mb-2">Aucun relais assigné</h2>
             <p className="text-sm text-white/50 max-w-md mx-auto">
-              Vous n'êtes pas (encore) gérant d'un Lolo Point. Contactez l'équipe O'SCOP pour
+              Vous n'êtes pas (encore) gérant d'un relais LOLODRIVE. Contactez l'équipe O'SCOP pour
               être affecté à un point relais.
             </p>
           </div>
@@ -216,7 +216,7 @@ export default function LoloPointManagerPage() {
                 <thead>
                   <tr className="text-left text-[11px] text-white/40 uppercase tracking-wider border-b border-white/[0.06]">
                     <th className="py-2 pr-2">#</th>
-                    <th className="py-2 pr-2">Lolo Point</th>
+                    <th className="py-2 pr-2">Relais</th>
                     <th className="py-2 pr-2">Territoire</th>
                     <th className="py-2 pr-2 text-right">CA</th>
                     <th className="py-2 pr-2 text-right">Commandes</th>

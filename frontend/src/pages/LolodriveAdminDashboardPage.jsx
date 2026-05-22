@@ -94,7 +94,7 @@ export default function LolodriveAdminDashboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <KpiCard testId="kpi-pass-active" label="PASS actifs" value={kpi.pass_active} sub="à l'instant T" icon={Ticket} accent="#D9B35A" />
             <KpiCard testId="kpi-orders-count" label={`Commandes (${PERIODS[period].label})`} value={kpi.orders?.count || 0} sub={fmtEUR(totalRevenue)} icon={ShoppingBag} accent="#10b981" />
-            <KpiCard testId="kpi-points-active" label="LOLO POINTS actifs" value={kpi.lolo_points_active} icon={Store} accent="#7c3aed" />
+            <KpiCard testId="kpi-points-active" label="Relais LOLODRIVE actifs" value={kpi.lolo_points_active} icon={Store} accent="#7c3aed" />
             <KpiCard testId="kpi-events-active" label="LOLO HOUR actifs" value={kpi.events_active} icon={Sparkles} accent="#ec4899" />
           </div>
 
@@ -163,7 +163,7 @@ export default function LolodriveAdminDashboardPage() {
                 segments={[
                   { label: 'Drive', value: kpi.orders?.drive || 0, color: '#10b981' },
                   { label: 'Livraison', value: kpi.orders?.delivery || 0, color: '#3b82f6' },
-                  { label: 'Lolo Point', value: kpi.orders?.lolo_point || 0, color: '#7c3aed' },
+                  { label: 'Relais', value: kpi.orders?.lolo_point || 0, color: '#7c3aed' },
                 ]}
               />
             </SectionCard>
@@ -237,7 +237,7 @@ export default function LolodriveAdminDashboardPage() {
                 { to: '/pass', label: 'Espace PASS', icon: Ticket, color: '#D9B35A', phase: 1 },
                 { to: '/catalogue-lolodrive', label: 'Catalogue', icon: ShoppingBag, color: '#7c3aed', phase: 1 },
                 { to: '/lolo-point/dashboard', label: 'Vue Gérant LP', icon: Store, color: '#10b981', phase: 2 },
-                { to: '/admin/lolo-points', label: 'LOLO POINTS admin', icon: Store, color: '#7c3aed', phase: 2 },
+                { to: '/admin/lolo-points', label: 'Réseau LOLODRIVE', icon: Store, color: '#7c3aed', phase: 2 },
                 { to: '/admin/lolo-hour', label: 'LOLO HOUR', icon: Sparkles, color: '#ec4899', phase: 2 },
                 { to: '/crm', label: 'CRM Partenaires', icon: HeartHandshake, color: '#D9B35A', phase: 2 },
                 { to: '/reporting-impact', label: 'Reporting ESS', icon: Leaf, color: '#10b981', phase: 2 },

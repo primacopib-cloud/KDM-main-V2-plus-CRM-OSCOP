@@ -119,10 +119,7 @@ export const compliancePoints = {
   ]
 };
 
-export const officialStatement = `Dans le cadre du partenariat KDMARCHE – O'SCOP,
-KDMARCHE commercialise les produits,
-O'SCOP organise l'accès coopératif aux conditions économiques.
-Les prix résultent d'une mutualisation ESS, non de remises commerciales.`;
+export const officialStatement = `Dans le cadre du partenariat KDMARCHE – O'SCOP, KDMARCHE assure la commercialisation des produits auprès des utilisateurs finaux, tandis qu'O'SCOP organise l'accès coopératif aux conditions économiques mutualisées. Les prix proposés s'inscrivent dans un cadre de mutualisation coopérative, fondé sur l'agrégation collective des volumes, des contributions et des services associés, et non sur une logique de remises commerciales individualisées.`;
 
 export const priceAdvantages = [
   "Mutualisation organisée par O'SCOP",

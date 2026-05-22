@@ -212,7 +212,7 @@ export default function PosLolodrivePage() {
       <div className="grid md:grid-cols-3 gap-3 mb-6">
         <div className="md:col-span-2">
           <Input
-            placeholder="Filtrer par code Lolo Point (ex: LP-PAP)"
+            placeholder="Filtrer par code relais (ex: LP-PAP)"
             value={pointCode}
             onChange={(e) => setPointCode(e.target.value)}
             className="bg-white/[0.04] border-white/10"

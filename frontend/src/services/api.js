@@ -891,6 +891,17 @@ export const lolodriveAPI = {
   managerTimeseries: (days = 30) => apiCall(`/lolodrive/manager/my-timeseries?days=${days}`),
   managerNetworkRanking: (days = 30) => apiCall(`/lolodrive/manager/network-ranking?days=${days}`),
 
+  // Brevo metrics (délivrabilité)
+  brevoMetricsSummary: (days = 30) => apiCall(`/brevo/metrics/summary?days=${days}`),
+
+  // PASS lifecycle (auto-renew + parrainage)
+  setPassAutoRenew: (enabled) =>
+    apiCall('/lolodrive/pass/auto-renew', { method: 'POST', body: JSON.stringify({ enabled }) }),
+  getMyReferralCode: () => apiCall('/lolodrive/pass/referral/me'),
+  claimReferralCode: (code) =>
+    apiCall('/lolodrive/pass/referral/claim', { method: 'POST', body: JSON.stringify({ code }) }),
+  getReferralStats: () => apiCall('/lolodrive/pass/referral/stats'),
+
   // Reporting timeseries
   kpiTimeseries: (metric = 'revenue', days = 30) =>
     apiCall(`/lolodrive/admin/kpi/timeseries?metric=${metric}&days=${days}`),

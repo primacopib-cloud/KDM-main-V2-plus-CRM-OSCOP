@@ -55,7 +55,7 @@ export default function LoloPointsAdminPage() {
         payout_cap_percent_bps: 600,
       };
       await lolodriveAPI.createLoloPoint(payload);
-      toast.success('Lolo Point créé');
+      toast.success('Relais LOLODRIVE créé');
       setOpenNew(false);
       setForm({ name: '', code: '', city: '', address: '', zone_name: '', territory: 'GP', lat: '', lng: '' });
       load();
@@ -81,8 +81,8 @@ export default function LoloPointsAdminPage() {
 
   return (
     <LolodriveLayout
-      title="Gestion LOLO POINTS"
-      subtitle="Réseau coopératif de relais multi-territoires (Antilles · Guyane · Réunion)"
+      title="Réseau LOLODRIVE"
+      subtitle="Relais coopératifs multi-territoires (Antilles · Guyane · Réunion)"
       actions={
         <>
           <Button variant="outline" size="sm" onClick={load} data-testid="refresh-btn">
@@ -92,12 +92,12 @@ export default function LoloPointsAdminPage() {
             <DialogTrigger asChild>
               <Button size="sm" data-testid="new-point-btn"
                 style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
-                <Plus className="w-4 h-4 mr-2" /> Nouveau Lolo Point
+                <Plus className="w-4 h-4 mr-2" /> Nouveau relais
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-[#15151c] border-white/10 text-white">
               <DialogHeader>
-                <DialogTitle>Créer un Lolo Point</DialogTitle>
+                <DialogTitle>Créer un Relais LOLODRIVE</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <div>
@@ -148,7 +148,7 @@ export default function LoloPointsAdminPage() {
         </>
       }
     >
-      <Phase2Banner module="LOLO POINTS" />
+      <Phase2Banner module="Réseau LOLODRIVE" />
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <TerritorySelector
@@ -180,7 +180,7 @@ export default function LoloPointsAdminPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <KpiCard testId="kpi-total-points" label="Lolo Points actifs" value={filteredPoints.length} icon={Store} accent="#7c3aed" />
+        <KpiCard testId="kpi-total-points" label="Relais actifs" value={filteredPoints.length} icon={Store} accent="#7c3aed" />
         <KpiCard testId="kpi-territories" label="Territoires" value={territoriesCovered} icon={MapPin} accent="#10b981" />
         <KpiCard testId="kpi-cities" label="Villes couvertes" value={citiesCovered} icon={MapPin} accent="#06b6d4" />
         <KpiCard testId="kpi-cap-monthly" label="Plafond mensuel" value="1 200 €" sub="par point" icon={Calculator} accent="#D9B35A" />
@@ -218,7 +218,7 @@ export default function LoloPointsAdminPage() {
           ))}
           {filteredPoints.length === 0 && (
             <div className="md:col-span-2 text-center text-white/50 py-12 text-sm" data-testid="empty-points">
-              Aucun Lolo Point pour ce territoire.
+              Aucun relais LOLODRIVE pour ce territoire.
             </div>
           )}
         </div>

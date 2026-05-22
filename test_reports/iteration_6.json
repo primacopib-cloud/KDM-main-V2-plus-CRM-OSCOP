@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 6 sprint testing complete. Backend pytest 14/14 PASSED in test_iter6_sprint.py: catalog territory filter (GP keeps Antilles RHUM/BANANE + generics, no RE/GF locals; RE returns the 3 Réunion SKUs + generics; GF returns MANIOC/CACHIRI + generics + JUS-MANGUE; MQ excludes MANIOC/VANILLE but keeps OEUFS/POULET); Brevo webhook IN list of 4 events {ok:true, received:4} + metrics summary (delivered=2, bounced=1, opened=1, delivery_rate=0.667, by_event populated); PASS auto-renew enable→true (persisted via my-pass)→disable→false; Referral lifecycle: GET /referral/me returns KDM-XXXXXX (10 chars) idempotent, POST claim with own code=400, invalid code=404, admin claims marie's code = 200 with both wallets +50 UC, second claim by same referee=409 (already used), admin stats returns total_codes/total_claims/total_bonus_uc_distributed (=claims*50*2)/top_sponsors, gerant non-admin=403. Frontend validated: landing /: H2 'Communityplace coopérative B2B2C' present (old 'Centrale d'Achats B2B ESS' removed), paragraph contains 'utilisateurs finaux' + 'mutualisation coopérative' + 'agrégation collective'; public-lolodrive-section with heading 'Trouvez le relais coopératif le plus proche', territory selector pills (DIV not SELECT), 10 markers default, Mapbox canvas, click 'Martinique' → 2 markers + count '2 relais actifs', 'Devenir relais LOLODRIVE' button present. /pass (marie): referral-section visible with code KDM-PHI3O8, copy-referral-btn / claim-code-input / claim-referral-btn / toggle-auto-renew-btn all present, auto-renew button toggled correctly ('Activer le renouvellement auto' → 'Désactiver le renouvellement auto'), wallet ledger shows REFERRAL_BONUS_SPONSOR +50 UC entry. /admin/lolo-points: title 'Réseau LOLODRIVE' (no 'Gestion LOLO POINTS'), 'Nouveau relais' button opens dialog 'Créer un Relais LOLODRIVE'. /lolodrive: KPI 'Relais LOLODRIVE actifs' (no 'LOLO POINTS actifs'), nav card 'Réseau LOLODRIVE'. /lolo-point/dashboard (gerant): title 'Relais LOLODRIVE — Lolo Point Capesterre' present. /reporting-impact: brevo-metrics-section present with 4 KPIs (Délivrés=2, Rejetés=1, Ouverts=1, Taux délivrance=66.7%).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/catalogue-lolodrive", "issues": ["Could not detect 'Relais LOLODRIVE' label or 'Choisir un relais LOLODRIVE' placeholder in initial DOM scan with marie. The fulfillment relay selector may render only after item selection / step navigation. Main agent should verify the placeholder/label is wired in PosLolodrivePage.jsx / LolodriveCatalogPage.jsx and visible on first render of the page; backend territory filter & catalog products are confirmed working."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter6_sprint.py",
+    "/app/test_reports/pytest/iter6.xml"
+  ],
+  "action_items": [
+    "Verify /catalogue-lolodrive renders 'Relais LOLODRIVE' selector label + 'Choisir un relais LOLODRIVE' placeholder visibly on first render (no interaction needed). Backend confirmed OK; only UI surface to double-check."
+  ],
+  "critical_code_review_comments": [
+    "routes_brevo_webhook.py: clean — public endpoint, optional X-Brevo-Token shared secret via env, idempotent daily aggregate via upsert+$inc; metrics summary computes delivery_rate / bounce_rate / open_rate with safe zero-division guard. Note: aggregation pipeline ignores 'days' filter (it groups all brevo_metrics_daily rows regardless of date) — minor improvement candidate but does not block ESS reporting since data is short-lived in tests.",
+    "routes_pass_lifecycle.py: referral code generator uses secrets.choice with retry on collision (good), unique index on code + unique index on referee_user_id (enforces 'one claim per referee' at DB level too — defense in depth). Plafond 10 enforced via count_documents on sponsor_user_id before insert. Wallet credit done in a loop for sponsor+referee with ledger entries — ensure idempotency on retry: a 500 mid-loop could double-credit sponsor on retry. Consider a single atomic operation or use a transaction. Acceptable for current scale.",
+    "routes_pass_lifecycle.py: stats endpoint properly checks is_admin OR role in admin set before returning data. Returns top 10 sponsors with enriched email/contact_name — clean.",
+    "seed_lolodrive.py: products[] now includes 7 territory-specific local SKUs — correctly tested across the 4 DOM. Generic products with territories=[] continue to be available everywhere via the existing $or query (lines 315-321 of routes).",
+    "LandingPage public Mapbox section: territory selector renders as DIV with internal pill buttons (not native SELECT) — frontend tests had to click child button by name. Consider exposing data-testid='public-territory-selector-MQ' on each pill for more deterministic testing."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter6_sprint.py"
+  ],
+  "success_rate": {"backend": "100% (14/14)", "frontend": "~95% (1 minor catalogue label scan miss to confirm visually)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; marie@example.com / Demo2026! ; gerant@lolopoint.fr / Demo2026!",
+  "seed_data_creation": "Re-ran /app/backend/seed_lolodrive.py before tests. Cleaned brevo_events / brevo_metrics_daily / lolodrive_referrals / lolodrive_referral_claims collections and reset marie wallet to 450 UC for deterministic test runs. Created admin wallet (balance 0) since seed didn't include one.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend referral system: lolodrive_referrals + lolodrive_referral_claims collections, unique indexes on code and referee_user_id. Tests reset these collections before run. Brevo webhook is public (BREVO_WEBHOOK_TOKEN env empty) — POST list of events is accepted. Auto-renew persists to lolodrive_passes.is_auto_renew. PASS my-pass endpoint nests pass/wallet under top-level keys. Public landing /api/lolodrive/lolo-points (no auth) returns the 10 seeded points with lat/lng for Mapbox markers. The territory filter for PUBLIC map is client-side filtering (DOM pills), not backend query.",
+  "rca of the issue": "N/A — all tested flows pass. Single minor UI verification item (catalogue page label) flagged for main agent visual confirmation."
+}

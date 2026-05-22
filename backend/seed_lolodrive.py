@@ -90,22 +90,34 @@ async def main():
         await db.users.update_one({"id": u["id"]}, {"$set": u}, upsert=True)
     print(f"  ✔ {len(users)} users seeded")
 
-    # ---- 2. PRODUITS ----
+    # ---- 2. PRODUITS (avec affinage par territoires) ----
+    # Convention : `territories=[]` → disponible partout. Sinon liste explicite des codes DOM.
     products = [
-        # ESSENTIELS (prix PASS)
-        {"sku": "RIZ-5KG", "name": "Riz long grain 5kg", "category": "Épicerie", "brand": "Saveurs Caraïbes", "catalog_type": "ESSENTIAL", "price_public_cents": 650, "price_pass_cents": 490, "image_url": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400"},
-        {"sku": "LAIT-1L", "name": "Lait UHT 1L", "category": "Épicerie", "brand": "Candia", "catalog_type": "ESSENTIAL", "price_public_cents": 140, "price_pass_cents": 110, "image_url": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400"},
-        {"sku": "HUILE-1L", "name": "Huile végétale 1L", "category": "Épicerie", "brand": "Lesieur", "catalog_type": "ESSENTIAL", "price_public_cents": 450, "price_pass_cents": 320, "image_url": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400"},
-        {"sku": "FARINE-1KG", "name": "Farine de blé T45 1kg", "category": "Épicerie", "brand": "Francine", "catalog_type": "ESSENTIAL", "price_public_cents": 200, "price_pass_cents": 160, "image_url": "https://images.unsplash.com/photo-1568254183919-78a4f43a2877?w=400"},
-        {"sku": "PATES-500G", "name": "Pâtes 500g", "category": "Épicerie", "brand": "Barilla", "catalog_type": "ESSENTIAL", "price_public_cents": 180, "price_pass_cents": 140, "image_url": "https://images.unsplash.com/photo-1551462147-37885acc36f1?w=400"},
-        {"sku": "SUCRE-1KG", "name": "Sucre blanc 1kg", "category": "Épicerie", "brand": "Daddy", "catalog_type": "ESSENTIAL", "price_public_cents": 180, "price_pass_cents": 140, "image_url": "https://images.unsplash.com/photo-1582049165166-77fd35d56167?w=400"},
-        {"sku": "OEUFS-12", "name": "Œufs frais x12", "category": "Frais", "brand": "Local", "catalog_type": "ESSENTIAL", "price_public_cents": 380, "price_pass_cents": 290, "image_url": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400"},
-        {"sku": "POULET-1KG", "name": "Poulet entier 1kg", "category": "Frais", "brand": "Volailles Antilles", "catalog_type": "ESSENTIAL", "price_public_cents": 850, "price_pass_cents": 650, "image_url": "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400"},
+        # ESSENTIELS (prix PASS) — disponibles dans les 4 DOM
+        {"sku": "RIZ-5KG", "name": "Riz long grain 5kg", "category": "Épicerie", "brand": "Saveurs Caraïbes", "catalog_type": "ESSENTIAL", "price_public_cents": 650, "price_pass_cents": 490, "territories": ["GP", "MQ", "GF"], "image_url": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400"},
+        {"sku": "LAIT-1L", "name": "Lait UHT 1L", "category": "Épicerie", "brand": "Candia", "catalog_type": "ESSENTIAL", "price_public_cents": 140, "price_pass_cents": 110, "territories": [], "image_url": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400"},
+        {"sku": "HUILE-1L", "name": "Huile végétale 1L", "category": "Épicerie", "brand": "Lesieur", "catalog_type": "ESSENTIAL", "price_public_cents": 450, "price_pass_cents": 320, "territories": [], "image_url": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400"},
+        {"sku": "FARINE-1KG", "name": "Farine de blé T45 1kg", "category": "Épicerie", "brand": "Francine", "catalog_type": "ESSENTIAL", "price_public_cents": 200, "price_pass_cents": 160, "territories": [], "image_url": "https://images.unsplash.com/photo-1568254183919-78a4f43a2877?w=400"},
+        {"sku": "PATES-500G", "name": "Pâtes 500g", "category": "Épicerie", "brand": "Barilla", "catalog_type": "ESSENTIAL", "price_public_cents": 180, "price_pass_cents": 140, "territories": [], "image_url": "https://images.unsplash.com/photo-1551462147-37885acc36f1?w=400"},
+        {"sku": "SUCRE-1KG", "name": "Sucre blanc 1kg", "category": "Épicerie", "brand": "Daddy", "catalog_type": "ESSENTIAL", "price_public_cents": 180, "price_pass_cents": 140, "territories": [], "image_url": "https://images.unsplash.com/photo-1582049165166-77fd35d56167?w=400"},
+        {"sku": "OEUFS-12", "name": "Œufs frais x12", "category": "Frais", "brand": "Local", "catalog_type": "ESSENTIAL", "price_public_cents": 380, "price_pass_cents": 290, "territories": ["GP", "MQ"], "image_url": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400"},
+        {"sku": "POULET-1KG", "name": "Poulet entier 1kg", "category": "Frais", "brand": "Volailles Antilles", "catalog_type": "ESSENTIAL", "price_public_cents": 850, "price_pass_cents": 650, "territories": ["GP", "MQ"], "image_url": "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400"},
         # NORMAL / HORS25
-        {"sku": "TOMACOULI-500G", "name": "Tomacouli 500g", "category": "Cuisine", "brand": "Panzani", "catalog_type": "NORMAL", "price_public_cents": 220, "price_pass_cents": None, "image_url": "https://images.unsplash.com/photo-1604908554007-3f88f54fa0aa?w=400"},
-        {"sku": "NUTELLA-400G", "name": "Pâte à tartiner 400g", "category": "Épicerie", "brand": "Nutella", "catalog_type": "NORMAL", "price_public_cents": 380, "price_pass_cents": None, "image_url": "https://images.unsplash.com/photo-1610725664338-5f25c3a23bb1?w=400"},
-        {"sku": "JUS-MANGUE-1L", "name": "Jus de mangue 1L", "category": "Boissons", "brand": "Caraïbes", "catalog_type": "NORMAL", "price_public_cents": 320, "price_pass_cents": None, "image_url": "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400"},
-        {"sku": "CAFE-250G", "name": "Café moulu 250g", "category": "Épicerie", "brand": "Carte Noire", "catalog_type": "NORMAL", "price_public_cents": 480, "price_pass_cents": None, "image_url": "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400"},
+        {"sku": "TOMACOULI-500G", "name": "Tomacouli 500g", "category": "Cuisine", "brand": "Panzani", "catalog_type": "NORMAL", "price_public_cents": 220, "price_pass_cents": None, "territories": [], "image_url": "https://images.unsplash.com/photo-1604908554007-3f88f54fa0aa?w=400"},
+        {"sku": "NUTELLA-400G", "name": "Pâte à tartiner 400g", "category": "Épicerie", "brand": "Nutella", "catalog_type": "NORMAL", "price_public_cents": 380, "price_pass_cents": None, "territories": [], "image_url": "https://images.unsplash.com/photo-1610725664338-5f25c3a23bb1?w=400"},
+        {"sku": "JUS-MANGUE-1L", "name": "Jus de mangue 1L", "category": "Boissons", "brand": "Caraïbes", "catalog_type": "NORMAL", "price_public_cents": 320, "price_pass_cents": None, "territories": ["GP", "MQ", "GF"], "image_url": "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400"},
+        {"sku": "CAFE-250G", "name": "Café moulu 250g", "category": "Épicerie", "brand": "Carte Noire", "catalog_type": "NORMAL", "price_public_cents": 480, "price_pass_cents": None, "territories": [], "image_url": "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400"},
+        # PRODUITS LOCAUX SPÉCIFIQUES — différenciation par territoire
+        # Antilles (Guadeloupe + Martinique)
+        {"sku": "RHUM-AGRICOLE-70CL", "name": "Rhum agricole AOC 70cl", "category": "Boissons", "brand": "Distillerie Damoiseau", "catalog_type": "NORMAL", "price_public_cents": 1850, "price_pass_cents": None, "territories": ["GP", "MQ"], "image_url": "https://images.unsplash.com/photo-1568708030267-8a4cd1b86d3a?w=400"},
+        {"sku": "BANANE-1KG", "name": "Banane locale 1kg", "category": "Frais", "brand": "Coopérative Banane Caraïbe", "catalog_type": "ESSENTIAL", "price_public_cents": 220, "price_pass_cents": 170, "territories": ["GP", "MQ"], "image_url": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400"},
+        # Guyane
+        {"sku": "MANIOC-500G", "name": "Farine de manioc 500g", "category": "Épicerie", "brand": "Yana Wassaï", "catalog_type": "ESSENTIAL", "price_public_cents": 280, "price_pass_cents": 210, "territories": ["GF"], "image_url": "https://images.unsplash.com/photo-1604908554007-3f88f54fa0aa?w=400"},
+        {"sku": "CACHIRI-1L", "name": "Cachiri (boisson amérindienne) 1L", "category": "Boissons", "brand": "Coop Wayampi", "catalog_type": "NORMAL", "price_public_cents": 450, "price_pass_cents": None, "territories": ["GF"], "image_url": "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400"},
+        # La Réunion
+        {"sku": "VANILLE-BOURBON-3G", "name": "Gousse de vanille Bourbon (3g)", "category": "Épicerie", "brand": "Vanilleraie Provanille", "catalog_type": "NORMAL", "price_public_cents": 590, "price_pass_cents": None, "territories": ["RE"], "image_url": "https://images.unsplash.com/photo-1606914469333-9c7e9e1b2c5c?w=400"},
+        {"sku": "ACHARDS-LEGUMES-200G", "name": "Achards de légumes 200g", "category": "Épicerie", "brand": "La Reine du Cari", "catalog_type": "NORMAL", "price_public_cents": 320, "price_pass_cents": None, "territories": ["RE"], "image_url": "https://images.unsplash.com/photo-1604908554007-3f88f54fa0aa?w=400"},
+        {"sku": "SUCRE-CANNE-RE-1KG", "name": "Sucre de canne La Réunion 1kg", "category": "Épicerie", "brand": "Tereos Sucre Réunion", "catalog_type": "ESSENTIAL", "price_public_cents": 220, "price_pass_cents": 170, "territories": ["RE"], "image_url": "https://images.unsplash.com/photo-1582049165166-77fd35d56167?w=400"},
     ]
 
     for p in products:

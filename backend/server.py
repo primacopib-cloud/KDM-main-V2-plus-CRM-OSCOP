@@ -1434,6 +1434,16 @@ from routes_emergent_auth import router as emergent_auth_router, set_emergent_au
 set_emergent_auth_database(db)
 app.include_router(emergent_auth_router)
 
+# Brevo transactional webhooks (delivered/bounced metrics)
+from routes_brevo_webhook import router as brevo_webhook_router, set_brevo_webhook_database, setup_brevo_webhook_indexes
+set_brevo_webhook_database(db)
+app.include_router(brevo_webhook_router)
+
+# PASS lifecycle (auto-renew, referrals)
+from routes_pass_lifecycle import router as pass_lifecycle_router, set_pass_lifecycle_database, setup_pass_lifecycle_indexes
+set_pass_lifecycle_database(db)
+app.include_router(pass_lifecycle_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)
@@ -1559,6 +1569,16 @@ async def startup_db_client():
         logger.info("Emergent OAuth indexes ensured")
     except Exception as e:
         logger.warning(f"Could not create Emergent OAuth indexes: {e}")
+    try:
+        await setup_brevo_webhook_indexes(db)
+        logger.info("Brevo webhook indexes ensured")
+    except Exception as e:
+        logger.warning(f"Could not create Brevo webhook indexes: {e}")
+    try:
+        await setup_pass_lifecycle_indexes(db)
+        logger.info("PASS lifecycle indexes ensured")
+    except Exception as e:
+        logger.warning(f"Could not create PASS lifecycle indexes: {e}")
     try:
         start_scheduler()
     except Exception as e:

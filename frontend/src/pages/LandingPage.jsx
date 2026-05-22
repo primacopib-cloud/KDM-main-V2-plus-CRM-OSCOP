@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { downloadOffer } from '../services/api';
+import { downloadOffer, lolodriveAPI } from '../services/api';
 import { 
   Download, 
   ArrowRight, 
@@ -11,7 +11,8 @@ import {
   Users,
   Truck,
   CreditCard,
-  Building2
+  Building2,
+  MapPin
 } from 'lucide-react';
 import { partners, subscriptionPlans, logisticsSteps, officialStatement, priceAdvantages, compliancePoints } from '../data/mock';
 import PricingSection from '../components/PricingSection';
@@ -20,6 +21,8 @@ import LogisticsSection from '../components/LogisticsSection';
 import ContactForm from '../components/ContactForm';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
+import LoloPointsMap from '../components/LoloPointsMap';
+import TerritorySelector from '../components/TerritorySelector';
 
 const LandingPage = () => {
   return (
@@ -45,7 +48,7 @@ const LandingPage = () => {
               </div>
               
               <h2 className="text-[40px] leading-[1.05] font-bold tracking-tight my-2.5">
-                Centrale d'Achats <span className="text-[#D9B35A]">B2B ESS</span>
+                Communityplace <span className="text-[#D9B35A]">coopérative B2B2C</span>
               </h2>
               
               <p className="text-white/75 text-base max-w-[60ch] m-0">
@@ -204,6 +207,9 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Réseau LOLODRIVE — carte publique */}
+      <PublicLolodriveMapSection />
+
       {/* Contact Section */}
       <section id="contact" className="py-8 px-5">
         <div className="max-w-[800px] mx-auto">
@@ -226,3 +232,69 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
+/* =================================================================
+ * Section publique : carte du Reseau LOLODRIVE (acquisition / contact)
+ * ================================================================= */
+
+const PublicLolodriveMapSection = () => {
+  const [points, setPoints] = useState([]);
+  const [territories, setTerritories] = useState([]);
+  const [territory, setTerritory] = useState(null);
+
+  useEffect(() => {
+    Promise.all([
+      lolodriveAPI.listLoloPoints({ territory: territory || undefined }).catch(() => ({ points: [] })),
+      territories.length === 0 ? lolodriveAPI.listTerritories().catch(() => ({ territories: [] })) : Promise.resolve({ territories }),
+    ]).then(([p, t]) => {
+      setPoints(p.points || []);
+      if (t.territories) setTerritories(t.territories);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [territory]);
+
+  return (
+    <section id="reseau-lolodrive" className="py-10 px-5" data-testid="public-lolodrive-section">
+      <div className="max-w-[1160px] mx-auto">
+        <div className="text-center mb-5">
+          <span className="badge-status mb-3 inline-flex">
+            <span className="dot pulse-glow"></span>
+            Réseau LOLODRIVE
+          </span>
+          <h3 className="text-[28px] font-bold tracking-tight mt-2 mb-2">
+            Trouvez le relais coopératif <span className="text-[#D9B35A]">le plus proche</span>
+          </h3>
+          <p className="text-white/70 text-sm max-w-[60ch] mx-auto">
+            <strong>LOLODRIVE by O'SCOP</strong> est le réseau coopératif de proximité de KDMARCHÉ : retrait drive, livraison locale,
+            relais commerçants et POS terrain. Activez votre PASS Vie Chère, commandez vos essentiels et retirez sur l'un de nos
+            relais coopératifs partout en Outre-mer.
+          </p>
+        </div>
+
+        <div className="glass-panel rounded-[18px] p-4 mb-3 flex flex-wrap items-center justify-between gap-3">
+          <TerritorySelector
+            territories={territories}
+            value={territory}
+            onChange={setTerritory}
+            testId="public-territory-selector"
+          />
+          <div className="text-xs text-white/60 inline-flex items-center gap-1.5" data-testid="public-points-count">
+            <MapPin className="w-3.5 h-3.5 text-[#D9B35A]" />
+            <strong className="text-white/90">{points.length}</strong> relais{points.length > 1 ? ' actifs' : ' actif'}
+          </div>
+        </div>
+
+        <LoloPointsMap points={points} territory={territory} height="460px" />
+
+        <div className="mt-3 text-center">
+          <Link to="/inscription">
+            <button className="btn-gold inline-flex items-center justify-center gap-2.5 rounded-[14px] px-5 py-3 text-sm font-semibold" data-testid="join-network-btn">
+              Devenir relais LOLODRIVE
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+};
