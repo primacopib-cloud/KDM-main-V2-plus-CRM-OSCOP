@@ -9,6 +9,7 @@ import { countries, getFlagDataUrl, getPhonePlaceholder, defaultCountry } from '
 import { ArrowLeft, UserPlus, Building2, Mail, Lock, Loader2, Globe, Phone, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI } from '../services/api';
+import PreselectedRelayBadge from '../components/PreselectedRelayBadge';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -128,6 +129,7 @@ const RegisterPage = () => {
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">
+            <PreselectedRelayBadge testId="register-preselected-relay" />
             {/* Company Info */}
             <div className="space-y-4">
               <h3 className="font-semibold text-sm text-white/75 flex items-center gap-2 uppercase tracking-wider">

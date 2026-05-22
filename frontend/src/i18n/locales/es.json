@@ -1,0 +1,56 @@
+{
+  "common": {
+    "join": "Unirse",
+    "discover": "Descubrir",
+    "back": "Volver",
+    "next": "Siguiente",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "loading": "Cargando…",
+    "language": "Idioma"
+  },
+  "landing": {
+    "hero_badge": "Communityplace cooperativa B2B2C",
+    "hero_h1": "El ecosistema cooperativo de los Territorios de Ultramar",
+    "hero_subtitle": "PASS Vida Asequible, Red LOLODRIVE, gobernanza ESS — para hacer accesible lo esencial a todos.",
+    "cta_register": "Crear mi cuenta",
+    "cta_signin": "Iniciar sesión",
+    "cta_become_relay": "Convertirse en relé LOLODRIVE",
+    "cta_activate_pass_here": "Activar mi PASS aquí",
+    "find_relay_title": "Encuentra el relé cooperativo",
+    "find_relay_highlight": "más cercano",
+    "relay_count_active": "relés activos",
+    "relay_count_active_one": "relé activo",
+    "official_statement_title": "Communityplace cooperativa B2B2C"
+  },
+  "navbar": {
+    "home": "Inicio",
+    "logiscop": "LOGI'SCOP",
+    "oscop": "O'SCOP",
+    "offers": "Ofertas",
+    "my_space": "Mi espacio",
+    "catalog": "Catálogo",
+    "orders": "Pedidos",
+    "wallet": "Wallet",
+    "logout": "Cerrar sesión"
+  },
+  "pass": {
+    "active": "PASS activo",
+    "expired": "PASS expirado",
+    "auto_renew_on": "Renovación automática activada",
+    "auto_renew_off": "Sin renovación automática",
+    "uc_balance": "Saldo UC",
+    "remaining_days": "días restantes",
+    "referral_section_title": "Apadrinamiento cooperativo",
+    "referral_my_code": "Mi código",
+    "referral_have_code": "Tengo un código"
+  },
+  "relay": {
+    "selected_label": "Relé seleccionado",
+    "modify": "Modificar",
+    "drive": "Drive",
+    "drive_subtitle": "Recogida cooperativa",
+    "delivery": "Entrega",
+    "delivery_subtitle": "Entrega local"
+  }
+}

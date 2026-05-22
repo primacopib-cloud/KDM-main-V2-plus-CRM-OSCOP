@@ -1,0 +1,47 @@
+{
+  "summary": "Iter9 Sprint (Stripe Subscriptions natives + i18n + LOGI'SCOP/O'SCOP + PreselectedRelayBadge): 7/8 new backend tests PASSED + 14/14 frontend UI checks PASSED. 1 backend BUG found: webhook invoice.paid returns 500 (uncaught stripe.error.AuthenticationError) when stripe.Subscription.retrieve() is invoked as fallback because the sandbox key 'sk_test_emergent' rejects real Stripe API calls. Idempotency test cannot be verified because the first call already 500s. All 4 i18n/LOGI/OSCOP/PreselectedBadge frontend acceptance criteria validated end-to-end.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/lolodrive/pass/subscription/webhook (invoice.paid)",
+        "issue": "Returns 500 Internal Server Error when handling invoice.paid for an unknown customer (cus_test_*). routes_pass_subscription.py:266 calls stripe.Subscription.retrieve(sub_id) inside the user-lookup fallback WITHOUT a try/except, and Stripe raises stripe.error.AuthenticationError 'Invalid API Key provided: sk_test_****gent' (Emergent sandbox key is non-functional against real Stripe API). The exception propagates → 500. Side-effect: the idempotency record is inserted before this crash (line 253), so the SECOND identical webhook call DOES return {duplicate:true} as designed, but the FIRST call is broken. In production (real customer_id present in DB), the fallback path is skipped and the flow works — but ANY unknown customer or test payload triggers the 500.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter9_sprint.py",
+    "/app/test_reports/pytest/iter9.xml"
+  ],
+  "action_items": [
+    "Wrap stripe.Subscription.retrieve() call in routes_pass_subscription.py:266 in try/except stripe.error.StripeError, log warning and return {'ok': False, 'reason': 'user not found'} (same as the existing fallback). Suggested patch:\n        if not user:\n            try:\n                sub = stripe.Subscription.retrieve(sub_id)\n                uid = (sub.get('metadata') or {}).get('user_id')\n                user = await db.users.find_one({'id': uid}, {'_id': 0}) if uid else None\n            except stripe.error.StripeError as exc:\n                logger.warning('invoice.paid: stripe.Subscription.retrieve failed: %s', exc)\n                user = None"
+  ],
+  "critical_code_review_comments": [
+    "routes_pass_subscription.py:264-271 — stripe.Subscription.retrieve() is NOT wrapped in try/except — any Stripe API failure (auth, network, rate-limit) crashes the webhook with 500 AFTER the idempotency record has been inserted. This creates a partial-write bug: the next retry will return {duplicate:true} (because the event row exists) but the PASS extension never happened. RECOMMENDATION: either (a) wrap the retrieve in try/except as above, OR (b) move the lolodrive_subscription_events insert AFTER all processing is done so failed events can be retried.",
+    "routes_pass_subscription.py:217-238 — webhook accepts unsigned payloads when STRIPE_WEBHOOK_SECRET is empty (test mode) — this is correct for the dev sandbox per the agent_to_agent_context_note. In production STRIPE_WEBHOOK_SECRET must be set to enforce signature verification.",
+    "routes_pass_subscription.py:280 — when computing new_end, the code uses datetime.utcnow() (naive) but base may be timezone-aware → comparison is brittle (lines 276-279 do handle the conversion). Functional but consider standardising on timezone-aware UTC throughout.",
+    "Stripe key 'sk_test_emergent' (Emergent sandbox) — works for stripe.checkout.Session.create() (returns valid URL) but FAILS for stripe.Subscription.retrieve() with AuthenticationError. This is an Emergent platform limitation, NOT a code bug — but the application must defensively catch it.",
+    "Frontend i18n scaffolding correctly stores 'en' in localStorage.i18nextLng after clicking [data-testid=language-en]. LanguageSwitcher renders 3 buttons (fr, en, es) inside [data-testid=language-switcher] in the NavBar.",
+    "PreselectedRelayBadge on /inscription correctly reads localStorage.kdm_preselected_point and displays name 'Lolo Point Saint-François' + 'LP-STF · GP' + Modifier link. The clear button [data-testid=register-preselected-relay-clear] removes the localStorage key AND unmounts the badge as expected.",
+    "/logiscop and /oscop are public (no auth) — both render [data-testid=logiscop-hero/oscop-hero] + their CTA buttons. NavBar shows LOGI'SCOP and O'SCOP links on desktop."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter9_sprint.py (created)"
+  ],
+  "success_rate": {
+    "backend": "87.5% (7/8 iter9 tests; the 1 failure is a real product bug, not a test issue)",
+    "frontend": "100% (14/14 UI checks: language switcher, /logiscop, /oscop, NavBar links, PreselectedRelayBadge create+clear+localStorage sync)"
+  },
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; marie@example.com / Demo2026!",
+  "seed_data_creation": "None. Used existing seed (marie's PASS state). Webhook test sent synthetic invoice/sub/customer ids — these inserted documents into lolodrive_subscription_events; the PASS extension did NOT trigger because user lookup failed (which is correct behaviour, modulo the 500 bug).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "iter9 sprint summary: (1) Backend Subscription endpoints /api/lolodrive/pass/subscription/{status,checkout,cancel,webhook} all wired correctly. status returns has_subscription:false + is_auto_renew_soft for users without Stripe sub. checkout returns 200 with cs_test_* URL (Stripe sandbox host). cancel returns 404 for users without stripe_subscription_id (correct). webhook handles customer.subscription.deleted correctly. (2) The single backend FAIL is webhook invoice.paid 500 — see action_items. Once fixed, re-run test_webhook_invoice_paid_idempotent to confirm both r1=200{ok:false,reason:user not found} AND r2=200{duplicate:true}. (3) Frontend: all i18n, /logiscop, /oscop, PreselectedRelayBadge data-testids present and functional. LanguageSwitcher persists choice in localStorage.i18nextLng. /pass PreselectedRelayBadge was NOT tested (requires marie login + manual /pass navigation) but the component returns null without localStorage so behaviour is conditional as expected. (4) iter8 regression: admin stripe/mode endpoint still works (mode=test, key prefix sk_test_emer…).",
+  "rca of the issue": "Root cause of webhook invoice.paid 500: routes_pass_subscription.py line 266 invokes `stripe.Subscription.retrieve(sub_id)` without exception handling. In the Emergent sandbox, the test key 'sk_test_emergent' is REJECTED by real Stripe API endpoints (only the Stripe SDK's local session creation works). The AuthenticationError raised by stripe._api_requestor bubbles up uncaught. Reproduction: POST /api/lolodrive/pass/subscription/webhook with {type:'invoice.paid', data:{object:{id:'in_test_X', subscription:'sub_test_X', customer:'cus_test_X'}}} → first call: 500 (after lolodrive_subscription_events.insert succeeds); second call: 200 {duplicate:true} (insert raises DuplicateKeyError → caught). Mitigation: wrap retrieve() in try/except stripe.error.StripeError; OR move the idempotency insert to the END of the success path."
+}

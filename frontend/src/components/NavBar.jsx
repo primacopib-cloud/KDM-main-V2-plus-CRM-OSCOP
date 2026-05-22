@@ -6,13 +6,14 @@ import {
   LayoutDashboard, ShoppingCart, Package, FileText, 
   Wallet, Settings, Users, Shield, BarChart3,
   Store, Building2, ChevronDown, Bell, Search,
-  FileSignature, MapPin, CreditCard, Home, Heart
+  FileSignature, MapPin, CreditCard, Home, Heart, Truck, HeartHandshake
 } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { useNotificationWebSocket, ConnectionStatus } from './NotificationToast';
 import NavigationHistoryDropdown from './NavigationHistoryDropdown';
 import QuickShortcuts from './QuickShortcuts';
 import { useFavorites } from './FavoriteButton';
+import LanguageSwitcher from './LanguageSwitcher';
 
 // Favorites nav button with count
 function FavoritesNavButton() {
@@ -39,6 +40,8 @@ function FavoritesNavButton() {
 const getNavItems = (userRole, isAdmin) => {
   const baseItems = [
     { href: '/', label: 'Accueil', icon: Home, public: true },
+    { href: '/logiscop', label: "LOGI'SCOP", icon: Truck, public: true, accent: '#0B4D87' },
+    { href: '/oscop', label: "O'SCOP", icon: HeartHandshake, public: true, accent: '#8CC63E' },
     { href: '/offres', label: 'Offres', icon: CreditCard, public: true },
   ];
 
@@ -176,6 +179,7 @@ const NavBar = ({ variant = 'default' }) => {
 
           {/* Right Section */}
           <div className="flex items-center gap-2">
+            <LanguageSwitcher className="hidden md:flex" />
             {isAuthenticated ? (
               <>
                 {/* Quick Shortcuts */}

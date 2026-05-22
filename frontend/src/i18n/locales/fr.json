@@ -1,0 +1,56 @@
+{
+  "common": {
+    "join": "Rejoindre",
+    "discover": "Découvrir",
+    "back": "Retour",
+    "next": "Suivant",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "loading": "Chargement…",
+    "language": "Langue"
+  },
+  "landing": {
+    "hero_badge": "Communityplace coopérative B2B2C",
+    "hero_h1": "L'écosystème coopératif des Outre-mer",
+    "hero_subtitle": "PASS Vie Chère, Réseau LOLODRIVE, gouvernance ESS — pour rendre l'essentiel accessible à tous.",
+    "cta_register": "Créer mon compte",
+    "cta_signin": "Se connecter",
+    "cta_become_relay": "Devenir relais LOLODRIVE",
+    "cta_activate_pass_here": "Activer mon PASS ici",
+    "find_relay_title": "Trouvez le relais coopératif",
+    "find_relay_highlight": "le plus proche",
+    "relay_count_active": "relais actifs",
+    "relay_count_active_one": "relais actif",
+    "official_statement_title": "Communityplace coopérative B2B2C"
+  },
+  "navbar": {
+    "home": "Accueil",
+    "logiscop": "LOGI'SCOP",
+    "oscop": "O'SCOP",
+    "offers": "Offres",
+    "my_space": "Mon Espace",
+    "catalog": "Catalogue",
+    "orders": "Commandes",
+    "wallet": "Wallet",
+    "logout": "Déconnexion"
+  },
+  "pass": {
+    "active": "PASS actif",
+    "expired": "PASS expiré",
+    "auto_renew_on": "Renouvellement automatique activé",
+    "auto_renew_off": "Pas de renouvellement automatique",
+    "uc_balance": "Solde UC",
+    "remaining_days": "jours restants",
+    "referral_section_title": "Parrainage coopérateur",
+    "referral_my_code": "Mon code",
+    "referral_have_code": "J'ai un code de parrainage"
+  },
+  "relay": {
+    "selected_label": "Relais sélectionné",
+    "modify": "Modifier",
+    "drive": "Drive",
+    "drive_subtitle": "Retrait coopératif",
+    "delivery": "Livraison",
+    "delivery_subtitle": "Livraison locale"
+  }
+}

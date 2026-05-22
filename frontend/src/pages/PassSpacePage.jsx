@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { Label } from '../components/ui/label';
 import { lolodriveAPI, authAPI } from '../services/api';
+import PreselectedRelayBadge from '../components/PreselectedRelayBadge';
 import { toast } from 'sonner';
 
 export default function PassSpacePage() {
@@ -139,6 +140,7 @@ export default function PassSpacePage() {
       {loading && <div className="text-center text-white/50 py-12">Chargement…</div>}
       {!loading && data && (
         <>
+          <PreselectedRelayBadge testId="pass-preselected-relay" className="mb-4" />
           {/* Hero PASS state */}
           <SectionCard className="mb-6 relative overflow-hidden">
             <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full blur-3xl opacity-30"

@@ -1,0 +1,56 @@
+{
+  "common": {
+    "join": "Join",
+    "discover": "Discover",
+    "back": "Back",
+    "next": "Next",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "language": "Language"
+  },
+  "landing": {
+    "hero_badge": "Cooperative B2B2C community-place",
+    "hero_h1": "The cooperative ecosystem of French Overseas Territories",
+    "hero_subtitle": "Cost-of-living PASS, LOLODRIVE network, social-economy governance — making essentials accessible to all.",
+    "cta_register": "Create my account",
+    "cta_signin": "Sign in",
+    "cta_become_relay": "Become a LOLODRIVE relay",
+    "cta_activate_pass_here": "Activate my PASS here",
+    "find_relay_title": "Find the cooperative relay",
+    "find_relay_highlight": "nearest you",
+    "relay_count_active": "active relays",
+    "relay_count_active_one": "active relay",
+    "official_statement_title": "Cooperative B2B2C community-place"
+  },
+  "navbar": {
+    "home": "Home",
+    "logiscop": "LOGI'SCOP",
+    "oscop": "O'SCOP",
+    "offers": "Offers",
+    "my_space": "My Space",
+    "catalog": "Catalog",
+    "orders": "Orders",
+    "wallet": "Wallet",
+    "logout": "Sign out"
+  },
+  "pass": {
+    "active": "Active PASS",
+    "expired": "Expired PASS",
+    "auto_renew_on": "Auto-renewal enabled",
+    "auto_renew_off": "No automatic renewal",
+    "uc_balance": "UC Balance",
+    "remaining_days": "days remaining",
+    "referral_section_title": "Member referral",
+    "referral_my_code": "My code",
+    "referral_have_code": "I have a referral code"
+  },
+  "relay": {
+    "selected_label": "Selected relay",
+    "modify": "Edit",
+    "drive": "Drive",
+    "drive_subtitle": "Cooperative pick-up",
+    "delivery": "Delivery",
+    "delivery_subtitle": "Local delivery"
+  }
+}

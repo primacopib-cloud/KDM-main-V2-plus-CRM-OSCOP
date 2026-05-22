@@ -1444,6 +1444,11 @@ from routes_pass_lifecycle import router as pass_lifecycle_router, set_pass_life
 set_pass_lifecycle_database(db)
 app.include_router(pass_lifecycle_router)
 
+# PASS Stripe Subscriptions (real recurring rebill)
+from routes_pass_subscription import router as pass_subscription_router, set_pass_subscription_database, setup_pass_subscription_indexes
+set_pass_subscription_database(db)
+app.include_router(pass_subscription_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)
@@ -1579,6 +1584,11 @@ async def startup_db_client():
         logger.info("PASS lifecycle indexes ensured")
     except Exception as e:
         logger.warning(f"Could not create PASS lifecycle indexes: {e}")
+    try:
+        await setup_pass_subscription_indexes(db)
+        logger.info("PASS subscription indexes ensured")
+    except Exception as e:
+        logger.warning(f"Could not create PASS subscription indexes: {e}")
     try:
         start_scheduler()
     except Exception as e:

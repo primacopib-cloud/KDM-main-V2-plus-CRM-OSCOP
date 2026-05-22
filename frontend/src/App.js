@@ -48,6 +48,8 @@ import LoloPointManagerPage from "./pages/LoloPointManagerPage";
 import LolodriveCatalogPage from "./pages/LolodriveCatalogPage";
 import PaymentReturnPage from "./pages/PaymentReturnPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
+import LogiscopPage from "./pages/LogiscopPage";
+import OscopPage from "./pages/OscopPage";
 
 function App() {
   return (
@@ -60,6 +62,8 @@ function App() {
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/inscription" element={<RegisterPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/logiscop" element={<LogiscopPage />} />
+          <Route path="/oscop" element={<OscopPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
           <Route path="/reinitialiser-mot-de-passe" element={<ResetPasswordPage />} />
