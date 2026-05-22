@@ -117,18 +117,26 @@ Exigences produit étendues :
 Voir `/app/memory/test_credentials.md`
 
 ## 6. Integrations
-| Service | Statut | Clé |
+| Service | Statut | Mode |
 |---|---|---|
-| Stripe **O'SCOP** (Checkout + Subscriptions PASS, recharges UC, auto-renew, livraisons) | ✅ TEST actif | `STRIPE_API_KEY` / `STRIPE_LIVE_KEY` |
-| Stripe **KDMARCHE** (commandes produits DRIVE) | ✅ TEST actif, LIVE key configurée | `STRIPE_KDMARCHE_API_KEY` / `STRIPE_KDMARCHE_LIVE_KEY` |
-| Brevo (Email + SMS) | ✅ Configuré | API key dans `.env` |
+| Stripe **O'SCOP** (PASS, recharges, livraisons) | ✅ **LIVE ACTIVÉ** | `sk_live_51ScyApLY9Vt...` + webhook signé |
+| Stripe **KDMARCHE** (commandes produits DRIVE) | ✅ **LIVE ACTIVÉ** | `sk_live_51FqczfCo8uj...` + webhook signé |
+| **Google OAuth natif KDMARCHE** | ✅ Actif | Branding KDMARCHE |
+| Google OAuth Emergent-managed | ✅ Fallback | Disponible |
+| Brevo Email + SMS | ✅ Configuré | API key dans `.env` |
 | Mapbox GL | ✅ Configuré | `REACT_APP_MAPBOX_TOKEN` |
-| Google Login (Emergent) | 🟡 Scaffolding | En attente vrais CLIENT_ID/SECRET OAuth (pas une API key) |
 
-### Architecture Stripe multi-comptes
+### Architecture Stripe multi-comptes (LIVE)
 Centralisée dans `/app/backend/stripe_accounts.py`. Routage automatique :
-- `kind=PASS` / `RECHARGE` / `SUBSCRIPTION` → compte **oscop**
-- `kind=ORDER` (commandes DRIVE) → compte **kdmarche**
-- Le `stripe_account` est persisté dans `payment_transactions` pour que le `status` polling et le webhook retrouvent le bon compte.
-- Le webhook unique `/api/webhook/stripe` essaie chaque compte (signature mismatch ignoré) → un seul endpoint pour les 2 dashboards Stripe.
-- Bascule LIVE : `STRIPE_MODE=live` dans `.env`, redémarrer backend.
+- `kind=PASS` / `RECHARGE` / `SUBSCRIPTION` → compte **oscop** (sk_live_51ScyApLY...)
+- `kind=ORDER` (commandes DRIVE) → compte **kdmarche** (sk_live_51FqczfCo...)
+- Webhook unique `/api/webhook/stripe` essaie les 4 secrets configurés (`STRIPE_WEBHOOK_SECRETS_OSCOP` + `STRIPE_WEBHOOK_SECRETS_KDMARCHE`, chacun supportant TEST + LIVE en CSV).
+- Signature obligatoire → 400 si invalide.
+- SDK Stripe officiel utilisé directement (pas `emergentintegrations.payments.stripe.checkout` qui rerouatait vers un proxy stub via `INTEGRATION_PROXY_URL`).
+- Idempotence atomique : claim `update_one({applied:{$ne:True}})` empêche les double-applications (polling + webhook race-safe).
+
+### Bascule TEST ↔ LIVE
+Mode contrôlé par `STRIPE_MODE` dans `/app/backend/.env`:
+- `STRIPE_MODE=test` → `STRIPE_API_KEY` + `STRIPE_KDMARCHE_API_KEY` (sk_test_*)
+- `STRIPE_MODE=live` → `STRIPE_LIVE_KEY` + `STRIPE_KDMARCHE_LIVE_KEY` (sk_live_*) ← **ACTUEL**
+Toujours `sudo supervisorctl restart backend` après changement (force le rechargement des modules).

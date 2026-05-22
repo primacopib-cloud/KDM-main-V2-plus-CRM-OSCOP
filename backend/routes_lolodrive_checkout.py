@@ -51,12 +51,20 @@ RECHARGE_PACKS = {
 }
 
 # Webhook signing secrets (configure when configuring webhooks in each Stripe
-# dashboard). When None, signature is NOT verified — fine for TEST development
-# but MUST be set in production.
-_WEBHOOK_SECRETS = {
-    "oscop": "STRIPE_WEBHOOK_SECRET",
-    "kdmarche": "STRIPE_KDMARCHE_WEBHOOK_SECRET",
+# dashboard). Each entry is a comma-separated list — useful when you have one
+# secret per mode (TEST + LIVE) on the same Stripe account.
+# When None, signature is NOT verified — fine for TEST development but MUST
+# be set in production.
+_WEBHOOK_SECRETS_ENV = {
+    "oscop": "STRIPE_WEBHOOK_SECRETS_OSCOP",
+    "kdmarche": "STRIPE_WEBHOOK_SECRETS_KDMARCHE",
 }
+
+
+def _webhook_secrets_for(account: str) -> list:
+    """Return the list of webhook signing secrets configured for an account."""
+    raw = os.environ.get(_WEBHOOK_SECRETS_ENV.get(account, ""), "")
+    return [s.strip() for s in raw.split(",") if s.strip()]
 
 
 def set_checkout_database(database):
@@ -312,28 +320,38 @@ async def stripe_webhook(http_request: Request):
     signature = http_request.headers.get("Stripe-Signature", "")
     event = None
     verified_account: Optional[str] = None
+    any_secret_configured = False
 
-    for account_name, env_var in _WEBHOOK_SECRETS.items():
-        secret = os.environ.get(env_var)
-        if not secret:
-            continue
-        try:
-            event = stripe.Webhook.construct_event(body, signature, secret)
-            verified_account = account_name
-            logger.info("Stripe webhook verified with account=%s event_id=%s", account_name, event.get("id"))
+    for account_name in ("oscop", "kdmarche"):
+        secrets_list = _webhook_secrets_for(account_name)
+        if secrets_list:
+            any_secret_configured = True
+        for secret in secrets_list:
+            try:
+                event = stripe.Webhook.construct_event(body, signature, secret)
+                verified_account = account_name
+                logger.info(
+                    "Stripe webhook verified with account=%s event_id=%s",
+                    account_name, event.get("id"),
+                )
+                break
+            except (stripe.error.SignatureVerificationError, ValueError) as exc:
+                logger.debug(
+                    "Stripe webhook signature mismatch for account=%s: %s",
+                    account_name, exc,
+                )
+                continue
+        if event is not None:
             break
-        except (stripe.error.SignatureVerificationError, ValueError) as exc:
-            logger.debug("Stripe webhook signature mismatch for account=%s: %s", account_name, exc)
-            continue
 
     if event is None:
-        if not any(os.environ.get(v) for v in _WEBHOOK_SECRETS.values()):
+        if not any_secret_configured:
             # No webhook secret configured — accept without verification (DEV/TEST only)
             try:
                 import json
                 event = stripe.Event.construct_from(json.loads(body.decode()), api_key=get_stripe_key("oscop"))
                 verified_account = "unsigned-test"
-                logger.warning("Stripe webhook NOT verified (no STRIPE_*_WEBHOOK_SECRET configured)")
+                logger.warning("Stripe webhook NOT verified (no STRIPE_WEBHOOK_SECRETS_* configured)")
             except Exception as exc:
                 logger.warning("Stripe webhook unsigned-parse failed: %s", exc)
                 raise HTTPException(status_code=400, detail="Webhook invalide")
