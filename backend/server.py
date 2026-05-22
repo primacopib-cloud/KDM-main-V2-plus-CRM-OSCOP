@@ -1413,6 +1413,17 @@ from routes_lolodrive_oscoop import lolodrive_router, set_lolodrive_database, en
 set_lolodrive_database(db)
 app.include_router(lolodrive_router)
 
+# Import and include LOLODRIVE Stripe Checkout (hosted page) for PASS/Recharge/Order
+from routes_lolodrive_checkout import (
+    checkout_router as lolodrive_checkout_router,
+    webhook_router as lolodrive_webhook_router,
+    set_checkout_database as set_lolo_checkout_db,
+    setup_checkout_indexes,
+)
+set_lolo_checkout_db(db)
+app.include_router(lolodrive_checkout_router)
+app.include_router(lolodrive_webhook_router)
+
 # Import and include CRM O'SCOP Bridge routes (contacts, organisations, opportunités, dossiers, impact)
 from routes_crm_oscoop import crm_router, set_crm_database, ensure_crm_indexes
 set_crm_database(db)
@@ -1518,6 +1529,13 @@ async def startup_db_client():
         logger.info("LOLODRIVE indexes ensured")
     except Exception as e:
         logger.warning(f"Could not create LOLODRIVE indexes: {e}")
+
+    # Stripe Checkout indexes (payment_transactions)
+    try:
+        await setup_checkout_indexes(db)
+        logger.info("LOLODRIVE Checkout indexes ensured")
+    except Exception as e:
+        logger.warning(f"Could not create LOLODRIVE Checkout indexes: {e}")
 
     # CRM O'SCOP Bridge indexes
     try:

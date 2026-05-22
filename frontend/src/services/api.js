@@ -852,6 +852,35 @@ export const lolodriveAPI = {
   simulateOrderPayment: (orderId) =>
     apiCall(`/lolodrive/demo/simulate-order-payment/${orderId}`, { method: 'POST' }),
   mySavings: () => apiCall('/lolodrive/me/savings'),
+
+  // POS extras
+  posCancelOrder: (orderId, reason, refundUc = false) =>
+    apiCall(`/lolodrive/pos/orders/${orderId}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason, refund_uc: refundUc }),
+    }),
+
+  // Extended dashboard KPI (UC en circulation, top produits, alertes, CA jour/mois)
+  kpiDashboard: () => apiCall('/lolodrive/admin/kpi/dashboard'),
+
+  // Stripe Checkout (hosted)
+  checkoutPass: (originUrl) =>
+    apiCall('/lolodrive/checkout/pass-session', {
+      method: 'POST',
+      body: JSON.stringify({ origin_url: originUrl }),
+    }),
+  checkoutRecharge: (originUrl, pack) =>
+    apiCall('/lolodrive/checkout/recharge-session', {
+      method: 'POST',
+      body: JSON.stringify({ origin_url: originUrl, pack }),
+    }),
+  checkoutOrder: (originUrl, orderId) =>
+    apiCall('/lolodrive/checkout/order-session', {
+      method: 'POST',
+      body: JSON.stringify({ origin_url: originUrl, order_id: orderId }),
+    }),
+  checkoutStatus: (sessionId) =>
+    apiCall(`/lolodrive/checkout/status/${sessionId}`),
 };
 
 // ============================================================

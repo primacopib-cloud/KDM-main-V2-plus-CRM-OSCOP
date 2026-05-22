@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Ticket, Wallet, Truck, Store, Sparkles, ShoppingBag, BarChart3, Activity,
   Building2, HeartHandshake, Leaf, ArrowRight, RefreshCw, AlertTriangle,
-  TrendingUp, Clock, CheckCircle2,
+  TrendingUp, Clock, CheckCircle2, Package, AlertCircle,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { Button } from '../components/ui/button';
@@ -19,6 +19,7 @@ const PERIODS = {
 
 export default function LolodriveAdminDashboardPage() {
   const [kpi, setKpi] = useState(null);
+  const [dash, setDash] = useState(null);
   const [impact, setImpact] = useState(null);
   const [posOrders, setPosOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,12 +29,14 @@ export default function LolodriveAdminDashboardPage() {
     try {
       setLoading(true);
       const fromDate = new Date(Date.now() - PERIODS[p].days * 86400_000).toISOString();
-      const [k, i, po] = await Promise.all([
+      const [k, d, i, po] = await Promise.all([
         lolodriveAPI.kpiOverview(fromDate),
+        lolodriveAPI.kpiDashboard(),
         crmAPI.impactSummary(),
         lolodriveAPI.posOrders(),
       ]);
       setKpi(k);
+      setDash(d);
       setImpact(i);
       setPosOrders(po.orders || []);
     } catch (e) {
@@ -94,6 +97,60 @@ export default function LolodriveAdminDashboardPage() {
             <KpiCard testId="kpi-points-active" label="LOLO POINTS actifs" value={kpi.lolo_points_active} icon={Store} accent="#7c3aed" />
             <KpiCard testId="kpi-events-active" label="LOLO HOUR actifs" value={kpi.events_active} icon={Sparkles} accent="#ec4899" />
           </div>
+
+          {/* CA Jour / Mois + UC en circulation / consommées */}
+          {dash && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <KpiCard testId="kpi-ca-today" label="CA aujourd'hui" value={fmtEUR(dash.ca_today.revenue_cents)}
+                sub={`${dash.ca_today.orders} commande(s)`} icon={TrendingUp} accent="#10b981" />
+              <KpiCard testId="kpi-ca-month" label="CA mois en cours" value={fmtEUR(dash.ca_month.revenue_cents)}
+                sub={`${dash.ca_month.orders} commande(s)`} icon={BarChart3} accent="#3b82f6" />
+              <KpiCard testId="kpi-uc-circulation" label="UC en circulation" value={dash.uc_in_circulation}
+                sub="somme des wallets actifs" icon={Wallet} accent="#D9B35A" />
+              <KpiCard testId="kpi-uc-consumed" label="UC consommées" value={dash.uc_consumed}
+                sub="depuis le lancement" icon={Activity} accent="#7c3aed" />
+            </div>
+          )}
+
+          {/* Alertes */}
+          {dash?.alerts && dash.alerts.length > 0 && (
+            <SectionCard className="mb-6" title="Alertes opérationnelles">
+              <div className="space-y-2" data-testid="alerts-section">
+                {dash.alerts.map((a, idx) => (
+                  <AlertRow key={idx} severity={a.severity} message={a.message} />
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Top produits */}
+          {dash?.top_products && dash.top_products.length > 0 && (
+            <SectionCard
+              className="mb-6"
+              title="Top produits (30 jours)"
+              action={<Badge color="#D9B35A">Volume vendu</Badge>}
+            >
+              <div className="space-y-2" data-testid="top-products-section">
+                {dash.top_products.map((p, idx) => (
+                  <div key={p.sku} data-testid={`top-product-${p.sku}`}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                      style={{ background: '#D9B35A1f', color: '#D9B35A' }}>#{idx + 1}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{p.name}</div>
+                      <div className="text-xs text-white/40">
+                        {p.sku} {p.catalog_type === 'ESSENTIAL' && <Badge color="#D9B35A">ESSENTIEL</Badge>}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-bold">{p.qty} u.</div>
+                      <div className="text-xs text-white/40">{fmtEUR(p.revenue_cents)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
 
           {/* Revenu, panier moyen, conversion */}
           <div className="grid md:grid-cols-3 gap-4 mb-6">
@@ -267,4 +324,20 @@ const iconFor = (status) => {
   if (status === 'FULFILLED') return <div className={cls} style={{ background: '#10b98120' }}><CheckCircle2 className="w-4 h-4 text-emerald-400" /></div>;
   if (status === 'READY') return <div className={cls} style={{ background: '#D9B35A20' }}><Clock className="w-4 h-4 text-[#D9B35A]" /></div>;
   return <div className={cls} style={{ background: '#3b82f620' }}><TrendingUp className="w-4 h-4 text-blue-400" /></div>;
+};
+
+const AlertRow = ({ severity, message }) => {
+  const cfg = {
+    critical: { color: '#ef4444', bg: '#ef44441f', icon: <AlertCircle className="w-4 h-4" /> },
+    warning:  { color: '#f59e0b', bg: '#f59e0b1f', icon: <AlertTriangle className="w-4 h-4" /> },
+    ok:       { color: '#10b981', bg: '#10b9811f', icon: <CheckCircle2 className="w-4 h-4" /> },
+  }[severity] || { color: '#888', bg: '#8881', icon: <AlertCircle className="w-4 h-4" /> };
+  return (
+    <div data-testid={`alert-${severity}`}
+      className="flex items-center gap-3 p-3 rounded-lg border"
+      style={{ background: cfg.bg, borderColor: `${cfg.color}33` }}>
+      <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ color: cfg.color }}>{cfg.icon}</div>
+      <div className="text-sm flex-1" style={{ color: cfg.color }}>{message}</div>
+    </div>
+  );
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Truck, Package, CheckCircle2, Clock, RefreshCw, ScanLine, AlertCircle,
-  Bell, BellOff, User, Calendar,
+  Bell, BellOff, User, Calendar, XCircle, Wifi, WifiOff,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { Button } from '../components/ui/button';
@@ -9,11 +9,14 @@ import { Input } from '../components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
-import { lolodriveAPI } from '../services/api';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Textarea } from '../components/ui/textarea';
+import { lolodriveAPI, authAPI } from '../services/api';
+import useLolodriveWebSocket from '../hooks/useLolodriveWebSocket';
 import { toast } from 'sonner';
 
 const STATUS_ORDER = ['PAID', 'PREPARING', 'READY', 'FULFILLED'];
-const POLL_INTERVAL_MS = 15000;
+const POLL_INTERVAL_MS = 30000; // fallback polling when WS off
 
 export default function PosLolodrivePage() {
   const [orders, setOrders] = useState([]);
@@ -26,15 +29,28 @@ export default function PosLolodrivePage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [soundOn, setSoundOn] = useState(true);
   const [compact, setCompact] = useState(false);
+  const [cancelDialog, setCancelDialog] = useState({ open: false, order: null, reason: '', refundUc: true });
   const previousPaidCountRef = useRef(0);
-  const audioRef = useRef(null);
 
-  // Init audio (data URI to avoid asset hosting)
-  useEffect(() => {
-    audioRef.current = new Audio(
-      'data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='
-    );
-  }, []);
+  const isAdmin = authAPI.getCurrentUser()?.is_admin || ['SUPER_ADMIN', 'ADMIN'].includes(authAPI.getCurrentUser()?.role);
+
+  // WebSocket subscription for real-time POS events
+  const { connected: wsConnected } = useLolodriveWebSocket({
+    isAdmin: !!isAdmin,
+    enabled: autoRefresh,
+    onMessage: (msg) => {
+      if (msg.type === 'lolodrive_pos_event') {
+        const ev = msg.payload?.event;
+        if (['order.paid', 'order.status_changed', 'order.fulfilled', 'order.cancelled'].includes(ev)) {
+          load({ silent: true });
+          if (ev === 'order.paid' && soundOn) {
+            toast.success('Nouvelle commande à préparer !', { duration: 4000 });
+            playBeep();
+          }
+        }
+      }
+    },
+  });
 
   const playBeep = () => {
     if (!soundOn) return;
@@ -94,13 +110,13 @@ export default function PosLolodrivePage() {
 
   useEffect(() => { load(); /* eslint-disable-line */ }, [tab, pointCode]);
 
-  // Polling
+  // Polling fallback (only when WS not connected)
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!autoRefresh || wsConnected) return;
     const id = setInterval(() => load({ silent: true }), POLL_INTERVAL_MS);
     return () => clearInterval(id);
     // eslint-disable-next-line
-  }, [autoRefresh, tab, pointCode]);
+  }, [autoRefresh, wsConnected, tab, pointCode]);
 
   const transitionTo = async (orderId, status) => {
     setActing(orderId);
@@ -132,6 +148,22 @@ export default function PosLolodrivePage() {
     }
   };
 
+  const confirmCancel = async () => {
+    if (!cancelDialog.order) return;
+    const orderId = cancelDialog.order.id;
+    setActing(orderId);
+    try {
+      const r = await lolodriveAPI.posCancelOrder(orderId, cancelDialog.reason || 'Annulation POS', cancelDialog.refundUc);
+      toast.success(`Commande ${r.status === 'REFUNDED' ? 'remboursée en UC' : 'annulée'}`);
+      setCancelDialog({ open: false, order: null, reason: '', refundUc: true });
+      load();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setActing(null);
+    }
+  };
+
   const counts = STATUS_ORDER.reduce((acc, s) => {
     acc[s] = orders.filter((o) => o.status === s).length;
     return acc;
@@ -144,9 +176,13 @@ export default function PosLolodrivePage() {
       subtitle="File des commandes, transitions de statut et scan de retrait."
       actions={
         <>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10" data-testid="ws-status">
+            {wsConnected ? <Wifi className="w-3 h-3 text-emerald-400" /> : <WifiOff className="w-3 h-3 text-amber-400" />}
+            <Label className="text-xs">{wsConnected ? 'Temps réel' : 'Polling'}</Label>
+          </div>
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10">
             <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} data-testid="auto-refresh-switch" />
-            <Label className="text-xs">Auto 15s</Label>
+            <Label className="text-xs">Live</Label>
           </div>
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10">
             <Switch checked={soundOn} onCheckedChange={setSoundOn} data-testid="sound-switch" />
@@ -274,6 +310,18 @@ export default function PosLolodrivePage() {
                         <ScanLine className="w-3 h-3 mr-1" /> Remettre client
                       </Button>
                     )}
+                    {['PAID', 'PREPARING', 'READY', 'PENDING_PAYMENT', 'DRAFT'].includes(o.status) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                        onClick={() => setCancelDialog({ open: true, order: o, reason: '', refundUc: !!o.pay_with_uc })}
+                        disabled={acting === o.id}
+                        data-testid={`btn-cancel-${o.id}`}
+                      >
+                        <XCircle className="w-3 h-3 mr-1" /> Annuler
+                      </Button>
+                    )}
                   </div>
                 </div>
                 {/* Items */}
@@ -302,10 +350,61 @@ export default function PosLolodrivePage() {
 
       {/* Footer help */}
       <div className="mt-6 text-xs text-white/40 text-center">
-        Auto-refresh {autoRefresh ? 'activé' : 'désactivé'} ·
+        {wsConnected ? '🟢 WebSocket temps réel actif' : autoRefresh ? '🟡 Polling fallback (30s)' : '⚪ Auto-refresh désactivé'} ·
         Son {soundOn ? 'on' : 'off'} ·
         Scannez un n° de commande pour retirer instantanément.
       </div>
+
+      {/* Cancel dialog */}
+      <Dialog open={cancelDialog.open} onOpenChange={(o) => setCancelDialog({ ...cancelDialog, open: o })}>
+        <DialogContent className="bg-[#15151c] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Annuler / signaler un problème</DialogTitle>
+          </DialogHeader>
+          {cancelDialog.order && (
+            <div className="space-y-4">
+              <div className="text-sm text-white/70">
+                Commande <span className="font-mono font-semibold">{cancelDialog.order.order_number}</span> ·{' '}
+                {fmtEUR(cancelDialog.order.total_cents)}
+                {cancelDialog.order.pay_with_uc && <> · {cancelDialog.order.total_uc} UC</>}
+              </div>
+              <div>
+                <Label className="text-xs text-white/60">Motif (visible client)</Label>
+                <Textarea
+                  value={cancelDialog.reason}
+                  onChange={(e) => setCancelDialog({ ...cancelDialog, reason: e.target.value })}
+                  placeholder="Produit indisponible, erreur de préparation, demande client…"
+                  className="bg-white/[0.04] border-white/10 mt-1"
+                  data-testid="cancel-reason"
+                />
+              </div>
+              {cancelDialog.order.pay_with_uc && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                  <Switch
+                    checked={cancelDialog.refundUc}
+                    onCheckedChange={(v) => setCancelDialog({ ...cancelDialog, refundUc: v })}
+                    data-testid="refund-uc-switch"
+                  />
+                  <div className="text-xs flex-1">
+                    <div className="font-medium">Rembourser {cancelDialog.order.total_uc} UC au client</div>
+                    <div className="text-white/50">Recommandé pour les commandes payées en UC</div>
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setCancelDialog({ ...cancelDialog, open: false })}>
+                  Retour
+                </Button>
+                <Button onClick={confirmCancel} disabled={acting === cancelDialog.order.id}
+                  data-testid="confirm-cancel-btn"
+                  className="bg-red-500 hover:bg-red-600 text-white">
+                  <XCircle className="w-3 h-3 mr-2" /> Confirmer l'annulation
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </LolodriveLayout>
   );
 }

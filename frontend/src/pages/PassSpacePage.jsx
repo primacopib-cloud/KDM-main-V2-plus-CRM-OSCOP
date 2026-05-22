@@ -6,6 +6,7 @@ import {
   CheckCircle2, ArrowRight, Zap,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
+import StripeCheckoutButton from '../components/StripeCheckoutButton';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
@@ -67,9 +68,12 @@ export default function PassSpacePage() {
 
   const recharge = async () => {
     try {
-      await lolodriveAPI.rechargeIntent(selectedPack);
-      toast.success(`Recharge ${selectedPack} initiée. (Démo Stripe : intent créé, paiement non débité)`);
-      setRechargeOpen(false);
+      const r = await lolodriveAPI.checkoutRecharge(window.location.origin, selectedPack);
+      if (r?.url) {
+        window.location.href = r.url;
+      } else {
+        toast.error('Erreur Stripe');
+      }
     } catch (e) {
       toast.error(e.message);
     }
@@ -179,7 +183,7 @@ export default function PassSpacePage() {
                       </RadioGroup>
                       <Button onClick={recharge} data-testid="confirm-recharge-btn"
                         style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
-                        Payer par CB (Stripe test)
+                        Payer par CB (Stripe Checkout)
                       </Button>
                     </DialogContent>
                   </Dialog>
@@ -199,15 +203,17 @@ export default function PassSpacePage() {
                     <Zap className="w-4 h-4 mr-2" />
                     {activating ? 'Activation...' : 'Activer mon PASS (mode démo)'}
                   </Button>
-                  <Button onClick={async () => {
-                    try { await lolodriveAPI.passIntent(); toast.info('Stripe PaymentIntent créé. En production, formulaire CB s\'ouvrirait.'); }
-                    catch (e) { toast.error(e.message); }
-                  }} variant="outline" data-testid="activate-pass-stripe-btn">
-                    <ShoppingBag className="w-4 h-4 mr-2" /> Payer 60 € par CB (Stripe)
-                  </Button>
+                  <StripeCheckoutButton
+                    createSession={(origin) => lolodriveAPI.checkoutPass(origin)}
+                    label="Payer 60 € par CB (Stripe)"
+                    variant="outline"
+                    size="lg"
+                    testId="activate-pass-stripe-btn"
+                    icon={<ShoppingBag className="w-4 h-4 mr-2" />}
+                  />
                 </div>
                 <p className="text-[11px] text-white/30 mt-3">
-                  Mode démo : active le PASS sans paiement réel. Utile pour démonstrations et tests.
+                  Mode démo : active le PASS sans paiement réel. Stripe (test) ouvre un formulaire CB hosted page.
                 </p>
               </div>
             )}

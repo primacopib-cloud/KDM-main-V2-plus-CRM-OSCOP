@@ -45,6 +45,7 @@ import LoloHourAdminPage from "./pages/LoloHourAdminPage";
 import CrmPartnersPage from "./pages/CrmPartnersPage";
 import EssReportingPage from "./pages/EssReportingPage";
 import LolodriveCatalogPage from "./pages/LolodriveCatalogPage";
+import PaymentReturnPage from "./pages/PaymentReturnPage";
 
 function App() {
   return (
@@ -131,6 +132,8 @@ function App() {
           <Route path="/reporting-impact" element={<EssReportingPage />} />
           <Route path="/reporting-ess" element={<EssReportingPage />} />
           <Route path="/catalogue-lolodrive" element={<LolodriveCatalogPage />} />
+          <Route path="/paiement/retour" element={<PaymentReturnPage />} />
+          <Route path="/paiement/annule" element={<PaymentReturnPage />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" richColors />

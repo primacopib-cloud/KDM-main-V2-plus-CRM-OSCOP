@@ -363,7 +363,7 @@ async def emit_payment_failed_notification(payment: dict):
 
 # ============== WEBSOCKET ENDPOINTS ==============
 
-@websocket_router.websocket("/ws/notifications")
+@websocket_router.websocket("/api/ws/notifications")
 async def websocket_notifications(
     websocket: WebSocket,
     user_id: str = Query(None),

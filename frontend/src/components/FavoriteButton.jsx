@@ -34,8 +34,9 @@ export function FavoritesProvider({ children }) {
         const data = await res.json();
         setFavoriteIds(new Set(data.product_ids || []));
       }
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
+      // 401/403 → silently ignore (user has no favorites yet, or endpoint not enabled)
+    } catch {
+      // Network error → silently ignore (favorites are optional)
     } finally {
       setLoading(false);
     }

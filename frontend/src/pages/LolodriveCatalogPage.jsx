@@ -69,13 +69,17 @@ export default function LolodriveCatalogPage() {
       if (payInUC) {
         await lolodriveAPI.payOrderUC(order.id);
         toast.success('Payée en UC ✅');
+        setCart({});
+        navigate('/pass');
       } else {
-        const intent = await lolodriveAPI.orderIntent(order.id);
-        toast.success('PaymentIntent Stripe créé. (Test : aucun débit réel)');
-        console.log('client_secret:', intent.client_secret);
+        // Stripe Checkout hosted (real test flow)
+        const session = await lolodriveAPI.checkoutOrder(window.location.origin, order.id);
+        if (session?.url) {
+          window.location.href = session.url;
+        } else {
+          toast.error('Erreur Stripe Checkout');
+        }
       }
-      setCart({});
-      navigate('/pass');
     } catch (e) {
       toast.error(e.message);
     }
