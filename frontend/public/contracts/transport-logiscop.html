@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Contrat de transport LOGI'SCOP ↔ Client final (B2B) — Premium Or & Violet</title>
+
+  <style>
+    :root{
+      /* Premium Or & Violet */
+      --violet-950:#1a0b2e;
+      --violet-900:#240d3f;
+      --violet-800:#341057;
+      --violet-700:#4a1776;
+      --violet-600:#6a2bb6;
+
+      --gold-600:#b07a1a;
+      --gold-500:#d4af37;
+      --gold-300:#f2d07a;
+
+      --ink:#0b1220;
+      --muted:#667085;
+      --line:rgba(15, 23, 42, .10);
+      --paper:#ffffff;
+      --soft:#f6f7fb;
+
+      --radius:16px;
+      --radius2:22px;
+
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--ink);
+      background:
+        radial-gradient(900px 420px at 20% -10%, rgba(212,175,55,.20), transparent 55%),
+        radial-gradient(820px 460px at 88% 0%, rgba(106,43,182,.18), transparent 55%),
+        linear-gradient(180deg, #f7f7fc 0%, #f4f5fb 55%, #f7f7fc 100%);
+    }
+
+    /* A4 page */
+    .page{
+      width:210mm;
+      min-height:297mm;
+      margin:12mm auto;
+      background:var(--paper);
+      border-radius:22px;
+      border:1px solid rgba(15,23,42,.08);
+      box-shadow:0 18px 60px rgba(26,11,46,.10);
+      overflow:hidden;
+      position:relative;
+    }
+
+    /* Header band */
+    header.band{
+      background:linear-gradient(135deg, rgba(26,11,46,1) 0%, rgba(52,16,87,1) 45%, rgba(74,23,118,1) 100%);
+      padding:16mm 16mm 12mm;
+      color:#fff;
+      position:relative;
+      overflow:hidden;
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    header.band:before{
+      content:"";
+      position:absolute; inset:-50%;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(212,175,55,.26), transparent 55%),
+        radial-gradient(circle at 70% 35%, rgba(242,208,122,.18), transparent 58%),
+        radial-gradient(circle at 50% 80%, rgba(106,43,182,.20), transparent 62%);
+      transform:rotate(-10deg);
+      pointer-events:none;
+    }
+    header.band > *{position:relative}
+
+    .toprow{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start}
+    .brand{display:flex;align-items:center;gap:12px;min-width:320px}
+    .logoBox{
+      width:66px;height:66px;border-radius:18px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.16);
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;
+      box-shadow:0 14px 36px rgba(0,0,0,.22);
+    }
+    .logoBox img{width:90%;height:90%;object-fit:contain;display:block;filter:drop-shadow(0 10px 22px rgba(0,0,0,.22))}
+    .titleblock h1{margin:0;font-size:20px;letter-spacing:.02em}
+    .titleblock .sub{margin-top:6px;font-size:12.5px;color:rgba(255,255,255,.86);line-height:1.4;max-width:88ch}
+
+    .meta{
+      text-align:right;
+      font-size:12.5px;
+      color:rgba(255,255,255,.90);
+      line-height:1.55;
+    }
+    .kv{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.95)}
+    .chiprow{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+    .chip{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:7px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.08);
+      color:rgba(255,255,255,.92);
+      font-size:12px;white-space:nowrap;
+    }
+    .dot{
+      width:8px;height:8px;border-radius:999px;
+      background:linear-gradient(135deg,var(--gold-500),var(--gold-300));
+      box-shadow:0 0 0 6px rgba(212,175,55,.18);
+    }
+    .badge{
+      display:inline-flex;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(212,175,55,.40);
+      background:rgba(212,175,55,.12);
+      color:rgba(26,11,46,.95);
+      font-weight:900;
+      letter-spacing:.08em;
+      font-size:11px;
+      vertical-align:middle;
+    }
+
+    main{padding:12mm 16mm 14mm}
+
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .card{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:var(--radius);
+      padding:10px 12px;
+      background:linear-gradient(180deg,#fff 0%,#fbfbff 100%);
+    }
+    .card h3{
+      margin:0 0 6px;
+      font-size:12px;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      color:rgba(26,11,46,.78);
+    }
+    .card p{margin:0;font-size:13px;color:#0f172a;line-height:1.55}
+
+    .toc{
+      margin-top:10px;
+      border-radius:var(--radius2);
+      border:1px solid rgba(106,43,182,.18);
+      background:linear-gradient(180deg, rgba(106,43,182,.05), rgba(212,175,55,.04));
+      padding:10px 12px;
+    }
+    .toc b{
+      display:block;
+      color:rgba(26,11,46,.92);
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      font-size:12px;
+      margin-bottom:6px;
+    }
+    .toc ol{margin:0;padding-left:18px;color:#0f172a;font-size:13px;line-height:1.65}
+
+    .section{
+      margin-top:12px;
+      border-top:1px solid rgba(15,23,42,.10);
+      padding-top:10px;
+    }
+    .section h2{
+      margin:0 0 6px;
+      font-size:13px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:rgba(26,11,46,.85);
+    }
+    .section p,.section li{margin:6px 0;font-size:13px;color:#0f172a;line-height:1.65}
+    .section ul{margin:6px 0 0;padding-left:18px}
+
+    .quote{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid rgba(212,175,55,.30);
+      background:linear-gradient(180deg, rgba(212,175,55,.08), rgba(106,43,182,.05));
+      color:#0f172a;
+      font-size:12.8px;
+    }
+    .quote b{color:rgba(26,11,46,.92)}
+
+    /* eIDAS signature block */
+    .eidas{
+      margin-top:14px;
+      border-radius:var(--radius2);
+      border:1px solid rgba(26,11,46,.14);
+      background:linear-gradient(180deg, rgba(26,11,46,.03), rgba(212,175,55,.03));
+      padding:12px;
+    }
+    .eidas h3{
+      margin:0 0 6px;
+      font-size:12px;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      color:rgba(26,11,46,.78);
+    }
+    .eidasGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .sigCard{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:18px;
+      background:#fff;
+      padding:10px 12px;
+      min-height:170px;
+      position:relative;
+      overflow:hidden;
+    }
+    .sigCard:before{
+      content:"";
+      position:absolute; inset:-40%;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(106,43,182,.10), transparent 55%),
+        radial-gradient(circle at 70% 30%, rgba(212,175,55,.10), transparent 58%);
+      transform: rotate(-8deg);
+      pointer-events:none;
+    }
+    .sigCard > *{position:relative}
+    .sigCard .t{
+      font-size:12px;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      color:rgba(26,11,46,.78);
+    }
+    .sigCard .who{
+      margin-top:6px;
+      font-weight:900;
+      font-size:13px;
+      color:#0f172a;
+    }
+    .sigLine{
+      margin-top:28px;
+      border-top:1px dashed rgba(26,11,46,.35);
+      padding-top:8px;
+      font-size:12.5px;
+      color:#0f172a;
+    }
+    .miniGrid{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .miniBox{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:14px;
+      background:#fff;
+      padding:8px 10px;
+      font-size:12.5px;
+      color:#0f172a;
+    }
+    .miniBox .k{color:rgba(26,11,46,.78);font-size:11px;letter-spacing:.10em;text-transform:uppercase}
+    .miniBox .v{margin-top:4px;font-family:var(--mono);font-size:12px}
+
+    .qrBox{
+      margin-top:10px;
+      border:1px solid rgba(106,43,182,.18);
+      border-radius:16px;
+      background:rgba(106,43,182,.04);
+      padding:10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .qrFake{
+      width:86px;height:86px;border-radius:16px;border:1px solid rgba(15,23,42,.12);
+      background:
+        linear-gradient(90deg, rgba(15,23,42,.10) 1px, transparent 1px) 0 0/10px 10px,
+        linear-gradient(rgba(15,23,42,.10) 1px, transparent 1px) 0 0/10px 10px,
+        radial-gradient(circle at 30% 30%, rgba(212,175,55,.25), transparent 55%);
+    }
+    .small{font-size:12px}
+    .muted{color:var(--muted)}
+    .kvDark{font-family:var(--mono);font-size:11px;color:rgba(26,11,46,.82)}
+
+    footer{
+      padding:10mm 16mm 12mm;
+      border-top:1px solid rgba(15,23,42,.10);
+      color:rgba(26,11,46,.70);
+      font-size:11px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      background:#fff;
+    }
+
+    @page{size:A4; margin:12mm}
+    @media print{
+      body{background:#fff}
+      .page{margin:0;border:none;border-radius:0;box-shadow:none}
+      input, select, button{display:none !important}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <header class="band">
+      <div class="toprow">
+        <div class="brand">
+          <div class="logoBox" aria-label="Logo LOGI'SCOP">
+            <img src="{{LOGO_SRC}}" alt="LOGI'SCOP"/>
+          </div>
+          <div class="titleblock">
+            <h1>CONTRAT DE TRANSPORT DE MARCHANDISES</h1>
+            <div class="sub">
+              Livraison LOGI'SCOP — B2B Outre-mer · Contrat distinct de la vente de marchandises<br/>
+              Signature électronique eIDAS (bloc probant : code de vérification + horodatage + empreinte)
+            </div>
+          </div>
+        </div>
+
+        <div class="meta">
+          Référence : <span class="kv" id="contractRef">{{CONTRAT_REF}}</span><br/>
+          Date émission : <span class="kv" id="issuedAt">{{DATE_EMISSION}}</span><br/>
+          Zone : <span class="kv">{{ZONE_CODE}}</span><br/>
+          Mode : <span class="badge">LOGISCOP_DELIVERY</span>
+        </div>
+      </div>
+
+      <div class="chiprow">
+        <span class="chip"><span class="dot"></span> Transporteur ESS</span>
+        <span class="chip">Prestation distincte</span>
+        <span class="chip">Aucune vente marchandise</span>
+        <span class="chip">Preuve probante</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="grid2">
+        <div class="card">
+          <h3>Transporteur</h3>
+          <p>
+            <b>LOGI'SCOP</b><br/>
+            {{LOGISCOP_FORM}} — {{LOGISCOP_ADDRESS}}<br/>
+            SIRET : {{LOGISCOP_SIRET}} · TVA : {{LOGISCOP_TVA}}<br/>
+            Contact : {{LOGISCOP_EMAIL}} · {{LOGISCOP_PHONE}}
+          </p>
+        </div>
+        <div class="card">
+          <h3>Client final (B2B)</h3>
+          <p>
+            <b>{{CLIENT_LEGAL_NAME}}</b><br/>
+            {{CLIENT_ADDRESS}}<br/>
+            SIRET : {{CLIENT_SIRET}} · TVA : {{CLIENT_TVA}}<br/>
+            Contact : {{CLIENT_CONTACT}}
+          </p>
+        </div>
+      </div>
+
+      <div class="toc">
+        <b>Sommaire</b>
+        <ol>
+          <li>Objet</li>
+          <li>Nature juridique de la prestation</li>
+          <li>Conditions de souscription</li>
+          <li>Périmètre de la prestation</li>
+          <li>Zones, tournées et délais</li>
+          <li>Tarifs et facturation</li>
+          <li>Transfert des risques</li>
+          <li>Obligations du Client</li>
+          <li>Responsabilité du Transporteur</li>
+          <li>Assurances</li>
+          <li>Impossibilité de livraison</li>
+          <li>Force majeure</li>
+          <li>Données & confidentialité</li>
+          <li>Durée</li>
+          <li>Droit applicable & litiges</li>
+          <li>Acceptation & signature eIDAS</li>
+        </ol>
+      </div>
+
+      <div class="section">
+        <h2>1 — Objet</h2>
+        <p>
+          Le présent contrat définit les conditions dans lesquelles LOGI'SCOP assure, à la demande du Client,
+          une prestation de transport de marchandises depuis un <b>point EXW local LOGI'SCOP</b> jusqu'au lieu de livraison indiqué.
+          Ce contrat est <b>distinct</b> de toute vente de marchandises réalisée par un tiers (notamment KDMARCHE).
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>2 — Nature juridique de la prestation</h2>
+        <ul>
+          <li>LOGI'SCOP agit exclusivement en qualité de <b>transporteur/logisticien</b>.</li>
+          <li>LOGI'SCOP <b>ne vend pas</b>, <b>n'achète pas</b> et <b>n'encaisse pas</b> le prix des marchandises.</li>
+          <li>Le contrat ne constitue ni mandat de vente, ni commission commerciale, ni intermédiation financière, ni assurance.</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>3 — Conditions de souscription</h2>
+        <p>
+          La livraison LOGI'SCOP est une <b>option facultative</b> souscrite explicitement par le Client. La souscription peut intervenir
+          via une interface de commande (case à cocher + acceptation) ou directement auprès de LOGI'SCOP.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>4 — Périmètre de la prestation</h2>
+        <p>La prestation comprend :</p>
+        <ul>
+          <li>enlèvement au point EXW local LOGI'SCOP ;</li>
+          <li>transport jusqu'à l'adresse du Client ;</li>
+          <li>déchargement standard ;</li>
+          <li>remise contre <b>preuve de livraison</b>.</li>
+        </ul>
+        <p class="muted small">
+          Sauf stipulation expresse, sont exclus : manutention spéciale, livraison en étage, formalités douanières, assurance ad valorem.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>5 — Zones, tournées et délais</h2>
+        <p>
+          Les livraisons sont organisées par zone. LOGI'SCOP peut mettre en place des tournées mutualisées (logique ESS) afin d'optimiser
+          les coûts et l'empreinte carbone. Les délais sont indicatifs et dépendants des contraintes locales.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>6 — Tarifs et facturation</h2>
+        <p>
+          Le tarif est communiqué avant confirmation de la livraison. La facturation est émise par LOGI'SCOP (ou refacturée si stipulé),
+          distincte de la facture de marchandises.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>7 — Transfert des risques</h2>
+        <p>
+          LOGI'SCOP assume la responsabilité des marchandises pendant le transport dans les limites réglementaires. Le transfert des risques
+          intervient à la remise effective au Client, matérialisée par une preuve de livraison signée et horodatée.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>8 — Obligations du Client</h2>
+        <ul>
+          <li>Fournir une adresse exacte et accessible ;</li>
+          <li>Être présent au créneau convenu ;</li>
+          <li>Vérifier l'état des marchandises et formuler toute réserve immédiatement sur le bon de livraison.</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>9 — Responsabilité du Transporteur</h2>
+        <p>
+          La responsabilité de LOGI'SCOP est limitée conformément à la réglementation applicable au transport de marchandises.
+          Les dommages indirects (pertes d'exploitation, manque à gagner) sont exclus sauf disposition impérative contraire.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>10 — Assurances</h2>
+        <p>
+          LOGI'SCOP déclare détenir une assurance responsabilité civile transporteur couvrant les dommages aux marchandises transportées.
+          Une attestation d'assurance est fournie sur demande.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>11 — Impossibilité de livraison</h2>
+        <p>
+          En cas d'absence, d'adresse inaccessible ou de refus, la livraison peut être reprogrammée et des frais supplémentaires peuvent s'appliquer,
+          ou la marchandise peut être remise à disposition EXW locale.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>12 — Force majeure</h2>
+        <p>Aucune Partie ne pourra être tenue responsable d'un manquement dû à un événement de force majeure.</p>
+      </div>
+
+      <div class="section">
+        <h2>13 — Données & confidentialité</h2>
+        <p>Les données sont traitées exclusivement pour l'exécution de la prestation, conformément au RGPD. Les informations logistiques sont confidentielles.</p>
+      </div>
+
+      <div class="section">
+        <h2>14 — Durée</h2>
+        <p>Le présent contrat s'applique pour chaque prestation de transport souscrite et prend fin à l'issue de la livraison ou de la remise EXW locale.</p>
+      </div>
+
+      <div class="section">
+        <h2>15 — Droit applicable & litiges</h2>
+        <p>Droit applicable : {{DROIT_APPLICABLE}}. Juridiction compétente : {{JURIDICTION}} (après tentative amiable).</p>
+      </div>
+
+      <div class="quote">
+        <b>Clause de référence :</b> « La livraison LOGI'SCOP est une prestation de transport indépendante, distincte de la vente des marchandises. »
+      </div>
+
+      <!-- BLOC SIGNATURE eIDAS -->
+      <div class="eidas">
+        <h3>Acceptation & signature électronique eIDAS</h3>
+        <p class="muted small" style="margin-top:0">
+          Ce bloc est conçu pour être complété par une solution eIDAS (signature + horodatage qualifié). Les champs peuvent être remplis côté serveur.
+        </p>
+
+        <div class="eidasGrid">
+          <div class="sigCard">
+            <div class="t">Client final (B2B)</div>
+            <div class="who">{{CLIENT_SIGN_NAME}} — {{CLIENT_SIGN_TITLE}}</div>
+
+            <div class="sigLine">Signature (eIDAS ou manuscrite) :</div>
+
+            <div class="miniGrid">
+              <div class="miniBox">
+                <div class="k">Horodatage</div>
+                <div class="v" id="signedAt">{{HORODATAGE_SIGNATURE}}</div>
+              </div>
+              <div class="miniBox">
+                <div class="k">Code vérification</div>
+                <div class="v" id="verifyCode">{{CODE_VERIFICATION}}</div>
+              </div>
+            </div>
+
+            <div class="qrBox">
+              <div class="qrFake" aria-hidden="true"></div>
+              <div>
+                <div class="small"><b>Vérification</b></div>
+                <div class="small muted">
+                  URL : <span class="kvDark">{{VERIFY_URL}}</span><br/>
+                  Empreinte : <span class="kvDark" id="docHash">{{DOC_HASH}}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sigCard">
+            <div class="t">LOGI'SCOP (transporteur)</div>
+            <div class="who">{{LOGISCOP_SIGN_NAME}} — {{LOGISCOP_SIGN_TITLE}}</div>
+
+            <div class="sigLine">Signature (eIDAS ou cachet) :</div>
+
+            <div class="miniGrid">
+              <div class="miniBox">
+                <div class="k">Horodatage</div>
+                <div class="v" id="signedAt2">{{HORODATAGE_SIGNATURE_LOGISCOP}}</div>
+              </div>
+              <div class="miniBox">
+                <div class="k">Référence prestation</div>
+                <div class="v" id="serviceRef">{{SERVICE_REF}}</div>
+              </div>
+            </div>
+
+            <div class="qrBox">
+              <div class="qrFake" aria-hidden="true"></div>
+              <div>
+                <div class="small"><b>Contrôle</b></div>
+                <div class="small muted">
+                  Contrat : <span class="kvDark" id="contractRef2">{{CONTRAT_REF}}</span><br/>
+                  Zone : <span class="kvDark">{{ZONE_CODE}}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="muted small" style="margin-top:10px">
+          Le Client reconnaît avoir lu et accepté les conditions du présent contrat. Les preuves de signature (certificat, horodatage, empreinte) sont conservées à des fins probantes.
+        </p>
+      </div>
+    </main>
+
+    <footer>
+      <div><b>LOGI'SCOP</b> — Contrat de transport B2B · Livraison locale (option) · Document prêt eIDAS</div>
+      <div class="kvDark">Ref {{CONTRAT_REF}} · v{{VERSION}}</div>
+    </footer>
+  </div>
+
+  <script>
+    (function(){
+      const pad = (n)=> String(n).padStart(2,'0');
+      const isoNow = ()=>{
+        const d = new Date();
+        return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds());
+      };
+      const randCode = ()=>{
+        const d = new Date();
+        const y = d.getFullYear(), m = pad(d.getMonth()+1), day = pad(d.getDate());
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let s = ""; for(let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+        return `LSC-${y}${m}${day}-${s}`;
+      };
+      const placeholderLike = (txt)=> !txt || txt.includes("{{") || txt.includes("}}");
+
+      const issuedAt = document.getElementById("issuedAt");
+      if(issuedAt && placeholderLike(issuedAt.textContent.trim())) issuedAt.textContent = isoNow();
+
+      const s1 = document.getElementById("signedAt");
+      const s2 = document.getElementById("signedAt2");
+      const vc = document.getElementById("verifyCode");
+      if(s1 && placeholderLike(s1.textContent.trim())) s1.textContent = isoNow();
+      if(s2 && placeholderLike(s2.textContent.trim())) s2.textContent = isoNow();
+      if(vc && placeholderLike(vc.textContent.trim())) vc.textContent = randCode();
+
+      async function sha256Hex(str){
+        const enc = new TextEncoder().encode(str);
+        const buf = await crypto.subtle.digest("SHA-256", enc);
+        return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+      }
+
+      (async function(){
+        const hashEl = document.getElementById("docHash");
+        if(!hashEl || !placeholderLike(hashEl.textContent.trim())) return;
+        if(!(window.crypto && crypto.subtle)) return;
+
+        const ref = (document.getElementById("contractRef")?.textContent || "").trim();
+        const code = (vc?.textContent || "").trim();
+        const ts = (s1?.textContent || "").trim();
+        const payload = JSON.stringify({doc:"CONTRAT_TRANSPORT", ref, verify_code:code, signed_at:ts});
+
+        try{ hashEl.textContent = await sha256Hex(payload); } catch(e){}
+      })();
+    })();
+  </script>
+</body>
+</html>

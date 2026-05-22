@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Annexe — Tournées mutualisées ESS (LOGI'SCOP) — Premium Or & Violet</title>
+
+  <style>
+    :root{
+      --violet-950:#1a0b2e;
+      --violet-900:#240d3f;
+      --violet-800:#341057;
+      --violet-700:#4a1776;
+      --violet-600:#6a2bb6;
+      --gold-600:#b07a1a;
+      --gold-500:#d4af37;
+      --gold-300:#f2d07a;
+      --ink:#0b1220;
+      --muted:#667085;
+      --line:rgba(15, 23, 42, .10);
+      --paper:#ffffff;
+      --soft:#f6f7fb;
+      --radius:16px;
+      --radius2:22px;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--ink);
+      background:
+        radial-gradient(900px 420px at 20% -10%, rgba(212,175,55,.20), transparent 55%),
+        radial-gradient(820px 460px at 88% 0%, rgba(106,43,182,.18), transparent 55%),
+        linear-gradient(180deg, #f7f7fc 0%, #f4f5fb 55%, #f7f7fc 100%);
+    }
+
+    .page{
+      width:210mm;
+      min-height:297mm;
+      margin:12mm auto;
+      background:var(--paper);
+      border-radius:22px;
+      border:1px solid rgba(15,23,42,.08);
+      box-shadow:0 18px 60px rgba(26,11,46,.10);
+      overflow:hidden;
+      position:relative;
+    }
+
+    header.band{
+      background:linear-gradient(135deg, rgba(26,11,46,1) 0%, rgba(52,16,87,1) 45%, rgba(74,23,118,1) 100%);
+      padding:16mm 16mm 12mm;
+      color:#fff;
+      position:relative;
+      overflow:hidden;
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    header.band:before{
+      content:"";
+      position:absolute; inset:-50%;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(212,175,55,.26), transparent 55%),
+        radial-gradient(circle at 70% 35%, rgba(242,208,122,.18), transparent 58%),
+        radial-gradient(circle at 50% 80%, rgba(106,43,182,.20), transparent 62%);
+      transform:rotate(-10deg);
+      pointer-events:none;
+    }
+    header.band > *{position:relative}
+
+    .toprow{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start}
+    .brand{display:flex;align-items:center;gap:12px;min-width:320px}
+    .logoBox{
+      width:66px;height:66px;border-radius:18px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.16);
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;box-shadow:0 14px 36px rgba(0,0,0,.22);
+    }
+    .logoBox img{width:90%;height:90%;object-fit:contain;display:block;filter:drop-shadow(0 10px 22px rgba(0,0,0,.22))}
+    .titleblock h1{margin:0;font-size:20px;letter-spacing:.02em}
+    .titleblock .sub{margin-top:6px;font-size:12.5px;color:rgba(255,255,255,.86);line-height:1.4;max-width:88ch}
+
+    .meta{
+      text-align:right;
+      font-size:12.5px;
+      color:rgba(255,255,255,.90);
+      line-height:1.55;
+    }
+    .kv{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.95)}
+
+    .chiprow{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+    .chip{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:7px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.08);
+      color:rgba(255,255,255,.92);
+      font-size:12px;white-space:nowrap;
+    }
+    .dot{
+      width:8px;height:8px;border-radius:999px;
+      background:linear-gradient(135deg,var(--gold-500),var(--gold-300));
+      box-shadow:0 0 0 6px rgba(212,175,55,.18);
+    }
+    .badge{
+      display:inline-flex;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(212,175,55,.40);
+      background:rgba(212,175,55,.12);
+      color:rgba(26,11,46,.95);
+      font-weight:900;
+      letter-spacing:.08em;
+      font-size:11px;
+      vertical-align:middle;
+    }
+
+    main{padding:12mm 16mm 14mm}
+
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .card{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:var(--radius);
+      padding:10px 12px;
+      background:linear-gradient(180deg,#fff 0%,#fbfbff 100%);
+    }
+    .card h3{
+      margin:0 0 6px;
+      font-size:12px;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      color:rgba(26,11,46,.78);
+    }
+    .card p{margin:0;font-size:13px;color:#0f172a;line-height:1.55}
+
+    .toc{
+      margin-top:10px;
+      border-radius:var(--radius2);
+      border:1px solid rgba(106,43,182,.18);
+      background:linear-gradient(180deg, rgba(106,43,182,.05), rgba(212,175,55,.04));
+      padding:10px 12px;
+    }
+    .toc b{
+      display:block;
+      color:rgba(26,11,46,.92);
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      font-size:12px;
+      margin-bottom:6px;
+    }
+    .toc ol{margin:0;padding-left:18px;color:#0f172a;font-size:13px;line-height:1.65}
+
+    .section{
+      margin-top:12px;
+      border-top:1px solid rgba(15,23,42,.10);
+      padding-top:10px;
+    }
+    .section h2{
+      margin:0 0 6px;
+      font-size:13px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:rgba(26,11,46,.85);
+    }
+    .section p,.section li{margin:6px 0;font-size:13px;color:#0f172a;line-height:1.65}
+    .section ul{margin:6px 0 0;padding-left:18px}
+
+    .quote{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid rgba(212,175,55,.30);
+      background:linear-gradient(180deg, rgba(212,175,55,.08), rgba(106,43,182,.05));
+      color:#0f172a;
+      font-size:12.8px;
+    }
+    .quote b{color:rgba(26,11,46,.92)}
+
+    .tech{
+      margin-top:12px;
+      border-radius:var(--radius2);
+      border:1px solid rgba(26,11,46,.14);
+      background:linear-gradient(180deg, rgba(26,11,46,.03), rgba(212,175,55,.03));
+      padding:12px;
+    }
+    .tech h3{
+      margin:0 0 6px;
+      font-size:12px;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      color:rgba(26,11,46,.78);
+    }
+    .kvDark{font-family:var(--mono);font-size:11px;color:rgba(26,11,46,.82)}
+    .pillbar{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+    .pill{
+      display:inline-flex;gap:8px;align-items:center;
+      padding:7px 10px;border-radius:999px;border:1px solid rgba(15,23,42,.10);
+      background:#fff;font-size:12px;color:rgba(26,11,46,.80);
+    }
+    .pill .k{font-weight:900;color:rgba(26,11,46,.92);letter-spacing:.06em}
+
+    .siggrid{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .sig{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:var(--radius2);
+      background:linear-gradient(180deg, rgba(26,11,46,.03), rgba(212,175,55,.03));
+      padding:10px 12px;
+      min-height:150px;
+    }
+    .sig .t{
+      font-size:12px;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      color:rgba(26,11,46,.78);
+    }
+    .sig .who{
+      margin-top:6px;
+      font-weight:900;
+      font-size:13px;
+      color:#0f172a;
+    }
+    .sig .line{
+      margin-top:30px;
+      border-top:1px dashed rgba(26,11,46,.35);
+      padding-top:8px;
+      font-size:12.5px;
+      color:#0f172a;
+    }
+    .small{font-size:12px}
+    .muted{color:var(--muted)}
+
+    footer{
+      padding:10mm 16mm 12mm;
+      border-top:1px solid rgba(15,23,42,.10);
+      color:rgba(26,11,46,.70);
+      font-size:11px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      background:#fff;
+    }
+
+    @page{size:A4; margin:12mm}
+    @media print{
+      body{background:#fff}
+      .page{margin:0;border:none;border-radius:0;box-shadow:none}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <header class="band">
+      <div class="toprow">
+        <div class="brand">
+          <div class="logoBox" aria-label="Logo LOGI'SCOP">
+            <img src="{{LOGO_SRC}}" alt="LOGI'SCOP"/>
+          </div>
+          <div class="titleblock">
+            <h1>ANNEXE — MODE « TOURNÉES MUTUALISÉES ESS »</h1>
+            <div class="sub">
+              Contrat de transport LOGI'SCOP ↔ Client final (B2B)<br/>
+              Tournées planifiées, mutualisation des coûts, règles équitables, traçabilité probante
+            </div>
+          </div>
+        </div>
+
+        <div class="meta">
+          Référence annexe : <span class="kv">{{REF_ANNEXE_TOURNEES}}</span><br/>
+          Version : <span class="kv">{{VERSION}}</span><br/>
+          Date d'effet : <span class="kv">{{DATE_EFFET}}</span><br/>
+          Zone : <span class="kv">{{ZONE_CODE}}</span>
+        </div>
+      </div>
+
+      <div class="chiprow">
+        <span class="chip"><span class="dot"></span> Mutualisation ESS</span>
+        <span class="chip">Fenêtre de livraison</span>
+        <span class="chip">Tarification transparente</span>
+        <span class="chip">POD probant</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="grid2">
+        <div class="card">
+          <h3>Transporteur</h3>
+          <p>
+            <b>LOGI'SCOP</b><br/>
+            {{LOGISCOP_FORM}} — {{LOGISCOP_ADDRESS}}<br/>
+            SIRET : {{LOGISCOP_SIRET}} · TVA : {{LOGISCOP_TVA}}<br/>
+            Contact : {{LOGISCOP_EMAIL}} · {{LOGISCOP_PHONE}}
+          </p>
+          <div class="pillbar">
+            <span class="pill"><span class="k">Mode</span> ESS_ROUTE</span>
+            <span class="pill"><span class="k">Zone</span> {{ZONE_CODE}}</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Client final (B2B)</h3>
+          <p>
+            <b>{{CLIENT_LEGAL_NAME}}</b><br/>
+            {{CLIENT_ADDRESS}}<br/>
+            SIRET : {{CLIENT_SIRET}} · TVA : {{CLIENT_TVA}}<br/>
+            Contact : {{CLIENT_CONTACT}}
+          </p>
+        </div>
+      </div>
+
+      <div class="toc">
+        <b>Sommaire</b>
+        <ol>
+          <li>Objet de l'annexe</li>
+          <li>Définition des Tournées ESS</li>
+          <li>Conditions d'éligibilité</li>
+          <li>Planification, créneaux et fenêtres</li>
+          <li>Tarification ESS (transparence & non-spéculation)</li>
+          <li>Engagements du client</li>
+          <li>Absence / refus / impossibilité</li>
+          <li>Priorisation équitable</li>
+          <li>Preuve de livraison (POD)</li>
+          <li>Responsabilité & assurance</li>
+          <li>Durée & acceptation</li>
+          <li>Clause officielle checkout</li>
+          <li>Annexe technique (API / documents)</li>
+        </ol>
+      </div>
+
+      <div class="section">
+        <h2>1 — Objet de l'annexe</h2>
+        <p>
+          La présente annexe fixe les conditions particulières applicables lorsque le Client souscrit à un mode de livraison
+          en <b>tournées mutualisées ESS</b> (« Tournées ESS »), organisé par LOGI'SCOP dans une logique d'intérêt collectif,
+          de réduction des coûts et d'optimisation environnementale.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>2 — Définition des Tournées ESS</h2>
+        <p>
+          Une Tournée ESS est une tournée planifiée regroupant plusieurs livraisons B2B sur une zone afin de mutualiser
+          les kilomètres et la capacité véhicule, réduire le coût unitaire, diminuer l'empreinte carbone et garantir un service
+          accessible aux TPE. Cette tournée est une <b>prestation de transport</b> distincte de la vente de marchandises.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>3 — Conditions d'éligibilité</h2>
+        <p>
+          Sont éligibles les clients situés dans les secteurs couverts par la tournée. Les critères de participation peuvent varier
+          selon la densité de livraisons, la saisonnalité et les contraintes opérationnelles de la zone.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>4 — Planification / créneaux / fenêtres</h2>
+        <ul>
+          <li>LOGI'SCOP communique un calendrier indicatif (jours et fenêtres horaires).</li>
+          <li>Le Client accepte une <b>fenêtre de livraison</b> (ex. 09:00–13:00) et non une heure fixe, sauf option spéciale.</li>
+          <li>Des cut-off (fenêtres de consolidation) peuvent s'appliquer : après cut-off, report à la tournée suivante.</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>5 — Tarification ESS (transparence & non-spéculation)</h2>
+        <p>
+          La tarification Tournées ESS est déterminée par une part fixe mutualisée et, le cas échéant, une part variable (poids/volume/cartons).
+          Elle est <b>affichée avant confirmation</b>, n'est pas indexée sur le montant de marchandises achetées et exclut toute logique spéculative.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>6 — Engagements du client</h2>
+        <ul>
+          <li>Être disponible sur la fenêtre annoncée.</li>
+          <li>Fournir un accès de livraison praticable et un point de dépôt accessible.</li>
+          <li>Vérifier la marchandise immédiatement à la remise et formuler toute réserve sur le POD.</li>
+          <li>Limiter les modifications tardives hors-process.</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>7 — Absence / refus / impossibilité</h2>
+        <p>
+          En cas d'absence, d'adresse erronée ou d'accès impossible, la livraison peut être reprogrammée, des frais peuvent s'appliquer
+          selon barème public, ou la marchandise peut être remise à disposition EXW local.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>8 — Priorisation équitable (règle ESS)</h2>
+        <p>
+          En cas de saturation, LOGI'SCOP applique une priorisation objective et transparente (respect créneaux, historique absences,
+          stabilité, critères territoriaux publiés le cas échéant). Toute priorisation est traçable (log interne audit).
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>9 — Preuve de livraison (POD) obligatoire</h2>
+        <ul>
+          <li>Signature destinataire + horodatage</li>
+          <li>Code de vérification + référence tournée (TourID)</li>
+          <li>Réserves consignées immédiatement si casse/manquant</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>10 — Responsabilité & assurance</h2>
+        <p>
+          La responsabilité pendant le transport suit la réglementation applicable au transport de marchandises. Les limitations et exclusions
+          prévues au contrat principal s'appliquent.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>11 — Durée & acceptation</h2>
+        <p>
+          La souscription au mode Tournées ESS vaut acceptation de la présente annexe. Elle s'applique à chaque prestation sélectionnée
+          et peut être résiliée selon les dispositions du contrat principal.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>12 — Clause officielle (à afficher au checkout)</h2>
+        <div class="quote">
+          <b>« La livraison en Tournées ESS est une tournée mutualisée planifiée, destinée à réduire les coûts et l'empreinte carbone.
+          Elle implique une fenêtre de livraison et des règles d'accès équitables et traçables. »</b>
+        </div>
+      </div>
+
+      <div class="tech">
+        <h3>Annexe technique (API / documents)</h3>
+        <p class="small muted" style="margin-top:0">
+          Champs recommandés pour l'industrialisation (API / GED / preuve probante).
+        </p>
+        <ul>
+          <li><span class="kvDark">fulfillment_mode</span> = <span class="kvDark">LOGISCOP_DELIVERY</span></li>
+          <li><span class="kvDark">delivery_mode</span> = <span class="kvDark">ESS_ROUTE</span></li>
+          <li><span class="kvDark">tour_id</span> (identifiant tournée)</li>
+          <li><span class="kvDark">route_window_start / route_window_end</span></li>
+          <li><span class="kvDark">pod_verify_code</span> + <span class="kvDark">pod_timestamp</span></li>
+          <li><span class="kvDark">priority_reason_code</span> (si applicable)</li>
+        </ul>
+      </div>
+
+      <div class="siggrid">
+        <div class="sig">
+          <div class="t">Pour le Client (B2B)</div>
+          <div class="who">{{CLIENT_SIGN_NAME}} — {{CLIENT_SIGN_TITLE}}</div>
+          <div class="line">Signature (eIDAS ou manuscrite) — Lieu/Date : {{LIEU_SIGNATURE}} / {{DATE_SIGNATURE}}</div>
+        </div>
+        <div class="sig">
+          <div class="t">Pour LOGI'SCOP</div>
+          <div class="who">{{LOGISCOP_SIGN_NAME}} — {{LOGISCOP_SIGN_TITLE}}</div>
+          <div class="line">Signature (eIDAS / cachet) — Lieu/Date : {{LIEU_SIGNATURE}} / {{DATE_SIGNATURE}}</div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div><b>LOGI'SCOP</b> — Annexe "Tournées mutualisées ESS" (B2B) · Document prêt GED/eIDAS</div>
+      <div class="kvDark">Ref {{REF_ANNEXE_TOURNEES}} · v{{VERSION}} · Effet {{DATE_EFFET}}</div>
+    </footer>
+  </div>
+</body>
+</html>

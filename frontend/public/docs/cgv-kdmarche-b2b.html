@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CGV KDMARCHE B2B — Marchandises (EXW)</title>
+  <style>
+    :root{
+      --ink:#0b1220; --muted:#64748b; --line:#e2e8f0; --paper:#ffffff;
+      --gold:#b07a1a; --blue:#1f3a8a; --bg:#f6f8fb; --soft:#f1f5f9;
+      --radius:14px; --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55}
+    .page{width:210mm;min-height:297mm;margin:12mm auto;background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.08)}
+    header{padding:16mm 16mm 10mm;background:linear-gradient(135deg, rgba(31,58,138,.08), rgba(176,122,26,.06));border-bottom:1px solid var(--line)}
+    .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+    .meta{font-size:12px;color:var(--muted)}
+    h1{margin:10px 0 4px;font-size:22px}
+    .subtitle{color:var(--muted);font-size:13px}
+    .callout{margin-top:10px;border:1px solid rgba(31,58,138,.20);background:rgba(31,58,138,.05);border-radius:14px;padding:10px 12px}
+    .callout b{color:#111827}
+    main{padding:12mm 16mm 14mm}
+    .art{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+    .art h2{margin:0 0 6px;font-size:14px;letter-spacing:.08em;text-transform:uppercase}
+    .art p,.art li{font-size:13px;color:#0f172a}
+    .art ul{margin:6px 0 0;padding-left:18px}
+    .kv{font-family:var(--mono);font-size:11px}
+    footer{padding:10px 16mm 12mm;border-top:1px solid var(--line);color:var(--muted);font-size:11px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    @page{size:A4;margin:12mm}
+    @media print{body{background:#fff}.page{margin:0;border:none;border-radius:0;box-shadow:none}}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="top">
+        <div>
+          <div class="kv">KDMARCHE · Conditions Générales de Vente B2B</div>
+          <h1>CGV KDMARCHE B2B — Marchandises (EXW)</h1>
+          <div class="subtitle">Ventes professionnelles réalisées par KDMARCHE (hors abonnements/crédits O'SCOP).</div>
+        </div>
+        <div class="meta">
+          Référence : <span class="kv">{{REF_CGV_KDM}}</span><br/>
+          Version : <span class="kv">{{VERSION}}</span><br/>
+          Date d'effet : <span class="kv">{{DATE_EFFET}}</span>
+        </div>
+      </div>
+      <div class="callout">
+        <b>EXW uniquement :</b> sauf stipulation expresse par zone, les ventes B2B sont réalisées en Incoterm <b>EXW</b>.
+        L'acheteur organise et supporte le transport, l'enlèvement et les formalités afférentes.
+      </div>
+    </header>
+
+    <main>
+      <div class="art">
+        <h2>Article 1 — Champ d'application</h2>
+        <p>Les présentes CGV s'appliquent aux ventes de marchandises réalisées par KDMARCHE auprès de clients professionnels disposant d'un accès B2B valide.</p>
+      </div>
+
+      <div class="art">
+        <h2>Article 2 — Accès B2B et zones</h2>
+        <p>Les prix et disponibilités sont déterminés par zone. L'accès à certaines zones peut être conditionné (validation O'SCOP, abonnement actif, droits par zone).</p>
+      </div>
+
+      <div class="art">
+        <h2>Article 3 — Prix</h2>
+        <p>Les prix sont exprimés HT, déterminés par zone, et peuvent varier selon la disponibilité et la logistique. Les prix dits "jusqu'à –50%" sont des prix structurels B2B issus de l'organisation et non des promotions artificielles.</p>
+      </div>
+
+      <div class="art">
+        <h2>Article 4 — Commande</h2>
+        <ul>
+          <li>Commande en ligne via espace B2B ; quantités souvent vendues en lots/palettes selon produits.</li>
+          <li>Validation de commande sous réserve de disponibilité stock et respect des règles de zone.</li>
+        </ul>
+      </div>
+
+      <div class="art">
+        <h2>Article 5 — Incoterm EXW (enlèvement)</h2>
+        <p>Lorsque EXW s'applique, l'acheteur organise l'enlèvement à l'adresse EXW de la zone, selon les créneaux et modalités communiqués. Les risques sont transférés conformément aux règles EXW.</p>
+      </div>
+
+      <div class="art">
+        <h2>Article 6 — Facturation et paiement</h2>
+        <p>KDMARCHE émet la facture des marchandises. Le paiement est effectué directement à KDMARCHE selon les moyens proposés. Aucun paiement marchandises n'est encaissé par O'SCOP.</p>
+      </div>
+
+      <div class="art">
+        <h2>Article 7 — Retours, non-conformités, avoirs</h2>
+        <p>Les retours sont encadrés B2B : délais, état produit, preuve d'achat, et conditions particulières liées aux DLC. KDMARCHE peut proposer un avoir ou un remboursement selon la politique applicable.</p>
+        <p>Procédures détaillées : {{POLITIQUE_RETOURS_REFERENCE}}.</p>
+      </div>
+
+      <div class="art">
+        <h2>Article 8 — Responsabilité</h2>
+        <p>La responsabilité de KDMARCHE est limitée aux obligations résultant de la vente de marchandises. Les dommages indirects et pertes d'exploitation sont exclus, dans la limite autorisée par la loi.</p>
+      </div>
+
+      <div class="art">
+        <h2>Article 9 — Droit applicable</h2>
+        <p>Droit applicable : {{DROIT_APPLICABLE}}. Juridiction compétente : {{JURIDICTION}}.</p>
+      </div>
+    </main>
+
+    <footer>
+      <div>CGV KDMARCHE B2B — Marchandises / EXW</div>
+      <div class="kv">Ref {{REF_CGV_KDM}} · v{{VERSION}} · Date effet {{DATE_EFFET}}</div>
+    </footer>
+  </div>
+</body>
+</html>

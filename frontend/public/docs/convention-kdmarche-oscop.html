@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Convention de partenariat KDMARCHE – O'SCOP (Centrale d'achats B2B ESS)</title>
+  <style>
+    :root{
+      --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --paper:#ffffff;
+      --gold:#b07a1a; --gold2:#f2d07a; --green:#0f766e; --blue:#1f3a8a;
+      --bg:#f8fafc; --soft:#f1f5f9;
+      --radius:14px;
+      --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5}
+    .page{
+      width:210mm; min-height:297mm; margin:12mm auto; background:var(--paper);
+      border:1px solid var(--line); border-radius:18px; overflow:hidden;
+      box-shadow:0 14px 40px rgba(0,0,0,.08);
+    }
+    header{
+      padding:18mm 16mm 10mm;
+      background:linear-gradient(135deg, rgba(176,122,26,.10), rgba(31,58,138,.06));
+      border-bottom:1px solid var(--line);
+      position:relative;
+    }
+    .brandrow{display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+    .logos{display:flex; gap:10px; align-items:center}
+    .logo{
+      width:44px;height:44px;border-radius:14px;border:1px solid rgba(17,24,39,.12);
+      background:linear-gradient(135deg, rgba(176,122,26,.22), rgba(242,208,122,.12));
+    }
+    .logo.alt{background:linear-gradient(135deg, rgba(15,118,110,.18), rgba(31,58,138,.10))}
+    .meta{font-size:12px;color:var(--muted)}
+    h1{margin:10px 0 4px;font-size:22px;letter-spacing:.2px}
+    .subtitle{color:var(--muted);font-size:13px}
+    .pillbar{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+    .pill{
+      display:inline-flex;gap:8px;align-items:center;padding:7px 10px;border-radius:999px;
+      background:#fff;border:1px solid var(--line);font-size:12px;color:#374151
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--green)}
+    main{padding:12mm 16mm 14mm}
+    .toc{border:1px solid var(--line);border-radius:var(--radius);background:var(--soft);padding:10px 12px}
+    .toc b{display:block;margin-bottom:6px}
+    .toc ol{margin:0;padding-left:18px;color:#374151}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    .box{border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;background:#fff}
+    .box h3{margin:0 0 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#374151}
+    .box p{margin:0;color:#374151;font-size:13px}
+    h2{margin:14px 0 6px;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
+    .art{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+    .art h3{margin:0 0 6px;font-size:14px}
+    .art p{margin:6px 0;color:#1f2937;font-size:13px}
+    .art ul{margin:6px 0 0;padding-left:18px;color:#1f2937;font-size:13px}
+    .quote{
+      margin:10px 0;padding:10px 12px;border-left:4px solid rgba(176,122,26,.45);
+      background:rgba(176,122,26,.06);border-radius:10px;color:#1f2937;font-size:13px
+    }
+    .siggrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    .sig{
+      border:1px solid var(--line);border-radius:var(--radius);padding:12px;background:#fff;min-height:130px
+    }
+    .sig .t{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+    .sig .who{margin-top:6px;font-weight:700}
+    .sig .line{margin-top:26px;border-top:1px dashed #cbd5e1;padding-top:8px;color:#374151;font-size:12px}
+    footer{
+      padding:10px 16mm 12mm;color:var(--muted);font-size:11px;border-top:1px solid var(--line);
+      display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap
+    }
+    .kv{font-family:var(--mono);font-size:10.5px}
+    .pb{page-break-before:always}
+    @page{size:A4;margin:12mm}
+    @media print{
+      body{background:#fff}
+      .page{margin:0;border:none;border-radius:0;box-shadow:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="brandrow">
+        <div class="logos" aria-label="Logos">
+          <div class="logo" title="KDMARCHE"></div>
+          <div class="logo alt" title="O'SCOP"></div>
+        </div>
+        <div class="meta">
+          Référence : <span class="kv">{{REF_CONVENTION}}</span><br/>
+          Version : <span class="kv">{{VERSION}}</span> · Date : <span class="kv">{{DATE_DOCUMENT}}</span>
+        </div>
+      </div>
+      <h1>CONVENTION DE PARTENARIAT</h1>
+      <div class="subtitle">Centrale d'achats B2B ESS — Partenariat KDMARCHE – O'SCOP (séparation stricte des rôles et flux)</div>
+      <div class="pillbar">
+        <span class="pill"><span class="dot"></span> B2B exclusivement</span>
+        <span class="pill">EXW uniquement (zones concernées)</span>
+        <span class="pill">Abonnements + crédits (O'SCOP)</span>
+        <span class="pill">Marchandises (KDMARCHE)</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="toc">
+        <b>Sommaire</b>
+        <ol>
+          <li>Objet</li>
+          <li>Répartition des rôles (clause cardinale)</li>
+          <li>Séparation des flux financiers</li>
+          <li>Accès à la centrale</li>
+          <li>Conformité & non-requalification</li>
+          <li>Durée – Résiliation</li>
+          <li>Confidentialité – Données</li>
+          <li>Droit applicable – Litiges</li>
+          <li>Signatures</li>
+        </ol>
+      </div>
+
+      <div class="grid2">
+        <div class="box">
+          <h3>KDMARCHE</h3>
+          <p>
+            Dénomination : <b>{{KDM_LEGAL_NAME}}</b><br/>
+            Forme : {{KDM_FORM}} · SIREN/SIRET : {{KDM_SIRET}}<br/>
+            Siège : {{KDM_ADDRESS}}<br/>
+            Représentée par : {{KDM_REP_NAME}}, {{KDM_REP_TITLE}}
+          </p>
+        </div>
+        <div class="box">
+          <h3>O'SCOP</h3>
+          <p>
+            Dénomination : <b>{{OSCOP_LEGAL_NAME}}</b><br/>
+            Forme : {{OSCOP_FORM}} · SIREN/SIRET : {{OSCOP_SIRET}}<br/>
+            Siège : {{OSCOP_ADDRESS}}<br/>
+            Représentée par : {{OSCOP_REP_NAME}}, {{OSCOP_REP_TITLE}}
+          </p>
+        </div>
+      </div>
+
+      <div class="art">
+        <h3>ARTICLE 1 — OBJET</h3>
+        <p>
+          La présente convention a pour objet de définir les conditions dans lesquelles les Parties coopèrent afin d'organiser
+          l'accès mutualisé à une <b>centrale d'achats B2B opérée par KDMARCHE</b>, reposant sur une <b>séparation stricte</b> des rôles, des flux financiers et des responsabilités.
+        </p>
+      </div>
+
+      <div class="art">
+        <h3>ARTICLE 2 — RÉPARTITION DES RÔLES (CLAUSE CARDINALE)</h3>
+        <p><b>2.1 Rôle de KDMARCHE.</b> KDMARCHE agit exclusivement en qualité de vendeur B2B de marchandises. À ce titre, KDMARCHE est notamment responsable :</p>
+        <ul>
+          <li>du catalogue produits, des stocks par zones, des prix produits et promotions (si applicables) ;</li>
+          <li>de la facturation des marchandises, de la TVA et de la conformité produit ;</li>
+          <li>des conditions de vente et d'exécution des commandes (incluant l'Incoterm EXW lorsque requis).</li>
+        </ul>
+        <p class="quote">
+          <b>2.2 Rôle d'O'SCOP.</b> O'SCOP agit exclusivement comme centrale coopérative d'ingénierie ESS et gestionnaire d'accès
+          (abonnements, crédits, droits, mutualisation). <b>O'SCOP ne vend aucune marchandise, ne facture aucun produit, et ne perçoit aucun paiement relatif aux marchandises.</b>
+        </p>
+      </div>
+
+      <div class="art">
+        <h3>ARTICLE 3 — SÉPARATION DES FLUX FINANCIERS</h3>
+        <p>
+          Les flux financiers sont strictement séparés :
+          <br/>— Abonnements, crédits, services : facturés et encaissés exclusivement par <b>O'SCOP</b> ;
+          <br/>— Marchandises : facturées et encaissées exclusivement par <b>KDMARCHE</b>.
+        </p>
+        <p>
+          Aucune commission, rétrocession ou rémunération indexée sur le prix ou le volume des marchandises n'est due entre les Parties,
+          sauf stipulation expresse et distincte validée par écrit, compatible ESS et sans indexation aux ventes.
+        </p>
+      </div>
+
+      <div class="art">
+        <h3>ARTICLE 4 — ACCÈS À LA CENTRALE</h3>
+        <p>
+          L'accès aux conditions économiques mutualisées est strictement réservé aux entreprises :
+          (i) validées par O'SCOP, (ii) disposant d'un abonnement O'SCOP actif, (iii) respectant les règles d'accès par zone.
+        </p>
+        <p>
+          Les règles techniques d'accès (permissions, états, zones, incoterms) sont appliquées par des politiques de contrôle d'accès
+          (OPA/ABAC) et des journaux probants (audit).
+        </p>
+      </div>
+
+      <div class="art">
+        <h3>ARTICLE 5 — CONFORMITÉ & NON-REQUALIFICATION</h3>
+        <p>
+          Les Parties déclarent que le partenariat ne constitue ni une activité d'assurance, ni une activité d'intermédiation financière,
+          ni une activité de services de paiement, ni un courtage. Les prix dits "jusqu'à –50%" sont des prix structurels résultant de
+          l'organisation (mutualisation, suppression d'intermédiaires, EXW), et ne constituent pas des promotions artificielles.
+          Les prix sont établis de manière transparente sur la base de coûts réels et de volumes mutualisés, conformément aux règles du droit commercial.
+        </p>
+        <p>
+          Le partenariat s'inscrit dans le cadre des principes de l'Économie Sociale et Solidaire, notamment la gouvernance démocratique, 
+          la lucrativité limitée et la primauté de l'utilité sociale sur la recherche de profit.
+        </p>
+      </div>
+
+      <div class="art">
+        <h3>ARTICLE 6 — DURÉE – RÉSILIATION</h3>
+        <p>
+          La présente convention est conclue pour une durée de <b>{{DUREE_MOIS}}</b> mois à compter du {{DATE_EFFET}},
+          renouvelable par tacite reconduction, sauf dénonciation par l'une des Parties avec un préavis de {{PREAVIS_JOURS}} jours.
+        </p>
+      </div>
+
+      <div class="art">
+        <h3>ARTICLE 7 — CONFIDENTIALITÉ – DONNÉES</h3>
+        <p>
+          Chaque Partie s'engage à préserver la confidentialité des informations non publiques reçues. Les données clients sont traitées
+          conformément au RGPD et aux finalités strictement nécessaires à l'exécution du partenariat.
+        </p>
+      </div>
+
+      <div class="art">
+        <h3>ARTICLE 8 — DROIT APPLICABLE – LITIGES</h3>
+        <p>
+          Droit applicable : {{DROIT_APPLICABLE}}.  
+          En cas de litige, les Parties recherchent une solution amiable avant toute action contentieuse. Juridiction compétente : {{JURIDICTION}}.
+        </p>
+      </div>
+
+      <h2>ARTICLE 9 — SIGNATURES</h2>
+      <div class="siggrid">
+        <div class="sig">
+          <div class="t">Pour KDMARCHE</div>
+          <div class="who">{{KDM_REP_NAME}} — {{KDM_REP_TITLE}}</div>
+          <div class="meta">Lieu : {{LIEU_SIGNATURE}} · Date : {{DATE_SIGNATURE}}</div>
+          <div class="line">Signature (eIDAS ou manuscrite) :</div>
+        </div>
+        <div class="sig">
+          <div class="t">Pour O'SCOP</div>
+          <div class="who">{{OSCOP_REP_NAME}} — {{OSCOP_REP_TITLE}}</div>
+          <div class="meta">Lieu : {{LIEU_SIGNATURE}} · Date : {{DATE_SIGNATURE}}</div>
+          <div class="line">Signature (eIDAS ou manuscrite) :</div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div>Convention de partenariat KDMARCHE – O'SCOP · Centrale d'achats B2B ESS</div>
+      <div class="kv">Ref {{REF_CONVENTION}} · v{{VERSION}} · Page <span class="pageNumber"></span></div>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "revision": "20260119020413",
+  "roots": [
+    "zones_config",
+    "zones_policy",
+    "delivery_policy",
+    "route_policy",
+    "route_capacity"
+  ]
+}

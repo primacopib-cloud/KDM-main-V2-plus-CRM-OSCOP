@@ -1,0 +1,41 @@
+{
+  "summary": "Full e2e test of KDMARCHÉ / LOLODRIVE by O'SCOP MVP. Backend: 24/24 pytest tests passed (auth, LOLODRIVE PASS/wallet/catalog/orders/POS/lolo-points/events/KPI, CRM contacts/orgs/opps/dossiers/tasks/impact/sync). Frontend: admin (/lolodrive, /pos, /admin/lolo-points, /admin/lolo-hour, /crm, /reporting-impact) and titulaire (/pass, /catalogue-lolodrive) screens load with seed data correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "Multiple list endpoints", "issue": "Responses wrap arrays in named keys ({\"products\": [...]}, {\"orders\": [...]}, {\"contacts\": [...]}) — frontend already handles this but ensure consistency / document in OpenAPI."},
+      {"endpoint": "/api/user-prefs/favorites/ids", "issue": "Returns 401 for both admin and Marie tokens; called from a generic layout. Non-blocking for LOLODRIVE MVP but produces console errors on every protected page."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "favorites side-call", "issue": "GET /api/user-prefs/favorites/ids returns 401 on every protected page (admin and Marie), polluting console with errors", "affected_selectors": []}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lolodrive_oscoop.py",
+    "/app/test_reports/pytest/lolodrive_results.xml"
+  ],
+  "action_items": [
+    "Optional: fix or guard the /api/user-prefs/favorites/ids call so it's not made for users without the favorites feature, or make it return [] instead of 401. Not blocking MVP."
+  ],
+  "critical_code_review_comments": [
+    "routes_lolodrive_oscoop.py at 761 lines: still acceptable but consider splitting into PASS, orders, POS, lolo-points, events submodules if growth continues.",
+    "Order/Quote schemas use sku+qty (correct) while frontend correctly maps cart -> {sku, qty}. Make sure any future client docs reflect this.",
+    "Pay-UC response shape ({ok, order_id, paid_with, total_uc}) does not return updated order; consumers must re-fetch /orders/me. Consider returning the updated order for fewer round-trips.",
+    "PASS payload uses status='ACTIVE' (uppercase) + a separate top-level 'active' boolean; pick one canonical representation to avoid client drift.",
+    "Many endpoints return wrapped lists ({\"products\": [...]}) while a few return raw lists; standardise for OpenAPI consumers.",
+    "Frontend prints multiple console errors for an unrelated favorites endpoint on every page (401s). Should be guarded."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lolodrive_oscoop.py"
+  ],
+  "success_rate": {"backend": "100% (24/24)", "frontend": "100% of MVP screens load + show seed data"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; marie@example.com / Demo2026! ; pos@lolodrive.fr / Demo2026! (all from /app/memory/test_credentials.md)",
+  "seed_data_creation": "No new seed required; /app/backend/seed_lolodrive.py already populated: 4 users, 12 products (8 ESSENTIAL + 4 NORMAL), 4 LOLO POINTS, 4 active events, 3 Marie orders, CRM (4 contacts, 5 orgs, 4 opps, 3 dossiers, 3 tasks). Note: Marie's wallet was decremented to ~234 UC during test runs (started at 450). Re-run seed to reset.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend pytest suite at /app/backend/tests/test_lolodrive_oscoop.py covers all 31 LOLODRIVE endpoints + CRM. Run: `pytest backend/tests/test_lolodrive_oscoop.py -v`. Helper `_extract_list()` handles wrapped list responses. Tests create real orders+pay-uc which decrement Marie's wallet; re-seed if balance approaches 0. All admin pages require an admin user with is_admin=true; PASS pages require any authenticated user with active PASS. POS status transitions follow PAID→PREPARING→READY→FULFILLED (last one via /scan endpoint, not /status)."
+}

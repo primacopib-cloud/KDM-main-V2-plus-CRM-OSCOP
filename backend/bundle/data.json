@@ -1,0 +1,767 @@
+{
+  "zones_config": {
+    "GUADELOUPE": {
+      "prep_options": {
+        "PREP_PALLET": {
+          "enabled": true,
+          "min_qty": 1,
+          "max_qty": 50,
+          "pricing_mode": "PALLET"
+        },
+        "PREP_CARTON": {
+          "enabled": true,
+          "min_qty": 1,
+          "max_qty": 500,
+          "pricing_mode": "CARTON"
+        },
+        "MANUTENTION": {
+          "enabled": true,
+          "min_qty": 1,
+          "max_qty": 1,
+          "pricing_mode": "FIXED"
+        }
+      }
+    },
+    "MARTINIQUE": {
+      "prep_options": {
+        "PREP_PALLET": {
+          "enabled": true,
+          "min_qty": 1,
+          "max_qty": 50,
+          "pricing_mode": "PALLET"
+        },
+        "PREP_CARTON": {
+          "enabled": true,
+          "min_qty": 1,
+          "max_qty": 500,
+          "pricing_mode": "CARTON"
+        }
+      }
+    },
+    "GUYANE": {
+      "prep_options": {
+        "PREP_PALLET": {
+          "enabled": true,
+          "min_qty": 1,
+          "max_qty": 50,
+          "pricing_mode": "PALLET"
+        },
+        "PREP_CARTON": {
+          "enabled": true,
+          "min_qty": 1,
+          "max_qty": 500,
+          "pricing_mode": "CARTON"
+        },
+        "PREP_CONTAINER": {
+          "enabled": true,
+          "min_qty": 1,
+          "max_qty": 5,
+          "pricing_mode": "CONTAINER"
+        }
+      }
+    },
+    "REUNION": {
+      "prep_options": {
+        "PREP_PALLET": {
+          "enabled": true,
+          "min_qty": 1,
+          "max_qty": 50,
+          "pricing_mode": "PALLET"
+        },
+        "PREP_CARTON": {
+          "enabled": true,
+          "min_qty": 1,
+          "max_qty": 500,
+          "pricing_mode": "CARTON"
+        }
+      }
+    },
+    "MAYOTTE": {
+      "prep_options": {}
+    }
+  },
+  "zones_policy": {
+    "GUADELOUPE": {
+      "exw_only": true,
+      "pickup_required": true,
+      "vat_rate": 8.5,
+      "vat_exonerated": false,
+      "kind": "OM",
+      "currency": "EUR"
+    },
+    "MARTINIQUE": {
+      "exw_only": true,
+      "pickup_required": true,
+      "vat_rate": 8.5,
+      "vat_exonerated": false,
+      "kind": "OM",
+      "currency": "EUR"
+    },
+    "GUYANE": {
+      "exw_only": true,
+      "pickup_required": true,
+      "vat_rate": 0,
+      "vat_exonerated": true,
+      "kind": "OM",
+      "currency": "EUR"
+    },
+    "REUNION": {
+      "exw_only": true,
+      "pickup_required": true,
+      "vat_rate": 8.5,
+      "vat_exonerated": false,
+      "kind": "OM",
+      "currency": "EUR"
+    },
+    "MAYOTTE": {
+      "exw_only": true,
+      "pickup_required": true,
+      "vat_rate": 0,
+      "vat_exonerated": true,
+      "kind": "OM",
+      "currency": "EUR"
+    }
+  },
+  "delivery_policy": {
+    "971": {
+      "zone_name": "Guadeloupe",
+      "logiscop_delivery_enabled": true,
+      "delivery_enabled": true,
+      "pickup_required": true,
+      "min_cartons": 1,
+      "max_cartons": 100,
+      "vat_rate": 8.5,
+      "vat_exonerated": false
+    },
+    "972": {
+      "zone_name": "Martinique",
+      "logiscop_delivery_enabled": true,
+      "delivery_enabled": true,
+      "pickup_required": true,
+      "min_cartons": 1,
+      "max_cartons": 100,
+      "vat_rate": 8.5,
+      "vat_exonerated": false
+    },
+    "973": {
+      "zone_name": "Guyane",
+      "logiscop_delivery_enabled": true,
+      "delivery_enabled": true,
+      "pickup_required": true,
+      "min_cartons": 5,
+      "max_cartons": 50,
+      "vat_rate": 0,
+      "vat_exonerated": true
+    },
+    "974": {
+      "zone_name": "La Réunion",
+      "logiscop_delivery_enabled": true,
+      "delivery_enabled": true,
+      "pickup_required": true,
+      "min_cartons": 1,
+      "max_cartons": 80,
+      "vat_rate": 8.5,
+      "vat_exonerated": false
+    },
+    "976": {
+      "zone_name": "Mayotte",
+      "logiscop_delivery_enabled": true,
+      "delivery_enabled": true,
+      "pickup_required": true,
+      "min_cartons": 2,
+      "max_cartons": 30,
+      "vat_rate": 0,
+      "vat_exonerated": true
+    }
+  },
+  "route_policy": {
+    "GUADELOUPE": {
+      "ess_route_enabled": true,
+      "window_required": true,
+      "min_reliability_score": 60,
+      "max_daily_capacity": 120,
+      "priority_rules": [
+        {
+          "code": "COMPLIANCE_OK",
+          "weight": 40
+        },
+        {
+          "code": "RELIABLE_PICKUPS",
+          "weight": 30
+        },
+        {
+          "code": "LOW_INCIDENTS",
+          "weight": 20
+        },
+        {
+          "code": "RECENT_LATE_CANCEL",
+          "weight": -30
+        }
+      ]
+    },
+    "MARTINIQUE": {
+      "ess_route_enabled": true,
+      "window_required": true,
+      "min_reliability_score": 60,
+      "max_daily_capacity": 100,
+      "priority_rules": [
+        {
+          "code": "COMPLIANCE_OK",
+          "weight": 40
+        },
+        {
+          "code": "RELIABLE_PICKUPS",
+          "weight": 30
+        },
+        {
+          "code": "LOW_INCIDENTS",
+          "weight": 20
+        },
+        {
+          "code": "RECENT_LATE_CANCEL",
+          "weight": -30
+        }
+      ]
+    },
+    "GUYANE": {
+      "ess_route_enabled": true,
+      "window_required": true,
+      "min_reliability_score": 50,
+      "max_daily_capacity": 60,
+      "priority_rules": [
+        {
+          "code": "COMPLIANCE_OK",
+          "weight": 40
+        },
+        {
+          "code": "RELIABLE_PICKUPS",
+          "weight": 30
+        },
+        {
+          "code": "LOW_INCIDENTS",
+          "weight": 20
+        }
+      ]
+    },
+    "REUNION": {
+      "ess_route_enabled": true,
+      "window_required": true,
+      "min_reliability_score": 60,
+      "max_daily_capacity": 80,
+      "priority_rules": [
+        {
+          "code": "COMPLIANCE_OK",
+          "weight": 40
+        },
+        {
+          "code": "RELIABLE_PICKUPS",
+          "weight": 30
+        },
+        {
+          "code": "LOW_INCIDENTS",
+          "weight": 20
+        }
+      ]
+    },
+    "MAYOTTE": {
+      "ess_route_enabled": false,
+      "window_required": true,
+      "min_reliability_score": 50,
+      "max_daily_capacity": 40,
+      "priority_rules": []
+    }
+  },
+  "route_capacity": {
+    "GUADELOUPE": {
+      "TOUR-GP-2026W04-TUE-AM": {
+        "capacity": 60,
+        "booked": 22,
+        "window_start": "2026-01-20T08:00:00Z",
+        "window_end": "2026-01-20T12:00:00Z"
+      },
+      "TOUR-GP-2026W04-TUE-PM": {
+        "capacity": 60,
+        "booked": 38,
+        "window_start": "2026-01-20T14:00:00Z",
+        "window_end": "2026-01-20T18:00:00Z"
+      },
+      "TOUR-GP-2026W04-WED-AM": {
+        "capacity": 60,
+        "booked": 23,
+        "window_start": "2026-01-21T08:00:00Z",
+        "window_end": "2026-01-21T12:00:00Z"
+      },
+      "TOUR-GP-2026W04-WED-PM": {
+        "capacity": 60,
+        "booked": 37,
+        "window_start": "2026-01-21T14:00:00Z",
+        "window_end": "2026-01-21T18:00:00Z"
+      },
+      "TOUR-GP-2026W04-THU-AM": {
+        "capacity": 60,
+        "booked": 20,
+        "window_start": "2026-01-22T08:00:00Z",
+        "window_end": "2026-01-22T12:00:00Z"
+      },
+      "TOUR-GP-2026W04-THU-PM": {
+        "capacity": 60,
+        "booked": 27,
+        "window_start": "2026-01-22T14:00:00Z",
+        "window_end": "2026-01-22T18:00:00Z"
+      },
+      "TOUR-GP-2026W04-FRI-AM": {
+        "capacity": 60,
+        "booked": 38,
+        "window_start": "2026-01-23T08:00:00Z",
+        "window_end": "2026-01-23T12:00:00Z"
+      },
+      "TOUR-GP-2026W04-FRI-PM": {
+        "capacity": 60,
+        "booked": 12,
+        "window_start": "2026-01-23T14:00:00Z",
+        "window_end": "2026-01-23T18:00:00Z"
+      },
+      "TOUR-GP-2026W05-MON-AM": {
+        "capacity": 60,
+        "booked": 17,
+        "window_start": "2026-01-26T08:00:00Z",
+        "window_end": "2026-01-26T12:00:00Z"
+      },
+      "TOUR-GP-2026W05-MON-PM": {
+        "capacity": 60,
+        "booked": 41,
+        "window_start": "2026-01-26T14:00:00Z",
+        "window_end": "2026-01-26T18:00:00Z"
+      },
+      "TOUR-GP-2026W05-TUE-AM": {
+        "capacity": 60,
+        "booked": 40,
+        "window_start": "2026-01-27T08:00:00Z",
+        "window_end": "2026-01-27T12:00:00Z"
+      },
+      "TOUR-GP-2026W05-TUE-PM": {
+        "capacity": 60,
+        "booked": 29,
+        "window_start": "2026-01-27T14:00:00Z",
+        "window_end": "2026-01-27T18:00:00Z"
+      },
+      "TOUR-GP-2026W05-WED-AM": {
+        "capacity": 60,
+        "booked": 33,
+        "window_start": "2026-01-28T08:00:00Z",
+        "window_end": "2026-01-28T12:00:00Z"
+      },
+      "TOUR-GP-2026W05-WED-PM": {
+        "capacity": 60,
+        "booked": 17,
+        "window_start": "2026-01-28T14:00:00Z",
+        "window_end": "2026-01-28T18:00:00Z"
+      },
+      "TOUR-GP-2026W05-THU-AM": {
+        "capacity": 60,
+        "booked": 39,
+        "window_start": "2026-01-29T08:00:00Z",
+        "window_end": "2026-01-29T12:00:00Z"
+      },
+      "TOUR-GP-2026W05-THU-PM": {
+        "capacity": 60,
+        "booked": 22,
+        "window_start": "2026-01-29T14:00:00Z",
+        "window_end": "2026-01-29T18:00:00Z"
+      },
+      "TOUR-GP-2026W05-FRI-AM": {
+        "capacity": 60,
+        "booked": 29,
+        "window_start": "2026-01-30T08:00:00Z",
+        "window_end": "2026-01-30T12:00:00Z"
+      },
+      "TOUR-GP-2026W05-FRI-PM": {
+        "capacity": 60,
+        "booked": 34,
+        "window_start": "2026-01-30T14:00:00Z",
+        "window_end": "2026-01-30T18:00:00Z"
+      },
+      "TOUR-GP-2026W06-MON-AM": {
+        "capacity": 60,
+        "booked": 37,
+        "window_start": "2026-02-02T08:00:00Z",
+        "window_end": "2026-02-02T12:00:00Z"
+      },
+      "TOUR-GP-2026W06-MON-PM": {
+        "capacity": 60,
+        "booked": 37,
+        "window_start": "2026-02-02T14:00:00Z",
+        "window_end": "2026-02-02T18:00:00Z"
+      }
+    },
+    "MARTINIQUE": {
+      "TOUR-MQ-2026W04-TUE-AM": {
+        "capacity": 50,
+        "booked": 12,
+        "window_start": "2026-01-20T08:00:00Z",
+        "window_end": "2026-01-20T12:00:00Z"
+      },
+      "TOUR-MQ-2026W04-TUE-PM": {
+        "capacity": 50,
+        "booked": 23,
+        "window_start": "2026-01-20T14:00:00Z",
+        "window_end": "2026-01-20T18:00:00Z"
+      },
+      "TOUR-MQ-2026W04-WED-AM": {
+        "capacity": 50,
+        "booked": 27,
+        "window_start": "2026-01-21T08:00:00Z",
+        "window_end": "2026-01-21T12:00:00Z"
+      },
+      "TOUR-MQ-2026W04-WED-PM": {
+        "capacity": 50,
+        "booked": 19,
+        "window_start": "2026-01-21T14:00:00Z",
+        "window_end": "2026-01-21T18:00:00Z"
+      },
+      "TOUR-MQ-2026W04-THU-AM": {
+        "capacity": 50,
+        "booked": 31,
+        "window_start": "2026-01-22T08:00:00Z",
+        "window_end": "2026-01-22T12:00:00Z"
+      },
+      "TOUR-MQ-2026W04-THU-PM": {
+        "capacity": 50,
+        "booked": 23,
+        "window_start": "2026-01-22T14:00:00Z",
+        "window_end": "2026-01-22T18:00:00Z"
+      },
+      "TOUR-MQ-2026W04-FRI-AM": {
+        "capacity": 50,
+        "booked": 22,
+        "window_start": "2026-01-23T08:00:00Z",
+        "window_end": "2026-01-23T12:00:00Z"
+      },
+      "TOUR-MQ-2026W04-FRI-PM": {
+        "capacity": 50,
+        "booked": 18,
+        "window_start": "2026-01-23T14:00:00Z",
+        "window_end": "2026-01-23T18:00:00Z"
+      },
+      "TOUR-MQ-2026W05-MON-AM": {
+        "capacity": 50,
+        "booked": 23,
+        "window_start": "2026-01-26T08:00:00Z",
+        "window_end": "2026-01-26T12:00:00Z"
+      },
+      "TOUR-MQ-2026W05-MON-PM": {
+        "capacity": 50,
+        "booked": 10,
+        "window_start": "2026-01-26T14:00:00Z",
+        "window_end": "2026-01-26T18:00:00Z"
+      },
+      "TOUR-MQ-2026W05-TUE-AM": {
+        "capacity": 50,
+        "booked": 17,
+        "window_start": "2026-01-27T08:00:00Z",
+        "window_end": "2026-01-27T12:00:00Z"
+      },
+      "TOUR-MQ-2026W05-TUE-PM": {
+        "capacity": 50,
+        "booked": 14,
+        "window_start": "2026-01-27T14:00:00Z",
+        "window_end": "2026-01-27T18:00:00Z"
+      },
+      "TOUR-MQ-2026W05-WED-AM": {
+        "capacity": 50,
+        "booked": 14,
+        "window_start": "2026-01-28T08:00:00Z",
+        "window_end": "2026-01-28T12:00:00Z"
+      },
+      "TOUR-MQ-2026W05-WED-PM": {
+        "capacity": 50,
+        "booked": 27,
+        "window_start": "2026-01-28T14:00:00Z",
+        "window_end": "2026-01-28T18:00:00Z"
+      },
+      "TOUR-MQ-2026W05-THU-AM": {
+        "capacity": 50,
+        "booked": 27,
+        "window_start": "2026-01-29T08:00:00Z",
+        "window_end": "2026-01-29T12:00:00Z"
+      },
+      "TOUR-MQ-2026W05-THU-PM": {
+        "capacity": 50,
+        "booked": 33,
+        "window_start": "2026-01-29T14:00:00Z",
+        "window_end": "2026-01-29T18:00:00Z"
+      },
+      "TOUR-MQ-2026W05-FRI-AM": {
+        "capacity": 50,
+        "booked": 12,
+        "window_start": "2026-01-30T08:00:00Z",
+        "window_end": "2026-01-30T12:00:00Z"
+      },
+      "TOUR-MQ-2026W05-FRI-PM": {
+        "capacity": 50,
+        "booked": 32,
+        "window_start": "2026-01-30T14:00:00Z",
+        "window_end": "2026-01-30T18:00:00Z"
+      },
+      "TOUR-MQ-2026W06-MON-AM": {
+        "capacity": 50,
+        "booked": 11,
+        "window_start": "2026-02-02T08:00:00Z",
+        "window_end": "2026-02-02T12:00:00Z"
+      },
+      "TOUR-MQ-2026W06-MON-PM": {
+        "capacity": 50,
+        "booked": 24,
+        "window_start": "2026-02-02T14:00:00Z",
+        "window_end": "2026-02-02T18:00:00Z"
+      }
+    },
+    "GUYANE": {
+      "TOUR-GF-2026W04-TUE-AM": {
+        "capacity": 30,
+        "booked": 13,
+        "window_start": "2026-01-20T08:00:00Z",
+        "window_end": "2026-01-20T12:00:00Z"
+      },
+      "TOUR-GF-2026W04-TUE-PM": {
+        "capacity": 30,
+        "booked": 7,
+        "window_start": "2026-01-20T14:00:00Z",
+        "window_end": "2026-01-20T18:00:00Z"
+      },
+      "TOUR-GF-2026W04-WED-AM": {
+        "capacity": 30,
+        "booked": 9,
+        "window_start": "2026-01-21T08:00:00Z",
+        "window_end": "2026-01-21T12:00:00Z"
+      },
+      "TOUR-GF-2026W04-WED-PM": {
+        "capacity": 30,
+        "booked": 6,
+        "window_start": "2026-01-21T14:00:00Z",
+        "window_end": "2026-01-21T18:00:00Z"
+      },
+      "TOUR-GF-2026W04-THU-AM": {
+        "capacity": 30,
+        "booked": 6,
+        "window_start": "2026-01-22T08:00:00Z",
+        "window_end": "2026-01-22T12:00:00Z"
+      },
+      "TOUR-GF-2026W04-THU-PM": {
+        "capacity": 30,
+        "booked": 8,
+        "window_start": "2026-01-22T14:00:00Z",
+        "window_end": "2026-01-22T18:00:00Z"
+      },
+      "TOUR-GF-2026W04-FRI-AM": {
+        "capacity": 30,
+        "booked": 7,
+        "window_start": "2026-01-23T08:00:00Z",
+        "window_end": "2026-01-23T12:00:00Z"
+      },
+      "TOUR-GF-2026W04-FRI-PM": {
+        "capacity": 30,
+        "booked": 8,
+        "window_start": "2026-01-23T14:00:00Z",
+        "window_end": "2026-01-23T18:00:00Z"
+      },
+      "TOUR-GF-2026W05-MON-AM": {
+        "capacity": 30,
+        "booked": 20,
+        "window_start": "2026-01-26T08:00:00Z",
+        "window_end": "2026-01-26T12:00:00Z"
+      },
+      "TOUR-GF-2026W05-MON-PM": {
+        "capacity": 30,
+        "booked": 16,
+        "window_start": "2026-01-26T14:00:00Z",
+        "window_end": "2026-01-26T18:00:00Z"
+      },
+      "TOUR-GF-2026W05-TUE-AM": {
+        "capacity": 30,
+        "booked": 8,
+        "window_start": "2026-01-27T08:00:00Z",
+        "window_end": "2026-01-27T12:00:00Z"
+      },
+      "TOUR-GF-2026W05-TUE-PM": {
+        "capacity": 30,
+        "booked": 11,
+        "window_start": "2026-01-27T14:00:00Z",
+        "window_end": "2026-01-27T18:00:00Z"
+      },
+      "TOUR-GF-2026W05-WED-AM": {
+        "capacity": 30,
+        "booked": 18,
+        "window_start": "2026-01-28T08:00:00Z",
+        "window_end": "2026-01-28T12:00:00Z"
+      },
+      "TOUR-GF-2026W05-WED-PM": {
+        "capacity": 30,
+        "booked": 18,
+        "window_start": "2026-01-28T14:00:00Z",
+        "window_end": "2026-01-28T18:00:00Z"
+      },
+      "TOUR-GF-2026W05-THU-AM": {
+        "capacity": 30,
+        "booked": 21,
+        "window_start": "2026-01-29T08:00:00Z",
+        "window_end": "2026-01-29T12:00:00Z"
+      },
+      "TOUR-GF-2026W05-THU-PM": {
+        "capacity": 30,
+        "booked": 12,
+        "window_start": "2026-01-29T14:00:00Z",
+        "window_end": "2026-01-29T18:00:00Z"
+      },
+      "TOUR-GF-2026W05-FRI-AM": {
+        "capacity": 30,
+        "booked": 7,
+        "window_start": "2026-01-30T08:00:00Z",
+        "window_end": "2026-01-30T12:00:00Z"
+      },
+      "TOUR-GF-2026W05-FRI-PM": {
+        "capacity": 30,
+        "booked": 14,
+        "window_start": "2026-01-30T14:00:00Z",
+        "window_end": "2026-01-30T18:00:00Z"
+      },
+      "TOUR-GF-2026W06-MON-AM": {
+        "capacity": 30,
+        "booked": 14,
+        "window_start": "2026-02-02T08:00:00Z",
+        "window_end": "2026-02-02T12:00:00Z"
+      },
+      "TOUR-GF-2026W06-MON-PM": {
+        "capacity": 30,
+        "booked": 16,
+        "window_start": "2026-02-02T14:00:00Z",
+        "window_end": "2026-02-02T18:00:00Z"
+      }
+    },
+    "REUNION": {
+      "TOUR-RE-2026W04-TUE-AM": {
+        "capacity": 40,
+        "booked": 25,
+        "window_start": "2026-01-20T08:00:00Z",
+        "window_end": "2026-01-20T12:00:00Z"
+      },
+      "TOUR-RE-2026W04-TUE-PM": {
+        "capacity": 40,
+        "booked": 8,
+        "window_start": "2026-01-20T14:00:00Z",
+        "window_end": "2026-01-20T18:00:00Z"
+      },
+      "TOUR-RE-2026W04-WED-AM": {
+        "capacity": 40,
+        "booked": 18,
+        "window_start": "2026-01-21T08:00:00Z",
+        "window_end": "2026-01-21T12:00:00Z"
+      },
+      "TOUR-RE-2026W04-WED-PM": {
+        "capacity": 40,
+        "booked": 15,
+        "window_start": "2026-01-21T14:00:00Z",
+        "window_end": "2026-01-21T18:00:00Z"
+      },
+      "TOUR-RE-2026W04-THU-AM": {
+        "capacity": 40,
+        "booked": 22,
+        "window_start": "2026-01-22T08:00:00Z",
+        "window_end": "2026-01-22T12:00:00Z"
+      },
+      "TOUR-RE-2026W04-THU-PM": {
+        "capacity": 40,
+        "booked": 14,
+        "window_start": "2026-01-22T14:00:00Z",
+        "window_end": "2026-01-22T18:00:00Z"
+      },
+      "TOUR-RE-2026W04-FRI-AM": {
+        "capacity": 40,
+        "booked": 20,
+        "window_start": "2026-01-23T08:00:00Z",
+        "window_end": "2026-01-23T12:00:00Z"
+      },
+      "TOUR-RE-2026W04-FRI-PM": {
+        "capacity": 40,
+        "booked": 21,
+        "window_start": "2026-01-23T14:00:00Z",
+        "window_end": "2026-01-23T18:00:00Z"
+      },
+      "TOUR-RE-2026W05-MON-AM": {
+        "capacity": 40,
+        "booked": 27,
+        "window_start": "2026-01-26T08:00:00Z",
+        "window_end": "2026-01-26T12:00:00Z"
+      },
+      "TOUR-RE-2026W05-MON-PM": {
+        "capacity": 40,
+        "booked": 17,
+        "window_start": "2026-01-26T14:00:00Z",
+        "window_end": "2026-01-26T18:00:00Z"
+      },
+      "TOUR-RE-2026W05-TUE-AM": {
+        "capacity": 40,
+        "booked": 18,
+        "window_start": "2026-01-27T08:00:00Z",
+        "window_end": "2026-01-27T12:00:00Z"
+      },
+      "TOUR-RE-2026W05-TUE-PM": {
+        "capacity": 40,
+        "booked": 14,
+        "window_start": "2026-01-27T14:00:00Z",
+        "window_end": "2026-01-27T18:00:00Z"
+      },
+      "TOUR-RE-2026W05-WED-AM": {
+        "capacity": 40,
+        "booked": 25,
+        "window_start": "2026-01-28T08:00:00Z",
+        "window_end": "2026-01-28T12:00:00Z"
+      },
+      "TOUR-RE-2026W05-WED-PM": {
+        "capacity": 40,
+        "booked": 12,
+        "window_start": "2026-01-28T14:00:00Z",
+        "window_end": "2026-01-28T18:00:00Z"
+      },
+      "TOUR-RE-2026W05-THU-AM": {
+        "capacity": 40,
+        "booked": 8,
+        "window_start": "2026-01-29T08:00:00Z",
+        "window_end": "2026-01-29T12:00:00Z"
+      },
+      "TOUR-RE-2026W05-THU-PM": {
+        "capacity": 40,
+        "booked": 11,
+        "window_start": "2026-01-29T14:00:00Z",
+        "window_end": "2026-01-29T18:00:00Z"
+      },
+      "TOUR-RE-2026W05-FRI-AM": {
+        "capacity": 40,
+        "booked": 23,
+        "window_start": "2026-01-30T08:00:00Z",
+        "window_end": "2026-01-30T12:00:00Z"
+      },
+      "TOUR-RE-2026W05-FRI-PM": {
+        "capacity": 40,
+        "booked": 22,
+        "window_start": "2026-01-30T14:00:00Z",
+        "window_end": "2026-01-30T18:00:00Z"
+      },
+      "TOUR-RE-2026W06-MON-AM": {
+        "capacity": 40,
+        "booked": 17,
+        "window_start": "2026-02-02T08:00:00Z",
+        "window_end": "2026-02-02T12:00:00Z"
+      },
+      "TOUR-RE-2026W06-MON-PM": {
+        "capacity": 40,
+        "booked": 23,
+        "window_start": "2026-02-02T14:00:00Z",
+        "window_end": "2026-02-02T18:00:00Z"
+      }
+    },
+    "MAYOTTE": {}
+  },
+  "generated_at": "2026-01-19T02:04:13.781419+00:00",
+  "version": "1.3.0"
+}

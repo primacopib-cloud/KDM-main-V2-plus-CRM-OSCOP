@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Note préventive ACPR / DGCCRF — KDMARCHE – O'SCOP</title>
+  <style>
+    :root{
+      --ink:#0b1220; --muted:#64748b; --line:#e2e8f0; --paper:#ffffff;
+      --gold:#b07a1a; --red:#b91c1c; --green:#0f766e; --bg:#f6f8fb; --soft:#f1f5f9;
+      --radius:14px; --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55}
+    .page{width:210mm;min-height:297mm;margin:12mm auto;background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.08)}
+    header{padding:16mm 16mm 10mm;background:linear-gradient(135deg, rgba(176,122,26,.10), rgba(15,118,110,.06));border-bottom:1px solid var(--line)}
+    .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+    .meta{font-size:12px;color:var(--muted)}
+    h1{margin:10px 0 4px;font-size:22px}
+    .subtitle{color:var(--muted);font-size:13px}
+    main{padding:12mm 16mm 14mm}
+    .panel{border:1px solid var(--line);border-radius:14px;background:var(--soft);padding:10px 12px}
+    .panel b{display:block;margin-bottom:6px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    .box{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
+    .box h3{margin:0 0 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#334155}
+    .box p{margin:0;color:#0f172a;font-size:13px}
+    .art{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+    .art h2{margin:0 0 6px;font-size:14px;letter-spacing:.08em;text-transform:uppercase}
+    .art p,.art li{font-size:13px;color:#0f172a}
+    .art ul{margin:6px 0 0;padding-left:18px}
+    .tagbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .tag{display:inline-flex;gap:8px;align-items:center;padding:7px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:12px;color:#334155}
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--green)}
+    .kv{font-family:var(--mono);font-size:11px}
+    footer{padding:10px 16mm 12mm;border-top:1px solid var(--line);color:var(--muted);font-size:11px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    @page{size:A4;margin:12mm}
+    @media print{body{background:#fff}.page{margin:0;border:none;border-radius:0;box-shadow:none}}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="top">
+        <div>
+          <div class="kv">Note préventive — ACPR / DGCCRF</div>
+          <h1>Qualification et prévention de requalification</h1>
+          <div class="subtitle">Dispositif Centrale d'achats B2B ESS — Partenariat KDMARCHE – O'SCOP</div>
+        </div>
+        <div class="meta">
+          Référence : <span class="kv">{{REF_NOTE}}</span><br/>
+          Version : <span class="kv">{{VERSION}}</span><br/>
+          Date : <span class="kv">{{DATE_DOCUMENT}}</span>
+        </div>
+      </div>
+
+      <div class="tagbar">
+        <span class="tag"><span class="dot"></span> Séparation flux marchandises / services</span>
+        <span class="tag">Aucune assurance</span>
+        <span class="tag">Aucune intermédiation financière</span>
+        <span class="tag">Anti-tromperie "prix structurels"</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="panel">
+        <b>Objet</b>
+        La présente note vise à clarifier la nature juridique et économique du dispositif afin de prévenir toute requalification erronée (assurance, intermédiation financière, pratiques commerciales trompeuses, vente à perte).
+      </div>
+
+      <div class="grid2">
+        <div class="box">
+          <h3>O'SCOP (services)</h3>
+          <p>
+            O'SCOP fournit des services d'accès/usage : abonnements, crédits, gouvernance ESS, mutualisation.<br/>
+            <b>O'SCOP ne vend pas de marchandises</b>, ne facture pas de produits, et n'encaisse aucun paiement de marchandises.
+          </p>
+        </div>
+        <div class="box">
+          <h3>KDMARCHE (marchandises)</h3>
+          <p>
+            KDMARCHE commercialise les marchandises en B2B, facture les produits, applique la TVA et gère les conditions EXW, stocks et zones.
+          </p>
+        </div>
+      </div>
+
+      <div class="art">
+        <h2>1 — Hors champ ACPR (absence d'assurance)</h2>
+        <ul>
+          <li>Aucune collecte de prime, aucune promesse d'indemnisation, aucune couverture d'aléa.</li>
+          <li>Aucune mutualisation de risques probabilisables, aucun sinistre, aucune prestation d'assurance.</li>
+          <li>Le dispositif relève d'une organisation contractuelle d'accès à des conditions économiques B2B, financée par abonnement/usage.</li>
+        </ul>
+      </div>
+
+      <div class="art">
+        <h2>2 — Hors champ services de paiement (absence de maniement de fonds pour compte de tiers)</h2>
+        <ul>
+          <li>Les paiements de marchandises sont encaissés par KDMARCHE.</li>
+          <li>O'SCOP encaisse uniquement abonnements, crédits et services (factures distinctes).</li>
+          <li>Pas de séquestre, pas de cantonnement de fonds marchandises par O'SCOP.</li>
+        </ul>
+      </div>
+
+      <div class="art">
+        <h2>3 — DGCCRF : information loyale et prévention tromperie</h2>
+        <ul>
+          <li>La mention "jusqu'à –50%" est qualifiée comme <b>prix structurels</b> (suppression d'intermédiaires, mutualisation, EXW), et non comme promotion artificielle.</li>
+          <li>Accès conditionné (validation B2B + abonnement actif) affiché publiquement.</li>
+          <li>Séparation claire des responsabilités : produits/factures = KDMARCHE ; accès/usage = O'SCOP.</li>
+        </ul>
+      </div>
+
+      <div class="art">
+        <h2>4 — Prévention vente à perte / dumping</h2>
+        <ul>
+          <li>O'SCOP ne vend pas les produits : hors champ vente à perte côté O'SCOP.</li>
+          <li>KDMARCHE conserve une documentation interne de formation des prix par zone (coût, logistique, taxes, frais).</li>
+          <li>Les prix sont justifiés par l'organisation B2B et la mutualisation, sans indexation aux ventes pour O'SCOP.</li>
+        </ul>
+      </div>
+
+      <div class="art">
+        <h2>5 — Preuves et traçabilité</h2>
+        <ul>
+          <li>Journal probant : décisions B2B, états abonnements, provisioning partenaire, consommations crédits (ledger).</li>
+          <li>Contrôle d'accès automatisé (OPA/ABAC) : prix/commande EXW par zone, droits par zone, suspension impayés.</li>
+        </ul>
+      </div>
+
+      <div class="art">
+        <h2>Conclusion</h2>
+        <p>
+          Le dispositif constitue une organisation coopérative d'accès à des conditions économiques B2B, financée par l'accès et l'usage,
+          sans intervention dans la vente de marchandises par O'SCOP, sans couverture de risques, et sans maniement de fonds marchandises.
+        </p>
+      </div>
+    </main>
+
+    <footer>
+      <div>Note préventive ACPR / DGCCRF — KDMARCHE – O'SCOP</div>
+      <div class="kv">Ref {{REF_NOTE}} · v{{VERSION}} · {{DATE_DOCUMENT}}</div>
+    </footer>
+  </div>
+</body>
+</html>
