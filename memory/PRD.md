@@ -345,5 +345,34 @@ Objectif : créer une interface web propre pour exploiter l'API existante sans m
 - Brevo webhooks idempotent par jour (upsert+$inc), referral lifecycle complet (claim/conflict/self/unauthorized).
 
 ### Code review — Recommandations futures
-- `routes_brevo_webhook.metrics/summary` ignore le filtre `days` (group all dates) — minor.
-- `routes_pass_lifecycle.claim` : crédit wallets en boucle non-atomique → sur retry après crash mid-loop, double crédit possible. Mitigation : enforce idempotency via `claim_id` ledger ref (déjà fait via `ref_id`).
+- ✅ Brevo metrics days filter — DONE iter 9
+- ✅ Idempotency strict claim parrainage — DONE iter 9
+- ✅ Stripe auto-renew (soft) — DONE iter 9
+- ✅ OG/Twitter meta sur landing — DONE iter 9
+
+## Iteration 9 (22 mai 2026) — Sprint hardening : Auto-renew Stripe + Idempotency + OG/social + Brevo days filter
+
+### Backend
+- **`pass_auto_renew.py`** (nouveau) :
+  - `create_pass_renewal_session(db, user_id)` : crée une Stripe Checkout session pré-tagged `auto_renew=True, kind=PASS` + insertion `payment_transactions` (status=initiated).
+  - `run_auto_renew_batch(db)` : scanne `lolodrive_passes` avec `is_auto_renew=true, status=ACTIVE, ends_at ∈ [now, now+36h]`, génère un lien Stripe et envoie email+SMS Brevo "Renouveler en 1 clic". Throttle 7j via `renew_email_sent_at`. Datetime naive UTC (cohérence avec seed legacy).
+- **`scheduler.py`** : appelle aussi `run_auto_renew_batch` à chaque cycle (toutes les 6h).
+- **`routes_lolodrive_oscoop.py`** : `POST /api/lolodrive/admin/notifications/auto-renew-batch` (require_admin) pour déclencher manuellement.
+- **`routes_brevo_webhook.py`** : `metrics/summary` filtre désormais sur `date >= cutoff` (clamp 1-365j, ISO YYYY-MM-DD lexicographique).
+- **`routes_pass_lifecycle.py`** :
+  - Idempotent ledger via `update_one({wallet_id, ref_id}, {$setOnInsert: ...}, upsert=True)` + crédit conditionnel sur `result.upserted_id is not None`.
+  - Index unique `(wallet_id, ref_id)` partial sur lolodrive_wallet_ledger (n'impacte pas les rows legacy sans `ref_id`).
+  - `ref_id` désormais formaté `REF-{claim_id}-{SPONSOR|REFEREE}` pour distinguer les 2 crédits du même claim.
+
+### Frontend
+- **`public/index.html`** : title "KDMARCHÉ × O'SCOP — Communityplace coopérative B2B2C" + meta description riche + 7 OG tags (type/title/description/site_name/locale/image/image:width|height|alt) + 4 Twitter tags. Image fallback Unsplash (Mapbox Static API bloquée par les URL restrictions du token).
+
+### Tests — Iteration 7 report
+- **Backend pytest 15/15 iter7 + 14/14 régression iter6 = 29/29 PASSED**.
+- **Frontend OG/Twitter meta DOM scan 100%**.
+- Validé : days clamp (0/-5 → 1, 9999 → 365), auto-renew throttle (1er run sent=1, immediate retrigger sent=0), idempotency (3× upsert → 1 crédit), payment_transactions tagged `auto_renew=true`.
+
+### Backlog restant
+- 🛡️ Stripe Subscriptions natives (rebill auto réel) — actuellement "soft" via lien email. Nécessite migration vers Stripe SubscriptionSchedule.
+- 🖼️ Image OG personnalisée hostée sur le CDN Emergent (actuellement Unsplash générique Caraïbes).
+- 🌐 i18n : extraire les labels FR pour préparer l'export en EN/ES (marchés DOM hispanophones futurs ?).
