@@ -103,4 +103,20 @@ webpackConfig.devServer = (devServerConfig) => {
   return devServerConfig;
 };
 
+// Jest config — react-router-dom v7 ships an "exports" map that confuses
+// jest-resolve. We force the CommonJS entries for all of its internals.
+webpackConfig.jest = {
+  configure: (jestConfig) => {
+    jestConfig.moduleNameMapper = {
+      ...(jestConfig.moduleNameMapper || {}),
+      '^react-router-dom$': '<rootDir>/node_modules/react-router-dom/dist/index.js',
+      '^react-router/dom$': '<rootDir>/node_modules/react-router/dist/development/dom-export.js',
+      '^react-router$': '<rootDir>/node_modules/react-router/dist/development/index.js',
+      // Mirror webpack alias `@/` → src/
+      '^@/(.*)$': '<rootDir>/src/$1',
+    };
+    return jestConfig;
+  },
+};
+
 module.exports = webpackConfig;

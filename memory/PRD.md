@@ -170,6 +170,30 @@ Exigences produit étendues :
 - ✅ Brevo webhook sans token → 401, token invalide → 401, header valide → 200, query param valide → 200.
 - ✅ Screenshot UI conforme à la charte (badges, couleurs, hover, tableau responsive).
 
+### Iter 15 (22 mai 2026) — Tests Jest verrouillant le contrat hooks (DONE)
+**Demande utilisateur** : ajouter des tests pour empêcher la régression des hooks (1 effet par axe).
+
+**Implémenté** :
+- 🆕 `/app/frontend/src/setupTests.js` — polyfill `TextEncoder`/`TextDecoder` (requis par react-router v7 sous JSDOM) + `matchMedia` stub.
+- 🆕 `/app/frontend/craco.config.js` enrichi avec une section `jest.configure` :
+  - `moduleNameMapper` pour bypass le `exports` map de react-router-dom v7 → entrées CJS explicites.
+  - Mirror de l'alias webpack `@/` → `<rootDir>/src/`.
+- 🆕 Deps dev : `@testing-library/react@16`, `@testing-library/jest-dom@6`, `@testing-library/dom`, `@testing-library/user-event`.
+- 🆕 `PublicLolodriveMapSection` exposé en **named export** depuis `LandingPage.jsx` pour pouvoir être monté en isolation.
+- 🆕 `src/pages/LandingPage.test.jsx` (3 tests) :
+  - Au montage : 1 appel `listTerritories` + 1 appel `listLoloPoints({territory: undefined})`.
+  - Changement de territoire : `listLoloPoints` re-fetched avec le nouveau territoire, `listTerritories` jamais rappelé.
+  - 3 changements consécutifs → exactement 4 appels `listLoloPoints` (1 mount + 3 changes) → pas de boucle infinie.
+- 🆕 `src/pages/LolodriveCatalogPage.test.jsx` (4 tests) :
+  - Non authentifié → redirection `/connexion`, aucun fetch catalogue/points.
+  - Authentifié au montage → 1 territoires + 1 catalogue + 1 lolo-points.
+  - Changement de territoire → catalogue + points re-fetched, territoires PAS rappelés.
+  - 2 changements → exactement 3 appels `catalogProducts` (pas de boucle).
+
+**Validation** :
+- ✅ `CI=true yarn test --watchAll=false` → **7/7 tests pass**.
+- ✅ Frontend dev server toujours HTTP 200 (`craco.config.js` n'impacte le webpack qu'en mode test).
+
 ### Iter 14 (22 mai 2026) — Refactor React hooks deps (zéro `eslint-disable`) (DONE)
 **Demande utilisateur** : éliminer les 8 `eslint-disable-next-line react-hooks/exhaustive-deps` documentés dans le code.
 

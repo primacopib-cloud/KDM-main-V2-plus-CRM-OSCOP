@@ -235,9 +235,10 @@ export default LandingPage;
 
 /* =================================================================
  * Section publique : carte du Reseau LOLODRIVE (acquisition / contact)
+ * Named export so unit tests can mount it in isolation.
  * ================================================================= */
 
-const PublicLolodriveMapSection = () => {
+export const PublicLolodriveMapSection = () => {
   const [points, setPoints] = useState([]);
   const [territories, setTerritories] = useState([]);
   const [territory, setTerritory] = useState(null);
