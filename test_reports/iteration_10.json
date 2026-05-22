@@ -1,0 +1,41 @@
+{
+  "summary": "Iter 10 backend validation of multi-account Stripe Checkout (O'SCOP for PASS/RECHARGE, KDMARCHE for ORDER) + native Google OAuth login redirect + dual-account webhook signature verification. 8/8 tests pass. End-to-end browser Stripe Checkout flow with test card 4242 NOT possible in this environment: the emergentintegrations shared key sk_test_emergent returns a stub URL (https://checkout.stripe.test/<sid>) whose host does not resolve. Status polling and webhook code paths are wired correctly and stripe_account is correctly persisted on payment_transactions and re-read by /status/<sid>, but the 'payment_status=paid' transition cannot be triggered from this sandbox key.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/lolodrive/checkout/pass-session (and order/recharge)", "issue": "Returned Stripe Checkout URL is https://checkout.stripe.test/<sid> — non-resolvable stub host because sk_test_emergent is a shared mock key. End-to-end card flow (4242...) cannot be completed in browser. Switching to a real Stripe test key (sk_test_...) is required to validate the paid→applied transition in TEST mode."},
+      {"endpoint": "GET /api/lolodrive/pass/me", "issue": "Response shape is {pass:{...}, wallet:{...}, active: bool} — slightly unusual; consumers must read .pass.status not .status. Documented but worth flagging for clients expecting flat PASS object."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Stripe Checkout (any kind)", "issue": "Frontend will redirect user to a non-resolvable checkout.stripe.test URL in current STRIPE_MODE=test config — user will see DNS error. This is environment-only (emergentintegrations stub).", "affected_selectors": ["a[href*='checkout.stripe']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter10_stripe_multiaccount.py",
+    "/app/test_reports/pytest/iter10_results.xml"
+  ],
+  "action_items": [
+    "For real end-to-end Stripe test validation, replace sk_test_emergent with a genuine Stripe test secret key (sk_test_...) on at least one of the two accounts so the returned URL resolves to checkout.stripe.com and the test card 4242 flow can be exercised. Then re-run iter10 tests + a Playwright flow.",
+    "Optional: flatten /api/lolodrive/pass/me response or also expose status at the top level for ergonomics."
+  ],
+  "critical_code_review_comments": [
+    "stripe_accounts.get_stripe_key falls back to oscop key when kdmarche key is missing — good defensive behavior, but log a warning so misconfiguration in prod is visible.",
+    "Webhook handler iterates over both accounts and silently swallows verification exceptions — works but masks real misconfiguration. Consider logging which account verified successfully.",
+    "routes_lolodrive_checkout._apply_payment_success applies side-effects in MongoDB without a transaction. Concurrent polling + webhook calls rely on the 'applied' flag for idempotency — race window exists between read and update. Consider using $set with a conditional filter ({applied: {$ne: true}}) to make the apply truly idempotent under contention.",
+    "PASS recharge route checks 'pass_doc.ends_at < datetime.utcnow()' but ends_at may be naive vs aware depending on Mongo driver — verify timezone consistency to avoid spurious 400s."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter10_stripe_multiaccount.py"
+  ],
+  "success_rate": {"backend": "100% (8/8 tests passed)", "frontend": "not tested"},
+  "test_credentials": "marie@example.com / Demo2026! (PASS ACTIVE, wallet 1100 UC, 30 orders incl. DRAFT). Stripe key sk_test_emergent is an Emergent shared stub.",
+  "seed_data_creation": "None — used existing seeded data for Marie (PASS active, multiple DRAFT orders).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All 5 requested validations passed at the API level: (1) pass-session returns stripe_account=oscop, (2) order-session returns stripe_account=kdmarche with persisted account on /status, (3) recharge-session returns stripe_account=oscop (PASS ACTIVE check works — Marie is ACTIVE), (4) /api/auth/google/login returns 302 to accounts.google.com with correct client_id=299456348062-..., correct redirect_uri ending /api/auth/google/callback, HMAC-signed state, openid+email+profile scope, and oauth_state secure httponly cookie set, (5) /api/webhook/stripe returns 400 both with missing AND bogus Stripe-Signature header, confirming dual-account fallback verification logic is wired. CANNOT validate paid->applied transition in browser because sk_test_emergent returns checkout.stripe.test stub URLs. To E2E test card 4242, the project needs a real Stripe test secret.",
+  "rca_of_the_issue": "Initial test failures were because tests asserted url.startswith('https://checkout.stripe.com/') but emergentintegrations returns 'https://checkout.stripe.test/<sid>' for the shared mock test key. Relaxed assertion to accept both .com (real Stripe) and .test (Emergent stub). The recharge test originally was skipped because /api/lolodrive/pass/me returns a wrapped payload {pass:{...}, active: bool, wallet:{...}} — fixed by reading body.active and body.pass.status. After fixes: 8/8 tests passing."
+}
