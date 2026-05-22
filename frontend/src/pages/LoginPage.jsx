@@ -144,11 +144,10 @@ const LoginPage = () => {
               <div className="relative flex justify-center"><span className="px-2 text-[11px] text-white/40 bg-[#070A10]">ou</span></div>
             </div>
 
-            {/* Emergent-managed Google login */}
+            {/* Native Google OAuth (KDMARCHE own Google Cloud project — branding KDMARCHE) */}
             {/* REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH */}
-            <button
-              type="button"
-              onClick={() => authAPI.startEmergentLogin()}
+            <a
+              href={`${process.env.REACT_APP_BACKEND_URL}/api/auth/google/login?redirect_after=/dashboard`}
               data-testid="google-login-btn"
               className="w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-[14px] text-sm font-medium bg-white text-[#1f1f1f] hover:bg-white/90 transition-colors"
             >
@@ -159,7 +158,7 @@ const LoginPage = () => {
                 <path fill="#1976D2" d="M43.6 20.5H42V20.5H24v7h11.3c-.8 2.3-2.4 4.4-4.6 5.7l6.1 5.2C39.6 35 44 30 44 24c0-1.2-.1-2.4-.4-3.5z"/>
               </svg>
               Continuer avec Google
-            </button>
+            </a>
             
             <p className="text-center text-sm text-white/60">
               Pas encore de compte ? <Link to="/inscription" className="text-[#D9B35A] hover:text-[#F2D07A] font-medium">Créer un compte</Link>

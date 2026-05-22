@@ -1434,6 +1434,11 @@ from routes_emergent_auth import router as emergent_auth_router, set_emergent_au
 set_emergent_auth_database(db)
 app.include_router(emergent_auth_router)
 
+# Native Google OAuth (KDMARCHE own Google Cloud project — branding KDMARCHE)
+from routes_google_auth import router as google_auth_router, set_google_auth_database, setup_google_auth_indexes
+set_google_auth_database(db)
+app.include_router(google_auth_router)
+
 # Brevo transactional webhooks (delivered/bounced metrics)
 from routes_brevo_webhook import router as brevo_webhook_router, set_brevo_webhook_database, setup_brevo_webhook_indexes
 set_brevo_webhook_database(db)
@@ -1574,6 +1579,11 @@ async def startup_db_client():
         logger.info("Emergent OAuth indexes ensured")
     except Exception as e:
         logger.warning(f"Could not create Emergent OAuth indexes: {e}")
+    try:
+        await setup_google_auth_indexes(db)
+        logger.info("Native Google OAuth indexes ensured")
+    except Exception as e:
+        logger.warning(f"Could not create Google OAuth indexes: {e}")
     try:
         await setup_brevo_webhook_indexes(db)
         logger.info("Brevo webhook indexes ensured")
