@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import os
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -95,7 +95,9 @@ async def brevo_metrics_summary(days: int = 30):
     if db is None:
         raise HTTPException(status_code=500, detail="Brevo webhook DB not initialized")
     days = max(1, min(days, 365))
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
     pipeline = [
+        {"$match": {"date": {"$gte": cutoff}}},
         {"$group": {"_id": "$event", "total": {"$sum": "$count"}}},
         {"$sort": {"total": -1}},
     ]

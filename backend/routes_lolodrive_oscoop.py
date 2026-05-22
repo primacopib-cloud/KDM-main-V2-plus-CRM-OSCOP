@@ -1350,6 +1350,13 @@ async def admin_notifications_test(admin: dict = Depends(require_admin)):
     return {"ok": True, "result": res}
 
 
+@lolodrive_router.post("/admin/notifications/auto-renew-batch")
+async def admin_run_auto_renew_batch(admin: dict = Depends(require_admin)):
+    """Force-run the soft auto-renew batch (Stripe link + Brevo email/SMS) for testing/ops."""
+    from pass_auto_renew import run_auto_renew_batch
+    return await run_auto_renew_batch(db)
+
+
 async def ensure_lolodrive_indexes(database):
     await database.lolodrive_passes.create_index("user_id", unique=True)
     await database.lolodrive_passes.create_index([("status", 1), ("ends_at", -1)])

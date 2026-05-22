@@ -1,0 +1,38 @@
+{
+  "summary": "Sprint final P1 testing complete. 15/15 iter7 + 14/14 iter6 regression PASSED. Validated: (1) Brevo metrics summary respects 'days' filter — clamps to 1 minimum (days=0/-5/-100 → 1), 365 maximum (days=9999 → 365), and today-only events return identical totals for days=1 vs days=30. (2) Stripe soft auto-renew via POST /api/lolodrive/admin/notifications/auto-renew-batch returns {sent, skipped} dict; non-admin → 403; with no PASS in window → {sent:0, skipped:0}; after setting marie's PASS ends_at=+20h, is_auto_renew=true, renew_email_sent_at=None → sent>=1 and a new payment_transactions row is created with kind='PASS', auto_renew=True, payment_status='initiated'; immediate re-trigger → sent=0 (7-day throttle via renew_email_sent_at marker). (3) Idempotent wallet ledger upsert validated: unique index (wallet_id, ref_id) is present on lolodrive_wallet_ledger with unique=true, and 3× replay of update_one upsert with identical (wallet_id, ref_id) only credits the wallet once (1st insert), the next 2 are no-op (upserted_id is None). (4) OG/Twitter meta + title on landing /: og:title='KDMARCHÉ × O'SCOP — Communityplace coopérative B2B2C', og:description, og:image=Unsplash (HTTP 200, image/jpeg), og:type=website, og:locale=fr_FR, og:image:width=1200, og:image:height=630; twitter:card=summary_large_image, twitter:title, twitter:image=Unsplash; <title>=Communityplace coopérative B2B2C; meta description mentions 'Réseau LOLODRIVE'. Regression iter6 (catalog territory filter GP/RE/GF/MQ, Brevo webhook IN+metrics, auto-renew toggle persisted, referral lifecycle KDM-XXXXXX claim crediting +50 UC sponsor+referee, plafond, admin stats) all green. Frontend DOM scan confirmed all OG/Twitter tags rendered correctly on /.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter7_sprint.py",
+    "/app/backend/tests/test_iter6_sprint.py",
+    "/app/test_reports/pytest/iter7.xml",
+    "/app/test_reports/pytest/iter6_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "pass_auto_renew.py:99 — uses datetime.utcnow() (naive) deliberately to match legacy seed (documented in code comment). Acceptable, but consider tz-aware migration in a future sprint. The PASS ends_at write path must stay naive too; otherwise the $gte/$lte query mismatches.",
+    "pass_auto_renew.py: scheduler creates a NEW Stripe Checkout session every cycle if throttle hasn't expired — current throttle (7d) prevents this. Good defense.",
+    "routes_brevo_webhook.py:97 — days=max(1, min(days, 365)) clamp is correct. cutoff uses YYYY-MM-DD string compare on `date` field (lexicographic — safe since ISO format).",
+    "routes_pass_lifecycle.py:234 — unique index uses partialFilterExpression on ref_id existence + type 'string', which correctly prevents pre-existing rows without ref_id from violating the constraint. Wrapped in try/except for safe re-runs.",
+    "routes_pass_lifecycle.py:172 — `if result.upserted_id is not None` correctly distinguishes 'new insert' from 'matched existing' on update_one(upsert=True). This is the right MongoDB idiom for idempotent credit.",
+    "routes_lolodrive_oscoop.py:1353 — admin endpoint correctly wraps run_auto_renew_batch with require_admin dependency. Note: scheduler.py also calls run_auto_renew_batch every 6h, so production batches will happen automatically.",
+    "frontend/public/index.html — IMPORTANT: CRA dev server requires a frontend restart to pick up changes to public/index.html (hot-reload doesn't track it). I had to `sudo supervisorctl restart frontend` once during testing to flush the cached old OG=Mapbox URL. Confirmed served HTML now uses Unsplash."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter7_sprint.py"
+  ],
+  "success_rate": {"backend": "100% (15/15 iter7 + 14/14 iter6 regression)", "frontend": "100% (OG meta DOM scan + landing render)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; marie@example.com / Demo2026! ; gerant@lolopoint.fr / Demo2026!",
+  "seed_data_creation": "Modified marie's PASS ends_at twice (set to +60d for empty-window test, then +20h for in-window test) via direct MongoDB. Created TEST_IDEMP-* ledger rows then cleaned them up to keep marie's wallet balance unchanged. Restarted frontend once to pick up index.html OG meta updates.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "iter7 covers: Brevo days clamp + filter, auto-renew batch (admin+throttle+payment_tx), wallet ledger unique index + 3x idempotent upsert, OG/Twitter meta on /. The auto-renew batch test consumes real Brevo email+SMS credits (we only triggered it once with marie in-window, plus 1 throttled re-trigger, total ~1 email + ~1 SMS to marie@example.com). PASS ends_at is now ~20h in future for marie. After test runs the renew_email_sent_at marker is set, so subsequent batches will skip marie until 7 days pass OR until you reset that field. Note CRA dev server requires `sudo supervisorctl restart frontend` to refresh public/index.html changes. Mapbox OG image was replaced by Unsplash due to URL restrictions on the Mapbox token (validated 200 image/jpeg).",
+  "rca of the issue": "N/A — all four P1 features validated. Single environment quirk noted: CRA dev server does not hot-reload public/index.html; main agent should remember to restart frontend after editing OG meta in the future."
+}

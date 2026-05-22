@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Run interval (seconds) — every 6 hours
 PASS_J3_INTERVAL_SECONDS = 6 * 60 * 60
+AUTO_RENEW_INTERVAL_SECONDS = 6 * 60 * 60
 
 _task: asyncio.Task | None = None
 _db = None
@@ -73,7 +74,12 @@ async def _scheduler_loop():
         try:
             await _send_pass_j3_batch()
         except Exception as exc:
-            logger.exception("Scheduler iteration crashed: %s", exc)
+            logger.exception("Scheduler J3 iteration crashed: %s", exc)
+        try:
+            from pass_auto_renew import run_auto_renew_batch
+            await run_auto_renew_batch(_db)
+        except Exception as exc:
+            logger.exception("Scheduler auto-renew iteration crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 
@@ -82,7 +88,7 @@ def start_scheduler():
     if _task is None or _task.done():
         loop = asyncio.get_event_loop()
         _task = loop.create_task(_scheduler_loop())
-        logger.info("Scheduler started (PASS J-3 every %.1fh)", PASS_J3_INTERVAL_SECONDS / 3600)
+        logger.info("Scheduler started (PASS J-3 + auto-renew every %.1fh)", PASS_J3_INTERVAL_SECONDS / 3600)
 
 
 def stop_scheduler():

@@ -149,20 +149,31 @@ async def claim_referral_code(payload: ReferralClaimIn, user_id: str = Depends(g
 
     for uid, role in ((referral["sponsor_user_id"], "sponsor"), (user["id"], "referee")):
         wallet = await db.lolodrive_wallets.find_one({"user_id": uid}, {"_id": 0})
-        if wallet:
+        if not wallet:
+            continue
+        # Idempotent ledger insert: unique on (wallet_id, ref_id) — only credits the wallet
+        # if the ledger entry was actually NEW. Replays of this loop after a crash will see
+        # the existing ledger row and skip the $inc.
+        ledger_ref = f"REF-{claim_id}-{role.upper()}"
+        result = await db.lolodrive_wallet_ledger.update_one(
+            {"wallet_id": wallet["id"], "ref_id": ledger_ref},
+            {"$setOnInsert": {
+                "id": secrets.token_hex(8),
+                "wallet_id": wallet["id"],
+                "ref_id": ledger_ref,
+                "type": "CREDIT",
+                "amount_uc": REFERRAL_BONUS_UC,
+                "reason": f"REFERRAL_BONUS_{role.upper()}",
+                "created_at": now,
+            }},
+            upsert=True,
+        )
+        # Only credit balance if ledger entry was newly inserted
+        if result.upserted_id is not None:
             await db.lolodrive_wallets.update_one(
                 {"id": wallet["id"]},
                 {"$inc": {"balance_uc": REFERRAL_BONUS_UC}, "$set": {"updated_at": now}},
             )
-            await db.lolodrive_wallet_ledger.insert_one({
-                "id": secrets.token_hex(8),
-                "wallet_id": wallet["id"],
-                "type": "CREDIT",
-                "amount_uc": REFERRAL_BONUS_UC,
-                "reason": f"REFERRAL_BONUS_{role.upper()}",
-                "ref_id": claim_id,
-                "created_at": now,
-            })
     return {
         "ok": True,
         "code": code,
@@ -217,3 +228,14 @@ async def setup_pass_lifecycle_indexes(database):
     await database.lolodrive_referrals.create_index("sponsor_user_id")
     await database.lolodrive_referral_claims.create_index("referee_user_id", unique=True)
     await database.lolodrive_referral_claims.create_index("sponsor_user_id")
+    # Strict idempotency on wallet ledger : (wallet_id, ref_id) must be unique.
+    # Allows safe retry of the credit loop after partial failures.
+    try:
+        await database.lolodrive_wallet_ledger.create_index(
+            [("wallet_id", 1), ("ref_id", 1)],
+            unique=True,
+            partialFilterExpression={"ref_id": {"$exists": True, "$type": "string"}},
+        )
+    except Exception:
+        # Index may already exist with a different spec; safe to ignore.
+        pass
