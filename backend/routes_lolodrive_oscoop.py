@@ -146,6 +146,9 @@ class LoloPointCreate(BaseModel):
     city: Optional[str] = None
     address: Optional[str] = None
     zone_name: Optional[str] = None
+    territory: Optional[str] = None  # GP / MQ / GF / RE
+    lat: Optional[float] = None
+    lng: Optional[float] = None
     manager_user_id: Optional[str] = None
     payout_cap_cents_monthly: int = 120000
     payout_cap_percent_bps: int = 600
@@ -705,11 +708,27 @@ async def admin_kpi_dashboard(admin: dict = Depends(require_admin)):
 # LOLO POINTS cooperatifs
 # =======================
 
+TERRITORIES = [
+    {"code": "GP", "name": "Guadeloupe", "center": {"lat": 16.2650, "lng": -61.5510}, "zoom": 9.5},
+    {"code": "MQ", "name": "Martinique", "center": {"lat": 14.6415, "lng": -61.0242}, "zoom": 10},
+    {"code": "GF", "name": "Guyane", "center": {"lat": 4.0000, "lng": -53.0000}, "zoom": 7},
+    {"code": "RE", "name": "La Réunion", "center": {"lat": -21.1151, "lng": 55.5364}, "zoom": 10},
+]
+
+
+@lolodrive_router.get("/territories")
+async def list_territories():
+    """Liste des territoires d'exploitation (DOM)."""
+    return {"territories": TERRITORIES}
+
+
 @lolodrive_router.get("/lolo-points")
-async def list_lolo_points(city: Optional[str] = None):
+async def list_lolo_points(city: Optional[str] = None, territory: Optional[str] = None):
     query = {"status": "ACTIVE"}
     if city:
         query["city"] = city
+    if territory:
+        query["territory"] = territory.upper()
     points = await db.lolodrive_points.find(query, {"_id": 0}).sort("name", 1).to_list(200)
     return {"points": points}
 

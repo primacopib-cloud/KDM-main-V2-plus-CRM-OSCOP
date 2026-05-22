@@ -236,8 +236,34 @@ Objectif : créer une interface web propre pour exploiter l'API existante sans m
 - Validation E2E ordre→READY → Brevo SMS+Email envoyés (logs httpx 201 Created).
 
 ### Backlog restant (P0/P1)
-- 🗺️ **P0** : Carte Mapbox des Lolo Points (clé fournie : `pk.eyJ1IjoiZmVsaXhpYSIs...`).
-- 🌍 **P0** : Multi-territoires (Guadeloupe, Martinique, Guyane, Réunion) — sélecteur admin + adaptation seed.
 - 📊 **P1** : Dashboard Gérant Lolo Point étendu (graphes temporels + classement réseau).
 - 🔐 **P1** : Scaffolding Google Login Emergent-managed (UI + routes, sans clés actives).
 - ⏰ **P1** : Cron/scheduler pour appel automatique du batch PASS J-3 (actuellement déclenchable par admin manuellement).
+
+## Iteration 6 (22 mai 2026) — Carte Mapbox + Multi-territoires DOM
+
+### Backend
+- `routes_lolodrive_oscoop.py` :
+  - `LoloPointCreate` enrichi : `territory` (GP/MQ/GF/RE), `lat`, `lng`.
+  - `GET /api/lolodrive/territories` → liste 4 DOM avec `center` et `zoom` par défaut.
+  - `GET /api/lolodrive/lolo-points?territory=GP|MQ|GF|RE` → filtre serveur.
+- `seed_lolodrive.py` : 10 Lolo Points sur 4 territoires (GP×4, MQ×2, GF×2, RE×2) avec coordonnées GPS réelles.
+
+### Frontend
+- `mapbox-gl@latest` ajouté via yarn ; `REACT_APP_MAPBOX_TOKEN` exposé dans `frontend/.env`.
+- **`components/TerritorySelector.jsx`** : pills DOM + persistance `localStorage` (`kdm_territory`).
+- **`components/LoloPointsMap.jsx`** : carte Mapbox dark-v11, marqueurs custom or/violet avec code territoire, popups info, `flyTo` au changement de territoire, `fitBounds` quand "Tous".
+- **`pages/LoloPointsAdminPage.jsx`** : refactor — toggle Carte/Liste, sélecteur territoire, KPI dynamiques (territoires/villes), formulaire création enrichi (territory dropdown + lat/lng).
+- `services/api.js` : `listLoloPoints` accepte `{city, territory}`, nouveau `listTerritories()`.
+
+### Tests E2E (Playwright)
+- Login admin → `/admin/lolo-points` → carte rendue (10 markers visibles).
+- Filtre **Martinique** → 2 markers MQ centrés sur la Caraïbe, KPI = 2/1/2.
+- Toggle Liste (MQ) → 2 cartes "Fort-de-France" & "Le Lamentin" avec badges MQ.
+- Reset "Tous" → 10 markers, vue mondiale.
+
+### Backlog restant (P1)
+- 📊 Dashboard Gérant Lolo Point étendu (graphes temporels + classement réseau).
+- 🔐 Scaffolding Google Login Emergent-managed.
+- ⏰ Cron/scheduler PASS J-3 automatique.
+- 🌍 Multi-territoires : étendre le filtre territory au catalogue produits / commandes (actuellement seulement Lolo Points).

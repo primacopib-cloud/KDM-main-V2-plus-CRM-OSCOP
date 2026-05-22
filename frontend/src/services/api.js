@@ -813,8 +813,20 @@ export const lolodriveAPI = {
     apiCall(`/lolodrive/pos/orders/${orderId}/scan`, { method: 'POST' }),
 
   // LOLO POINTS
-  listLoloPoints: (city) =>
-    apiCall(`/lolodrive/lolo-points${city ? `?city=${encodeURIComponent(city)}` : ''}`),
+  listLoloPoints: (cityOrOpts, territory) => {
+    // Backward compatible: support listLoloPoints(city) AND listLoloPoints({city, territory})
+    let city = cityOrOpts;
+    let terr = territory;
+    if (cityOrOpts && typeof cityOrOpts === 'object') {
+      city = cityOrOpts.city;
+      terr = cityOrOpts.territory;
+    }
+    const q = new URLSearchParams();
+    if (city) q.append('city', city);
+    if (terr) q.append('territory', terr);
+    return apiCall(`/lolodrive/lolo-points${q.toString() ? `?${q.toString()}` : ''}`);
+  },
+  listTerritories: () => apiCall('/lolodrive/territories'),
   createLoloPoint: (payload) =>
     apiCall('/lolodrive/admin/lolo-points', { method: 'POST', body: JSON.stringify(payload) }),
   addContribution: (pointId, payload) =>
