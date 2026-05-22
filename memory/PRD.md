@@ -119,7 +119,16 @@ Voir `/app/memory/test_credentials.md`
 ## 6. Integrations
 | Service | Statut | Clé |
 |---|---|---|
-| Stripe (Checkout + Subscriptions) | ✅ TEST actif | `sk_test_...` (LIVE en attente bascule) |
+| Stripe **O'SCOP** (Checkout + Subscriptions PASS, recharges UC, auto-renew, livraisons) | ✅ TEST actif | `STRIPE_API_KEY` / `STRIPE_LIVE_KEY` |
+| Stripe **KDMARCHE** (commandes produits DRIVE) | ✅ TEST actif, LIVE key configurée | `STRIPE_KDMARCHE_API_KEY` / `STRIPE_KDMARCHE_LIVE_KEY` |
 | Brevo (Email + SMS) | ✅ Configuré | API key dans `.env` |
 | Mapbox GL | ✅ Configuré | `REACT_APP_MAPBOX_TOKEN` |
-| Google Login (Emergent) | 🟡 Scaffolding | En attente CLIENT_ID/SECRET |
+| Google Login (Emergent) | 🟡 Scaffolding | En attente vrais CLIENT_ID/SECRET OAuth (pas une API key) |
+
+### Architecture Stripe multi-comptes
+Centralisée dans `/app/backend/stripe_accounts.py`. Routage automatique :
+- `kind=PASS` / `RECHARGE` / `SUBSCRIPTION` → compte **oscop**
+- `kind=ORDER` (commandes DRIVE) → compte **kdmarche**
+- Le `stripe_account` est persisté dans `payment_transactions` pour que le `status` polling et le webhook retrouvent le bon compte.
+- Le webhook unique `/api/webhook/stripe` essaie chaque compte (signature mismatch ignoré) → un seul endpoint pour les 2 dashboards Stripe.
+- Bascule LIVE : `STRIPE_MODE=live` dans `.env`, redémarrer backend.

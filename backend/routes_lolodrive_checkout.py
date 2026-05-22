@@ -22,6 +22,11 @@ from emergentintegrations.payments.stripe.checkout import (
     CheckoutSessionRequest,
 )
 from brevo_service import notify_pass_activated
+from stripe_accounts import (
+    AccountName,
+    get_account_for_checkout_kind,
+    get_stripe_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,22 +56,18 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)):
     return user
 
 
-def _stripe_api_key() -> Optional[str]:
-    """Returns the active Stripe API key based on STRIPE_MODE.
+def _stripe_client_for(account: AccountName, http_request: Request) -> StripeCheckout:
+    """Build a Stripe Checkout client for the requested account.
 
-    STRIPE_MODE=live → uses STRIPE_LIVE_KEY (real charges).
-    Anything else (test, unset, ...) → uses STRIPE_API_KEY (test/sandbox).
+    PASS / RECHARGE / SUBSCRIPTION → "oscop" (O'SCOP OUTREMER)
+    ORDER (DRIVE)                  → "kdmarche" (KDMARCHE)
     """
-    mode = (os.environ.get("STRIPE_MODE") or "test").strip().lower()
-    if mode == "live":
-        return os.environ.get("STRIPE_LIVE_KEY") or os.environ.get("STRIPE_API_KEY") or os.environ.get("STRIPE_SECRET_KEY")
-    return os.environ.get("STRIPE_API_KEY") or os.environ.get("STRIPE_SECRET_KEY")
-
-
-def _stripe_client(http_request: Request) -> StripeCheckout:
-    api_key = _stripe_api_key()
+    api_key = get_stripe_key(account)
     if not api_key:
-        raise HTTPException(status_code=500, detail="Stripe non configuré")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Stripe non configuré (account={account})",
+        )
     host_url = str(http_request.base_url).rstrip("/")
     webhook_url = f"{host_url}/api/webhook/stripe"
     return StripeCheckout(api_key=api_key, webhook_url=webhook_url)
@@ -98,10 +99,11 @@ class OrderPayload(BaseModel):
 
 @checkout_router.post("/pass-session")
 async def create_pass_session(payload: OriginPayload, http_request: Request, user: dict = Depends(get_current_user)):
-    """Create Stripe Checkout session for PASS Vie Chère 60€."""
-    sc = _stripe_client(http_request)
+    """Create Stripe Checkout session for PASS Vie Chère 60€ (O'SCOP account)."""
+    account: AccountName = get_account_for_checkout_kind("PASS")
+    sc = _stripe_client_for(account, http_request)
     urls = _build_urls(payload.origin_url, "PASS", user["id"])
-    metadata = {"kind": "PASS", "user_id": user["id"]}
+    metadata = {"kind": "PASS", "user_id": user["id"], "stripe_account": account}
     req = CheckoutSessionRequest(
         amount=PASS_PRICE_EUR,
         currency="eur",
@@ -115,6 +117,7 @@ async def create_pass_session(payload: OriginPayload, http_request: Request, use
         "session_id": session.session_id,
         "user_id": user["id"],
         "kind": "PASS",
+        "stripe_account": account,
         "amount_cents": int(PASS_PRICE_EUR * 100),
         "currency": "eur",
         "payment_status": "initiated",
@@ -123,12 +126,12 @@ async def create_pass_session(payload: OriginPayload, http_request: Request, use
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
     })
-    return {"url": session.url, "session_id": session.session_id}
+    return {"url": session.url, "session_id": session.session_id, "stripe_account": account}
 
 
 @checkout_router.post("/recharge-session")
 async def create_recharge_session(payload: RechargePayload, http_request: Request, user: dict = Depends(get_current_user)):
-    """Create Stripe Checkout session for UC recharge pack."""
+    """Create Stripe Checkout session for UC recharge pack (O'SCOP account)."""
     pack = RECHARGE_PACKS.get(payload.pack)
     if not pack:
         raise HTTPException(status_code=400, detail="Pack invalide")
@@ -136,9 +139,10 @@ async def create_recharge_session(payload: RechargePayload, http_request: Reques
     pass_doc = await db.lolodrive_passes.find_one({"user_id": user["id"], "status": "ACTIVE"})
     if not pass_doc or pass_doc.get("ends_at") < datetime.utcnow():
         raise HTTPException(status_code=400, detail="PASS inactif : activation requise")
-    sc = _stripe_client(http_request)
+    account: AccountName = get_account_for_checkout_kind("RECHARGE")
+    sc = _stripe_client_for(account, http_request)
     urls = _build_urls(payload.origin_url, "RECHARGE", user["id"])
-    metadata = {"kind": "RECHARGE", "user_id": user["id"], "pack": payload.pack, "uc": str(pack["uc"])}
+    metadata = {"kind": "RECHARGE", "user_id": user["id"], "pack": payload.pack, "uc": str(pack["uc"]), "stripe_account": account}
     req = CheckoutSessionRequest(
         amount=pack["amount_eur"],
         currency="eur",
@@ -152,6 +156,7 @@ async def create_recharge_session(payload: RechargePayload, http_request: Reques
         "session_id": session.session_id,
         "user_id": user["id"],
         "kind": "RECHARGE",
+        "stripe_account": account,
         "amount_cents": int(pack["amount_eur"] * 100),
         "currency": "eur",
         "payment_status": "initiated",
@@ -160,21 +165,22 @@ async def create_recharge_session(payload: RechargePayload, http_request: Reques
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
     })
-    return {"url": session.url, "session_id": session.session_id, "pack": payload.pack}
+    return {"url": session.url, "session_id": session.session_id, "pack": payload.pack, "stripe_account": account}
 
 
 @checkout_router.post("/order-session")
 async def create_order_session(payload: OrderPayload, http_request: Request, user: dict = Depends(get_current_user)):
-    """Create Stripe Checkout session for an existing order."""
+    """Create Stripe Checkout session for an existing order (KDMARCHE account)."""
     order = await db.lolodrive_orders.find_one({"id": payload.order_id, "user_id": user["id"]})
     if not order:
         raise HTTPException(status_code=404, detail="Commande introuvable")
     if order["status"] not in ["DRAFT", "PENDING_PAYMENT"]:
         raise HTTPException(status_code=400, detail="Commande non payable")
     amount_eur = order["total_cents"] / 100.0
-    sc = _stripe_client(http_request)
+    account: AccountName = get_account_for_checkout_kind("ORDER")
+    sc = _stripe_client_for(account, http_request)
     urls = _build_urls(payload.origin_url, "ORDER", order["id"])
-    metadata = {"kind": "ORDER", "user_id": user["id"], "order_id": order["id"]}
+    metadata = {"kind": "ORDER", "user_id": user["id"], "order_id": order["id"], "stripe_account": account}
     req = CheckoutSessionRequest(
         amount=amount_eur,
         currency="eur",
@@ -188,6 +194,7 @@ async def create_order_session(payload: OrderPayload, http_request: Request, use
         "session_id": session.session_id,
         "user_id": user["id"],
         "kind": "ORDER",
+        "stripe_account": account,
         "amount_cents": order["total_cents"],
         "currency": "eur",
         "payment_status": "initiated",
@@ -196,8 +203,8 @@ async def create_order_session(payload: OrderPayload, http_request: Request, use
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
     })
-    await db.lolodrive_orders.update_one({"id": order["id"]}, {"$set": {"status": "PENDING_PAYMENT", "stripe_checkout_session_id": session.session_id, "updated_at": datetime.utcnow()}})
-    return {"url": session.url, "session_id": session.session_id, "amount_cents": order["total_cents"]}
+    await db.lolodrive_orders.update_one({"id": order["id"]}, {"$set": {"status": "PENDING_PAYMENT", "stripe_checkout_session_id": session.session_id, "stripe_account": account, "updated_at": datetime.utcnow()}})
+    return {"url": session.url, "session_id": session.session_id, "amount_cents": order["total_cents"], "stripe_account": account}
 
 
 # ====================== STATUS (polling) ======================
@@ -210,7 +217,9 @@ async def checkout_status(session_id: str, http_request: Request, user: dict = D
         raise HTTPException(status_code=404, detail="Transaction introuvable")
     if tx["user_id"] != user["id"]:
         raise HTTPException(status_code=403, detail="Accès refusé")
-    sc = _stripe_client(http_request)
+    # Use the Stripe account that created the session (falls back to kind→account mapping for legacy txs)
+    account: AccountName = tx.get("stripe_account") or get_account_for_checkout_kind(tx.get("kind", ""))
+    sc = _stripe_client_for(account, http_request)
     status = await sc.get_checkout_status(session_id)
     new_payment_status = status.payment_status
     # Update tx
@@ -229,6 +238,7 @@ async def checkout_status(session_id: str, http_request: Request, user: dict = D
         "amount_total": getattr(status, "amount_total", tx.get("amount_cents")),
         "currency": getattr(status, "currency", tx.get("currency", "eur")),
         "kind": tx["kind"],
+        "stripe_account": account,
         "applied": tx.get("applied") or new_payment_status == "paid",
     }
 
@@ -237,14 +247,24 @@ async def checkout_status(session_id: str, http_request: Request, user: dict = D
 
 @webhook_router.post("/api/webhook/stripe")
 async def stripe_webhook(http_request: Request):
-    """Stripe webhook endpoint. Applies business logic idempotently."""
+    """Stripe webhook endpoint. Applies business logic idempotently.
+
+    Both Stripe accounts (KDMARCHE + O'SCOP) post here. We try to verify the
+    signature with each account's key — whichever validates wins.
+    """
     body = await http_request.body()
     signature = http_request.headers.get("Stripe-Signature", "")
-    sc = _stripe_client(http_request)
-    try:
-        evt = await sc.handle_webhook(body, signature)
-    except Exception as e:
-        logger.warning(f"Stripe webhook invalid: {e}")
+    evt = None
+    for account in ("oscop", "kdmarche"):
+        try:
+            sc = _stripe_client_for(account, http_request)
+            evt = await sc.handle_webhook(body, signature)
+            if evt:
+                break
+        except Exception:
+            continue
+    if not evt:
+        logger.warning("Stripe webhook invalid for both accounts (signature mismatch)")
         raise HTTPException(status_code=400, detail="Webhook invalide")
 
     if evt.payment_status == "paid" and evt.session_id:
