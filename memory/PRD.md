@@ -263,7 +263,41 @@ Objectif : créer une interface web propre pour exploiter l'API existante sans m
 - Reset "Tous" → 10 markers, vue mondiale.
 
 ### Backlog restant (P1)
-- 📊 Dashboard Gérant Lolo Point étendu (graphes temporels + classement réseau).
-- 🔐 Scaffolding Google Login Emergent-managed.
-- ⏰ Cron/scheduler PASS J-3 automatique.
-- 🌍 Multi-territoires : étendre le filtre territory au catalogue produits / commandes (actuellement seulement Lolo Points).
+- ✅ Dashboard Gérant Lolo Point étendu — DONE itération 7
+- ✅ Scaffolding Google Login Emergent-managed — DONE itération 7
+- ✅ Cron/scheduler PASS J-3 automatique — DONE itération 7
+- ✅ Multi-territoires sur catalogue / commandes — DONE itération 7
+
+## Iteration 7 (22 mai 2026) — Sprint P1 complet (Manager dashboard + Google Auth + Scheduler + Territory filter)
+
+### Backend
+- **Manager dashboard étendu** :
+  - `GET /api/lolodrive/manager/my-timeseries?days=7|30|90` → série quotidienne {date, orders, revenue_cents, fulfilled} via aggregation MongoDB (clamp 7-90).
+  - `GET /api/lolodrive/manager/network-ranking?days=N` → classement de tous les Lolo Points actifs trié par revenue puis orders, avec `my_rank` du gérant connecté et `total_points`.
+- **Google Auth Emergent-managed** (`routes_emergent_auth.py`) :
+  - `POST /api/auth/emergent/session` → exchange `session_id` URL-fragment via Emergent `/session-data`, upsert user, set httpOnly cookie + retour JWT pour compat avec hooks existants.
+  - `GET /api/auth/emergent/me` → vérifie cookie (timezone-aware expiry).
+  - `POST /api/auth/emergent/logout` → supprime session DB + cookie.
+  - Indexes `emergent_sessions` (session_token unique, user_id, expires_at).
+- **Scheduler** (`scheduler.py`) :
+  - asyncio task lancée au startup, intervalle 6h, idempotent via `j3_notified_at`, gating Brevo (`is_brevo_configured()`).
+  - Crash protection : try/except autour de chaque itération.
+- **Filtres territory** :
+  - `GET /catalog/products?territory=GP|MQ|GF|RE` → produits avec `territories=[]` ou contenant le code (default = disponible partout).
+  - `GET /pos/orders?territory=...` → résolution via `lolodrive_points.territory` puis $in sur les ids.
+
+### Frontend
+- **`/connexion`** : ajout du bouton "Continuer avec Google" (data-testid `google-login-btn`) qui démarre le flux Emergent OAuth.
+- **`/auth/callback`** : nouvelle page (AuthCallbackPage.jsx) qui parse `#session_id=`, échange via backend, puis redirect `/dashboard`.
+- **`LoloPointManagerPage`** : 2 nouvelles sections — *Performance* (AreaChart CA + BarChart commandes/jour, sélecteur 7j/30j/90j) et *Classement réseau* (tableau top 10 + ligne du gérant surlignée + badge "Mon rang : #N/Total").
+- **`LolodriveCatalogPage`** : ajout du `TerritorySelector` global (persistance localStorage).
+- **`Badge` component** : forward des props (`...rest`) pour permettre les data-testid (fix testing agent).
+
+### Tests
+- Backend pytest **11/11 PASSED** (`/app/backend/tests/test_iter5_p1.py`) — endpoints manager/oauth/territory/cron startup log.
+- Frontend Playwright **100%** — tous les data-testid vérifiés (google-login-btn, auth-callback-page, manager-performance-section, manager-ranking-section, days-7/30/90-btn, my-rank-badge, catalog-territory-selector, rank-row-LP-CAP highlighted).
+
+### Backlog restant
+- 🌍 Étendre les `territories` sur les produits seedés (actuellement `territories=[]` = disponibles partout — fonctionnel mais pas réellement filtré).
+- 🔄 Auto-renouvellement opt-in du PASS (non géré, non requis dans la spec).
+- 📈 Métriques Brevo (delivered/bounced) via webhooks Brevo.
