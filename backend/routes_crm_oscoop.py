@@ -306,6 +306,17 @@ async def list_opps(stage: Optional[str] = None, type_besoin: Optional[str] = No
     docs = await db.crm_opportunities.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
     return {"opportunities": docs}
 
+
+@crm_router.patch("/opportunities/{opp_id}/stage")
+async def update_opp_stage(opp_id: str, payload: dict, admin: dict = Depends(require_admin)):
+    stage = (payload or {}).get("stage")
+    if not stage:
+        raise HTTPException(status_code=400, detail="stage requis")
+    r = await db.crm_opportunities.update_one({"id": opp_id}, {"$set": {"pipeline_stage": stage, "updated_at": now()}})
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Opportunité introuvable")
+    return {"ok": True, "opp_id": opp_id, "stage": stage}
+
 # -----------------------
 # Dossiers
 # -----------------------
@@ -343,6 +354,31 @@ async def list_tasks(status: Optional[str] = None, due_only: bool = False, admin
     if due_only: query["due_at"] = {"$lte": now() + timedelta(days=7)}
     docs = await db.crm_tasks.find(query, {"_id": 0}).sort("due_at", 1).limit(200).to_list(200)
     return {"tasks": docs}
+
+
+@crm_router.patch("/tasks/{task_id}/status")
+async def update_task_status(task_id: str, payload: dict, admin: dict = Depends(require_admin)):
+    status_v = (payload or {}).get("status")
+    if status_v not in ("todo", "in_progress", "done", "cancelled"):
+        raise HTTPException(status_code=400, detail="status invalide")
+    r = await db.crm_tasks.update_one({"id": task_id}, {"$set": {"status": status_v, "updated_at": now()}})
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Tâche introuvable")
+    return {"ok": True, "task_id": task_id, "status": status_v}
+
+
+@crm_router.patch("/dossiers/{dossier_id}/status")
+async def update_dossier_status(dossier_id: str, payload: dict, admin: dict = Depends(require_admin)):
+    statut = (payload or {}).get("statut")
+    if not statut:
+        raise HTTPException(status_code=400, detail="statut requis")
+    upd = {"statut": statut, "updated_at": now()}
+    if (payload or {}).get("etape_actuelle"):
+        upd["etape_actuelle"] = payload["etape_actuelle"]
+    r = await db.crm_dossiers.update_one({"id": dossier_id}, {"$set": upd})
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Dossier introuvable")
+    return {"ok": True, "dossier_id": dossier_id, "statut": statut}
 
 # -----------------------
 # Sync / Events bridge

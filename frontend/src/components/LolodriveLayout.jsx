@@ -107,8 +107,8 @@ export const KpiCard = ({ label, value, sub, icon: Icon, accent = '#D9B35A', tes
   </div>
 );
 
-export const SectionCard = ({ title, action, children, className = '' }) => (
-  <div className={`rounded-2xl bg-white/[0.025] border border-white/[0.07] p-5 ${className}`}>
+export const SectionCard = ({ title, action, children, className = '', ...rest }) => (
+  <div className={`rounded-2xl bg-white/[0.025] border border-white/[0.07] p-5 ${className}`} {...rest}>
     {(title || action) && (
       <div className="flex items-center justify-between mb-4">
         {title && <h2 className="text-base font-semibold tracking-tight">{title}</h2>}

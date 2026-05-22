@@ -44,6 +44,7 @@ import LoloPointsAdminPage from "./pages/LoloPointsAdminPage";
 import LoloHourAdminPage from "./pages/LoloHourAdminPage";
 import CrmPartnersPage from "./pages/CrmPartnersPage";
 import EssReportingPage from "./pages/EssReportingPage";
+import LoloPointManagerPage from "./pages/LoloPointManagerPage";
 import LolodriveCatalogPage from "./pages/LolodriveCatalogPage";
 import PaymentReturnPage from "./pages/PaymentReturnPage";
 
@@ -126,6 +127,8 @@ function App() {
           <Route path="/pos" element={<PosLolodrivePage />} />
           <Route path="/pos-lolodrive" element={<PosLolodrivePage />} />
           <Route path="/admin/lolo-points" element={<LoloPointsAdminPage />} />
+          <Route path="/lolo-point/dashboard" element={<LoloPointManagerPage />} />
+          <Route path="/gerant" element={<LoloPointManagerPage />} />
           <Route path="/admin/lolo-hour" element={<LoloHourAdminPage />} />
           <Route path="/crm" element={<CrmPartnersPage />} />
           <Route path="/crm-partenaires" element={<CrmPartnersPage />} />

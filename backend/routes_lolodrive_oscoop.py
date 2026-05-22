@@ -751,7 +751,243 @@ async def payout_preview(point_id: str, request: PayoutPreviewRequest, admin: di
 async def active_events():
     now = datetime.utcnow()
     events = await db.lolodrive_events.find({"is_active": True, "ends_at": {"$gte": now}}, {"_id": 0}).sort("starts_at", 1).limit(100).to_list(100)
+    # Add reservation count + remaining stock
+    for ev in events:
+        reservations = await db.lolodrive_reservations.count_documents({"event_id": ev["id"], "status": "CONFIRMED"})
+        ev["reservations_count"] = reservations
+        ev["remaining_stock"] = max(0, (ev.get("stock_limit") or 0) - reservations) if ev.get("stock_limit") else None
     return {"events": events}
+
+
+@lolodrive_router.get("/events")
+async def list_events(scope: str = "all"):
+    """scope: all|upcoming|live|ended"""
+    now = datetime.utcnow()
+    q = {"is_active": True}
+    if scope == "upcoming":
+        q["starts_at"] = {"$gt": now}
+    elif scope == "live":
+        q["starts_at"] = {"$lte": now}
+        q["ends_at"] = {"$gte": now}
+    elif scope == "ended":
+        q["ends_at"] = {"$lt": now}
+    events = await db.lolodrive_events.find(q, {"_id": 0}).sort("starts_at", -1).limit(200).to_list(200)
+    for ev in events:
+        reservations = await db.lolodrive_reservations.count_documents({"event_id": ev["id"], "status": "CONFIRMED"})
+        ev["reservations_count"] = reservations
+        ev["remaining_stock"] = max(0, (ev.get("stock_limit") or 0) - reservations) if ev.get("stock_limit") else None
+    return {"events": events}
+
+
+@lolodrive_router.get("/events/{event_id}")
+async def event_detail(event_id: str, user: dict = Depends(get_current_user)):
+    ev = await db.lolodrive_events.find_one({"id": event_id}, {"_id": 0})
+    if not ev:
+        raise HTTPException(status_code=404, detail="Événement introuvable")
+    reservations = await db.lolodrive_reservations.count_documents({"event_id": event_id, "status": "CONFIRMED"})
+    ev["reservations_count"] = reservations
+    ev["remaining_stock"] = max(0, (ev.get("stock_limit") or 0) - reservations) if ev.get("stock_limit") else None
+    # User reservation
+    my_res = await db.lolodrive_reservations.find_one({"event_id": event_id, "user_id": user["id"], "status": "CONFIRMED"}, {"_id": 0})
+    ev["my_reservation"] = my_res
+    # Linked products with flash prices
+    linked = ev.get("linked_products") or []
+    skus = [lp["sku"] for lp in linked]
+    products = await db.lolodrive_products.find({"sku": {"$in": skus}}, {"_id": 0}).to_list(100)
+    by_sku = {p["sku"]: p for p in products}
+    for lp in linked:
+        p = by_sku.get(lp["sku"], {})
+        lp["name"] = p.get("name", lp.get("name", lp["sku"]))
+        lp["category"] = p.get("category")
+        lp["image_url"] = p.get("image_url")
+        lp["public_price_cents"] = p.get("price_public_cents")
+    ev["linked_products"] = linked
+    return ev
+
+
+@lolodrive_router.post("/events/{event_id}/reserve")
+async def reserve_event(event_id: str, user: dict = Depends(get_current_user)):
+    ev = await db.lolodrive_events.find_one({"id": event_id})
+    if not ev or not ev.get("is_active"):
+        raise HTTPException(status_code=404, detail="Événement introuvable")
+    now = datetime.utcnow()
+    if ev.get("ends_at") and ev["ends_at"] < now:
+        raise HTTPException(status_code=400, detail="Événement terminé")
+    if ev.get("is_pass_only") and not await is_pass_active(user["id"]):
+        raise HTTPException(status_code=403, detail="PASS Vie Chère requis pour réserver")
+    # Per user limit
+    per_user_limit = ev.get("per_user_limit") or 1
+    user_res_count = await db.lolodrive_reservations.count_documents({"event_id": event_id, "user_id": user["id"], "status": "CONFIRMED"})
+    if user_res_count >= per_user_limit:
+        raise HTTPException(status_code=400, detail=f"Limite atteinte ({per_user_limit} par utilisateur)")
+    # Global stock
+    if ev.get("stock_limit"):
+        global_count = await db.lolodrive_reservations.count_documents({"event_id": event_id, "status": "CONFIRMED"})
+        if global_count >= ev["stock_limit"]:
+            raise HTTPException(status_code=400, detail="Stock épuisé")
+    res = {
+        "id": str(uuid.uuid4()),
+        "event_id": event_id,
+        "user_id": user["id"],
+        "status": "CONFIRMED",
+        "created_at": now,
+    }
+    await db.lolodrive_reservations.insert_one(res)
+    res.pop("_id", None)
+    await emit_crm_event("event.reserved", {"event_id": event_id, "user_id": user["id"]})
+    return res
+
+
+@lolodrive_router.delete("/events/{event_id}/reserve")
+async def cancel_reservation(event_id: str, user: dict = Depends(get_current_user)):
+    r = await db.lolodrive_reservations.find_one({"event_id": event_id, "user_id": user["id"], "status": "CONFIRMED"})
+    if not r:
+        raise HTTPException(status_code=404, detail="Aucune réservation")
+    await db.lolodrive_reservations.update_one({"id": r["id"]}, {"$set": {"status": "CANCELLED", "cancelled_at": datetime.utcnow()}})
+    return {"ok": True, "reservation_id": r["id"]}
+
+
+@lolodrive_router.get("/admin/events/{event_id}/reservations")
+async def list_event_reservations(event_id: str, admin: dict = Depends(require_admin)):
+    res = await db.lolodrive_reservations.find({"event_id": event_id}, {"_id": 0}).sort("created_at", -1).limit(500).to_list(500)
+    user_ids = [r["user_id"] for r in res]
+    users = await db.users.find({"id": {"$in": user_ids}}, {"_id": 0, "password_hash": 0}).to_list(500)
+    by_id = {u["id"]: u for u in users}
+    for r in res:
+        u = by_id.get(r["user_id"], {})
+        r["user_name"] = u.get("contact_name") or u.get("company_name")
+        r["user_email"] = u.get("email")
+    return {"reservations": res}
+
+
+@lolodrive_router.post("/admin/events/{event_id}/products")
+async def link_products_to_event(event_id: str, payload: dict, admin: dict = Depends(require_admin)):
+    """payload = {linked_products: [{sku, flash_price_cents, flash_price_uc, stock_per_product (optional)}]}"""
+    items = payload.get("linked_products") or []
+    await db.lolodrive_events.update_one({"id": event_id}, {"$set": {"linked_products": items, "updated_at": datetime.utcnow()}})
+    return {"ok": True, "event_id": event_id, "count": len(items)}
+
+
+# =======================
+# Gérant LOLO POINT — vue dédiée
+# =======================
+
+@lolodrive_router.get("/manager/my-point")
+async def manager_my_point(user: dict = Depends(get_current_user)):
+    """Retourne le LOLO POINT du gérant connecté (via manager_user_id)."""
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    if not point:
+        raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    return point
+
+
+@lolodrive_router.get("/manager/my-orders")
+async def manager_my_orders(order_status: Optional[str] = None, user: dict = Depends(get_current_user)):
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    if not point:
+        raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    q = {"lolo_point_id": point["id"]}
+    if order_status:
+        q["status"] = order_status
+    orders = await db.lolodrive_orders.find(q, {"_id": 0}).sort("created_at", -1).limit(200).to_list(200)
+    return {"point": point, "orders": orders}
+
+
+@lolodrive_router.get("/manager/my-payout-preview")
+async def manager_my_payout_preview(user: dict = Depends(get_current_user)):
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    if not point:
+        raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    to_date = datetime.utcnow()
+    from_date = to_date - timedelta(days=30)
+    # Reuse existing payout calculation logic
+    return await payout_preview_compute(point["id"], from_date, to_date)
+
+
+async def payout_preview_compute(point_id: str, from_date: datetime, to_date: datetime) -> dict:
+    """Re-usable payout preview computation."""
+    point = await db.lolodrive_points.find_one({"id": point_id})
+    if not point:
+        raise HTTPException(status_code=404, detail="Point introuvable")
+    orders = await db.lolodrive_orders.find({
+        "lolo_point_id": point_id,
+        "status": {"$in": ["PAID", "PREPARING", "READY", "FULFILLED"]},
+        "created_at": {"$gte": from_date, "$lte": to_date},
+    }, {"_id": 0}).to_list(2000)
+    consumption_volume_cents = sum(o.get("subtotal_cents", 0) for o in orders)
+    withdrawals = sum(1 for o in orders if o.get("status") == "FULFILLED")
+    pass_activations = await db.lolodrive_passes.count_documents({
+        "source_lolo_point_id": point_id,
+        "starts_at": {"$gte": from_date, "$lte": to_date},
+    })
+    withdrawal_commission = withdrawals * point.get("withdrawal_commission_cents", 70)
+    pass_commission = pass_activations * point.get("pass_activation_commission_cents", 400)
+    volume_commission = int(consumption_volume_cents * (point.get("essential_volume_bps", 200) / 10000))
+    calculated = withdrawal_commission + pass_commission + volume_commission
+    percent_cap = int(consumption_volume_cents * (point.get("payout_cap_percent_bps", 600) / 10000))
+    monthly_cap = point.get("payout_cap_cents_monthly", 120000)
+    capped = min(calculated, percent_cap, monthly_cap)
+    return {
+        "point_id": point_id,
+        "from_date": from_date,
+        "to_date": to_date,
+        "consumption_volume_cents": consumption_volume_cents,
+        "withdrawals": withdrawals,
+        "pass_activations": pass_activations,
+        "components": {
+            "withdrawal_commission_cents": withdrawal_commission,
+            "pass_commission_cents": pass_commission,
+            "volume_commission_cents": volume_commission,
+        },
+        "calculated_cents": calculated,
+        "caps": {"percent_cap_cents": percent_cap, "monthly_cap_cents": monthly_cap},
+        "capped_cents": capped,
+    }
+
+
+# =======================
+# Reporting timeseries
+# =======================
+
+@lolodrive_router.get("/admin/kpi/timeseries")
+async def admin_kpi_timeseries(metric: str = "revenue", days: int = 30, admin: dict = Depends(require_admin)):
+    """Daily aggregation for charts. metric: revenue|orders|uc_consumed|pass_activations"""
+    days = min(max(days, 7), 365)
+    from_date = datetime.utcnow() - timedelta(days=days)
+    paid_statuses = [OrderStatus.PAID.value, OrderStatus.PREPARING.value, OrderStatus.READY.value, OrderStatus.FULFILLED.value]
+    points = []
+    if metric == "revenue":
+        rows = await db.lolodrive_orders.aggregate([
+            {"$match": {"created_at": {"$gte": from_date}, "status": {"$in": paid_statuses}}},
+            {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}, "value": {"$sum": "$total_cents"}}},
+            {"$sort": {"_id": 1}},
+        ]).to_list(400)
+        points = [{"date": r["_id"], "value": r["value"]} for r in rows]
+    elif metric == "orders":
+        rows = await db.lolodrive_orders.aggregate([
+            {"$match": {"created_at": {"$gte": from_date}, "status": {"$in": paid_statuses}}},
+            {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}, "value": {"$sum": 1}}},
+            {"$sort": {"_id": 1}},
+        ]).to_list(400)
+        points = [{"date": r["_id"], "value": r["value"]} for r in rows]
+    elif metric == "uc_consumed":
+        rows = await db.lolodrive_wallet_ledger.aggregate([
+            {"$match": {"type": "DEBIT", "created_at": {"$gte": from_date}}},
+            {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}, "value": {"$sum": "$amount_uc"}}},
+            {"$sort": {"_id": 1}},
+        ]).to_list(400)
+        points = [{"date": r["_id"], "value": r["value"]} for r in rows]
+    elif metric == "pass_activations":
+        rows = await db.lolodrive_passes.aggregate([
+            {"$match": {"starts_at": {"$gte": from_date}, "status": "ACTIVE"}},
+            {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$starts_at"}}, "value": {"$sum": 1}}},
+            {"$sort": {"_id": 1}},
+        ]).to_list(400)
+        points = [{"date": r["_id"], "value": r["value"]} for r in rows]
+    else:
+        raise HTTPException(status_code=400, detail="metric invalide")
+    return {"metric": metric, "days": days, "points": points}
+
 
 @lolodrive_router.post("/admin/partners")
 async def create_partner(request: PartnerCreate, admin: dict = Depends(require_admin)):
@@ -937,3 +1173,5 @@ async def ensure_lolodrive_indexes(database):
     await database.lolodrive_partners.create_index("name")
     await database.lolodrive_payments.create_index("stripe_payment_intent_id", unique=True)
     await database.lolodrive_payments.create_index([("user_id", 1), ("created_at", -1)])
+    await database.lolodrive_reservations.create_index([("event_id", 1), ("status", 1)])
+    await database.lolodrive_reservations.create_index([("user_id", 1), ("event_id", 1)])

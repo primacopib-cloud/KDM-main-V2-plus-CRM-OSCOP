@@ -55,9 +55,31 @@ sudo supervisorctl restart backend frontend
 | Préfixe | Rôle |
 |---------|------|
 | `/api/auth/*` | Auth JWT |
-| `/api/lolodrive/*` | Moteur LOLODRIVE V2 (PASS, wallet, catalogue, orders, POS, LOLO POINTS, événements) |
-| `/api/crm/*` | CRM O'SCOP Bridge (contacts, orgs, opportunités, dossiers, impact) |
+| `/api/lolodrive/*` | Moteur LOLODRIVE V2 (PASS, wallet, catalogue, orders, POS, LOLO POINTS, événements, réservations, manager) |
+| `/api/lolodrive/checkout/*` | Stripe Checkout hosted (PASS, recharge, order) |
+| `/api/webhook/stripe` | Webhook Stripe (signature validée) |
+| `/api/crm/*` | CRM O'SCOP Bridge (contacts, orgs, opportunités drag-drop, dossiers, tâches, impact) |
+| `/api/ws/notifications` | WebSocket temps réel (events POS pour admins) |
 | `/api/v1/b2b/*`, `/api/v2/*` | Compatibilité KDMARCHÉ B2B (catalogue multi-zones, LOGI'SCOP, OPA) |
+
+## Webhook Stripe en production
+
+L'endpoint `/api/webhook/stripe` est déjà implémenté côté serveur. Pour l'activer en production :
+
+1. Aller sur https://dashboard.stripe.com/webhooks
+2. **Add endpoint** → URL : `https://VOTRE-DOMAINE/api/webhook/stripe`
+3. Sélectionner les événements :
+   - `checkout.session.completed`
+   - `payment_intent.succeeded`
+   - `payment_intent.payment_failed`
+4. Copier le **Signing secret** (`whsec_...`) et l'ajouter dans `backend/.env` :
+   ```
+   STRIPE_WEBHOOK_SECRET=whsec_xxxxx
+   ```
+5. Redémarrer le backend.
+6. Vérifier les livraisons depuis le dashboard Stripe (tab Events).
+
+L'implémentation est **idempotente** : même si le webhook arrive 2 fois ou si le polling client a déjà appliqué la logique métier, aucune double activation/double crédit n'est possible (champ `applied` dans `payment_transactions`).
 
 ## Écrans clés
 

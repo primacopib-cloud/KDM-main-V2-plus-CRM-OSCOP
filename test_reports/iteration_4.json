@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 4 Phase 2 testing complete. Backend pytest 66/66 PASSED across 3 files: 25 NEW iter4 tests (LOLO HOUR events scope/detail/reserve/cancel/list/link-products, LOLO POINT manager my-point/my-orders/my-payout-preview incl. admin 404, timeseries 4 metrics + invalid metric, CRM PATCH opps/stage + tasks/status + dossiers/status with positive/negative cases) + 11 iter3 + 30 iter1+2 regression. Frontend: all data-testids present on /admin/lolo-hour (scope-upcoming/live/ended/all, 4 event cards, detail/link/save-links-btn, 12 link-toggles per dialog), /lolo-point/dashboard (LP-CAP rendered with commissions cards 0.12€ calc/à verser, KPI orders 1 ready, gerant Jean Bernard), /crm (kanban with 36 cards across 7 stage columns, all 4 new-{contact|org|opp|task}-btn render in their respective tabs, 3 task-toggle clickable, PATCH endpoints integrated), /reporting-impact (period-7/30/90 tabs reload data, 4 Recharts SVGs render: AreaChart revenue + BarChart orders + LineChart UC + BarChart PASS, JSON + Print PDF buttons OK). Fixed SectionCard to forward extra props (data-testid) so chart wrappers expose correct testids.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lolodrive_iter4.py",
+    "/app/backend/tests/test_lolodrive_iter3.py",
+    "/app/backend/tests/test_lolodrive_oscoop.py",
+    "/app/test_reports/pytest/iter4.xml",
+    "/app/test_reports/pytest/iter4_full.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_lolodrive_oscoop.py: events scope filter (upcoming/live/ended) works on starts_at/ends_at vs now; per_user_limit + stock_limit checks honored; admin reservations enriches with user_name+email; link_products replaces (not appends) - good idempotent pattern",
+    "routes_crm_oscoop.py: PATCH /tasks/{id}/status enforces enum (todo|in_progress|done|cancelled) returning 400 on invalid - good; PATCH /opportunities/{id}/stage and /dossiers/{id}/status require non-empty body fields, return 404 on missing entity",
+    "manager/my-payout-preview reuses payout_preview_compute (shared with admin) - good DRY",
+    "EssReportingPage Promise.all(6) batches all KPIs in parallel - efficient; SectionCard now forwards extra props so data-testid lands on chart container DOM",
+    "LoloHourAdminPage: link-products dialog correctly toggles linked_products array and posts to /admin/events/{id}/products with flash_price_cents + flash_price_uc per SKU",
+    "kanban uses native HTML5 DnD (draggable, onDragStart/onDrop). Visual + backend PATCH /opportunities/{id}/stage verified via pytest. Playwright ElementHandle has no drag_to; use page.locator().drag_to() if future tests need full DnD coverage."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lolodrive_iter4.py",
+    "/app/frontend/src/components/LolodriveLayout.jsx"
+  ],
+  "success_rate": {"backend": "100% (66/66 incl. 25 new iter4)", "frontend": "100% (all iter4 data-testids verified, 0 relevant console errors)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; marie@example.com / Demo2026! ; pos@lolodrive.fr / Demo2026! ; gerant@lolopoint.fr / Demo2026! - login route /connexion, submit button is 'Se connecter'",
+  "seed_data_creation": "Test created/reset reservations on ev-1 for marie (cancelled all then re-reserved up to per_user_limit=2 then asserted 3rd returns 400 Limite atteinte). Admin link-products test posts SKU-FLASH-1+SKU-FLASH-2 to ev-1 (replaces). Test task TEST_task_iter4 created when no task seeded.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 4 stable. 66/66 backend tests across iter1+2+3+4. SectionCard in LolodriveLayout.jsx now forwards extra props - chart-revenue/orders/uc/pass data-testids verified rendering. ev-1 per_user_limit=2 + is_pass_only=true (marie has active PASS, admin does not). ev-3 also is_pass_only -> 403 when admin tries to reserve (no PASS). gerant@lolopoint.fr is sole assigned manager (lp-2 LP-CAP). HTML5 DnD: playwright ElementHandle has no drag_to attr - use Locator API page.locator('[data-testid=card-X]').drag_to(page.locator('[data-testid=column-Y]')) if needed; backend PATCH covered in pytest. Login submit button label is 'Se connecter'."
+}

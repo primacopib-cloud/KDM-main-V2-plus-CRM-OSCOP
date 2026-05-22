@@ -830,10 +830,32 @@ export const lolodriveAPI = {
 
   // Events / partners
   activeEvents: () => apiCall('/lolodrive/events/active'),
+  listEvents: (scope = 'all') => apiCall(`/lolodrive/events?scope=${scope}`),
+  eventDetail: (eventId) => apiCall(`/lolodrive/events/${eventId}`),
+  reserveEvent: (eventId) =>
+    apiCall(`/lolodrive/events/${eventId}/reserve`, { method: 'POST' }),
+  cancelReservation: (eventId) =>
+    apiCall(`/lolodrive/events/${eventId}/reserve`, { method: 'DELETE' }),
+  listEventReservations: (eventId) =>
+    apiCall(`/lolodrive/admin/events/${eventId}/reservations`),
+  linkProductsToEvent: (eventId, linkedProducts) =>
+    apiCall(`/lolodrive/admin/events/${eventId}/products`, {
+      method: 'POST',
+      body: JSON.stringify({ linked_products: linkedProducts }),
+    }),
   createEvent: (payload) =>
     apiCall('/lolodrive/admin/events', { method: 'POST', body: JSON.stringify(payload) }),
   createPartner: (payload) =>
     apiCall('/lolodrive/admin/partners', { method: 'POST', body: JSON.stringify(payload) }),
+
+  // Manager LOLO POINT (gérant connecté)
+  managerMyPoint: () => apiCall('/lolodrive/manager/my-point'),
+  managerMyOrders: (orderStatus) => apiCall(`/lolodrive/manager/my-orders${orderStatus ? `?order_status=${orderStatus}` : ''}`),
+  managerPayoutPreview: () => apiCall('/lolodrive/manager/my-payout-preview'),
+
+  // Reporting timeseries
+  kpiTimeseries: (metric = 'revenue', days = 30) =>
+    apiCall(`/lolodrive/admin/kpi/timeseries?metric=${metric}&days=${days}`),
 
   // Admin
   initDefaults: () => apiCall('/lolodrive/admin/init-defaults', { method: 'POST' }),
@@ -917,6 +939,11 @@ export const crmAPI = {
     if (typeBesoin) p.append('type_besoin', typeBesoin);
     return apiCall(`/crm/opportunities?${p.toString()}`);
   },
+  updateOppStage: (oppId, stage) =>
+    apiCall(`/crm/opportunities/${oppId}/stage`, {
+      method: 'PATCH',
+      body: JSON.stringify({ stage }),
+    }),
 
   // Dossiers
   createDossier: (payload) =>
@@ -927,6 +954,11 @@ export const crmAPI = {
     if (statut) p.append('statut', statut);
     return apiCall(`/crm/dossiers?${p.toString()}`);
   },
+  updateDossierStatus: (dossierId, statut, etape) =>
+    apiCall(`/crm/dossiers/${dossierId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ statut, etape_actuelle: etape }),
+    }),
 
   // Tasks
   createTask: (payload) =>
@@ -937,6 +969,11 @@ export const crmAPI = {
     if (dueOnly) p.append('due_only', 'true');
     return apiCall(`/crm/tasks${p.toString() ? `?${p.toString()}` : ''}`);
   },
+  updateTaskStatus: (taskId, status) =>
+    apiCall(`/crm/tasks/${taskId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
 
   // Impact / sync
   impactSummary: () => apiCall('/crm/impact/summary'),

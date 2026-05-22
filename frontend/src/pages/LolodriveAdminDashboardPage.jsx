@@ -236,11 +236,11 @@ export default function LolodriveAdminDashboardPage() {
                 { to: '/pos', label: 'POS LOLODRIVE', icon: Truck, color: '#10b981', phase: 1 },
                 { to: '/pass', label: 'Espace PASS', icon: Ticket, color: '#D9B35A', phase: 1 },
                 { to: '/catalogue-lolodrive', label: 'Catalogue', icon: ShoppingBag, color: '#7c3aed', phase: 1 },
-                { to: '/admin/lolo-points', label: 'LOLO POINTS', icon: Store, color: '#7c3aed', phase: 2 },
+                { to: '/lolo-point/dashboard', label: 'Vue Gérant LP', icon: Store, color: '#10b981', phase: 2 },
+                { to: '/admin/lolo-points', label: 'LOLO POINTS admin', icon: Store, color: '#7c3aed', phase: 2 },
                 { to: '/admin/lolo-hour', label: 'LOLO HOUR', icon: Sparkles, color: '#ec4899', phase: 2 },
                 { to: '/crm', label: 'CRM Partenaires', icon: HeartHandshake, color: '#D9B35A', phase: 2 },
                 { to: '/reporting-impact', label: 'Reporting ESS', icon: Leaf, color: '#10b981', phase: 2 },
-                { to: '/super-admin', label: 'KPIs étendus', icon: BarChart3, color: '#3b82f6', phase: 1 },
               ].map((l) => (
                 <Link
                   key={l.to}
