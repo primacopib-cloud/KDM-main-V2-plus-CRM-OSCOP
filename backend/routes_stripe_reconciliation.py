@@ -308,3 +308,95 @@ async def stripe_reconciliation_csv(
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ---------------- Transactions list (paginated, with refund status) ----------------
+
+@reconciliation_router.get("/reconciliation/transactions")
+async def stripe_reconciliation_transactions(
+    user_id: str = Depends(get_current_user_id),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    status_filter: str = Query("all", description="all | paid | refunded_full | refunded_partial"),
+    account: Optional[str] = Query(None, description="oscop | kdmarche"),
+    limit: int = Query(100, ge=1, le=500),
+    skip: int = Query(0, ge=0),
+):
+    """List flat transactions with refund status, for the admin reconciliation table."""
+    await _require_admin(user_id)
+
+    now_utc = datetime.now(timezone.utc)
+    dt_to = _parse_date(date_to, now_utc) + timedelta(days=1)
+    dt_from = _parse_date(date_from, now_utc - timedelta(days=30))
+    if dt_from > dt_to:
+        raise HTTPException(status_code=400, detail="date_from doit être ≤ date_to")
+
+    query: dict = {"applied": True, "applied_at": {"$gte": dt_from, "$lte": dt_to}}
+    if status_filter == "paid":
+        query["$or"] = [
+            {"refund_status": {"$exists": False}},
+            {"refund_status": None},
+            {"refund_status": ""},
+        ]
+    elif status_filter == "refunded_full":
+        query["refund_status"] = "full"
+    elif status_filter == "refunded_partial":
+        query["refund_status"] = "partial"
+    elif status_filter == "refunded":
+        query["refund_status"] = {"$in": ["full", "partial"]}
+
+    if account in ("oscop", "kdmarche"):
+        query["stripe_account"] = account
+
+    total = await db.payment_transactions.count_documents(query)
+    cursor = (
+        db.payment_transactions.find(query, {"_id": 0})
+        .sort("applied_at", -1)
+        .skip(skip)
+        .limit(limit)
+    )
+
+    # Resolve user emails in batch
+    txs = await cursor.to_list(limit)
+    user_ids = list({t.get("user_id") for t in txs if t.get("user_id")})
+    users_map: dict = {}
+    if user_ids:
+        async for u in db.users.find({"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "email": 1, "contact_name": 1}):
+            users_map[u["id"]] = u
+
+    items = []
+    for t in txs:
+        amt_cents = int(t.get("amount_cents") or 0)
+        refund_cents = int(t.get("refund_amount_cents") or 0)
+        u = users_map.get(t.get("user_id") or "", {})
+        applied_at = t.get("applied_at")
+        refunded_at = t.get("refunded_at")
+        items.append({
+            "id": t.get("id"),
+            "session_id": t.get("session_id"),
+            "stripe_account": t.get("stripe_account") or "oscop",
+            "kind": t.get("kind"),
+            "amount_cents": amt_cents,
+            "amount_eur": round(amt_cents / 100, 2),
+            "currency": t.get("currency", "eur"),
+            "user_id": t.get("user_id"),
+            "user_email": u.get("email", ""),
+            "user_name": u.get("contact_name", ""),
+            "pack_or_order": (t.get("metadata") or {}).get("pack") or (t.get("metadata") or {}).get("order_id") or "",
+            "applied_at": applied_at.isoformat() if applied_at else None,
+            "applied_by": t.get("applied_by", ""),
+            "refund_status": t.get("refund_status") or None,
+            "refund_amount_cents": refund_cents,
+            "refund_amount_eur": round(refund_cents / 100, 2),
+            "refunded_at": refunded_at.isoformat() if refunded_at else None,
+            "refunded_by": t.get("refunded_by") or None,
+            "net_amount_cents": amt_cents - refund_cents,
+            "net_amount_eur": round((amt_cents - refund_cents) / 100, 2),
+        })
+
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "items": items,
+    }

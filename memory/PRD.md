@@ -141,11 +141,42 @@ Exigences produit étendues :
 - ✅ Idempotence : 2e webhook = no-op (wallet reste 1700)
 - ✅ Refund partiel → `refund_status=partial`, wallet intouché, log WARNING + CRM event
 
+### Iter 13 (22 mai 2026) — Réconciliation Stripe : Refunds dans le dashboard + Brevo webhook sécurisé (DONE)
+
+**Demande utilisateur** : étendre la page Réconciliation Stripe pour inclure les statuts et montants des remboursements ; durcir le webhook Brevo.
+
+**Implémenté — Backend** :
+- 🆕 `GET /api/admin/stripe/reconciliation/transactions` : liste plate paginée des transactions avec colonnes refund (`refund_status`, `refund_amount_cents`, `refunded_at`, `refunded_by`, `net_amount_cents`).
+  - Filtres : `status_filter` (`all` / `paid` / `refunded_full` / `refunded_partial` / `refunded`), `account` (`oscop` / `kdmarche`), `date_from`, `date_to`, `limit`, `skip`.
+  - Email du payeur résolu en batch (1 requête `users` quel que soit le nombre de transactions).
+- 🔒 Webhook Brevo durci (`routes_brevo_webhook.py`) :
+  - **Refuse désormais 401 si `BREVO_WEBHOOK_TOKEN` n'est pas configuré** (avant : acceptait silencieusement). Fail-fast en prod.
+  - Token accepté via header `X-Brevo-Token` **OU** query param `?token=...` (fallback pour les configurations Brevo qui n'autorisent pas les headers custom).
+  - Log warning avec IP source si token invalide.
+
+**Implémenté — Frontend** :
+- 🆕 `StripeReconciliationPage.jsx` enrichie :
+  - 3 cartes globales : **Total encaissé brut / Total remboursé / Net comptable**
+  - Cartes par compte : ajout de 3 mini-stats internes (`Remboursé total`, `Partiels`, `Net`) avec couleurs sémantiques (rouge corail #E64432 pour refunds, or pour total, bleu pour net).
+  - Tableau "Détail des transactions" avec colonnes Date / Compte / Type / Email / **Brut / Remboursé / Net** / Statut.
+  - Badges de statut : `Encaissé` (vert lime), `Remboursé` (rouge corail), `Partiel` (ambre).
+  - Filtres : Statut (4 options) + Compte (oscop/kdmarche).
+  - Pagination (25/page) avec contrôles Précédent/Suivant.
+  - Graphique quotidien bascule sur `net_eur` (brut − remboursé) au lieu du brut seul.
+
+**Tests E2E validés** :
+- ✅ `GET /api/admin/stripe/reconciliation/transactions` filtre par `status_filter` (paid/refunded_full/refunded_partial) — comptages corrects.
+- ✅ Filtre par `account` (oscop/kdmarche) — comptages corrects.
+- ✅ Brevo webhook sans token → 401, token invalide → 401, header valide → 200, query param valide → 200.
+- ✅ Screenshot UI conforme à la charte (badges, couleurs, hover, tableau responsive).
+
 ## 4. Backlog
 
 ### P1 — Internationalisation
 - Wrapper toutes les chaînes UI restantes avec `t()` (scaffolding i18n déjà en place)
-- Activer la vérification du token webhook Brevo (`X-Brevo-Token`) en production
+
+### P2 — Test E2E LIVE (en attente coordination utilisateur)
+- Effectuer un paiement réel de 1€ → déclencher un remboursement Stripe dashboard → vérifier que `charge.refunded` met bien à jour `refund_status=full` et que les UC du PASS sont annulées.
 
 ### P2 — Auth Google
 - Brancher Google Login (Emergent-managed) avec `GOOGLE_CLIENT_ID` / `SECRET` fournis par l'utilisateur

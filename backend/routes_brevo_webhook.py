@@ -41,10 +41,26 @@ FAILURE_EVENTS = {"soft_bounce", "hard_bounce", "blocked", "spam", "invalid_emai
 async def brevo_webhook(
     request: Request,
     x_brevo_token: Optional[str] = Header(None, alias="X-Brevo-Token"),
+    token: Optional[str] = None,
 ):
-    """Receive a Brevo event payload (single event or list)."""
+    """Receive a Brevo event payload (single event or list).
+
+    Authentication: a shared secret token, configured via env `BREVO_WEBHOOK_TOKEN`,
+    must be provided either as the `X-Brevo-Token` HTTP header OR as a `?token=`
+    query string parameter (Brevo allows custom headers AND query string params
+    in webhook URL configuration — query string is the fallback).
+
+    If `BREVO_WEBHOOK_TOKEN` is unset/empty, the endpoint refuses all calls (401)
+    so that a misconfigured production never silently accepts unsigned events.
+    """
     expected = os.environ.get("BREVO_WEBHOOK_TOKEN", "").strip()
-    if expected and x_brevo_token != expected:
+    if not expected:
+        logger.error("Brevo webhook called but BREVO_WEBHOOK_TOKEN is not configured")
+        raise HTTPException(status_code=401, detail="Brevo webhook token not configured")
+    provided = (x_brevo_token or token or "").strip()
+    if provided != expected:
+        client_ip = request.client.host if request.client else "?"
+        logger.warning("Brevo webhook rejected: invalid token from %s", client_ip)
         raise HTTPException(status_code=401, detail="Invalid Brevo webhook token")
 
     body = await request.json()

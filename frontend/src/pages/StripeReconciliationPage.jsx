@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import {
   Loader2, Download, RefreshCw, ExternalLink, ArrowLeft, AlertTriangle, Lock, Unlock,
+  RotateCcw, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import NavBar from "../components/NavBar";
 
@@ -23,6 +24,13 @@ const KIND_LABEL = {
   RECHARGE: "Recharges UC",
   ORDER: "Commandes DRIVE",
 };
+const STATUS_FILTERS = [
+  { value: "all", label: "Tous les paiements" },
+  { value: "paid", label: "Payés (non remboursés)" },
+  { value: "refunded_full", label: "Remboursés intégralement" },
+  { value: "refunded_partial", label: "Remboursés partiellement" },
+];
+const PAGE_SIZE = 25;
 
 function formatEur(cents) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format((cents || 0) / 100);
@@ -38,6 +46,18 @@ function isoNDaysAgo(n) {
   return d.toISOString().slice(0, 10);
 }
 
+function fmtDateTime(iso) {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString("fr-FR", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  } catch (_e) {
+    return iso;
+  }
+}
+
 export default function StripeReconciliationPage() {
   const navigate = useNavigate();
   const [dateFrom, setDateFrom] = useState(isoNDaysAgo(30));
@@ -45,6 +65,13 @@ export default function StripeReconciliationPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Transactions table state
+  const [txStatus, setTxStatus] = useState("all");
+  const [txAccount, setTxAccount] = useState("");
+  const [txPage, setTxPage] = useState(0);
+  const [txData, setTxData] = useState({ items: [], total: 0 });
+  const [txLoading, setTxLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -74,9 +101,44 @@ export default function StripeReconciliationPage() {
     }
   }, [dateFrom, dateTo]);
 
+  const fetchTransactions = useCallback(async () => {
+    setTxLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const params = new URLSearchParams({
+        date_from: dateFrom,
+        date_to: dateTo,
+        status_filter: txStatus,
+        limit: String(PAGE_SIZE),
+        skip: String(txPage * PAGE_SIZE),
+      });
+      if (txAccount) params.set("account", txAccount);
+      const resp = await fetch(
+        `${API}/admin/stripe/reconciliation/transactions?${params.toString()}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      setTxData(json);
+    } catch (e) {
+      toast.error(e.message || "Erreur transactions");
+    } finally {
+      setTxLoading(false);
+    }
+  }, [dateFrom, dateTo, txStatus, txAccount, txPage]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setTxPage(0);
+  }, [txStatus, txAccount, dateFrom, dateTo]);
 
   const handleExportCsv = async () => {
     try {
@@ -113,6 +175,17 @@ export default function StripeReconciliationPage() {
     return (data.totals?.oscop?.count || 0) + (data.totals?.kdmarche?.count || 0);
   }, [data]);
 
+  const grandRefundCents = useMemo(() => {
+    if (!data) return 0;
+    const o = data.totals?.oscop || {};
+    const k = data.totals?.kdmarche || {};
+    return (o.refund_full_cents || 0) + (o.refund_partial_cents || 0)
+      + (k.refund_full_cents || 0) + (k.refund_partial_cents || 0);
+  }, [data]);
+
+  const grandNetCents = grandTotalCents - grandRefundCents;
+  const totalPages = Math.max(1, Math.ceil((txData.total || 0) / PAGE_SIZE));
+
   return (
     <div className="min-h-screen" data-testid="stripe-reconciliation-page">
       <NavBar />
@@ -132,7 +205,7 @@ export default function StripeReconciliationPage() {
               Réconciliation Stripe
             </h1>
             <p className="text-sm opacity-70 mt-2">
-              Paiements encaissés par compte Stripe — destiné à votre comptable
+              Paiements et remboursements par compte Stripe — destiné à votre comptable
             </p>
           </div>
 
@@ -166,7 +239,7 @@ export default function StripeReconciliationPage() {
             </div>
             <button
               type="button"
-              onClick={fetchData}
+              onClick={() => { fetchData(); fetchTransactions(); }}
               data-testid="reco-refresh-btn"
               className="btn-ghost h-10 px-4 rounded-lg inline-flex items-center gap-2"
             >
@@ -200,15 +273,34 @@ export default function StripeReconciliationPage() {
 
         {!loading && !error && data && (
           <>
-            {/* Totals row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Global totals row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <TotalCard
-                title="Total global encaissé"
+                title="Total encaissé brut"
                 amount={grandTotalCents}
                 count={grandTotalCount}
                 accent="var(--kdm-or-metallise)"
                 testid="reco-total-global"
               />
+              <TotalCard
+                title="Total remboursé"
+                amount={grandRefundCents}
+                count={null}
+                accent="#E64432"
+                testid="reco-total-refunds"
+                negative
+              />
+              <TotalCard
+                title="Net comptable (brut − remboursé)"
+                amount={grandNetCents}
+                count={null}
+                accent="var(--kdm-bleu-logistique)"
+                testid="reco-total-net"
+              />
+            </div>
+
+            {/* Per-account totals */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <AccountTotalCard account="oscop" data={data.totals?.oscop} link={data.dashboard_links?.oscop} testid="reco-total-oscop" />
               <AccountTotalCard account="kdmarche" data={data.totals?.kdmarche} link={data.dashboard_links?.kdmarche} testid="reco-total-kdmarche" />
             </div>
@@ -216,7 +308,7 @@ export default function StripeReconciliationPage() {
             {/* Daily chart */}
             <div className="glass-panel rounded-2xl p-5 mb-6" data-testid="reco-daily-chart">
               <h2 className="font-display text-xl mb-4" style={{ color: "var(--kdm-bleu-logistique)" }}>
-                Encaissements quotidiens
+                Encaissements quotidiens (net après remboursement)
               </h2>
               <div style={{ width: "100%", height: 320 }}>
                 <ResponsiveContainer>
@@ -225,20 +317,25 @@ export default function StripeReconciliationPage() {
                     <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="rgba(31,42,58,0.6)" />
                     <YAxis tick={{ fontSize: 11 }} stroke="rgba(31,42,58,0.6)" tickFormatter={(v) => `${v} €`} />
                     <Tooltip
-                      formatter={(value, name) => [`${Number(value).toFixed(2)} €`, ACCOUNT_LABEL[name.replace("_eur", "")] || name]}
+                      formatter={(value, name) => {
+                        const a = name.replace("_net_eur", "").replace("_eur", "");
+                        return [`${Number(value).toFixed(2)} €`, ACCOUNT_LABEL[a] || name];
+                      }}
                       labelFormatter={(d) => `Jour : ${d}`}
                       contentStyle={{ background: "#fff", border: "1px solid rgba(212,175,55,0.3)", borderRadius: 12 }}
                     />
-                    <Legend formatter={(v) => ACCOUNT_LABEL[v.replace("_eur", "")] || v} />
-                    <Bar dataKey="oscop_eur" stackId="x" fill={ACCOUNT_COLOR.oscop} radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="kdmarche_eur" stackId="x" fill={ACCOUNT_COLOR.kdmarche} radius={[6, 6, 0, 0]} />
+                    <Legend
+                      formatter={(v) => ACCOUNT_LABEL[v.replace("_net_eur", "").replace("_eur", "")] || v}
+                    />
+                    <Bar dataKey="oscop_net_eur" stackId="x" fill={ACCOUNT_COLOR.oscop} radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="kdmarche_net_eur" stackId="x" fill={ACCOUNT_COLOR.kdmarche} radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* By kind table */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {["oscop", "kdmarche"].map((account) => (
                 <ByKindCard
                   key={account}
@@ -247,6 +344,145 @@ export default function StripeReconciliationPage() {
                   testid={`reco-bykind-${account}`}
                 />
               ))}
+            </div>
+
+            {/* Transactions list */}
+            <div className="glass-panel rounded-2xl p-5" data-testid="reco-transactions">
+              <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+                <h2 className="font-display text-xl" style={{ color: "var(--kdm-bleu-logistique)" }}>
+                  Détail des transactions
+                </h2>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wide opacity-60 mb-1.5">Statut</label>
+                    <select
+                      value={txStatus}
+                      onChange={(e) => setTxStatus(e.target.value)}
+                      data-testid="reco-tx-status-filter"
+                      className="px-3 py-2 rounded-lg bg-white border text-sm"
+                      style={{ borderColor: "rgba(212,175,55,0.30)" }}
+                    >
+                      {STATUS_FILTERS.map((s) => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-wide opacity-60 mb-1.5">Compte</label>
+                    <select
+                      value={txAccount}
+                      onChange={(e) => setTxAccount(e.target.value)}
+                      data-testid="reco-tx-account-filter"
+                      className="px-3 py-2 rounded-lg bg-white border text-sm"
+                      style={{ borderColor: "rgba(212,175,55,0.30)" }}
+                    >
+                      <option value="">Tous les comptes</option>
+                      <option value="oscop">O'SCOP OUTREMER</option>
+                      <option value="kdmarche">KDMARCHE</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {txLoading && (
+                <div className="text-center py-8 opacity-60">
+                  <Loader2 className="animate-spin inline" size={20} />
+                </div>
+              )}
+
+              {!txLoading && txData.items.length === 0 && (
+                <div className="text-center py-10 opacity-60 text-sm">
+                  Aucune transaction sur la période.
+                </div>
+              )}
+
+              {!txLoading && txData.items.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm" data-testid="reco-tx-table">
+                    <thead>
+                      <tr className="border-b" style={{ borderColor: "rgba(212,175,55,0.25)" }}>
+                        <th className="text-left py-2 pr-3 font-medium opacity-70">Date</th>
+                        <th className="text-left py-2 pr-3 font-medium opacity-70">Compte</th>
+                        <th className="text-left py-2 pr-3 font-medium opacity-70">Type</th>
+                        <th className="text-left py-2 pr-3 font-medium opacity-70">Email</th>
+                        <th className="text-right py-2 pr-3 font-medium opacity-70">Brut</th>
+                        <th className="text-right py-2 pr-3 font-medium opacity-70">Remboursé</th>
+                        <th className="text-right py-2 pr-3 font-medium opacity-70">Net</th>
+                        <th className="text-left py-2 font-medium opacity-70">Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {txData.items.map((tx) => (
+                        <tr
+                          key={tx.id}
+                          className="border-b transition-colors hover:bg-amber-50/40"
+                          style={{ borderColor: "rgba(212,175,55,0.12)" }}
+                          data-testid={`reco-tx-row-${tx.id}`}
+                        >
+                          <td className="py-2 pr-3 tabular-nums whitespace-nowrap">
+                            {fmtDateTime(tx.applied_at)}
+                          </td>
+                          <td className="py-2 pr-3">
+                            <span
+                              className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                              style={{
+                                color: ACCOUNT_COLOR[tx.stripe_account],
+                                background: ACCOUNT_COLOR[tx.stripe_account] + "1A",
+                              }}
+                            >
+                              {ACCOUNT_LABEL[tx.stripe_account] || tx.stripe_account}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-3">{tx.kind}</td>
+                          <td className="py-2 pr-3 max-w-[200px] truncate" title={tx.user_email}>
+                            {tx.user_email || "—"}
+                          </td>
+                          <td className="py-2 pr-3 text-right tabular-nums">
+                            {formatEur(tx.amount_cents)}
+                          </td>
+                          <td className="py-2 pr-3 text-right tabular-nums" style={{ color: tx.refund_amount_cents ? "#E64432" : "inherit" }}>
+                            {tx.refund_amount_cents ? `− ${formatEur(tx.refund_amount_cents)}` : "—"}
+                          </td>
+                          <td className="py-2 pr-3 text-right tabular-nums font-medium">
+                            {formatEur(tx.net_amount_cents)}
+                          </td>
+                          <td className="py-2">
+                            <RefundBadge status={tx.refund_status} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {!txLoading && txData.total > PAGE_SIZE && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t" style={{ borderColor: "rgba(212,175,55,0.18)" }}>
+                  <div className="text-xs opacity-60">
+                    {txData.total} transaction{txData.total > 1 ? "s" : ""} — page {txPage + 1} / {totalPages}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTxPage((p) => Math.max(0, p - 1))}
+                      disabled={txPage === 0}
+                      data-testid="reco-tx-prev"
+                      className="btn-ghost h-8 px-3 rounded-lg inline-flex items-center gap-1 disabled:opacity-30"
+                    >
+                      <ChevronLeft size={14} /> Précédent
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTxPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={txPage >= totalPages - 1}
+                      data-testid="reco-tx-next"
+                      className="btn-ghost h-8 px-3 rounded-lg inline-flex items-center gap-1 disabled:opacity-30"
+                    >
+                      Suivant <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -274,19 +510,27 @@ function ModeBadge({ mode }) {
   );
 }
 
-function TotalCard({ title, amount, count, accent, testid }) {
+function TotalCard({ title, amount, count, accent, testid, negative }) {
   return (
     <div className="glass-panel rounded-2xl p-5" data-testid={testid}>
       <div className="text-xs uppercase tracking-wide opacity-60 mb-1">{title}</div>
-      <div className="font-display text-3xl font-bold" style={{ color: accent }}>
-        {formatEur(amount)}
+      <div className="font-display text-3xl font-bold tabular-nums" style={{ color: accent }}>
+        {negative && amount > 0 ? "− " : ""}{formatEur(amount)}
       </div>
-      <div className="text-xs opacity-60 mt-1">{count} transaction{count > 1 ? "s" : ""}</div>
+      {count !== null && count !== undefined && (
+        <div className="text-xs opacity-60 mt-1">{count} transaction{count > 1 ? "s" : ""}</div>
+      )}
     </div>
   );
 }
 
 function AccountTotalCard({ account, data, link, testid }) {
+  const refundFull = data?.refund_full_cents || 0;
+  const refundPartial = data?.refund_partial_cents || 0;
+  const refundTotal = refundFull + refundPartial;
+  const refundFullCount = data?.refund_full_count || 0;
+  const refundPartialCount = data?.refund_partial_count || 0;
+  const net = data?.net_cents ?? ((data?.amount_cents || 0) - refundTotal);
   return (
     <div
       className="glass-panel rounded-2xl p-5 relative overflow-hidden"
@@ -297,13 +541,13 @@ function AccountTotalCard({ account, data, link, testid }) {
         className="absolute top-0 left-0 right-0 h-1"
         style={{ background: ACCOUNT_COLOR[account] }}
       />
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between mb-4">
         <div>
           <div className="text-xs uppercase tracking-wide opacity-60 mb-1">{ACCOUNT_LABEL[account]}</div>
-          <div className="font-display text-3xl font-bold" style={{ color: ACCOUNT_COLOR[account] }}>
+          <div className="font-display text-3xl font-bold tabular-nums" style={{ color: ACCOUNT_COLOR[account] }}>
             {formatEur(data?.amount_cents)}
           </div>
-          <div className="text-xs opacity-60 mt-1">{data?.count || 0} transaction{(data?.count || 0) > 1 ? "s" : ""}</div>
+          <div className="text-xs opacity-60 mt-1">{data?.count || 0} transaction{(data?.count || 0) > 1 ? "s" : ""} encaissées</div>
         </div>
         {link && (
           <a
@@ -318,8 +562,77 @@ function AccountTotalCard({ account, data, link, testid }) {
           </a>
         )}
       </div>
+
+      {/* Refund + net section */}
+      <div className="grid grid-cols-3 gap-2 pt-3 border-t" style={{ borderColor: "rgba(212,175,55,0.18)" }}>
+        <RefundStat
+          label="Remboursé total"
+          amount={refundTotal}
+          count={refundFullCount + refundPartialCount}
+          color="#E64432"
+          icon={<RotateCcw size={11} />}
+          testid={`reco-${account}-refund-total`}
+        />
+        <RefundStat
+          label="Partiels"
+          amount={refundPartial}
+          count={refundPartialCount}
+          color="#D97706"
+          testid={`reco-${account}-refund-partial`}
+        />
+        <div data-testid={`reco-${account}-net`}>
+          <div className="text-[10px] uppercase tracking-wider opacity-60">Net</div>
+          <div className="font-semibold tabular-nums" style={{ color: ACCOUNT_COLOR[account] }}>
+            {formatEur(net)}
+          </div>
+        </div>
+      </div>
     </div>
   );
+}
+
+function RefundStat({ label, amount, count, color, icon, testid }) {
+  return (
+    <div data-testid={testid}>
+      <div className="text-[10px] uppercase tracking-wider opacity-60 inline-flex items-center gap-1">
+        {icon}{label}
+      </div>
+      <div className="font-semibold tabular-nums" style={{ color }}>
+        {amount > 0 ? `− ${formatEur(amount)}` : formatEur(0)}
+      </div>
+      {count > 0 && (
+        <div className="text-[10px] opacity-50">{count} op.</div>
+      )}
+    </div>
+  );
+}
+
+function RefundBadge({ status }) {
+  if (!status) {
+    return (
+      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+        style={{ background: "rgba(140,198,62,0.18)", color: "#6FA82E" }}>
+        Encaissé
+      </span>
+    );
+  }
+  if (status === "full") {
+    return (
+      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+        style={{ background: "rgba(230,68,50,0.14)", color: "#E64432" }}>
+        Remboursé
+      </span>
+    );
+  }
+  if (status === "partial") {
+    return (
+      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+        style={{ background: "rgba(217,119,6,0.14)", color: "#D97706" }}>
+        Partiel
+      </span>
+    );
+  }
+  return null;
 }
 
 function ByKindCard({ account, byKind, testid }) {
