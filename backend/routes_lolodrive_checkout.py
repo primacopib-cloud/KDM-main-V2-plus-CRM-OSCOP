@@ -135,10 +135,16 @@ async def create_recharge_session(payload: RechargePayload, http_request: Reques
     pack = RECHARGE_PACKS.get(payload.pack)
     if not pack:
         raise HTTPException(status_code=400, detail="Pack invalide")
-    # Check PASS active
+    # Check PASS active — handle both naive and aware datetimes coming from Mongo
     pass_doc = await db.lolodrive_passes.find_one({"user_id": user["id"], "status": "ACTIVE"})
-    if not pass_doc or pass_doc.get("ends_at") < datetime.utcnow():
+    if not pass_doc:
         raise HTTPException(status_code=400, detail="PASS inactif : activation requise")
+    ends_at = pass_doc.get("ends_at")
+    if ends_at is not None:
+        # Normalize both sides to naive UTC for comparison (Mongo stores BSON dates as UTC naive)
+        ends_at_naive = ends_at.replace(tzinfo=None) if getattr(ends_at, "tzinfo", None) else ends_at
+        if ends_at_naive < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="PASS inactif : activation requise")
     account: AccountName = get_account_for_checkout_kind("RECHARGE")
     sc = _stripe_client_for(account, http_request)
     urls = _build_urls(payload.origin_url, "RECHARGE", user["id"])
@@ -227,10 +233,14 @@ async def checkout_status(session_id: str, http_request: Request, user: dict = D
         {"session_id": session_id},
         {"$set": {"payment_status": new_payment_status, "updated_at": datetime.utcnow()}},
     )
-    # Apply business logic ONCE (idempotent)
-    if new_payment_status == "paid" and not tx.get("applied"):
-        await _apply_payment_success(tx)
-        await db.payment_transactions.update_one({"session_id": session_id}, {"$set": {"applied": True}})
+    # Apply business logic ONCE — atomic claim (eliminates race with the webhook)
+    if new_payment_status == "paid":
+        claim = await db.payment_transactions.update_one(
+            {"session_id": session_id, "applied": {"$ne": True}},
+            {"$set": {"applied": True, "applied_at": datetime.utcnow(), "applied_by": "polling"}},
+        )
+        if claim.modified_count == 1:
+            await _apply_payment_success(tx)
     return {
         "session_id": session_id,
         "status": status.status,
@@ -255,26 +265,40 @@ async def stripe_webhook(http_request: Request):
     body = await http_request.body()
     signature = http_request.headers.get("Stripe-Signature", "")
     evt = None
+    verified_account: Optional[str] = None
     for account in ("oscop", "kdmarche"):
         try:
             sc = _stripe_client_for(account, http_request)
             evt = await sc.handle_webhook(body, signature)
             if evt:
+                verified_account = account
+                logger.info("Stripe webhook verified with account=%s session_id=%s", account, getattr(evt, "session_id", None))
                 break
-        except Exception:
+        except Exception as exc:
+            logger.debug("Stripe webhook signature mismatch for account=%s: %s", account, exc)
             continue
     if not evt:
-        logger.warning("Stripe webhook invalid for both accounts (signature mismatch)")
+        logger.warning("Stripe webhook invalid for both accounts (signature mismatch on KDMARCHE + O'SCOP)")
         raise HTTPException(status_code=400, detail="Webhook invalide")
 
     if evt.payment_status == "paid" and evt.session_id:
         tx = await db.payment_transactions.find_one({"session_id": evt.session_id})
-        if tx and not tx.get("applied"):
-            await _apply_payment_success(tx)
-            await db.payment_transactions.update_one(
-                {"session_id": evt.session_id},
-                {"$set": {"applied": True, "payment_status": "paid", "updated_at": datetime.utcnow()}},
+        if tx:
+            # Atomic claim — race-safe with the polling /status endpoint
+            claim = await db.payment_transactions.update_one(
+                {"session_id": evt.session_id, "applied": {"$ne": True}},
+                {"$set": {
+                    "applied": True,
+                    "applied_at": datetime.utcnow(),
+                    "applied_by": f"webhook:{verified_account}",
+                    "payment_status": "paid",
+                    "updated_at": datetime.utcnow(),
+                }},
             )
+            if claim.modified_count == 1:
+                await _apply_payment_success(tx)
+            else:
+                logger.info("Stripe webhook: tx %s already applied — no-op", evt.session_id)
     return {"received": True}
 
 

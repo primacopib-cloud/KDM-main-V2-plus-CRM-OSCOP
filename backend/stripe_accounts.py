@@ -21,9 +21,11 @@ directly elsewhere — always call `get_stripe_key(account)` or
 """
 from __future__ import annotations
 
+import logging
 import os
 from typing import Literal, Optional
 
+logger = logging.getLogger(__name__)
 AccountName = Literal["oscop", "kdmarche"]
 
 # Env var keys per account
@@ -48,7 +50,8 @@ def get_stripe_key(account: AccountName = "oscop") -> Optional[str]:
 
     Falls back to the O'SCOP key if a per-account key is missing — that way
     existing single-account integrations keep working even before the KDMARCHE
-    keys are provisioned in every environment.
+    keys are provisioned in every environment. A WARNING is logged when the
+    fallback fires so misconfiguration is visible in prod.
     """
     if account not in _KEYS:
         raise ValueError(f"Unknown Stripe account: {account!r}")
@@ -63,7 +66,14 @@ def get_stripe_key(account: AccountName = "oscop") -> Optional[str]:
     # Backwards-compatible fallback to O'SCOP keys for the kdmarche account
     if account == "kdmarche":
         fallback_env = _KEYS["oscop"]["live" if mode == "live" else "test"]
-        return os.environ.get(fallback_env) or os.environ.get("STRIPE_SECRET_KEY")
+        fallback = os.environ.get(fallback_env) or os.environ.get("STRIPE_SECRET_KEY")
+        if fallback:
+            logger.warning(
+                "Stripe: %s key missing in %s mode — falling back to O'SCOP %s. "
+                "Configure %s to charge on the KDMARCHE account.",
+                env_key, mode, fallback_env, env_key,
+            )
+        return fallback
 
     return os.environ.get("STRIPE_SECRET_KEY")
 
