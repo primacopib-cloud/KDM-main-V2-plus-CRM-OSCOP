@@ -21,6 +21,7 @@ from emergentintegrations.payments.stripe.checkout import (
     StripeCheckout,
     CheckoutSessionRequest,
 )
+from brevo_service import notify_pass_activated
 
 logger = logging.getLogger(__name__)
 
@@ -285,6 +286,21 @@ async def _apply_payment_success(tx: dict):
             "stripe_session_id": tx["session_id"], "created_at": now,
         })
         await _emit_crm_event("pass.activated", {"user_id": user_id, "pass_price_cents": int(PASS_PRICE_EUR * 100), "uc_granted": PASS_UC, "ends_at": ends_at})
+        # Brevo email + SMS (best-effort)
+        try:
+            user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
+            if user_doc and user_doc.get("email"):
+                pass_doc = await db.lolodrive_passes.find_one({"user_id": user_id}, {"_id": 0, "id": 1})
+                await notify_pass_activated(
+                    to_email=user_doc["email"],
+                    to_name=user_doc.get("contact_name"),
+                    to_phone=user_doc.get("phone"),
+                    pass_id=(pass_doc or {}).get("id", "PASS"),
+                    uc_granted=PASS_UC,
+                    ends_at=ends_at,
+                )
+        except Exception as exc:
+            logger.warning(f"Brevo PASS notification failed: {exc}")
 
     elif kind == "RECHARGE":
         pack_key = tx["metadata"].get("pack")

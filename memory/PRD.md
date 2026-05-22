@@ -210,3 +210,34 @@ Objectif : créer une interface web propre pour exploiter l'API existante sans m
 - ✅ Reporting ESS avancé — graphes Recharts + export PDF + rapports investisseurs
 - ✅ Webhook Stripe — déjà implémenté + instructions config prod documentées
 
+
+
+## Iteration 5 (22 mai 2026) — Brevo Email + SMS transactionnels
+
+### Backend
+- **`/app/backend/brevo_service.py`** : nouveau service async (httpx + Brevo REST `/v3/smtp/email`, `/v3/transactionalSMS/sms`).
+  - 3 helpers domaine : `notify_pass_activated`, `notify_order_ready`, `notify_pass_expiry_j3` (chacun envoie email **et** SMS, French templates inline).
+  - `_normalize_phone` : convertit `06...`, `+33...`, `+590...` en E.164.
+  - Best-effort : exceptions/échecs Brevo loggés mais ne cassent jamais le flux métier.
+- **Hooks intégrés** :
+  - `routes_lolodrive_checkout.py::_apply_payment_success` (kind=PASS) → email + SMS confirmation activation.
+  - `routes_lolodrive_oscoop.py::pos_update_order_status` (status=READY) → email + SMS commande prête (avec nom du Lolo Point).
+- **2 nouveaux endpoints admin** :
+  - `POST /api/lolodrive/admin/notifications/test` — envoie un email + SMS au compte admin courant pour valider la config Brevo.
+  - `POST /api/lolodrive/admin/notifications/pass-expiry-j3` — batch idempotent (marqueur `j3_notified_at`) pour les PASS qui expirent dans ~3 jours.
+
+### Configuration
+- `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, `BREVO_SMS_SENDER` dans `/app/backend/.env`.
+- Sender email actuel : `no_reply@kdmarche-oscop.fr` (à vérifier dans dashboard Brevo pour la prod).
+
+### Tests
+- `backend/tests/test_brevo_service.py` : tests unitaires (normalize_phone, skip-when-unconfigured).
+- Validation E2E réelle : `POST /admin/notifications/test` → Brevo retourne 201 (Email + SMS livrés, 12.1 crédits SMS consommés).
+- Validation E2E ordre→READY → Brevo SMS+Email envoyés (logs httpx 201 Created).
+
+### Backlog restant (P0/P1)
+- 🗺️ **P0** : Carte Mapbox des Lolo Points (clé fournie : `pk.eyJ1IjoiZmVsaXhpYSIs...`).
+- 🌍 **P0** : Multi-territoires (Guadeloupe, Martinique, Guyane, Réunion) — sélecteur admin + adaptation seed.
+- 📊 **P1** : Dashboard Gérant Lolo Point étendu (graphes temporels + classement réseau).
+- 🔐 **P1** : Scaffolding Google Login Emergent-managed (UI + routes, sans clés actives).
+- ⏰ **P1** : Cron/scheduler pour appel automatique du batch PASS J-3 (actuellement déclenchable par admin manuellement).

@@ -25,6 +25,7 @@ import logging
 import stripe
 
 from auth import get_current_user_id
+from brevo_service import notify_order_ready, notify_pass_expiry_j3
 
 logger = logging.getLogger(__name__)
 
@@ -559,6 +560,27 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
         extra["fulfilled_at"] = now
     await db.lolodrive_orders.update_one({"id": order_id}, {"$set": {"status": request.status.value, **extra}})
     await _broadcast_pos_event("order.status_changed", {"order_id": order_id, "status": request.status.value})
+    # Brevo email+SMS notification on READY (best-effort)
+    if request.status == OrderStatus.READY:
+        try:
+            order = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
+            if order:
+                user_doc = await db.users.find_one({"id": order.get("user_id")}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
+                pickup = "Point de retrait LOLODRIVE"
+                if order.get("lolo_point_id"):
+                    pt = await db.lolodrive_points.find_one({"id": order["lolo_point_id"]}, {"_id": 0, "name": 1, "code": 1})
+                    if pt:
+                        pickup = pt.get("name") or pt.get("code") or pickup
+                if user_doc and user_doc.get("email"):
+                    await notify_order_ready(
+                        to_email=user_doc["email"],
+                        to_name=user_doc.get("contact_name"),
+                        to_phone=user_doc.get("phone"),
+                        order_number=str(order.get("order_number") or order.get("id", ""))[:32],
+                        pickup_point=pickup,
+                    )
+        except Exception as exc:
+            logger.warning(f"Brevo order-ready notification failed: {exc}")
     return {"ok": True, "order_id": order_id, "status": request.status.value}
 
 @lolodrive_router.post("/pos/orders/{order_id}/scan")
@@ -1154,8 +1176,63 @@ async def kpi_overview(from_date: Optional[datetime] = None, to_date: Optional[d
         "events_active": events_active,
     }
 
+# =======================
+# Notifications Brevo (Email + SMS)
+# =======================
+
+@lolodrive_router.post("/admin/notifications/pass-expiry-j3")
+async def notify_pass_expiry_j3_batch(admin: dict = Depends(require_admin)):
+    """Envoie un email + SMS de rappel J-3 à tous les titulaires de PASS qui expirent dans ~3 jours.
+    Idempotent par jour : on ne renvoie qu'une fois par PASS via le marqueur `j3_notified_at`.
+    """
+    now = datetime.utcnow()
+    window_start = now + timedelta(days=2, hours=12)
+    window_end = now + timedelta(days=3, hours=12)
+    cursor = db.lolodrive_passes.find({
+        "status": "ACTIVE",
+        "ends_at": {"$gte": window_start, "$lte": window_end},
+        "$or": [{"j3_notified_at": {"$exists": False}}, {"j3_notified_at": None}],
+    }, {"_id": 0})
+    sent = 0
+    failed = 0
+    async for p in cursor:
+        user = await db.users.find_one({"id": p["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
+        if not user or not user.get("email"):
+            continue
+        try:
+            await notify_pass_expiry_j3(
+                to_email=user["email"],
+                to_name=user.get("contact_name"),
+                to_phone=user.get("phone"),
+                pass_id=p.get("id", "PASS"),
+                ends_at=p["ends_at"],
+            )
+            await db.lolodrive_passes.update_one(
+                {"id": p["id"]}, {"$set": {"j3_notified_at": now, "updated_at": now}}
+            )
+            sent += 1
+        except Exception as exc:
+            logger.warning(f"PASS expiry J-3 notification failed for {user.get('email')}: {exc}")
+            failed += 1
+    return {"ok": True, "sent": sent, "failed": failed, "window": {"from": window_start, "to": window_end}}
+
+
+@lolodrive_router.post("/admin/notifications/test")
+async def admin_notifications_test(admin: dict = Depends(require_admin)):
+    """Envoie une notification test (email + SMS) à l'admin courant pour vérifier la config Brevo."""
+    from brevo_service import notify_pass_activated as _notify
+    res = await _notify(
+        to_email=admin.get("email"),
+        to_name=admin.get("contact_name"),
+        to_phone=admin.get("phone"),
+        pass_id="TEST-" + datetime.utcnow().strftime("%H%M%S"),
+        uc_granted=600,
+        ends_at=datetime.utcnow() + timedelta(days=30),
+    )
+    return {"ok": True, "result": res}
+
+
 async def ensure_lolodrive_indexes(database):
-    """Indexes essentiels pour performance et anti-scans sur collections LOLODRIVE."""
     await database.lolodrive_passes.create_index("user_id", unique=True)
     await database.lolodrive_passes.create_index([("status", 1), ("ends_at", -1)])
     await database.lolodrive_wallets.create_index("user_id", unique=True)
