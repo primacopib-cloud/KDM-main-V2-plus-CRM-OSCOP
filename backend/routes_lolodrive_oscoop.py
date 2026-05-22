@@ -307,11 +307,19 @@ async def catalog_teaser():
     return {"products": products, "note": "Catalogue teaser public : prix PASS détaillés masqués."}
 
 @lolodrive_router.get("/catalog/products")
-async def catalog_products(catalog_type: Optional[CatalogType] = None, user: dict = Depends(get_current_user)):
+async def catalog_products(catalog_type: Optional[CatalogType] = None, territory: Optional[str] = None, user: dict = Depends(get_current_user)):
     pass_active = await is_pass_active(user["id"])
     query = {"is_active": {"$ne": False}}
     if catalog_type:
         query["catalog_type"] = catalog_type.value
+    if territory:
+        # Product is available in territory if `territories` is missing/empty (=all) OR contains the requested code.
+        territory = territory.upper()
+        query["$or"] = [
+            {"territories": {"$exists": False}},
+            {"territories": {"$size": 0}},
+            {"territories": territory},
+        ]
     products = await db.lolodrive_products.find(query, {"_id": 0}).sort("name", 1).limit(200).to_list(200)
 
     out = []
@@ -541,13 +549,17 @@ async def get_delivery_zones():
     return {"zones": zones}
 
 @lolodrive_router.get("/pos/orders")
-async def pos_orders(status_filter: Optional[OrderStatus] = Query(None, alias="status"), lolo_point_code: Optional[str] = None, user: dict = Depends(get_current_user)):
+async def pos_orders(status_filter: Optional[OrderStatus] = Query(None, alias="status"), lolo_point_code: Optional[str] = None, territory: Optional[str] = None, user: dict = Depends(get_current_user)):
     query: Dict[str, Any] = {}
     if status_filter:
         query["status"] = status_filter.value
     if lolo_point_code:
         point = await db.lolodrive_points.find_one({"code": lolo_point_code})
         query["lolo_point_id"] = point.get("id") if point else "__missing__"
+    if territory:
+        terr_points = await db.lolodrive_points.find({"territory": territory.upper()}, {"_id": 0, "id": 1}).to_list(200)
+        ids = [p["id"] for p in terr_points]
+        query["lolo_point_id"] = {"$in": ids} if ids else "__missing__"
     orders = await db.lolodrive_orders.find(query, {"_id": 0}).sort("created_at", -1).limit(200).to_list(200)
     return {"orders": orders}
 
@@ -943,6 +955,93 @@ async def manager_my_payout_preview(user: dict = Depends(get_current_user)):
     from_date = to_date - timedelta(days=30)
     # Reuse existing payout calculation logic
     return await payout_preview_compute(point["id"], from_date, to_date)
+
+
+@lolodrive_router.get("/manager/my-timeseries")
+async def manager_my_timeseries(days: int = 30, user: dict = Depends(get_current_user)):
+    """Série temporelle quotidienne du Lolo Point du gérant : commandes + CA + retraits."""
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    if not point:
+        raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    days = max(7, min(days, 90))
+    to_date = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=0)
+    from_date = (to_date - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    pipeline = [
+        {"$match": {
+            "lolo_point_id": point["id"],
+            "status": {"$in": ["PAID", "PREPARING", "READY", "FULFILLED"]},
+            "created_at": {"$gte": from_date, "$lte": to_date},
+        }},
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+            "orders": {"$sum": 1},
+            "revenue_cents": {"$sum": "$subtotal_cents"},
+            "fulfilled": {"$sum": {"$cond": [{"$eq": ["$status", "FULFILLED"]}, 1, 0]}},
+        }},
+    ]
+    rows = await db.lolodrive_orders.aggregate(pipeline).to_list(1000)
+    by_day = {r["_id"]: r for r in rows}
+    series = []
+    cursor = from_date
+    while cursor.date() <= to_date.date():
+        key = cursor.strftime("%Y-%m-%d")
+        r = by_day.get(key, {})
+        series.append({
+            "date": key,
+            "orders": r.get("orders", 0),
+            "revenue_cents": r.get("revenue_cents", 0),
+            "fulfilled": r.get("fulfilled", 0),
+        })
+        cursor += timedelta(days=1)
+    return {"point": {"id": point["id"], "name": point["name"], "code": point["code"]}, "days": days, "series": series}
+
+
+@lolodrive_router.get("/manager/network-ranking")
+async def manager_network_ranking(days: int = 30, user: dict = Depends(get_current_user)):
+    """Classement de tous les Lolo Points actifs par chiffre d'affaires sur N jours, et rang du gérant connecté."""
+    days = max(7, min(days, 90))
+    to_date = datetime.utcnow()
+    from_date = to_date - timedelta(days=days)
+    points = await db.lolodrive_points.find({"status": "ACTIVE"}, {"_id": 0}).to_list(500)
+    ids = [p["id"] for p in points]
+    pipeline = [
+        {"$match": {
+            "lolo_point_id": {"$in": ids},
+            "status": {"$in": ["PAID", "PREPARING", "READY", "FULFILLED"]},
+            "created_at": {"$gte": from_date, "$lte": to_date},
+        }},
+        {"$group": {
+            "_id": "$lolo_point_id",
+            "orders": {"$sum": 1},
+            "revenue_cents": {"$sum": "$subtotal_cents"},
+            "fulfilled": {"$sum": {"$cond": [{"$eq": ["$status", "FULFILLED"]}, 1, 0]}},
+        }},
+    ]
+    by_id = {r["_id"]: r for r in await db.lolodrive_orders.aggregate(pipeline).to_list(1000)}
+    enriched = []
+    for p in points:
+        s = by_id.get(p["id"], {})
+        enriched.append({
+            "point_id": p["id"],
+            "code": p["code"],
+            "name": p["name"],
+            "territory": p.get("territory"),
+            "city": p.get("city"),
+            "orders": s.get("orders", 0),
+            "revenue_cents": s.get("revenue_cents", 0),
+            "fulfilled": s.get("fulfilled", 0),
+        })
+    enriched.sort(key=lambda x: (x["revenue_cents"], x["orders"]), reverse=True)
+    for i, e in enumerate(enriched):
+        e["rank"] = i + 1
+    my_point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    my_rank = next((e for e in enriched if my_point and e["point_id"] == my_point.get("id")), None)
+    return {
+        "days": days,
+        "ranking": enriched,
+        "my_rank": my_rank,
+        "total_points": len(enriched),
+    }
 
 
 async def payout_preview_compute(point_id: str, from_date: datetime, to_date: datetime) -> dict:

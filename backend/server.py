@@ -1429,6 +1429,15 @@ from routes_crm_oscoop import crm_router, set_crm_database, ensure_crm_indexes
 set_crm_database(db)
 app.include_router(crm_router)
 
+# Import and include Emergent OAuth (Google social login via Emergent platform)
+from routes_emergent_auth import router as emergent_auth_router, set_emergent_auth_database, setup_emergent_indexes
+set_emergent_auth_database(db)
+app.include_router(emergent_auth_router)
+
+# Background scheduler (PASS J-3 reminders every 6h)
+from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
+set_scheduler_database(db)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -1544,6 +1553,17 @@ async def startup_db_client():
     except Exception as e:
         logger.warning(f"Could not create CRM O'SCOP indexes: {e}")
 
+    # Emergent OAuth indexes + start background scheduler
+    try:
+        await setup_emergent_indexes(db)
+        logger.info("Emergent OAuth indexes ensured")
+    except Exception as e:
+        logger.warning(f"Could not create Emergent OAuth indexes: {e}")
+    try:
+        start_scheduler()
+    except Exception as e:
+        logger.warning(f"Could not start scheduler: {e}")
+
     # Seed default subscription plans if missing
     try:
         seeded = await seed_subscription_plans(db)
@@ -1557,4 +1577,8 @@ async def startup_db_client():
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    try:
+        stop_scheduler()
+    except Exception:
+        pass
     client.close()

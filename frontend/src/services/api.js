@@ -76,6 +76,26 @@ export const authAPI = {
   isAuthenticated: () => {
     return !!localStorage.getItem('token');
   },
+
+  // Emergent-managed Google OAuth
+  // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+  startEmergentLogin: () => {
+    const redirectUrl = window.location.origin + '/auth/callback';
+    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  },
+  exchangeEmergentSession: async (sessionId) => {
+    const res = await fetch(`${API}/auth/emergent/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ session_id: sessionId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Erreur authentification');
+    if (data.access_token) localStorage.setItem('token', data.access_token);
+    if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+    return data;
+  },
 };
 
 // Quote Request APIs
@@ -767,8 +787,12 @@ export const lolodriveAPI = {
 
   // Catalogue
   catalogTeaser: () => apiCall('/lolodrive/catalog/teaser'),
-  catalogProducts: (catalogType) =>
-    apiCall(`/lolodrive/catalog/products${catalogType ? `?catalog_type=${catalogType}` : ''}`),
+  catalogProducts: (catalogType, territory) => {
+    const q = new URLSearchParams();
+    if (catalogType) q.append('catalog_type', catalogType);
+    if (territory) q.append('territory', territory);
+    return apiCall(`/lolodrive/catalog/products${q.toString() ? `?${q.toString()}` : ''}`);
+  },
   quote: (items) =>
     apiCall('/lolodrive/catalog/quote', { method: 'POST', body: JSON.stringify({ items }) }),
 
@@ -864,6 +888,8 @@ export const lolodriveAPI = {
   managerMyPoint: () => apiCall('/lolodrive/manager/my-point'),
   managerMyOrders: (orderStatus) => apiCall(`/lolodrive/manager/my-orders${orderStatus ? `?order_status=${orderStatus}` : ''}`),
   managerPayoutPreview: () => apiCall('/lolodrive/manager/my-payout-preview'),
+  managerTimeseries: (days = 30) => apiCall(`/lolodrive/manager/my-timeseries?days=${days}`),
+  managerNetworkRanking: (days = 30) => apiCall(`/lolodrive/manager/network-ranking?days=${days}`),
 
   // Reporting timeseries
   kpiTimeseries: (metric = 'revenue', days = 30) =>

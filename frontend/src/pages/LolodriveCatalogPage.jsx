@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
 import { lolodriveAPI, authAPI } from '../services/api';
 import { toast } from 'sonner';
+import TerritorySelector, { getInitialTerritory } from '../components/TerritorySelector';
 
 export default function LolodriveCatalogPage() {
   const navigate = useNavigate();
@@ -18,6 +19,8 @@ export default function LolodriveCatalogPage() {
   const [fulfillment, setFulfillment] = useState('DRIVE');
   const [loloPoints, setLoloPoints] = useState([]);
   const [selectedPoint, setSelectedPoint] = useState('');
+  const [territories, setTerritories] = useState([]);
+  const [territory, setTerritory] = useState(getInitialTerritory());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,20 +30,27 @@ export default function LolodriveCatalogPage() {
     }
     (async () => {
       try {
-        const [c, lp] = await Promise.all([
-          lolodriveAPI.catalogProducts(filter || undefined),
-          lolodriveAPI.listLoloPoints(),
+        const [c, lp, tr] = await Promise.all([
+          lolodriveAPI.catalogProducts(filter || undefined, territory || undefined),
+          lolodriveAPI.listLoloPoints({ territory: territory || undefined }),
+          territories.length === 0 ? lolodriveAPI.listTerritories() : Promise.resolve({ territories }),
         ]);
         setProducts(c.products || []);
         setPassActive(c.pass_active);
         setLoloPoints(lp.points || []);
+        if (tr.territories) setTerritories(tr.territories);
+        // Reset selected point if no longer in filtered list
+        if (selectedPoint && !(lp.points || []).some((p) => p.code === selectedPoint)) {
+          setSelectedPoint('');
+        }
       } catch (e) {
         toast.error(e.message);
       } finally {
         setLoading(false);
       }
     })();
-  }, [navigate, filter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, filter, territory]);
 
   const add = (sku) => setCart({ ...cart, [sku]: (cart[sku] || 0) + 1 });
   const sub = (sku) => {
@@ -173,6 +183,15 @@ export default function LolodriveCatalogPage() {
         </Sheet>
       }
     >
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <TerritorySelector
+          territories={territories}
+          value={territory}
+          onChange={setTerritory}
+          testId="catalog-territory-selector"
+        />
+      </div>
+
       <Tabs value={filter} onValueChange={setFilter} className="mb-6">
         <TabsList className="bg-white/[0.04] border border-white/10">
           <TabsTrigger value="" data-testid="tab-all">Tous</TabsTrigger>

@@ -119,10 +119,11 @@ export const SectionCard = ({ title, action, children, className = '', ...rest }
   </div>
 );
 
-export const Badge = ({ children, color = '#D9B35A' }) => (
+export const Badge = ({ children, color = '#D9B35A', ...rest }) => (
   <span
     className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full font-medium"
     style={{ backgroundColor: `${color}1c`, color }}
+    {...rest}
   >
     {children}
   </span>

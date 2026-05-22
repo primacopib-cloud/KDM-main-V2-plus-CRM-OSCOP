@@ -2,19 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Store, MapPin, Package, CheckCircle2, RefreshCw, Calculator, TrendingUp,
-  ShoppingBag, Wallet, Ticket, Clock,
+  ShoppingBag, Wallet, Ticket, Clock, Trophy, BarChart3,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { lolodriveAPI, authAPI } from '../services/api';
 import { toast } from 'sonner';
+import {
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar,
+} from 'recharts';
 
 export default function LoloPointManagerPage() {
   const navigate = useNavigate();
   const [point, setPoint] = useState(null);
   const [orders, setOrders] = useState([]);
   const [payout, setPayout] = useState(null);
+  const [series, setSeries] = useState([]);
+  const [ranking, setRanking] = useState({ ranking: [], my_rank: null, total_points: 0 });
+  const [days, setDays] = useState(30);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
 
@@ -29,14 +35,18 @@ export default function LoloPointManagerPage() {
   const load = async () => {
     try {
       setLoading(true);
-      const [p, o, py] = await Promise.all([
+      const [p, o, py, ts, rk] = await Promise.all([
         lolodriveAPI.managerMyPoint(),
         lolodriveAPI.managerMyOrders(filter || null),
         lolodriveAPI.managerPayoutPreview().catch(() => null),
+        lolodriveAPI.managerTimeseries(days).catch(() => ({ series: [] })),
+        lolodriveAPI.managerNetworkRanking(days).catch(() => ({ ranking: [], my_rank: null, total_points: 0 })),
       ]);
       setPoint(p);
       setOrders(o.orders || []);
       setPayout(py);
+      setSeries(ts.series || []);
+      setRanking(rk);
     } catch (e) {
       if (e.message?.includes('Aucun')) {
         toast.error('Vous n\'êtes assigné à aucun Lolo Point. Contactez l\'administrateur.');
@@ -48,7 +58,7 @@ export default function LoloPointManagerPage() {
     }
   };
 
-  useEffect(() => { if (point) load(); /* eslint-disable-line */ }, [filter]);
+  useEffect(() => { if (point) load(); /* eslint-disable-line */ }, [filter, days]);
 
   const counts = {
     PAID: orders.filter((o) => o.status === 'PAID').length,
@@ -131,6 +141,119 @@ export default function LoloPointManagerPage() {
               </div>
             </SectionCard>
           )}
+
+          {/* Performance temporelle (Recharts) */}
+          <SectionCard
+            title="Performance"
+            action={
+              <div className="inline-flex rounded-full border border-white/10 bg-white/[0.04] p-1">
+                {[7, 30, 90].map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setDays(d)}
+                    data-testid={`days-${d}-btn`}
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      days === d ? 'bg-[#D9B35A] text-black' : 'text-white/70 hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    {d}j
+                  </button>
+                ))}
+              </div>
+            }
+            className="mb-6"
+            data-testid="manager-performance-section"
+          >
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="rounded-lg bg-white/[0.02] border border-white/[0.05] p-3">
+                <div className="text-xs text-white/50 mb-2 inline-flex items-center gap-1.5"><BarChart3 className="w-3 h-3" /> Chiffre d'affaires (€)</div>
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart data={series.map((s) => ({ ...s, revenue_eur: (s.revenue_cents || 0) / 100 }))}>
+                    <defs>
+                      <linearGradient id="grad-revenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#D9B35A" stopOpacity={0.55} />
+                        <stop offset="100%" stopColor="#D9B35A" stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="rgba(255,255,255,0.06)" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} tickFormatter={(d) => d.slice(5)} />
+                    <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} />
+                    <Tooltip contentStyle={{ background: '#15151c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }} formatter={(v) => `${v} €`} />
+                    <Area type="monotone" dataKey="revenue_eur" stroke="#D9B35A" fill="url(#grad-revenue)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="rounded-lg bg-white/[0.02] border border-white/[0.05] p-3">
+                <div className="text-xs text-white/50 mb-2 inline-flex items-center gap-1.5"><BarChart3 className="w-3 h-3" /> Commandes / jour</div>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={series}>
+                    <CartesianGrid stroke="rgba(255,255,255,0.06)" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} tickFormatter={(d) => d.slice(5)} />
+                    <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} allowDecimals={false} />
+                    <Tooltip contentStyle={{ background: '#15151c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }} />
+                    <Bar dataKey="orders" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </SectionCard>
+
+          {/* Classement réseau */}
+          <SectionCard
+            title="Classement réseau"
+            action={
+              ranking.my_rank ? (
+                <Badge color="#D9B35A" data-testid="my-rank-badge">
+                  Mon rang : #{ranking.my_rank.rank}/{ranking.total_points}
+                </Badge>
+              ) : null
+            }
+            className="mb-6"
+            data-testid="manager-ranking-section"
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[11px] text-white/40 uppercase tracking-wider border-b border-white/[0.06]">
+                    <th className="py-2 pr-2">#</th>
+                    <th className="py-2 pr-2">Lolo Point</th>
+                    <th className="py-2 pr-2">Territoire</th>
+                    <th className="py-2 pr-2 text-right">CA</th>
+                    <th className="py-2 pr-2 text-right">Commandes</th>
+                    <th className="py-2 pr-2 text-right">Retraits</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ranking.ranking.slice(0, 10).map((r) => {
+                    const isMine = ranking.my_rank?.point_id === r.point_id;
+                    return (
+                      <tr
+                        key={r.point_id}
+                        data-testid={`rank-row-${r.code}`}
+                        className={`border-b border-white/[0.04] ${isMine ? 'bg-[#D9B35A]/10' : ''}`}
+                      >
+                        <td className="py-2 pr-2 font-mono">
+                          {r.rank <= 3 ? <Trophy className="w-3.5 h-3.5 inline text-[#D9B35A] mr-1" /> : null}
+                          {r.rank}
+                        </td>
+                        <td className="py-2 pr-2">
+                          <div className="font-medium">{r.name}</div>
+                          <div className="text-[11px] text-white/40 font-mono">{r.code} · {r.city}</div>
+                        </td>
+                        <td className="py-2 pr-2"><Badge color="#7c3aed">{r.territory || '—'}</Badge></td>
+                        <td className="py-2 pr-2 text-right font-medium">{fmtEUR(r.revenue_cents)}</td>
+                        <td className="py-2 pr-2 text-right">{r.orders}</td>
+                        <td className="py-2 pr-2 text-right">{r.fulfilled}</td>
+                      </tr>
+                    );
+                  })}
+                  {ranking.ranking.length === 0 && (
+                    <tr><td colSpan="6" className="py-6 text-center text-xs text-white/40">Aucune donnée pour cette période.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </SectionCard>
 
           {/* Mes commandes */}
           <SectionCard

@@ -47,6 +47,7 @@ import EssReportingPage from "./pages/EssReportingPage";
 import LoloPointManagerPage from "./pages/LoloPointManagerPage";
 import LolodriveCatalogPage from "./pages/LolodriveCatalogPage";
 import PaymentReturnPage from "./pages/PaymentReturnPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
           <Route path="/offres" element={<OffersPage />} />
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/inscription" element={<RegisterPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
           <Route path="/reinitialiser-mot-de-passe" element={<ResetPasswordPage />} />

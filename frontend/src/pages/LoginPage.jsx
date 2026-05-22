@@ -137,6 +137,29 @@ const LoginPage = () => {
                 </>
               )}
             </button>
+
+            {/* Divider */}
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10" /></div>
+              <div className="relative flex justify-center"><span className="px-2 text-[11px] text-white/40 bg-[#070A10]">ou</span></div>
+            </div>
+
+            {/* Emergent-managed Google login */}
+            {/* REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH */}
+            <button
+              type="button"
+              onClick={() => authAPI.startEmergentLogin()}
+              data-testid="google-login-btn"
+              className="w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-[14px] text-sm font-medium bg-white text-[#1f1f1f] hover:bg-white/90 transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#FFC107" d="M43.6 20.5H42V20.5H24v7h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5-5C33.6 6.7 29 5 24 5 13 5 4 14 4 25s9 20 20 20c11 0 20-9 20-20 0-1.5-.2-3-.4-4.5z"/>
+                <path fill="#FF3D00" d="M6.3 14.7l5.7 4.2C13.6 15.1 18.4 12 24 12c3.1 0 5.9 1.2 8 3.1l5-5C33.6 6.7 29 5 24 5 16.3 5 9.6 9.4 6.3 14.7z"/>
+                <path fill="#4CAF50" d="M24 45c5.1 0 9.8-1.9 13.3-5l-6.1-5.2c-2.1 1.4-4.5 2.2-7.2 2.2-5.3 0-9.7-3.4-11.3-8H6.5l-.5.4C9.4 35.8 16.1 40 24 40z"/>
+                <path fill="#1976D2" d="M43.6 20.5H42V20.5H24v7h11.3c-.8 2.3-2.4 4.4-4.6 5.7l6.1 5.2C39.6 35 44 30 44 24c0-1.2-.1-2.4-.4-3.5z"/>
+              </svg>
+              Continuer avec Google
+            </button>
             
             <p className="text-center text-sm text-white/60">
               Pas encore de compte ? <Link to="/inscription" className="text-[#D9B35A] hover:text-[#F2D07A] font-medium">Créer un compte</Link>
