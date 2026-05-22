@@ -289,10 +289,21 @@ async def checkout_status(session_id: str, http_request: Request, user: dict = D
     if new_payment_status == "paid":
         claim = await db.payment_transactions.update_one(
             {"session_id": session_id, "applied": {"$ne": True}},
-            {"$set": {"applied": True, "applied_at": datetime.utcnow(), "applied_by": "polling"}},
+            {"$set": {
+                "applied": True,
+                "applied_at": datetime.utcnow(),
+                "applied_by": "polling",
+                "payment_intent_id": session.payment_intent,
+            }},
         )
         if claim.modified_count == 1:
             await _apply_payment_success(tx)
+        else:
+            # Already applied — backfill the payment_intent if it wasn't stored yet
+            await db.payment_transactions.update_one(
+                {"session_id": session_id, "payment_intent_id": {"$exists": False}},
+                {"$set": {"payment_intent_id": session.payment_intent}},
+            )
     return {
         "session_id": session_id,
         "status": session.status,
@@ -372,6 +383,7 @@ async def stripe_webhook(http_request: Request):
                         "applied_at": datetime.utcnow(),
                         "applied_by": f"webhook:{verified_account}",
                         "payment_status": "paid",
+                        "payment_intent_id": session.get("payment_intent"),
                         "updated_at": datetime.utcnow(),
                     }},
                 )
@@ -379,6 +391,64 @@ async def stripe_webhook(http_request: Request):
                     await _apply_payment_success(tx)
                 else:
                     logger.info("Stripe webhook: tx %s already applied — no-op", session_id)
+    elif event["type"] == "charge.refunded":
+        # Reverse business logic when a charge is fully refunded.
+        # Partial refunds → log + admin alert only (not auto-reversed).
+        charge = event["data"]["object"]
+        payment_intent_id = charge.get("payment_intent")
+        amount = int(charge.get("amount") or 0)
+        amount_refunded = int(charge.get("amount_refunded") or 0)
+        is_full_refund = amount_refunded >= amount and amount > 0
+
+        if not payment_intent_id:
+            logger.warning("Stripe webhook charge.refunded: no payment_intent on charge %s", charge.get("id"))
+            return {"received": True}
+
+        tx = await db.payment_transactions.find_one({"payment_intent_id": payment_intent_id})
+        if not tx:
+            logger.warning(
+                "Stripe webhook charge.refunded: no payment_transaction for payment_intent=%s",
+                payment_intent_id,
+            )
+            return {"received": True}
+
+        if not is_full_refund:
+            # Partial refund — admin must handle manually
+            await db.payment_transactions.update_one(
+                {"id": tx["id"]},
+                {"$set": {
+                    "refund_status": "partial",
+                    "refund_amount_cents": amount_refunded,
+                    "refunded_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow(),
+                }},
+            )
+            logger.warning(
+                "Stripe webhook: PARTIAL refund %d/%d cents on tx %s (kind=%s) — admin review required",
+                amount_refunded, amount, tx["id"], tx["kind"],
+            )
+            await _emit_crm_event("payment.refunded.partial", {
+                "tx_id": tx["id"], "kind": tx["kind"], "user_id": tx.get("user_id"),
+                "amount_refunded_cents": amount_refunded, "amount_cents": amount,
+            })
+            return {"received": True}
+
+        # Full refund — atomic claim, then reverse
+        claim = await db.payment_transactions.update_one(
+            {"id": tx["id"], "refund_status": {"$ne": "full"}},
+            {"$set": {
+                "refund_status": "full",
+                "refund_amount_cents": amount_refunded,
+                "refunded_at": datetime.utcnow(),
+                "refunded_by": f"webhook:{verified_account}",
+                "updated_at": datetime.utcnow(),
+            }},
+        )
+        if claim.modified_count == 1:
+            await _apply_payment_refund(tx)
+            logger.info("Stripe webhook: FULL refund applied for tx %s (kind=%s)", tx["id"], tx["kind"])
+        else:
+            logger.info("Stripe webhook: refund already applied for tx %s — no-op", tx["id"])
     return {"received": True}
 
 
@@ -467,6 +537,100 @@ async def _apply_payment_success(tx: dict):
             await manager.broadcast_to_admins({
                 "type": "lolodrive_pos_event",
                 "payload": {"event": "order.paid", "data": {"order_id": order_id}, "timestamp": now.isoformat()},
+            })
+        except Exception:
+            pass
+
+
+async def _apply_payment_refund(tx: dict):
+    """Reverse business effects on a FULL refund. Must be idempotent.
+
+    Strategy per kind:
+      - PASS:     status → REFUNDED, wallet -= PASS_UC (ledger DEBIT, may go negative)
+      - RECHARGE: wallet -= pack.uc (ledger DEBIT, may go negative)
+      - ORDER:    order.status → REFUNDED
+
+    Wallet can become negative (already-spent UC are not magically returned by
+    the customer). An "wallet.negative_after_refund" CRM event is emitted in
+    that case so admins can decide whether to reach out or chargeback.
+    """
+    kind = tx["kind"]
+    user_id = tx["user_id"]
+    session_id = tx.get("session_id")
+    now = datetime.utcnow()
+
+    if kind == "PASS":
+        await db.lolodrive_passes.update_one(
+            {"user_id": user_id, "stripe_session_id": session_id},
+            {"$set": {"status": "REFUNDED", "refunded_at": now, "updated_at": now}},
+        )
+        wallet = await _get_or_create_wallet(user_id)
+        await db.lolodrive_wallets.update_one(
+            {"id": wallet["id"]},
+            {"$inc": {"balance_uc": -PASS_UC}, "$set": {"updated_at": now}},
+        )
+        await db.lolodrive_wallet_ledger.insert_one({
+            "id": str(uuid.uuid4()), "wallet_id": wallet["id"], "type": "DEBIT",
+            "amount_uc": PASS_UC, "reason": "PASS_REFUND",
+            "stripe_session_id": session_id, "created_at": now,
+        })
+        await _emit_crm_event("pass.refunded", {"user_id": user_id, "session_id": session_id})
+        # Check post-refund balance
+        wallet_after = await db.lolodrive_wallets.find_one({"id": wallet["id"]}, {"_id": 0, "balance_uc": 1})
+        if wallet_after and wallet_after.get("balance_uc", 0) < 0:
+            logger.warning(
+                "Wallet went negative after PASS refund: user=%s balance=%s UC",
+                user_id, wallet_after.get("balance_uc"),
+            )
+            await _emit_crm_event("wallet.negative_after_refund", {
+                "user_id": user_id, "balance_uc": wallet_after.get("balance_uc"),
+                "kind": "PASS_REFUND",
+            })
+
+    elif kind == "RECHARGE":
+        pack_key = (tx.get("metadata") or {}).get("pack")
+        pack = RECHARGE_PACKS.get(pack_key)
+        if not pack:
+            logger.warning(f"Refund: pack inconnu {pack_key}")
+            return
+        wallet = await _get_or_create_wallet(user_id)
+        await db.lolodrive_wallets.update_one(
+            {"id": wallet["id"]},
+            {"$inc": {"balance_uc": -pack["uc"]}, "$set": {"updated_at": now}},
+        )
+        await db.lolodrive_wallet_ledger.insert_one({
+            "id": str(uuid.uuid4()), "wallet_id": wallet["id"], "type": "DEBIT",
+            "amount_uc": pack["uc"], "reason": "RECHARGE_REFUND",
+            "stripe_session_id": session_id, "created_at": now,
+        })
+        await _emit_crm_event("recharge.refunded", {
+            "user_id": user_id, "pack": pack_key, "uc": pack["uc"],
+        })
+        wallet_after = await db.lolodrive_wallets.find_one({"id": wallet["id"]}, {"_id": 0, "balance_uc": 1})
+        if wallet_after and wallet_after.get("balance_uc", 0) < 0:
+            logger.warning(
+                "Wallet went negative after RECHARGE refund: user=%s balance=%s UC",
+                user_id, wallet_after.get("balance_uc"),
+            )
+            await _emit_crm_event("wallet.negative_after_refund", {
+                "user_id": user_id, "balance_uc": wallet_after.get("balance_uc"),
+                "kind": "RECHARGE_REFUND",
+            })
+
+    elif kind == "ORDER":
+        order_id = (tx.get("metadata") or {}).get("order_id")
+        if not order_id:
+            return
+        await db.lolodrive_orders.update_one(
+            {"id": order_id},
+            {"$set": {"status": "REFUNDED", "refunded_at": now, "updated_at": now}},
+        )
+        await _emit_crm_event("order.refunded", {"user_id": user_id, "order_id": order_id})
+        try:
+            from routes_websockets import manager
+            await manager.broadcast_to_admins({
+                "type": "lolodrive_pos_event",
+                "payload": {"event": "order.refunded", "data": {"order_id": order_id}, "timestamp": now.isoformat()},
             })
         except Exception:
             pass

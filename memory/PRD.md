@@ -120,6 +120,27 @@ Exigences produit étendues :
 - 🔗 Lien ajouté dans NavBar admin
 - ✅ Validation : screenshot OK, totaux corrects (60€ PASS test affiché), CSV téléchargeable, 403 pour non-admin
 
+### Iter 12 (22 mai 2026) — Auto-refund Stripe (charge.refunded) (DONE)
+**Demande utilisateur** : ajouter `charge.refunded` au webhook → reversal automatique des UC + PASS + ORDER.
+
+**Implémenté** :
+- 🆕 `payment_transactions` enrichi : `payment_intent_id` (persistance) + `refund_status` (`full`/`partial`/null) + `refund_amount_cents` + `refunded_at` + `refunded_by`
+- 🆕 Webhook gère `charge.refunded` :
+  - Mapping via `payment_intent` → `payment_transaction`
+  - **Refund total** (`amount_refunded >= amount`) : claim atomique → reversal via `_apply_payment_refund(tx)`
+  - **Refund partiel** : log WARNING + événement CRM `payment.refunded.partial` (pas d'auto-reversal, admin review)
+- 🆕 `_apply_payment_refund(tx)` — miroir de `_apply_payment_success` :
+  - `PASS` → `status=REFUNDED`, wallet -= 600 UC, ledger DEBIT (`reason=PASS_REFUND`)
+  - `RECHARGE` → wallet -= pack.uc, ledger DEBIT (`reason=RECHARGE_REFUND`)
+  - `ORDER` → `order.status=REFUNDED`, broadcast WS admin
+- 🛡️ Wallet peut devenir **négatif** (UC déjà dépensées non récupérables) → événement CRM `wallet.negative_after_refund` pour suivi admin
+- 📌 `payment_intent_id` aussi capturé lors du polling `/status/<id>` (backfill incluant transactions déjà appliquées)
+
+**Tests E2E validés** :
+- ✅ Webhook signé `charge.refunded` full → HTTP 200, `refund_status=full`, wallet 2300 → 1700 (-600 UC), ledger DEBIT `PASS_REFUND`
+- ✅ Idempotence : 2e webhook = no-op (wallet reste 1700)
+- ✅ Refund partiel → `refund_status=partial`, wallet intouché, log WARNING + CRM event
+
 ## 4. Backlog
 
 ### P1 — Internationalisation
