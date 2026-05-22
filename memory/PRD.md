@@ -64,3 +64,42 @@ Objectif : créer une interface web propre pour exploiter l'API existante sans m
 - Activation Google Login en option secondaire
 - Tests automatisés Playwright
 
+
+---
+
+## Iteration 2 (22 mai 2026) — Recentrage 3 écrans critiques
+
+### Backend (additions démo)
+- `POST /api/lolodrive/demo/simulate-pass-activation` — active PASS + crédite 600 UC sans Stripe webhook
+- `POST /api/lolodrive/demo/simulate-order-payment/{order_id}` — passe une commande à PAID
+- `GET /api/lolodrive/me/savings` — calcule économies réalisées par l'utilisateur (savings_cents, essential_items, orders_count)
+
+### Frontend - 3 écrans critiques enrichis
+1. **`/lolodrive` Dashboard admin** :
+   - Sélecteur de période 7j/30j/90j avec rechargement KPI
+   - Répartition revenus visuelle (barre stackée Drive/Livraison/Lolo Point)
+   - Panneau "Engagement PASS" (conversion %, panier moyen, UC débités)
+   - Section "Activité POS en cours" avec aperçu temps réel
+   - Badges "Phase 2 · léger" sur les modules non-critiques
+2. **`/pass` Espace titulaire** :
+   - KPI **Économies réalisées** (calcul automatique sur commandes ESSENTIELS)
+   - Indicateurs d'expiration J-7 / J-3 avec couleurs (amber/red)
+   - Bouton démo "Activer mon PASS (mode démo)" pour démos sans Stripe réel
+   - Bouton "Voir le catalogue" (lien direct parcours commande)
+   - Libellés humanisés du wallet ledger
+3. **`/pos` Interface POS** :
+   - **Auto-refresh polling 15s** avec détection nouvelles commandes
+   - **Notification sonore (beep)** quand nouvelle commande PAID arrive
+   - **Banner "X commandes à traiter"** visible en haut
+   - Switch "Vue compacte" (réduit hauteur des cartes)
+   - Affichage nom client, items avec badge `E` pour essentiels
+   - Boutons workflow : Préparer → Marquer prête → Remettre client (scan)
+
+### Frontend - 4 modules Phase 2 (allégés)
+- `/admin/lolo-points`, `/admin/lolo-hour`, `/crm`, `/reporting-impact` : ajout `<Phase2Banner>` indiquant la version légère
+
+### Tests Iteration 2
+- Backend pytest 30/30 PASSED (24 itération 1 + 6 nouveaux : demo endpoints + KPI périodes)
+- Frontend 100% — 6 écrans critiques + 4 banners Phase 2 vérifiés
+- Parcours E2E complet validé : activation PASS → commande → paiement → POS → retrait → KPI admin
+
