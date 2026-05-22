@@ -18,7 +18,12 @@ export default function LolodriveCatalogPage() {
   const [cart, setCart] = useState({});
   const [fulfillment, setFulfillment] = useState('DRIVE');
   const [loloPoints, setLoloPoints] = useState([]);
-  const [selectedPoint, setSelectedPoint] = useState('');
+  const [selectedPoint, setSelectedPoint] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('kdm_preselected_point') || 'null');
+      return saved?.code || '';
+    } catch (_) { return ''; }
+  });
   const [territories, setTerritories] = useState([]);
   const [territory, setTerritory] = useState(getInitialTerritory());
   const [loading, setLoading] = useState(true);

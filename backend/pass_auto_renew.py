@@ -42,7 +42,12 @@ def _public_origin() -> str:
 
 
 def _stripe() -> StripeCheckout:
-    api_key = os.environ.get("STRIPE_API_KEY") or os.environ.get("STRIPE_SECRET_KEY")
+    # Honor STRIPE_MODE: 'live' uses STRIPE_LIVE_KEY, otherwise STRIPE_API_KEY (test).
+    mode = (os.environ.get("STRIPE_MODE") or "test").strip().lower()
+    if mode == "live":
+        api_key = os.environ.get("STRIPE_LIVE_KEY") or os.environ.get("STRIPE_API_KEY")
+    else:
+        api_key = os.environ.get("STRIPE_API_KEY") or os.environ.get("STRIPE_SECRET_KEY")
     if not api_key:
         raise RuntimeError("STRIPE_API_KEY missing")
     backend_origin = os.environ.get("KDM_BACKEND_ORIGIN") or _public_origin()

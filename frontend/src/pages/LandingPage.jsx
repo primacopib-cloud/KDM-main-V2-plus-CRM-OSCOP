@@ -241,6 +241,7 @@ const PublicLolodriveMapSection = () => {
   const [points, setPoints] = useState([]);
   const [territories, setTerritories] = useState([]);
   const [territory, setTerritory] = useState(null);
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -253,6 +254,16 @@ const PublicLolodriveMapSection = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [territory]);
 
+  const activateHere = (point) => {
+    // Persist for the registration / PASS purchase funnel
+    try {
+      localStorage.setItem('kdm_preselected_point', JSON.stringify({
+        id: point.id, code: point.code, name: point.name, territory: point.territory,
+      }));
+      if (point.territory) localStorage.setItem('kdm_territory', point.territory);
+    } catch (_) {}
+  };
+
   return (
     <section id="reseau-lolodrive" className="py-10 px-5" data-testid="public-lolodrive-section">
       <div className="max-w-[1160px] mx-auto">
@@ -261,13 +272,12 @@ const PublicLolodriveMapSection = () => {
             <span className="dot pulse-glow"></span>
             Réseau LOLODRIVE
           </span>
-          <h3 className="text-[28px] font-bold tracking-tight mt-2 mb-2">
-            Trouvez le relais coopératif <span className="text-[#D9B35A]">le plus proche</span>
+          <h3 className="text-[28px] font-display font-bold tracking-tight mt-2 mb-2">
+            Trouvez le relais coopératif <span className="text-or-metallise">le plus proche</span>
           </h3>
           <p className="text-white/70 text-sm max-w-[60ch] mx-auto">
             <strong>LOLODRIVE by O'SCOP</strong> est le réseau coopératif de proximité de KDMARCHÉ : retrait drive, livraison locale,
-            relais commerçants et POS terrain. Activez votre PASS Vie Chère, commandez vos essentiels et retirez sur l'un de nos
-            relais coopératifs partout en Outre-mer.
+            relais commerçants et POS terrain. <strong>Cliquez sur un relais</strong> pour activer votre PASS Vie Chère sur place.
           </p>
         </div>
 
@@ -279,12 +289,12 @@ const PublicLolodriveMapSection = () => {
             testId="public-territory-selector"
           />
           <div className="text-xs text-white/60 inline-flex items-center gap-1.5" data-testid="public-points-count">
-            <MapPin className="w-3.5 h-3.5 text-[#D9B35A]" />
+            <MapPin className="w-3.5 h-3.5 text-or-metallise" />
             <strong className="text-white/90">{points.length}</strong> relais{points.length > 1 ? ' actifs' : ' actif'}
           </div>
         </div>
 
-        <LoloPointsMap points={points} territory={territory} height="460px" />
+        <LoloPointsMap points={points} territory={territory} height="460px" onSelect={(p) => setSelected(p)} />
 
         <div className="mt-3 text-center">
           <Link to="/inscription">
@@ -294,6 +304,54 @@ const PublicLolodriveMapSection = () => {
             </button>
           </Link>
         </div>
+
+        {/* Fiche relais — modal coopératif */}
+        {selected && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+            onClick={() => setSelected(null)}
+            data-testid="relay-detail-modal"
+          >
+            <div
+              className="glass-panel rounded-[20px] p-6 max-w-md w-full border border-or-metallise/30"
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: 'linear-gradient(180deg, rgba(15,16,24,0.95), rgba(7,10,16,0.98))' }}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-or-metallise mb-1">Relais LOLODRIVE</div>
+                  <h4 className="text-2xl font-display font-bold leading-tight">{selected.name}</h4>
+                  <div className="font-mono text-xs text-white/40 mt-1">{selected.code} · {selected.territory}</div>
+                </div>
+                <button onClick={() => setSelected(null)} className="text-white/40 hover:text-white text-xl leading-none px-2" data-testid="close-relay-detail">×</button>
+              </div>
+              <div className="separator-premium"><span className="dot"></span></div>
+              <div className="space-y-2 text-sm mb-5">
+                <div className="flex items-start gap-2"><MapPin className="w-4 h-4 mt-0.5 text-violet-premium flex-shrink-0" /><span>{selected.address || '—'}, {selected.city || '—'}</span></div>
+                {selected.zone_name && <div className="text-xs text-white/50 ml-6">Zone : {selected.zone_name}</div>}
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-5 text-center">
+                <div className="rounded-lg bg-vert-lime/10 border border-vert-lime/30 p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-vert-lime mb-0.5">Drive</div>
+                  <div className="text-xs text-white/80">Retrait coopératif</div>
+                </div>
+                <div className="rounded-lg bg-violet-premium/10 border border-violet-premium/30 p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-violet-premium mb-0.5">Livraison</div>
+                  <div className="text-xs text-white/80">Livraison locale</div>
+                </div>
+              </div>
+              <Link to="/inscription" onClick={() => activateHere(selected)} data-testid="activate-pass-here-btn">
+                <button className="btn-gold w-full inline-flex items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-semibold">
+                  Activer mon PASS ici
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </Link>
+              <p className="text-[11px] text-white/40 mt-3 text-center">
+                Vous serez redirigé vers l'inscription PASS, ce relais sera pré-sélectionné comme point de retrait.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

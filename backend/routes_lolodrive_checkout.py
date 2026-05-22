@@ -51,8 +51,20 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)):
     return user
 
 
+def _stripe_api_key() -> Optional[str]:
+    """Returns the active Stripe API key based on STRIPE_MODE.
+
+    STRIPE_MODE=live → uses STRIPE_LIVE_KEY (real charges).
+    Anything else (test, unset, ...) → uses STRIPE_API_KEY (test/sandbox).
+    """
+    mode = (os.environ.get("STRIPE_MODE") or "test").strip().lower()
+    if mode == "live":
+        return os.environ.get("STRIPE_LIVE_KEY") or os.environ.get("STRIPE_API_KEY") or os.environ.get("STRIPE_SECRET_KEY")
+    return os.environ.get("STRIPE_API_KEY") or os.environ.get("STRIPE_SECRET_KEY")
+
+
 def _stripe_client(http_request: Request) -> StripeCheckout:
-    api_key = os.environ.get("STRIPE_API_KEY") or os.environ.get("STRIPE_SECRET_KEY")
+    api_key = _stripe_api_key()
     if not api_key:
         raise HTTPException(status_code=500, detail="Stripe non configuré")
     host_url = str(http_request.base_url).rstrip("/")

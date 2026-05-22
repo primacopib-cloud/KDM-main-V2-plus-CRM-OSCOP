@@ -62,8 +62,8 @@ export default function LolodriveLayout({ title, subtitle, children, actions }) 
           <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
             <div>
               <h1
-                className="text-3xl sm:text-4xl font-bold tracking-tight bg-clip-text text-transparent"
-                style={{ backgroundImage: 'linear-gradient(135deg, #D9B35A 0%, #fff 70%)' }}
+                className="text-3xl sm:text-4xl font-display font-bold tracking-tight bg-clip-text text-transparent"
+                style={{ backgroundImage: 'linear-gradient(135deg, #D4AF37 0%, #fff 70%)' }}
               >
                 {title}
               </h1>

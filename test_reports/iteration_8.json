@@ -1,0 +1,44 @@
+{
+  "summary": "Iter8 Sprint (Premium charter + Stripe mode admin + Relay modal preselect): 7/7 new backend tests + 14/15 iter7 regression + 21/22 iter6 regression PASSED. Frontend: 10/10 critical UI checks PASSED on landing /. Validated: (1) GET /api/lolodrive/admin/stripe/mode → 200 {mode:'test', active_key_prefix:'sk_test_emer…', live_key_configured:true, warning:'Mode test/sandbox — aucune charge réelle'}. (2) Same endpoint w/o auth → 401; with marie (titulaire) → 403; with gerant (gérant LP) → 403. (3) POST /api/lolodrive/checkout/pass-session (marie) → 200, returns Stripe Checkout URL with cs_test_* session id (Emergent sandbox uses host checkout.stripe.test which behaves like checkout.stripe.com — STRIPE_MODE='test' confirmed). (4) POST /admin/notifications/auto-renew-batch → 200 dict {sent, skipped} (still functional post Stripe wiring change). (5) GET /lolodrive/lolo-points → returns 10 points each with lat/lng/territory. Frontend on /: og:image meta = customer-assets.emergentagent.com/.../o39a4kp9_CHARTE%20GRAPHIQUE%20PREMIUM%20KDMLOLO.png (curl direct → HTTP 200, Content-Type image/png, 1.77MB). H2 'Communityplace coopérative B2B2C' computed fontFamily = 'Playfair Display, Times New Roman, Georgia, serif'. Map renders 10 .kdm-lolo-marker. Click first marker → data-testid='relay-detail-modal' opens, contains DRIVE & LIVRAISON chips, exposes data-testid='activate-pass-here-btn' and data-testid='close-relay-detail'. Close button dismisses modal. CTA click → navigates to /inscription AND localStorage.setItem('kdm_preselected_point', {id:'lp-4', code:'LP-STF', name:'Lolo Point Saint-François', territory:'GP'}) confirmed. Code review of LolodriveCatalogPage.jsx line 21-26 confirms selectedPoint useState initializer reads localStorage 'kdm_preselected_point'.code on mount — logic correct.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "relay-detail-modal", "issues": ["Modal title is not an h2/h3 heading element (returned null on h2,h3 selector). Title styling/typography appears in screenshot but rendered as a div/span. Minor a11y nit — main agent may consider wrapping the relay name in an h3 for semantic markup. Functionality unaffected."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter8_sprint.py",
+    "/app/backend/tests/test_iter7_sprint.py",
+    "/app/test_reports/pytest/iter8.xml",
+    "/app/test_reports/pytest/iter8_full.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_lolodrive_oscoop.py:1360-1375 — admin_stripe_mode correctly honors STRIPE_MODE env var, returns 12-char prefix + ellipsis of active key (safe: not the full key), and live_key_configured flag. require_admin dependency correctly returns 403 for non-admin tokens.",
+    "routes_lolodrive_checkout.py:54-66 — _stripe_api_key() switches between STRIPE_LIVE_KEY (mode='live') and STRIPE_API_KEY (default/test). Defensive default to 'test' if env var missing → no accidental live charges.",
+    "pass_auto_renew.py:43-57 — _stripe() mirror logic correctly. Same defensive default.",
+    "frontend/public/index.html:15,24 — og:image and twitter:image both point at premium charter artifact URL. URL contains URL-encoded space (%20) — valid per RFC 3986; curl returns 200 image/png 1.77MB.",
+    "LolodriveCatalogPage.jsx:21-26 — selectedPoint useState initializer is correctly lazy (function form), reads localStorage exactly once on mount. Falls back to '' on parse error. line 47-50 also handles case where preselected code is no longer in the filtered points list (e.g. user switched territory).",
+    "LandingPage.jsx:260 — localStorage.setItem captures {id, code, name, territory} — matches what catalog page reads (only .code is used). Other fields are forward-compatible for future UI enrichments.",
+    "STRIPE_MODE='test' confirmed in /app/backend/.env line 6 — testing agent did NOT switch to live as instructed."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter8_sprint.py (created)",
+    "/app/backend/tests/test_iter7_sprint.py (updated test_og_image_unsplash_200 → test_og_image_premium_charter_200 to match new artifact URL)"
+  ],
+  "success_rate": {
+    "backend": "100% iter8 (7/7), 100% iter7 (15/15 after test update), 95% iter6 (1 pre-existing referral idempotency state failure, not iter8 related)",
+    "frontend": "100% (11/11 landing+modal+CTA+localStorage flows)"
+  },
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; marie@example.com / Demo2026! ; gerant@lolopoint.fr / Demo2026!",
+  "seed_data_creation": "None for iter8 (read-only tests on existing seed). Marie's PASS state from iter7 (ends_at +20h, renew_email_sent_at set) was reused — the auto-renew batch test in iter8 just calls the endpoint and validates the dict shape, no further state changes.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 4 iter8 sprint features (premium graphical charter applied, Mapbox actionable map with relay detail modal + CTA, premium charter OG image, Stripe LIVE key configured but protected behind STRIPE_MODE=test + admin /stripe/mode endpoint) fully validated. Backend tests live at /app/backend/tests/test_iter8_sprint.py. CRITICAL: do NOT flip STRIPE_MODE=live during testing — current sandbox key prefix is 'sk_test_emer' (Emergent-managed sandbox); the live key prefix is 'sk_live_51ScyA...' configured in /app/backend/.env line 5. The iter7 OG image test was updated to match the new premium charter artifact URL. The pre-existing iter6 referral test failure ('Vous avez déjà utilisé un code de parrainage' → 409) is correct business logic (idempotent claim) and not a regression caused by iter8 — it's a seed-state issue from prior runs and would need a marie wallet/referral reset to re-test the happy path.",
+  "rca of the issue": "N/A — all iter8 acceptance criteria met. Single minor a11y nit: relay-detail-modal title is not wrapped in an h2/h3 element (visual styling is correct, only semantic markup could be improved). No functional impact."
+}

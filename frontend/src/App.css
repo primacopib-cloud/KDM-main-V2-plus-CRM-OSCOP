@@ -36,17 +36,17 @@
   position: relative;
 }
 
-/* Gold gradient button */
+/* Gold gradient button — Or métallisé premium */
 .btn-gold {
-  background: linear-gradient(135deg, rgba(217,179,90,0.98), rgba(242,208,122,0.72));
-  border: 1px solid rgba(217,179,90,0.55);
+  background: linear-gradient(135deg, #D4AF37 0%, #E6C25A 100%);
+  border: 1px solid rgba(212,175,55,0.65);
   color: #14110A;
-  box-shadow: 0 18px 40px rgba(217,179,90,0.20);
+  box-shadow: 0 18px 40px rgba(212,175,55,0.22);
 }
 
 .btn-gold:hover {
-  background: linear-gradient(135deg, rgba(242,208,122,0.95), rgba(217,179,90,0.72));
-  border-color: rgba(242,208,122,0.70);
+  background: linear-gradient(135deg, #E6C25A 0%, #D4AF37 100%);
+  border-color: rgba(230,194,90,0.80);
   transform: translateY(-1px);
 }
 

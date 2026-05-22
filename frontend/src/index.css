@@ -1,10 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;0,900;1,500;1,700&family=Montserrat:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  /* === CHARTE GRAPHIQUE PREMIUM — Écosystème coopératif B2B2C === */
+  /* Sub-marques : LOGI'SCOP · O'SCOP · KD MARCHÉ · LOLO DRIVE */
+
+  /* Palette chromatique officielle */
+  --kdm-bleu-logistique: #0B4D87;     /* LOGI'SCOP — fiabilité */
+  --kdm-orange-energie: #FF7A00;      /* LOGI'SCOP / dynamique */
+  --kdm-violet-premium: #6C4C8E;      /* KD MARCHÉ / LOLO DRIVE — premium */
+  --kdm-beige-perle: #F2E6D3;         /* fonds doux, écrans clairs */
+  --kdm-anthracite: #333333;          /* texte sombre */
+  --kdm-rose-magenta: #E6007E;        /* accent vif */
+  --kdm-vert-lime: #8CC63E;           /* O'SCOP — vie, ESS */
+  --kdm-rouge-corail: #FF5A4A;        /* alerte douce, accent */
+  --kdm-or-metallise: #D4AF37;        /* premium accent */
+  --kdm-argent: #C0C0C0;              /* secondary */
+
+  /* Tokens app (rétrocompat avec les anciens noms) */
   --bg: #070A10;
   --panel: rgba(255,255,255,0.06);
   --panel2: rgba(255,255,255,0.09);
@@ -12,28 +28,72 @@
   --muted: rgba(255,255,255,0.72);
   --soft: rgba(255,255,255,0.12);
   --line: rgba(255,255,255,0.14);
-  --gold: #D9B35A;
-  --gold2: #F2D07A;
-  --green: #57D19A;
-  --danger: #FF6B6B;
+  --gold: #D4AF37;                     /* aligné Or métallisé */
+  --gold2: #E6C25A;                    /* highlight */
+  --green: #8CC63E;                    /* aligné Vert lime */
+  --danger: #FF5A4A;                   /* aligné Rouge corail */
   --shadow: 0 18px 60px rgba(0,0,0,0.55);
   --radius: 18px;
   --radius2: 26px;
+
+  /* Typographies */
+  --font-display: 'Playfair Display', 'Times New Roman', Georgia, serif;
+  --font-body: 'Montserrat', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body);
   background:
-    radial-gradient(900px 420px at 20% -10%, rgba(217,179,90,0.22), transparent 55%),
-    radial-gradient(820px 460px at 88% 0%, rgba(87,209,154,0.16), transparent 55%),
-    radial-gradient(800px 520px at 60% 120%, rgba(217,179,90,0.10), transparent 65%),
+    radial-gradient(900px 420px at 20% -10%, rgba(212,175,55,0.18), transparent 55%),
+    radial-gradient(820px 460px at 88% 0%, rgba(108,76,142,0.14), transparent 55%),
+    radial-gradient(800px 520px at 60% 120%, rgba(140,198,62,0.08), transparent 65%),
     linear-gradient(180deg, #05070C 0%, #070A10 45%, #060913 100%);
   color: var(--text);
   line-height: 1.45;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings : Playfair Display pour un rendu premium éditorial */
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Tailwind utility helpers for the new palette */
+.text-bleu-logistique { color: var(--kdm-bleu-logistique); }
+.text-orange-energie { color: var(--kdm-orange-energie); }
+.text-violet-premium { color: var(--kdm-violet-premium); }
+.text-or-metallise { color: var(--kdm-or-metallise); }
+.text-vert-lime { color: var(--kdm-vert-lime); }
+.bg-bleu-logistique { background-color: var(--kdm-bleu-logistique); }
+.bg-orange-energie { background-color: var(--kdm-orange-energie); }
+.bg-violet-premium { background-color: var(--kdm-violet-premium); }
+.bg-or-metallise { background-color: var(--kdm-or-metallise); }
+.bg-vert-lime { background-color: var(--kdm-vert-lime); }
+.border-or-metallise { border-color: var(--kdm-or-metallise); }
+
+/* Or métallisé gradient — rubans/séparateurs premium */
+.bg-gradient-or {
+  background: linear-gradient(135deg, #D4AF37 0%, #F2D07A 50%, #B8941E 100%);
+}
+.bg-gradient-cooperatif {
+  background: linear-gradient(135deg, #0B4D87 0%, #6C4C8E 50%, #FF7A00 100%);
+}
+
+/* Premium separator — fine ribbon with gold dot */
+.separator-premium {
+  display: flex; align-items: center; justify-content: center; gap: 12px; margin: 12px 0;
+}
+.separator-premium::before, .separator-premium::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent);
+}
+.separator-premium .dot {
+  width: 8px; height: 8px; background: var(--kdm-or-metallise); transform: rotate(45deg);
 }
 
 code {
@@ -61,7 +121,7 @@ code {
 
 /* Selection */
 ::selection {
-  background-color: rgba(217,179,90,0.35);
+  background-color: rgba(212,175,55,0.35);
   color: white;
 }
 
@@ -78,19 +138,19 @@ html {
     --card-foreground: 0 0% 92%;
     --popover: 220 15% 8%;
     --popover-foreground: 0 0% 92%;
-    --primary: 43 61% 60%;
+    --primary: 46 65% 52%;          /* Or métallisé #D4AF37 */
     --primary-foreground: 220 20% 4%;
     --secondary: 220 10% 15%;
     --secondary-foreground: 0 0% 92%;
     --muted: 220 10% 15%;
     --muted-foreground: 0 0% 72%;
-    --accent: 150 55% 58%;
+    --accent: 86 53% 51%;           /* Vert lime #8CC63E */
     --accent-foreground: 220 20% 4%;
-    --destructive: 0 72% 71%;
+    --destructive: 6 100% 64%;      /* Rouge corail #FF5A4A */
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14%;
     --input: 0 0% 14%;
-    --ring: 43 61% 60%;
+    --ring: 46 65% 52%;
     --radius: 0.75rem;
   }
 }

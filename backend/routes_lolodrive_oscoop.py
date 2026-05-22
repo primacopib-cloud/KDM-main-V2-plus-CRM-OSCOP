@@ -1357,6 +1357,24 @@ async def admin_run_auto_renew_batch(admin: dict = Depends(require_admin)):
     return await run_auto_renew_batch(db)
 
 
+@lolodrive_router.get("/admin/stripe/mode")
+async def admin_stripe_mode(admin: dict = Depends(require_admin)):
+    """Returns the active Stripe mode (test|live). Critical info for ops dashboard.
+
+    To switch to live charges: set STRIPE_MODE=live in /app/backend/.env then restart.
+    """
+    import os as _os
+    mode = (_os.environ.get("STRIPE_MODE") or "test").strip().lower()
+    test_key = _os.environ.get("STRIPE_API_KEY", "")
+    live_key = _os.environ.get("STRIPE_LIVE_KEY", "")
+    return {
+        "mode": mode,
+        "active_key_prefix": (live_key if mode == "live" else test_key)[:12] + "…" if (live_key if mode == "live" else test_key) else None,
+        "live_key_configured": bool(live_key),
+        "warning": "MODE LIVE: charges réelles" if mode == "live" else "Mode test/sandbox — aucune charge réelle",
+    }
+
+
 async def ensure_lolodrive_indexes(database):
     await database.lolodrive_passes.create_index("user_id", unique=True)
     await database.lolodrive_passes.create_index([("status", 1), ("ends_at", -1)])
