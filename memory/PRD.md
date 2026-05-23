@@ -179,6 +179,55 @@ Exigences produit étendues :
   - `moduleNameMapper` pour bypass le `exports` map de react-router-dom v7 → entrées CJS explicites.
   - Mirror de l'alias webpack `@/` → `<rootDir>/src/`.
 - 🆕 Deps dev : `@testing-library/react@16`, `@testing-library/jest-dom@6`, `@testing-library/dom`, `@testing-library/user-event`.
+- 🆕 `PublicLolodriveMapSection` exposé en **named export** depuis `LandingPage.jsx`.
+- 🆕 `src/pages/LandingPage.test.jsx` (3 tests) — verrouille `1 listTerritories + N listLoloPoints`.
+- 🆕 `src/pages/LolodriveCatalogPage.test.jsx` (4 tests) — verrouille auth-gate + contrat hooks catalogue.
+
+**Validation** : `CI=true yarn test --watchAll=false` → 7/7 pass.
+
+### Iter 16 (23 mai 2026) — Pont GED ESS externe (intégration légère contrôlée) (DONE)
+**Demande utilisateur** : intégrer le ZIP `KDM-main-V2-plus-CRM-OSCOP-main-GED-bridge.zip` en câblant le pont GED ESS externe sans remplacer la GED interne, et sans refactorer massivement `server.py`.
+
+**Implémenté** :
+- 🆕 `/app/backend/ged_external_client.py` — client async `httpx` vers le microservice GED ESS externe. Config depuis env (`GED_ESS_API_URL`, `GED_ESS_API_TOKEN`, `GED_ESS_WEBHOOK_SECRET`, `GED_ESS_TIMEOUT_SECONDS`). Header `Authorization: Bearer` + signature HMAC SHA256 `X-GED-ESS-Signature` sur le payload. Méthodes : `health`, `list_scopes`, `create_document`, `generate_pdf`, `push_to_external_connector`. Helpers : `SCOPE_BY_SOURCE`, `PDF_TEMPLATE_BY_SCOPE`, `resolve_scope_code`, `build_ged_business_metadata`.
+- 🆕 `/app/backend/routes_ged_bridge.py` — routeur `/api/ged-bridge/*` protégé par admin (`get_current_user_id` + check `is_admin` ou role ∈ {SUPER_ADMIN, ADMIN, COOP_BOARD, GESTIONNAIRE_GED, oscop_super_admin, kdm_b2b_admin}). Routes :
+  - `GET /health` — ping le microservice externe
+  - `GET /scopes` — liste les périmètres
+  - `GET /sync-events` — journal des syncs (paginé, filtre source/source_id)
+  - `POST /documents` — crée un document directement côté GED externe
+  - `POST /pdf/generate` — génère un PDF institutionnel
+  - `POST /crm/dossiers/{id}/push` — pousse un dossier CRM O'SCOP → GED externe (template `OSCOP_CONTRAT_COOPERATIF`), met à jour `crm_dossiers.ged_external_document_id`
+  - `POST /lolodrive/orders/{id}/push` — pousse une commande LOLODRIVE → GED externe (template `KDMARCHE_APPEL_CONTRIBUTION`)
+- 🆕 Collection `ged_bridge_sync_events` : journal d'audit complet (id, source, source_id, direction, status SUCCESS/ERROR, payload, response, created_at). 3 indexes créés au démarrage.
+- 🪶 `server.py` enrichi de **9 lignes seulement** (import + `set_database` + `include_router` + `ensure_indexes` au startup). **Aucun refactor**.
+- 🆕 `/app/backend/.env` enrichi des 4 vars GED (valeurs fournies par l'utilisateur).
+- 🆕 `/app/backend/.env.example` créé — documente toutes les vars critiques (Mongo, Stripe multi-comptes, Brevo, Mapbox, Google OAuth, GED ESS).
+- 🆕 `/app/docs/GED_ESS_BRIDGE.md` copié depuis le ZIP.
+
+**Tests E2E (curl)** :
+- ✅ `GET /api/ged-bridge/health` sans token → **403** ; avec admin token → **502 + message clair** (`GED externe erreur 404` puisque l'URL pointe sur localhost:8001 qui n'expose pas `/health` — comportement attendu en l'absence d'un vrai microservice GED).
+- ✅ `GET /api/ged-bridge/scopes` → 502 propre.
+- ✅ `POST /api/ged-bridge/pdf/generate` → 502 propre + **événement tracé en `ged_bridge_sync_events`** avec `status=ERROR`, `direction=OUTBOUND`, payload + response.
+- ✅ `POST /api/ged-bridge/crm/dossiers/unknown/push` → **404 "Dossier CRM introuvable"** (validation DB métier avant appel externe).
+- ✅ `POST /api/ged-bridge/lolodrive/orders/unknown/push` → **404 "Commande LOLODRIVE introuvable"**.
+- ✅ Audit : `GET /api/ged-bridge/sync-events?limit=5` renvoie bien la trace de la tentative PDF avec statut ERROR.
+- ✅ **GED interne préservée** : `GET /api/ged/documents` → 200 (pont additif, pas un remplacement).
+
+**Côté microservice GED ESS** (côté KDM, à fournir par l'admin GED) :
+- URL cible : `http://localhost:8001` (placeholder) — à remplacer par la vraie URL du microservice
+- Bearer token : `TON_TOKEN_GED` (placeholder)
+- Webhook HMAC secret partagé : `SECRET_PARTAGE_GED` (placeholder)
+- Timeout : 20 s
+
+
+**Demande utilisateur** : ajouter des tests pour empêcher la régression des hooks (1 effet par axe).
+
+**Implémenté** :
+- 🆕 `/app/frontend/src/setupTests.js` — polyfill `TextEncoder`/`TextDecoder` (requis par react-router v7 sous JSDOM) + `matchMedia` stub.
+- 🆕 `/app/frontend/craco.config.js` enrichi avec une section `jest.configure` :
+  - `moduleNameMapper` pour bypass le `exports` map de react-router-dom v7 → entrées CJS explicites.
+  - Mirror de l'alias webpack `@/` → `<rootDir>/src/`.
+- 🆕 Deps dev : `@testing-library/react@16`, `@testing-library/jest-dom@6`, `@testing-library/dom`, `@testing-library/user-event`.
 - 🆕 `PublicLolodriveMapSection` exposé en **named export** depuis `LandingPage.jsx` pour pouvoir être monté en isolation.
 - 🆕 `src/pages/LandingPage.test.jsx` (3 tests) :
   - Au montage : 1 appel `listTerritories` + 1 appel `listLoloPoints({territory: undefined})`.

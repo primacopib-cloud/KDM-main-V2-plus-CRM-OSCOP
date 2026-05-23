@@ -1464,6 +1464,16 @@ from routes_pass_subscription import router as pass_subscription_router, set_pas
 set_pass_subscription_database(db)
 app.include_router(pass_subscription_router)
 
+# GED ESS Bridge — connector to the external GED microservice (PostgreSQL/S3/audit)
+# Does NOT replace the internal Mongo GED (/api/ged); namespace /api/ged-bridge/*
+from routes_ged_bridge import (
+    ged_bridge_router,
+    set_ged_bridge_database,
+    ensure_ged_bridge_indexes,
+)
+set_ged_bridge_database(db)
+app.include_router(ged_bridge_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)
@@ -1609,6 +1619,11 @@ async def startup_db_client():
         logger.info("PASS subscription indexes ensured")
     except Exception as e:
         logger.warning(f"Could not create PASS subscription indexes: {e}")
+    try:
+        await ensure_ged_bridge_indexes(db)
+        logger.info("GED ESS Bridge indexes ensured")
+    except Exception as e:
+        logger.warning(f"Could not create GED bridge indexes: {e}")
     try:
         start_scheduler()
     except Exception as e:
