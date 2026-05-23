@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ShoppingCart, Package, FileText, 
   Wallet, Settings, Users, Shield, BarChart3,
   Store, Building2, ChevronDown, Bell, Search,
-  FileSignature, MapPin, CreditCard, Home, Heart, Truck, HeartHandshake
+  FileSignature, MapPin, CreditCard, Home, Heart, Truck, HeartHandshake, Server
 } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { useNotificationWebSocket, ConnectionStatus } from './NotificationToast';
@@ -64,6 +64,7 @@ const getNavItems = (userRole, isAdmin) => {
     { href: '/admin-v2', label: 'Admin Orgs', icon: Building2 },
     { href: '/admin/produits', label: 'Validation Produits', icon: Package },
     { href: '/admin/stripe-reconciliation', label: 'Réconciliation Stripe', icon: CreditCard },
+    { href: '/admin/ged-bridge', label: 'Pont GED ESS', icon: Server },
   ];
 
   if (isAdmin) {

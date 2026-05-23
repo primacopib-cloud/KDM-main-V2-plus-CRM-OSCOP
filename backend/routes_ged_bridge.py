@@ -129,12 +129,63 @@ async def record_bridge_sync(source: str, source_id: str, direction: str, status
 
 @ged_bridge_router.get("/health")
 async def ged_bridge_health(_: dict = Depends(require_admin)):
+    """Statut du pont GED ESS.
+
+    Renvoie toujours HTTP 200 avec un statut lisible :
+      • OK        : URL configurée + microservice externe répond
+      • DEGRADED  : URL configurée mais microservice indisponible (404, timeout, etc.)
+      • DISABLED  : GED_ESS_API_URL non configurée (pont volontairement désactivé)
+    Permet aux dashboards admin d'afficher un statut propre sans confondre
+    avec un bug applicatif tant que la vraie GED ESS n'est pas déployée.
+    """
     client = GedExternalClient()
+    cfg = client.config
+
+    if not cfg.enabled:
+        return {
+            "bridge": "OK",
+            "status": "DISABLED",
+            "message": "GED_ESS_API_URL non configurée — pont volontairement désactivé.",
+            "config": {
+                "url_configured": False,
+                "token_configured": bool(cfg.api_token),
+                "webhook_secret_configured": bool(cfg.webhook_secret),
+                "timeout_seconds": cfg.timeout_seconds,
+            },
+        }
+
     try:
         external = await client.health()
-        return {"bridge": "OK", "external_ged": external}
+        return {
+            "bridge": "OK",
+            "status": "OK",
+            "external_ged": external,
+            "config": {
+                "url_configured": True,
+                "url": cfg.base_url,
+                "token_configured": bool(cfg.api_token),
+                "webhook_secret_configured": bool(cfg.webhook_secret),
+                "timeout_seconds": cfg.timeout_seconds,
+            },
+        }
     except GedExternalError as exc:
-        raise as_public_error(exc)
+        # Microservice non joignable / non déployé : statut dégradé, pas un bug.
+        return {
+            "bridge": "OK",
+            "status": "DEGRADED",
+            "error": str(exc),
+            "message": (
+                "Microservice GED ESS injoignable à l'URL configurée. "
+                "Statut normal tant que la GED ESS n'est pas déployée."
+            ),
+            "config": {
+                "url_configured": True,
+                "url": cfg.base_url,
+                "token_configured": bool(cfg.api_token),
+                "webhook_secret_configured": bool(cfg.webhook_secret),
+                "timeout_seconds": cfg.timeout_seconds,
+            },
+        }
 
 
 @ged_bridge_router.get("/scopes")
@@ -150,6 +201,7 @@ async def ged_bridge_scopes(_: dict = Depends(require_admin)):
 async def ged_bridge_sync_events(
     source: Optional[str] = None,
     source_id: Optional[str] = None,
+    status: Optional[str] = Query(None, description="SUCCESS | ERROR"),
     limit: int = Query(100, ge=1, le=500),
     _: dict = Depends(require_admin),
 ):
@@ -158,8 +210,78 @@ async def ged_bridge_sync_events(
         query["source"] = source
     if source_id:
         query["source_id"] = source_id
+    if status:
+        query["status"] = status
     docs = await db.ged_bridge_sync_events.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
-    return {"events": docs}
+    # Aggregate counts for the admin header
+    pipeline = [
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}},
+    ]
+    agg = await db.ged_bridge_sync_events.aggregate(pipeline).to_list(10)
+    counts = {row["_id"]: row["count"] for row in agg}
+    return {
+        "events": docs,
+        "counts": {
+            "total": sum(counts.values()),
+            "success": counts.get("SUCCESS", 0),
+            "error": counts.get("ERROR", 0),
+        },
+    }
+
+
+@ged_bridge_router.post("/sync-events/{event_id}/retry")
+async def ged_bridge_retry_sync_event(event_id: str, user: dict = Depends(require_admin)):
+    """Re-pousse une tentative en échec — selon `source`, on rejoue le bon flow.
+
+    Supporte les sources : `crm_dossier` et `lolodrive_order`. Pour les autres
+    (POST /documents, /pdf/generate directs), on rejoue exactement le payload.
+    """
+    event = await db.ged_bridge_sync_events.find_one({"id": event_id}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Événement de sync introuvable")
+    if event.get("status") == "SUCCESS":
+        raise HTTPException(status_code=400, detail="Cet événement est déjà en succès — rien à rejouer")
+
+    source = event.get("source")
+    source_id = event.get("source_id")
+    payload = event.get("payload") or {}
+
+    client = GedExternalClient()
+    try:
+        # Replay according to source
+        if source == "crm_dossier":
+            # Same flow as push_crm_dossier_to_ged — regenerate PDF
+            response = await client.generate_pdf(payload) if payload.get("template_code") else await client.create_document(payload)
+            await db.crm_dossiers.update_one(
+                {"id": source_id},
+                {"$set": {
+                    "ged_external_document_id": response.get("id"),
+                    "ged_external_reference": response.get("reference"),
+                    "ged_synced_at": datetime.utcnow(),
+                }},
+            )
+        elif source == "lolodrive_order":
+            response = await client.generate_pdf(payload)
+            await db.lolodrive_orders.update_one(
+                {"id": source_id},
+                {"$set": {
+                    "ged_external_document_id": response.get("id"),
+                    "ged_external_reference": response.get("reference"),
+                    "ged_synced_at": datetime.utcnow(),
+                }},
+            )
+        else:
+            # Generic replay : choose endpoint based on presence of template_code
+            if payload.get("template_code"):
+                response = await client.generate_pdf(payload)
+            else:
+                response = await client.create_document(payload)
+
+        await record_bridge_sync(source, source_id, "OUTBOUND_RETRY", "SUCCESS", payload, response)
+        return {"status": "RETRIED_SUCCESS", "event_id": event_id, "ged": response}
+    except GedExternalError as exc:
+        await record_bridge_sync(source, source_id, "OUTBOUND_RETRY", "ERROR", payload, {"error": str(exc), "retried_from": event_id})
+        raise as_public_error(exc)
 
 
 # ------------------------------------------------------------------

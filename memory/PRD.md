@@ -185,7 +185,50 @@ Exigences produit étendues :
 
 **Validation** : `CI=true yarn test --watchAll=false` → 7/7 pass.
 
-### Iter 16 (23 mai 2026) — Pont GED ESS externe (intégration légère contrôlée) (DONE)
+### Iter 16 (23 mai 2026) — Pont GED ESS externe : intégration légère contrôlée (DONE)
+**Demande utilisateur** : intégrer le ZIP `KDM-main-V2-plus-CRM-OSCOP-main-GED-bridge.zip` en câblant le pont GED ESS externe sans remplacer la GED interne, et sans refactorer massivement `server.py`.
+
+**Implémenté** :
+- 🆕 `backend/ged_external_client.py` — client async `httpx` (Bearer + HMAC `X-GED-ESS-Signature`).
+- 🆕 `backend/routes_ged_bridge.py` — routeur `/api/ged-bridge/*` admin-only :
+  - `GET /health`, `GET /scopes`, `GET /sync-events`, `POST /documents`, `POST /pdf/generate`
+  - `POST /crm/dossiers/{id}/push` (template `OSCOP_CONTRAT_COOPERATIF`) → met à jour `crm_dossiers.ged_external_document_id`
+  - `POST /lolodrive/orders/{id}/push` (template `KDMARCHE_APPEL_CONTRIBUTION`)
+- 🆕 Collection `ged_bridge_sync_events` (audit), 3 indexes Mongo créés au startup.
+- 🪶 `server.py` enrichi de **9 lignes** seulement (zéro refactor).
+- 🆕 `/app/backend/.env.example` documenté avec toutes les vars critiques.
+- 🆕 `/app/docs/GED_ESS_BRIDGE.md`.
+
+### Iter 17 (23 mai 2026) — Pont GED stabilisation + page admin minimaliste (DONE)
+
+**Demande utilisateur** : ne pas traiter les 502 comme bugs tant que la vraie GED ESS n'est pas déployée. Statut DEGRADED propre + page admin légère (sync-events + bouton re-push).
+
+**Implémenté (backend, petit commit)** :
+- `GET /api/ged-bridge/health` ré-écrit : renvoie **toujours HTTP 200** avec un statut lisible :
+  - `OK` — URL configurée + microservice répond
+  - `DEGRADED` — URL configurée mais microservice indisponible (404, timeout). Message explicite : *"Statut normal tant que la GED ESS n'est pas déployée."*
+  - `DISABLED` — `GED_ESS_API_URL` non configurée (pont volontairement désactivé)
+  - Renvoie en plus un objet `config` (url, token configuré ✔/—, HMAC configuré ✔/—, timeout) pour diagnostic admin.
+- `GET /api/ged-bridge/sync-events` enrichi : retourne maintenant `{events, counts: {total, success, error}}` agrégés via `$group` Mongo. Filtre `status=SUCCESS|ERROR` ajouté.
+- 🆕 `POST /api/ged-bridge/sync-events/{event_id}/retry` — rejoue un événement en échec (CRM dossier / LOLODRIVE order / PDF generate / create document). Trace une entrée `OUTBOUND_RETRY` en `ged_bridge_sync_events`.
+
+**Implémenté (frontend, petit commit)** :
+- 🆕 `/app/frontend/src/pages/GedBridgeAdminPage.jsx` — page admin minimaliste :
+  - Carte santé avec badge coloré (OK vert / DEGRADED ambre / DISABLED gris) + panneau diagnostic config (URL, tokens, timeout).
+  - 3 cartes de compteurs (Total / Succès / Erreurs).
+  - Filtres Statut (par défaut "Erreurs" pour focus opérationnel) + Source.
+  - Tableau des sync-events avec colonnes Date / Source / ID métier / Direction / Statut / Détail / Action.
+  - Bouton **Re-pousser** sur chaque ligne en erreur (loader pendant le retry + refresh auto du tableau).
+- 🆕 Route `/admin/ged-bridge` dans `App.js`, lien "Pont GED ESS" (icône Server) ajouté dans `NavBar.jsx` (section admin).
+
+**Tests E2E (curl + screenshot UI)** :
+- ✅ `GET /api/ged-bridge/health` → 200 + `status:"DEGRADED"` + diagnostic complet (avant : 502).
+- ✅ `GET /api/ged-bridge/sync-events?status=ERROR` → 200 + `counts:{total:2, success:0, error:2}`.
+- ✅ `POST /api/ged-bridge/sync-events/{id}/retry` → 502 propre + nouvelle entrée `OUTBOUND_RETRY` tracée.
+- ✅ `POST /api/ged-bridge/sync-events/unknown/retry` → 404.
+- ✅ Screenshot UI admin : page rend correctement, badge DEGRADED ambre, 2 lignes d'erreurs avec boutons "Re-pousser" actifs, design conforme à la charte premium light.
+
+
 **Demande utilisateur** : intégrer le ZIP `KDM-main-V2-plus-CRM-OSCOP-main-GED-bridge.zip` en câblant le pont GED ESS externe sans remplacer la GED interne, et sans refactorer massivement `server.py`.
 
 **Implémenté** :
