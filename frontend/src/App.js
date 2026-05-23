@@ -35,6 +35,7 @@ import ShoppingListsPage from "./pages/ShoppingListsPage";
 import ShoppingListDetailPage from "./pages/ShoppingListDetailPage";
 import AdminPlansPage from "./pages/AdminPlansPage";
 import { FavoritesProvider } from "./components/FavoriteButton";
+import BackButton from "./components/BackButton";
 
 // LOLODRIVE by O'SCOP - 7 nouvelles pages
 import LolodriveAdminDashboardPage from "./pages/LolodriveAdminDashboardPage";
@@ -59,6 +60,7 @@ function App() {
     <FavoritesProvider>
     <div className="App">
       <BrowserRouter>
+        <BackButton />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/offres" element={<OffersPage />} />

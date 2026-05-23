@@ -213,6 +213,32 @@ Exigences produit étendues :
 - Activation GED interne : 4 documents de référence (`convention`, `cg-oscop`, `cgv-kdmarche`, `note-preventive`) en statut PUBLISHED.
 
 ### Iter 19 (23 mai 2026) — Microservice finance-api séparé (P1 → P5) (DONE)
+- 📂 `/app/finance-api/` projet FastAPI indépendant (SQLAlchemy 2.x, JWT, SQLite en dev / PostgreSQL en prod)
+- 13 endpoints opérationnels : `/health`, `/setup/bootstrap`, `/auth/token`, `/parties`, `/receivables`, `/payments` (+ mark-paid + refund), `/sepa/mandates` (+ activate/revoke), `/installment-plans`, `/webhooks/{stripe,gocardless}`, `/reporting/dashboard`, `/ledger/entries`, `/audit/verify-ledger-chain`
+- **Journal financier chaîné** SHA-256 — tamper-test validé (altération `payload_json` détectée à la séquence exacte)
+- Port 8030 en sandbox (8010 occupé par infra Emergent), 8010 documenté pour prod
+- Bootstrap admin : `admin@finance.kdm-oscop.fr` / `AdminFinance2026!`
+- Aucun changement sur le backend KDM.
+
+### Iter 20 (23 mai 2026) — Bouton "Retour à la page précédente" global back-office (DONE)
+**Demande utilisateur** : ajouter un bouton de retour à la page précédente sur toutes les pages du back office.
+
+**Implémenté** :
+- 🆕 `/app/frontend/src/components/BackButton.jsx` (~50 lignes) — composant flottant unique :
+  - Détecte la route courante via `useLocation()` et 15 patterns `BACK_OFFICE_PATTERNS` (admin*, super-admin, vendor, crm, lolodrive, lolo-point, pos, reporting-impact, etc.)
+  - Clic → `navigate(-1)` ; si `window.history.length === 1` (onglet fraîchement ouvert sur une URL admin) → fallback `/admin`
+  - `data-testid="back-office-back-btn"` pour les tests E2E
+- 🆕 Style `.back-office-back-btn` dans `App.css` : pastille flottante glass-morphism bleu logistique (#1F4D87), position fixed top-left sous la NavBar, responsive (mobile : plus petit).
+- 🆕 Monté **une seule fois** dans `App.js` à l'intérieur de `<BrowserRouter>` (avant `<Routes>`). Aucune modification des 14+ pages back-office individuelles.
+
+**Tests E2E (playwright auto)** :
+- ✅ Public : `/`, `/catalogue-lolodrive` → bouton **ABSENT** (pas de pollution UX)
+- ✅ Back-office (7 routes testées) : `/admin`, `/admin/stripe-reconciliation`, `/admin/ged-bridge`, `/admin/lolo-points`, `/crm`, `/vendor`, `/lolodrive` → bouton **VISIBLE**
+- ✅ Screenshot : pastille bleue lisible sous la NavBar, design conforme à la charte premium clair
+
+**Total : 9/9 routes** conformes au comportement attendu.
+
+
 
 **Demande utilisateur** : créer un microservice **séparé** du projet KDM pour la gestion financière. Ne PAS toucher au backend KDM tant que finance-api n'est pas validé en standalone.
 

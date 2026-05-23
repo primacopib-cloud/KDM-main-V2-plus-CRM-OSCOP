@@ -79,6 +79,50 @@
   box-shadow: 0 8px 20px rgba(212,175,55,0.18);
 }
 
+/* Floating Back Button — back-office only (mounted globally in App.js) */
+.back-office-back-btn {
+  position: fixed;
+  top: 84px;
+  left: 16px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(31,77,135,0.30);
+  color: #1F4D87;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(31,77,135,0.10);
+  transition: background-color .15s ease, transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.back-office-back-btn:hover {
+  background: #FFFFFF;
+  border-color: rgba(31,77,135,0.55);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(31,77,135,0.18);
+}
+
+.back-office-back-btn:active { transform: translateY(0); }
+
+@media (max-width: 640px) {
+  .back-office-back-btn {
+    top: 76px;
+    left: 12px;
+    height: 30px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+}
+
 /* Badge styles */
 .badge-status {
   display: inline-flex;
