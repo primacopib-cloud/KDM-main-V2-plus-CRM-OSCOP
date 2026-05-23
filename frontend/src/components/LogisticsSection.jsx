@@ -9,7 +9,8 @@ const LogisticsSection = () => {
       case 'KDMARCHE':
         return { color: '#D9B35A', bg: 'rgba(217,179,90,0.08)', border: 'rgba(217,179,90,0.20)' };
       case 'Client':
-        return { color: 'rgba(255,255,255,0.75)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.12)' };
+        // Bleu logistique vif pour bien ressortir sur fond crème/clair
+        return { color: '#1F4D87', bg: 'rgba(31,77,135,0.10)', border: 'rgba(31,77,135,0.45)' };
       default:
         return { color: 'rgba(255,255,255,0.75)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.12)' };
     }
@@ -58,7 +59,7 @@ const LogisticsSection = () => {
                 </div>
               </div>
             );
-          })};
+          })}
         </div>
 
         {/* Legend */}
@@ -72,7 +73,7 @@ const LogisticsSection = () => {
             <span className="text-xs text-white/65">KDMARCHE (Produits & Facturation)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-white/50"></div>
+            <div className="w-3 h-3 rounded-full" style={{ background: '#1F4D87' }}></div>
             <span className="text-xs text-white/65">Client (Transport EXW)</span>
           </div>
         </div>

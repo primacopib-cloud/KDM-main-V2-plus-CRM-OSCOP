@@ -24,8 +24,10 @@ import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// Demo vendor ID (in production, get from auth)
-const DEMO_VENDOR_ID = 'vendor_878ad7936d37';
+// Demo vendor ID — points to the seeded "Distillerie Damoiseau" vendor pro.
+// Login : vendor-pro@kdmarche.fr / Demo2026!
+// In production, this should come from auth (user.vendor_id).
+const DEMO_VENDOR_ID = 'vendor-demo-pro';
 
 // Product categories
 const CATEGORIES = [

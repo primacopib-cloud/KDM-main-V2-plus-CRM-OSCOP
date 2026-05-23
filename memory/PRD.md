@@ -200,6 +200,119 @@ Exigences produit étendues :
 - 🆕 `/app/docs/GED_ESS_BRIDGE.md`.
 
 ### Iter 17 (23 mai 2026) — Pont GED stabilisation + page admin minimaliste (DONE)
+- `GET /api/ged-bridge/health` ré-écrit : statut **OK / DEGRADED / DISABLED** + diagnostic config (toujours HTTP 200).
+- `GET /api/ged-bridge/sync-events` enrichi : `{events, counts}` + filtre `status=`.
+- 🆕 `POST /api/ged-bridge/sync-events/{id}/retry` — rejoue un événement en échec.
+- 🆕 Frontend `/admin/ged-bridge` (`GedBridgeAdminPage.jsx`) : carte santé + 3 compteurs + tableau sync-events avec filtres + bouton "Re-pousser" sur chaque erreur. Lien ajouté dans NavBar.
+
+- Lien "Pont GED ESS" ajouté dans NavBar.
+
+### Iter 18 (23 mai 2026) — Badge "Client" visible + personas démo + GED activée (DONE)
+- `LogisticsSection.jsx` : badge Client passé en bleu logistique #1F4D87 (lisible sur fond crème).
+- Seed `/app/backend/seed_demo_personas.py` (idempotent) : ajoute vendeur pro `vendor-pro@kdmarche.fr` (Distillerie Damoiseau + 3 produits), acheteur B2B `acheteur-pro@kdmarche.fr` (Restaurant La Caravelle + 250 crédits), commande de réassort LP pour gérant existant.
+- Activation GED interne : 4 documents de référence (`convention`, `cg-oscop`, `cgv-kdmarche`, `note-preventive`) en statut PUBLISHED.
+
+### Iter 19 (23 mai 2026) — Microservice finance-api séparé (P1 → P5) (DONE)
+
+**Demande utilisateur** : créer un microservice **séparé** du projet KDM pour la gestion financière. Ne PAS toucher au backend KDM tant que finance-api n'est pas validé en standalone.
+
+**Architecture livrée** :
+- 📂 `/app/finance-api/` — projet FastAPI indépendant, structure exacte demandée :
+  - `main.py`, `requirements.txt`, `Dockerfile`, `.env.example`, `.env`, `README.md`
+  - `app/core/{config,security}.py`
+  - `app/db/session.py` (SQLAlchemy 2.x ; SQLite en dev, PostgreSQL prêt en prod)
+  - `app/models/{user,party,receivable,payment,sepa_mandate,installment,ledger,webhook_event}.py`
+  - `app/schemas/all.py` (Pydantic v2)
+  - `app/routes/{auth,parties,receivables,payments,sepa,installment_plans,webhooks,reporting}.py`
+  - `app/services/{psp_adapters,ledger_service,reconciliation_service,ged_connector,crm_connector}.py`
+
+**Endpoints disponibles** :
+- `GET /health`, `POST /setup/bootstrap`, `POST /auth/token`
+- `POST/GET /parties`
+- `POST/GET /receivables` (types : INVOICE, COTISATION, APPEL_CONTRIBUTION, PASS_CONSOMMATION, RECHARGE_UC, ORDER, OTHER)
+- `POST /payments`, `POST /payments/{id}/mark-paid`, `POST /payments/{id}/refund`, `GET /payments`
+- `POST /sepa/mandates`, `POST /sepa/mandates/{id}/activate`, `POST /sepa/mandates/{id}/revoke`
+- `POST /installment-plans` (validation : Σ échéances = montant créance)
+- `POST /webhooks/stripe`, `POST /webhooks/gocardless` (idempotents, signature à brancher)
+- `GET /reporting/dashboard`, `GET /ledger/entries`, `GET /audit/verify-ledger-chain`
+
+**Journal financier probant** :
+- Table `ledger_entries` append-only avec `sequence` monotone + chaînage SHA-256 (`previous_hash` + `entry_hash`)
+- Vérification chaîne via `GET /audit/verify-ledger-chain`
+- ✅ **Tamper-test validé** : altération directe du `payload_json` (ex. amount_cents → 999999) détectée immédiatement avec le message `"entry_hash divergent — payload modifié après écriture"` à la séquence exacte.
+
+**PSP adapters** (`psp_adapters.py`) :
+- 3 backends : `manual` (toujours fonctionnel pour tests), `stripe`, `gocardless`
+- Si secret PSP manquant : adaptateur renvoie `status=FAILED` avec message clair (pas de crash)
+- `_stripe_checkout` et `_gocardless_billing_request` ont placeholders prêts pour brancher les vrais SDK
+
+**Port** : Demandé 8010, mais ce port est utilisé par l'infra interne Emergent dans le pod preview → service exposé sur **8030 en sandbox** (8010 reste documenté pour la prod via Docker/k8s). Aucun impact fonctionnel.
+
+**Base de données** :
+- **Dev/sandbox** : SQLite `finance_api.db` (zéro setup)
+- **Prod** : `DATABASE_URL=postgresql+psycopg2://finance_user:***@postgres-finance:5432/finance_api` (à activer dans `.env`)
+- Auto-init des tables au startup (`Base.metadata.create_all`)
+
+**Tests E2E (curl, scénario complet)** :
+- ✅ `/health` → 200 + flags config (stripe_configured: false, gocardless_configured: false, etc.)
+- ✅ `/setup/bootstrap` (1ère) → 200 + token JWT 120 min ; rejeu → **409 Conflict** ✓
+- ✅ `/auth/token` (OAuth2 form) → JWT renvoyé, `/parties` sans token → **401**
+- ✅ `POST /parties` (Restaurant La Caravelle, SIRET 555…) → 201
+- ✅ `POST /receivables` (COTISATION 120€) → 201 + entrée ledger seq=1
+- ✅ `POST /payments` (manual) → status PENDING + hosted_url + entrée ledger seq=2 PAYMENT_INITIATED
+- ✅ `POST /payments/{id}/mark-paid` → status SUCCEEDED + receivable PAID + entrée ledger seq=3
+- ✅ `POST /payments/{id}/refund` (30€) → status PARTIAL_REFUND + entrée ledger seq=4
+- ✅ `POST /sepa/mandates` SEPA_B2B → 201, UMR auto-générée `UMR-20260523-0001`
+- ✅ `POST /sepa/mandates/{id}/activate` → ACTIVE + entrée ledger seq=6
+- ✅ `POST /installment-plans` (3×40€) → 3 installments créées
+- ✅ `/reporting/dashboard` : KPIs cohérents (1 party, 1 receivable PAID, 12000 paid, 3000 refunded, 7 ledger entries)
+- ✅ `/audit/verify-ledger-chain` initial → `ok: true, total_entries: 7`
+- ✅ Tamper test : ledger chain casse à la bonne séquence après modification SQL directe
+
+**État P1→P5** : OK. **P6 (bridge KDM)** sera traité dans une itération séparée, après validation utilisateur.
+
+
+
+**Demande utilisateur** :
+1. Rendre le badge "Client" visible (était quasi-invisible sur fond crème)
+2. Créer compte vendeur pro fictif + parcours
+3. Créer compte acheteur B2B fictif + parcours
+4. Créer compte Lolo Point + parcours d'achat
+5. Activer la GED
+
+**Implémenté** :
+
+#### 1. Badge Client (`LogisticsSection.jsx`)
+- Couleur passée de `rgba(255,255,255,0.75)` (invisible sur fond crème) → **`#1F4D87` (Bleu logistique)** avec contour `rgba(31,77,135,0.45)` bien marqué.
+- Pastille légende synchronisée (`background: #1F4D87`).
+- Bonus : fix d'un `};` parasite après `.map()` qui pouvait poser des soucis.
+
+#### 2. Seed personas (`/app/backend/seed_demo_personas.py`)
+- 🆕 **Vendeur pro** : `vendor-pro@kdmarche.fr` / `Demo2026!`
+  - Côté `users` : rôle `vendor`, lié à `vendor_id=vendor-demo-pro`
+  - Côté `vendors` : Distillerie Damoiseau (status `approved`, SIRET 444…)
+  - 3 produits : Rhum AOC blanc 1L (approuvé), Rhum VSOP 70cl (approuvé), Confiture goyave-rhum (en attente)
+  - Parcours : `/vendor` → dashboard 2/3 actifs + 1 en attente, possibilité d'ajouter/éditer/soumettre
+- 🆕 **Acheteur B2B pro** : `acheteur-pro@kdmarche.fr` / `Demo2026!`
+  - Restaurant La Caravelle (SIRET 555…, 250 crédits)
+  - Parcours : `/catalogue`, `/espace-acheteur`, `/wallet`
+- ✅ **Gérant Lolo Point existant** enrichi d'une commande de réassort B2B `LD-LP-20260518-J1K2L3` FULFILLED (260 €) — parcours d'achat seedé
+- `VendorSpacePage.jsx` : `DEMO_VENDOR_ID` mis à jour vers `vendor-demo-pro` pour exposer le seed.
+
+#### 3. Activation GED interne
+- Le script `seed_demo_personas.py` force l'init des 4 documents de référence via `initialize_default_documents()` si la collection est vide. À l'exécution : 4 documents trouvés (`convention`, `cg-oscop`, `cgv-kdmarche`, `note-preventive`), tous en statut `PUBLISHED`. Accessibles via `/documents` et `GET /api/ged/documents`.
+
+**Tests E2E** :
+- ✅ `POST /api/auth/login` vendor-pro → 200, company "Distillerie Damoiseau"
+- ✅ `POST /api/auth/login` acheteur-pro → 200, 250 crédits, "Restaurant La Caravelle"
+- ✅ `GET /api/vendor/dashboard/vendor-demo-pro` → 3 produits (2 approved + 1 pending), CA 0 € (pas encore de ventes)
+- ✅ `GET /api/ged/documents` (admin) → 4 documents PUBLISHED
+- ✅ Screenshot landing : badge Client bleu logistique parfaitement lisible, légende synchronisée
+- ✅ Screenshot `/vendor` : dashboard Distillerie Damoiseau affiche 2 actifs / 1 en attente
+
+**Credentials mis à jour** dans `/app/memory/test_credentials.md`.
+
+
 
 **Demande utilisateur** : ne pas traiter les 502 comme bugs tant que la vraie GED ESS n'est pas déployée. Statut DEGRADED propre + page admin légère (sync-events + bouton re-push).
 
