@@ -19,6 +19,7 @@ business logic has actually been executed — PASS activated / order paid).
 import csv
 import io
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -217,7 +218,7 @@ async def stripe_reconciliation(
         "dashboard_links": dashboard_links,
         "stripe_mode": (
             "live"
-            if (__import__("os").environ.get("STRIPE_MODE", "test").strip().lower() == "live")
+            if (os.environ.get("STRIPE_MODE", "test").strip().lower() == "live")
             else "test"
         ),
     }

@@ -385,7 +385,7 @@ async def list_pickup_locations(
             await db.pickup_locations.insert_one(loc.dict())
         locations = await db.pickup_locations.find(query).to_list(100)
     
-    return [PickupLocationResponse(**l) for l in locations]
+    return [PickupLocationResponse(**loc) for loc in locations]
 
 
 # ============== CART ==============

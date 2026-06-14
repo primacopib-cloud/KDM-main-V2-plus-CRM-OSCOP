@@ -131,8 +131,10 @@ async def upsert_contact_from_user(user: dict, source: str = "lolodrive") -> dic
     email = user.get("email")
     phone = user.get("phone") or user.get("telephone")
     query = {"$or": []}
-    if email: query["$or"].append({"email": email})
-    if phone: query["$or"].append({"telephone": phone})
+    if email:
+        query["$or"].append({"email": email})
+    if phone:
+        query["$or"].append({"telephone": phone})
     if not query["$or"]:
         query = {"external_user_id": user.get("id")}
 
@@ -255,7 +257,8 @@ async def create_contact(request: ContactCreate, admin: dict = Depends(require_a
 @crm_router.get("/contacts")
 async def list_contacts(q: Optional[str] = None, type_acteur: Optional[str] = None, limit: int = 100, admin: dict = Depends(require_admin)):
     query: Dict[str, Any] = {}
-    if type_acteur: query["type_acteur"] = type_acteur
+    if type_acteur:
+        query["type_acteur"] = type_acteur
     if q:
         query["$or"] = [{"email": {"$regex": q, "$options": "i"}}, {"nom": {"$regex": q, "$options": "i"}}, {"prenom": {"$regex": q, "$options": "i"}}, {"telephone": {"$regex": q, "$options": "i"}}]
     docs = await db.crm_contacts.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
@@ -264,7 +267,8 @@ async def list_contacts(q: Optional[str] = None, type_acteur: Optional[str] = No
 @crm_router.get("/contacts/{contact_id}")
 async def get_contact(contact_id: str, admin: dict = Depends(require_admin)):
     doc = await db.crm_contacts.find_one({"id": contact_id}, {"_id": 0})
-    if not doc: raise HTTPException(status_code=404, detail="Contact introuvable")
+    if not doc:
+        raise HTTPException(status_code=404, detail="Contact introuvable")
     return doc
 
 # -----------------------
@@ -281,7 +285,8 @@ async def create_org(request: OrganizationCreate, admin: dict = Depends(require_
 @crm_router.get("/organizations")
 async def list_orgs(q: Optional[str] = None, type_structure: Optional[str] = None, limit: int = 100, admin: dict = Depends(require_admin)):
     query: Dict[str, Any] = {}
-    if type_structure: query["type_structure"] = type_structure
+    if type_structure:
+        query["type_structure"] = type_structure
     if q:
         query["$or"] = [{"raison_sociale": {"$regex": q, "$options": "i"}}, {"enseigne": {"$regex": q, "$options": "i"}}, {"email": {"$regex": q, "$options": "i"}}]
     docs = await db.crm_organizations.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
@@ -301,8 +306,10 @@ async def create_opp(request: OpportunityCreate, admin: dict = Depends(require_a
 @crm_router.get("/opportunities")
 async def list_opps(stage: Optional[str] = None, type_besoin: Optional[str] = None, limit: int = 100, admin: dict = Depends(require_admin)):
     query: Dict[str, Any] = {}
-    if stage: query["pipeline_stage"] = stage
-    if type_besoin: query["type_besoin"] = type_besoin
+    if stage:
+        query["pipeline_stage"] = stage
+    if type_besoin:
+        query["type_besoin"] = type_besoin
     docs = await db.crm_opportunities.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
     return {"opportunities": docs}
 
@@ -331,8 +338,10 @@ async def create_dossier(request: DossierCreate, admin: dict = Depends(require_a
 @crm_router.get("/dossiers")
 async def list_dossiers(type_dossier: Optional[str] = None, statut: Optional[str] = None, limit: int = 100, admin: dict = Depends(require_admin)):
     query: Dict[str, Any] = {}
-    if type_dossier: query["type_dossier"] = type_dossier
-    if statut: query["statut"] = statut
+    if type_dossier:
+        query["type_dossier"] = type_dossier
+    if statut:
+        query["statut"] = statut
     docs = await db.crm_dossiers.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
     return {"dossiers": docs}
 
@@ -350,8 +359,10 @@ async def create_task(request: TaskCreate, admin: dict = Depends(require_admin))
 @crm_router.get("/tasks")
 async def list_tasks(status: Optional[str] = None, due_only: bool = False, admin: dict = Depends(require_admin)):
     query: Dict[str, Any] = {}
-    if status: query["status"] = status
-    if due_only: query["due_at"] = {"$lte": now() + timedelta(days=7)}
+    if status:
+        query["status"] = status
+    if due_only:
+        query["due_at"] = {"$lte": now() + timedelta(days=7)}
     docs = await db.crm_tasks.find(query, {"_id": 0}).sort("due_at", 1).limit(200).to_list(200)
     return {"tasks": docs}
 

@@ -66,7 +66,7 @@ const LogisticsSection = () => {
         <div className="mt-4 flex flex-wrap justify-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-[#57D19A]"></div>
-            <span className="text-xs text-white/65">O'SCOP (Accès & Abonnement)</span>
+            <span className="text-xs text-white/65">O&apos;SCOP (Accès &amp; Abonnement)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-[#D9B35A]"></div>

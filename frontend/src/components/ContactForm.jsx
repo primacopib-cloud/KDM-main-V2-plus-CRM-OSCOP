@@ -76,7 +76,7 @@ const ContactForm = () => {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="company" className="text-white/80 text-sm">Nom de l'entreprise *</Label>
+            <Label htmlFor="company" className="text-white/80 text-sm">Nom de l&apos;entreprise *</Label>
             <Input
               id="company"
               name="company"
@@ -181,7 +181,7 @@ const ContactForm = () => {
         </button>
 
         <p className="text-xs text-white/50 text-center">
-          En soumettant ce formulaire, vous acceptez d'être contacté par notre équipe commerciale.
+          En soumettant ce formulaire, vous acceptez d&apos;être contacté par notre équipe commerciale.
         </p>
       </form>
     </div>

@@ -204,11 +204,8 @@ async def get_shopping_lists(
     summaries = []
     for lst in lists:
         items = lst.get("items", [])
-        # Quick total calculation
-        total = 0
-        for item in items:
-            # We'd need to look up prices, but for summary we can skip or use cached
-            pass
+        # NOTE: per-list total intentionally not computed in summary
+        # (would require N price lookups). Front-end fetches detail when expanded.
         
         summaries.append(ShoppingListSummary(
             id=lst.get("id"),

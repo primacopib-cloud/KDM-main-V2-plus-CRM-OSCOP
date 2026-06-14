@@ -1,3 +1,5 @@
+/* eslint-env jest */
+/* global jest */
 // Jest DOM matchers (toBeInTheDocument, etc.)
 import '@testing-library/jest-dom';
 import { TextEncoder, TextDecoder } from 'util';

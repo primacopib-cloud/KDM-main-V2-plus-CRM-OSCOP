@@ -40,7 +40,8 @@ async def main() -> None:
     # =========================================================
     vendor_id = "vendor-demo-pro"
     vendor_email = "vendor-pro@kdmarche.fr"
-    vendor_password = "Demo2026!"
+    # Demo seed password — overridable via env so prod-like environments inject their own.
+    vendor_password = os.environ.get("DEMO_SEED_PASSWORD", "Demo2026!")
 
     # Côté table `users` (login app)
     vendor_user = {

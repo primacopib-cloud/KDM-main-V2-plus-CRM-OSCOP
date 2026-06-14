@@ -219,7 +219,7 @@ def cents_to_uc(cents: int) -> int:
     return round(cents / 10)
 
 async def logistics_config() -> dict:
-    cfg = await db.lolodrive_logistics_config.find_one({"id": "default"})
+    cfg = await db.lolodrive_logistics_config.find_one({"id": "default"}, {"_id": 0})
     if cfg:
         return cfg
     await db.lolodrive_logistics_config.insert_one({**DEFAULT_LOGISTICS_CONFIG, "created_at": datetime.utcnow(), "updated_at": datetime.utcnow()})

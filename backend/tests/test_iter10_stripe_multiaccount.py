@@ -16,9 +16,10 @@ import requests
 from urllib.parse import urlparse, parse_qs
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://coop-dashboard-8.preview.emergentagent.com").rstrip("/")
-MARIE_EMAIL = "marie@example.com"
-MARIE_PASSWORD = "Demo2026!"
-ORIGIN = "https://coop-dashboard-8.preview.emergentagent.com"
+MARIE_EMAIL = os.environ.get("DEMO_USER_EMAIL", "marie@example.com")
+# Password sourced from env; falls back to the documented demo seed for local CI.
+MARIE_PASSWORD = os.environ.get("DEMO_USER_PASSWORD") or os.environ.get("DEMO_SEED_PASSWORD") or "Demo2026!"
+ORIGIN = os.environ.get("REACT_APP_FRONTEND_ORIGIN", BASE_URL)
 
 
 # --------------------------------------------------------------------------- #

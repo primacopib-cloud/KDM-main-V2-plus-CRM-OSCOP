@@ -181,7 +181,7 @@ const ProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, countries }) =
             Soumettre un nouveau produit
           </DialogTitle>
           <DialogDescription>
-            Remplissez les informations du produit. Il sera soumis pour validation par l'administrateur.
+            Remplissez les informations du produit. Il sera soumis pour validation par l&apos;administrateur.
           </DialogDescription>
         </DialogHeader>
 
@@ -393,7 +393,7 @@ const ProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, countries }) =
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="country_of_origin">Pays d'origine *</Label>
+                <Label htmlFor="country_of_origin">Pays d&apos;origine *</Label>
                 <Select value={formData.country_of_origin} onValueChange={(v) => handleChange('country_of_origin', v)}>
                   <SelectTrigger data-testid="product-origin">
                     <SelectValue />
@@ -687,7 +687,7 @@ const VendorSpacePage = () => {
               
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>Chiffre d'affaires</CardDescription>
+                  <CardDescription>Chiffre d&apos;affaires</CardDescription>
                   <CardTitle className="text-3xl text-emerald-600">
                     {formatCurrency(dashboard?.sales?.total_revenue || 0)}
                   </CardTitle>

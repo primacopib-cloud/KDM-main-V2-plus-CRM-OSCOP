@@ -105,7 +105,7 @@ def generate_order_pdf(order: dict, org: dict = None, signature_data: dict = Non
     if isinstance(order_date, str):
         try:
             order_date = datetime.fromisoformat(order_date.replace('Z', '+00:00'))
-        except:
+        except (ValueError, TypeError):
             order_date = datetime.utcnow()
     
     elements.append(Paragraph(f"N° {order_number}", ParagraphStyle(
@@ -331,7 +331,7 @@ def generate_invoice_pdf(invoice: dict, order: dict = None) -> bytes:
     if isinstance(issue_date, str):
         try:
             issue_date = datetime.fromisoformat(issue_date.replace('Z', '+00:00'))
-        except:
+        except (ValueError, TypeError):
             issue_date = datetime.utcnow()
     
     info_data = [
@@ -418,7 +418,7 @@ def generate_invoice_pdf(invoice: dict, order: dict = None) -> bytes:
             if isinstance(paid_date, str):
                 try:
                     paid_date = datetime.fromisoformat(paid_date.replace('Z', '+00:00'))
-                except:
+                except (ValueError, TypeError):
                     paid_date = None
             if paid_date:
                 elements.append(Paragraph(f"Payée le {paid_date.strftime('%d/%m/%Y')}", ParagraphStyle(

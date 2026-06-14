@@ -442,7 +442,7 @@ export default function WalletPage() {
                   Pour accéder au wallet organisation et aux zones, associez-vous à une organisation B2B.
                 </p>
                 <Link to="/onboarding" className="text-sm text-blue-400 underline mt-2 inline-block">
-                  Demander l'adhésion →
+                  Demander l&apos;adhésion →
                 </Link>
               </div>
             </div>
@@ -689,7 +689,7 @@ export default function WalletPage() {
               Recharger le wallet
             </DialogTitle>
             <DialogDescription className="text-white/60">
-              Ajoutez des crédits à votre compte O'SCOP
+              Ajoutez des crédits à votre compte O&apos;SCOP
             </DialogDescription>
           </DialogHeader>
 
@@ -726,7 +726,7 @@ export default function WalletPage() {
             <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.08]">
               <p className="text-xs text-white/50">
                 Les crédits sont non remboursables et non convertibles en espèces. 
-                Ils permettent d'accéder aux services premium O'SCOP.
+                Ils permettent d&apos;accéder aux services premium O&apos;SCOP.
               </p>
             </div>
           </div>
@@ -781,7 +781,7 @@ export default function WalletPage() {
 
               <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.08]">
                 <p className="text-xs text-white/50">
-                  L'activation d'une zone vous permet d'accéder aux prix et de passer 
+                  L&apos;activation d&apos;une zone vous permet d&apos;accéder aux prix et de passer 
                   des commandes pour les produits disponibles dans cette zone.
                 </p>
               </div>
@@ -900,7 +900,7 @@ export default function WalletPage() {
               {!transferReference ? (
                 <>
                   <div className="mb-4">
-                    <Label className="text-white/70">Nom de l'entreprise (pour la référence)</Label>
+                    <Label className="text-white/70">Nom de l&apos;entreprise (pour la référence)</Label>
                     <Input 
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
@@ -1078,7 +1078,7 @@ export default function WalletPage() {
                 </Button>
                 
                 <p className="text-xs text-center text-white/40">
-                  En continuant, vous autorisez O'SCOP à débiter votre compte via SEPA
+                  En continuant, vous autorisez O&apos;SCOP à débiter votre compte via SEPA
                 </p>
               </div>
             </TabsContent>

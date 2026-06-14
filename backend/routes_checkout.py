@@ -346,9 +346,8 @@ async def pay_installment(
     if installment.get("status") == "PAID":
         raise HTTPException(status_code=400, detail="Échéance déjà payée")
     
-    # Get org
-    org = await db.orgs.find_one({"id": order["org_id"]})
-    org_name = org.get("legal_name", "Client") if org else "Client"
+    # Get org (currently unused — preserved for future receipt/metadata enrichment)
+    await db.orgs.find_one({"id": order["org_id"]})
     
     try:
         # Create payment intent for this installment

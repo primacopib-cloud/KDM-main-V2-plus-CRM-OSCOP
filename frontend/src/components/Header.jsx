@@ -52,9 +52,9 @@ const Header = () => {
             </div>
             <div className="hidden xl:block">
               <h1 className="text-xs tracking-wider uppercase text-white/85 font-semibold m-0">
-                KDMARCHE × O'SCOP
+                KDMARCHE × O&apos;SCOP
               </h1>
-              <p className="text-[10px] text-white/50 mt-0">Centrale d'achats B2B ESS</p>
+              <p className="text-[10px] text-white/50 mt-0">Centrale d&apos;achats B2B ESS</p>
             </div>
           </Link>
 

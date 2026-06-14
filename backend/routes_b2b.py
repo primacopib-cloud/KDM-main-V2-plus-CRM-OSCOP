@@ -259,9 +259,8 @@ async def apply_prep_options_b2b(request: ApplyPrepOptionsRequest):
     """
     zone_code = request.zone_code.upper()
     
-    # Get OPA cache for policy evaluation
-    opa_cache = await get_opa_cache()
-    zones_config = opa_cache.get("zones_config", {})
+    # Get OPA cache for policy evaluation (zones_config currently unused — see build_zones_config_from_db below).
+    await get_opa_cache()
     
     # Build full config for policy (with detailed options)
     zones = await db.kdm_zones.find({"is_active": True}, {"_id": 0}).to_list(100)

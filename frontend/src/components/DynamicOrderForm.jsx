@@ -363,7 +363,7 @@ const DynamicOrderForm = ({
           </div>
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-gray-500">Adresse d'enlèvement :</p>
+              <p className="text-gray-500">Adresse d&apos;enlèvement :</p>
               <p className="font-medium text-gray-900">{replaceVariables(vars.POINT_EXW_ADRESSE || '[À définir]', vars)}</p>
             </div>
             <div>
@@ -634,9 +634,9 @@ const DynamicOrderForm = ({
           <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Conditions</h4>
             <div className="space-y-2 text-sm text-gray-600">
-              <p>• Incoterm : <strong className="text-gray-900">EXW</strong> (enlèvement à charge de l'acheteur)</p>
+              <p>• Incoterm : <strong className="text-gray-900">EXW</strong> (enlèvement à charge de l&apos;acheteur)</p>
               <p>• Paiement : à réception de facture</p>
-              <p>• Validité de l'offre : 30 jours</p>
+              <p>• Validité de l&apos;offre : 30 jours</p>
               <p>• CGV KDMARCHE B2B applicables</p>
               {isVatExonerated && (
                 <p className="text-emerald-600 font-medium">• Zone exonérée de TVA (article 294 CGI)</p>
@@ -699,7 +699,7 @@ const DynamicOrderForm = ({
             {/* Client Signature */}
             <div className="p-4 rounded-xl bg-white border border-gray-200 min-h-[200px]">
               <p className="text-xs font-semibold uppercase tracking-wider text-[#4a1776] mb-3">
-                Pour l'Acheteur
+                Pour l&apos;Acheteur
               </p>
               <p className="text-sm text-gray-700 mb-1">
                 {signatureData.clientName || replaceVariables(vars.CLIENT_CONTACT || '[Nom du signataire]', vars)}
@@ -718,14 +718,14 @@ const DynamicOrderForm = ({
               </div>
               
               <div className="border-t border-dashed border-gray-300 pt-3 mt-4">
-                <p className="text-xs text-gray-400">Signature précédée de la mention "Bon pour accord" :</p>
+                <p className="text-xs text-gray-400">Signature précédée de la mention &quot;Bon pour accord&quot; :</p>
               </div>
             </div>
           </div>
           
           <div className="mt-6 p-3 rounded-lg bg-[#d4af37]/5 border border-[#d4af37]/20">
             <p className="text-xs text-gray-600 text-center">
-              <strong>Mention obligatoire :</strong> En signant ce bon de commande, l'acheteur reconnaît avoir pris connaissance 
+              <strong>Mention obligatoire :</strong> En signant ce bon de commande, l&apos;acheteur reconnaît avoir pris connaissance 
               et accepté les CGV KDMARCHE B2B disponibles sur <span className="text-[#4a1776]">kdmarche-oscop.fr/legal/cgv-kdmarche</span>
             </p>
           </div>
@@ -736,7 +736,7 @@ const DynamicOrderForm = ({
       <footer className="px-8 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center text-xs text-gray-500">
         <div>
           <p><strong>KDMARCHE</strong> — Bon de commande B2B (EXW) — Zone {zoneCode} {isVatExonerated && '— TVA exonérée'}</p>
-          <p className="mt-1">Flux marchandises uniquement. Services d'accès : facturation séparée par O'SCOP.</p>
+          <p className="mt-1">Flux marchandises uniquement. Services d&apos;accès : facturation séparée par O&apos;SCOP.</p>
         </div>
         <p className="font-mono">Réf. {replaceVariables(vars.COMMANDE_REF || 'BC-XXXX', vars)} · Page 1/1</p>
       </footer>

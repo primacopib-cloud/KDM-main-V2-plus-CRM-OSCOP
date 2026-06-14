@@ -377,7 +377,7 @@ export default function StripeReconciliationPage() {
                       style={{ borderColor: "rgba(212,175,55,0.30)" }}
                     >
                       <option value="">Tous les comptes</option>
-                      <option value="oscop">O'SCOP OUTREMER</option>
+                      <option value="oscop">O&apos;SCOP OUTREMER</option>
                       <option value="kdmarche">KDMARCHE</option>
                     </select>
                   </div>

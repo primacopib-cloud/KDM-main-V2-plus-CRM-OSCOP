@@ -31,7 +31,7 @@ const Footer = () => {
               />
             </div>
             <p className="text-white/60 text-sm leading-relaxed">
-              Centrale d'achats B2B ESS - Partenariat officiel pour l'Économie Sociale et Solidaire.
+              Centrale d&apos;achats B2B ESS - Partenariat officiel pour l&apos;Économie Sociale et Solidaire.
             </p>
             
             {/* ESS Official Clause Badge */}
@@ -103,7 +103,7 @@ const Footer = () => {
                   data-testid="footer-link-cg-oscop"
                 >
                   <CreditCard className="w-3.5 h-3.5 text-[#57D19A]" />
-                  <span>CG O'SCOP</span>
+                  <span>CG O&apos;SCOP</span>
                 </Link>
               </li>
               <li>
@@ -162,7 +162,7 @@ const Footer = () => {
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-white/50 text-xs">
-            © 2025 Centrale d'Achats B2B ESS - KDMARCHE & O'SCOP. Tous droits réservés.
+            © 2025 Centrale d&apos;Achats B2B ESS - KDMARCHE &amp; O&apos;SCOP. Tous droits réservés.
           </p>
           <div className="flex gap-6">
             <Link to="/legal/cgv-kdmarche" className="text-white/50 hover:text-white/80 text-xs transition-colors">Mentions légales</Link>

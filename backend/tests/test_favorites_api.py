@@ -115,7 +115,7 @@ class TestFavoritesAPICRUD:
         assert response.status_code == 200
         data = response.json()
         assert data["product_id"] == TEST_PRODUCT_ID
-        assert data["is_favorite"] == True
+        assert data["is_favorite"] is True
         assert "message" in data
         
     def test_add_favorite_duplicate(self, auth_headers):
@@ -127,7 +127,7 @@ class TestFavoritesAPICRUD:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["is_favorite"] == True
+        assert data["is_favorite"] is True
         assert "déjà" in data["message"].lower() or "already" in data["message"].lower()
         
     def test_add_favorite_invalid_product(self, auth_headers):
@@ -186,7 +186,7 @@ class TestFavoritesAPICRUD:
         assert response.status_code == 200
         data = response.json()
         assert data["product_id"] == TEST_PRODUCT_ID
-        assert data["is_favorite"] == False
+        assert data["is_favorite"] is False
         
     def test_verify_favorite_removed(self, auth_headers):
         """GET /api/user-prefs/favorites/ids should not include removed product"""
@@ -206,7 +206,7 @@ class TestFavoritesAPICRUD:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["is_favorite"] == False
+        assert data["is_favorite"] is False
 
 
 class TestFavoritesToggle:
@@ -224,7 +224,7 @@ class TestFavoritesToggle:
         assert response.status_code == 200
         data = response.json()
         assert data["product_id"] == TEST_PRODUCT_ID
-        assert data["is_favorite"] == True
+        assert data["is_favorite"] is True
         
     def test_toggle_remove_favorite(self, auth_headers):
         """POST /api/user-prefs/favorites/{id}/toggle should remove if present"""
@@ -235,7 +235,7 @@ class TestFavoritesToggle:
         assert response.status_code == 200
         data = response.json()
         assert data["product_id"] == TEST_PRODUCT_ID
-        assert data["is_favorite"] == False
+        assert data["is_favorite"] is False
         
     def test_toggle_add_again(self, auth_headers):
         """POST /api/user-prefs/favorites/{id}/toggle should add again after removal"""
@@ -245,7 +245,7 @@ class TestFavoritesToggle:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["is_favorite"] == True
+        assert data["is_favorite"] is True
         
     def test_toggle_invalid_product(self, auth_headers):
         """POST /api/user-prefs/favorites/{id}/toggle should return 404 for invalid product"""

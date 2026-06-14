@@ -158,7 +158,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str, token: str = 
                 # Send keepalive ping
                 try:
                     await websocket.send_json({"type": "keepalive", "timestamp": datetime.now(timezone.utc).isoformat()})
-                except:
+                except Exception:
                     break
                     
     except WebSocketDisconnect:
@@ -221,8 +221,9 @@ async def create_notification(notification: NotificationCreate):
         "created_at": now.isoformat(),
     }
     
-    # Save to database
-    await db.admin_notifications.insert_one(notif_data)
+    # Save to database — insert_one mutates notif_data to add a non-JSON-serializable
+    # `_id` ObjectId. We pass a copy so the original dict stays clean for WS + response.
+    await db.admin_notifications.insert_one(dict(notif_data))
     
     # Broadcast to connected WebSocket clients
     ws_message = {

@@ -50,7 +50,7 @@ async def get_collection_count(collection_name: str, query: dict = None) -> int:
     """Get count from a collection"""
     try:
         return await db[collection_name].count_documents(query or {})
-    except:
+    except Exception:
         return 0
 
 
@@ -63,7 +63,7 @@ async def get_sum_field(collection_name: str, field: str, query: dict = None) ->
         ]
         result = await db[collection_name].aggregate(pipeline).to_list(1)
         return result[0]["total"] if result else 0
-    except:
+    except Exception:
         return 0
 
 
@@ -473,7 +473,7 @@ async def get_pending_products(limit: int = 50):
             {"status": "pending_approval"},
             {"_id": 0}
         ).sort("created_at", -1).limit(limit).to_list(limit)
-    except:
+    except Exception:
         products = []
     
     return {
@@ -551,11 +551,12 @@ async def get_advanced_stats(period: str = "month"):
     try:
         # Daily/Weekly/Monthly sales aggregation
         if group_by == "day":
-            date_format = "%Y-%m-%d"
+            _date_format = "%Y-%m-%d"
         elif group_by == "week":
-            date_format = "%Y-W%V"
+            _date_format = "%Y-W%V"
         else:
-            date_format = "%Y-%m"
+            _date_format = "%Y-%m"
+        # _date_format is reserved for future MongoDB $dateToString aggregation; not used by current Python-side grouping.
         
         # Get orders with dates
         orders_cursor = db.orders.find({
@@ -689,7 +690,7 @@ async def get_advanced_stats(period: str = "month"):
                     period_key = date_obj.strftime("%Y-%m")
                 
                 users_by_period[period_key] = users_by_period.get(period_key, 0) + 1
-            except:
+            except Exception:
                 pass
         
         user_trend = [

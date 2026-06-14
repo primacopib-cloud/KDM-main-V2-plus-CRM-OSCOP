@@ -264,12 +264,12 @@ export default function DeliveryOptionsSelector({
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <span className={`font-semibold ${deliveryType === 'EXW' ? 'text-[#57D19A]' : 'text-white'}`}>
-                    Retrait EXW LOGI'SCOP
+                    Retrait EXW LOGI&apos;SCOP
                   </span>
                   <span className="text-[#57D19A] font-bold">GRATUIT</span>
                 </div>
                 <p className="text-white/60 text-sm mt-1">
-                  Retrait au point LOGI'SCOP de votre zone
+                  Retrait au point LOGI&apos;SCOP de votre zone
                 </p>
               </div>
               {deliveryType === 'EXW' && (
@@ -345,7 +345,7 @@ export default function DeliveryOptionsSelector({
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <span className={`font-semibold ${deliveryType === 'DELIVERY' ? 'text-[#D9B35A]' : 'text-white'}`}>
-                    Livraison LOGI'SCOP (directe)
+                    Livraison LOGI&apos;SCOP (directe)
                   </span>
                   {quote && (
                     <span className="text-[#D9B35A] font-bold">
@@ -562,7 +562,7 @@ export default function DeliveryOptionsSelector({
               {essDisclaimer?.short || "La livraison en Tournées ESS est une tournée mutualisée planifiée, destinée à réduire les coûts et l'empreinte carbone. Elle implique une fenêtre de livraison et des règles d'accès équitables et traçables."}
               {' '}
               <a href="/legal/annexe-ess-route" target="_blank" className="text-[#10B981] hover:underline">
-                Voir l'annexe complète
+                Voir l&apos;annexe complète
               </a>
             </label>
           </div>
@@ -723,11 +723,11 @@ export default function DeliveryOptionsSelector({
           className="mt-1"
         />
         <label htmlFor="terms" className="text-sm text-white/70 cursor-pointer">
-          J'accepte les{' '}
+          J&apos;accepte les{' '}
           <a href="/legal/cg-oscop" target="_blank" className="text-[#D9B35A] hover:underline">
-            Conditions Générales de Transport LOGI'SCOP
+            Conditions Générales de Transport LOGI&apos;SCOP
           </a>
-          {' '}et reconnais que les frais de transport sont facturés séparément par LOGI'SCOP.
+          {' '}et reconnais que les frais de transport sont facturés séparément par LOGI&apos;SCOP.
         </label>
       </div>
 
@@ -739,7 +739,7 @@ export default function DeliveryOptionsSelector({
           <p className="text-blue-300/70 mt-1">
             Les marchandises sont facturées par <strong>KDMARCHE</strong>. 
             {deliveryType === 'DELIVERY' && (
-              <> Le transport est facturé séparément par <strong>LOGI'SCOP</strong>.</>
+              <> Le transport est facturé séparément par <strong>LOGI&apos;SCOP</strong>.</>
             )}
           </p>
         </div>

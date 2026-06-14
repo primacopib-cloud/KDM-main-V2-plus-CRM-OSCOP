@@ -877,7 +877,7 @@ async def poll_notifications(
         try:
             since_dt = datetime.fromisoformat(since.replace('Z', '+00:00'))
             query["created_at"] = {"$gt": since_dt}
-        except:
+        except (ValueError, TypeError):
             pass
     
     # Get new notifications

@@ -20,8 +20,8 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-# Reuse the KDM auth dependency
-from server import get_current_user_id
+# Reuse the KDM auth dependency from auth.py (avoid circular import via server.py)
+from auth import get_current_user_id
 
 from finance_external_client import FinanceExternalClient, FinanceExternalError
 
