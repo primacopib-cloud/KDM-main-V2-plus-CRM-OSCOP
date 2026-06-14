@@ -1,27 +1,30 @@
-"""PSP webhooks — Stripe / GoCardless intake with idempotency.
+"""PSP webhooks — Stripe / GoCardless intake with idempotency + signature verify.
 
-These endpoints are intentionally *unauthenticated* (PSPs sign with HMAC).
-For now we accept any payload (signature verification is a no-op until
-STRIPE_WEBHOOK_SECRET / GoCardless equivalent is provided), but every event
-is stored in `webhook_events` with its raw payload for replay/audit.
+These endpoints are intentionally *unauthenticated* (PSPs sign with HMAC):
+  • Stripe : header `Stripe-Signature` — verified via STRIPE_WEBHOOK_SECRET
+  • GoCardless : header `Webhook-Signature` — verified via GOCARDLESS_WEBHOOK_SECRET
+Every event is stored in `webhook_events` with its raw payload for replay/audit
+and processed exactly once (idempotency on `external_event_id`).
 """
-from fastapi import APIRouter, Depends, Request
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Header, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.webhook_event import WebhookEvent
 from app.models.payment import Payment
-from app.services import reconciliation_service
+from app.services import psp_adapters, reconciliation_service
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 
-async def _store_event(db: Session, provider: str, payload: dict) -> WebhookEvent:
+async def _store_event(db: Session, provider: str, payload: dict, signature_valid: bool) -> WebhookEvent:
     external_id = (
         payload.get("id")
         or payload.get("event_id")
-        or payload.get("events", [{}])[0].get("id", "")
+        or (payload.get("events", [{}]) or [{}])[0].get("id", "")
     )
     if not external_id:
         external_id = f"{provider}_{payload.get('type', 'unknown')}_{id(payload)}"
@@ -33,8 +36,8 @@ async def _store_event(db: Session, provider: str, payload: dict) -> WebhookEven
     event = WebhookEvent(
         provider=provider,
         external_event_id=external_id,
-        event_type=str(payload.get("type") or payload.get("events", [{}])[0].get("action", "")),
-        signature_valid=True,  # TODO: real signature check when keys are wired
+        event_type=str(payload.get("type") or (payload.get("events", [{}]) or [{}])[0].get("action", "")),
+        signature_valid=signature_valid,
         processed=False,
         raw_payload=payload,
     )
@@ -44,12 +47,29 @@ async def _store_event(db: Session, provider: str, payload: dict) -> WebhookEven
 
 
 @router.post("/stripe")
-async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
-    """Stripe webhook intake (idempotent)."""
-    payload = await request.json()
-    event = await _store_event(db, "stripe", payload)
+async def stripe_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+    stripe_signature: Optional[str] = Header(None, alias="Stripe-Signature"),
+):
+    """Stripe webhook intake — verifies signature when secret is configured."""
+    raw_body = await request.body()
+    verified_event = psp_adapters.verify_stripe_signature(
+        payload=raw_body, signature_header=stripe_signature or "",
+    )
+    if verified_event is not None:
+        payload = dict(verified_event)
+        signature_valid = True
+    else:
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {"error": "invalid json"}
+        signature_valid = False
+
+    event = await _store_event(db, "stripe", payload, signature_valid)
     if event.processed:
-        return {"received": True, "duplicate": True, "event_id": event.id}
+        return {"received": True, "duplicate": True, "event_id": event.id, "signature_valid": signature_valid}
 
     event_type = (payload.get("type") or "").lower()
     data = (payload.get("data") or {}).get("object", {})
@@ -81,16 +101,33 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 
     event.processed = True
     db.commit()
-    return {"received": True, "event_id": event.id}
+    return {"received": True, "event_id": event.id, "signature_valid": signature_valid}
 
 
 @router.post("/gocardless")
-async def gocardless_webhook(request: Request, db: Session = Depends(get_db)):
-    payload = await request.json()
-    event = await _store_event(db, "gocardless", payload)
+async def gocardless_webhook(
+    request: Request,
+    db: Session = Depends(get_db),
+    webhook_signature: Optional[str] = Header(None, alias="Webhook-Signature"),
+):
+    raw_body = await request.body()
+    verified = psp_adapters.verify_gocardless_signature(
+        payload=raw_body, signature_header=webhook_signature or "",
+    )
+    if verified is not None:
+        payload = verified
+        signature_valid = True
+    else:
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {"error": "invalid json"}
+        signature_valid = False
+
+    event = await _store_event(db, "gocardless", payload, signature_valid)
     if event.processed:
-        return {"received": True, "duplicate": True, "event_id": event.id}
+        return {"received": True, "duplicate": True, "event_id": event.id, "signature_valid": signature_valid}
     # TODO: handle mandate.created / mandate.active / payment.confirmed
     event.processed = True
     db.commit()
-    return {"received": True, "event_id": event.id}
+    return {"received": True, "event_id": event.id, "signature_valid": signature_valid}

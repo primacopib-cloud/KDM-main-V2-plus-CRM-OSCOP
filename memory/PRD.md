@@ -226,6 +226,41 @@ Exigences produit étendues :
 - Validation Playwright sur 9 routes : pages publiques sans bouton, back-office avec bouton.
 
 ### Iter 21 (23 mai 2026) — P6 + P7 : bridge KDM ↔ finance-api + page admin (DONE)
+- 🆕 `backend/finance_external_client.py` + `routes_finance_bridge.py` (8 routes admin-only, journal Mongo).
+- 🆕 Frontend `/admin/finance-bridge` : santé + 3 compteurs + tableau sync-events + 2 actions rapides.
+- `server.py` : 9 lignes ajoutées, zéro refactor. Tests curl + Playwright OK.
+
+### Iter 22 (14 juin 2026) — P8 : SDK Stripe + GoCardless réels dans psp_adapters (DONE)
+
+**Demande** : brancher les vrais SDK Stripe + GoCardless dans `finance-api/app/services/psp_adapters.py`.
+
+**Implémenté** :
+- 🆕 Dépendances : `stripe>=10.0` (14.1.0) et `gocardless-pro>=2.0` (3.4.1) ajoutées au `requirements.txt`.
+- 🆕 `psp_adapters.py` ré-écrit avec **vraies intégrations SDK** :
+  - **Stripe** : `_stripe_checkout()` utilise `stripe.checkout.Session.create(mode='payment', payment_method_types=['card'], …)`. `_stripe_refund()` utilise `stripe.Refund.create(payment_intent=…)` avec les `reason` valides Stripe + fallback metadata. Métadonnées flatten en string.
+  - **GoCardless** : `_gocardless_billing_request()` utilise `client.billing_requests.create()` + `client.billing_request_flows.create()` pour la page de signature hébergée (mandate + first payment). `_gocardless_refund()` utilise `client.refunds.create()`.
+  - **Manual** : conservé pour les tests.
+  - **Fail-soft** : si clé absente → `status: "FAILED"` avec `raw.error` clair, **jamais de crash**.
+- 🆕 Vérification de signature webhooks :
+  - `verify_stripe_signature()` utilise `stripe.Webhook.construct_event(payload, sig, secret)`. Retourne le `Event` parsé ou `None` (secret manquant / signature invalide).
+  - `verify_gocardless_signature()` utilise `gocardless_pro.webhooks.parse()`. Nouvelle var env `GOCARDLESS_WEBHOOK_SECRET` (séparée du token API).
+- 🆕 `routes/webhooks.py` enrichi : lit le header (`Stripe-Signature` / `Webhook-Signature`), tente la vérification, stocke `signature_valid: bool` dans `WebhookEvent`. Idempotence conservée. Réponses incluent `signature_valid` pour debug admin.
+- 🆕 `/health` expose maintenant `stripe_webhook_configured`, `gocardless_env`, `gocardless_webhook_configured`.
+
+**Tests E2E (sandbox)** :
+- ✅ Manual PSP : payment created `status=PENDING`, hosted_url `manual_session_*` (toujours fonctionnel).
+- ✅ Stripe sans clé : `status=FAILED`, `failure_reason="STRIPE_SECRET_KEY non configurée — adaptateur Stripe non opérationnel."`
+- ✅ Stripe avec clé bidon `sk_test_FAKE_…` → SDK appelé pour de vrai → erreur remontée propre : `"Stripe error: Invalid API Key provided: sk_test_****LLED"`. Confirme que le SDK est wired (pas un mock).
+- ✅ GoCardless sans token : `status=FAILED`, message clair.
+- ✅ GoCardless avec token bidon → SDK appelé → `"GoCardless error: The access token you've used is not a valid sandbox API access token"`. SDK wired.
+- ✅ Webhook Stripe sans signature → 200, `signature_valid: false`, événement stocké.
+- ✅ Webhook Stripe rejoué (même `id`) → 200, `duplicate: true`. Idempotence OK.
+
+**État production** :
+- `.env` final restauré sans clés → finance-api démarre, `/health` retourne `stripe_configured: false, gocardless_configured: false` (DISABLED clean).
+- Pour activer en prod : remplir `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` + `GOCARDLESS_ACCESS_TOKEN` + `GOCARDLESS_WEBHOOK_SECRET` + redémarrer.
+
+
 
 **P6 — Bridge backend** :
 - 🆕 `/app/backend/finance_external_client.py` (~180 lignes) : client `httpx` synchrone vers finance-api avec auto-login OAuth2 password, cache JWT en mémoire, retry une fois sur 401 (refresh token), erreurs typées `FinanceExternalError`.

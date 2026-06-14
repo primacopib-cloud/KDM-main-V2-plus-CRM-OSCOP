@@ -82,7 +82,10 @@ def health() -> dict:
         "config": {
             "default_currency": settings.DEFAULT_CURRENCY,
             "stripe_configured": bool(settings.STRIPE_SECRET_KEY),
+            "stripe_webhook_configured": bool(settings.STRIPE_WEBHOOK_SECRET),
             "gocardless_configured": bool(settings.GOCARDLESS_ACCESS_TOKEN),
+            "gocardless_env": settings.GOCARDLESS_ENV if settings.GOCARDLESS_ACCESS_TOKEN else "",
+            "gocardless_webhook_configured": bool(settings.GOCARDLESS_WEBHOOK_SECRET),
             "ged_connector_configured": bool(settings.GED_ESS_API_URL),
             "crm_connector_configured": bool(settings.CRM_API_URL),
         },

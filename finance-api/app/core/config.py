@@ -24,6 +24,7 @@ class Settings:
     STRIPE_WEBHOOK_SECRET: str = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
     GOCARDLESS_ACCESS_TOKEN: str = os.environ.get("GOCARDLESS_ACCESS_TOKEN", "")
     GOCARDLESS_ENV: str = os.environ.get("GOCARDLESS_ENV", "sandbox")
+    GOCARDLESS_WEBHOOK_SECRET: str = os.environ.get("GOCARDLESS_WEBHOOK_SECRET", "")
 
     # Outbound connectors
     GED_ESS_API_URL: str = os.environ.get("GED_ESS_API_URL", "")
