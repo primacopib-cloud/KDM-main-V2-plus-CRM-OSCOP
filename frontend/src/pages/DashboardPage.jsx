@@ -142,7 +142,7 @@ const DashboardPage = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-2">Bienvenue, {user.contact_name} !</h1>
-              <p className="text-white/70 text-sm">Accédez à la centrale d'achats B2B ESS</p>
+              <p className="text-white/70 text-sm">Accédez à la centrale d&apos;achats B2B ESS</p>
             </div>
             <Link to="/catalogue">
               <button className="btn-gold inline-flex items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold">
@@ -281,8 +281,8 @@ const DashboardPage = () => {
                 {[
                   { action: 'Connexion au compte', time: 'À l\'instant', icon: User },
                   { action: 'Compte créé', time: new Date(user.created_at).toLocaleDateString('fr-FR'), icon: User },
-                ].map((item, index) => (
-                  <div key={index} className="flex items-center gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                ].map((item) => (
+                  <div key={`activity-${item.action}`} className="flex items-center gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.04] border border-white/[0.08]">
                       <item.icon className="w-4 h-4 text-white/60" />
                     </div>
@@ -335,7 +335,7 @@ const DashboardPage = () => {
             >
               <div className="flex items-center gap-3 mb-3">
                 <HelpCircle className="w-5 h-5 text-[#57D19A]" />
-                <h3 className="font-semibold">Besoin d'aide ?</h3>
+                <h3 className="font-semibold">Besoin d&apos;aide ?</h3>
               </div>
               <p className="text-white/60 text-sm mb-4">Notre équipe est disponible pour vous accompagner.</p>
               <button className="btn-gold w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold">

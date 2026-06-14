@@ -448,127 +448,18 @@ class ABACPolicyEngine:
 
 
 # ============== CONVENIENCE FUNCTIONS ==============
-
-def check_pricing_access(
-    user_id: str,
-    user_roles: List[str],
-    user_org_id: str,
-    target_org_id: str,
-    zone_id: str,
-    org_data: Dict,
-    subscription_data: Dict,
-    partner_data: Dict,
-    entitled_zones: List[str],
-) -> PolicyResult:
-    """
-    Convenience function to check if user can view pricing
-    """
-    engine = ABACPolicyEngine()
-    
-    input = PolicyInput(
-        action="kdm.pricing.view",
-        subject=PolicySubject(
-            user_id=user_id,
-            roles=user_roles,
-            org_id=user_org_id,
-        ),
-        resource=PolicyResource(
-            org_id=target_org_id,
-            zone_id=zone_id,
-        ),
-    )
-    
-    data = PolicyData(
-        org=org_data,
-        subscription=subscription_data,
-        partner_account=partner_data,
-        entitlements=entitled_zones,
-    )
-    
-    return engine.evaluate(input, data)
-
-
-def check_order_access(
-    user_id: str,
-    user_roles: List[str],
-    user_org_id: str,
-    target_org_id: str,
-    zone_id: str,
-    incoterm: str,
-    pickup_location_id: str,
-    order_total_cents: int,
-    org_data: Dict,
-    subscription_data: Dict,
-    partner_data: Dict,
-    entitled_zones: List[str],
-    zone_data: Dict,
-) -> PolicyResult:
-    """
-    Convenience function to check if user can create order
-    """
-    engine = ABACPolicyEngine()
-    
-    input = PolicyInput(
-        action="kdm.order.create",
-        subject=PolicySubject(
-            user_id=user_id,
-            roles=user_roles,
-            org_id=user_org_id,
-        ),
-        resource=PolicyResource(
-            org_id=target_org_id,
-            zone_id=zone_id,
-            incoterm=incoterm,
-            pickup_location_id=pickup_location_id,
-            order_total_exw_cents=order_total_cents,
-        ),
-    )
-    
-    data = PolicyData(
-        org=org_data,
-        subscription=subscription_data,
-        partner_account=partner_data,
-        entitlements=entitled_zones,
-        zone=zone_data,
-    )
-    
-    return engine.evaluate(input, data)
-
-
-def check_wallet_consume(
-    user_id: str,
-    user_roles: List[str],
-    user_org_id: str,
-    amount_credits: int,
-    org_data: Dict,
-    subscription_data: Dict,
-    wallet_data: Dict,
-) -> PolicyResult:
-    """
-    Convenience function to check if user can consume credits
-    """
-    engine = ABACPolicyEngine()
-    
-    input = PolicyInput(
-        action="wallet.consume",
-        subject=PolicySubject(
-            user_id=user_id,
-            roles=user_roles,
-            org_id=user_org_id,
-        ),
-        resource=PolicyResource(
-            org_id=user_org_id,
-            amount_credits=amount_credits,
-        ),
-    )
-    
-    data = PolicyData(
-        org=org_data,
-        subscription=subscription_data,
-        wallet=wallet_data,
-    )
-    
-    return engine.evaluate(input, data)
+#
+# NOTE: The previous helpers `check_pricing_access`, `check_order_access` and
+# `check_wallet_consume` were removed in 2026-02 — they were never called from
+# anywhere in the codebase (verified via grep). Routes call
+# `ABACPolicyEngine().evaluate(input, data)` directly with the typed
+# `PolicyInput` / `PolicyData` dataclasses, which keeps callsites explicit
+# and avoids long positional argument lists (the previous helpers had 9–13
+# positional args, which the code review flagged as error-prone).
+#
+# If a future caller needs a thin wrapper, prefer building a small
+# `OrderAccessContext` / `PricingAccessContext` dataclass at the call site
+# rather than reintroducing a wide-signature function.
 
 
 # ============== PREP OPTIONS POLICY (OPA/REGO STYLE) ==============

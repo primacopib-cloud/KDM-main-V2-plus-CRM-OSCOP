@@ -571,3 +571,35 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 ### Backlog
 - P1 : Wrapping i18n complet (FR/EN/ES) — après validation test LIVE.
 - Future : brancher les vraies URLs de la GED ESS quand fournies (actuellement mode DEGRADED assumé).
+
+### 2026-02 — Code Review Phase 1+2+3a (Critical + Low-Risk Cleanup)
+**Backend (lint = 0 erreur bloquante) :**
+- ✅ Fix circular import `routes_finance_bridge.py` ↔ `server.py` → import depuis `auth.py`
+- ✅ Hardcoded passwords → env vars (`DEMO_SEED_PASSWORD`, `DEMO_USER_PASSWORD`) dans `seed_demo_personas.py` + `tests/test_iter10_*.py`
+- ✅ Dynamic import sécurisé : `routes_stripe_reconciliation.py` (`__import__("os")` → `import os`)
+- ✅ 2 ObjectId serialization bugs corrigés (`routes_lolodrive_oscoop.py`, `routes_notifications.py`)
+- ✅ 9 bare `except:` → `except Exception:` / `except (ValueError, TypeError):`
+- ✅ 11 E701 multi-statements aplatis (`routes_crm_oscoop.py`)
+- ✅ 7 E712 == True/False → `is True/False` (tests)
+- ✅ E741 `l` ambigu → `loc` (`routes_catalog.py`)
+- ✅ 4 F841 local vars inutilisées nettoyées
+- ✅ **Dead code supprimé** : `check_pricing_access`, `check_order_access`, `check_wallet_consume` (jamais appelés)
+
+**Frontend (yarn build = clean) :**
+- ✅ 41 unescaped entities corrigées (apostrophes/quotes → `&apos;` / `&quot;` / `&amp;`) dans : Footer, Header, ContactForm, LogisticsSection, DeliveryOptionsSelector, DynamicOrderForm, WalletPage, VendorSpacePage, StripeReconciliationPage, LegalPage, LandingPage, DashboardPage
+- ✅ **Array index keys → IDs stables** (~15 instances) dans LegalPage / LandingPage / DashboardPage (utilise zone.code, point.label, slug content, etc.)
+- ✅ Bloc `catch (_) {}` vide commenté dans LandingPage
+- ✅ `setupTests.js` annoté `eslint-env jest` + `global jest`
+- ✅ Trailing JSX corrupt cleanup dans LegalPage.jsx
+
+**Restant en lint (acceptable) :**
+- 5 false-positives `react-hooks/set-state-in-effect` / `static-components` — règles React 19 strictes sur patterns légitimes (useEffect→fetchData, useCallback+setState). Pas de bugs.
+
+**Non fait volontairement (risque de régression avant test LIVE) :**
+- localStorage → httpOnly cookies (36 instances) — casserait l'auth E2E
+- Split composants massifs (BuyerSpacePage 1237L, ProductCatalogManager 965L, etc.)
+- Refactor email/pdf/auto-renew (fonctionnels, refactor = risque silencieux)
+
+### Test E2E LIVE Stripe (P0 — en attente utilisateur)
+- L'utilisateur doit effectuer un paiement réel de 1€ (PASS ou produit ORDER) puis procéder à un refund depuis le dashboard Stripe.
+- Vérifier les logs webhook : `tail -f /var/log/supervisor/backend.err.log | grep -iE 'stripe|webhook'`.

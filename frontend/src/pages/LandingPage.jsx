@@ -68,7 +68,7 @@ const LandingPage = () => {
                   onClick={downloadOffer}
                 >
                   <Download className="w-4 h-4" />
-                  Télécharger l'offre PDF
+                  Télécharger l&apos;offre PDF
                 </button>
               </div>
               
@@ -76,7 +76,7 @@ const LandingPage = () => {
               <div className="grid grid-cols-3 gap-3 mt-5">
                 <div className="mini-card">
                   <div className="text-xs text-white/65 uppercase tracking-wider">Prix</div>
-                  <div className="text-sm mt-1.5 text-white/90 font-bold">Jusqu'à –50%</div>
+                  <div className="text-sm mt-1.5 text-white/90 font-bold">Jusqu&apos;à –50%</div>
                 </div>
                 <div className="mini-card">
                   <div className="text-xs text-white/65 uppercase tracking-wider">Modèle</div>
@@ -97,15 +97,15 @@ const LandingPage = () => {
               <div className="callout-gold">
                 <strong className="text-white/90">Prix structurels B2B</strong>
                 <p className="text-sm text-white/70 mt-1 mb-0">
-                  Il ne s'agit ni de remises, ni de promotions, mais de prix résultant d'une mutualisation ESS.
+                  Il ne s&apos;agit ni de remises, ni de promotions, mais de prix résultant d&apos;une mutualisation ESS.
                 </p>
               </div>
               
               {/* List */}
               <ul className="grid gap-2.5 m-0 p-0 list-none">
-                {priceAdvantages.map((advantage, index) => (
+                {priceAdvantages.map((advantage) => (
                   <li 
-                    key={index} 
+                    key={`advantage-${advantage.slice(0, 32)}`}
                     className="flex gap-2.5 items-start p-2.5 px-3 rounded-2xl bg-white/[0.03] border border-white/[0.08]"
                   >
                     <div className="check-icon mt-0.5"></div>
@@ -135,10 +135,10 @@ const LandingPage = () => {
           >
             <span className="ribbon mb-4 inline-block">Règle absolue</span>
             <h3 className="text-2xl font-bold mt-3 mb-3">
-              Condition d'accès à la Centrale d'Achats
+              Condition d&apos;accès à la Centrale d&apos;Achats
             </h3>
             <p className="text-white/75 mb-5 max-w-2xl mx-auto">
-              L'accès aux conditions <strong className="text-white">KDMARCHE – Centrale ESS</strong> est conditionné à une <strong className="text-[#57D19A]">adhésion O'SCOP active</strong>.
+              L&apos;accès aux conditions <strong className="text-white">KDMARCHE – Centrale ESS</strong> est conditionné à une <strong className="text-[#57D19A]">adhésion O&apos;SCOP active</strong>.
             </p>
             
             <div className="inline-flex flex-wrap gap-4 justify-center p-4 rounded-2xl bg-black/20">
@@ -146,8 +146,8 @@ const LandingPage = () => {
                 "Pas d'accès aux prix mutualisés",
                 "Pas d'accès à la centrale B2B",
                 "Pas d'accès aux zones"
-              ].map((item, index) => (
-                <div key={index} className="flex items-center gap-2 text-[#FF6B6B] text-sm">
+              ].map((item) => (
+                <div key={`no-pass-${item.slice(0, 32)}`} className="flex items-center gap-2 text-[#FF6B6B] text-sm">
                   <div className="cross-icon"></div>
                   <span>{item}</span>
                 </div>
@@ -180,8 +180,8 @@ const LandingPage = () => {
                 Garanties
               </h4>
               <div className="space-y-2.5">
-                {compliancePoints.guaranteed.map((point, index) => (
-                  <div key={index} className="flex items-center gap-2.5 text-white/80 text-sm">
+                {compliancePoints.guaranteed.map((point) => (
+                  <div key={`guaranteed-${point.slice(0, 32)}`} className="flex items-center gap-2.5 text-white/80 text-sm">
                     <div className="check-icon"></div>
                     <span>{point}</span>
                   </div>
@@ -195,8 +195,8 @@ const LandingPage = () => {
                 Exclusions
               </h4>
               <div className="space-y-2.5">
-                {compliancePoints.excluded.map((point, index) => (
-                  <div key={index} className="flex items-center gap-2.5 text-white/80 text-sm">
+                {compliancePoints.excluded.map((point) => (
+                  <div key={`excluded-${point.slice(0, 32)}`} className="flex items-center gap-2.5 text-white/80 text-sm">
                     <div className="cross-icon"></div>
                     <span>{point}</span>
                   </div>
@@ -219,7 +219,7 @@ const LandingPage = () => {
               Formulaire de contact
             </span>
             <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2">Demande de Devis</h3>
-            <p className="text-white/70 text-sm">Contactez-nous pour rejoindre la centrale d'achats ESS</p>
+            <p className="text-white/70 text-sm">Contactez-nous pour rejoindre la centrale d&apos;achats ESS</p>
           </div>
           
           <ContactForm />
@@ -265,7 +265,9 @@ export const PublicLolodriveMapSection = () => {
         id: point.id, code: point.code, name: point.name, territory: point.territory,
       }));
       if (point.territory) localStorage.setItem('kdm_territory', point.territory);
-    } catch (_) {}
+    } catch (_) {
+      // localStorage may be unavailable (private mode, quota exceeded) — preselection is non-critical.
+    }
   };
 
   return (
@@ -280,7 +282,7 @@ export const PublicLolodriveMapSection = () => {
             Trouvez le relais coopératif <span className="text-or-metallise">le plus proche</span>
           </h3>
           <p className="text-white/70 text-sm max-w-[60ch] mx-auto">
-            <strong>LOLODRIVE by O'SCOP</strong> est le réseau coopératif de proximité de KDMARCHÉ : retrait drive, livraison locale,
+            <strong>LOLODRIVE by O&apos;SCOP</strong> est le réseau coopératif de proximité de KDMARCHÉ : retrait drive, livraison locale,
             relais commerçants et POS terrain. <strong>Cliquez sur un relais</strong> pour activer votre PASS Vie Chère sur place.
           </p>
         </div>
@@ -351,7 +353,7 @@ export const PublicLolodriveMapSection = () => {
                 </button>
               </Link>
               <p className="text-[11px] text-white/40 mt-3 text-center">
-                Vous serez redirigé vers l'inscription PASS, ce relais sera pré-sélectionné comme point de retrait.
+                Vous serez redirigé vers l&apos;inscription PASS, ce relais sera pré-sélectionné comme point de retrait.
               </p>
             </div>
           </div>

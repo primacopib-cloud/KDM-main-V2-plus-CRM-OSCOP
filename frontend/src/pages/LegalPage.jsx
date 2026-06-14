@@ -32,7 +32,7 @@ const renderContent = (content) => {
     // List items with dash
     if (line.trim().startsWith('-') || line.trim().startsWith('—')) {
       return (
-        <li key={idx} className="ml-4 text-white/70 text-sm leading-relaxed list-none flex items-start gap-2 mb-1.5">
+        <li key={`line-${idx}-${line.slice(0, 24)}`} className="ml-4 text-white/70 text-sm leading-relaxed list-none flex items-start gap-2 mb-1.5">
           <ChevronRight className="w-3 h-3 mt-1 text-white/40 flex-shrink-0" />
           <span dangerouslySetInnerHTML={{ __html: processedLine.replace(/^[-—]\s*/, '') }} />
         </li>
@@ -41,11 +41,11 @@ const renderContent = (content) => {
     
     // Empty line
     if (line.trim() === '') {
-      return <div key={idx} className="h-2" />;
+      return <div key={`empty-${idx}`} className="h-2" />;
     }
     
     return (
-      <p key={idx} className="text-white/70 text-sm leading-relaxed mb-2" 
+      <p key={`p-${idx}-${line.slice(0, 24)}`} className="text-white/70 text-sm leading-relaxed mb-2" 
          dangerouslySetInnerHTML={{ __html: processedLine }} />
     );
   });
@@ -109,7 +109,7 @@ const PartiesCard = ({ parties }) => {
       <div className="p-4 rounded-xl bg-[#57D19A]/5 border border-[#57D19A]/15">
         <div className="flex items-center gap-2 mb-3">
           <Building2 className="w-4 h-4 text-[#57D19A]" />
-          <h4 className="text-sm font-semibold text-[#57D19A] uppercase tracking-wider">O'SCOP</h4>
+          <h4 className="text-sm font-semibold text-[#57D19A] uppercase tracking-wider">O&apos;SCOP</h4>
         </div>
         <div className="space-y-1 text-sm text-white/70">
           <p><span className="text-white/50">Dénomination :</span> <strong className="text-white/90">{replaceVariables(osc.name)}</strong></p>
@@ -141,8 +141,8 @@ const AuditTable = () => (
           </tr>
         </thead>
         <tbody>
-          {auditComplianceTable.rows.map((row, idx) => (
-            <tr key={idx} className="border-b border-white/5">
+          {auditComplianceTable.rows.map((row) => (
+            <tr key={`audit-${row.element}`} className="border-b border-white/5">
               <td className="py-2.5 px-3 text-white/80">{row.element}</td>
               <td className="py-2.5 px-3 text-center">
                 {row.kdmarche ? (
@@ -165,7 +165,7 @@ const AuditTable = () => (
     </div>
     
     <div className="mt-4 p-4 rounded-xl bg-[#8B5CF6]/8 border border-[#8B5CF6]/20">
-      <p className="text-xs uppercase tracking-wider text-[#8B5CF6] font-semibold mb-2">Phrase d'audit officielle</p>
+      <p className="text-xs uppercase tracking-wider text-[#8B5CF6] font-semibold mb-2">Phrase d&apos;audit officielle</p>
       <p className="text-sm text-white/80 italic leading-relaxed">
         {auditComplianceTable.officialPhrase}
       </p>
@@ -212,7 +212,7 @@ const LegalDocument = ({ document }) => {
             Version : <span className="text-white/90">{processedVersion}</span>
           </span>
           <span className="px-3 py-1.5 rounded-full bg-white/[0.04] text-white/70 border border-white/[0.06]">
-            Date d'effet : <span className="text-white/90">{processedDate}</span>
+            Date d&apos;effet : <span className="text-white/90">{processedDate}</span>
           </span>
           <span className="px-3 py-1.5 rounded-full bg-white/[0.04] text-white/70 border border-white/[0.06]">
             Référence : <span className="text-white/90 font-mono">{processedRef}</span>
@@ -247,7 +247,7 @@ const LegalDocument = ({ document }) => {
         <div className="mt-6 p-5 rounded-2xl bg-[#10B981]/8 border border-[#10B981]/20">
           <p className="text-xs uppercase tracking-wider text-[#10B981] font-semibold mb-3 flex items-center gap-2">
             <Leaf className="w-4 h-4" />
-            Clause officielle (affichée dans l'onboarding)
+            Clause officielle (affichée dans l&apos;onboarding)
           </p>
           <p className="text-base text-white/90 italic leading-relaxed font-medium">
             {document.officialClause}
@@ -339,7 +339,7 @@ export default function LegalPage() {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">Conditions Générales & Convention</h1>
           <p className="text-white/60">
-            Documents contractuels régissant les relations B2B — Centrale d'achats ESS
+            Documents contractuels régissant les relations B2B — Centrale d&apos;achats ESS
           </p>
         </div>
 
@@ -360,7 +360,7 @@ export default function LegalPage() {
               data-testid="tab-cg-oscop"
             >
               <CreditCard className="w-4 h-4" />
-              <span className="hidden lg:inline">CG</span> O'SCOP
+              <span className="hidden lg:inline">CG</span> O&apos;SCOP
             </TabsTrigger>
             <TabsTrigger 
               value="convention"
@@ -385,7 +385,7 @@ export default function LegalPage() {
               data-testid="tab-logiscop"
             >
               <Package className="w-4 h-4" />
-              <span className="hidden lg:inline">LOGI'</span>SCOP
+              <span className="hidden lg:inline">LOGI&apos;</span>SCOP
             </TabsTrigger>
             <TabsTrigger 
               value="transport"
@@ -444,8 +444,8 @@ export default function LegalPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {annexeLogiscopContent.tarification.zones.map((zone, idx) => (
-                        <tr key={idx} className="border-b border-white/5">
+                      {annexeLogiscopContent.tarification.zones.map((zone) => (
+                        <tr key={`logi-zone-${zone.code}`} className="border-b border-white/5">
                           <td className="py-2.5 px-3">
                             <span className="text-white/80">{zone.name}</span>
                             <span className="ml-2 text-xs text-white/40">({zone.code})</span>
@@ -464,8 +464,8 @@ export default function LegalPage() {
                   <div className="p-4 rounded-xl bg-[#8B5CF6]/5 border border-[#8B5CF6]/15">
                     <h4 className="text-sm font-semibold text-[#8B5CF6] mb-3">Suppléments créneau</h4>
                     <div className="space-y-2">
-                      {annexeLogiscopContent.tarification.supplements.map((sup, idx) => (
-                        <div key={idx} className="flex justify-between text-sm">
+                      {annexeLogiscopContent.tarification.supplements.map((sup) => (
+                        <div key={`supp-${sup.label}`} className="flex justify-between text-sm">
                           <span className="text-white/70">{sup.label}</span>
                           <span className="text-white/90 font-medium">{sup.amount}</span>
                         </div>
@@ -476,8 +476,8 @@ export default function LegalPage() {
                   <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08]">
                     <h4 className="text-sm font-semibold text-white/80 mb-3">Frais de préparation</h4>
                     <div className="space-y-2">
-                      {annexeLogiscopContent.tarification.preparation.map((prep, idx) => (
-                        <div key={idx} className="flex justify-between text-sm">
+                      {annexeLogiscopContent.tarification.preparation.map((prep) => (
+                        <div key={`prep-${prep.label}`} className="flex justify-between text-sm">
                           <span className="text-white/60">{prep.label}</span>
                           <span className="text-white/80">{prep.amount}</span>
                         </div>
@@ -559,8 +559,8 @@ export default function LegalPage() {
                 
                 {/* ESS Benefits */}
                 <div className="grid md:grid-cols-3 gap-3 mb-6">
-                  {annexeTourneesESSContent.tarification.benefits.map((benefit, idx) => (
-                    <div key={idx} className="p-3 rounded-xl bg-[#10B981]/5 border border-[#10B981]/15 text-center">
+                  {annexeTourneesESSContent.tarification.benefits.map((benefit) => (
+                    <div key={`ess-benefit-${benefit.label}`} className="p-3 rounded-xl bg-[#10B981]/5 border border-[#10B981]/15 text-center">
                       <p className="text-xs text-[#10B981] uppercase tracking-wider mb-1">{benefit.label}</p>
                       <p className="text-white/90 font-semibold">{benefit.value}</p>
                     </div>
@@ -579,8 +579,8 @@ export default function LegalPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {annexeTourneesESSContent.tarification.zones.map((zone, idx) => (
-                        <tr key={idx} className="border-b border-white/5">
+                      {annexeTourneesESSContent.tarification.zones.map((zone) => (
+                        <tr key={`ess-zone-${zone.code}`} className="border-b border-white/5">
                           <td className="py-2.5 px-3">
                             <span className="text-white/80">{zone.name}</span>
                             <span className="ml-2 text-xs text-white/40">({zone.code})</span>
