@@ -555,3 +555,19 @@ Mode contrôlé par `STRIPE_MODE` dans `/app/backend/.env`:
 - `STRIPE_MODE=test` → `STRIPE_API_KEY` + `STRIPE_KDMARCHE_API_KEY` (sk_test_*)
 - `STRIPE_MODE=live` → `STRIPE_LIVE_KEY` + `STRIPE_KDMARCHE_LIVE_KEY` (sk_live_*) ← **ACTUEL**
 Toujours `sudo supervisorctl restart backend` après changement (force le rechargement des modules).
+
+
+### 2026-02 — Intégration coordonnées bancaires KDMARCHE (myPOS)
+- Clé Stripe LIVE KDMARCHE (`sk_live_51FqczfCo8u…`) confirmée et active dans `/app/backend/.env` → ligne `STRIPE_KDMARCHE_LIVE_KEY`.
+- Mode `STRIPE_MODE=live` validé : `stripe_accounts.get_stripe_key('kdmarche')` retourne bien la clé live KDMARCHE et `get_account_for_checkout_kind('ORDER')` route correctement.
+- Coordonnées bancaires KDMARCHE (myPOS Ltd, IE) ajoutées comme constante **serveur-only** dans `/app/backend/routes_payment.py` → `KDMARCHE_BANK_DETAILS` (titulaire PIPEROL FELIXIA VANESSA, IBAN `IE72MPOS99039052096773`, BIC `MPOSIE2D`).
+- Endpoint public `/api/payments/bank-details` continue à exposer **uniquement** les coordonnées OSCOP (Crédit Mutuel) — pas de fuite des détails KDMARCHE (vérifié via curl).
+- ⚠️ Sécurité : clé Stripe LIVE exposée en clair dans le chat → recommander à l'utilisateur de la **roter** dans Stripe Dashboard après le test E2E 1€.
+
+### Test E2E LIVE Stripe (P0 — en attente utilisateur)
+- L'utilisateur doit effectuer un paiement réel de 1€ (PASS ou produit ORDER) puis procéder à un refund depuis le dashboard Stripe.
+- Vérifier les logs webhook : `tail -f /var/log/supervisor/backend.err.log | grep -iE 'stripe|webhook'`.
+
+### Backlog
+- P1 : Wrapping i18n complet (FR/EN/ES) — après validation test LIVE.
+- Future : brancher les vraies URLs de la GED ESS quand fournies (actuellement mode DEGRADED assumé).

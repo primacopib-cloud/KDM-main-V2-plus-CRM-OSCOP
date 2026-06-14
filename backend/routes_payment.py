@@ -35,6 +35,7 @@ def set_payment_database(database):
 
 
 # ============== BANK TRANSFER DETAILS ==============
+# OSCOP (Crédit Mutuel) — used for the public /bank-details endpoint (OSCOP credits)
 BANK_DETAILS = {
     "account_holder": "OBJECTIF SCOP OUTREMER",
     "iban": "FR76 1027 8053 4000 0212 5320 139",
@@ -48,6 +49,22 @@ BANK_DETAILS = {
         "city": "BAIE MAHAULT",
         "country": "GUADELOUPE - FRANCE"
     }
+}
+
+# KDMARCHE (myPOS) — server-only constant, NOT exposed via public endpoints.
+# Use this for internal payout / reconciliation routing logic for the KDMARCHE Stripe account.
+# Owner request: keep these details only in server-side constants (no public route).
+KDMARCHE_BANK_DETAILS = {
+    "account_name": "KDMARCHE",
+    "account_number": "40113620682",
+    "beneficiary_name": "PIPEROL FELIXIA VANESSA",
+    "beneficiary_address": "CHEMIN SYMPHART LAMPECINADO MORNE BOURG #",
+    "iban": "IE72MPOS99039052096773",
+    "bic": "MPOSIE2D",
+    "bank_name": "myPOS Ltd",
+    "bank_address": "12 St. Stephen's Green, Dublin 2 D02 WK11, Ireland",
+    "currency": "EUR",
+    "stripe_account_key_env": "STRIPE_KDMARCHE_LIVE_KEY",
 }
 
 
