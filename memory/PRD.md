@@ -221,6 +221,42 @@ Exigences produit étendues :
 - Aucun changement sur le backend KDM.
 
 ### Iter 20 (23 mai 2026) — Bouton "Retour à la page précédente" global back-office (DONE)
+- 🆕 `BackButton.jsx` (~50 lignes) monté une seule fois dans `App.js`, 15 patterns regex de routes back-office.
+- Style pastille glass-morphism bleu logistique #1F4D87, position fixed top-left sous NavBar, responsive.
+- Validation Playwright sur 9 routes : pages publiques sans bouton, back-office avec bouton.
+
+### Iter 21 (23 mai 2026) — P6 + P7 : bridge KDM ↔ finance-api + page admin (DONE)
+
+**P6 — Bridge backend** :
+- 🆕 `/app/backend/finance_external_client.py` (~180 lignes) : client `httpx` synchrone vers finance-api avec auto-login OAuth2 password, cache JWT en mémoire, retry une fois sur 401 (refresh token), erreurs typées `FinanceExternalError`.
+- 🆕 `/app/backend/routes_finance_bridge.py` (~280 lignes) : routeur admin-only `/api/finance-bridge/*` :
+  - `GET /health` → 200 + statut OK/DEGRADED/DISABLED + relais santé finance-api
+  - `POST /parties/from-customer/{customer_id}` — idempotent (réutilise via `external_customer_id`)
+  - `POST /receivables/from-order/{order_id}` — résout/crée le party d'abord
+  - `POST /payments/create`, `POST /installment-plans/create`, `POST /sepa/mandates/create` — passthrough avec audit
+  - `GET /sync-events` — journal local Mongo + counts agrégés
+- 🪶 `server.py` enrichi de **9 lignes** (import + `set_finance_bridge_database` + `include_router` + `ensure_finance_bridge_indexes` au startup). Zéro refactor.
+- 🆕 4 vars env dans `/app/backend/.env` (`FINANCE_API_URL=http://localhost:8030`, `FINANCE_API_EMAIL`, `FINANCE_API_PASSWORD`, `FINANCE_API_TIMEOUT_SECONDS=20`). `.env.example` mis à jour.
+- Collection Mongo `finance_bridge_sync_events` (id unique, indexes (source, source_id, created_at) + (status, created_at)).
+
+**P7 — Page admin frontend** :
+- 🆕 `/app/frontend/src/pages/FinanceBridgeAdminPage.jsx` (~340 lignes) — page `/admin/finance-bridge` :
+  - Carte santé (OK vert / DEGRADED ambre / DISABLED gris) + version + diagnostic config
+  - 3 compteurs (Total / Succès / Erreurs)
+  - **Actions rapides** : 2 inputs + boutons pour pousser un client KDM ou une commande LOLODRIVE vers finance-api
+  - Filtres Statut + Source, tableau sync-events
+  - Lien "Pont Finance" (icône CreditCard) ajouté dans NavBar admin
+
+**Tests E2E (curl + Playwright)** :
+- ✅ `/api/finance-bridge/health` (admin) → `bridge:OK, status:OK, external_finance: {bootstrap_done: true, version: 0.1.0}`
+- ✅ `/parties/from-customer/user-buyer-pro` → SUCCESS ; 2ème appel → SUCCESS_IDEMPOTENT (party réutilisé)
+- ✅ `/parties/from-customer/unknown` → 404
+- ✅ `/receivables/from-order/order-lp-gerant-1` → créance "LD-LP-20260518-J1K2L3" 260€ créée + party résolu
+- ✅ `/sync-events` → counts agrégés, 5 entrées SUCCESS
+- ✅ `/health` sans auth → 403
+- ✅ Page admin `/admin/finance-bridge` : badge OK vert "Opérationnel", boutons "Pousser" fonctionnels, toasts succès, **aucune erreur runtime** après fix du SyntheticEvent passing.
+
+
 **Demande utilisateur** : ajouter un bouton de retour à la page précédente sur toutes les pages du back office.
 
 **Implémenté** :

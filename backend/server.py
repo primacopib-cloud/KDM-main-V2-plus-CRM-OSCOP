@@ -1474,6 +1474,16 @@ from routes_ged_bridge import (
 set_ged_bridge_database(db)
 app.include_router(ged_bridge_router)
 
+# Finance API Bridge — connector to the external finance-api microservice (PostgreSQL/ledger)
+# Namespace /api/finance-bridge/* — admin-only
+from routes_finance_bridge import (
+    finance_bridge_router,
+    set_finance_bridge_database,
+    ensure_finance_bridge_indexes,
+)
+set_finance_bridge_database(db)
+app.include_router(finance_bridge_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)
@@ -1624,6 +1634,11 @@ async def startup_db_client():
         logger.info("GED ESS Bridge indexes ensured")
     except Exception as e:
         logger.warning(f"Could not create GED bridge indexes: {e}")
+    try:
+        await ensure_finance_bridge_indexes(db)
+        logger.info("Finance API Bridge indexes ensured")
+    except Exception as e:
+        logger.warning(f"Could not create Finance bridge indexes: {e}")
     try:
         start_scheduler()
     except Exception as e:

@@ -52,6 +52,7 @@ import AuthCallbackPage from "./pages/AuthCallbackPage";
 import GoogleAuthReturnPage from "./pages/GoogleAuthReturnPage";
 import StripeReconciliationPage from "./pages/StripeReconciliationPage";
 import GedBridgeAdminPage from "./pages/GedBridgeAdminPage";
+import FinanceBridgeAdminPage from "./pages/FinanceBridgeAdminPage";
 import LogiscopPage from "./pages/LogiscopPage";
 import OscopPage from "./pages/OscopPage";
 
@@ -70,6 +71,7 @@ function App() {
           <Route path="/auth/google/return" element={<GoogleAuthReturnPage />} />
           <Route path="/admin/stripe-reconciliation" element={<StripeReconciliationPage />} />
           <Route path="/admin/ged-bridge" element={<GedBridgeAdminPage />} />
+          <Route path="/admin/finance-bridge" element={<FinanceBridgeAdminPage />} />
           <Route path="/logiscop" element={<LogiscopPage />} />
           <Route path="/oscop" element={<OscopPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
