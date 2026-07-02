@@ -917,8 +917,8 @@ const AdminPlansPage = () => {
                     {p.default_credits} crédits · {p.max_zones} zone(s) · {p.max_users} user(s)
                   </div>
                   <ul className="space-y-1 mt-3 text-sm text-white/70">
-                    {(p.features || []).slice(0, 4).map((f, i) => (
-                      <li key={i} className="flex items-start gap-2">
+                    {(p.features || []).slice(0, 4).map((f) => (
+                      <li key={`feat-${p.id || p.code}-${f}`} className="flex items-start gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#D9B35A' }} />
                         <span>{f}</span>
                       </li>

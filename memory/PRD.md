@@ -595,6 +595,14 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 **Restant en lint (acceptable) :**
 - 5 false-positives `react-hooks/set-state-in-effect` / `static-components` — règles React 19 strictes sur patterns légitimes (useEffect→fetchData, useCallback+setState). Pas de bugs.
 
+### 2026-02 — Code Review Phase 3b (Array Keys restants)
+- ✅ **11 array-index-as-key remplacés par IDs stables** :
+  - `ProductCardView.jsx` (6) : tier_pricing, allergens.contains/may_contain/free_from, technical_specs.norms, available_zones
+  - `ProductCatalogManager.jsx` (1) : tags editor
+  - `OrderFormPreview.jsx` (3) : hero tags, produits table, fees table
+  - `AdminPlansPage.jsx` (1) : features list
+- ⚠️ **Faux positif écarté** : le rapport "182 `is` au lieu de `==`" est incorrect — toutes les occurrences dans `/backend/tests/` sont des `is None` / `is True` / `is False`, usage PEP 8 correct.
+
 **Non fait volontairement (risque de régression avant test LIVE) :**
 - localStorage → httpOnly cookies (36 instances) — casserait l'auth E2E
 - Split composants massifs (BuyerSpacePage 1237L, ProductCatalogManager 965L, etc.)

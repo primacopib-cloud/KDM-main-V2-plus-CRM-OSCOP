@@ -389,8 +389,8 @@ export default function ProductCardView({ product, showActions = true }) {
               <div className="mt-4 pt-4 border-t border-[#D9B35A]/20">
                 <p className="text-sm text-white/60 mb-2">Tarifs dégressifs</p>
                 <div className="flex flex-wrap gap-2">
-                  {product.pricing.tier_pricing.map((tier, idx) => (
-                    <Badge key={idx} variant="outline" className="bg-white/[0.04] border-white/10">
+                  {product.pricing.tier_pricing.map((tier) => (
+                    <Badge key={`tier-${tier.min_qty}-${tier.price_ht_cents}`} variant="outline" className="bg-white/[0.04] border-white/10">
                       ≥{tier.min_qty}: {formatCurrency(tier.price_ht_cents)}
                     </Badge>
                   ))}
@@ -634,8 +634,8 @@ export default function ProductCardView({ product, showActions = true }) {
                     <div>
                       <p className="text-sm font-medium text-amber-400 mb-2">Peut contenir (traces)</p>
                       <div className="flex flex-wrap gap-2">
-                        {product.allergens.may_contain.map((a, i) => (
-                          <Badge key={i} className="bg-amber-500/20 text-amber-400 border-amber-500/30">{a}</Badge>
+                        {product.allergens.may_contain.map((a) => (
+                          <Badge key={`may-${a}`} className="bg-amber-500/20 text-amber-400 border-amber-500/30">{a}</Badge>
                         ))}
                       </div>
                     </div>
@@ -644,8 +644,8 @@ export default function ProductCardView({ product, showActions = true }) {
                     <div>
                       <p className="text-sm font-medium text-emerald-400 mb-2">Sans (garanti)</p>
                       <div className="flex flex-wrap gap-2">
-                        {product.allergens.free_from.map((a, i) => (
-                          <Badge key={i} className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">{a}</Badge>
+                        {product.allergens.free_from.map((a) => (
+                          <Badge key={`free-${a}`} className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">{a}</Badge>
                         ))}
                       </div>
                     </div>
@@ -683,8 +683,8 @@ export default function ProductCardView({ product, showActions = true }) {
                   <div className="mt-4">
                     <p className="text-sm font-medium text-white/70 mb-2">Normes</p>
                     <div className="flex flex-wrap gap-2">
-                      {product.technical_specs.norms.map((n, i) => (
-                        <Badge key={i} variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">{n}</Badge>
+                      {product.technical_specs.norms.map((n) => (
+                        <Badge key={`norm-${n}`} variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">{n}</Badge>
                       ))}
                     </div>
                   </div>
@@ -782,8 +782,8 @@ export default function ProductCardView({ product, showActions = true }) {
                 <div className="mt-4">
                   <p className="text-sm font-medium text-white/70 mb-2">Zones de disponibilité</p>
                   <div className="flex flex-wrap gap-2">
-                    {product.logistics.available_zones.map((z, i) => (
-                      <Badge key={i} className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">{z}</Badge>
+                    {product.logistics.available_zones.map((z) => (
+                      <Badge key={`zone-${z}`} className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">{z}</Badge>
                     ))}
                   </div>
                 </div>

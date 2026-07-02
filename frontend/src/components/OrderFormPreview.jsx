@@ -84,9 +84,9 @@ const OrderFormPreview = ({
             {[
               { icon: CheckCircle2, label: 'B2B uniquement', color: '#d4af37' },
               { icon: Truck, label: 'Incoterm EXW', color: '#d4af37' },
-            ].map((tag, idx) => (
+            ].map((tag) => (
               <span 
-                key={idx}
+                key={`hero-tag-${tag.label}`}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs text-white/90"
                 style={{ 
                   background: 'rgba(255,255,255,0.08)',
@@ -169,7 +169,7 @@ const OrderFormPreview = ({
             </thead>
             <tbody>
               {products.length > 0 ? products.map((product, idx) => (
-                <tr key={idx} className={idx % 2 === 1 ? 'bg-purple-50/30' : ''}>
+                <tr key={`prod-${product.sku || product.label}-${idx}`} className={idx % 2 === 1 ? 'bg-purple-50/30' : ''}>
                   <td className="py-3 px-4">
                     <p className="font-semibold text-gray-900">{product.label}</p>
                     <p className="text-xs text-gray-500">SKU: {product.sku} {product.dlc ? `· DLC: ${product.dlc}` : ''}</p>
@@ -203,7 +203,7 @@ const OrderFormPreview = ({
               </thead>
               <tbody>
                 {fees.map((fee, idx) => (
-                  <tr key={idx} className={idx % 2 === 1 ? 'bg-purple-50/30' : ''}>
+                  <tr key={`fee-${fee.label}-${idx}`} className={idx % 2 === 1 ? 'bg-purple-50/30' : ''}>
                     <td className="py-3 px-4 font-semibold text-gray-900">{fee.label}</td>
                     <td className="py-3 px-4 text-gray-500">{fee.description}</td>
                     <td className="py-3 px-4 text-right font-semibold text-gray-900">{formatCurrency(fee.amount_ht)}</td>

@@ -363,8 +363,8 @@ const TagInput = ({ value = [], onChange, placeholder }) => {
       </div>
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {value.map((tag, i) => (
-            <Badge key={i} variant="outline" className="bg-white/[0.04] border-white/10 text-xs">
+          {value.map((tag) => (
+            <Badge key={`tag-${tag}`} variant="outline" className="bg-white/[0.04] border-white/10 text-xs">
               {tag}
               <button type="button" onClick={() => removeTag(tag)} className="ml-1 hover:text-red-400">
                 <X className="w-3 h-3" />
