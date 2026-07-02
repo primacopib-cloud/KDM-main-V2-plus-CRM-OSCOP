@@ -401,3 +401,184 @@ async def stripe_reconciliation_transactions(
         "limit": limit,
         "items": items,
     }
+
+
+# ---------------- LIVE Health (go/no-go dashboard) ----------------
+
+@reconciliation_router.get("/live-health")
+async def stripe_live_health(user_id: str = Depends(get_current_user_id)):
+    """Snapshot go/no-go pour le passage en LIVE Stripe.
+
+    Renvoie en une seule requête :
+      - `mode` : test | live (depuis STRIPE_MODE)
+      - `accounts.{oscop,kdmarche}` : clé configurée, préfixe masqué, nombre de secrets webhook
+      - `last_webhook_received` : dernier événement traité (via `applied_by=webhook:*`)
+      - `last_successful_payment` : dernier paiement appliqué OK
+      - `stats_24h.{oscop,kdmarche}` : paid_count / refund_count / stale_pending_count / paid_amount_cents
+      - `verdict` : "go" | "warn" | "no-go" + `reasons[]` (liste courte de raisons humaines)
+
+    Aucune écriture ; agrège uniquement `payment_transactions`.
+    """
+    await _require_admin(user_id)
+
+    from stripe_accounts import get_stripe_key  # local import — module-scoped side effects  # noqa: WPS433
+
+    now_utc = datetime.now(timezone.utc)
+    window_start = now_utc - timedelta(hours=24)
+    stale_threshold = now_utc - timedelta(minutes=15)
+
+    mode = "live" if (os.environ.get("STRIPE_MODE", "test").strip().lower() == "live") else "test"
+    accounts = ["oscop", "kdmarche"]
+
+    def _mask_key(k: Optional[str]) -> Optional[str]:
+        if not k:
+            return None
+        # Show first 14 chars only (sk_live_51ABCDE) so it's identifiable but not usable.
+        return f"{k[:14]}…"
+
+    def _webhook_secret_count(account: str) -> int:
+        env_key = f"STRIPE_WEBHOOK_SECRETS_{account.upper()}"
+        raw = os.environ.get(env_key, "").strip()
+        if not raw:
+            return 0
+        return len([s for s in raw.split(",") if s.strip().startswith("whsec_")])
+
+    accounts_info = {
+        a: {
+            "key_configured": bool(get_stripe_key(a)),
+            "key_prefix": _mask_key(get_stripe_key(a)),
+            "webhook_secrets_count": _webhook_secret_count(a),
+        }
+        for a in accounts
+    }
+
+    # Last webhook received (any account) — infer from applied_by starting with "webhook:"
+    last_webhook = await db.payment_transactions.find_one(
+        {"applied_by": {"$regex": "^webhook:"}},
+        {"_id": 0, "applied_at": 1, "applied_by": 1, "stripe_account": 1, "kind": 1, "session_id": 1},
+        sort=[("applied_at", -1)],
+    )
+    last_webhook_summary = None
+    if last_webhook:
+        applied_by = last_webhook.get("applied_by") or ""
+        verified_account = applied_by.replace("webhook:", "", 1) if applied_by.startswith("webhook:") else None
+        applied_at = last_webhook.get("applied_at")
+        last_webhook_summary = {
+            "at": applied_at.isoformat() if isinstance(applied_at, datetime) else applied_at,
+            "account": last_webhook.get("stripe_account") or verified_account,
+            "verified_account": verified_account,
+            "kind": last_webhook.get("kind"),
+            "session_id": last_webhook.get("session_id"),
+            "unsigned_test_mode": verified_account == "unsigned-test",
+        }
+
+    # Last successful payment (any account)
+    last_paid = await db.payment_transactions.find_one(
+        {"applied": True, "payment_status": "paid"},
+        {"_id": 0, "applied_at": 1, "stripe_account": 1, "kind": 1, "amount_cents": 1, "session_id": 1},
+        sort=[("applied_at", -1)],
+    )
+    last_paid_summary = None
+    if last_paid:
+        applied_at = last_paid.get("applied_at")
+        last_paid_summary = {
+            "at": applied_at.isoformat() if isinstance(applied_at, datetime) else applied_at,
+            "account": last_paid.get("stripe_account") or "oscop",
+            "kind": last_paid.get("kind"),
+            "amount_cents": int(last_paid.get("amount_cents") or 0),
+            "amount_eur": round(int(last_paid.get("amount_cents") or 0) / 100, 2),
+            "session_id": last_paid.get("session_id"),
+        }
+
+    # 24h aggregates per account
+    stats_24h = {}
+    for a in accounts:
+        account_match = {"$or": [
+            {"stripe_account": a},
+            *([{"stripe_account": {"$exists": False}}] if a == "oscop" else []),  # legacy rows without stripe_account default to oscop
+        ]}
+
+        paid_pipeline = [
+            {"$match": {"applied": True, "payment_status": "paid", "applied_at": {"$gte": window_start}, **account_match}},
+            {"$group": {"_id": None, "count": {"$sum": 1}, "amount_cents": {"$sum": {"$ifNull": ["$amount_cents", 0]}}}},
+        ]
+        paid_agg = await db.payment_transactions.aggregate(paid_pipeline).to_list(1)
+        paid = paid_agg[0] if paid_agg else {"count": 0, "amount_cents": 0}
+
+        refund_pipeline = [
+            {"$match": {"refund_status": {"$in": ["full", "partial"]}, "refunded_at": {"$gte": window_start}, **account_match}},
+            {"$group": {"_id": "$refund_status", "count": {"$sum": 1}, "amount_cents": {"$sum": {"$ifNull": ["$refund_amount_cents", 0]}}}},
+        ]
+        refund_agg = await db.payment_transactions.aggregate(refund_pipeline).to_list(10)
+        refund_full = next((r for r in refund_agg if r["_id"] == "full"), {"count": 0, "amount_cents": 0})
+        refund_partial = next((r for r in refund_agg if r["_id"] == "partial"), {"count": 0, "amount_cents": 0})
+
+        # Stale-pending: transactions created > 15 min ago in last 24h, still not applied
+        stale_pending = await db.payment_transactions.count_documents({
+            "applied": {"$ne": True},
+            "created_at": {"$gte": window_start, "$lte": stale_threshold},
+            **account_match,
+        })
+
+        stats_24h[a] = {
+            "paid_count": int(paid.get("count", 0)),
+            "paid_amount_cents": int(paid.get("amount_cents", 0)),
+            "paid_amount_eur": round(int(paid.get("amount_cents", 0)) / 100, 2),
+            "refund_full_count": int(refund_full.get("count", 0)),
+            "refund_full_amount_cents": int(refund_full.get("amount_cents", 0)),
+            "refund_partial_count": int(refund_partial.get("count", 0)),
+            "refund_partial_amount_cents": int(refund_partial.get("amount_cents", 0)),
+            "stale_pending_count": stale_pending,
+        }
+
+    # Verdict
+    reasons: list = []
+    verdict = "go"
+
+    if mode != "live":
+        reasons.append(f"STRIPE_MODE = '{mode}' (attendu: 'live' pour go-live)")
+        verdict = "warn"
+
+    for a in accounts:
+        info = accounts_info[a]
+        if not info["key_configured"]:
+            reasons.append(f"Compte {a}: clé Stripe non configurée")
+            verdict = "no-go"
+        if info["webhook_secrets_count"] == 0:
+            reasons.append(f"Compte {a}: aucun webhook secret configuré")
+            if verdict == "go":
+                verdict = "warn"
+
+    if last_webhook_summary and last_webhook_summary.get("unsigned_test_mode"):
+        reasons.append("Dernier webhook reçu en mode NON signé (test only) — vérifier config prod")
+        if verdict == "go":
+            verdict = "warn"
+
+    total_stale = sum(stats_24h[a]["stale_pending_count"] for a in accounts)
+    if total_stale > 0:
+        reasons.append(f"{total_stale} transaction(s) en attente > 15 min sur 24h (webhook potentiellement KO)")
+        if verdict == "go":
+            verdict = "warn"
+
+    total_paid_24h = sum(stats_24h[a]["paid_count"] for a in accounts)
+    # A LIVE-ready system needs at least one paid session on a `cs_live_...` id.
+    live_payment_ever = False
+    if last_paid_summary:
+        sid = (last_paid_summary.get("session_id") or "").lower()
+        live_payment_ever = sid.startswith("cs_live_") or sid.startswith("pi_live_") or sid.startswith("in_")
+    if mode == "live" and total_paid_24h == 0 and not live_payment_ever:
+        reasons.append("Aucun paiement LIVE encore observé — faire le test 1€ E2E pour valider (dernier paiement en TEST/legacy)")
+        if verdict == "go":
+            verdict = "warn"
+
+    return {
+        "checked_at": now_utc.isoformat(),
+        "window_hours": 24,
+        "mode": mode,
+        "accounts": accounts_info,
+        "last_webhook_received": last_webhook_summary,
+        "last_successful_payment": last_paid_summary,
+        "stats_24h": stats_24h,
+        "verdict": verdict,
+        "reasons": reasons,
+    }

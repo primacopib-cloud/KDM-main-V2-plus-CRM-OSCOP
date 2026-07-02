@@ -568,6 +568,17 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 - L'utilisateur doit effectuer un paiement réel de 1€ (PASS ou produit ORDER) puis procéder à un refund depuis le dashboard Stripe.
 - Vérifier les logs webhook : `tail -f /var/log/supervisor/backend.err.log | grep -iE 'stripe|webhook'`.
 
+### 2026-02 — Endpoint `GET /api/admin/stripe/live-health` (go/no-go LIVE)
+- Nouvel endpoint admin-only (403 sinon) qui retourne en un JSON :
+  - `mode` : test | live
+  - `accounts.{oscop,kdmarche}` : `key_configured`, `key_prefix` (masqué, jamais la clé complète), `webhook_secrets_count`
+  - `last_webhook_received` : dernier webhook traité (via `applied_by=webhook:*`), avec compte, kind, session_id, flag `unsigned_test_mode`
+  - `last_successful_payment` : dernier paiement OK (compte, kind, amount, session_id)
+  - `stats_24h.{oscop,kdmarche}` : paid_count, paid_amount, refund_full/partial_count+amount, stale_pending_count (tx >15min sans applied)
+  - `verdict` : `go` / `warn` / `no-go` + `reasons[]` humains (ex. "Aucun paiement LIVE encore observé — faire le test 1€ E2E")
+- Aucune écriture, agrège uniquement `payment_transactions`.
+- Contract tests : `/app/backend/tests/test_stripe_live_health.py` — 7/7 PASS (auth 403, shape, prefix masking, verdict logic).
+
 ### Backlog
 - P1 : Wrapping i18n complet (FR/EN/ES) — après validation test LIVE.
 - Future : brancher les vraies URLs de la GED ESS quand fournies (actuellement mode DEGRADED assumé).
