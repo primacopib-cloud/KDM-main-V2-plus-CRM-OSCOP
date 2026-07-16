@@ -701,3 +701,10 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 - Backend `routes_favorites_alerts_center.py` : GET /api/user-prefs/favorites/alerts-center, PUT /api/user-prefs/favorites/{product_id}/alerts. `favorites_alerts.py` respecte `alerts_enabled` (testé : OFF → 0 notifié).
 - i18n fr/en/es (`fav_alerts.*` + nav.favorite_alerts).
 - Auto-testé (curl e2e + screenshot). Les 7 autres apps à connecter : l'utilisateur fournira la liste plus tard.
+
+### 2026-06 — Corrections revue de code externe — TERMINÉ (iteration_24 : 100%)
+- Backend : wildcard imports remplacés par imports explicites (routes_checkout, routes_checkout_v1, abac_policy) ; 6 vrais NameError `generate_id` corrigés (routes_admin_ess_capacity/_rules — les créations ESS crashaient en 500) ; credentials tests via env vars ; refactor favorites_alerts (helpers _already_alerted/_notify_user).
+- Frontend : DOMPurify sur dangerouslySetInnerHTML (LegalDocument) ; keys stables au lieu d'index (6 fichiers) ; http.js ne lit plus jamais de token localStorage ; export CSV admin via cookies.
+- Vérifié : « 122 missing hook deps » du rapport = FAUX POSITIF (eslint react-hooks/exhaustive-deps = 0 warning sur tout src/). « Circular imports » déjà atténués par imports in-function (serveur démarre sans erreur).
+- REPORTÉ (risque régression > gain, code legacy testé) : refactor des fonctions legacy complexes (logiscop_v1_pricing, lolodrive_checkout_apply, ess_models...) et découpage des 5 composants 400-460 lignes (tous < règle d'or 500).
+- Non-régression validée par testing_agent iteration_24 : backend 10/10, frontend 7/7.
