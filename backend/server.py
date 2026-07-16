@@ -108,8 +108,10 @@ app.include_router(preparation_router)
 
 # Import and include Admin Zones routes (CRUD zones + options)
 from routes_admin_zones import admin_zones_router, set_admin_zones_database
+from routes_admin_zones_public import admin_zones_public_router
 set_admin_zones_database(db)
 app.include_router(admin_zones_router)
+app.include_router(admin_zones_public_router)
 
 # Import and include B2B routes (checkout + prep options)
 from routes_b2b import b2b_router, set_b2b_database
@@ -173,8 +175,10 @@ app.include_router(contracts_router)
 
 # Import and include POD (Proof of Delivery) routes
 from routes_pod import pod_router, set_pod_database
+from routes_pod_sign import pod_sign_router
 set_pod_database(db)
 app.include_router(pod_router)
+app.include_router(pod_sign_router)
 
 # Import and include ESS Route (Tournées Mutualisées) routes
 from routes_ess import ess_router, set_ess_database
@@ -194,8 +198,10 @@ app.include_router(admin_ess_capacity_router)
 
 # Import and include User Preferences Routes (shortcuts)
 from routes_user_prefs import user_prefs_router, set_user_prefs_database
+from routes_user_prefs_favorites import user_prefs_favorites_router
 set_user_prefs_database(db)
 app.include_router(user_prefs_router, prefix="/api")
+app.include_router(user_prefs_favorites_router, prefix="/api")
 
 # Import and include Notifications History Routes
 from routes_notifications_history import notifications_history_router, set_notifications_history_database
@@ -204,8 +210,10 @@ app.include_router(notifications_history_router, prefix="/api")
 
 # Import and include Shopping Lists Routes
 from routes_shopping_lists import shopping_lists_router, set_shopping_lists_database
+from routes_shopping_lists_items import shopping_lists_items_router
 set_shopping_lists_database(db)
 app.include_router(shopping_lists_router, prefix="/api")
+app.include_router(shopping_lists_items_router, prefix="/api")
 
 # Import and include Super Admin Plans & Credits Routes
 from routes_admin_plans import admin_plans_router, set_admin_plans_database

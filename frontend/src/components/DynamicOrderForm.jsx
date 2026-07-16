@@ -9,6 +9,8 @@ import { Checkbox } from '../components/ui/checkbox';
 import { Badge } from '../components/ui/badge';
 import { legalVariables, replaceVariables } from '../data/legalDocuments';
 
+import { PreparationOptionsSection } from './order-form/PreparationOptionsSection';
+import { TotalsAndSignatures } from './order-form/TotalsAndSignatures';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Dynamic Purchase Order Component with Zone-based Preparation Options
@@ -432,304 +434,31 @@ const DynamicOrderForm = ({
           </table>
         </div>
 
-        {/* ===== PREPARATION OPTIONS - ZONE BASED ===== */}
-        <div 
-          className="p-6 rounded-2xl"
-          style={{
-            background: 'linear-gradient(180deg, rgba(16,185,129,0.05), rgba(212,175,55,0.03))',
-            border: '2px solid rgba(16,185,129,0.2)'
-          }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Truck className="w-5 h-5 text-emerald-600" />
-              <h3 className="text-lg font-bold text-gray-900">
-                Options de préparation — {zoneCode}
-              </h3>
-              {isVatExonerated && (
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                  TVA exonérée
-                </Badge>
-              )}
-            </div>
-            {calculating && (
-              <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin" />
-            )}
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="w-6 h-6 text-emerald-600 animate-spin" />
-              <span className="ml-2 text-gray-500">Chargement des options...</span>
-            </div>
-          ) : error ? (
-            <div className="flex items-center gap-2 py-4 text-red-600">
-              <AlertCircle className="w-5 h-5" />
-              <span>{error}</span>
-            </div>
-          ) : preparationOptions.length === 0 ? (
-            <div className="flex items-center gap-2 py-4 text-gray-500">
-              <Info className="w-5 h-5" />
-              <span>Aucune option de préparation configurée pour cette zone.</span>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {preparationOptions.map((option) => {
-                const isSelected = selectedOptions[option.id];
-                const qty = quantities[option.id] || 1;
-                const showQuantity = ['PER_UNIT', 'PALLET', 'CARTON', 'CONTAINER', 'PER_KG'].includes(option.pricing_mode);
-                const optionExonerated = option.tva_exonerated || option.tva_rate === 0;
-                
-                return (
-                  <div 
-                    key={option.id}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      isSelected 
-                        ? 'border-emerald-500 bg-emerald-50/50' 
-                        : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
-                    data-testid={`preparation-option-${option.id}`}
-                  >
-                    <div className="flex items-start gap-4">
-                      <Checkbox
-                        id={option.id}
-                        checked={isSelected}
-                        onCheckedChange={() => toggleOption(option.id, option.is_required)}
-                        disabled={option.is_required}
-                        className="mt-1"
-                      />
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <label 
-                            htmlFor={option.id}
-                            className="font-semibold text-gray-900 cursor-pointer"
-                          >
-                            {option.name}
-                          </label>
-                          <Badge variant="outline" className={getTypeColor(option.preparation_type || option.code)}>
-                            {option.code || option.preparation_type}
-                          </Badge>
-                          {option.is_required && (
-                            <Badge variant="destructive" className="text-xs">Obligatoire</Badge>
-                          )}
-                          {option.is_default && !option.is_required && (
-                            <Badge variant="secondary" className="text-xs">Recommandé</Badge>
-                          )}
-                          {optionExonerated && (
-                            <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-600 border-emerald-200">
-                              TVA 0%
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {option.description && (
-                          <p className="text-sm text-gray-500 mt-1">{option.description}</p>
-                        )}
-                        
-                        <div className="flex items-center gap-4 mt-2">
-                          <span className="text-sm font-medium text-emerald-700">
-                            {formatCurrency(option.price_ht_cents)} HT
-                            <span className="text-gray-500 font-normal ml-1">
-                              {getPricingModeLabel(option.pricing_mode)}
-                            </span>
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            {optionExonerated ? 'Exonéré TVA' : `TVA ${option.tva_rate}%`}
-                          </span>
-                          {option.sla_lead_time_hours > 0 && (
-                            <span className="text-xs text-blue-600">
-                              Délai: {option.sla_lead_time_hours}h
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Quantity selector */}
-                      {showQuantity && isSelected && (
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity(option.id, -1)}
-                            disabled={qty <= (option.min_qty || 1)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center font-mono font-bold">{qty}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity(option.id, 1)}
-                            disabled={qty >= (option.max_qty || 999999)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {/* Calculated line total */}
-                      {isSelected && calculatedTotals?.preparation_details && (
-                        <div className="text-right min-w-[100px]">
-                          {calculatedTotals.preparation_details
-                            .filter(d => d.option_id === option.id)
-                            .map(d => (
-                              <span key={d.option_id} className="font-bold text-emerald-700">
-                                {formatCurrency(d.total_ht_cents)} HT
-                              </span>
-                            ))
-                          }
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* ===== TOTALS SECTION ===== */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Récapitulatif</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Sous-total marchandises HT</span>
-                <span className="font-mono">{formatCurrency(calculatedTotals?.products_subtotal_ht_cents || productsSubtotalHT)}</span>
-              </div>
-              
-              {calculatedTotals?.preparation_subtotal_ht_cents > 0 && (
-                <div className="flex justify-between text-emerald-700">
-                  <span>Frais de préparation HT</span>
-                  <span className="font-mono">{formatCurrency(calculatedTotals.preparation_subtotal_ht_cents)}</span>
-                </div>
-              )}
-              
-              <div className="flex justify-between font-bold pt-2 border-t border-gray-200">
-                <span>Total HT</span>
-                <span className="font-mono">{formatCurrency(calculatedTotals?.grand_total_ht_cents || productsSubtotalHT)}</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-600">
-                  TVA {isVatExonerated ? '(exonérée)' : `(${zoneTvaRate}% DOM)`}
-                </span>
-                <span className={`font-mono ${isVatExonerated ? 'text-emerald-600' : ''}`}>
-                  {isVatExonerated ? '0,00 €' : formatCurrency(calculatedTotals?.grand_total_tva_cents || productsTVA)}
-                </span>
-              </div>
-              
-              <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-200">
-                <span>Total TTC</span>
-                <span className="font-mono text-[#4a1776]">
-                  {formatCurrency(calculatedTotals?.grand_total_ttc_cents || (productsSubtotalHT + productsTVA))}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Conditions</h4>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>• Incoterm : <strong className="text-gray-900">EXW</strong> (enlèvement à charge de l&apos;acheteur)</p>
-              <p>• Paiement : à réception de facture</p>
-              <p>• Validité de l&apos;offre : 30 jours</p>
-              <p>• CGV KDMARCHE B2B applicables</p>
-              {isVatExonerated && (
-                <p className="text-emerald-600 font-medium">• Zone exonérée de TVA (article 294 CGI)</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ===== SIGNATURE BLOCK WITH STAMP ===== */}
-        <div 
-          className="mt-8 p-6 rounded-2xl"
-          style={{
-            background: 'linear-gradient(180deg, rgba(26,11,46,0.02), rgba(212,175,55,0.03))',
-            border: '2px solid rgba(26,11,46,0.12)'
-          }}
-        >
-          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-[#4a1776]" />
-            Signatures
-          </h3>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Vendor Signature */}
-            <div className="relative">
-              <div className="p-4 rounded-xl bg-white border border-gray-200 min-h-[200px]">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#b07a1a] mb-3">
-                  Pour le Vendeur — KDMARCHE
-                </p>
-                <p className="text-sm text-gray-700 mb-1">{replaceVariables(vars.KDM_REP_NAME, vars)}</p>
-                <p className="text-xs text-gray-500 mb-4">{replaceVariables(vars.KDM_REP_TITLE, vars)}</p>
-                
-                <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                  <Calendar className="w-3 h-3" />
-                  <span>Date : {signatureData.signatureDate}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-                  <MapPin className="w-3 h-3" />
-                  <span>Lieu : {replaceVariables(vars.LIEU_SIGNATURE || 'Baie-Mahault', vars)}</span>
-                </div>
-                
-                <div className="border-t border-dashed border-gray-300 pt-3 mt-4">
-                  <p className="text-xs text-gray-400">Signature et cachet :</p>
-                </div>
-                
-                {showStamp && (
-                  <div className="absolute bottom-4 right-4 opacity-90">
-                    <img 
-                      src="/kdmarche-stamp.svg" 
-                      alt="Tampon KDMARCHE PRO" 
-                      className="w-24 h-24 transform rotate-[-8deg]"
-                      style={{
-                        filter: 'drop-shadow(2px 2px 4px rgba(198, 1, 1, 0.3))'
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Client Signature */}
-            <div className="p-4 rounded-xl bg-white border border-gray-200 min-h-[200px]">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#4a1776] mb-3">
-                Pour l&apos;Acheteur
-              </p>
-              <p className="text-sm text-gray-700 mb-1">
-                {signatureData.clientName || replaceVariables(vars.CLIENT_CONTACT || '[Nom du signataire]', vars)}
-              </p>
-              <p className="text-xs text-gray-500 mb-4">
-                {signatureData.clientTitle || '[Qualité / Fonction]'}
-              </p>
-              
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                <Calendar className="w-3 h-3" />
-                <span>Date : ___/___/______</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-                <MapPin className="w-3 h-3" />
-                <span>Lieu : {signatureData.signatureLocation || '________________________'}</span>
-              </div>
-              
-              <div className="border-t border-dashed border-gray-300 pt-3 mt-4">
-                <p className="text-xs text-gray-400">Signature précédée de la mention &quot;Bon pour accord&quot; :</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-6 p-3 rounded-lg bg-[#d4af37]/5 border border-[#d4af37]/20">
-            <p className="text-xs text-gray-600 text-center">
-              <strong>Mention obligatoire :</strong> En signant ce bon de commande, l&apos;acheteur reconnaît avoir pris connaissance 
-              et accepté les CGV KDMARCHE B2B disponibles sur <span className="text-[#4a1776]">kdmarche-oscop.fr/legal/cgv-kdmarche</span>
-            </p>
-          </div>
-        </div>
+        <PreparationOptionsSection
+          preparationOptions={preparationOptions}
+          selectedOptions={selectedOptions}
+          quantities={quantities}
+          loading={loading}
+          error={error}
+          calculating={calculating}
+          calculatedTotals={calculatedTotals}
+          toggleOption={toggleOption}
+          updateQuantity={updateQuantity}
+          getPricingModeLabel={getPricingModeLabel}
+          getTypeColor={getTypeColor}
+          formatCurrency={formatCurrency}
+        />
+        <TotalsAndSignatures
+          calculatedTotals={calculatedTotals}
+          formatCurrency={formatCurrency}
+          productsSubtotalHT={productsSubtotalHT}
+          productsTVA={productsTVA}
+          zoneTvaRate={zoneTvaRate}
+          isVatExonerated={isVatExonerated}
+          signatureData={signatureData}
+          showStamp={showStamp}
+          vars={vars}
+        />
       </main>
 
       {/* Footer */}

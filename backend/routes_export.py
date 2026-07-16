@@ -1,102 +1,32 @@
 """
-KDMARCHE × O'SCOP - Data Export API
-Export CSV/Excel for admin reports
+KDMARCHE Export Admin — Endpoints d'export CSV/JSON.
 
-Features:
-- Organizations export
-- Applications export
-- Orders export
-- Transactions/Ledger export
-- Audit log export
+Découpé : enums & helpers dans export_common.py.
 """
 
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta
-from enum import Enum
 import csv
 import io
 import logging
 
+from export_common import (
+    ExportFormat, ExportType, format_datetime, dict_to_csv_row, check_admin,
+    set_export_common_database,
+)
+
 logger = logging.getLogger(__name__)
 
-# Router
 export_router = APIRouter(prefix="/api/admin/export")
 
-# Database reference (set by server.py)
 db = None
 
-
 def set_export_database(database):
-    """Set database reference from main server"""
     global db
     db = database
-
-
-# ============== ENUMS ==============
-
-class ExportFormat(str, Enum):
-    CSV = "csv"
-    # EXCEL = "xlsx"  # Would require openpyxl
-
-
-class ExportType(str, Enum):
-    ORGANIZATIONS = "organizations"
-    APPLICATIONS = "applications"
-    ORDERS = "orders"
-    TRANSACTIONS = "transactions"
-    AUDIT_LOG = "audit_log"
-    PRODUCTS = "products"
-    USERS = "users"
-
-
-# ============== HELPERS ==============
-
-def format_datetime(dt):
-    """Format datetime for export"""
-    if not dt:
-        return ""
-    if isinstance(dt, str):
-        dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
-    return dt.strftime("%Y-%m-%d %H:%M:%S")
-
-
-def dict_to_csv_row(data: dict, columns: List[str]) -> List[str]:
-    """Convert dict to CSV row with specified columns"""
-    row = []
-    for col in columns:
-        value = data.get(col, "")
-        if isinstance(value, datetime):
-            value = format_datetime(value)
-        elif isinstance(value, (list, dict)):
-            value = str(value)
-        elif value is None:
-            value = ""
-        row.append(str(value))
-    return row
-
-
-async def check_admin(request: Request):
-    """Check if request is from admin"""
-    from auth import decode_token
-    
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Token manquant")
-    
-    token = auth_header.split(" ")[1]
-    user_id = decode_token(token)
-    
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Token invalide")
-    
-    user = await db.users.find_one({"id": user_id})
-    if not user or not user.get("is_admin"):
-        raise HTTPException(status_code=403, detail="Accès administrateur requis")
-    
-    return user
-
+    set_export_common_database(database)
 
 # ============== EXPORT ENDPOINTS ==============
 

@@ -14,17 +14,9 @@ import {
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 import { toast } from 'sonner';
+import { frequencyLabels } from '../components/shopping-lists/shoppingListConstants';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
-
-const frequencyLabels = {
-  weekly: 'Hebdomadaire',
-  biweekly: 'Bi-mensuel',
-  monthly: 'Mensuel',
-  quarterly: 'Trimestriel',
-  one_time: 'Ponctuel',
-  custom: 'Personnalisé',
-};
 
 function formatPrice(cents) {
   if (!cents) return '—';

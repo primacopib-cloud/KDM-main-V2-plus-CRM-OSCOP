@@ -1,0 +1,42 @@
+{
+  "summary": "LOT 6 refactor regression validation (iteration 16). BACKEND: 34/34 PASS on new /app/backend/tests/test_lot6_refactor_regression.py covering all 15 backend splits (shopping_lists x3 modules, user_prefs x3, pod x3, logiscop, ess, abac, schema_catalog + schema_preparation + admin_zones_public, websockets/ws_manager, pdf_generators, contracts_models, export_common, schema_product_card_parts). Server boots cleanly, all new routers included with correct prefixes. FRONTEND: 2 REAL REGRESSIONS FOUND that build did not catch (matching the risk anticipated in the review request — 'props manquantes dans les composants frontend extraits'): (1) ShoppingListsPage /listes-achats throws PageError 'filterFrequency is not defined' because ShoppingListFilters.jsx uses filterFrequency/setFilterFrequency but ShoppingListsPage.jsx does NOT pass them as props; (2) LegalPage /legal throws PageError 'Button is not defined' because LegalDocument.jsx uses <Button> in JSX but does not import Button from '../ui/button'. All other refactored pages (/notifications, /admin/produits, /onboarding, /catalogue, /admin-v2, /espace-vendeur) render clean, zero critical console errors. NavBar refactor (UserMenu.jsx + navItems.js) — navbar renders on all pages; login flow works (admin lands on /dashboard).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ShoppingListFilters.jsx (via ShoppingListsPage)", "issue": "PageError: 'filterFrequency is not defined'. ShoppingListFilters.jsx line 35 references filterFrequency/setFilterFrequency but ShoppingListsPage.jsx (which declares the state at line 57) does NOT pass them as props to <ShoppingListFilters>. Same class of bug as the Lot 4 hasActiveFilters regression the review request explicitly warned about.", "selector": "route /listes-achats", "priority": "CRITICAL"},
+      {"component": "components/legal/LegalDocument.jsx", "issue": "PageError: 'Button is not defined'. JSX at lines 180/188 uses <Button> but the file only imports lucide-react icons (line 1) and legalDocuments helpers (line 2) — missing 'import { Button } from ../ui/button'. Affects /legal and any doc rendered via /legal/:docId.", "selector": "route /legal", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [
+      {"flow": "WebSocket /api/ws/notifications", "issue": "Pre-existing 400 (empty user_id). Not a Lot 6 regression.", "affected_selectors": []},
+      {"flow": "Buyer cart (acheteur-pro)", "issue": "Pre-existing: buyer lacks organization_id → cart/orders v2 return 400. Not a Lot 6 regression (test allows 400).", "affected_selectors": []}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lot6_refactor_regression.py",
+    "/app/test_reports/pytest/lot6_regression.xml"
+  ],
+  "action_items": [
+    "FIX ShoppingListsPage.jsx → pass filterFrequency + setFilterFrequency (and any other missing filter props) as props to <ShoppingListFilters/>. Verify all state variables used inside ShoppingListFilters.jsx are received via props.",
+    "FIX components/legal/LegalDocument.jsx → add missing import: `import { Button } from '../ui/button';` (or the correct path to the shadcn Button). Then verify /legal renders CGV/ESS/LOGISCOP/Convention/Charte tabs.",
+    "After fixes, re-run pytest /app/backend/tests/test_lot6_refactor_regression.py (should stay 34/34) and reload /listes-achats + /legal in the browser to confirm both PageErrors are gone."
+  ],
+  "critical_code_review_comments": [
+    "The verbatim-split approach is safe on the backend (34/34 endpoints reachable, no import errors), but on the frontend, two extractions dropped required props/imports. CI=true yarn build cannot detect these because React only throws at render time. Recommendation: add a lightweight smoke test that navigates each refactored page and asserts zero React runtime errors — mirrors iteration_16 methodology.",
+    "ShoppingListsPage / ShoppingListFilters split needs an explicit prop-contract review: any state referenced inside the child but declared in the parent must be listed in ShoppingListFilters' function signature.",
+    "LegalDocument.jsx: no static-analysis lint rule catches undeclared JSX components. Consider enabling ESLint react/jsx-no-undef with strict severity to catch <Button>-style misses in future lots."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lot6_refactor_regression.py (new, 34 tests, ~3s)"
+  ],
+  "success_rate": {"backend": "100% (34/34)", "frontend": "~78% (7/9 refactored routes render clean; 2 routes throw runtime errors)"},
+  "test_credentials": "Used admin@kdmarche-oscop.fr / AdminKDM2025! (validated). Buyer/vendor/manager not needed for these smoke checks.",
+  "seed_data_creation": "One TEST_LOT6_REG_LIST shopping list created + deleted inside the CRUD flow test (idempotent).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "After main agent fixes the two prop/import bugs, re-run: (a) pytest /app/backend/tests/test_lot6_refactor_regression.py, (b) browser navigate to /listes-achats (admin logged in) and /legal, assert no PageError. Correct preview URL is https://coop-dashboard-8.preview.emergentagent.com (from frontend/.env REACT_APP_BACKEND_URL) — the other preview host in the task title is unrelated / stale. Pre-existing non-regressions: /api/ws/notifications 400 (empty user_id), buyer without org_id → 400 on cart.",
+  "rca of the issue": "Both bugs are 'verbatim move that dropped context' from Lot 6 mechanical splits. #1 ShoppingListsPage: state variables filterFrequency + setFilterFrequency were left in the parent when the JSX using them was extracted into ShoppingListFilters.jsx; the child references these identifiers directly (line 35) instead of receiving them via props → ReferenceError at render. #2 LegalDocument.jsx: when the huge LegalPage was split, the <Button> import was left behind in the original file; the new child file imports icons + helpers only. Both are pure line-move oversights, not logic drift. Mitigation is trivial: add missing prop passthrough (ShoppingListFilters) + add missing named import (Button in LegalDocument). Neither affects backend or business logic."
+}

@@ -26,37 +26,8 @@ import { Label } from './ui/label';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Icon mapping
-const iconMap = {
-  Star,
-  ShoppingCart,
-  Package,
-  Wallet,
-  FileText,
-  LayoutDashboard,
-  Scale,
-  Home,
-  CreditCard,
-  Building2,
-  Store,
-  Users,
-  Plus,
-};
-
-const getIcon = (iconName) => {
-  return iconMap[iconName] || Star;
-};
-
-// Color options
-const colorOptions = [
-  { value: '#D9B35A', label: 'Or' },
-  { value: '#D4AF37', label: 'Vert' },
-  { value: '#3B82F6', label: 'Bleu' },
-  { value: '#8B5CF6', label: 'Violet' },
-  { value: '#EC4899', label: 'Rose' },
-  { value: '#F59E0B', label: 'Orange' },
-  { value: '#EF4444', label: 'Rouge' },
-  { value: '#06B6D4', label: 'Cyan' },
-];
+import { iconMap, getIcon, colorOptions } from './shortcuts/shortcutConstants';
+import { ShortcutDialogs } from './shortcuts/ShortcutDialogs';
 
 export default function QuickShortcuts({ variant = 'navbar' }) {
   const [shortcuts, setShortcuts] = useState([]);
@@ -277,169 +248,20 @@ export default function QuickShortcuts({ variant = 'navbar' }) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Add Dialog */}
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="bg-[#0A0E17] border-white/10 text-white">
-            <DialogHeader>
-              <DialogTitle>Ajouter un raccourci</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <Label>Nom</Label>
-                <Input
-                  value={newShortcut.label}
-                  onChange={(e) => setNewShortcut({ ...newShortcut, label: e.target.value })}
-                  placeholder="Mon raccourci"
-                  className="bg-white/[0.04] border-white/10"
-                  data-testid="shortcut-label-input"
-                />
-              </div>
-              <div>
-                <Label>URL</Label>
-                <Input
-                  value={newShortcut.href}
-                  onChange={(e) => setNewShortcut({ ...newShortcut, href: e.target.value })}
-                  placeholder="/catalogue"
-                  className="bg-white/[0.04] border-white/10"
-                  data-testid="shortcut-href-input"
-                />
-              </div>
-              <div>
-                <Label>Couleur</Label>
-                <div className="flex gap-2 mt-2">
-                  {colorOptions.map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={() => setNewShortcut({ ...newShortcut, color: color.value })}
-                      className={`w-8 h-8 rounded-full transition-all ${
-                        newShortcut.color === color.value ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0A0E17]' : ''
-                      }`}
-                      style={{ backgroundColor: color.value }}
-                      title={color.label}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setShowAddDialog(false)}>
-                Annuler
-              </Button>
-              <Button 
-                onClick={() => handleAddShortcut()}
-                disabled={!newShortcut.label || !newShortcut.href}
-                className="bg-[#D9B35A] hover:bg-[#C9A34A] text-black"
-                data-testid="add-shortcut-btn"
-              >
-                Ajouter
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Management Dialog */}
-        <Dialog open={isManaging} onOpenChange={setIsManaging}>
-          <DialogContent className="bg-[#0A0E17] border-white/10 text-white max-w-md">
-            <DialogHeader>
-              <DialogTitle>Gérer les raccourcis</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2 py-4 max-h-80 overflow-y-auto">
-              {shortcuts.length === 0 ? (
-                <p className="text-center text-white/50 py-8">Aucun raccourci</p>
-              ) : (
-                shortcuts.map((shortcut) => {
-                  const Icon = getIcon(shortcut.icon);
-                  return (
-                    <div
-                      key={shortcut.id}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.04] border border-white/10"
-                    >
-                      <GripVertical className="w-4 h-4 text-white/30 cursor-grab" />
-                      <div 
-                        className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: `${shortcut.color}20` }}
-                      >
-                        <Icon className="w-4 h-4" style={{ color: shortcut.color }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{shortcut.label}</p>
-                        <p className="text-xs text-white/50 truncate">{shortcut.href}</p>
-                      </div>
-                      <button
-                        onClick={() => setEditingShortcut(shortcut)}
-                        className="p-1.5 rounded hover:bg-white/[0.08] text-white/60"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteShortcut(shortcut.id)}
-                        className="p-1.5 rounded hover:bg-red-500/20 text-red-400"
-                        data-testid={`delete-shortcut-${shortcut.id}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setIsManaging(false)}>
-                Fermer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Dialog */}
-        <Dialog open={!!editingShortcut} onOpenChange={() => setEditingShortcut(null)}>
-          <DialogContent className="bg-[#0A0E17] border-white/10 text-white">
-            <DialogHeader>
-              <DialogTitle>Modifier le raccourci</DialogTitle>
-            </DialogHeader>
-            {editingShortcut && (
-              <div className="space-y-4 py-4">
-                <div>
-                  <Label>Nom</Label>
-                  <Input
-                    value={editingShortcut.label}
-                    onChange={(e) => setEditingShortcut({ ...editingShortcut, label: e.target.value })}
-                    className="bg-white/[0.04] border-white/10"
-                  />
-                </div>
-                <div>
-                  <Label>Couleur</Label>
-                  <div className="flex gap-2 mt-2">
-                    {colorOptions.map((color) => (
-                      <button
-                        key={color.value}
-                        onClick={() => setEditingShortcut({ ...editingShortcut, color: color.value })}
-                        className={`w-8 h-8 rounded-full transition-all ${
-                          editingShortcut.color === color.value ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0A0E17]' : ''
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        title={color.label}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setEditingShortcut(null)}>
-                Annuler
-              </Button>
-              <Button 
-                onClick={handleUpdateShortcut}
-                className="bg-[#D9B35A] hover:bg-[#C9A34A] text-black"
-              >
-                <Check className="w-4 h-4 mr-2" />
-                Enregistrer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ShortcutDialogs
+          showAddDialog={showAddDialog}
+          setShowAddDialog={setShowAddDialog}
+          isManaging={isManaging}
+          setIsManaging={setIsManaging}
+          newShortcut={newShortcut}
+          setNewShortcut={setNewShortcut}
+          shortcuts={shortcuts}
+          editingShortcut={editingShortcut}
+          setEditingShortcut={setEditingShortcut}
+          handleAddShortcut={handleAddShortcut}
+          handleDeleteShortcut={handleDeleteShortcut}
+          handleUpdateShortcut={handleUpdateShortcut}
+        />
       </div>
     );
   }

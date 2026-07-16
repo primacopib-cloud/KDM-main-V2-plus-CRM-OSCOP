@@ -23,34 +23,12 @@ import Footer from '../components/Footer';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+import {
+  frequencyIcons, frequencyLabels, frequencyColors, COLOR_OPTIONS,
+} from '../components/shopping-lists/shoppingListConstants';
+import { ShoppingListDialogs } from '../components/shopping-lists/ShoppingListDialogs';
+import { ShoppingListFilters } from '../components/shopping-lists/ShoppingListFilters';
 
-// Icon mapping for frequencies
-const frequencyIcons = {
-  weekly: Calendar,
-  biweekly: Calendar,
-  monthly: CalendarDays,
-  quarterly: CalendarRange,
-  one_time: CalendarCheck,
-  custom: Settings,
-};
-
-const frequencyLabels = {
-  weekly: 'Hebdomadaire',
-  biweekly: 'Bi-mensuel',
-  monthly: 'Mensuel',
-  quarterly: 'Trimestriel',
-  one_time: 'Ponctuel',
-  custom: 'Personnalisé',
-};
-
-const frequencyColors = {
-  weekly: '#D4AF37',
-  biweekly: '#3B82F6',
-  monthly: '#8B5CF6',
-  quarterly: '#F59E0B',
-  one_time: '#6B7280',
-  custom: '#D9B35A',
-};
 
 function formatPrice(cents) {
   if (!cents) return '—';
@@ -274,16 +252,7 @@ export default function ShoppingListsPage() {
       list.description?.toLowerCase().includes(query)
     );
   });
-
-  const colorOptions = [
-    { value: '#D9B35A', label: 'Or' },
-    { value: '#D4AF37', label: 'Vert' },
-    { value: '#3B82F6', label: 'Bleu' },
-    { value: '#8B5CF6', label: 'Violet' },
-    { value: '#EC4899', label: 'Rose' },
-    { value: '#F59E0B', label: 'Orange' },
-  ];
-
+  const colorOptions = COLOR_OPTIONS;
   return (
     <div className="min-h-screen bg-[#070A10] text-white">
       <NavBar />
@@ -317,68 +286,15 @@ export default function ShoppingListsPage() {
             </Button>
           </div>
 
-          {/* Filters */}
-          <div
-            className="p-4 rounded-2xl mb-6"
-            style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
-              border: '1px solid rgba(255,255,255,0.08)'
-            }}
-          >
-            <div className="flex flex-col lg:flex-row gap-4 items-center">
-              {/* Search */}
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Rechercher une liste..."
-                  className="pl-10 bg-white/[0.04] border-white/10"
-                  data-testid="lists-search"
-                />
-              </div>
-
-              {/* Frequency Filter */}
-              <Select value={filterFrequency} onValueChange={setFilterFrequency}>
-                <SelectTrigger className="w-full lg:w-48 bg-white/[0.04] border-white/10">
-                  <Calendar className="w-4 h-4 mr-2 text-white/40" />
-                  <SelectValue placeholder="Fréquence" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes fréquences</SelectItem>
-                  <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                  <SelectItem value="biweekly">Bi-mensuel</SelectItem>
-                  <SelectItem value="monthly">Mensuel</SelectItem>
-                  <SelectItem value="quarterly">Trimestriel</SelectItem>
-                  <SelectItem value="one_time">Ponctuel</SelectItem>
-                  <SelectItem value="custom">Personnalisé</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Sort */}
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full lg:w-40 bg-white/[0.04] border-white/10">
-                  <SelectValue placeholder="Trier par" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="created_at">Date création</SelectItem>
-                  <SelectItem value="last_used_at">Dernière utilisation</SelectItem>
-                  <SelectItem value="use_count">Plus utilisées</SelectItem>
-                  <SelectItem value="name">Nom A-Z</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => fetchLists(true)}
-                disabled={refreshing}
-                className="text-white/60"
-              >
-                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
-          </div>
+          <ShoppingListFilters
+            lists={lists}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            refreshing={refreshing}
+            fetchLists={fetchLists}
+          />
 
           {/* Lists Grid */}
           {loading ? (
@@ -528,188 +444,17 @@ export default function ShoppingListsPage() {
 
       <Footer />
 
-      {/* Create Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="bg-[#0A0E17] border-white/10 text-white">
-          <DialogHeader>
-            <DialogTitle>Nouvelle liste d'achats</DialogTitle>
-            <DialogDescription className="text-white/60">
-              Créez une liste pour organiser vos commandes récurrentes
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>Nom de la liste *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Commande mensuelle"
-                className="bg-white/[0.04] border-white/10"
-                data-testid="list-name-input"
-              />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Input
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Ex: Produits de base pour la cuisine"
-                className="bg-white/[0.04] border-white/10"
-              />
-            </div>
-            <div>
-              <Label>Fréquence</Label>
-              <Select 
-                value={formData.frequency} 
-                onValueChange={(v) => setFormData({ ...formData, frequency: v })}
-              >
-                <SelectTrigger className="bg-white/[0.04] border-white/10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                  <SelectItem value="biweekly">Bi-mensuel</SelectItem>
-                  <SelectItem value="monthly">Mensuel</SelectItem>
-                  <SelectItem value="quarterly">Trimestriel</SelectItem>
-                  <SelectItem value="one_time">Ponctuel</SelectItem>
-                  <SelectItem value="custom">Personnalisé</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Couleur</Label>
-              <div className="flex gap-2 mt-2">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() => setFormData({ ...formData, color: color.value })}
-                    className={`w-8 h-8 rounded-full transition-all ${
-                      formData.color === color.value 
-                        ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0A0E17]' 
-                        : ''
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                    title={color.label}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowCreateDialog(false)}>
-              Annuler
-            </Button>
-            <Button 
-              onClick={handleCreate}
-              className="bg-[#D9B35A] hover:bg-[#C9A34A] text-black"
-              data-testid="confirm-create-list"
-            >
-              <Check className="w-4 h-4 mr-2" />
-              Créer la liste
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="bg-[#0A0E17] border-white/10 text-white">
-          <DialogHeader>
-            <DialogTitle>Modifier la liste</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>Nom de la liste *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="bg-white/[0.04] border-white/10"
-              />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Input
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="bg-white/[0.04] border-white/10"
-              />
-            </div>
-            <div>
-              <Label>Fréquence</Label>
-              <Select 
-                value={formData.frequency} 
-                onValueChange={(v) => setFormData({ ...formData, frequency: v })}
-              >
-                <SelectTrigger className="bg-white/[0.04] border-white/10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                  <SelectItem value="biweekly">Bi-mensuel</SelectItem>
-                  <SelectItem value="monthly">Mensuel</SelectItem>
-                  <SelectItem value="quarterly">Trimestriel</SelectItem>
-                  <SelectItem value="one_time">Ponctuel</SelectItem>
-                  <SelectItem value="custom">Personnalisé</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Couleur</Label>
-              <div className="flex gap-2 mt-2">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() => setFormData({ ...formData, color: color.value })}
-                    className={`w-8 h-8 rounded-full transition-all ${
-                      formData.color === color.value 
-                        ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0A0E17]' 
-                        : ''
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                    title={color.label}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowEditDialog(false)}>
-              Annuler
-            </Button>
-            <Button 
-              onClick={handleUpdate}
-              className="bg-[#D9B35A] hover:bg-[#C9A34A] text-black"
-            >
-              <Check className="w-4 h-4 mr-2" />
-              Enregistrer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation */}
-      <Dialog open={!!showDeleteConfirm} onOpenChange={() => setShowDeleteConfirm(null)}>
-        <DialogContent className="bg-[#0A0E17] border-white/10 text-white">
-          <DialogHeader>
-            <DialogTitle>Supprimer la liste ?</DialogTitle>
-            <DialogDescription className="text-white/60">
-              Cette action est irréversible. Tous les produits de cette liste seront perdus.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowDeleteConfirm(null)}>
-              Annuler
-            </Button>
-            <Button 
-              onClick={() => handleDelete(showDeleteConfirm)}
-              className="bg-red-500 hover:bg-red-600 text-white"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ShoppingListDialogs
+        showCreateDialog={showCreateDialog}
+        setShowCreateDialog={setShowCreateDialog}
+        showEditDialog={showEditDialog}
+        setShowEditDialog={setShowEditDialog}
+        formData={formData}
+        setFormData={setFormData}
+        handleCreate={handleCreate}
+        handleUpdate={handleUpdate}
+        handleDelete={handleDelete}
+      />
     </div>
   );
 }
