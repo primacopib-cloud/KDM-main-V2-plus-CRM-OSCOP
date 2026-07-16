@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useState } from 'react';
 import { Package, Plus, RefreshCw, Clock, Flag, ShoppingCart, TrendingUp } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -86,13 +87,13 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
       }
 
       const result = await response.json();
-      toast.success('Produit soumis !', {
+      toast.success(i18n.t('adm.produit_soumis'), {
         description: 'Votre produit est en attente de validation par l\'administrateur.'
       });
       onSuccess(result);
       onClose();
     } catch (error) {
-      toast.error('Erreur', { description: error.message });
+      toast.error(i18n.t('adm.erreur'), { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -119,29 +120,29 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <Label htmlFor="name">Nom du produit *</Label>
+                <Label htmlFor="name">{i18n.t('adm.nom_du_produit_2')}</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
-                  placeholder="Ex: Riz long grain 5kg"
+                  placeholder={i18n.t('adm.ex_riz_long_grain_5kg')}
                   required
                   data-testid="product-name"
                 />
               </div>
               <div>
-                <Label htmlFor="sku">SKU / Référence *</Label>
+                <Label htmlFor="sku">{i18n.t('adm.sku_reference')}</Label>
                 <Input
                   id="sku"
                   value={formData.sku}
                   onChange={(e) => handleChange('sku', e.target.value)}
-                  placeholder="Ex: ALI-RIZ-001"
+                  placeholder={i18n.t('adm.ex_ali_riz_001')}
                   required
                   data-testid="product-sku"
                 />
               </div>
               <div>
-                <Label htmlFor="ean13">Code EAN-13</Label>
+                <Label htmlFor="ean13">{i18n.t('adm.code_ean_13')}</Label>
                 <Input
                   id="ean13"
                   value={formData.ean13}
@@ -150,19 +151,19 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                 />
               </div>
               <div className="col-span-2">
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description">{i18n.t('adm.description_2')}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleChange('description', e.target.value)}
-                  placeholder="Décrivez votre produit en détail..."
+                  placeholder={i18n.t('adm.decrivez_votre_produit_en_detail')}
                   rows={3}
                   required
                   data-testid="product-description"
                 />
               </div>
               <div>
-                <Label htmlFor="category">Catégorie *</Label>
+                <Label htmlFor="category">{i18n.t('adm.categorie_2')}</Label>
                 <Select value={formData.category} onValueChange={(v) => handleChange('category', v)}>
                   <SelectTrigger data-testid="product-category">
                     <SelectValue />
@@ -175,12 +176,12 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                 </Select>
               </div>
               <div>
-                <Label htmlFor="brand">Marque</Label>
+                <Label htmlFor="brand">{i18n.t('adm.marque')}</Label>
                 <Input
                   id="brand"
                   value={formData.brand}
                   onChange={(e) => handleChange('brand', e.target.value)}
-                  placeholder="Ex: Ma Marque"
+                  placeholder={i18n.t('adm.ex_ma_marque')}
                 />
               </div>
             </div>
@@ -193,7 +194,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
             </h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="price_ht">Prix HT (€) *</Label>
+                <Label htmlFor="price_ht">{i18n.t('adm.prix_ht_2')}</Label>
                 <Input
                   id="price_ht"
                   type="number"
@@ -207,7 +208,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                 />
               </div>
               <div>
-                <Label htmlFor="tva_rate">Taux TVA *</Label>
+                <Label htmlFor="tva_rate">{i18n.t('adm.taux_tva')}</Label>
                 <Select value={String(formData.tva_rate)} onValueChange={(v) => handleChange('tva_rate', parseFloat(v))}>
                   <SelectTrigger data-testid="product-tva">
                     <SelectValue />
@@ -220,7 +221,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                 </Select>
               </div>
               <div>
-                <Label>Prix TTC (calculé)</Label>
+                <Label>{i18n.t('adm.prix_ttc_calcule')}</Label>
                 <div className="h-10 px-3 py-2 border rounded-md bg-gray-50 text-gray-700 font-mono">
                   {formData.price_ht 
                     ? (parseFloat(formData.price_ht) * (1 + formData.tva_rate / 100)).toFixed(2) + ' €'
@@ -238,7 +239,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
             </h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="stock_quantity">Quantité en stock *</Label>
+                <Label htmlFor="stock_quantity">{i18n.t('adm.quantite_en_stock')}</Label>
                 <Input
                   id="stock_quantity"
                   type="number"
@@ -251,7 +252,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                 />
               </div>
               <div>
-                <Label htmlFor="min_order_quantity">Quantité min. commande</Label>
+                <Label htmlFor="min_order_quantity">{i18n.t('adm.quantite_min_commande')}</Label>
                 <Input
                   id="min_order_quantity"
                   type="number"
@@ -262,7 +263,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                 />
               </div>
               <div>
-                <Label htmlFor="unit_type">Unité de vente</Label>
+                <Label htmlFor="unit_type">{i18n.t('adm.unite_de_vente')}</Label>
                 <Select value={formData.unit_type} onValueChange={(v) => handleChange('unit_type', v)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -275,7 +276,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                 </Select>
               </div>
               <div>
-                <Label htmlFor="format_type">Format / Conditionnement</Label>
+                <Label htmlFor="format_type">{i18n.t('adm.format_conditionnement')}</Label>
                 <Select value={formData.format_type} onValueChange={(v) => handleChange('format_type', v)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -288,25 +289,25 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                 </Select>
               </div>
               <div>
-                <Label htmlFor="volume_per_unit">Volume (L)</Label>
+                <Label htmlFor="volume_per_unit">{i18n.t('adm.volume_l')}</Label>
                 <Input
                   id="volume_per_unit"
                   type="number"
                   step="0.01"
                   value={formData.volume_per_unit}
                   onChange={(e) => handleChange('volume_per_unit', e.target.value)}
-                  placeholder="Ex: 5"
+                  placeholder={i18n.t('adm.ex_5')}
                 />
               </div>
               <div>
-                <Label htmlFor="weight_per_unit">Poids (kg)</Label>
+                <Label htmlFor="weight_per_unit">{i18n.t('adm.poids_kg')}</Label>
                 <Input
                   id="weight_per_unit"
                   type="number"
                   step="0.01"
                   value={formData.weight_per_unit}
                   onChange={(e) => handleChange('weight_per_unit', e.target.value)}
-                  placeholder="Ex: 5"
+                  placeholder={i18n.t('adm.ex_5')}
                 />
               </div>
             </div>
@@ -319,7 +320,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="country_of_origin">Pays d&apos;origine *</Label>
+                <Label htmlFor="country_of_origin">{i18n.t('adm.pays_d_origine')}</Label>
                 <Select value={formData.country_of_origin} onValueChange={(v) => handleChange('country_of_origin', v)}>
                   <SelectTrigger data-testid="product-origin">
                     <SelectValue />
@@ -334,12 +335,12 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                 </Select>
               </div>
               <div>
-                <Label htmlFor="region_of_origin">Région (optionnel)</Label>
+                <Label htmlFor="region_of_origin">{i18n.t('adm.region_optionnel')}</Label>
                 <Input
                   id="region_of_origin"
                   value={formData.region_of_origin}
                   onChange={(e) => handleChange('region_of_origin', e.target.value)}
-                  placeholder="Ex: Bretagne"
+                  placeholder={i18n.t('adm.ex_bretagne')}
                 />
               </div>
             </div>
@@ -352,23 +353,23 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="dlc_days">DLC (jours)</Label>
+                <Label htmlFor="dlc_days">{i18n.t('adm.dlc_jours')}</Label>
                 <Input
                   id="dlc_days"
                   type="number"
                   min="0"
                   value={formData.dlc_days}
                   onChange={(e) => handleChange('dlc_days', e.target.value)}
-                  placeholder="Ex: 365"
+                  placeholder={i18n.t('adm.ex_365')}
                 />
               </div>
               <div>
-                <Label htmlFor="storage_conditions">Conditions de stockage</Label>
+                <Label htmlFor="storage_conditions">{i18n.t('adm.conditions_de_stockage')}</Label>
                 <Input
                   id="storage_conditions"
                   value={formData.storage_conditions}
                   onChange={(e) => handleChange('storage_conditions', e.target.value)}
-                  placeholder="Ex: Conserver au frais"
+                  placeholder={i18n.t('adm.ex_conserver_au_frais')}
                 />
               </div>
             </div>
@@ -377,7 +378,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
           {/* Zones */}
           <div className="space-y-4">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-              Zones de disponibilité *
+              {i18n.t('adm.zones_disponibilite_req')}
             </h3>
             <div className="flex flex-wrap gap-2">
               {ZONES.map(zone => (
@@ -394,7 +395,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
               ))}
             </div>
             {formData.available_zones.length === 0 && (
-              <p className="text-sm text-red-500">Sélectionnez au moins une zone</p>
+              <p className="text-sm text-red-500">{i18n.t('adm.selectionnez_au_moins_une_zone')}</p>
             )}
           </div>
 

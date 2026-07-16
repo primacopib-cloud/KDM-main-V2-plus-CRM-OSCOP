@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '../components/ui/input';
@@ -38,10 +39,10 @@ const AdminLoginPage = () => {
       if (!user?.is_admin) {
         // Not an admin account — log out immediately, don't leak session.
         authAPI.logout();
-        toast.error("Ce compte n'a pas les privilèges administrateur.");
+        toast.error(i18n.t('adm.ce_compte_n_a_pas'));
         return;
       }
-      toast.success('Bienvenue dans l\'espace administrateur');
+      toast.success(i18n.t('adm.bienvenue_dans_l_espace_administrateur'));
       navigate('/superadmin');
     } catch (error) {
       toast.error(error.message || 'Identifiants incorrects');
@@ -78,7 +79,7 @@ const AdminLoginPage = () => {
             data-testid="back-to-member-login-link"
           >
             <ArrowLeft className="w-4 h-4" />
-            Retour à la connexion membres
+            {i18n.t('adm.retour_connexion_membres')}
           </Link>
           <div className="flex items-center gap-3">
             <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
@@ -100,17 +101,16 @@ const AdminLoginPage = () => {
             }}
           >
             <Shield className="w-3 h-3" />
-            Espace Administrateur
+            {i18n.t('adm.espace_administrateur')}
           </span>
           <h1
             className="text-4xl xl:text-5xl font-serif font-semibold text-white leading-[1.05] mb-4"
             style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", serif' }}
           >
-            Console <span className="text-[#F5A623]">Super Admin</span> KDMARCHE × O&apos;SCOP
+            Console <span className="text-[#F5A623]">{i18n.t('adm.super_admin')}</span> KDMARCHE × O&apos;SCOP
           </h1>
           <p className="text-white/70 text-base leading-relaxed max-w-md mb-8">
-            Zone restreinte : administration de la Centrale Coopérative, réconciliation Stripe, validation
-            catalogues, ponts GED et Finance.
+            {i18n.t('adm.zone_restreinte_desc')}
           </p>
 
           <div
@@ -122,28 +122,27 @@ const AdminLoginPage = () => {
           >
             <AlertTriangle className="w-5 h-5 text-[#F5A623] flex-shrink-0 mt-0.5" />
             <p className="text-white/80 text-sm leading-relaxed">
-              Toute connexion et action administrateur est <strong className="text-white">journalisée</strong> pour
-              audit et conformité. L&apos;usage frauduleux est passible de poursuites.
+              {i18n.t('adm.toute_connexion_prefix')}<strong className="text-white">{i18n.t('adm.journalisee')}</strong>{i18n.t('adm.audit_conformite_suffix')}
             </p>
           </div>
 
           <ul className="mt-8 space-y-2.5 max-w-md text-sm text-white/60">
             <li className="flex items-center gap-2.5">
-              <KeyRound className="w-3.5 h-3.5 text-[#F5A623]" /> Authentification renforcée
+              <KeyRound className="w-3.5 h-3.5 text-[#F5A623]" /> {i18n.t('adm.authentification_renforcee')}
             </li>
             <li className="flex items-center gap-2.5">
-              <Terminal className="w-3.5 h-3.5 text-[#F5A623]" /> Console de gestion Centrale ESS
+              <Terminal className="w-3.5 h-3.5 text-[#F5A623]" /> {i18n.t('adm.console_gestion_centrale')}
             </li>
             <li className="flex items-center gap-2.5">
-              <ScrollText className="w-3.5 h-3.5 text-[#F5A623]" /> Audit trail complet · RGPD compliant
+              <ScrollText className="w-3.5 h-3.5 text-[#F5A623]" /> {i18n.t('adm.audit_trail_rgpd')}
             </li>
           </ul>
         </div>
 
         <div className="relative flex items-center gap-4 text-[11px] text-white/45">
-          <span>Session chiffrée · Journal d&apos;audit actif</span>
+          <span>{i18n.t('adm.session_chiffree_journal_d_audit')}</span>
           <span>·</span>
-          <span>© 2026 Centrale ESS</span>
+          <span>{i18n.t('adm.2026_centrale_ess')}</span>
         </div>
       </aside>
 
@@ -163,23 +162,23 @@ const AdminLoginPage = () => {
           <div className="w-full max-w-md">
             <div className="mb-8">
               <p className="text-xs uppercase tracking-[0.18em] text-[#4a1776] font-bold mb-2 flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5" /> Connexion Administrateur
+                <Shield className="w-3.5 h-3.5" /> {i18n.t('adm.connexion_administrateur')}
               </p>
               <h2
                 className="text-3xl font-serif font-semibold text-slate-900 mb-2"
                 style={{ fontFamily: '"Playfair Display", serif' }}
               >
-                Accès sécurisé
+                {i18n.t('adm.acces_securise')}
               </h2>
               <p className="text-slate-500 text-sm">
-                Réservé aux super-administrateurs de la Centrale KDMARCHE × O&apos;SCOP.
+                {i18n.t('adm.reserve_super_admins')}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5" data-testid="admin-login-form">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-slate-700 text-sm font-medium">
-                  Adresse e-mail administrateur
+                  {i18n.t('adm.adresse_email_admin')}
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -200,7 +199,7 @@ const AdminLoginPage = () => {
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="password" className="text-slate-700 text-sm font-medium">
-                    Mot de passe
+                    {i18n.t('adm.mot_de_passe')}
                   </Label>
                 </div>
                 <div className="relative">
@@ -239,11 +238,11 @@ const AdminLoginPage = () => {
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Vérification…
+                    <Loader2 className="w-4 h-4 animate-spin" /> {i18n.t('adm.verification')}
                   </>
                 ) : (
                   <>
-                    <LogIn className="w-4 h-4" /> Accès sécurisé
+                    <LogIn className="w-4 h-4" /> {i18n.t('adm.acces_securise')}
                   </>
                 )}
               </button>
@@ -257,10 +256,9 @@ const AdminLoginPage = () => {
               >
                 <AlertTriangle className="w-4 h-4 text-[#4a1776] flex-shrink-0 mt-0.5" />
                 <span>
-                  Cet écran est réservé aux <strong className="text-slate-900">super-administrateurs</strong>. Les
-                  comptes membres doivent utiliser la{' '}
+                  {i18n.t('adm.cet_ecran_reserve_prefix')}<strong className="text-slate-900">{i18n.t('adm.super_administrateurs')}</strong>{i18n.t('adm.comptes_membres_doivent')}{' '}
                   <Link to="/connexion" className="text-[#5B2E8C] font-medium hover:underline">
-                    connexion standard
+                    {i18n.t('adm.connexion_standard')}
                   </Link>
                   .
                 </span>

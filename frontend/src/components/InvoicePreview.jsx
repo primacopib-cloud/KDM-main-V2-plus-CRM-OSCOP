@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { replaceVariables, legalVariables, invoiceTemplate } from '../data/legalDocuments';
 import { CheckCircle2, Truck, FileText, CreditCard, Building2 } from 'lucide-react';
@@ -16,7 +17,7 @@ const InvoicePreview = ({
   const vars = { ...legalVariables, ...orderData };
   
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', { 
+    return new Intl.NumberFormat(i18n.language, { 
       style: 'currency', 
       currency: vars.DEVISE || 'EUR' 
     }).format(amount || 0);

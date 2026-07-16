@@ -64,7 +64,7 @@ export default function PassSpacePage() {
     setActivating(true);
     try {
       const r = await lolodriveAPI.simulatePassActivation();
-      toast.success(`PASS activé ! ${r.uc_granted} UC crédités. Valable jusqu'au ${new Date(r.ends_at).toLocaleDateString('fr-FR')}.`);
+      toast.success(`PASS activé ! ${r.uc_granted} UC crédités. Valable jusqu'au ${new Date(r.ends_at).toLocaleDateString(i18n.language)}.`);
       load();
     } catch (e) {
       toast.error(e.message);
@@ -172,7 +172,7 @@ export default function PassSpacePage() {
                       Expire dans {days} jours
                     </span>
                     <span className="text-white/40">
-                      ({new Date(data.pass.ends_at).toLocaleDateString('fr-FR')})
+                      ({new Date(data.pass.ends_at).toLocaleDateString(i18n.language)})
                     </span>
                   </div>
                   <div className="text-xs text-white/40 mt-2 max-w-md">
@@ -324,7 +324,7 @@ export default function PassSpacePage() {
                     <div>
                       <div className="text-sm font-medium">{reasonLabel(l.reason)}</div>
                       <div className="text-xs text-white/40">
-                        {new Date(l.created_at).toLocaleString('fr-FR')}
+                        {new Date(l.created_at).toLocaleString(i18n.language)}
                       </div>
                     </div>
                   </div>
@@ -367,7 +367,7 @@ export default function PassSpacePage() {
                       <div className="text-sm font-medium font-mono truncate">{o.order_number}</div>
                       <div className="text-xs text-white/40">
                         {o.fulfillment_type} · {i18n.t('orders.articles_count', { count: o.items?.length || 0 })} ·{' '}
-                        {new Date(o.created_at).toLocaleDateString('fr-FR')}
+                        {new Date(o.created_at).toLocaleDateString(i18n.language)}
                       </div>
                     </div>
                   </div>

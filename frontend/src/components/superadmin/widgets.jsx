@@ -1,10 +1,11 @@
+import i18n from '@/i18n';
 import {
   AlertTriangle, AlertCircle, Info, Clock, ShoppingCart, FileSignature,
   Building2, Package, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
 
 export const formatCurrency = (amount) =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount || 0);
+  new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'EUR' }).format(amount || 0);
 
 export const StatCard = ({ title, value, subtitle, icon: Icon, trend, trendValue, color = '#D9B35A', size = 'normal' }) => {
   const isPositive = trend === 'up';
@@ -89,7 +90,7 @@ export const ActivityItem = ({ activity }) => {
         <p className="text-xs text-white/50">{activity.details}</p>
       </div>
       <div className="text-xs text-white/40">
-        {activity.timestamp ? new Date(activity.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
+        {activity.timestamp ? new Date(activity.timestamp).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' }) : ''}
       </div>
     </div>
   );

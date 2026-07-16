@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { Button } from '../ui/button';
 import {
@@ -126,7 +127,7 @@ export const ConfirmStep = ({ step, signerInfo, loading, handleDecline, handleCo
                       {signerInfo?.first_name} {signerInfo?.last_name}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Signé le {new Date().toLocaleDateString('fr-FR')}
+                      Signé le {new Date().toLocaleDateString(i18n.language)}
                     </p>
                     <p className="text-xs text-[#4a1776] font-medium">
                       ✓ Vérifié par SMS
@@ -189,7 +190,7 @@ export const SuccessStep = ({ step, signatureResult, onClose }) => (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Date</span>
                   <span className="text-gray-900">
-                    {new Date(signatureResult.signed_at).toLocaleString('fr-FR')}
+                    {new Date(signatureResult.signed_at).toLocaleString(i18n.language)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">

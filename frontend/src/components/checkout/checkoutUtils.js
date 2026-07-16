@@ -1,10 +1,11 @@
 export const MIN_INSTALLMENT_CENTS = 550000;
 
+import i18n from '@/i18n';
 import { Package, Truck, FileSignature, CreditCard } from 'lucide-react';
 
 export const formatCurrency = (cents) => {
   if (!cents && cents !== 0) return '---';
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat(i18n.language, {
     style: 'currency',
     currency: 'EUR'
   }).format(cents / 100);

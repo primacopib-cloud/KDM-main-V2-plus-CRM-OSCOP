@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Bell, X, Check, CheckCheck, FileText, User, Building2, Wallet, AlertTriangle } from 'lucide-react';
 import { notificationsAPI } from '../services/api';
@@ -103,7 +104,7 @@ const NotificationsDropdown = ({ isAdmin = false }) => {
     if (diff < 60000) return 'À l\'instant';
     if (diff < 3600000) return `Il y a ${Math.floor(diff / 60000)} min`;
     if (diff < 86400000) return `Il y a ${Math.floor(diff / 3600000)} h`;
-    return date.toLocaleDateString('fr-FR');
+    return date.toLocaleDateString(i18n.language);
   };
 
   return (

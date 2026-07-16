@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { replaceVariables, legalVariables, invoiceTemplate } from '../data/legalDocuments';
 import { CheckCircle2, Truck, FileText, Building2, Calendar, Hash, MapPin, Package } from 'lucide-react';
@@ -13,7 +14,7 @@ const OrderFormPreview = ({
   signatureData = {
     clientName: '',
     clientTitle: '',
-    signatureDate: new Date().toLocaleDateString('fr-FR'),
+    signatureDate: new Date().toLocaleDateString(i18n.language),
     signatureLocation: ''
   },
   showStamp = true,
@@ -23,7 +24,7 @@ const OrderFormPreview = ({
   const vars = { ...legalVariables, ...orderData };
   
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', { 
+    return new Intl.NumberFormat(i18n.language, { 
       style: 'currency', 
       currency: vars.DEVISE || 'EUR' 
     }).format(amount || 0);
@@ -74,7 +75,7 @@ const OrderFormPreview = ({
             {/* Order Meta */}
             <div className="text-right text-white/80 text-sm space-y-1">
               <p>Commande n° <span className="font-mono text-white">{replaceVariables(vars.COMMANDE_REF || 'BC-XXXX-XXXX', vars)}</span></p>
-              <p>Date : <span className="font-mono text-white">{replaceVariables(vars.DATE_FACTURE || new Date().toLocaleDateString('fr-FR'), vars)}</span></p>
+              <p>Date : <span className="font-mono text-white">{replaceVariables(vars.DATE_FACTURE || new Date().toLocaleDateString(i18n.language), vars)}</span></p>
               <p>Zone : <span className="font-mono text-white">{vars.ZONE_CODE || 'N/A'}</span></p>
             </div>
           </div>

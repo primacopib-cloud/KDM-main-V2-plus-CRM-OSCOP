@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useEffect, useState } from 'react';
 import { X, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -83,18 +84,18 @@ export const OptionFormModal = ({ open, onClose, onSave, initialData, isEdit, pl
 
         <div className="p-5 space-y-4">
           <div>
-            <Label className="text-white/80">Nom de l&apos;option</Label>
+            <Label className="text-white/80">{i18n.t('adm.nom_de_l_option')}</Label>
             <Input
               data-testid="option-name-input"
               value={data.name}
               onChange={(e) => setData({ ...data, name: e.target.value })}
-              placeholder="ex. Zone supplémentaire"
+              placeholder={i18n.t('adm.ex_zone_supplementaire')}
               className="bg-white/5 border-white/10 text-white"
             />
           </div>
 
           <div>
-            <Label className="text-white/80">Description</Label>
+            <Label className="text-white/80">{i18n.t('adm.description')}</Label>
             <Textarea
               value={data.description || ''}
               onChange={(e) => setData({ ...data, description: e.target.value })}
@@ -105,7 +106,7 @@ export const OptionFormModal = ({ open, onClose, onSave, initialData, isEdit, pl
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-white/80">Prix (€)</Label>
+              <Label className="text-white/80">{i18n.t('adm.prix')}</Label>
               <Input
                 data-testid="option-price-input"
                 type="number"
@@ -116,19 +117,19 @@ export const OptionFormModal = ({ open, onClose, onSave, initialData, isEdit, pl
               />
             </div>
             <div>
-              <Label className="text-white/80">Période</Label>
+              <Label className="text-white/80">{i18n.t('adm.periode_2')}</Label>
               <select
                 value={data.period}
                 onChange={(e) => setData({ ...data, period: e.target.value })}
                 className="w-full px-3 py-2 rounded-md bg-white/5 border border-white/10 text-white"
               >
-                <option value="mois">mois</option>
+                <option value="mois">{i18n.t('adm.mois')}</option>
                 <option value="an">an</option>
-                <option value="unique">unique</option>
+                <option value="unique">{i18n.t('adm.unique')}</option>
               </select>
             </div>
             <div>
-              <Label className="text-white/80">Crédits inclus</Label>
+              <Label className="text-white/80">{i18n.t('adm.credits_inclus')}</Label>
               <Input
                 type="number"
                 value={data.credits_included}
@@ -172,7 +173,7 @@ export const OptionFormModal = ({ open, onClose, onSave, initialData, isEdit, pl
               checked={data.active}
               onCheckedChange={(v) => setData({ ...data, active: v })}
             />
-            <Label className="text-white/80">Active</Label>
+            <Label className="text-white/80">{i18n.t('adm.active')}</Label>
           </div>
         </div>
 

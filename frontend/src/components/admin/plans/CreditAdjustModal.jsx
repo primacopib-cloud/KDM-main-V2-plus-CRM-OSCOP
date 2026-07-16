@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useEffect, useState } from 'react';
 import { X, Coins, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,7 +25,7 @@ export const CreditAdjustModal = ({ open, onClose, onSave, user }) => {
   const handleSave = async () => {
     const amt = parseInt(amount);
     if (!amt || !reason) {
-      toast.error('Montant et raison sont requis');
+      toast.error(i18n.t('adm.montant_et_raison_sont_requis'));
       return;
     }
     setSaving(true);
@@ -49,7 +50,7 @@ export const CreditAdjustModal = ({ open, onClose, onSave, user }) => {
         style={{ background: '#0f1623', border: '1px solid rgba(217,179,90,0.3)' }}
       >
         <div className="flex items-center justify-between p-5 border-b border-white/10">
-          <h2 className="text-lg font-bold text-white">Ajuster crédits</h2>
+          <h2 className="text-lg font-bold text-white">{i18n.t('adm.ajuster_credits')}</h2>
           <button onClick={onClose} className="text-white/60 hover:text-white">
             <X className="w-5 h-5" />
           </button>
@@ -60,47 +61,47 @@ export const CreditAdjustModal = ({ open, onClose, onSave, user }) => {
             className="p-3 rounded-lg"
             style={{ background: 'rgba(217,179,90,0.08)' }}
           >
-            <div className="text-sm text-white/70">Utilisateur</div>
+            <div className="text-sm text-white/70">{i18n.t('adm.utilisateur')}</div>
             <div className="text-white font-medium">{user.email}</div>
             <div className="text-xs text-white/50">
               {user.company_name || '—'} · Solde actuel:{' '}
               <span className="text-[#D9B35A] font-bold">
-                {user.credits_balance} crédits
+                {user.credits_balance} {i18n.t('adm.credits_lc')}
               </span>
             </div>
           </div>
 
           <div>
             <Label className="text-white/80">
-              Montant (positif = ajout, négatif = déduction)
+              {i18n.t('adm.montant_positif_negatif')}
             </Label>
             <Input
               data-testid="credit-amount-input"
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="ex. 100 ou -50"
+              placeholder={i18n.t('adm.ex_100_ou_50')}
               className="bg-white/5 border-white/10 text-white"
             />
           </div>
 
           <div>
-            <Label className="text-white/80">Raison</Label>
+            <Label className="text-white/80">{i18n.t('adm.raison')}</Label>
             <Input
               data-testid="credit-reason-input"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="ex. Bonus fidélité"
+              placeholder={i18n.t('adm.ex_bonus_fidelite')}
               className="bg-white/5 border-white/10 text-white"
             />
           </div>
 
           <div>
-            <Label className="text-white/80">Référence (optionnel)</Label>
+            <Label className="text-white/80">{i18n.t('adm.reference_optionnel')}</Label>
             <Input
               value={reference}
               onChange={(e) => setReference(e.target.value)}
-              placeholder="ex. Facture #2025-001"
+              placeholder={i18n.t('adm.ex_facture_2025_001')}
               className="bg-white/5 border-white/10 text-white"
             />
           </div>

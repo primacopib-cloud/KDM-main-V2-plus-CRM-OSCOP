@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3,
@@ -9,20 +10,20 @@ import { ConnectionStatus } from '../NotificationToast';
 import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
 
 const NAV_LINKS = [
-  { to: '/', label: 'Accueil' },
-  { to: '/espace-acheteur', label: 'Espace Acheteur' },
-  { to: '/espace-vendeur', label: 'Espace Vendeur' },
-  { to: '/catalogue', label: 'Catalogue' },
-  { to: '/admin-v2', label: 'Admin Orgs' },
-  { to: '/admin/produits', label: 'Validation' },
+  { to: '/', label: i18n.t('adm.accueil') },
+  { to: '/espace-acheteur', label: i18n.t('adm.espace_acheteur') },
+  { to: '/espace-vendeur', label: i18n.t('adm.espace_vendeur') },
+  { to: '/catalogue', label: i18n.t('adm.catalogue') },
+  { to: '/admin-v2', label: i18n.t('adm.admin_orgs') },
+  { to: '/admin/produits', label: i18n.t('adm.validation') },
 ];
 
 const TABS = [
-  { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { value: 'stats', label: 'Statistiques', icon: BarChart3 },
-  { value: 'catalog', label: 'Catalogue', icon: Package },
-  { value: 'users', label: 'Utilisateurs', icon: Users },
-  { value: 'orders', label: 'Commandes', icon: ShoppingCart },
+  { value: 'dashboard', label: i18n.t('adm.dashboard'), icon: LayoutDashboard },
+  { value: 'stats', label: i18n.t('adm.statistiques'), icon: BarChart3 },
+  { value: 'catalog', label: i18n.t('adm.catalogue'), icon: Package },
+  { value: 'users', label: i18n.t('adm.utilisateurs'), icon: Users },
+  { value: 'orders', label: i18n.t('adm.commandes'), icon: ShoppingCart },
 ];
 
 export const SuperAdminHeader = ({
@@ -46,7 +47,7 @@ export const SuperAdminHeader = ({
         <div className="h-6 w-px bg-white/10" />
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-[#EF4444]" />
-          <span className="text-sm font-semibold text-white/90">Super Admin</span>
+          <span className="text-sm font-semibold text-white/90">{i18n.t('adm.super_admin')}</span>
         </div>
       </div>
 
@@ -73,11 +74,11 @@ export const SuperAdminHeader = ({
           onChange={(e) => setPeriod(e.target.value)}
           className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white/80"
         >
-          <option value="day">Aujourd&apos;hui</option>
-          <option value="week">Cette semaine</option>
-          <option value="month">Ce mois</option>
-          <option value="year">Cette année</option>
-          <option value="all">Tout</option>
+          <option value="day">{i18n.t('adm.aujourd_hui')}</option>
+          <option value="week">{i18n.t('adm.cette_semaine')}</option>
+          <option value="month">{i18n.t('adm.ce_mois')}</option>
+          <option value="year">{i18n.t('adm.cette_annee')}</option>
+          <option value="all">{i18n.t('adm.tout')}</option>
         </select>
 
         <Button
@@ -87,7 +88,7 @@ export const SuperAdminHeader = ({
           className="border-white/10 hover:bg-white/5"
         >
           <RefreshCw className="w-4 h-4 mr-1" />
-          Actualiser
+          {i18n.t('adm.actualiser')}
         </Button>
       </div>
     </div>

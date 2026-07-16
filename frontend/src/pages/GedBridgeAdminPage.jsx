@@ -10,6 +10,7 @@
  * Volontairement compacte : aucun refactor lourd, design aligné sur la charte
  * premium light (glass-panel, or métallisé, bleu logistique).
  */
+import i18n from '@/i18n';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -30,7 +31,7 @@ const STATUS_FILTERS = [
 function fmtDateTime(iso) {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString("fr-FR", {
+    return new Date(iso).toLocaleString(i18n.language, {
       day: "2-digit", month: "2-digit", year: "numeric",
       hour: "2-digit", minute: "2-digit", second: "2-digit",
     });

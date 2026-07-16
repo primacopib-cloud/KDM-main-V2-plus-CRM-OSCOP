@@ -10,6 +10,9 @@ import enApp from './locales/en-app.json';
 import es from './locales/es.json';
 import esSite from './locales/es-site.json';
 import esApp from './locales/es-app.json';
+import frAdmin from './locales/fr-admin.json';
+import enAdmin from './locales/en-admin.json';
+import esAdmin from './locales/es-admin.json';
 
 /**
  * KDMARCHÉ × O'SCOP — i18n scaffolding.
@@ -22,9 +25,9 @@ i18n
   .use(initReactI18next)
   .init({
     resources: {
-      fr: { translation: { ...fr, ...frSite, ...frApp } },
-      en: { translation: { ...en, ...enSite, ...enApp } },
-      es: { translation: { ...es, ...esSite, ...esApp } },
+      fr: { translation: { ...fr, ...frSite, ...frApp, ...frAdmin } },
+      en: { translation: { ...en, ...enSite, ...enApp, ...enAdmin } },
+      es: { translation: { ...es, ...esSite, ...esApp, ...esAdmin } },
     },
     fallbackLng: 'fr',
     supportedLngs: ['fr', 'en', 'es'],

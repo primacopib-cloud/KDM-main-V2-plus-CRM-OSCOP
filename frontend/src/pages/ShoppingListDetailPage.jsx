@@ -21,7 +21,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 function formatPrice(cents) {
   if (!cents) return '—';
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat(i18n.language, {
     style: 'currency',
     currency: 'EUR'
   }).format(cents / 100);

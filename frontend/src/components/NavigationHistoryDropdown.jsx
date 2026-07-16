@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -32,7 +33,7 @@ const formatRelativeTime = (timestamp) => {
   if (minutes < 60) return `Il y a ${minutes} min`;
   if (hours < 24) return `Il y a ${hours}h`;
   if (days < 7) return `Il y a ${days}j`;
-  return new Date(timestamp).toLocaleDateString('fr-FR');
+  return new Date(timestamp).toLocaleDateString(i18n.language);
 };
 
 export default function NavigationHistoryDropdown({ variant = 'dark' }) {

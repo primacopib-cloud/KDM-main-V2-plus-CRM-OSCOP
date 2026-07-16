@@ -160,5 +160,5 @@ export const getEmptyProduct = (category = 'alimentaire') => ({
 });
 
 export const formatPrice = (cents) => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format((cents || 0) / 100);
+  return new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'EUR' }).format((cents || 0) / 100);
 };

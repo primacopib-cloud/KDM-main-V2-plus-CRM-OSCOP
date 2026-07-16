@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '../components/ui/input';
@@ -47,7 +48,7 @@ const AdminPage = () => {
         setCurrentUser(userData);
         
         if (!userData.is_admin) {
-          toast.error('Accès réservé aux administrateurs');
+          toast.error(i18n.t('adm.acces_reserve_aux_administrateurs'));
           navigate('/dashboard');
           return;
         }
@@ -64,7 +65,7 @@ const AdminPage = () => {
       } catch (error) {
         console.error('Failed to load admin data:', error);
         if (error.message?.includes('403') || error.message?.includes('admin')) {
-          toast.error('Accès non autorisé');
+          toast.error(i18n.t('adm.acces_non_autorise'));
           navigate('/dashboard');
         }
       } finally {
@@ -80,7 +81,7 @@ const AdminPage = () => {
       const data = await adminAPI.getUsers(1, 20, searchTerm);
       setUsers(data);
     } catch (error) {
-      toast.error('Erreur lors de la recherche');
+      toast.error(i18n.t('adm.erreur_lors_de_la_recherche'));
     }
   };
 
@@ -89,7 +90,7 @@ const AdminPage = () => {
       const data = await adminAPI.getUsers(newPage, 20, searchTerm);
       setUsers(data);
     } catch (error) {
-      toast.error('Erreur lors du chargement');
+      toast.error(i18n.t('adm.erreur_lors_du_chargement'));
     }
   };
 
@@ -97,9 +98,9 @@ const AdminPage = () => {
     try {
       await adminAPI.updateQuoteStatus(quoteId, newStatus);
       setQuotes(prev => prev.map(q => q.id === quoteId ? { ...q, status: newStatus } : q));
-      toast.success('Statut mis à jour');
+      toast.success(i18n.t('adm.statut_mis_a_jour'));
     } catch (error) {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error(i18n.t('adm.erreur_lors_de_la_mise'));
     }
   };
 
@@ -110,9 +111,9 @@ const AdminPage = () => {
         ...prev,
         users: prev.users.map(u => u.id === userId ? { ...u, credits: u.credits + amount } : u)
       }));
-      toast.success(`Crédits ${amount > 0 ? 'ajoutés' : 'retirés'}`);
+      toast.success(amount > 0 ? i18n.t('adm.credits_ajoutes') : i18n.t('adm.credits_retires'));
     } catch (error) {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error(i18n.t('adm.erreur_lors_de_la_mise'));
     }
   };
 
@@ -125,9 +126,9 @@ const AdminPage = () => {
   }
 
   const tabs = [
-    { id: 'overview', label: 'Vue d\'ensemble', icon: TrendingUp },
-    { id: 'users', label: 'Utilisateurs', icon: Users },
-    { id: 'quotes', label: 'Demandes', icon: FileText },
+    { id: 'overview', label: i18n.t('adm.vue_d_ensemble'), icon: TrendingUp },
+    { id: 'users', label: i18n.t('adm.utilisateurs'), icon: Users },
+    { id: 'quotes', label: i18n.t('adm.demandes'), icon: FileText },
   ];
 
   return (
@@ -145,7 +146,7 @@ const AdminPage = () => {
           <div className="flex items-center gap-4">
             <Link to="/dashboard" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Retour</span>
+              <span className="text-sm">{i18n.t('adm.retour')}</span>
             </Link>
             <span className="badge-status text-xs bg-red-500/20 text-red-400 border-red-500/30">
               <Shield className="w-3 h-3" />
@@ -162,8 +163,8 @@ const AdminPage = () => {
 
       <div className="max-w-[1160px] mx-auto px-5 py-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">Administration</h1>
-          <p className="text-white/60 text-sm">Gérez les utilisateurs et les demandes de devis</p>
+          <h1 className="text-2xl font-bold mb-2">{i18n.t('adm.administration')}</h1>
+          <p className="text-white/60 text-sm">{i18n.t('adm.gerez_les_utilisateurs_et_les')}</p>
         </div>
 
         {/* Tabs */}
@@ -194,7 +195,7 @@ const AdminPage = () => {
                     <Users className="w-5 h-5 text-[#D9B35A]" />
                   </div>
                 </div>
-                <p className="text-xs text-white/60 mb-1">Utilisateurs</p>
+                <p className="text-xs text-white/60 mb-1">{i18n.t('adm.utilisateurs')}</p>
                 <p className="text-2xl font-bold">{stats.total_users}</p>
                 <p className="text-xs text-[#D4AF37] mt-1">+{stats.new_users_this_month} ce mois</p>
               </div>
@@ -205,7 +206,7 @@ const AdminPage = () => {
                     <FileText className="w-5 h-5 text-[#D4AF37]" />
                   </div>
                 </div>
-                <p className="text-xs text-white/60 mb-1">Demandes de devis</p>
+                <p className="text-xs text-white/60 mb-1">{i18n.t('adm.demandes_de_devis')}</p>
                 <p className="text-2xl font-bold">{stats.total_quotes}</p>
                 <p className="text-xs text-[#D4AF37] mt-1">+{stats.new_quotes_this_month} ce mois</p>
               </div>
@@ -216,7 +217,7 @@ const AdminPage = () => {
                     <TrendingUp className="w-5 h-5 text-blue-400" />
                   </div>
                 </div>
-                <p className="text-xs text-white/60 mb-1">Commandes</p>
+                <p className="text-xs text-white/60 mb-1">{i18n.t('adm.commandes')}</p>
                 <p className="text-2xl font-bold">{stats.total_orders}</p>
               </div>
 
@@ -226,33 +227,33 @@ const AdminPage = () => {
                     <Wallet className="w-5 h-5 text-purple-400" />
                   </div>
                 </div>
-                <p className="text-xs text-white/60 mb-1">Crédits distribués</p>
+                <p className="text-xs text-white/60 mb-1">{i18n.t('adm.credits_distribues')}</p>
                 <p className="text-2xl font-bold">{stats.total_credits_distributed}</p>
               </div>
             </div>
 
             {/* Quotes by Status */}
             <div className="glass-panel-soft rounded-[18px] p-5">
-              <h3 className="text-sm uppercase tracking-wider text-white/75 font-semibold mb-4">Demandes par statut</h3>
+              <h3 className="text-sm uppercase tracking-wider text-white/75 font-semibold mb-4">{i18n.t('adm.demandes_par_statut')}</h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4 text-yellow-400" />
-                    <span className="text-sm text-yellow-400 font-medium">En attente</span>
+                    <span className="text-sm text-yellow-400 font-medium">{i18n.t('adm.en_attente')}</span>
                   </div>
                   <p className="text-2xl font-bold">{stats.quotes_by_status?.pending || 0}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="w-4 h-4 text-blue-400" />
-                    <span className="text-sm text-blue-400 font-medium">Contacté</span>
+                    <span className="text-sm text-blue-400 font-medium">{i18n.t('adm.contacte')}</span>
                   </div>
                   <p className="text-2xl font-bold">{stats.quotes_by_status?.contacted || 0}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="w-4 h-4 text-[#D4AF37]" />
-                    <span className="text-sm text-[#D4AF37] font-medium">Converti</span>
+                    <span className="text-sm text-[#D4AF37] font-medium">{i18n.t('adm.converti')}</span>
                   </div>
                   <p className="text-2xl font-bold">{stats.quotes_by_status?.converted || 0}</p>
                 </div>
@@ -269,7 +270,7 @@ const AdminPage = () => {
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <Input
-                  placeholder="Rechercher par email, entreprise..."
+                  placeholder={i18n.t('adm.rechercher_par_email_entreprise')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearchUsers()}
@@ -287,12 +288,12 @@ const AdminPage = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-white/[0.08]">
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Entreprise</th>
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Contact</th>
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Email</th>
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Abonnement</th>
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Crédits</th>
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Actions</th>
+                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.entreprise')}</th>
+                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.contact')}</th>
+                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.email')}</th>
+                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.abonnement')}</th>
+                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.credits')}</th>
+                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -315,14 +316,14 @@ const AdminPage = () => {
                             <button 
                               onClick={() => handleUpdateCredits(user.id, 100)}
                               className="p-1.5 rounded-lg bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/30"
-                              title="Ajouter 100 crédits"
+                              title={i18n.t('adm.ajouter_100_credits')}
                             >
                               <Plus className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => handleUpdateCredits(user.id, -50)}
                               className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                              title="Retirer 50 crédits"
+                              title={i18n.t('adm.retirer_50_credits')}
                             >
                               <Minus className="w-4 h-4" />
                             </button>
@@ -369,27 +370,27 @@ const AdminPage = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/[0.08]">
-                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Date</th>
-                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Entreprise</th>
-                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Contact</th>
-                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Email</th>
-                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Formule</th>
-                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Statut</th>
-                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Actions</th>
+                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.date')}</th>
+                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.entreprise')}</th>
+                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.contact')}</th>
+                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.email')}</th>
+                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.formule')}</th>
+                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.statut')}</th>
+                    <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">{i18n.t('adm.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {quotes.map((quote) => (
                     <tr key={quote.id} className="border-b border-white/[0.04] hover:bg-white/[0.02]">
                       <td className="p-4 text-white/60 text-sm">
-                        {new Date(quote.created_at).toLocaleDateString('fr-FR')}
+                        {new Date(quote.created_at).toLocaleDateString(i18n.language)}
                       </td>
                       <td className="p-4 font-medium text-white/90">{quote.company}</td>
                       <td className="p-4 text-white/80">{quote.contact_name}</td>
                       <td className="p-4 text-white/80">{quote.email}</td>
                       <td className="p-4">
                         <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-white/[0.08] text-white/70">
-                          {quote.plan || 'Non spécifié'}
+                          {quote.plan || i18n.t('adm.non_specifie')}
                         </span>
                       </td>
                       <td className="p-4">
@@ -399,7 +400,7 @@ const AdminPage = () => {
                           'bg-yellow-500/20 text-yellow-400'
                         }`}>
                           {quote.status === 'converted' ? 'Converti' :
-                           quote.status === 'contacted' ? 'Contacté' : 'En attente'}
+                           quote.status === 'contacted' ? i18n.t('adm.contacte') : i18n.t('adm.en_attente')}
                         </span>
                       </td>
                       <td className="p-4">
@@ -408,7 +409,7 @@ const AdminPage = () => {
                             <button 
                               onClick={() => handleUpdateQuoteStatus(quote.id, 'contacted')}
                               className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
-                              title="Marquer comme contacté"
+                              title={i18n.t('adm.marquer_comme_contacte')}
                             >
                               <CheckCircle className="w-4 h-4" />
                             </button>
@@ -417,7 +418,7 @@ const AdminPage = () => {
                             <button 
                               onClick={() => handleUpdateQuoteStatus(quote.id, 'converted')}
                               className="p-1.5 rounded-lg bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/30"
-                              title="Marquer comme converti"
+                              title={i18n.t('adm.marquer_comme_converti')}
                             >
                               <CheckCircle className="w-4 h-4" />
                             </button>

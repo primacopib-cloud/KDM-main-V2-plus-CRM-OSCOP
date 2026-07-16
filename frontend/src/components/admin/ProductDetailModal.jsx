@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState } from 'react';
 import {
   Package, CheckCircle2, XCircle, Clock, Eye, Search, Filter,
@@ -19,11 +20,11 @@ import { toast } from 'sonner';
 export const getStatusBadge = (status) => {
   switch (status) {
     case 'pending_approval':
-      return <Badge className="bg-amber-100 text-amber-700 border-amber-200"><Clock className="w-3 h-3 mr-1" /> En attente</Badge>;
+      return <Badge className="bg-amber-100 text-amber-700 border-amber-200"><Clock className="w-3 h-3 mr-1" /> {i18n.t('adm.en_attente')}</Badge>;
     case 'approved':
-      return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200"><CheckCircle2 className="w-3 h-3 mr-1" /> Approuvé</Badge>;
+      return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200"><CheckCircle2 className="w-3 h-3 mr-1" /> {i18n.t('adm.approuve')}</Badge>;
     case 'rejected':
-      return <Badge className="bg-red-100 text-red-700 border-red-200"><XCircle className="w-3 h-3 mr-1" /> Rejeté</Badge>;
+      return <Badge className="bg-red-100 text-red-700 border-red-200"><XCircle className="w-3 h-3 mr-1" /> {i18n.t('adm.rejete')}</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -44,7 +45,7 @@ export const ProductDetailModal = ({ product, isOpen, onClose, onApprove, onReje
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
-      toast.error('Veuillez indiquer un motif de rejet');
+      toast.error(i18n.t('adm.veuillez_indiquer_un_motif_de'));
       return;
     }
     setLoading(true);
@@ -57,7 +58,7 @@ export const ProductDetailModal = ({ product, isOpen, onClose, onApprove, onReje
   if (!product) return null;
 
   const formatCurrency = (amount) => 
-    new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount || 0);
+    new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'EUR' }).format(amount || 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -68,7 +69,7 @@ export const ProductDetailModal = ({ product, isOpen, onClose, onApprove, onReje
             Validation du produit
           </DialogTitle>
           <DialogDescription>
-            Examinez les informations et décidez d'approuver ou de rejeter ce produit.
+            {i18n.t('adm.examinez_les_informations')}
           </DialogDescription>
         </DialogHeader>
 
@@ -86,15 +87,15 @@ export const ProductDetailModal = ({ product, isOpen, onClose, onApprove, onReje
                 {product.status === 'rejected' && <XCircle className="w-5 h-5 text-red-600" />}
                 <span className="font-medium">
                   {product.status === 'pending_approval' && 'En attente de validation'}
-                  {product.status === 'approved' && 'Produit approuvé'}
-                  {product.status === 'rejected' && 'Produit rejeté'}
+                  {product.status === 'approved' && i18n.t('adm.produit_approuve_2')}
+                  {product.status === 'rejected' && i18n.t('adm.produit_rejete_2')}
                 </span>
               </div>
               {getStatusBadge(product.status)}
             </div>
             {product.rejection_reason && (
               <p className="mt-2 text-sm text-red-700">
-                <strong>Motif:</strong> {product.rejection_reason}
+                <strong>{i18n.t('adm.motif')}</strong> {product.rejection_reason}
               </p>
             )}
           </div>
@@ -102,37 +103,37 @@ export const ProductDetailModal = ({ product, isOpen, onClose, onApprove, onReje
           {/* Product Info */}
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <Label className="text-gray-500">Nom du produit</Label>
+              <Label className="text-gray-500">{i18n.t('adm.nom_du_produit')}</Label>
               <p className="font-semibold text-lg">{product.name}</p>
             </div>
             <div>
-              <Label className="text-gray-500">SKU</Label>
+              <Label className="text-gray-500">{i18n.t('adm.sku')}</Label>
               <p className="font-mono">{product.sku}</p>
             </div>
             <div>
-              <Label className="text-gray-500">Catégorie</Label>
+              <Label className="text-gray-500">{i18n.t('adm.categorie')}</Label>
               <p className="capitalize">{product.category}</p>
             </div>
             <div className="col-span-2">
-              <Label className="text-gray-500">Description</Label>
+              <Label className="text-gray-500">{i18n.t('adm.description')}</Label>
               <p className="text-gray-700">{product.description || '—'}</p>
             </div>
           </div>
 
           {/* Pricing */}
           <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-semibold mb-3">Tarification</h4>
+            <h4 className="font-semibold mb-3">{i18n.t('adm.tarification')}</h4>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label className="text-gray-500">Prix HT</Label>
+                <Label className="text-gray-500">{i18n.t('adm.prix_ht')}</Label>
                 <p className="font-bold text-lg">{formatCurrency(product.price_ht)}</p>
               </div>
               <div>
-                <Label className="text-gray-500">TVA</Label>
+                <Label className="text-gray-500">{i18n.t('adm.tva')}</Label>
                 <p className="font-medium">{product.tva_rate}%</p>
               </div>
               <div>
-                <Label className="text-gray-500">Prix TTC</Label>
+                <Label className="text-gray-500">{i18n.t('adm.prix_ttc')}</Label>
                 <p className="font-bold text-lg text-purple-600">
                   {formatCurrency(product.price_ht * (1 + product.tva_rate / 100))}
                 </p>
@@ -143,20 +144,20 @@ export const ProductDetailModal = ({ product, isOpen, onClose, onApprove, onReje
           {/* Stock & Origin */}
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold mb-3">Stock</h4>
+              <h4 className="font-semibold mb-3">{i18n.t('adm.stock')}</h4>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-gray-500">Quantité</Label>
+                  <Label className="text-gray-500">{i18n.t('adm.quantite')}</Label>
                   <p className="font-bold">{product.stock_quantity}</p>
                 </div>
                 <div>
-                  <Label className="text-gray-500">Min. commande</Label>
+                  <Label className="text-gray-500">{i18n.t('adm.min_commande')}</Label>
                   <p>{product.min_order_quantity || 1}</p>
                 </div>
               </div>
             </div>
             <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold mb-3">Origine</h4>
+              <h4 className="font-semibold mb-3">{i18n.t('adm.origine')}</h4>
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{product.country_flag}</span>
                 <div>
@@ -171,7 +172,7 @@ export const ProductDetailModal = ({ product, isOpen, onClose, onApprove, onReje
 
           {/* Zones */}
           <div>
-            <Label className="text-gray-500">Zones de disponibilité</Label>
+            <Label className="text-gray-500">{i18n.t('adm.zones_de_disponibilite')}</Label>
             <div className="flex flex-wrap gap-2 mt-2">
               {product.available_zones?.map(zone => (
                 <Badge key={zone} variant="outline" className="bg-purple-50">
@@ -185,7 +186,7 @@ export const ProductDetailModal = ({ product, isOpen, onClose, onApprove, onReje
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="w-4 h-4 text-blue-600" />
-              <h4 className="font-semibold text-blue-900">Vendeur</h4>
+              <h4 className="font-semibold text-blue-900">{i18n.t('adm.vendeur')}</h4>
             </div>
             <p className="text-blue-800">{product.vendor_name || 'N/A'}</p>
             <p className="text-sm text-blue-600">{product.vendor_email || ''}</p>
@@ -194,11 +195,11 @@ export const ProductDetailModal = ({ product, isOpen, onClose, onApprove, onReje
           {/* Rejection Form */}
           {showRejectForm && (
             <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-              <Label className="text-red-700">Motif du rejet *</Label>
+              <Label className="text-red-700">{i18n.t('adm.motif_du_rejet')}</Label>
               <Textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Expliquez pourquoi ce produit est rejeté..."
+                placeholder={i18n.t('adm.expliquez_pourquoi_ce_produit_est')}
                 className="mt-2"
                 rows={3}
               />
@@ -242,7 +243,7 @@ export const ProductDetailModal = ({ product, isOpen, onClose, onApprove, onReje
             </>
           )}
           {product.status !== 'pending_approval' && (
-            <Button variant="outline" onClick={onClose}>Fermer</Button>
+            <Button variant="outline" onClick={onClose}>{i18n.t('adm.fermer')}</Button>
           )}
         </DialogFooter>
       </DialogContent>

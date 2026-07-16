@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
@@ -102,7 +103,7 @@ const VendorSpacePage = () => {
   );
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount || 0);
+    return new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'EUR' }).format(amount || 0);
   };
 
   if (loading) {
@@ -127,7 +128,7 @@ const VendorSpacePage = () => {
                 <Building2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Espace Vendeur</h1>
+                <h1 className="text-xl font-bold text-gray-900">{i18n.t('adm.espace_vendeur')}</h1>
                 <p className="text-sm text-gray-500">{dashboard?.company_name || 'Mon Entreprise'}</p>
               </div>
             </div>
@@ -158,7 +159,7 @@ const VendorSpacePage = () => {
                 data-testid="add-product-btn"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Nouveau produit</span>
+                <span className="hidden sm:inline">{i18n.t('adm.nouveau_produit')}</span>
               </Button>
             </div>
           </div>
@@ -190,7 +191,7 @@ const VendorSpacePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>Produits actifs</CardDescription>
+                  <CardDescription>{i18n.t('adm.produits_actifs')}</CardDescription>
                   <CardTitle className="text-3xl text-purple-600">
                     {dashboard?.products?.approved || 0}
                   </CardTitle>
@@ -204,37 +205,37 @@ const VendorSpacePage = () => {
               
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>En attente</CardDescription>
+                  <CardDescription>{i18n.t('adm.en_attente')}</CardDescription>
                   <CardTitle className="text-3xl text-amber-600">
                     {dashboard?.products?.pending || 0}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-500">produits à valider</p>
+                  <p className="text-sm text-gray-500">{i18n.t('adm.produits_a_valider')}</p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>Chiffre d&apos;affaires</CardDescription>
+                  <CardDescription>{i18n.t('adm.chiffre_d_affaires')}</CardDescription>
                   <CardTitle className="text-3xl text-emerald-600">
                     {formatCurrency(dashboard?.sales?.total_revenue || 0)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-500">total HT</p>
+                  <p className="text-sm text-gray-500">{i18n.t('adm.total_ht')}</p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>Commandes</CardDescription>
+                  <CardDescription>{i18n.t('adm.commandes')}</CardDescription>
                   <CardTitle className="text-3xl text-blue-600">
                     {dashboard?.sales?.order_count || 0}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-500">total</p>
+                  <p className="text-sm text-gray-500">{i18n.t('adm.total')}</p>
                 </CardContent>
               </Card>
             </div>
@@ -242,7 +243,7 @@ const VendorSpacePage = () => {
             {/* Recent Orders */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Commandes récentes</CardTitle>
+                <CardTitle className="text-lg">{i18n.t('adm.commandes_recentes')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {dashboard?.recent_orders?.length > 0 ? (
@@ -261,7 +262,7 @@ const VendorSpacePage = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-8">Aucune commande récente</p>
+                  <p className="text-gray-500 text-center py-8">{i18n.t('adm.aucune_commande_recente')}</p>
                 )}
               </CardContent>
             </Card>
@@ -277,7 +278,7 @@ const VendorSpacePage = () => {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <Input
-                        placeholder="Rechercher un produit..."
+                        placeholder={i18n.t('adm.rechercher_un_produit')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-10"
@@ -290,11 +291,11 @@ const VendorSpacePage = () => {
                       <SelectValue placeholder="Statut" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tous les statuts</SelectItem>
-                      <SelectItem value="pending_approval">En attente</SelectItem>
-                      <SelectItem value="approved">Approuvés</SelectItem>
-                      <SelectItem value="rejected">Rejetés</SelectItem>
-                      <SelectItem value="inactive">Inactifs</SelectItem>
+                      <SelectItem value="all">{i18n.t('adm.tous_les_statuts')}</SelectItem>
+                      <SelectItem value="pending_approval">{i18n.t('adm.en_attente')}</SelectItem>
+                      <SelectItem value="approved">{i18n.t('adm.approuves')}</SelectItem>
+                      <SelectItem value="rejected">{i18n.t('adm.rejetes')}</SelectItem>
+                      <SelectItem value="inactive">{i18n.t('adm.inactifs')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button variant="outline" onClick={fetchProducts}>
@@ -379,8 +380,8 @@ const VendorSpacePage = () => {
               <Card>
                 <CardContent className="py-12 text-center">
                   <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun produit</h3>
-                  <p className="text-gray-500 mb-4">Commencez par ajouter votre premier produit</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">{i18n.t('adm.aucun_produit')}</h3>
+                  <p className="text-gray-500 mb-4">{i18n.t('adm.commencez_par_ajouter_votre_premier')}</p>
                   <Button onClick={() => setIsFormOpen(true)} className="bg-purple-600 hover:bg-purple-700">
                     <Plus className="w-4 h-4 mr-2" />
                     Ajouter un produit
@@ -395,8 +396,8 @@ const VendorSpacePage = () => {
             <Card>
               <CardContent className="py-12 text-center">
                 <ShoppingCart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Commandes</h3>
-                <p className="text-gray-500">Les commandes de vos produits apparaîtront ici</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{i18n.t('adm.commandes')}</h3>
+                <p className="text-gray-500">{i18n.t('adm.les_commandes_de_vos_produits')}</p>
               </CardContent>
             </Card>
           </TabsContent>

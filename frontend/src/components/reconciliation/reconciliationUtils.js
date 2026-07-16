@@ -21,7 +21,7 @@ export const STATUS_FILTERS = [
 export const PAGE_SIZE = 25;
 
 export function formatEur(cents) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format((cents || 0) / 100);
+  return new Intl.NumberFormat(i18n.language, { style: "currency", currency: "EUR" }).format((cents || 0) / 100);
 }
 
 export function isoToday() {
@@ -37,7 +37,7 @@ export function isoNDaysAgo(n) {
 export function fmtDateTime(iso) {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString("fr-FR", {
+    return new Date(iso).toLocaleString(i18n.language, {
       day: "2-digit", month: "2-digit", year: "numeric",
       hour: "2-digit", minute: "2-digit",
     });

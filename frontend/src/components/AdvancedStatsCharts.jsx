@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import {
   LineChart,
@@ -49,7 +50,7 @@ const CustomTooltip = ({ active, payload, label }) => {
           <span className="text-white/80">{entry.name}:</span>
           <span className="font-semibold text-white">
             {typeof entry.value === 'number' 
-              ? entry.value.toLocaleString('fr-FR', { 
+              ? entry.value.toLocaleString(i18n.language, { 
                   style: entry.name.includes('CA') || entry.name.includes('revenue') ? 'currency' : 'decimal',
                   currency: 'EUR',
                   minimumFractionDigits: 0,
@@ -131,7 +132,7 @@ export default function AdvancedStatsCharts({ period = 'month' }) {
   }, [period]);
   
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('fr-FR', { 
+    return new Intl.NumberFormat(i18n.language, { 
       style: 'currency', 
       currency: 'EUR',
       minimumFractionDigits: 0,
@@ -164,7 +165,7 @@ export default function AdvancedStatsCharts({ period = 'month' }) {
         />
         <SummaryCard 
           label="Commandes"
-          value={stats?.summary?.total_orders?.toLocaleString('fr-FR') || '0'}
+          value={stats?.summary?.total_orders?.toLocaleString(i18n.language) || '0'}
           color="#3B82F6"
         />
         <SummaryCard 
@@ -174,7 +175,7 @@ export default function AdvancedStatsCharts({ period = 'month' }) {
         />
         <SummaryCard 
           label="Nouveaux utilisateurs"
-          value={stats?.summary?.total_new_users?.toLocaleString('fr-FR') || '0'}
+          value={stats?.summary?.total_new_users?.toLocaleString(i18n.language) || '0'}
           color="#8B5CF6"
         />
       </div>

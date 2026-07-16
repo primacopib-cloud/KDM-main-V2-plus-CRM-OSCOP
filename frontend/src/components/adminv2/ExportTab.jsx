@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { Calendar, Download, Filter, Loader2, Building2, FileText, Package, Wallet, Eye, Users } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -26,8 +27,8 @@ export const ExportTab = ({
                     <Download className="w-5 h-5 text-[#D9B35A]" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Export des données</h3>
-                    <p className="text-sm text-white/50">Téléchargez les données au format CSV (Excel compatible)</p>
+                    <h3 className="font-semibold">{i18n.t('adm.export_des_donnees')}</h3>
+                    <p className="text-sm text-white/50">{i18n.t('adm.telechargez_les_donnees_au_format')}</p>
                   </div>
                 </div>
                 
@@ -51,7 +52,7 @@ export const ExportTab = ({
                   <PopoverContent className="w-80 bg-[#0a0d14] border-white/10 text-white" align="end">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-sm">Filtres d'export</h4>
+                        <h4 className="font-semibold text-sm">{i18n.t('adm.filtres_d_export')}</h4>
                         {hasActiveFilters && (
                           <Button
                             variant="ghost"
@@ -60,13 +61,13 @@ export const ExportTab = ({
                             className="h-auto p-1 text-xs text-white/50 hover:text-white"
                           >
                             <X className="w-3 h-3 mr-1" />
-                            Réinitialiser
+                            {i18n.t('adm.reinitialiser')}
                           </Button>
                         )}
                       </div>
                       
                       <div className="space-y-2">
-                        <Label className="text-xs text-white/60">Date de début</Label>
+                        <Label className="text-xs text-white/60">{i18n.t('adm.date_de_debut')}</Label>
                         <Input
                           type="date"
                           value={exportFilters.dateFrom}
@@ -77,7 +78,7 @@ export const ExportTab = ({
                       </div>
                       
                       <div className="space-y-2">
-                        <Label className="text-xs text-white/60">Date de fin</Label>
+                        <Label className="text-xs text-white/60">{i18n.t('adm.date_de_fin')}</Label>
                         <Input
                           type="date"
                           value={exportFilters.dateTo}
@@ -88,29 +89,29 @@ export const ExportTab = ({
                       </div>
                       
                       <div className="space-y-2">
-                        <Label className="text-xs text-white/60">Statut</Label>
+                        <Label className="text-xs text-white/60">{i18n.t('adm.statut')}</Label>
                         <Select 
                           value={exportFilters.statusFilter} 
                           onValueChange={(value) => setExportFilters(prev => ({ ...prev, statusFilter: value === 'all' ? '' : value }))}
                         >
                           <SelectTrigger className="bg-white/[0.04] border-white/10 text-white" data-testid="export-status-filter">
-                            <SelectValue placeholder="Tous les statuts" />
+                            <SelectValue placeholder={i18n.t('adm.tous_les_statuts')} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">Tous les statuts</SelectItem>
-                            <SelectItem value="DRAFT">Brouillon</SelectItem>
-                            <SelectItem value="SUBMITTED">Soumis</SelectItem>
-                            <SelectItem value="PENDING_REVIEW">En révision</SelectItem>
-                            <SelectItem value="APPROVED">Approuvé</SelectItem>
-                            <SelectItem value="REJECTED">Rejeté</SelectItem>
-                            <SelectItem value="SUSPENDED">Suspendu</SelectItem>
+                            <SelectItem value="all">{i18n.t('adm.tous_les_statuts')}</SelectItem>
+                            <SelectItem value="DRAFT">{i18n.t('adm.brouillon')}</SelectItem>
+                            <SelectItem value="SUBMITTED">{i18n.t('adm.soumis')}</SelectItem>
+                            <SelectItem value="PENDING_REVIEW">{i18n.t('adm.en_revision')}</SelectItem>
+                            <SelectItem value="APPROVED">{i18n.t('adm.approuve')}</SelectItem>
+                            <SelectItem value="REJECTED">{i18n.t('adm.rejete')}</SelectItem>
+                            <SelectItem value="SUSPENDED">{i18n.t('adm.suspendu')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       
                       <div className="pt-2 border-t border-white/[0.08]">
                         <p className="text-xs text-white/40">
-                          Les filtres s'appliquent à tous les exports. Laissez vide pour exporter toutes les données.
+                          {i18n.t('adm.filtres_s_appliquent')}
                         </p>
                       </div>
                     </div>
@@ -121,7 +122,7 @@ export const ExportTab = ({
               {/* Active Filters Display */}
               {hasActiveFilters && (
                 <div className="mb-4 flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-white/50">Filtres actifs:</span>
+                  <span className="text-xs text-white/50">{i18n.t('adm.filtres_actifs')}</span>
                   {exportFilters.dateFrom && (
                     <Badge variant="outline" className="text-xs border-[#D9B35A]/30 text-[#D9B35A]">
                       <Calendar className="w-3 h-3 mr-1" />
@@ -131,7 +132,7 @@ export const ExportTab = ({
                   {exportFilters.dateTo && (
                     <Badge variant="outline" className="text-xs border-[#D9B35A]/30 text-[#D9B35A]">
                       <Calendar className="w-3 h-3 mr-1" />
-                      Jusqu'à: {exportFilters.dateTo}
+                      {i18n.t('adm.jusqu_a')} {exportFilters.dateTo}
                     </Badge>
                   )}
                   {exportFilters.statusFilter && (
@@ -168,7 +169,7 @@ export const ExportTab = ({
                             </div>
                             <div>
                               <p className="font-medium text-white/90">{exp.label}</p>
-                              <p className="text-xs text-white/40">{exp.count} entrées</p>
+                              <p className="text-xs text-white/40">{exp.count} {i18n.t('adm.entrees')}</p>
                             </div>
                           </div>
                         </div>
@@ -189,7 +190,7 @@ export const ExportTab = ({
                           ) : (
                             <>
                               <Download className="w-4 h-4 mr-2" />
-                              Télécharger CSV
+                              {i18n.t('adm.telecharger_csv')}
                             </>
                           )}
                         </Button>
@@ -200,14 +201,13 @@ export const ExportTab = ({
               ) : (
                 <div className="text-center py-8 text-white/50">
                   <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin" />
-                  <p>Chargement des options d'export...</p>
+                  <p>{i18n.t('adm.chargement_des_options_d_export')}</p>
                 </div>
               )}
 
               <div className="mt-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
                 <p className="text-sm text-blue-400">
-                  <strong>Note:</strong> Les fichiers CSV sont encodés en UTF-8 avec BOM et utilisent le point-virgule (;) 
-                  comme séparateur pour une compatibilité optimale avec Excel français.
+                  <strong>{i18n.t('adm.note')}</strong> {i18n.t('adm.csv_note_desc')}
                 </p>
               </div>
             </div>

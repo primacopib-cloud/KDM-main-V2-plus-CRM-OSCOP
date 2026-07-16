@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -284,7 +285,7 @@ export default function LoloPointManagerPage() {
                     <div className="min-w-0">
                       <div className="text-sm font-medium font-mono">{o.order_number}</div>
                       <div className="text-xs text-white/40">
-                        {o.fulfillment_type} · {o.items?.length || 0} art. · {new Date(o.created_at).toLocaleString('fr-FR')}
+                        {o.fulfillment_type} · {o.items?.length || 0} art. · {new Date(o.created_at).toLocaleString(i18n.language)}
                       </div>
                     </div>
                   </div>

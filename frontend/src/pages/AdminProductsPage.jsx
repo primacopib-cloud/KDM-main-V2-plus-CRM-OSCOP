@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import {
   Package, CheckCircle2, XCircle, Clock, Eye, Search, Filter,
@@ -90,14 +91,14 @@ const AdminProductsPage = () => {
         method: 'POST'
       });
       if (response.ok) {
-        toast.success('Produit approuvé !');
+        toast.success(i18n.t('adm.produit_approuve'));
         fetchProducts('pending_approval');
       } else {
         const error = await response.json();
         toast.error(error.detail || 'Erreur lors de l\'approbation');
       }
     } catch (error) {
-      toast.error('Erreur de connexion');
+      toast.error(i18n.t('adm.erreur_de_connexion'));
     }
   };
 
@@ -110,14 +111,14 @@ const AdminProductsPage = () => {
         body: JSON.stringify({ reason })
       });
       if (response.ok) {
-        toast.success('Produit rejeté');
+        toast.success(i18n.t('adm.produit_rejete'));
         fetchProducts('pending_approval');
       } else {
         const error = await response.json();
         toast.error(error.detail || 'Erreur lors du rejet');
       }
     } catch (error) {
-      toast.error('Erreur de connexion');
+      toast.error(i18n.t('adm.erreur_de_connexion'));
     }
   };
 
@@ -129,7 +130,7 @@ const AdminProductsPage = () => {
   );
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount || 0);
+    new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'EUR' }).format(amount || 0);
 
   if (loading) {
     return (
@@ -152,8 +153,8 @@ const AdminProductsPage = () => {
                 <Package className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Validation des Produits</h1>
-                <p className="text-sm text-gray-500">Administration KDMARCHE</p>
+                <h1 className="text-xl font-bold text-gray-900">{i18n.t('adm.validation_des_produits')}</h1>
+                <p className="text-sm text-gray-500">{i18n.t('adm.administration_kdmarche')}</p>
               </div>
             </div>
             
@@ -172,7 +173,7 @@ const AdminProductsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="cursor-pointer hover:shadow-md" onClick={() => setActiveTab('pending')}>
             <CardHeader className="pb-2">
-              <CardDescription>En attente</CardDescription>
+              <CardDescription>{i18n.t('adm.en_attente')}</CardDescription>
               <CardTitle className="text-3xl text-amber-600">
                 {stats.pending_approval || pendingCount || 0}
               </CardTitle>
@@ -180,7 +181,7 @@ const AdminProductsPage = () => {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Approuvés (total)</CardDescription>
+              <CardDescription>{i18n.t('adm.approuves_total')}</CardDescription>
               <CardTitle className="text-3xl text-emerald-600">
                 {vendors.reduce((sum, v) => sum + (v.products?.approved || 0), 0)}
               </CardTitle>
@@ -188,7 +189,7 @@ const AdminProductsPage = () => {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Vendeurs actifs</CardDescription>
+              <CardDescription>{i18n.t('adm.vendeurs_actifs')}</CardDescription>
               <CardTitle className="text-3xl text-blue-600">
                 {vendors.filter(v => v.status === 'approved').length}
               </CardTitle>
@@ -196,7 +197,7 @@ const AdminProductsPage = () => {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Total vendeurs</CardDescription>
+              <CardDescription>{i18n.t('adm.total_vendeurs')}</CardDescription>
               <CardTitle className="text-3xl text-purple-600">
                 {vendors.length}
               </CardTitle>
@@ -211,10 +212,10 @@ const AdminProductsPage = () => {
                 <Clock className="w-4 h-4" /> En attente
               </TabsTrigger>
               <TabsTrigger value="approved" className="gap-2">
-                <CheckCircle2 className="w-4 h-4" /> Approuvés
+                <CheckCircle2 className="w-4 h-4" /> {i18n.t('adm.approuves')}
               </TabsTrigger>
               <TabsTrigger value="rejected" className="gap-2">
-                <XCircle className="w-4 h-4" /> Rejetés
+                <XCircle className="w-4 h-4" /> {i18n.t('adm.rejetes')}
               </TabsTrigger>
             </TabsList>
 
@@ -222,7 +223,7 @@ const AdminProductsPage = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="Rechercher..."
+                  placeholder={i18n.t('adm.rechercher')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 w-64"
@@ -281,7 +282,7 @@ const AdminProductsPage = () => {
 
                           {product.rejection_reason && (
                             <div className="mt-2 p-2 bg-red-50 rounded text-sm text-red-700">
-                              <strong>Motif:</strong> {product.rejection_reason}
+                              <strong>{i18n.t('adm.motif')}</strong> {product.rejection_reason}
                             </div>
                           )}
                         </div>
@@ -295,7 +296,7 @@ const AdminProductsPage = () => {
                               setIsDetailOpen(true);
                             }}
                           >
-                            <Eye className="w-4 h-4 mr-1" /> Détails
+                            <Eye className="w-4 h-4 mr-1" /> {i18n.t('adm.details')}
                           </Button>
                           
                           {product.status === 'pending_approval' && (
@@ -320,12 +321,12 @@ const AdminProductsPage = () => {
                 <CardContent className="py-12 text-center">
                   <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {activeTab === 'pending' ? 'Aucun produit en attente' :
-                     activeTab === 'approved' ? 'Aucun produit approuvé' :
-                     'Aucun produit rejeté'}
+                    {activeTab === 'pending' ? i18n.t('adm.aucun_produit_en_attente') :
+                     activeTab === 'approved' ? i18n.t('adm.aucun_produit_approuve') :
+                     i18n.t('adm.aucun_produit_rejete')}
                   </h3>
                   <p className="text-gray-500">
-                    {activeTab === 'pending' && 'Tous les produits ont été traités'}
+                    {activeTab === 'pending' && i18n.t('adm.tous_les_produits_traites')}
                   </p>
                 </CardContent>
               </Card>

@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { Plus, Pencil, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { formatPrice } from './shared';
@@ -23,12 +24,12 @@ export const OptionsTab = ({ options, onCreate, onEdit, onDelete }) => (
       <table className="w-full text-sm">
         <thead style={{ background: 'rgba(255,255,255,0.05)' }}>
           <tr className="text-left text-white/60">
-            <th className="p-3">Nom</th>
-            <th className="p-3">Prix</th>
-            <th className="p-3">Crédits inclus</th>
-            <th className="p-3">Plans compatibles</th>
-            <th className="p-3">Statut</th>
-            <th className="p-3 text-right">Actions</th>
+            <th className="p-3">{i18n.t('adm.nom')}</th>
+            <th className="p-3">{i18n.t('adm.prix_2')}</th>
+            <th className="p-3">{i18n.t('adm.credits_inclus')}</th>
+            <th className="p-3">{i18n.t('adm.plans_compatibles')}</th>
+            <th className="p-3">{i18n.t('adm.statut')}</th>
+            <th className="p-3 text-right">{i18n.t('adm.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -85,7 +86,7 @@ export const OptionsTab = ({ options, onCreate, onEdit, onDelete }) => (
           {options.length === 0 && (
             <tr>
               <td colSpan={6} className="p-8 text-center text-white/50">
-                Aucune option créée
+                {i18n.t('adm.aucune_option_creee')}
               </td>
             </tr>
           )}

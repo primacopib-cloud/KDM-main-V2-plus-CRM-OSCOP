@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import {
   Bell, FileText, User, Building2, Wallet, AlertTriangle, ShoppingCart,
@@ -63,7 +64,7 @@ export const formatDate = (dateStr) => {
   if (diff < 3600000) return `Il y a ${Math.floor(diff / 60000)} min`;
   if (diff < 86400000) return `Il y a ${Math.floor(diff / 3600000)}h`;
   
-  return date.toLocaleDateString('fr-FR', {
+  return date.toLocaleDateString(i18n.language, {
     day: 'numeric',
     month: 'short',
     year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,

@@ -33,7 +33,7 @@ import { ShoppingListFilters } from '../components/shopping-lists/ShoppingListFi
 
 function formatPrice(cents) {
   if (!cents) return '—';
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat(i18n.language, {
     style: 'currency',
     currency: 'EUR'
   }).format(cents / 100);

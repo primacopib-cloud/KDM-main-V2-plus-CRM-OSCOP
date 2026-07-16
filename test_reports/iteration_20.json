@@ -1,0 +1,40 @@
+{
+  "summary": "Frontend-only i18n Phase B (admin/superadmin/vendor/lolodrive) EN validation on preview URL. Found 1 CRITICAL crash on /admin/plans?lang=en ('i18n is not defined' runtime error in PlansTab.jsx) and 1 wrong-route note for lolodrive, plus multiple partial-translation gaps on Vendor space, Product Validation, and Lolodrive dashboard. Currency/date localisation confirmed working on /superadmin and /espace-acheteur (€69.44, Jul 16). Iteration 19 BuyerDashboardTab issues are resolved.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AdminPlansPage / PlansTab.jsx", "issue": "CRITICAL: /admin/plans?lang=en renders BLANK due to uncaught runtime error 'ReferenceError: i18n is not defined' thrown from PlansTab.jsx lines 60/77/102 (uses i18n.t(...) without importing i18n). Whole Plans/Options/Credits screen crashes. Fix: `import i18n from 'i18next';` at top of /app/frontend/src/components/admin/plans/PlansTab.jsx (and audit siblings CreditsTab/OptionsTab/PlanFormModal/OptionFormModal/CreditAdjustModal for same pattern).", "selector": "/admin/plans page body (empty)", "priority": "CRITICAL"},
+      {"component": "Route /lolodrive/admin", "issue": "The URL requested in the task (/lolodrive/admin?lang=en) is NOT registered in App.js. Only '/lolodrive' and '/lolodrive/dashboard' exist (App.js lines 144-145). No route matched -> React Router warning + blank page (only 'Retour' visible).", "selector": "App.js Route mapping", "priority": "HIGH"},
+      {"component": "LolodriveAdminDashboardPage (/lolodrive?lang=en)", "issue": "Route DOES render but only partially translated. FR leaks in EN mode: subtitle 'Pilotage global LOLODRIVE by O'SCOP — moteur transactionnel V2 + couche relationnelle CRM.', button 'Actualiser' (should be Refresh), KPI 'Commandes (30 days)', suffix '3 commande(s)', alert '11 commande(s) payée(s) en attente >2h', orders list 'DRIVE · 1 article(s) · 3.70 €', CRM label 'Partenaires', footer 'Mentions légales / Charte ESS / Plateforme coopérative ESS'. Also currency shown as '11.10 €' (FR format with space + € suffix) instead of '€11.10' — indicates this page's formatters are NOT using i18n.language.", "selector": "/lolodrive dashboard body", "priority": "HIGH"},
+      {"component": "VendorSpacePage (/espace-vendeur?lang=en)", "issue": "Inner tab bar still fully French: 'Tableau de bord / Mes produits / Commandes'. Also a legacy secondary nav shows 'Accueil / Espace Acheteur / Catalogue / Admin' (mixing FR labels). Header/breadcrumb 'Vendor Space' is fine.", "selector": "vendor space tabs", "priority": "HIGH"},
+      {"component": "AdminProductsPage (/admin/produits?lang=en)", "issue": "Residual FR: page header badge '1 en attente', filter tab labelled 'En attente' (a second tab is correctly 'Approved'), row action button 'Approuver' still French. 'TVA: 5.5%' left as-is (French tax abbreviation; consider 'VAT' in EN).", "selector": "products validation table", "priority": "MEDIUM"},
+      {"component": "AdminLoginPage & shared admin layout", "issue": "A floating back button labelled 'Retour' (French) is rendered on EVERY admin route in EN mode (/admin/connexion, /superadmin, /admin/plans, /admin-v2, /admin/produits, /espace-vendeur, /lolodrive). The proper localized 'Back to member login' text is shown alongside it on the login page, so this appears to be a shared legacy button not passed through i18next.", "selector": ".back-button / top-left 'Retour'", "priority": "MEDIUM"},
+      {"component": "/espace-acheteur?lang=en", "issue": "Price suffix 'TTC' (French for 'incl. VAT') still shown next to '€69.44 TTC' in Recent orders. Should be 'incl. VAT' or removed in EN.", "selector": "recent-orders price cell", "priority": "LOW"},
+      {"component": "Console noise on /espace-acheteur?lang=en", "issue": "Dozens of minified console errors 'qt' fire on buyer space load. Not blocking UI but worth investigating (likely a component throwing inside a try/catch swallow).", "selector": "browser console", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_20.json"],
+  "action_items": [
+    "FIX CRITICAL: Add `import i18n from 'i18next';` to /app/frontend/src/components/admin/plans/PlansTab.jsx (lines 60,77,102 reference i18n). Audit other files under components/admin/plans/ for the same missing import.",
+    "Clarify route: task expected /lolodrive/admin but App.js only exposes /lolodrive and /lolodrive/dashboard. Either add a /lolodrive/admin alias or update the task doc.",
+    "Translate LolodriveAdminDashboardPage strings: subtitle, 'Actualiser', 'Commandes (30 days)', pluralised 'commande(s)/article(s)', operational-alerts message, CRM 'Partenaires', footer legal links. Also route the number/currency formatter through i18n.language (page currently outputs '11.10 €' regardless of lang).",
+    "Translate VendorSpacePage inner tabs ('Tableau de bord', 'Mes produits', 'Commandes') and the mixed FR/EN sub-navigation.",
+    "AdminProductsPage: translate '1 en attente' header badge, 'En attente' filter tab, 'Approuver' row action button; consider TVA -> VAT.",
+    "Shared admin layout: route the sticky 'Retour' back button through i18next (t('common.back') or similar).",
+    "Minor: replace 'TTC' with the i18n-friendly 'incl. VAT' suffix on buyer order rows."
+  ],
+  "critical_code_review_comments": [
+    "PlansTab.jsx pattern of calling `i18n.t(...)` directly (rather than via `useTranslation()` hook) requires an explicit `import i18n from 'i18next'` — the import is missing here. Prefer `const { t } = useTranslation()` everywhere to prevent this class of bug from recurring; grep for other files that use `i18n.t(` without a matching import.",
+    "Currency/date formatting refactor (fr-FR -> i18n.language) is partially applied: /superadmin and /espace-acheteur are correct, but /lolodrive still emits French-style '11.10 €'. Suggest a shared `formatMoney(amount)` helper that reads i18n.language once, then replace remaining raw `toLocaleString('fr-FR', ...)` / string concatenations."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped per request)", "frontend": "~55% (Admin login EN, SuperAdmin EN, Admin V2 EN, currency/date fixes all pass; Plans crashes, Vendor/Products/Lolodrive have significant FR residuals)"},
+  "test_credentials": "Super Admin admin@kdmarche-oscop.fr / AdminKDM2025! and Buyer acheteur-pro@kdmarche.fr / Demo2026! — both logged in successfully.",
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "VERIFIED PASS in EN: /admin/connexion (Restricted area, Administrator Login, Secure access all translated), /superadmin (all tabs Dashboard/Statistics/Catalog/Users/Orders, KPI cards Revenue/Orders/Users/Organizations/Products/Wallet Credits + subtitles '0 active', '0 pending', '0 low stock', Sales & Orders, Users & Organizations, Alerts, Recent activity, Quick actions all EN; currency €0.00 EN format), /admin-v2 (B2B Administration, Applications, Organizations, Export CSV, Pending/Approved/Rejected all EN), /espace-acheteur (Jul 16, 1 item(s), Pending, €69.44 — iter 19 issues FIXED). FR landing / regression OK. No raw 'adm.xxx' keys observed anywhere. FAILURES: /admin/plans crashes (i18n undefined), /lolodrive/admin route missing, /lolodrive dashboard partly FR, /espace-vendeur inner tabs FR, /admin/produits residual FR words ('Approuver','En attente','1 en attente'), floating 'Retour' button on every admin page.",
+  "rca of the issue": "PlansTab.jsx crash: file uses `i18n.t(...)` API but does not `import i18n from 'i18next'` — React catches the ReferenceError which unmounts the whole /admin/plans tree, resulting in a blank body. Fix by adding the import (or switching to `useTranslation()` hook). Route /lolodrive/admin: not defined in App.js — route registry only knows '/lolodrive' and '/lolodrive/dashboard'; the specification URL is stale."
+}

@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { partners } from '../data/mock';
@@ -167,7 +168,7 @@ const StatsPage = () => {
                       <div>
                         <p className="font-medium text-white/90">{order.items_count} article(s)</p>
                         <p className="text-xs text-white/50">
-                          {new Date(order.date).toLocaleDateString('fr-FR')}
+                          {new Date(order.date).toLocaleDateString(i18n.language)}
                         </p>
                       </div>
                     </div>
@@ -223,7 +224,7 @@ const StatsPage = () => {
                       <div>
                         <p className="text-sm text-white/80">{item.description || (item.type === 'added' ? 'Ajout' : 'Utilisation')}</p>
                         <p className="text-xs text-white/40">
-                          {new Date(item.date).toLocaleDateString('fr-FR')}
+                          {new Date(item.date).toLocaleDateString(i18n.language)}
                         </p>
                       </div>
                     </div>

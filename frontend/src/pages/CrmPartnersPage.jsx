@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import {
   HeartHandshake, Building2, Activity, Briefcase, RefreshCw, Search, Plus,
@@ -183,7 +184,7 @@ export default function CrmPartnersPage() {
                             )}
                             {o.montant_estime_cents && (
                               <div className="text-[10px] text-white/50 mt-1">
-                                {(o.montant_estime_cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                                {(o.montant_estime_cents / 100).toLocaleString(i18n.language, { style: 'currency', currency: 'EUR' })}
                               </div>
                             )}
                           </div>
@@ -280,7 +281,7 @@ export default function CrmPartnersPage() {
                     {t.title}
                   </div>
                   {t.description && <div className="text-xs text-white/40">{t.description}</div>}
-                  {t.due_at && <div className="text-xs text-white/40 mt-1">📅 {new Date(t.due_at).toLocaleDateString('fr-FR')}</div>}
+                  {t.due_at && <div className="text-xs text-white/40 mt-1">📅 {new Date(t.due_at).toLocaleDateString(i18n.language)}</div>}
                 </div>
                 <div className="flex gap-1">
                   <Badge color={t.priority === 'high' ? '#ef4444' : '#D9B35A'}>{t.priority}</Badge>

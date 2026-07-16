@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Truck, Package, CheckCircle2, Clock, RefreshCw, ScanLine, AlertCircle,
@@ -283,7 +284,7 @@ export default function PosLolodrivePage() {
                       {o.pay_with_uc && <Badge color="#D9B35A">PAYÉ UC</Badge>}
                     </div>
                     <div className="text-xs text-white/40 mt-1 flex items-center gap-3 flex-wrap">
-                      <span><Calendar className="w-3 h-3 inline mr-1" />{new Date(o.created_at).toLocaleString('fr-FR')}</span>
+                      <span><Calendar className="w-3 h-3 inline mr-1" />{new Date(o.created_at).toLocaleString(i18n.language)}</span>
                       <span><User className="w-3 h-3 inline mr-1" />{users[o.user_id]?.name || 'Client'}</span>
                       <span>{o.items?.length || 0} art. · <strong>{fmtEUR(o.total_cents)}</strong></span>
                       {o.pay_with_uc && <span className="text-[#D9B35A]">{o.total_uc} UC</span>}

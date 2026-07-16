@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useEffect, useState } from 'react';
 import { X, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -85,23 +86,23 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
 
         <div className="p-5 space-y-4">
           <div>
-            <Label className="text-white/80">Nom du plan</Label>
+            <Label className="text-white/80">{i18n.t('adm.nom_du_plan')}</Label>
             <Input
               data-testid="plan-name-input"
               value={data.name}
               onChange={(e) => setData({ ...data, name: e.target.value })}
-              placeholder="ex. ESS PREMIUM"
+              placeholder={i18n.t('adm.ex_ess_premium')}
               className="bg-white/5 border-white/10 text-white"
             />
           </div>
 
           <div>
-            <Label className="text-white/80">Description</Label>
+            <Label className="text-white/80">{i18n.t('adm.description')}</Label>
             <Textarea
               data-testid="plan-description-input"
               value={data.description || ''}
               onChange={(e) => setData({ ...data, description: e.target.value })}
-              placeholder="Description courte du plan"
+              placeholder={i18n.t('adm.description_courte_du_plan')}
               className="bg-white/5 border-white/10 text-white"
               rows={2}
             />
@@ -109,7 +110,7 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-white/80">Prix (€)</Label>
+              <Label className="text-white/80">{i18n.t('adm.prix')}</Label>
               <Input
                 data-testid="plan-price-input"
                 type="number"
@@ -120,23 +121,23 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
               />
             </div>
             <div>
-              <Label className="text-white/80">Période</Label>
+              <Label className="text-white/80">{i18n.t('adm.periode_2')}</Label>
               <select
                 data-testid="plan-period-select"
                 value={data.period}
                 onChange={(e) => setData({ ...data, period: e.target.value })}
                 className="w-full px-3 py-2 rounded-md bg-white/5 border border-white/10 text-white"
               >
-                <option value="mois">mois</option>
+                <option value="mois">{i18n.t('adm.mois')}</option>
                 <option value="an">an</option>
-                <option value="unique">unique</option>
+                <option value="unique">{i18n.t('adm.unique')}</option>
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-white/80">Crédits par défaut</Label>
+              <Label className="text-white/80">{i18n.t('adm.credits_par_defaut')}</Label>
               <Input
                 data-testid="plan-credits-input"
                 type="number"
@@ -148,7 +149,7 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
               />
             </div>
             <div>
-              <Label className="text-white/80">Zones max</Label>
+              <Label className="text-white/80">{i18n.t('adm.zones_max')}</Label>
               <Input
                 type="number"
                 value={data.max_zones}
@@ -159,7 +160,7 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
               />
             </div>
             <div>
-              <Label className="text-white/80">Utilisateurs max</Label>
+              <Label className="text-white/80">{i18n.t('adm.utilisateurs_max')}</Label>
               <Input
                 type="number"
                 value={data.max_users}
@@ -172,12 +173,12 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
           </div>
 
           <div>
-            <Label className="text-white/80">Fonctionnalités (une par ligne)</Label>
+            <Label className="text-white/80">{i18n.t('adm.fonctionnalites_une_par_ligne')}</Label>
             <Textarea
               data-testid="plan-features-input"
               value={featuresText}
               onChange={(e) => setFeaturesText(e.target.value)}
-              placeholder="Accès catalogue&#10;Crédits inclus&#10;..."
+              placeholder={i18n.t('adm.acces_catalogue_10_credits_inclus')}
               className="bg-white/5 border-white/10 text-white font-mono text-sm"
               rows={6}
             />
@@ -185,7 +186,7 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-white/80">Ordre d&apos;affichage</Label>
+              <Label className="text-white/80">{i18n.t('adm.ordre_d_affichage')}</Label>
               <Input
                 type="number"
                 value={data.sort_order}
@@ -196,7 +197,7 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
               />
             </div>
             <div>
-              <Label className="text-white/80">Couleur</Label>
+              <Label className="text-white/80">{i18n.t('adm.couleur')}</Label>
               <Input
                 type="color"
                 value={data.color || '#D9B35A'}
@@ -213,7 +214,7 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
                 checked={data.popular}
                 onCheckedChange={(v) => setData({ ...data, popular: v })}
               />
-              <Label className="text-white/80">Plan populaire</Label>
+              <Label className="text-white/80">{i18n.t('adm.plan_populaire')}</Label>
             </div>
             <div className="flex items-center gap-2">
               <Switch
@@ -221,7 +222,7 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
                 checked={data.active}
                 onCheckedChange={(v) => setData({ ...data, active: v })}
               />
-              <Label className="text-white/80">Actif</Label>
+              <Label className="text-white/80">{i18n.t('adm.actif')}</Label>
             </div>
           </div>
         </div>

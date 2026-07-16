@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileSignature, Phone, CheckCircle2, Shield, AlertCircle } from 'lucide-react';
@@ -213,7 +214,7 @@ export default function SignatureDemoPage() {
                     <span className="font-mono text-xs">{signatureResult.signature_hash?.slice(0, 32)}...</span>
                   </p>
                   <p className="text-white/70">
-                    <span className="text-white/50">Date:</span> {new Date(signatureResult.signed_at).toLocaleString('fr-FR')}
+                    <span className="text-white/50">Date:</span> {new Date(signatureResult.signed_at).toLocaleString(i18n.language)}
                   </p>
                 </div>
               </div>
@@ -244,7 +245,7 @@ export default function SignatureDemoPage() {
                 signatureData={{
                   clientName: `${signerInfo.first_name} ${signerInfo.last_name}`,
                   clientTitle: signerInfo.title,
-                  signatureDate: new Date().toLocaleDateString('fr-FR'),
+                  signatureDate: new Date().toLocaleDateString(i18n.language),
                   signatureLocation: 'Guadeloupe'
                 }}
                 showStamp={true}

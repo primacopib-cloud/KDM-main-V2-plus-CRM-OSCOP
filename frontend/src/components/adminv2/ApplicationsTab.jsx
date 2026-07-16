@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import {
   Building2, FileText, CheckCircle2, XCircle, ChevronDown, ChevronUp, MapPin,
 } from 'lucide-react';
@@ -21,14 +22,14 @@ export const ApplicationsTab = ({
             <div className="flex gap-3 mb-4">
               <Select value={appStatusFilter} onValueChange={setAppStatusFilter}>
                 <SelectTrigger className="w-[200px] bg-white/[0.04] border-white/10 text-white">
-                  <SelectValue placeholder="Filtrer par statut" />
+                  <SelectValue placeholder={i18n.t('adm.filtrer_par_statut')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="PENDING_REVIEW">En révision</SelectItem>
-                  <SelectItem value="SUBMITTED">Soumis</SelectItem>
-                  <SelectItem value="APPROVED">Approuvé</SelectItem>
-                  <SelectItem value="REJECTED">Rejeté</SelectItem>
+                  <SelectItem value="all">{i18n.t('adm.tous_les_statuts')}</SelectItem>
+                  <SelectItem value="PENDING_REVIEW">{i18n.t('adm.en_revision')}</SelectItem>
+                  <SelectItem value="SUBMITTED">{i18n.t('adm.soumis')}</SelectItem>
+                  <SelectItem value="APPROVED">{i18n.t('adm.approuve')}</SelectItem>
+                  <SelectItem value="REJECTED">{i18n.t('adm.rejete')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -38,7 +39,7 @@ export const ApplicationsTab = ({
               {applications.length === 0 ? (
                 <div className="text-center py-12 text-white/50">
                   <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucune demande</p>
+                  <p>{i18n.t('adm.aucune_demande')}</p>
                 </div>
               ) : (
                 applications.map(app => {
@@ -84,21 +85,21 @@ export const ApplicationsTab = ({
                             <div className="grid md:grid-cols-2 gap-6">
                               {/* Organization info */}
                               <div>
-                                <h4 className="text-sm font-semibold text-white/70 mb-3">Informations entreprise</h4>
+                                <h4 className="text-sm font-semibold text-white/70 mb-3">{i18n.t('adm.informations_entreprise')}</h4>
                                 <div className="space-y-2 text-sm">
                                   <div className="flex items-center gap-2">
                                     <Building2 className="w-4 h-4 text-white/40" />
-                                    <span className="text-white/60">Raison sociale:</span>
+                                    <span className="text-white/60">{i18n.t('adm.raison_sociale')}</span>
                                     <span className="text-white/90">{app.org?.legal_name}</span>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <FileText className="w-4 h-4 text-white/40" />
-                                    <span className="text-white/60">SIRET:</span>
+                                    <span className="text-white/60">{i18n.t('adm.siret')}</span>
                                     <span className="text-white/90">{app.org?.registration_id}</span>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <MapPin className="w-4 h-4 text-white/40" />
-                                    <span className="text-white/60">Territoire:</span>
+                                    <span className="text-white/60">{i18n.t('adm.territoire')}</span>
                                     <span className="text-white/90">{app.org?.territory}</span>
                                   </div>
                                 </div>
@@ -106,7 +107,7 @@ export const ApplicationsTab = ({
 
                               {/* Documents */}
                               <div>
-                                <h4 className="text-sm font-semibold text-white/70 mb-3">Documents fournis</h4>
+                                <h4 className="text-sm font-semibold text-white/70 mb-3">{i18n.t('adm.documents_fournis')}</h4>
                                 {app.documents?.length > 0 ? (
                                   <div className="space-y-2">
                                     {app.documents.map((doc, idx) => (
@@ -114,13 +115,13 @@ export const ApplicationsTab = ({
                                         <FileText className="w-4 h-4 text-[#D4AF37]" />
                                         <span className="text-sm text-white/80">{doc.doc_type}</span>
                                         <Badge variant="outline" className="text-[10px] ml-auto">
-                                          {doc.verified ? 'Vérifié' : 'Non vérifié'}
+                                          {doc.verified ? i18n.t('adm.verifie') : i18n.t('adm.non_verifie')}
                                         </Badge>
                                       </div>
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-white/50">Aucun document</p>
+                                  <p className="text-sm text-white/50">{i18n.t('adm.aucun_document')}</p>
                                 )}
                               </div>
                             </div>
@@ -150,7 +151,7 @@ export const ApplicationsTab = ({
                             {app.status === 'REJECTED' && app.reason_code && (
                               <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                                 <p className="text-sm text-red-400">
-                                  <strong>Raison du rejet:</strong> {REJECTION_REASONS.find(r => r.code === app.reason_code)?.label || app.reason_code}
+                                  <strong>{i18n.t('adm.raison_du_rejet')}</strong> {REJECTION_REASONS.find(r => r.code === app.reason_code)?.label || app.reason_code}
                                 </p>
                                 {app.comment && (
                                   <p className="text-sm text-red-400/80 mt-1">{app.comment}</p>

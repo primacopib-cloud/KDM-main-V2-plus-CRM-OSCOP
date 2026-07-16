@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Progress } from '../components/ui/progress';
@@ -280,7 +281,7 @@ const DashboardPage = () => {
               <div className="space-y-3">
                 {[
                   { action: 'Connexion au compte', time: 'À l\'instant', icon: User },
-                  { action: 'Compte créé', time: new Date(user.created_at).toLocaleDateString('fr-FR'), icon: User },
+                  { action: 'Compte créé', time: new Date(user.created_at).toLocaleDateString(i18n.language), icon: User },
                 ].map((item) => (
                   <div key={`activity-${item.action}`} className="flex items-center gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.04] border border-white/[0.08]">

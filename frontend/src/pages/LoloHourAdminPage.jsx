@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import {
   Sparkles, Plus, Calendar, Zap, Users, RefreshCw, Building2, Eye,
@@ -227,7 +228,7 @@ export default function LoloHourAdminPage() {
                   </div>
                   <div className="text-xs text-white/50 mb-3">
                     <Calendar className="w-3 h-3 inline mr-1" />
-                    {new Date(ev.starts_at).toLocaleString('fr-FR')} → {new Date(ev.ends_at).toLocaleString('fr-FR')}
+                    {new Date(ev.starts_at).toLocaleString(i18n.language)} → {new Date(ev.ends_at).toLocaleString(i18n.language)}
                     {isLive && <Badge color="#10b981" className="ml-2">EN COURS</Badge>}
                     {isPast && <Badge color="#888" className="ml-2">TERMINÉ</Badge>}
                   </div>

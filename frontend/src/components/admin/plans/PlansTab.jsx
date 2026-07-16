@@ -57,7 +57,7 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
             <span className="text-white/60 text-sm">/ {p.period}</span>
           </div>
           <div className="text-xs text-white/50 mt-1">
-            {p.default_credits} crédits · {p.max_zones} zone(s) · {p.max_users} user(s)
+            {i18n.t('adm.plan_meta', { credits: p.default_credits, zones: p.max_zones, users: p.max_users })}
           </div>
           <ul className="space-y-1 mt-3 text-sm text-white/70">
             {(p.features || []).slice(0, 4).map((f) => (
@@ -74,7 +74,7 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
           </ul>
           <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
             <div className="text-xs text-white/50">
-              {p.subscribers_count} abonné(s)
+              {i18n.t('adm.abonnes_count', { count: p.subscribers_count })}
             </div>
             <div className="flex gap-2">
               <button
@@ -99,7 +99,7 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
       ))}
       {plans.length === 0 && (
         <div className="col-span-full text-center text-white/50 py-12">
-          Aucun plan créé. Cliquez sur &quot;Nouveau plan&quot; pour commencer.
+          {i18n.t('adm.aucun_plan_cree')}
         </div>
       )}
     </div>

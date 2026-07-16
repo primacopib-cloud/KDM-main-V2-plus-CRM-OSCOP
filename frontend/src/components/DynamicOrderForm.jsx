@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect, useMemo } from 'react';
 import Barcode from 'react-barcode';
 import { 
@@ -21,7 +22,7 @@ const DynamicOrderForm = ({
   signatureData = {
     clientName: '',
     clientTitle: '',
-    signatureDate: new Date().toLocaleDateString('fr-FR'),
+    signatureDate: new Date().toLocaleDateString(i18n.language),
     signatureLocation: ''
   },
   showStamp = true,
@@ -42,7 +43,7 @@ const DynamicOrderForm = ({
 
   // Format currency
   const formatCurrency = (amountCents) => {
-    return new Intl.NumberFormat('fr-FR', { 
+    return new Intl.NumberFormat(i18n.language, { 
       style: 'currency', 
       currency: 'EUR' 
     }).format((amountCents || 0) / 100);
@@ -292,7 +293,7 @@ const DynamicOrderForm = ({
             
             <div className="text-right text-white/80 text-sm space-y-1">
               <p>Commande n° <span className="font-mono text-white">{replaceVariables(vars.COMMANDE_REF || 'BC-XXXX-XXXX', vars)}</span></p>
-              <p>Date : <span className="font-mono text-white">{replaceVariables(vars.DATE_FACTURE || new Date().toLocaleDateString('fr-FR'), vars)}</span></p>
+              <p>Date : <span className="font-mono text-white">{replaceVariables(vars.DATE_FACTURE || new Date().toLocaleDateString(i18n.language), vars)}</span></p>
               <p>Zone : <span className="font-mono text-white font-bold">{zoneCode}</span></p>
               <p>TVA : <span className={`font-mono ${isVatExonerated ? 'text-emerald-400 font-bold' : 'text-white'}`}>
                 {isVatExonerated ? 'Exonérée (0%)' : `${zoneTvaRate}%`}

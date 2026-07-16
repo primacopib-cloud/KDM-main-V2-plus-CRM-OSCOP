@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -40,7 +41,7 @@ const STATUS_CONFIG = {
 const formatDate = (dateStr) => {
   if (!dateStr) return '---';
   const date = new Date(dateStr);
-  return date.toLocaleDateString('fr-FR', {
+  return date.toLocaleDateString(i18n.language, {
     day: '2-digit',
     month: 'long',
     year: 'numeric',

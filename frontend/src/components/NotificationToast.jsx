@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { 
@@ -213,12 +214,12 @@ export function ConnectionStatus({ isConnected }) {
       {isConnected ? (
         <>
           <Wifi className="w-3 h-3" />
-          <span>Connecté</span>
+          <span>{i18n.t('adm.connecte')}</span>
         </>
       ) : (
         <>
           <WifiOff className="w-3 h-3" />
-          <span>Déconnecté</span>
+          <span>{i18n.t('adm.deconnecte')}</span>
         </>
       )}
     </div>

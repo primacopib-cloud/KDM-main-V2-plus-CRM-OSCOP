@@ -1,16 +1,17 @@
+import i18n from '@/i18n';
 import {
   Plus, CreditCard, TrendingUp, TrendingDown, RefreshCw,
 } from 'lucide-react';
 
 export const formatCredits = (amount) => {
   if (amount === null || amount === undefined) return '---';
-  return amount.toLocaleString('fr-FR');
+  return amount.toLocaleString(i18n.language);
 };
 
 export const formatDate = (dateStr) => {
   if (!dateStr) return '---';
   const date = new Date(dateStr);
-  return date.toLocaleDateString('fr-FR', {
+  return date.toLocaleDateString(i18n.language, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Coins, Layers, Settings2, Users } from 'lucide-react';
@@ -45,13 +46,13 @@ const AdminPlansPage = () => {
         const me = await authAPI.getMe();
         const isAdmin = me?.is_admin || me?.role === 'admin' || me?.email?.includes('admin');
         if (!isAdmin) {
-          toast.error('Accès réservé aux administrateurs');
+          toast.error(i18n.t('adm.acces_reserve_aux_administrateurs'));
           navigate('/dashboard');
           return;
         }
         await loadAll();
       } catch (e) {
-        toast.error('Erreur de chargement');
+        toast.error(i18n.t('adm.erreur_de_chargement'));
         navigate('/dashboard');
       }
     };
@@ -91,19 +92,19 @@ const AdminPlansPage = () => {
   const handleSavePlan = async (data) => {
     if (editingPlan) {
       await adminPlansAPI.updatePlan(editingPlan.id, data);
-      toast.success('Plan mis à jour');
+      toast.success(i18n.t('adm.plan_mis_a_jour'));
     } else {
       await adminPlansAPI.createPlan(data);
-      toast.success('Plan créé');
+      toast.success(i18n.t('adm.plan_cree'));
     }
     await loadAll();
   };
   const handleDeletePlan = async (plan) => {
-    if (!window.confirm(`Supprimer / désactiver le plan "${plan.name}" ?`)) return;
+    if (!window.confirm(i18n.t('adm.supprimer_desactiver_plan', { name: plan.name }))) return;
     try {
       const force = plan.subscribers_count === 0;
       const res = await adminPlansAPI.deletePlan(plan.id, force);
-      toast.success(res.message || 'Plan supprimé');
+      toast.success(res.message || i18n.t('adm.plan_supprime'));
       await loadAll();
     } catch (e) {
       toast.error(e.message || 'Erreur');
@@ -122,10 +123,10 @@ const AdminPlansPage = () => {
   const handleSaveOption = async (data) => {
     if (editingOption) {
       await adminPlansAPI.updateOption(editingOption.id, data);
-      toast.success('Option mise à jour');
+      toast.success(i18n.t('adm.option_mise_a_jour'));
     } else {
       await adminPlansAPI.createOption(data);
-      toast.success('Option créée');
+      toast.success(i18n.t('adm.option_creee'));
     }
     await loadAll();
   };
@@ -133,7 +134,7 @@ const AdminPlansPage = () => {
     if (!window.confirm(`Supprimer l'option "${opt.name}" ?`)) return;
     try {
       await adminPlansAPI.deleteOption(opt.id);
-      toast.success('Option supprimée');
+      toast.success(i18n.t('adm.option_supprimee'));
       await loadAll();
     } catch (e) {
       toast.error(e.message || 'Erreur');
@@ -155,7 +156,7 @@ const AdminPlansPage = () => {
   };
   const handleSaveAdjust = async (data) => {
     const res = await adminPlansAPI.adjustUserCredits(selectedUser.user_id, data);
-    toast.success(res.message || 'Crédits ajustés');
+    toast.success(res.message || i18n.t('adm.credits_ajustes'));
     await handleSearchUsers();
     await adminPlansAPI.getStats().then(setStats).catch(() => {});
   };
@@ -183,13 +184,13 @@ const AdminPlansPage = () => {
               className="flex items-center gap-2 text-sm text-white/60 hover:text-white mb-2"
               data-testid="back-to-superadmin"
             >
-              <ArrowLeft className="w-4 h-4" /> Retour Super Admin
+              <ArrowLeft className="w-4 h-4" /> {i18n.t('adm.retour_super_admin')}
             </button>
             <h1 className="text-3xl sm:text-4xl font-bold text-white">
-              Plans, Options & Crédits
+              {i18n.t('adm.plans_options_credits')}
             </h1>
             <p className="text-white/60 text-sm mt-1">
-              Gérez dynamiquement les tarifs, options et crédits utilisateurs
+              {i18n.t('adm.gerez_dynamiquement')}
             </p>
           </div>
         </div>
@@ -199,12 +200,12 @@ const AdminPlansPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <StatsCard
               icon={Layers}
-              label="Plans actifs"
+              label={i18n.t('adm.plans_actifs')}
               value={`${stats.plans.active} / ${stats.plans.total}`}
             />
             <StatsCard
               icon={Settings2}
-              label="Options actives"
+              label={i18n.t('adm.options_actives')}
               value={`${stats.options.active} / ${stats.options.total}`}
               color="#7AB7FF"
             />
@@ -216,7 +217,7 @@ const AdminPlansPage = () => {
             />
             <StatsCard
               icon={Coins}
-              label="Crédits distribués"
+              label={i18n.t('adm.credits_distribues')}
               value={stats.credits.total_distributed}
               color="#FFB347"
             />
@@ -229,9 +230,9 @@ const AdminPlansPage = () => {
           style={{ background: 'rgba(255,255,255,0.05)' }}
         >
           {[
-            { id: 'plans', label: "Plans d'abonnement", icon: Layers },
-            { id: 'options', label: 'Options / Addons', icon: Settings2 },
-            { id: 'credits', label: 'Crédits utilisateurs', icon: Coins },
+            { id: 'plans', label: i18n.t('adm.plans_d_abonnement'), icon: Layers },
+            { id: 'options', label: i18n.t('adm.options_addons'), icon: Settings2 },
+            { id: 'credits', label: i18n.t('adm.credits_utilisateurs'), icon: Coins },
           ].map((t) => (
             <button
               key={t.id}

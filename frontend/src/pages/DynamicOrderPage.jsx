@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DynamicOrderForm from '../components/DynamicOrderForm';
@@ -76,7 +77,7 @@ const DynamicOrderPage = () => {
   };
 
   const formatCurrency = (cents) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+    return new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'EUR' }).format(cents / 100);
   };
 
   return (
@@ -144,7 +145,7 @@ const DynamicOrderPage = () => {
               products={products}
               orderData={{
                 COMMANDE_REF: 'BC-2026-DEMO-001',
-                DATE_FACTURE: new Date().toLocaleDateString('fr-FR'),
+                DATE_FACTURE: new Date().toLocaleDateString(i18n.language),
                 CLIENT_LEGAL_NAME: 'SOCIÉTÉ DÉMONSTRATION SARL',
                 CLIENT_ADDRESS: '123 Rue de la Démo, 97100 Basse-Terre',
                 CLIENT_SIRET: '123 456 789 00012',
@@ -155,7 +156,7 @@ const DynamicOrderPage = () => {
               signatureData={{
                 clientName: 'Jean Martin',
                 clientTitle: 'Directeur des Achats',
-                signatureDate: new Date().toLocaleDateString('fr-FR'),
+                signatureDate: new Date().toLocaleDateString(i18n.language),
                 signatureLocation: ''
               }}
               onTotalsChange={handleTotalsChange}
@@ -249,7 +250,7 @@ const DynamicOrderPage = () => {
                     </div>
 
                     <p className="text-xs text-gray-400 text-center">
-                      Calcul à {new Date(calculatedTotals.calculation_timestamp).toLocaleTimeString('fr-FR')}
+                      Calcul à {new Date(calculatedTotals.calculation_timestamp).toLocaleTimeString(i18n.language)}
                     </p>
                   </div>
                 ) : (

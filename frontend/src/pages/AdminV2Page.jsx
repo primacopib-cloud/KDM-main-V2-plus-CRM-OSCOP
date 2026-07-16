@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -76,7 +77,7 @@ export default function AdminV2Page() {
   useEffect(() => {
     const init = async () => {
       if (!authAPI.isAuthenticated()) {
-        toast.error('Veuillez vous connecter');
+        toast.error(i18n.t('adm.veuillez_vous_connecter'));
         navigate('/connexion');
         return;
       }
@@ -84,7 +85,7 @@ export default function AdminV2Page() {
       try {
         const userData = await authAPI.getMe();
         if (!userData.is_admin) {
-          toast.error('Accès réservé aux administrateurs');
+          toast.error(i18n.t('adm.acces_reserve_aux_administrateurs'));
           navigate('/dashboard');
           return;
         }
@@ -94,7 +95,7 @@ export default function AdminV2Page() {
 
       } catch (error) {
         console.error('Init error:', error);
-        toast.error('Erreur de chargement');
+        toast.error(i18n.t('adm.erreur_de_chargement'));
       } finally {
         setLoading(false);
       }
@@ -132,7 +133,7 @@ export default function AdminV2Page() {
     if (!selectedApp || !decisionType) return;
 
     if (decisionType === 'REJECTED' && !rejectionReason) {
-      toast.error('Veuillez sélectionner une raison de rejet');
+      toast.error(i18n.t('adm.veuillez_selectionner_une_raison_de'));
       return;
     }
 
@@ -145,7 +146,7 @@ export default function AdminV2Page() {
         decisionComment || null
       );
 
-      toast.success(decisionType === 'APPROVED' ? 'Demande approuvée' : 'Demande rejetée');
+      toast.success(decisionType === 'APPROVED' ? i18n.t('adm.demande_approuvee') : i18n.t('adm.demande_rejetee'));
       
       // Update local state
       setApplications(prev => prev.map(app => 
@@ -162,7 +163,7 @@ export default function AdminV2Page() {
       loadData();
 
     } catch (error) {
-      toast.error(error.message || 'Erreur lors de la décision');
+      toast.error(error.message || i18n.t('adm.erreur_decision'));
     } finally {
       setSubmittingDecision(false);
     }
@@ -184,7 +185,7 @@ export default function AdminV2Page() {
         dateTo: exportFilters.dateTo || null,
         statusFilter: exportFilters.statusFilter || null,
       });
-      toast.success(`Export ${exportType} téléchargé`);
+      toast.success(i18n.t('adm.export_telecharge', { type: exportType }));
     } catch (error) {
       toast.error(error.message || 'Erreur lors de l\'export');
     } finally {
@@ -235,7 +236,7 @@ export default function AdminV2Page() {
           <div className="flex items-center gap-4">
             <Link to="/dashboard" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm hidden sm:inline">Retour</span>
+              <span className="text-sm hidden sm:inline">{i18n.t('adm.retour')}</span>
             </Link>
             <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
               <Shield className="w-3 h-3 mr-1" />
@@ -254,8 +255,8 @@ export default function AdminV2Page() {
       <div className="max-w-[1280px] mx-auto px-5 py-6">
         {/* Title */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-1">Administration B2B</h1>
-          <p className="text-white/60 text-sm">Gestion des demandes d'adhésion et des organisations</p>
+          <h1 className="text-2xl font-bold mb-1">{i18n.t('adm.administration_b2b')}</h1>
+          <p className="text-white/60 text-sm">{i18n.t('adm.gestion_des_demandes_d_adhesion')}</p>
         </div>
 
         {/* Stats */}
@@ -263,28 +264,28 @@ export default function AdminV2Page() {
           <div className="glass-panel-soft rounded-[14px] p-4">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="w-4 h-4 text-white/50" />
-              <p className="text-xs text-white/50">Total demandes</p>
+              <p className="text-xs text-white/50">{i18n.t('adm.total_demandes')}</p>
             </div>
             <p className="text-2xl font-bold">{appStats.total}</p>
           </div>
           <div className="glass-panel-soft rounded-[14px] p-4">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4 text-yellow-400" />
-              <p className="text-xs text-white/50">En attente</p>
+              <p className="text-xs text-white/50">{i18n.t('adm.en_attente')}</p>
             </div>
             <p className="text-2xl font-bold text-yellow-400">{appStats.pending}</p>
           </div>
           <div className="glass-panel-soft rounded-[14px] p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-green-400" />
-              <p className="text-xs text-white/50">Approuvées</p>
+              <p className="text-xs text-white/50">{i18n.t('adm.approuvees')}</p>
             </div>
             <p className="text-2xl font-bold text-green-400">{appStats.approved}</p>
           </div>
           <div className="glass-panel-soft rounded-[14px] p-4">
             <div className="flex items-center gap-2 mb-2">
               <XCircle className="w-4 h-4 text-red-400" />
-              <p className="text-xs text-white/50">Rejetées</p>
+              <p className="text-xs text-white/50">{i18n.t('adm.rejetees')}</p>
             </div>
             <p className="text-2xl font-bold text-red-400">{appStats.rejected}</p>
           </div>
@@ -298,7 +299,7 @@ export default function AdminV2Page() {
               className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A]"
             >
               <FileText className="w-4 h-4 mr-2" />
-              Demandes d'adhésion
+              {i18n.t('adm.demandes_adhesion')}
             </TabsTrigger>
             <TabsTrigger 
               value="organizations"

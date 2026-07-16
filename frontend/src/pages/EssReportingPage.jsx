@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import {
   Leaf, Ticket, Store, ShoppingBag, Wallet, RefreshCw, Download, Printer,
@@ -251,7 +252,7 @@ export default function EssReportingPage() {
 
           {/* Print footer */}
           <div className="hidden print:block mt-8 text-xs text-white/60 border-t border-white/10 pt-3">
-            Édité le {new Date().toLocaleString('fr-FR')} — KDMARCHÉ × O'SCOP — Rapport impact ESS période {days}j
+            Édité le {new Date().toLocaleString(i18n.language)} — KDMARCHÉ × O'SCOP — Rapport impact ESS période {days}j
           </div>
         </div>
       )}

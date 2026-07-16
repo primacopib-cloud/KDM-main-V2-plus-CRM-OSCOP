@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import {
   Truck, MapPin, Package, Clock, ChevronRight, Check,
@@ -78,7 +79,7 @@ export const EssRouteSection = ({
                 {availableTours.filter(t => t.status === 'open').map(tour => (
                   <SelectItem key={tour.tour_id} value={tour.tour_id}>
                     <div className="flex items-center gap-2">
-                      <span>{new Date(tour.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                      <span>{new Date(tour.date).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
                       <span className="text-white/50">•</span>
                       <span>{tour.window_start}-{tour.window_end}</span>
                       <span className="text-xs text-white/40">({tour.available} places)</span>

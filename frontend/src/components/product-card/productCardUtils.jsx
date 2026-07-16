@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState } from 'react';
 import {
   Package, Tag, Building2, MapPin, Scale, Ruler, Thermometer,
@@ -170,7 +171,7 @@ export const CountryFlag = ({ countryCode, size = 24 }) => {
 // Format currency
 export const formatCurrency = (cents, currency = 'EUR') => {
   if (!cents && cents !== 0) return '---';
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat(i18n.language, {
     style: 'currency',
     currency: currency
   }).format(cents / 100);
