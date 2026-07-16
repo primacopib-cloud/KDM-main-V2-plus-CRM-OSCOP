@@ -328,19 +328,29 @@ async def stripe_webhook(request: Request):
     """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
-    endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+    endpoint_secret = (
+        os.environ.get("STRIPE_WEBHOOK_SECRET")
+        or os.environ.get("STRIPE_WEBHOOK_SECRET_KDMARCHE")
+        or os.environ.get("STRIPE_WEBHOOK_SECRETS_KDMARCHE")
+    )
+    stripe_mode = (os.environ.get("STRIPE_MODE") or "live").lower()
     
     try:
         if endpoint_secret:
             event = stripe.Webhook.construct_event(
                 payload, sig_header, endpoint_secret
             )
-        else:
-            # For development without webhook signature verification
+        elif stripe_mode != "live":
+            # Dev only: parse without signature verification
             import json
             event = stripe.Event.construct_from(
                 json.loads(payload), stripe.api_key
             )
+        else:
+            logger.error("Webhook rejeté: aucun secret configuré en mode LIVE")
+            raise HTTPException(status_code=400, detail="Webhook signature required")
+    except HTTPException:
+        raise
     except ValueError as e:
         logger.error(f"Invalid payload: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid payload")
@@ -349,7 +359,9 @@ async def stripe_webhook(request: Request):
         raise HTTPException(status_code=400, detail="Invalid signature")
     
     # Handle the event
-    event_type = event["type"]
+    event_type = event.get("type") if isinstance(event, dict) else event["type"]
+    if not event_type:
+        raise HTTPException(status_code=400, detail="Invalid payload: missing type")
     data = event["data"]["object"]
     
     logger.info(f"Webhook received: {event_type}")

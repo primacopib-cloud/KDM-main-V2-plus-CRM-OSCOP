@@ -148,7 +148,7 @@ export function RefundBadge({ status }) {
   return null;
 }
 
-function ByKindCard({ account, byKind, testid }) {
+export function ByKindCard({ account, byKind, testid }) {
   return (
     <div className="glass-panel rounded-2xl p-5" data-testid={testid}>
       <h3 className="font-display text-lg mb-4" style={{ color: ACCOUNT_COLOR[account] }}>

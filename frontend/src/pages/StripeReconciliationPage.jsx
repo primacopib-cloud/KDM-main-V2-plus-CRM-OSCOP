@@ -15,7 +15,7 @@ import {
   formatEur, isoToday, isoNDaysAgo, fmtDateTime,
 } from "../components/reconciliation/reconciliationUtils";
 import {
-  ModeBadge, TotalCard, AccountTotalCard, RefundStat, RefundBadge,
+  ModeBadge, TotalCard, AccountTotalCard, RefundStat, RefundBadge, ByKindCard,
 } from "../components/reconciliation/ReconciliationCards";
 
 

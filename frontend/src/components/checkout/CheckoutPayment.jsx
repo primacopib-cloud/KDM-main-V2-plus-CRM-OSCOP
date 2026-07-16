@@ -210,7 +210,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
   </>
 );
 
-export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, submitting, setCurrentStep, handleSubmitOrder }) => (
+export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, submitting, setCurrentStep, handleSubmitOrder, nextStep }) => (
   <>
           {/* Sidebar - Order Summary */}
           <div className="lg:col-span-1">
