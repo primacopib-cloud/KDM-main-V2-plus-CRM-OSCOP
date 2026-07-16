@@ -175,7 +175,7 @@ export const cgOscopContent = {
   dateEffet: "{{DATE_EFFET}}",
   reference: "{{REF_CG_OSCOP}}",
   entity: "O'SCOP",
-  accentColor: "#57D19A",
+  accentColor: "#D4AF37",
   sections: [
     {
       number: "1",

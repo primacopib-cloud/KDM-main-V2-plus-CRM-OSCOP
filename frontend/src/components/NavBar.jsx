@@ -41,9 +41,9 @@ const getNavItems = (userRole, isAdmin) => {
   // Top bar: keep it lean — 4 public + 2 member shortcuts.
   const baseItems = [
     { href: '/', label: 'Accueil', icon: Home, public: true },
-    { href: '/logiscop', label: "LOGI'SCOP", icon: Truck, public: true, accent: '#0B4D87' },
+    { href: '/logiscop', label: "LOGI'SCOP", icon: Truck, public: true, accent: '#5B2E8C' },
     { href: '/oscop', label: "O'SCOP", icon: HeartHandshake, public: true, accent: '#8CC63E' },
-    { href: '/tarifs', label: 'Tarifs', icon: CreditCard, public: true },
+    { href: '/tarifs', label: 'Accès Pro Mutualisé', icon: CreditCard, public: true },
   ];
 
   // Member-only shortcuts kept in top bar (per product decision).
@@ -136,26 +136,24 @@ const NavBar = ({ variant = 'default' }) => {
         background: isScrolled ? 'rgba(255,253,247,0.96)' : 'rgba(255,253,247,0.86)',
         backdropFilter: 'blur(14px)',
         borderBottom: '1px solid rgba(212,175,55,0.32)',
-        boxShadow: isScrolled ? '0 8px 24px rgba(11,77,135,0.06)' : 'none'
+        boxShadow: isScrolled ? '0 8px 24px rgba(76,42,110,0.06)' : 'none'
       }}
     >
       <div className="max-w-[1400px] mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <img 
                 src={partners.kdmarche.logo} 
-                alt="KDMARCHE" 
-                className="h-8 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 1px 4px rgba(217,179,90,0.3))' }}
+                alt="KDMARCHE Pro" 
+                className="h-12 w-auto object-contain"
               />
               <span className="text-white/30 text-sm hidden sm:inline">×</span>
               <img 
                 src={partners.oscop.logo} 
-                alt="O'SCOP" 
-                className="h-5 w-auto object-contain hidden sm:block"
-                style={{ filter: 'drop-shadow(0 1px 4px rgba(87,209,154,0.3))' }}
+                alt="Objectif SCOP Outremer" 
+                className="h-11 w-auto object-contain hidden sm:block"
               />
             </div>
           </Link>
@@ -229,7 +227,7 @@ const NavBar = ({ variant = 'default' }) => {
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/[0.06] transition-colors"
                   >
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#D9B35A] to-[#57D19A] flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#D9B35A] to-[#D4AF37] flex items-center justify-center">
                       <User className="w-3.5 h-3.5 text-black" />
                     </div>
                     <span className="text-sm text-white/90 hidden md:block max-w-[120px] truncate">
@@ -244,7 +242,7 @@ const NavBar = ({ variant = 'default' }) => {
                       style={{
                         background: '#FFFFFF',
                         border: '1px solid rgba(212,175,55,0.34)',
-                        boxShadow: '0 18px 48px rgba(11,77,135,0.18), 0 4px 12px rgba(31,42,58,0.08)',
+                        boxShadow: '0 18px 48px rgba(76,42,110,0.18), 0 4px 12px rgba(31,42,58,0.08)',
                         backdropFilter: 'blur(20px)'
                       }}
                     >
@@ -386,7 +384,7 @@ const NavBar = ({ variant = 'default' }) => {
               background: '#FFFFFF',
               backdropFilter: 'blur(20px)',
               border: '1px solid rgba(212,175,55,0.36)',
-              boxShadow: '0 24px 56px rgba(11,77,135,0.18)',
+              boxShadow: '0 24px 56px rgba(76,42,110,0.18)',
               maxHeight: 'calc(100vh - 100px)',
               overflowY: 'auto'
             }}

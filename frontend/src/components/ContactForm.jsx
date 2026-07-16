@@ -60,8 +60,8 @@ const ContactForm = () => {
   if (isSubmitted) {
     return (
       <div className="glass-panel rounded-[22px] p-12 text-center">
-        <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'rgba(87,209,154,0.15)', border: '1px solid rgba(87,209,154,0.30)' }}>
-          <CheckCircle2 className="w-10 h-10 text-[#57D19A]" />
+        <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.30)' }}>
+          <CheckCircle2 className="w-10 h-10 text-[#D4AF37]" />
         </div>
         <h3 className="text-2xl font-bold mb-4">Demande envoyée !</h3>
         <p className="text-white/70">

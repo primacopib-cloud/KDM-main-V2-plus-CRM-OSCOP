@@ -249,7 +249,7 @@ export default function DeliveryOptionsSelector({
           <label
             className={`relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all ${
               deliveryType === 'EXW'
-                ? 'border-[#57D19A] bg-[#57D19A]/10'
+                ? 'border-[#D4AF37] bg-[#D4AF37]/10'
                 : 'border-white/10 bg-white/[0.02] hover:border-white/20'
             }`}
             data-testid="delivery-option-exw"
@@ -257,23 +257,23 @@ export default function DeliveryOptionsSelector({
             <RadioGroupItem value="EXW" className="sr-only" />
             <div className="flex items-start gap-3">
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                deliveryType === 'EXW' ? 'bg-[#57D19A]/20' : 'bg-white/[0.06]'
+                deliveryType === 'EXW' ? 'bg-[#D4AF37]/20' : 'bg-white/[0.06]'
               }`}>
-                <MapPin className={`w-5 h-5 ${deliveryType === 'EXW' ? 'text-[#57D19A]' : 'text-white/60'}`} />
+                <MapPin className={`w-5 h-5 ${deliveryType === 'EXW' ? 'text-[#D4AF37]' : 'text-white/60'}`} />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className={`font-semibold ${deliveryType === 'EXW' ? 'text-[#57D19A]' : 'text-white'}`}>
+                  <span className={`font-semibold ${deliveryType === 'EXW' ? 'text-[#D4AF37]' : 'text-white'}`}>
                     Retrait EXW LOGI&apos;SCOP
                   </span>
-                  <span className="text-[#57D19A] font-bold">GRATUIT</span>
+                  <span className="text-[#D4AF37] font-bold">GRATUIT</span>
                 </div>
                 <p className="text-white/60 text-sm mt-1">
                   Retrait au point LOGI&apos;SCOP de votre zone
                 </p>
               </div>
               {deliveryType === 'EXW' && (
-                <Check className="w-5 h-5 text-[#57D19A] absolute top-3 right-3" />
+                <Check className="w-5 h-5 text-[#D4AF37] absolute top-3 right-3" />
               )}
             </div>
           </label>
@@ -383,11 +383,11 @@ export default function DeliveryOptionsSelector({
           </Select>
 
           {selectedLocation && (
-            <div className="mt-4 p-3 rounded-lg bg-[#57D19A]/10 border border-[#57D19A]/20">
+            <div className="mt-4 p-3 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/20">
               <div className="flex items-start gap-3">
-                <Building2 className="w-5 h-5 text-[#57D19A] flex-shrink-0 mt-0.5" />
+                <Building2 className="w-5 h-5 text-[#D4AF37] flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-semibold text-[#57D19A]">{selectedLocation.name}</p>
+                  <p className="font-semibold text-[#D4AF37]">{selectedLocation.name}</p>
                   <p className="text-white/70 mt-1">{selectedLocation.address}</p>
                   <p className="text-white/70">{selectedLocation.postal_code} {selectedLocation.city}</p>
                   {selectedLocation.phone && (

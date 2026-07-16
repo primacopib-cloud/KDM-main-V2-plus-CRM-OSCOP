@@ -18,16 +18,14 @@ const Footer = () => {
             <div className="flex items-center gap-4 mb-6">
               <img 
                 src={partners.kdmarche.logo} 
-                alt="KDMARCHE" 
-                className="h-36 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 2px 6px rgba(217,179,90,0.35))' }}
+                alt="KDMARCHE Pro" 
+                className="h-24 w-auto object-contain"
               />
               <span className="text-white/30 font-light">×</span>
               <img 
                 src={partners.oscop.logo} 
-                alt="O'SCOP" 
+                alt="Objectif SCOP Outremer" 
                 className="h-20 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 2px 6px rgba(87,209,154,0.35))' }}
               />
             </div>
             <p className="text-white/60 text-sm leading-relaxed">
@@ -54,6 +52,9 @@ const Footer = () => {
                 <Link to="/offres" className="text-white/60 hover:text-white/90 text-sm transition-colors">Nos Offres</Link>
               </li>
               <li>
+                <Link to="/tarifs" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-tarifs">Accès Pro Mutualisé</Link>
+              </li>
+              <li>
                 <Link to="/catalogue" className="text-white/60 hover:text-white/90 text-sm transition-colors">Catalogue B2B</Link>
               </li>
               <li>
@@ -65,7 +66,7 @@ const Footer = () => {
             </ul>
             
             {/* Espaces Section */}
-            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#57D19A] mb-4 mt-6">Espaces</h4>
+            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#D4AF37] mb-4 mt-6">Espaces</h4>
             <ul className="space-y-3">
               <li>
                 <Link to="/espace-acheteur" className="text-white/60 hover:text-white/90 text-sm transition-colors">Espace Acheteur Pro</Link>
@@ -102,7 +103,7 @@ const Footer = () => {
                   className="text-white/60 hover:text-white/90 text-sm transition-colors flex items-center gap-2"
                   data-testid="footer-link-cg-oscop"
                 >
-                  <CreditCard className="w-3.5 h-3.5 text-[#57D19A]" />
+                  <CreditCard className="w-3.5 h-3.5 text-[#D4AF37]" />
                   <span>CG O&apos;SCOP</span>
                 </Link>
               </li>
@@ -143,15 +144,15 @@ const Footer = () => {
             <h4 className="font-semibold text-sm uppercase tracking-wider text-[#D9B35A] mb-4">Contact</h4>
             <ul className="space-y-4">
               <li className="flex items-center gap-3 text-white/60 text-sm">
-                <Mail className="w-4 h-4 text-[#57D19A]" />
+                <Mail className="w-4 h-4 text-[#D4AF37]" />
                 <span>contact@centrale-ess.fr</span>
               </li>
               <li className="flex items-center gap-3 text-white/60 text-sm">
-                <Phone className="w-4 h-4 text-[#57D19A]" />
+                <Phone className="w-4 h-4 text-[#D4AF37]" />
                 <span>+33 1 23 45 67 89</span>
               </li>
               <li className="flex items-start gap-3 text-white/60 text-sm">
-                <MapPin className="w-4 h-4 text-[#57D19A] flex-shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 text-[#D4AF37] flex-shrink-0 mt-0.5" />
                 <span>Outre-mer & Métropole</span>
               </li>
             </ul>

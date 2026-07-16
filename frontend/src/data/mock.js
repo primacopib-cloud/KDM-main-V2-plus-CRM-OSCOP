@@ -4,7 +4,7 @@ export const partners = {
   kdmarche: {
     name: "KDMARCHE",
     role: "Opérateur commercial et logistique B2B",
-    logo: "https://customer-assets.emergentagent.com/job_b2b-ess-market/artifacts/81criz40_KDMARCHE%20PRO.svg",
+    logo: "/logos/kdmarche-pro.webp",
     responsibilities: [
       "Opérateur de vente B2B",
       "Gestionnaire des catalogues produits",
@@ -25,7 +25,7 @@ export const partners = {
     name: "O'SCOP",
     fullName: "Objectif SCOP Outremer",
     role: "Centrale coopérative d'ingénierie ESS, accès et mutualisation",
-    logo: "https://customer-assets.emergentagent.com/job_b2b-ess-market/artifacts/7ef2z2pb_LOGO%20OBJECTIF%20SCOP%20OUTREMER%202026.png",
+    logo: "/logos/oscop.webp",
     responsibilities: [
       "Centrale d'ingénierie d'achats ESS",
       "Organisateur de la mutualisation",

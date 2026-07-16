@@ -540,7 +540,7 @@ export default function CheckoutPage() {
             {currentStep === 1 && (
               <div className="glass-panel-soft rounded-[18px] p-6">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <Truck className="w-5 h-5 text-[#57D19A]" />
+                  <Truck className="w-5 h-5 text-[#D4AF37]" />
                   Mode de livraison LOGI'SCOP
                 </h3>
                 

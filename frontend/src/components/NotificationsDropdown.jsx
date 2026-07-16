@@ -9,7 +9,7 @@ const NotificationIcon = ({ type }) => {
     case 'new_quote':
       return <FileText className="w-4 h-4 text-[#D9B35A]" />;
     case 'new_user':
-      return <User className="w-4 h-4 text-[#57D19A]" />;
+      return <User className="w-4 h-4 text-[#D4AF37]" />;
     case 'org_submitted':
     case 'org_approved':
     case 'org_rejected':

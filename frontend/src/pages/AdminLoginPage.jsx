@@ -54,7 +54,7 @@ const AdminLoginPage = () => {
     <div className="min-h-screen flex flex-col lg:flex-row" data-testid="admin-login-page">
       {/* ─────────────── LEFT PANEL (deep purple admin) ─────────────── */}
       <aside
-        className="relative hidden lg:flex lg:w-1/2 flex-col justify-between p-10 xl:p-14 overflow-hidden"
+        className="on-dark relative hidden lg:flex lg:w-1/2 flex-col justify-between p-10 xl:p-14 overflow-hidden"
         style={{
           background:
             'radial-gradient(900px 500px at 15% 0%, rgba(245,166,35,0.20), transparent 60%), ' +
@@ -81,19 +81,13 @@ const AdminLoginPage = () => {
             Retour à la connexion membres
           </Link>
           <div className="flex items-center gap-3">
-            <img
-              src={partners.kdmarche.logo}
-              alt="KDMARCHE"
-              className="h-10 w-auto object-contain"
-              style={{ filter: 'drop-shadow(0 2px 8px rgba(245,166,35,0.35))' }}
-            />
+            <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
+              <img src={partners.kdmarche.logo} alt="KDMARCHE Pro" className="h-12 w-auto object-contain" />
+            </div>
             <span className="text-white/30 text-lg">×</span>
-            <img
-              src={partners.oscop.logo}
-              alt="O'SCOP"
-              className="h-7 w-auto object-contain"
-              style={{ filter: 'drop-shadow(0 2px 8px rgba(217,179,90,0.35))' }}
-            />
+            <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
+              <img src={partners.oscop.logo} alt="Objectif SCOP Outremer" className="h-12 w-auto object-contain" />
+            </div>
           </div>
         </div>
 
@@ -238,7 +232,7 @@ const AdminLoginPage = () => {
                 type="submit"
                 disabled={isLoading}
                 data-testid="admin-login-submit-btn"
-                className="w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-all shadow-lg shadow-[#4a1776]/30 hover:shadow-xl hover:shadow-[#4a1776]/40"
+                className="force-white w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-all shadow-lg shadow-[#4a1776]/30 hover:shadow-xl hover:shadow-[#4a1776]/40"
                 style={{
                   background: 'linear-gradient(135deg, #4a1776 0%, #2a0c4a 100%)',
                 }}
@@ -265,7 +259,7 @@ const AdminLoginPage = () => {
                 <span>
                   Cet écran est réservé aux <strong className="text-slate-900">super-administrateurs</strong>. Les
                   comptes membres doivent utiliser la{' '}
-                  <Link to="/connexion" className="text-[#0B4D87] font-medium hover:underline">
+                  <Link to="/connexion" className="text-[#5B2E8C] font-medium hover:underline">
                     connexion standard
                   </Link>
                   .

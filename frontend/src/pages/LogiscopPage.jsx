@@ -6,7 +6,7 @@ import Footer from '../components/Footer';
 
 /**
  * LOGI'SCOP — Logistique coopérative de proximité.
- * Charte : Bleu logistique #0B4D87 (fiabilité) + Orange énergie #FF7A00 (dynamique).
+ * Charte : Bleu logistique #5B2E8C (fiabilité) + Orange énergie #FF7A00 (dynamique).
  */
 export default function LogiscopPage() {
   return (
@@ -16,7 +16,7 @@ export default function LogiscopPage() {
       {/* Hero — Bleu logistique × Orange énergie */}
       <section
         className="px-5 pt-20 pb-14"
-        style={{ background: 'linear-gradient(135deg, rgba(11,77,135,0.25) 0%, rgba(255,122,0,0.15) 100%)' }}
+        style={{ background: 'linear-gradient(135deg, rgba(76,42,110,0.25) 0%, rgba(255,122,0,0.15) 100%)' }}
         data-testid="logiscop-hero"
       >
         <div className="max-w-[1160px] mx-auto grid md:grid-cols-2 gap-10 items-center">
@@ -31,7 +31,7 @@ export default function LogiscopPage() {
               className="font-display text-5xl md:text-6xl font-bold leading-[1.05] mt-4 mb-3 tracking-tight"
               style={{ color: '#fff' }}
             >
-              <span style={{ color: '#0B4D87' }}>LOGI</span>'<span style={{ color: '#FF7A00' }}>SCOP</span>
+              <span style={{ color: '#5B2E8C' }}>LOGI</span>'<span style={{ color: '#FF7A00' }}>SCOP</span>
             </h1>
             <p className="text-base text-white/80 max-w-[55ch] mb-6">
               Le bras logistique du réseau coopératif. Mutualisation des flux, optimisation des coûts,
@@ -41,7 +41,7 @@ export default function LogiscopPage() {
               <Link to="/inscription">
                 <button
                   className="inline-flex items-center gap-2 rounded-[14px] px-5 py-3 text-sm font-semibold transition-all hover:translate-y-[-1px]"
-                  style={{ background: 'linear-gradient(135deg, #0B4D87, #FF7A00)', color: '#fff', boxShadow: '0 10px 30px rgba(11,77,135,0.4)' }}
+                  style={{ background: 'linear-gradient(135deg, #5B2E8C, #FF7A00)', color: '#fff', boxShadow: '0 10px 30px rgba(76,42,110,0.4)' }}
                   data-testid="logiscop-cta-partner"
                 >
                   Devenir partenaire logistique <ArrowRight className="w-4 h-4" />
@@ -96,7 +96,7 @@ export default function LogiscopPage() {
 }
 
 const Stat = ({ icon: Icon, label, value, tone }) => {
-  const color = tone === 'bleu' ? '#0B4D87' : '#FF7A00';
+  const color = tone === 'bleu' ? '#5B2E8C' : '#FF7A00';
   return (
     <div className="rounded-[16px] p-4 border border-white/10 backdrop-blur-sm" style={{ background: `${color}10` }}>
       <Icon className="w-5 h-5 mb-2" style={{ color }} />
@@ -107,7 +107,7 @@ const Stat = ({ icon: Icon, label, value, tone }) => {
 };
 
 const Step = ({ num, title, desc, tone }) => {
-  const color = tone === 'bleu' ? '#0B4D87' : '#FF7A00';
+  const color = tone === 'bleu' ? '#5B2E8C' : '#FF7A00';
   return (
     <div className="rounded-[18px] p-5 border border-white/10" style={{ background: 'rgba(255,255,255,0.03)' }}>
       <div className="font-display text-3xl font-bold mb-2" style={{ color }}>{num}</div>

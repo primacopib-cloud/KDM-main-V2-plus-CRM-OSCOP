@@ -31,7 +31,7 @@ import { Button } from './ui/button';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Color palette for charts
-const COLORS = ['#D9B35A', '#57D19A', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#14B8A6'];
+const COLORS = ['#D9B35A', '#D4AF37', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#14B8A6'];
 
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, label }) => {
@@ -169,7 +169,7 @@ export default function AdvancedStatsCharts({ period = 'month' }) {
         <SummaryCard 
           label="Panier moyen"
           value={formatCurrency(stats?.summary?.average_basket)}
-          color="#57D19A"
+          color="#D4AF37"
         />
         <SummaryCard 
           label="Nouveaux utilisateurs"
@@ -321,7 +321,7 @@ export default function AdvancedStatsCharts({ period = 'month' }) {
         </ChartSection>
         
         {/* Orders by Zone */}
-        <ChartSection title="Commandes par zone" icon={MapPin} color="#57D19A" loading={loading}>
+        <ChartSection title="Commandes par zone" icon={MapPin} color="#D4AF37" loading={loading}>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats?.charts?.orders_by_zone || []}>
@@ -339,7 +339,7 @@ export default function AdvancedStatsCharts({ period = 'month' }) {
                   tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="orders" fill="#57D19A" radius={[4, 4, 0, 0]} name="Commandes" />
+                <Bar dataKey="orders" fill="#D4AF37" radius={[4, 4, 0, 0]} name="Commandes" />
               </BarChart>
             </ResponsiveContainer>
           </div>

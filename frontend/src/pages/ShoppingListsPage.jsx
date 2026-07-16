@@ -44,7 +44,7 @@ const frequencyLabels = {
 };
 
 const frequencyColors = {
-  weekly: '#57D19A',
+  weekly: '#D4AF37',
   biweekly: '#3B82F6',
   monthly: '#8B5CF6',
   quarterly: '#F59E0B',
@@ -277,7 +277,7 @@ export default function ShoppingListsPage() {
 
   const colorOptions = [
     { value: '#D9B35A', label: 'Or' },
-    { value: '#57D19A', label: 'Vert' },
+    { value: '#D4AF37', label: 'Vert' },
     { value: '#3B82F6', label: 'Bleu' },
     { value: '#8B5CF6', label: 'Violet' },
     { value: '#EC4899', label: 'Rose' },

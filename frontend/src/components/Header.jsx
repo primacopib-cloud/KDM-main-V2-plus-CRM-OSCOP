@@ -47,7 +47,7 @@ const Header = () => {
                 src={partners.oscop.logo} 
                 alt="O'SCOP" 
                 className="h-6 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 1px 4px rgba(87,209,154,0.3))' }}
+                style={{ filter: 'drop-shadow(0 1px 4px rgba(212,175,55,0.3))' }}
               />
             </div>
             <div className="hidden xl:block">
@@ -106,7 +106,7 @@ const Header = () => {
               background: '#FFFFFF',
               backdropFilter: 'blur(20px)',
               border: '1px solid rgba(212,175,55,0.34)',
-              boxShadow: '0 18px 48px rgba(11,77,135,0.16)'
+              boxShadow: '0 18px 48px rgba(76,42,110,0.16)'
             }}
           >
             <nav className="flex flex-col gap-4">

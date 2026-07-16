@@ -71,7 +71,7 @@ const PartnersSection = () => {
           <div className="glass-panel-soft rounded-[22px] p-5 relative overflow-hidden">
             <div 
               className="absolute top-0 left-0 right-0 h-1" 
-              style={{ background: 'linear-gradient(90deg, #57D19A, #7EE8B8)' }}
+              style={{ background: 'linear-gradient(90deg, #D4AF37, #7EE8B8)' }}
             ></div>
             
             <div className="text-center mb-4">
@@ -79,11 +79,11 @@ const PartnersSection = () => {
                 src={partners.oscop.logo} 
                 alt="O'SCOP" 
                 className="h-44 w-auto object-contain mx-auto mb-3"
-                style={{ filter: 'drop-shadow(0 4px 12px rgba(87,209,154,0.4))' }}
+                style={{ filter: 'drop-shadow(0 4px 12px rgba(212,175,55,0.4))' }}
               />
               <span className="pill">
                 <Settings className="w-3 h-3" />
-                <span className="text-[#57D19A] font-semibold">Ingénierie ESS</span>
+                <span className="text-[#D4AF37] font-semibold">Ingénierie ESS</span>
               </span>
               <h4 className="text-base font-bold mt-3 text-white/90">{partners.oscop.role}</h4>
             </div>

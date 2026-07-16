@@ -106,7 +106,7 @@ const ActivityItem = ({ activity }) => {
   const colors = {
     order: '#D9B35A',
     signature: '#8B5CF6',
-    organization: '#57D19A',
+    organization: '#D4AF37',
     product: '#3B82F6'
   };
   const Icon = icons[activity.type] || Clock;
@@ -379,7 +379,7 @@ export default function SuperAdminPage() {
             value={formatCurrency(kpis?.wallet?.current_total_balance)}
             subtitle={`${formatCurrency(kpis?.wallet?.total_credits_sold)} vendus`}
             icon={Wallet}
-            color="#57D19A"
+            color="#D4AF37"
           />
         </div>
 
@@ -482,11 +482,11 @@ export default function SuperAdminPage() {
 
             {/* Wallet & Signatures */}
             <div className="grid md:grid-cols-2 gap-6">
-              <KPISection title="Wallet & Crédits" icon={Wallet} color="#57D19A">
+              <KPISection title="Wallet & Crédits" icon={Wallet} color="#D4AF37">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-white/60">Solde total</span>
-                    <span className="font-bold text-[#57D19A]">{formatCurrency(kpis?.wallet?.current_total_balance)}</span>
+                    <span className="font-bold text-[#D4AF37]">{formatCurrency(kpis?.wallet?.current_total_balance)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-white/60">Crédits vendus</span>

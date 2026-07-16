@@ -339,7 +339,7 @@ export default function CatalogPage() {
             {/* Zone selector */}
             <Select value={selectedZone} onValueChange={setSelectedZone}>
               <SelectTrigger className="w-[160px] h-10 bg-white/[0.04] border-white/10 text-white">
-                <MapPin className="w-4 h-4 mr-2 text-[#57D19A]" />
+                <MapPin className="w-4 h-4 mr-2 text-[#D4AF37]" />
                 <SelectValue placeholder="Zone" />
               </SelectTrigger>
               <SelectContent>
@@ -573,7 +573,7 @@ export default function CatalogPage() {
                   {product.price_visible ? (
                     <>
                       {product.savings_percent && (
-                        <Badge className="mb-1 bg-[#57D19A]/20 text-[#57D19A] border-0 text-[10px]">
+                        <Badge className="mb-1 bg-[#D4AF37]/20 text-[#D4AF37] border-0 text-[10px]">
                           -{product.savings_percent}%
                         </Badge>
                       )}
@@ -741,7 +741,7 @@ export default function CatalogPage() {
                   {pickupLocations.map(loc => (
                     <SelectItem key={loc.id} value={loc.id}>
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-[#57D19A]" />
+                        <MapPin className="w-4 h-4 text-[#D4AF37]" />
                         <span>{loc.name} - {loc.city}</span>
                       </div>
                     </SelectItem>

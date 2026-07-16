@@ -5,7 +5,7 @@ const LogisticsSection = () => {
   const getStepStyle = (responsible) => {
     switch (responsible) {
       case "O'SCOP":
-        return { color: '#57D19A', bg: 'rgba(87,209,154,0.08)', border: 'rgba(87,209,154,0.20)' };
+        return { color: '#D4AF37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.20)' };
       case 'KDMARCHE':
         return { color: '#D9B35A', bg: 'rgba(217,179,90,0.08)', border: 'rgba(217,179,90,0.20)' };
       case 'Client':
@@ -65,7 +65,7 @@ const LogisticsSection = () => {
         {/* Legend */}
         <div className="mt-4 flex flex-wrap justify-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#57D19A]"></div>
+            <div className="w-3 h-3 rounded-full bg-[#D4AF37]"></div>
             <span className="text-xs text-white/65">O&apos;SCOP (Accès &amp; Abonnement)</span>
           </div>
           <div className="flex items-center gap-2">

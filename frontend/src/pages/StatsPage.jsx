@@ -108,18 +108,18 @@ const StatsPage = () => {
 
           <div className="glass-panel-soft rounded-[18px] p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(87,209,154,0.12)', border: '1px solid rgba(87,209,154,0.20)' }}>
-                <TrendingUp className="w-5 h-5 text-[#57D19A]" />
+              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.20)' }}>
+                <TrendingUp className="w-5 h-5 text-[#D4AF37]" />
               </div>
             </div>
             <p className="text-xs text-white/60 mb-1">Économies Totales</p>
-            <p className="text-2xl font-bold text-[#57D19A]">{overview.total_savings?.toFixed(2) || '0.00'}€</p>
+            <p className="text-2xl font-bold text-[#D4AF37]">{overview.total_savings?.toFixed(2) || '0.00'}€</p>
           </div>
 
           <div className="glass-panel-soft rounded-[18px] p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(87,209,154,0.12)', border: '1px solid rgba(87,209,154,0.20)' }}>
-                <Wallet className="w-5 h-5 text-[#57D19A]" />
+              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.20)' }}>
+                <Wallet className="w-5 h-5 text-[#D4AF37]" />
               </div>
             </div>
             <p className="text-xs text-white/60 mb-1">Crédits Disponibles</p>
@@ -174,11 +174,11 @@ const StatsPage = () => {
                     <div className="text-right">
                       <p className="font-semibold">{order.amount?.toFixed(2)}€</p>
                       {order.savings > 0 && (
-                        <p className="text-xs text-[#57D19A]">-{order.savings?.toFixed(2)}€</p>
+                        <p className="text-xs text-[#D4AF37]">-{order.savings?.toFixed(2)}€</p>
                       )}
                     </div>
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                      order.status === 'delivered' ? 'bg-[#57D19A]/20 text-[#57D19A]' :
+                      order.status === 'delivered' ? 'bg-[#D4AF37]/20 text-[#D4AF37]' :
                       order.status === 'shipped' ? 'bg-blue-500/20 text-blue-400' :
                       order.status === 'processing' ? 'bg-yellow-500/20 text-yellow-400' :
                       'bg-white/10 text-white/60'
@@ -212,10 +212,10 @@ const StatsPage = () => {
                   <div key={item.id || `credit-${item.date || ''}-${index}`} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02]">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        item.type === 'added' ? 'bg-[#57D19A]/20' : 'bg-red-500/20'
+                        item.type === 'added' ? 'bg-[#D4AF37]/20' : 'bg-red-500/20'
                       }`}>
                         {item.type === 'added' ? (
-                          <ArrowUpRight className="w-4 h-4 text-[#57D19A]" />
+                          <ArrowUpRight className="w-4 h-4 text-[#D4AF37]" />
                         ) : (
                           <ArrowDownRight className="w-4 h-4 text-red-400" />
                         )}
@@ -227,7 +227,7 @@ const StatsPage = () => {
                         </p>
                       </div>
                     </div>
-                    <span className={`font-semibold ${item.type === 'added' ? 'text-[#57D19A]' : 'text-red-400'}`}>
+                    <span className={`font-semibold ${item.type === 'added' ? 'text-[#D4AF37]' : 'text-red-400'}`}>
                       {item.type === 'added' ? '+' : '-'}{item.amount}
                     </span>
                   </div>

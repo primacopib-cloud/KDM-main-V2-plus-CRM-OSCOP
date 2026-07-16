@@ -29,7 +29,7 @@ const ORDER_STATUSES = {
   PENDING: { label: 'En attente', color: 'bg-yellow-500/20 text-yellow-400', icon: Clock },
   CONFIRMED: { label: 'Confirmée', color: 'bg-blue-500/20 text-blue-400', icon: CheckCircle2 },
   PROCESSING: { label: 'En préparation', color: 'bg-purple-500/20 text-purple-400', icon: Package },
-  READY_FOR_PICKUP: { label: 'Prête à enlever', color: 'bg-[#57D19A]/20 text-[#57D19A]', icon: Truck },
+  READY_FOR_PICKUP: { label: 'Prête à enlever', color: 'bg-[#D4AF37]/20 text-[#D4AF37]', icon: Truck },
   COMPLETED: { label: 'Terminée', color: 'bg-green-500/20 text-green-400', icon: CheckCircle2 },
   CANCELED: { label: 'Annulée', color: 'bg-red-500/20 text-red-400', icon: XCircle },
 };
@@ -203,7 +203,7 @@ export default function OrdersPage() {
           </div>
           <div className="glass-panel-soft rounded-[14px] p-4">
             <p className="text-xs text-white/50 mb-1">À enlever</p>
-            <p className="text-2xl font-bold text-[#57D19A]">{stats.ready}</p>
+            <p className="text-2xl font-bold text-[#D4AF37]">{stats.ready}</p>
           </div>
           <div className="glass-panel-soft rounded-[14px] p-4">
             <p className="text-xs text-white/50 mb-1">Terminées</p>
@@ -306,9 +306,9 @@ export default function OrdersPage() {
                           <div>
                             <h4 className="text-sm font-semibold text-white/70 mb-3">Point d'enlèvement (EXW)</h4>
                             {order.pickup_location ? (
-                              <div className="p-3 rounded-xl bg-[#57D19A]/10 border border-[#57D19A]/20">
+                              <div className="p-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20">
                                 <div className="flex items-start gap-2">
-                                  <MapPin className="w-4 h-4 text-[#57D19A] mt-0.5" />
+                                  <MapPin className="w-4 h-4 text-[#D4AF37] mt-0.5" />
                                   <div>
                                     <p className="font-medium text-white/90">{order.pickup_location.name}</p>
                                     <p className="text-xs text-white/60">{order.pickup_location.address}</p>

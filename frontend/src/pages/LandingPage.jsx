@@ -138,7 +138,7 @@ const LandingPage = () => {
               Condition d&apos;accès à la Centrale d&apos;Achats
             </h3>
             <p className="text-white/75 mb-5 max-w-2xl mx-auto">
-              L&apos;accès aux conditions <strong className="text-white">KDMARCHE – Centrale ESS</strong> est conditionné à une <strong className="text-[#57D19A]">adhésion O&apos;SCOP active</strong>.
+              L&apos;accès aux conditions <strong className="text-white">KDMARCHE – Centrale ESS</strong> est conditionné à une <strong className="text-[#D4AF37]">adhésion O&apos;SCOP active</strong>.
             </p>
             
             <div className="inline-flex flex-wrap gap-4 justify-center p-4 rounded-2xl bg-black/20">
@@ -175,7 +175,7 @@ const LandingPage = () => {
           
           <div className="grid md:grid-cols-2 gap-3.5">
             <div className="glass-panel-soft rounded-[18px] p-5">
-              <h4 className="text-sm tracking-wider uppercase text-[#57D19A] font-semibold mb-4 flex items-center gap-2">
+              <h4 className="text-sm tracking-wider uppercase text-[#D4AF37] font-semibold mb-4 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" />
                 Garanties
               </h4>
@@ -484,12 +484,12 @@ export const CooperativeApiSection = () => {
               <pre className="text-[13px] leading-relaxed font-mono text-white/85 overflow-x-auto">
                 <code>
 {`{
-  `}<span className="text-[#F5A623]">&quot;service_name&quot;</span>: <span className="text-[#57D19A]">&quot;CommunityPlace Pro Cooperative API&quot;</span>,{`
-  `}<span className="text-[#F5A623]">&quot;target_users&quot;</span>: <span className="text-[#57D19A]">&quot;membres_professionnels&quot;</span>,{`
-  `}<span className="text-[#F5A623]">&quot;access_model&quot;</span>: <span className="text-[#57D19A]">&quot;acces_cooperatif_mutualise&quot;</span>,{`
-  `}<span className="text-[#F5A623]">&quot;pricing_basis&quot;</span>: <span className="text-[#57D19A]">&quot;conditions_economiques_mutualisees&quot;</span>,{`
-  `}<span className="text-[#F5A623]">&quot;framework&quot;</span>: <span className="text-[#57D19A]">&quot;B2B2C_cooperative&quot;</span>,{`
-  `}<span className="text-[#F5A623]">&quot;compliance&quot;</span>: [<span className="text-[#57D19A]">&quot;ESS&quot;</span>, <span className="text-[#57D19A]">&quot;RGPD&quot;</span>, <span className="text-[#57D19A]">&quot;SSL256&quot;</span>]{`
+  `}<span className="text-[#F5A623]">&quot;service_name&quot;</span>: <span className="text-[#D4AF37]">&quot;CommunityPlace Pro Cooperative API&quot;</span>,{`
+  `}<span className="text-[#F5A623]">&quot;target_users&quot;</span>: <span className="text-[#D4AF37]">&quot;membres_professionnels&quot;</span>,{`
+  `}<span className="text-[#F5A623]">&quot;access_model&quot;</span>: <span className="text-[#D4AF37]">&quot;acces_cooperatif_mutualise&quot;</span>,{`
+  `}<span className="text-[#F5A623]">&quot;pricing_basis&quot;</span>: <span className="text-[#D4AF37]">&quot;conditions_economiques_mutualisees&quot;</span>,{`
+  `}<span className="text-[#F5A623]">&quot;framework&quot;</span>: <span className="text-[#D4AF37]">&quot;B2B2C_cooperative&quot;</span>,{`
+  `}<span className="text-[#F5A623]">&quot;compliance&quot;</span>: [<span className="text-[#D4AF37]">&quot;ESS&quot;</span>, <span className="text-[#D4AF37]">&quot;RGPD&quot;</span>, <span className="text-[#D4AF37]">&quot;SSL256&quot;</span>]{`
 }`}
                 </code>
               </pre>

@@ -63,12 +63,12 @@ const LoginPage = () => {
     <div className="min-h-screen flex flex-col lg:flex-row" data-testid="login-page">
       {/* ─────────────── LEFT PANEL (deep blue KDMARCHE) ─────────────── */}
       <aside
-        className="relative hidden lg:flex lg:w-1/2 flex-col justify-between p-10 xl:p-14 overflow-hidden"
+        className="on-dark relative hidden lg:flex lg:w-1/2 flex-col justify-between p-10 xl:p-14 overflow-hidden"
         style={{
           background:
             'radial-gradient(900px 500px at 15% 0%, rgba(212,175,55,0.22), transparent 60%), ' +
-            'radial-gradient(700px 500px at 90% 100%, rgba(87,209,154,0.14), transparent 65%), ' +
-            'linear-gradient(180deg, #0B1F3B 0%, #0B4D87 55%, #0B1F3B 100%)',
+            'radial-gradient(700px 500px at 90% 100%, rgba(212,175,55,0.14), transparent 65%), ' +
+            'linear-gradient(180deg, #2A1045 0%, #5B2E8C 55%, #2A1045 100%)',
         }}
       >
         {/* Subtle grid overlay */}
@@ -92,19 +92,13 @@ const LoginPage = () => {
             Retour à l&apos;accueil
           </Link>
           <div className="flex items-center gap-3">
-            <img
-              src={partners.kdmarche.logo}
-              alt="KDMARCHE"
-              className="h-10 w-auto object-contain"
-              style={{ filter: 'drop-shadow(0 2px 8px rgba(217,179,90,0.35))' }}
-            />
+            <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
+              <img src={partners.kdmarche.logo} alt="KDMARCHE Pro" className="h-12 w-auto object-contain" />
+            </div>
             <span className="text-white/30 text-lg">×</span>
-            <img
-              src={partners.oscop.logo}
-              alt="O'SCOP"
-              className="h-7 w-auto object-contain"
-              style={{ filter: 'drop-shadow(0 2px 8px rgba(87,209,154,0.35))' }}
-            />
+            <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
+              <img src={partners.oscop.logo} alt="Objectif SCOP Outremer" className="h-12 w-auto object-contain" />
+            </div>
           </div>
         </div>
 
@@ -174,9 +168,9 @@ const LoginPage = () => {
         {/* Top bar: mobile brand + language */}
         <div className="flex items-center justify-between px-6 lg:px-10 py-5">
           <Link to="/" className="flex items-center gap-2 lg:hidden">
-            <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-7 w-auto object-contain" />
+            <img src={partners.kdmarche.logo} alt="KDMARCHE Pro" className="h-10 w-auto object-contain" />
             <span className="text-slate-400 text-sm">×</span>
-            <img src={partners.oscop.logo} alt="O'SCOP" className="h-5 w-auto object-contain" />
+            <img src={partners.oscop.logo} alt="Objectif SCOP Outremer" className="h-9 w-auto object-contain" />
           </Link>
           <div className="ml-auto">
             <LanguageSwitcher />
@@ -187,7 +181,7 @@ const LoginPage = () => {
         <div className="flex-1 flex items-center justify-center px-6 lg:px-10 pb-10">
           <div className="w-full max-w-md">
             <div className="mb-8">
-              <p className="text-xs uppercase tracking-[0.15em] text-[#0B4D87] font-semibold mb-2">
+              <p className="text-xs uppercase tracking-[0.15em] text-[#5B2E8C] font-semibold mb-2">
                 Connexion Membres
               </p>
               <h2 className="text-3xl font-serif font-semibold text-slate-900 mb-2" style={{ fontFamily: '"Playfair Display", serif' }}>
@@ -214,7 +208,7 @@ const LoginPage = () => {
                     placeholder="contact@entreprise.fr"
                     required
                     data-testid="login-email-input"
-                    className="pl-11 h-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 rounded-xl focus:border-[#0B4D87] focus:ring-[#0B4D87]/20"
+                    className="pl-11 h-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 rounded-xl focus:border-[#5B2E8C] focus:ring-[#5B2E8C]/20"
                   />
                 </div>
               </div>
@@ -226,7 +220,7 @@ const LoginPage = () => {
                   </Label>
                   <Link
                     to="/mot-de-passe-oublie"
-                    className="text-xs text-[#0B4D87] hover:text-[#083866] font-medium"
+                    className="text-xs text-[#5B2E8C] hover:text-[#451F6B] font-medium"
                     data-testid="forgot-password-link"
                   >
                     Mot de passe oublié ?
@@ -243,7 +237,7 @@ const LoginPage = () => {
                     placeholder="••••••••"
                     required
                     data-testid="login-password-input"
-                    className="pl-11 pr-11 h-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 rounded-xl focus:border-[#0B4D87] focus:ring-[#0B4D87]/20"
+                    className="pl-11 pr-11 h-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 rounded-xl focus:border-[#5B2E8C] focus:ring-[#5B2E8C]/20"
                   />
                   <button
                     type="button"
@@ -261,9 +255,9 @@ const LoginPage = () => {
                 type="submit"
                 disabled={isLoading}
                 data-testid="login-submit-btn"
-                className="w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-all shadow-lg shadow-[#0B4D87]/30 hover:shadow-xl hover:shadow-[#0B4D87]/40"
+                className="force-white w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-all shadow-lg shadow-[#5B2E8C]/30 hover:shadow-xl hover:shadow-[#5B2E8C]/40"
                 style={{
-                  background: 'linear-gradient(135deg, #0B4D87 0%, #083866 100%)',
+                  background: 'linear-gradient(135deg, #5B2E8C 0%, #451F6B 100%)',
                 }}
               >
                 {isLoading ? (
@@ -304,7 +298,7 @@ const LoginPage = () => {
 
               <p className="text-center text-sm text-slate-500">
                 Pas encore membre ?{' '}
-                <Link to="/adhesion" className="text-[#0B4D87] hover:text-[#083866] font-semibold" data-testid="signup-link">
+                <Link to="/adhesion" className="text-[#5B2E8C] hover:text-[#451F6B] font-semibold" data-testid="signup-link">
                   Adhérer à la Centrale
                 </Link>
               </p>

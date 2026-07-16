@@ -328,24 +328,24 @@ export default function DocumentsPage() {
         {/* API Integration info */}
         <div className="mt-12 glass-panel-soft rounded-[18px] p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <ExternalLink className="w-5 h-5 text-[#57D19A]" />
+            <ExternalLink className="w-5 h-5 text-[#D4AF37]" />
             Intégration API GED
           </h3>
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08]">
-              <p className="font-medium text-[#57D19A] mb-2">GET /api/ged/documents</p>
+              <p className="font-medium text-[#D4AF37] mb-2">GET /api/ged/documents</p>
               <p className="text-white/60">Liste tous les documents avec métadonnées</p>
             </div>
             <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08]">
-              <p className="font-medium text-[#57D19A] mb-2">GET /api/ged/documents/{'{type}'}/metadata</p>
+              <p className="font-medium text-[#D4AF37] mb-2">GET /api/ged/documents/{'{type}'}/metadata</p>
               <p className="text-white/60">Métadonnées complètes (ref, version, checksums)</p>
             </div>
             <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08]">
-              <p className="font-medium text-[#57D19A] mb-2">GET /api/ged/documents/{'{type}'}/render</p>
+              <p className="font-medium text-[#D4AF37] mb-2">GET /api/ged/documents/{'{type}'}/render</p>
               <p className="text-white/60">Document rendu avec variables templating</p>
             </div>
             <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08]">
-              <p className="font-medium text-[#57D19A] mb-2">GET /api/ged/documents/{'{type}'}/versions</p>
+              <p className="font-medium text-[#D4AF37] mb-2">GET /api/ged/documents/{'{type}'}/versions</p>
               <p className="text-white/60">Historique des versions du document</p>
             </div>
           </div>

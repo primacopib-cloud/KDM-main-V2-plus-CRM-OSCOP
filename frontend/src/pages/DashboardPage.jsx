@@ -105,7 +105,7 @@ const DashboardPage = () => {
                 src={partners.oscop.logo} 
                 alt="O'SCOP" 
                 className="h-20 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 2px 6px rgba(87,209,154,0.35))' }}
+                style={{ filter: 'drop-shadow(0 2px 6px rgba(212,175,55,0.35))' }}
               />
             </Link>
             <span className="badge-status text-xs">
@@ -135,7 +135,7 @@ const DashboardPage = () => {
         <div 
           className="rounded-[22px] p-6 mb-6 relative overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, rgba(217,179,90,0.15), rgba(87,209,154,0.10))',
+            background: 'linear-gradient(135deg, rgba(217,179,90,0.15), rgba(212,175,55,0.10))',
             border: '1px solid rgba(217,179,90,0.25)'
           }}
         >
@@ -168,8 +168,8 @@ const DashboardPage = () => {
 
           <div className="glass-panel-soft rounded-[18px] p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(87,209,154,0.12)', border: '1px solid rgba(87,209,154,0.20)' }}>
-                <Wallet className="w-5 h-5 text-[#57D19A]" />
+              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.20)' }}>
+                <Wallet className="w-5 h-5 text-[#D4AF37]" />
               </div>
               <button 
                 className="btn-ghost p-1.5 rounded-lg"
@@ -185,12 +185,12 @@ const DashboardPage = () => {
 
           <div className="glass-panel-soft rounded-[18px] p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(87,209,154,0.12)', border: '1px solid rgba(87,209,154,0.20)' }}>
-                <TrendingUp className="w-5 h-5 text-[#57D19A]" />
+              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.20)' }}>
+                <TrendingUp className="w-5 h-5 text-[#D4AF37]" />
               </div>
             </div>
             <p className="text-xs text-white/60 mb-1">Économies réalisées</p>
-            <p className="text-xl font-bold">-- € <span className="text-sm font-normal text-[#57D19A]">ce mois</span></p>
+            <p className="text-xl font-bold">-- € <span className="text-sm font-normal text-[#D4AF37]">ce mois</span></p>
           </div>
 
           <div className="glass-panel-soft rounded-[18px] p-5">
@@ -219,8 +219,8 @@ const DashboardPage = () => {
                   </div>
                 </Link>
                 
-                <Link to="/commandes" className="h-auto p-4 rounded-xl text-left flex items-center gap-3 transition-all hover:-translate-y-0.5" style={{ background: 'rgba(87,209,154,0.08)', border: '1px solid rgba(87,209,154,0.15)' }}>
-                  <FileText className="w-5 h-5 text-[#57D19A]" />
+                <Link to="/commandes" className="h-auto p-4 rounded-xl text-left flex items-center gap-3 transition-all hover:-translate-y-0.5" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                  <FileText className="w-5 h-5 text-[#D4AF37]" />
                   <div>
                     <p className="font-medium text-white/90 text-sm">Mes commandes</p>
                     <p className="text-xs text-white/60">Historique et suivi</p>
@@ -254,8 +254,8 @@ const DashboardPage = () => {
                   </div>
                 </button>
                 
-                <Link to="/statistiques" className="h-auto p-4 rounded-xl text-left flex items-center gap-3 transition-all hover:-translate-y-0.5" style={{ background: 'rgba(87,209,154,0.08)', border: '1px solid rgba(87,209,154,0.15)' }}>
-                  <BarChart3 className="w-5 h-5 text-[#57D19A]" />
+                <Link to="/statistiques" className="h-auto p-4 rounded-xl text-left flex items-center gap-3 transition-all hover:-translate-y-0.5" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                  <BarChart3 className="w-5 h-5 text-[#D4AF37]" />
                   <div>
                     <p className="font-medium text-white/90 text-sm">Statistiques</p>
                     <p className="text-xs text-white/60">Commandes et crédits</p>
@@ -334,7 +334,7 @@ const DashboardPage = () => {
               }}
             >
               <div className="flex items-center gap-3 mb-3">
-                <HelpCircle className="w-5 h-5 text-[#57D19A]" />
+                <HelpCircle className="w-5 h-5 text-[#D4AF37]" />
                 <h3 className="font-semibold">Besoin d&apos;aide ?</h3>
               </div>
               <p className="text-white/60 text-sm mb-4">Notre équipe est disponible pour vous accompagner.</p>

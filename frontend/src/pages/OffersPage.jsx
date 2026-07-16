@@ -162,7 +162,7 @@ const OffersPage = () => {
         <div 
           className="max-w-4xl mx-auto rounded-[26px] p-8 text-center relative overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, rgba(217,179,90,0.15), rgba(87,209,154,0.10))',
+            background: 'linear-gradient(135deg, rgba(217,179,90,0.15), rgba(212,175,55,0.10))',
             border: '1px solid rgba(217,179,90,0.25)'
           }}
         >

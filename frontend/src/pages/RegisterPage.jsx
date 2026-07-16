@@ -96,7 +96,7 @@ const RegisterPage = () => {
       style={{
         background: `
           radial-gradient(900px 420px at 20% -10%, rgba(217,179,90,0.22), transparent 55%),
-          radial-gradient(820px 460px at 88% 0%, rgba(87,209,154,0.16), transparent 55%),
+          radial-gradient(820px 460px at 88% 0%, rgba(212,175,55,0.16), transparent 55%),
           linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)
         `
       }}
@@ -121,7 +121,7 @@ const RegisterPage = () => {
                 src={partners.oscop.logo} 
                 alt="O'SCOP" 
                 className="h-28 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 3px 10px rgba(87,209,154,0.45))' }}
+                style={{ filter: 'drop-shadow(0 3px 10px rgba(212,175,55,0.45))' }}
               />
             </div>
             <h1 className="text-2xl font-bold">Créer un compte</h1>

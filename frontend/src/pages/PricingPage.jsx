@@ -18,9 +18,9 @@ const TIERS = [
     tagline: 'Démarrage coopératif',
     price: 149,
     period: 'HT / mois',
-    accent: '#0B4D87',
-    accentSoft: 'rgba(11,77,135,0.08)',
-    accentBorder: 'rgba(11,77,135,0.22)',
+    accent: '#5B2E8C',
+    accentSoft: 'rgba(76,42,110,0.08)',
+    accentBorder: 'rgba(76,42,110,0.22)',
     features: [
       { icon: Package, label: 'Accès à la centrale d\'achats KDMARCHE B2B' },
       { icon: MapPin, label: '1 zone géographique incluse' },
@@ -96,15 +96,15 @@ const PricingPage = () => {
             Abonnements O&apos;SCOP
           </span>
           <h1
-            className="text-4xl sm:text-5xl lg:text-6xl font-serif font-semibold text-[#0B1F3B] leading-[1.05] mb-4"
+            className="text-4xl sm:text-5xl lg:text-6xl font-serif font-semibold text-[#2A1045] leading-[1.05] mb-4"
             style={{ fontFamily: '"Playfair Display", serif' }}
             data-testid="pricing-title"
           >
-            Choisissez votre accès <span className="text-[#D9B35A]">à la Centrale</span>
+            Accès Pro <span className="text-[#D9B35A]">Mutualisé</span>
           </h1>
           <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
-            Accédez aux prix structurels B2B mutualisés via KDMARCHE, dans un cadre coopératif B2B2C dédié aux membres
-            professionnels.
+            Choisissez votre accès à la Centrale : prix structurels B2B mutualisés via KDMARCHE, dans un cadre
+            coopératif B2B2C dédié aux membres professionnels.
           </p>
         </div>
       </section>
@@ -137,7 +137,7 @@ const PricingPage = () => {
                   <Icon className="w-5 h-5 text-[#4a1776]" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#0B1F3B]">{f.title}</p>
+                  <p className="text-sm font-semibold text-[#2A1045]">{f.title}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{f.desc}</p>
                 </div>
               </div>
@@ -149,26 +149,26 @@ const PricingPage = () => {
       {/* FAQ short */}
       <section className="pb-24 px-4">
         <div className="max-w-3xl mx-auto p-8 rounded-2xl bg-white/80 border border-[#D9B35A]/25 backdrop-blur-sm">
-          <h3 className="text-xl font-serif font-semibold text-[#0B1F3B] mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>
+          <h3 className="text-xl font-serif font-semibold text-[#2A1045] mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>
             Questions fréquentes
           </h3>
           <div className="space-y-4 text-sm">
             <div>
-              <p className="font-semibold text-[#0B1F3B]">Puis-je changer de formule à tout moment ?</p>
+              <p className="font-semibold text-[#2A1045]">Puis-je changer de formule à tout moment ?</p>
               <p className="text-slate-600 mt-1">
                 Oui, changement de formule possible chaque mois. L&apos;écart tarifaire est calculé au prorata et
                 imputé au wallet crédits.
               </p>
             </div>
             <div>
-              <p className="font-semibold text-[#0B1F3B]">Qui peut adhérer ?</p>
+              <p className="font-semibold text-[#2A1045]">Qui peut adhérer ?</p>
               <p className="text-slate-600 mt-1">
                 Toute structure professionnelle (SIRET obligatoire) : coopératives, associations ESS, PME, artisans,
                 restaurateurs, épiceries, collectivités.
               </p>
             </div>
             <div>
-              <p className="font-semibold text-[#0B1F3B]">Comment se calculent les prix mutualisés ?</p>
+              <p className="font-semibold text-[#2A1045]">Comment se calculent les prix mutualisés ?</p>
               <p className="text-slate-600 mt-1">
                 Les prix résultent de la force collective des membres : volumes agrégés, contributions et services
                 mutualisés du réseau. Il ne s&apos;agit ni de remises, ni de promotions, mais de <strong>conditions
@@ -179,8 +179,8 @@ const PricingPage = () => {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               to="/adhesion"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-              style={{ background: 'linear-gradient(135deg, #0B4D87 0%, #083866 100%)' }}
+              className="force-white inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+              style={{ background: 'linear-gradient(135deg, #5B2E8C 0%, #451F6B 100%)' }}
               data-testid="cta-adhesion"
             >
               Adhérer à la Centrale
@@ -211,7 +211,7 @@ const PricingCard = ({ tier }) => {
     >
       {isRecommended && (
         <span
-          className="absolute -top-3 right-6 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.15em] font-bold text-white shadow-md"
+          className="force-white absolute -top-3 right-6 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.15em] font-bold text-white shadow-md"
           style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)' }}
           data-testid="pricing-recommended-badge"
         >
@@ -235,8 +235,8 @@ const PricingCard = ({ tier }) => {
         </div>
 
         <div className="flex items-baseline gap-1 mb-6">
-          <span className="text-5xl font-bold text-[#0B1F3B]">{tier.price}</span>
-          <span className="text-2xl font-bold text-[#0B1F3B]/70">€</span>
+          <span className="text-5xl font-bold text-[#2A1045]">{tier.price}</span>
+          <span className="text-2xl font-bold text-[#2A1045]/70">€</span>
           <span className="text-xs text-slate-500 ml-2">{tier.period}</span>
         </div>
 
@@ -263,8 +263,8 @@ const PricingCard = ({ tier }) => {
           data-testid={`pricing-cta-${tier.id}`}
           className={`w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
             isRecommended
-              ? 'text-white shadow-lg hover:shadow-xl'
-              : 'text-[#0B1F3B] hover:opacity-90'
+              ? 'force-white text-white shadow-lg hover:shadow-xl'
+              : 'text-[#2A1045] hover:opacity-90'
           }`}
           style={
             isRecommended

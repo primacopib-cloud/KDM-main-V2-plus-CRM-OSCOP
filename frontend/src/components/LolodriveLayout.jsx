@@ -63,7 +63,7 @@ export default function LolodriveLayout({ title, subtitle, children, actions }) 
             <div>
               <h1
                 className="text-3xl sm:text-4xl font-display font-bold tracking-tight bg-clip-text text-transparent"
-                style={{ backgroundImage: 'linear-gradient(135deg, #B8941E 0%, #D4AF37 50%, #0B4D87 100%)' }}
+                style={{ backgroundImage: 'linear-gradient(135deg, #B8941E 0%, #D4AF37 50%, #5B2E8C 100%)' }}
               >
                 {title}
               </h1>

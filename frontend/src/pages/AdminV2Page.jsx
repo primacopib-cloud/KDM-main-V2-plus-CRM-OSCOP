@@ -448,7 +448,7 @@ export default function AdminV2Page() {
                                   <div className="space-y-2">
                                     {app.documents.map((doc, idx) => (
                                       <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
-                                        <FileText className="w-4 h-4 text-[#57D19A]" />
+                                        <FileText className="w-4 h-4 text-[#D4AF37]" />
                                         <span className="text-sm text-white/80">{doc.doc_type}</span>
                                         <Badge variant="outline" className="text-[10px] ml-auto">
                                           {doc.verified ? 'Vérifié' : 'Non vérifié'}

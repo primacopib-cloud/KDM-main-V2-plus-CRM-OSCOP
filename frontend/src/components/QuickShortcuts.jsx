@@ -49,7 +49,7 @@ const getIcon = (iconName) => {
 // Color options
 const colorOptions = [
   { value: '#D9B35A', label: 'Or' },
-  { value: '#57D19A', label: 'Vert' },
+  { value: '#D4AF37', label: 'Vert' },
   { value: '#3B82F6', label: 'Bleu' },
   { value: '#8B5CF6', label: 'Violet' },
   { value: '#EC4899', label: 'Rose' },

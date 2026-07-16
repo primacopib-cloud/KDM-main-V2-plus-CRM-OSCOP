@@ -106,10 +106,10 @@ const PartiesCard = ({ parties }) => {
           <p><span className="text-white/50">Représentée par :</span> {replaceVariables(kdm.rep_name)}, {replaceVariables(kdm.rep_title)}</p>
         </div>
       </div>
-      <div className="p-4 rounded-xl bg-[#57D19A]/5 border border-[#57D19A]/15">
+      <div className="p-4 rounded-xl bg-[#D4AF37]/5 border border-[#D4AF37]/15">
         <div className="flex items-center gap-2 mb-3">
-          <Building2 className="w-4 h-4 text-[#57D19A]" />
-          <h4 className="text-sm font-semibold text-[#57D19A] uppercase tracking-wider">O&apos;SCOP</h4>
+          <Building2 className="w-4 h-4 text-[#D4AF37]" />
+          <h4 className="text-sm font-semibold text-[#D4AF37] uppercase tracking-wider">O&apos;SCOP</h4>
         </div>
         <div className="space-y-1 text-sm text-white/70">
           <p><span className="text-white/50">Dénomination :</span> <strong className="text-white/90">{replaceVariables(osc.name)}</strong></p>
@@ -137,7 +137,7 @@ const AuditTable = () => (
           <tr className="border-b border-white/10">
             <th className="text-left py-2 px-3 text-white/60 font-medium">{auditComplianceTable.headers[0]}</th>
             <th className="text-center py-2 px-3 text-[#D9B35A] font-medium">{auditComplianceTable.headers[1]}</th>
-            <th className="text-center py-2 px-3 text-[#57D19A] font-medium">{auditComplianceTable.headers[2]}</th>
+            <th className="text-center py-2 px-3 text-[#D4AF37] font-medium">{auditComplianceTable.headers[2]}</th>
           </tr>
         </thead>
         <tbody>
@@ -153,7 +153,7 @@ const AuditTable = () => (
               </td>
               <td className="py-2.5 px-3 text-center">
                 {row.oscop ? (
-                  <CheckCircle2 className="w-5 h-5 text-[#57D19A] mx-auto" />
+                  <CheckCircle2 className="w-5 h-5 text-[#D4AF37] mx-auto" />
                 ) : (
                   <XCircle className="w-5 h-5 text-white/20 mx-auto" />
                 )}
@@ -356,7 +356,7 @@ export default function LegalPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="oscop"
-              className="data-[state=active]:bg-[#57D19A]/20 data-[state=active]:text-[#57D19A] flex items-center gap-1 py-2.5 text-xs sm:text-sm"
+              className="data-[state=active]:bg-[#D4AF37]/20 data-[state=active]:text-[#D4AF37] flex items-center gap-1 py-2.5 text-xs sm:text-sm"
               data-testid="tab-cg-oscop"
             >
               <CreditCard className="w-4 h-4" />

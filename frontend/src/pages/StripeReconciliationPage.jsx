@@ -16,7 +16,7 @@ const ACCOUNT_LABEL = {
   kdmarche: "KDMARCHE",
 };
 const ACCOUNT_COLOR = {
-  oscop: "#0B4D87",      // Bleu logistique
+  oscop: "#5B2E8C",      // Bleu logistique
   kdmarche: "#D4AF37",   // Or métallisé
 };
 const KIND_LABEL = {

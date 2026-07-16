@@ -575,10 +575,10 @@ export default function WalletPage() {
               <div className="glass-panel-soft rounded-[18px] p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold flex items-center gap-2">
-                    <Unlock className="w-4 h-4 text-[#57D19A]" />
+                    <Unlock className="w-4 h-4 text-[#D4AF37]" />
                     Zones activées
                   </h3>
-                  <Badge className="bg-[#57D19A]/20 text-[#57D19A]">
+                  <Badge className="bg-[#D4AF37]/20 text-[#D4AF37]">
                     {entitledZones.length} zone{entitledZones.length > 1 ? 's' : ''}
                   </Badge>
                 </div>
@@ -606,7 +606,7 @@ export default function WalletPage() {
                       return (
                         <div 
                           key={entitlement.id || idx}
-                          className="p-4 rounded-xl bg-[#57D19A]/5 border border-[#57D19A]/20"
+                          className="p-4 rounded-xl bg-[#D4AF37]/5 border border-[#D4AF37]/20"
                         >
                           <div className="flex items-start justify-between">
                             <div>
@@ -618,7 +618,7 @@ export default function WalletPage() {
                             </Badge>
                           </div>
                           <div className="mt-3 flex items-center gap-2 text-xs text-white/50">
-                            <CheckCircle2 className="w-3 h-3 text-[#57D19A]" />
+                            <CheckCircle2 className="w-3 h-3 text-[#D4AF37]" />
                             <span>Activée le {formatDate(entitlement.created_at)}</span>
                           </div>
                           {zone.exw_only && (
@@ -756,7 +756,7 @@ export default function WalletPage() {
         <DialogContent className="bg-[#0a0d14] border-white/10 text-white sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Globe className="w-5 h-5 text-[#57D19A]" />
+              <Globe className="w-5 h-5 text-[#D4AF37]" />
               Activer une zone
             </DialogTitle>
             <DialogDescription className="text-white/60">
@@ -769,7 +769,7 @@ export default function WalletPage() {
 
           {selectedZone && (
             <div className="py-4">
-              <div className="p-4 rounded-xl bg-[#57D19A]/5 border border-[#57D19A]/20">
+              <div className="p-4 rounded-xl bg-[#D4AF37]/5 border border-[#D4AF37]/20">
                 <p className="font-semibold text-white/90">{selectedZone.name}</p>
                 <p className="text-sm text-white/60 mt-1">{selectedZone.code}</p>
                 {selectedZone.exw_only && (
@@ -802,7 +802,7 @@ export default function WalletPage() {
             <Button
               onClick={handleAddZone}
               disabled={zoneLoading || !selectedZone}
-              className="bg-[#57D19A] hover:bg-[#47c18a] text-black"
+              className="bg-[#D4AF37] hover:bg-[#47c18a] text-black"
             >
               {zoneLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />

@@ -196,18 +196,18 @@ const AdminPage = () => {
                 </div>
                 <p className="text-xs text-white/60 mb-1">Utilisateurs</p>
                 <p className="text-2xl font-bold">{stats.total_users}</p>
-                <p className="text-xs text-[#57D19A] mt-1">+{stats.new_users_this_month} ce mois</p>
+                <p className="text-xs text-[#D4AF37] mt-1">+{stats.new_users_this_month} ce mois</p>
               </div>
 
               <div className="glass-panel-soft rounded-[18px] p-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2.5 rounded-xl bg-[#57D19A]/20">
-                    <FileText className="w-5 h-5 text-[#57D19A]" />
+                  <div className="p-2.5 rounded-xl bg-[#D4AF37]/20">
+                    <FileText className="w-5 h-5 text-[#D4AF37]" />
                   </div>
                 </div>
                 <p className="text-xs text-white/60 mb-1">Demandes de devis</p>
                 <p className="text-2xl font-bold">{stats.total_quotes}</p>
-                <p className="text-xs text-[#57D19A] mt-1">+{stats.new_quotes_this_month} ce mois</p>
+                <p className="text-xs text-[#D4AF37] mt-1">+{stats.new_quotes_this_month} ce mois</p>
               </div>
 
               <div className="glass-panel-soft rounded-[18px] p-5">
@@ -249,10 +249,10 @@ const AdminPage = () => {
                   </div>
                   <p className="text-2xl font-bold">{stats.quotes_by_status?.contacted || 0}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-[#57D19A]/10 border border-[#57D19A]/20">
+                <div className="p-4 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20">
                   <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="w-4 h-4 text-[#57D19A]" />
-                    <span className="text-sm text-[#57D19A] font-medium">Converti</span>
+                    <CheckCircle className="w-4 h-4 text-[#D4AF37]" />
+                    <span className="text-sm text-[#D4AF37] font-medium">Converti</span>
                   </div>
                   <p className="text-2xl font-bold">{stats.quotes_by_status?.converted || 0}</p>
                 </div>
@@ -314,7 +314,7 @@ const AdminPage = () => {
                           <div className="flex items-center gap-2">
                             <button 
                               onClick={() => handleUpdateCredits(user.id, 100)}
-                              className="p-1.5 rounded-lg bg-[#57D19A]/20 text-[#57D19A] hover:bg-[#57D19A]/30"
+                              className="p-1.5 rounded-lg bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/30"
                               title="Ajouter 100 crédits"
                             >
                               <Plus className="w-4 h-4" />
@@ -394,7 +394,7 @@ const AdminPage = () => {
                       </td>
                       <td className="p-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                          quote.status === 'converted' ? 'bg-[#57D19A]/20 text-[#57D19A]' :
+                          quote.status === 'converted' ? 'bg-[#D4AF37]/20 text-[#D4AF37]' :
                           quote.status === 'contacted' ? 'bg-blue-500/20 text-blue-400' :
                           'bg-yellow-500/20 text-yellow-400'
                         }`}>
@@ -416,7 +416,7 @@ const AdminPage = () => {
                           {quote.status === 'contacted' && (
                             <button 
                               onClick={() => handleUpdateQuoteStatus(quote.id, 'converted')}
-                              className="p-1.5 rounded-lg bg-[#57D19A]/20 text-[#57D19A] hover:bg-[#57D19A]/30"
+                              className="p-1.5 rounded-lg bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/30"
                               title="Marquer comme converti"
                             >
                               <CheckCircle className="w-4 h-4" />

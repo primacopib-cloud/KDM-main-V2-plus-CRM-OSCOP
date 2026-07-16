@@ -46,7 +46,7 @@ const getNotificationIcon = (type) => {
 const getNotificationColor = (type) => {
   const colors = {
     new_quote: '#D9B35A',
-    new_user: '#57D19A',
+    new_user: '#D4AF37',
     org_submitted: '#3B82F6',
     org_approved: '#10B981',
     org_rejected: '#EF4444',
@@ -307,8 +307,8 @@ export default function NotificationsHistoryPage() {
               </div>
               <div className="p-4 rounded-xl bg-white/[0.04] border border-white/10">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#57D19A]/20 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-[#57D19A]" />
+                  <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-[#D4AF37]" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{stats.today || 0}</p>
