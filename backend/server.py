@@ -310,6 +310,24 @@ from routes_finance_bridge import (
 set_finance_bridge_database(db)
 app.include_router(finance_bridge_router)
 
+# Socle Connecteurs unifiés (multi-apps) — /api/connectors/*
+from admin_guard import set_admin_guard_database
+from connectors.base import set_connectors_database, ensure_connectors_indexes
+from connectors.auto_sync import set_auto_sync_database
+from routes_connectors import connectors_router, set_connectors_routes_database
+set_admin_guard_database(db)
+set_connectors_database(db)
+set_auto_sync_database(db)
+set_connectors_routes_database(db)
+app.include_router(connectors_router)
+
+# Alertes favoris (restock/promo) + routes admin stock & prix
+from favorites_alerts import set_favorites_alerts_database
+from routes_stock_admin import stock_admin_router, set_stock_admin_database
+set_favorites_alerts_database(db)
+set_stock_admin_database(db)
+app.include_router(stock_admin_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)
@@ -465,6 +483,11 @@ async def startup_db_client():
         logger.info("Finance API Bridge indexes ensured")
     except Exception as e:
         logger.warning(f"Could not create Finance bridge indexes: {e}")
+    try:
+        await ensure_connectors_indexes(db)
+        logger.info("Connectors indexes ensured")
+    except Exception as e:
+        logger.warning(f"Could not create connectors indexes: {e}")
     try:
         start_scheduler()
     except Exception as e:

@@ -51,6 +51,10 @@ async def handle_checkout_completed(session: dict):
     except Exception as e:
         logger.error(f"Error generating invoice: {str(e)}")
     
+    # Auto-sync connecteurs (GED + Finance O'SCOP) — non bloquant
+    from connectors.auto_sync import schedule_order_sync
+    schedule_order_sync(order_id)
+    
     logger.info(f"Order {order['order_number']} payment completed")
 
 
@@ -94,6 +98,8 @@ async def handle_payment_succeeded(intent: dict):
                         "status": "PAID",
                     }}
                 )
+                from connectors.auto_sync import schedule_order_sync
+                schedule_order_sync(order_id)
             
             logger.info(f"Installment {installment_number}/4 paid for order {order['order_number']}")
     else:
@@ -113,6 +119,8 @@ async def handle_payment_succeeded(intent: dict):
         )
         
         logger.info(f"Payment succeeded for order {order['order_number']}")
+        from connectors.auto_sync import schedule_order_sync
+        schedule_order_sync(order_id)
 
 
 async def handle_payment_failed(intent: dict):

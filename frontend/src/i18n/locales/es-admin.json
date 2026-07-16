@@ -419,6 +419,25 @@
     "populaire": "Popular",
     "mensuel_lc": "/mes",
     "sur_soumis": "de {{count}} enviados",
-    "plus_more": "+{{count}} más"
+    "plus_more": "+{{count}} más",
+    "conn_title": "Conectores",
+    "conn_subtitle": "Apps externas conectadas a KDMARCHÉ — salud, cola de sincronización y reintento.",
+    "conn_refresh": "Actualizar",
+    "conn_test_health": "Probar conexión",
+    "conn_not_tested": "No probado",
+    "conn_manual_push": "Push manual (pedido pagado)",
+    "conn_order_placeholder": "ID de pedido KDMARCHÉ",
+    "conn_push_order": "Enviar factura + pago",
+    "conn_sync_queue": "Cola de sincronización",
+    "conn_counts": "{{success}} éxitos · {{error}} errores",
+    "conn_all_status": "Todos los estados",
+    "conn_no_events": "Sin eventos de sincronización todavía.",
+    "conn_retry": "Reintentar",
+    "conn_retry_ok": "Reintento exitoso",
+    "conn_col_date": "Fecha",
+    "conn_col_connector": "Conector",
+    "conn_col_action": "Acción",
+    "conn_col_detail": "Detalle",
+    "conn_col_status": "Estado"
   }
 }

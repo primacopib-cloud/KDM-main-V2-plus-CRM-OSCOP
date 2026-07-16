@@ -1,0 +1,35 @@
+{
+  "summary": "Iteration 23 — Validated the two new features: (A) Unified external connectors framework (oscop-ged + oscop-finance) targeting the real remote CRM https://objectifscopoutremer.com, and (B) Favorites restock/promo alerts with 24h anti-spam. Backend pytest: 10/10 PASS. Frontend: /admin/connecteurs renders both connector cards with correct data-testid, health check returns OK badge for oscop-ged (live call to remote CRM succeeded), sync queue table lists 1 SUCCESS (oscop-finance push_paiement) + 1 ERROR (oscop-ged push_invoice — known remote bug 'Path parameters cannot have a default value') with a working Retry button. i18n EN validated (?lang=en shows 'Connectors' title). Regression: buyer /catalogue still renders. IMPORTANT anti-spam finding below.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter23_connectors_favorites.py",
+    "/app/test_reports/pytest/iter23_results.xml"
+  ],
+  "action_items": [
+    "Non-blocking: the admin nav link to /admin/connecteurs is defined in /app/frontend/src/components/navbar/navItems.js (line 42) but during Playwright DOM scans on /admin, /admin/dashboard, /admin/utilisateurs and /admin/plans no <a href='/admin/connecteurs'> was rendered in the DOM. The route works via direct URL. Please verify the admin dropdown/hamburger actually surfaces this entry for real admin users (may be gated behind a menu that only opens on click).",
+    "Non-blocking: retry of the oscop-ged ERROR event correctly stays in ERROR — remote CRM bug 'Path parameters cannot have a default value' (as expected per review). Consider surfacing 'attempts' counter in the UI so admins see retries increment."
+  ],
+  "critical_code_review_comments": [
+    "routes_connectors.py + connectors/base.py + favorites_alerts.py + routes_stock_admin.py are all well under 500 lines (project golden rule respected).",
+    "favorites_alerts.py:52 — `user_favorites.find({'favorites.product_id': product_id})` correctly leverages the array shape, but no index on `favorites.product_id`. For scale, add: `db.user_favorites.create_index('favorites.product_id')`.",
+    "routes_stock_admin.py:68/99 — `asyncio.ensure_future(alert_favorites(...))` fires the alert as a fire-and-forget task; if the process is killed before completion, the notification & Brevo email are lost silently. Consider awaiting or enqueueing via a persistent queue for reliability.",
+    "routes_stock_admin.py:66 — `restocked = old_available <= 0 and body.quantity_available > 0` correctly handles the 0→N transition; note that if `existing` is None (first ever stock row), old_available=0 so any positive quantity will trigger a restock alert — this is fine but be aware for seeding scripts.",
+    "connectors/base.py:44 — `record_event` doesn't sanitize `response_excerpt` size; a very large remote payload could bloat the collection. Consider truncating (e.g. 4KB max).",
+    "favorites_alerts.py has NO unit test coverage in /app/backend/tests aside from the integration path exercised via /api/catalog/admin/*. Consider a direct unit test with a mocked db."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter23_connectors_favorites.py (new)"
+  ],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "100% on target flows (7/7 checks)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; acheteur-pro@kdmarche.fr / Demo2026! — both worked.",
+  "seed_data_creation": "The test file uses a `clean_alerts_log` fixture that deletes rows in `favorites_alerts_log` for product 61c31a9c-d072-4988-9a39-76ca46520bba before each restock/promo test to bypass the 24h anti-spam gate. After the run: 2 log rows remain (1 restock + 1 promo for user-buyer-pro on MARTINIQUE), price is restored to 1250 cents, stock in MARTINIQUE is at 40. No writes were pushed to the remote CRM beyond the pre-existing SUCCESS/ERROR events + the safe retry of the known ERROR (which failed again as expected — no new remote data created).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The 24h anti-spam is implemented via `favorites_alerts_log` (indexed on user+product+alert_type+sent_at). When you test restock/promo alerts, you MUST clean this collection first for the tested product, otherwise the trigger flag returns True but no notification is created (the endpoint response uses the DB write to zone_stocks, not the actual alert emission). This is EXPECTED behavior of the anti-spam, not a bug. Test product 61c31a9c-d072-4988-9a39-76ca46520bba zone MARTINIQUE price is 1250 cents (restored). Do NOT call /api/connectors/push/order/* — it creates real payments in the remote CRM.",
+  "rca of the issue": "N/A — no bugs found. Both features work as specified. The initial pytest run showed 2 failures because the test fixture did not clean favorites_alerts_log, so the 24h anti-spam correctly prevented a second notification. Fix: added `clean_alerts_log` pytest fixture that purges the log for the tested product before each alert test. Re-run: 10/10 PASS."
+}

@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ShoppingCart, Package, FileText,
   Wallet, Users, Shield, BarChart3,
-  Store, Building2, MapPin, CreditCard, Home, Truck, HeartHandshake, Server, Settings,
+  Store, Building2, MapPin, CreditCard, Home, Truck, HeartHandshake, Server, Settings, Plug,
 } from 'lucide-react';
 
 export const getNavItems = (userRole, isAdmin) => {
@@ -39,6 +39,7 @@ export const getNavItems = (userRole, isAdmin) => {
         { href: '/admin-v2', label: 'nav.admin_orgs', icon: Building2 },
         { href: '/admin/produits', label: 'nav.product_validation', icon: Package },
         { href: '/admin/stripe-reconciliation', label: 'nav.stripe_recon', icon: CreditCard },
+        { href: '/admin/connecteurs', label: 'nav.connectors', icon: Plug },
         { href: '/admin/ged-bridge', label: 'nav.ged_bridge', icon: Server },
         { href: '/admin/finance-bridge', label: 'nav.finance_bridge', icon: CreditCard },
       ] : [],

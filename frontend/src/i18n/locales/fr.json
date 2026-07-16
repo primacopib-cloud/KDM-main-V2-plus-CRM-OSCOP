@@ -54,7 +54,8 @@
     "user": "Utilisateur",
     "my_account": "Mon compte",
     "vendor": "Vendeur",
-    "administration": "Administration"
+    "administration": "Administration",
+    "connectors": "Connecteurs"
   },
   "footer": {
     "navigation": "Navigation",

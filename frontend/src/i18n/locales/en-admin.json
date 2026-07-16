@@ -419,6 +419,25 @@
     "populaire": "Popular",
     "mensuel_lc": "/month",
     "sur_soumis": "of {{count}} submitted",
-    "plus_more": "+{{count}} more"
+    "plus_more": "+{{count}} more",
+    "conn_title": "Connectors",
+    "conn_subtitle": "External apps connected to KDMARCHÉ — health, sync queue and replay.",
+    "conn_refresh": "Refresh",
+    "conn_test_health": "Test connection",
+    "conn_not_tested": "Not tested",
+    "conn_manual_push": "Manual push (paid order)",
+    "conn_order_placeholder": "KDMARCHÉ order ID",
+    "conn_push_order": "Push invoice + payment",
+    "conn_sync_queue": "Sync queue",
+    "conn_counts": "{{success}} success · {{error}} errors",
+    "conn_all_status": "All statuses",
+    "conn_no_events": "No sync events yet.",
+    "conn_retry": "Retry",
+    "conn_retry_ok": "Replay successful",
+    "conn_col_date": "Date",
+    "conn_col_connector": "Connector",
+    "conn_col_action": "Action",
+    "conn_col_detail": "Detail",
+    "conn_col_status": "Status"
   }
 }

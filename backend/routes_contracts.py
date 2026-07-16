@@ -293,6 +293,10 @@ async def sign_transport_contract(contract_id: str, request: TransportContractSi
     
     logger.info(f"Transport contract signed: {contract.get('reference')} by {request.signer_name}")
     
+    # Auto-sync : push du contrat signé vers la GED O'SCOP (non bloquant)
+    from connectors.auto_sync import schedule_contract_sync
+    schedule_contract_sync(contract_id)
+    
     return {
         "status": "signed",
         "contract_id": contract_id,
