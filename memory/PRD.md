@@ -579,6 +579,15 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 - Aucune écriture, agrège uniquement `payment_transactions`.
 - Contract tests : `/app/backend/tests/test_stripe_live_health.py` — 7/7 PASS (auth 403, shape, prefix masking, verdict logic).
 
+### 2026-02 — Redesign Login / Landing / Tarifs (UX coopérative)
+- ✅ **`/connexion` refonte totale** : split panel dark navy (KDMARCHE) + white form. Badge "ESPACE MEMBRES", storytelling coopératif, 3 bénéfices (Centrale B2B2C, Conditions mutualisées, Cadre sécurisé), footer RGPD/SSL. Bouton bleu profond, Google OAuth intégré, lien "Adhérer à la Centrale", et **callout "Vous êtes administrateur ? Connexion admin"** en bas.
+- ✅ **`/admin/connexion` nouvelle page** : split panel dark purple (#4a1776) + gold (#F5A623). Badge "ESPACE ADMINISTRATEUR", warning journalisation, formulaire distinct. Enforcement `is_admin` : login refusé + logout automatique + toast erreur si le compte n'est pas admin. Redirect vers `/superadmin` sur succès.
+- ✅ **`NavBar` simplifié** : top bar publique = Accueil, LOGI'SCOP, O'SCOP, Tarifs + (si connecté) Mon Espace + Catalogue. Tout le reste (Wallet, Commandes, Documents, Espace Vendeur, Super Admin, Plans, Admin Orgs, Validation Produits, Recon Stripe, GED, Finance) passe dans le dropdown avatar structuré en 3 sections (Compte / Vendeur / Administration).
+- ✅ **`/tarifs` nouvelle page** : 3 abonnements ESS ACCÈS PRO 149€ (bleu), ESS VOLUME PRO 349€ (or, badge RECOMMANDÉ), ESS IMPACT PRO 749€ (violet). Trust strip (Sécurisé / Mutualisé / Coopératif / Performant) + FAQ courte + CTAs adhésion.
+- ✅ **Landing : bandeau `CooperativeApiSection`** ajouté (violet + or) avec message institutionnel "API Coopérative B2B2C — Accès Pro Mutualisé", 4 piliers, et bloc code JSON reprenant la formulation API cooperative (`service_name: "CommunityPlace Pro Cooperative API"`, etc.).
+- Palette appliquée : violet profond `#4a1776` + jaune `#F5A623` (charte KD MARCHÉ Pro) + bleu KDMARCHE `#0B4D87` + or O'SCOP `#D9B35A`.
+- Build frontend clean (yarn build OK), aucune régression sur les routes existantes.
+
 ### Backlog
 - P1 : Wrapping i18n complet (FR/EN/ES) — après validation test LIVE.
 - Future : brancher les vraies URLs de la GED ESS quand fournies (actuellement mode DEGRADED assumé).

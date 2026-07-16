@@ -38,45 +38,45 @@ function FavoritesNavButton() {
 
 // Navigation items for different user roles
 const getNavItems = (userRole, isAdmin) => {
+  // Top bar: keep it lean — 4 public + 2 member shortcuts.
   const baseItems = [
     { href: '/', label: 'Accueil', icon: Home, public: true },
     { href: '/logiscop', label: "LOGI'SCOP", icon: Truck, public: true, accent: '#0B4D87' },
     { href: '/oscop', label: "O'SCOP", icon: HeartHandshake, public: true, accent: '#8CC63E' },
-    { href: '/offres', label: 'Offres', icon: CreditCard, public: true },
+    { href: '/tarifs', label: 'Tarifs', icon: CreditCard, public: true },
   ];
 
-  const buyerItems = [
+  // Member-only shortcuts kept in top bar (per product decision).
+  const memberShortcuts = [
     { href: '/espace-acheteur', label: 'Mon Espace', icon: LayoutDashboard },
     { href: '/catalogue', label: 'Catalogue', icon: ShoppingCart },
-    { href: '/commandes', label: 'Commandes', icon: Package },
-    { href: '/wallet', label: 'Wallet', icon: Wallet },
-    { href: '/documents', label: 'Documents', icon: FileText },
-    { href: '/listes-achats', label: 'Listes d\'achats', icon: ShoppingCart },
   ];
 
-  const vendorItems = [
-    { href: '/espace-vendeur', label: 'Espace Vendeur', icon: Store },
-  ];
-
-  const adminItems = [
-    { href: '/superadmin', label: 'Super Admin', icon: Shield },
-    { href: '/admin/plans', label: 'Plans & Crédits', icon: CreditCard },
-    { href: '/admin-v2', label: 'Admin Orgs', icon: Building2 },
-    { href: '/admin/produits', label: 'Validation Produits', icon: Package },
-    { href: '/admin/stripe-reconciliation', label: 'Réconciliation Stripe', icon: CreditCard },
-    { href: '/admin/ged-bridge', label: 'Pont GED ESS', icon: Server },
-    { href: '/admin/finance-bridge', label: 'Pont Finance', icon: CreditCard },
-  ];
-
-  if (isAdmin) {
-    return [...baseItems, ...buyerItems, ...vendorItems, ...adminItems];
-  }
-
-  if (userRole === 'vendor') {
-    return [...baseItems, ...vendorItems, ...buyerItems];
-  }
-
-  return [...baseItems, ...buyerItems];
+  // Everything below is available via the user-avatar dropdown, not the top bar.
+  return {
+    topBar: baseItems.concat(userRole || isAdmin ? memberShortcuts : []),
+    dropdown: {
+      buyer: [
+        { href: '/espace-acheteur', label: 'Mon Espace', icon: LayoutDashboard },
+        { href: '/commandes', label: 'Mes Commandes', icon: Package },
+        { href: '/wallet', label: 'Wallet', icon: Wallet },
+        { href: '/documents', label: 'Documents', icon: FileText },
+        { href: '/listes-achats', label: 'Listes d\'achats', icon: ShoppingCart },
+      ],
+      vendor: userRole === 'vendor' || isAdmin ? [
+        { href: '/espace-vendeur', label: 'Espace Vendeur', icon: Store },
+      ] : [],
+      admin: isAdmin ? [
+        { href: '/superadmin', label: 'Super Admin', icon: Shield },
+        { href: '/admin/plans', label: 'Plans & Crédits', icon: CreditCard },
+        { href: '/admin-v2', label: 'Admin Orgs', icon: Building2 },
+        { href: '/admin/produits', label: 'Validation Produits', icon: Package },
+        { href: '/admin/stripe-reconciliation', label: 'Réconciliation Stripe', icon: CreditCard },
+        { href: '/admin/ged-bridge', label: 'Pont GED ESS', icon: Server },
+        { href: '/admin/finance-bridge', label: 'Pont Finance', icon: CreditCard },
+      ] : [],
+    },
+  };
 };
 
 const NavBar = ({ variant = 'default' }) => {
@@ -125,7 +125,8 @@ const NavBar = ({ variant = 'default' }) => {
     navigate('/');
   };
 
-  const navItems = getNavItems(user?.role, isAdmin);
+  const nav = getNavItems(user?.role, isAdmin);
+  const navItems = nav.topBar;
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
@@ -254,68 +255,93 @@ const NavBar = ({ variant = 'default' }) => {
                           <p className="text-xs text-[#D9B35A] mt-1">{user.company_name}</p>
                         )}
                       </div>
+                      {/* Buyer/member section */}
                       <div className="p-2">
-                        <Link 
-                          to="/espace-acheteur" 
+                        {nav.dropdown.buyer.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <Link
+                              key={item.href}
+                              to={item.href}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg"
+                              onClick={() => setShowUserMenu(false)}
+                              data-testid={`user-menu-${item.href.replace(/\//g, '-')}`}
+                            >
+                              <Icon className="w-4 h-4" />
+                              {item.label}
+                              {item.href === '/wallet' && (
+                                <span className="ml-auto text-xs text-[#D9B35A]">{user?.credits || 0} cr</span>
+                              )}
+                            </Link>
+                          );
+                        })}
+                        <Link
+                          to="/notifications"
                           className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg"
                           onClick={() => setShowUserMenu(false)}
-                        >
-                          <LayoutDashboard className="w-4 h-4" />
-                          Mon Espace
-                        </Link>
-                        <Link 
-                          to="/commandes" 
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <Package className="w-4 h-4" />
-                          Mes Commandes
-                        </Link>
-                        <Link 
-                          to="/wallet" 
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <Wallet className="w-4 h-4" />
-                          Wallet ({user?.credits || 0} crédits)
-                        </Link>
-                        <Link 
-                          to="/legal" 
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <FileText className="w-4 h-4" />
-                          Documents légaux
-                        </Link>
-                        <Link 
-                          to="/notifications" 
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg"
-                          onClick={() => setShowUserMenu(false)}
+                          data-testid="user-menu-notifications"
                         >
                           <Bell className="w-4 h-4" />
                           Notifications
+                          {unreadCount > 0 && (
+                            <span className="ml-auto text-xs bg-red-500 text-white rounded-full px-1.5">{unreadCount}</span>
+                          )}
                         </Link>
-                        {isAdmin && (
-                          <>
-                            <div className="my-2 border-t border-white/10" />
-                            <Link 
-                              to="/superadmin" 
-                              className="flex items-center gap-2 px-3 py-2 text-sm text-[#D9B35A] hover:bg-[#D9B35A]/10 rounded-lg"
-                              onClick={() => setShowUserMenu(false)}
-                            >
-                              <Shield className="w-4 h-4" />
-                              Super Admin
-                            </Link>
-                          </>
-                        )}
                       </div>
+
+                      {/* Vendor section */}
+                      {nav.dropdown.vendor.length > 0 && (
+                        <div className="p-2 border-t border-white/10">
+                          <p className="text-[10px] uppercase tracking-wider text-white/40 px-3 pt-1 pb-1.5 font-semibold">Vendeur</p>
+                          {nav.dropdown.vendor.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <Link
+                                key={item.href}
+                                to={item.href}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06] rounded-lg"
+                                onClick={() => setShowUserMenu(false)}
+                              >
+                                <Icon className="w-4 h-4" />
+                                {item.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Admin section */}
+                      {nav.dropdown.admin.length > 0 && (
+                        <div className="p-2 border-t border-white/10">
+                          <p className="text-[10px] uppercase tracking-wider text-[#D9B35A]/70 px-3 pt-1 pb-1.5 font-semibold flex items-center gap-1">
+                            <Shield className="w-3 h-3" /> Administration
+                          </p>
+                          {nav.dropdown.admin.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <Link
+                                key={item.href}
+                                to={item.href}
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-[#D9B35A] hover:bg-[#D9B35A]/10 rounded-lg"
+                                onClick={() => setShowUserMenu(false)}
+                                data-testid={`admin-menu-${item.href.replace(/\//g, '-')}`}
+                              >
+                                <Icon className="w-4 h-4" />
+                                {item.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       <div className="p-2 border-t border-white/10">
-                        <button 
+                        <button
                           onClick={() => {
                             setShowUserMenu(false);
                             handleLogout();
                           }}
                           className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg w-full"
+                          data-testid="user-menu-logout"
                         >
                           <LogOut className="w-4 h-4" />
                           Déconnexion
@@ -393,6 +419,66 @@ const NavBar = ({ variant = 'default' }) => {
                 );
               })}
             </nav>
+
+            {isAuthenticated && (nav.dropdown.buyer.length > 0 || nav.dropdown.admin.length > 0) && (
+              <>
+                <div className="mt-3 pt-3 border-t border-white/10">
+                  <p className="text-[10px] uppercase tracking-wider text-white/40 px-4 pb-2 font-semibold">Mon compte</p>
+                  {nav.dropdown.buyer.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:bg-white/[0.06] rounded-xl"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Icon className="w-4 h-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+                {nav.dropdown.vendor.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-white/10">
+                    <p className="text-[10px] uppercase tracking-wider text-white/40 px-4 pb-2 font-semibold">Vendeur</p>
+                    {nav.dropdown.vendor.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.href}
+                          to={item.href}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:bg-white/[0.06] rounded-xl"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+                {nav.dropdown.admin.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-white/10">
+                    <p className="text-[10px] uppercase tracking-wider text-[#D9B35A]/70 px-4 pb-2 font-semibold">Administration</p>
+                    {nav.dropdown.admin.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.href}
+                          to={item.href}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#D9B35A] hover:bg-[#D9B35A]/10 rounded-xl"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
 
             <div className="mt-4 pt-4 border-t border-white/10">
               {isAuthenticated ? (

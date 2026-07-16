@@ -210,6 +210,9 @@ const LandingPage = () => {
       {/* Réseau LOLODRIVE — carte publique */}
       <PublicLolodriveMapSection />
 
+      {/* API Coopérative B2B2C — dispositif institutionnel */}
+      <CooperativeApiSection />
+
       {/* Contact Section */}
       <section id="contact" className="py-8 px-5">
         <div className="max-w-[800px] mx-auto">
@@ -358,6 +361,163 @@ export const PublicLolodriveMapSection = () => {
             </div>
           </div>
         )}
+      </div>
+    </section>
+  );
+};
+
+
+/* =================================================================
+ * Section publique : dispositif API coopérative B2B2C
+ * (Ancrage institutionnel — palette violet KD MARCHÉ Pro + or O'SCOP)
+ * ================================================================= */
+export const CooperativeApiSection = () => {
+  return (
+    <section
+      id="cooperative-api"
+      className="py-16 px-5 relative"
+      style={{
+        background:
+          'radial-gradient(1000px 500px at 10% 0%, rgba(245,166,35,0.10), transparent 60%), ' +
+          'radial-gradient(800px 480px at 90% 100%, rgba(217,179,90,0.12), transparent 65%), ' +
+          'linear-gradient(180deg, #2a0c4a 0%, #4a1776 55%, #2a0c4a 100%)',
+      }}
+      data-testid="cooperative-api-section"
+    >
+      <div className="max-w-[1160px] mx-auto">
+        <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center">
+          {/* LEFT: message institutionnel */}
+          <div>
+            <span
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] uppercase tracking-[0.18em] font-bold mb-5"
+              style={{
+                background: 'rgba(245,166,35,0.14)',
+                border: '1px solid rgba(245,166,35,0.4)',
+                color: '#F5A623',
+              }}
+            >
+              <Zap className="w-3 h-3" />
+              API Coopérative B2B2C
+            </span>
+            <h3
+              className="text-4xl lg:text-5xl font-serif font-semibold text-white leading-[1.05] mb-5"
+              style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", serif' }}
+            >
+              Accès Pro <span className="text-[#F5A623]">Mutualisé</span>
+            </h3>
+            <p className="text-white/80 text-base leading-relaxed mb-4">
+              Dispositif API réservé aux membres professionnels : bénéficiez d&apos;un{' '}
+              <strong className="text-white">accès coopératif</strong> à des produits et solutions sélectionnés,
+              avec des conditions économiques issues de la force collective du réseau.
+            </p>
+            <p className="text-white/60 text-sm leading-relaxed mb-6">
+              Cadre coopératif B2B2C — les conditions économiques associées résultent de la mutualisation collective
+              des volumes, contributions et services du réseau. <em>Il ne s&apos;agit ni de remises, ni de promotions,
+              mais de conditions structurelles.</em>
+            </p>
+
+            <div className="flex flex-wrap gap-3 mb-8">
+              <Link
+                to="/tarifs"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-[#2a0c4a] shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #F5A623 0%, #D9B35A 100%)' }}
+                data-testid="coop-cta-tarifs"
+              >
+                Accéder à l&apos;API <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/adhesion"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white border border-white/25 hover:bg-white/5"
+                data-testid="coop-cta-adhesion"
+              >
+                Adhérer à la Centrale
+              </Link>
+            </div>
+
+            {/* Pillars */}
+            <div className="grid grid-cols-2 gap-3 max-w-lg">
+              {[
+                { icon: ShieldCheck, label: 'Sécurisé', desc: 'Accès authentifié et protégé' },
+                { icon: Users, label: 'Mutualisé', desc: 'Conditions issues du collectif' },
+                { icon: CheckCircle2, label: 'Coopératif', desc: 'Modèle éthique et solidaire' },
+                { icon: Zap, label: 'Performant', desc: 'Services sélectionnés' },
+              ].map((p) => {
+                const Icon = p.icon;
+                return (
+                  <div
+                    key={p.label}
+                    className="p-3 rounded-xl"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(245,166,35,0.2)',
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Icon className="w-4 h-4 text-[#F5A623]" />
+                      <p className="text-xs uppercase tracking-wider font-bold text-white">{p.label}</p>
+                    </div>
+                    <p className="text-[11px] text-white/55">{p.desc}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* RIGHT: schema visuel (API JSON) */}
+          <div className="relative">
+            <div
+              className="relative rounded-2xl p-6 lg:p-7 overflow-hidden"
+              style={{
+                background: 'linear-gradient(180deg, #1a0430 0%, #2a0c4a 100%)',
+                border: '1px solid rgba(245,166,35,0.25)',
+                boxShadow: '0 24px 64px rgba(74,23,118,0.4)',
+              }}
+            >
+              <div className="flex items-center gap-1.5 mb-4">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+                <span className="ml-auto text-[10px] text-white/40 uppercase tracking-wider">
+                  KDMARCHE Pro API
+                </span>
+              </div>
+              <pre className="text-[13px] leading-relaxed font-mono text-white/85 overflow-x-auto">
+                <code>
+{`{
+  `}<span className="text-[#F5A623]">&quot;service_name&quot;</span>: <span className="text-[#57D19A]">&quot;CommunityPlace Pro Cooperative API&quot;</span>,{`
+  `}<span className="text-[#F5A623]">&quot;target_users&quot;</span>: <span className="text-[#57D19A]">&quot;membres_professionnels&quot;</span>,{`
+  `}<span className="text-[#F5A623]">&quot;access_model&quot;</span>: <span className="text-[#57D19A]">&quot;acces_cooperatif_mutualise&quot;</span>,{`
+  `}<span className="text-[#F5A623]">&quot;pricing_basis&quot;</span>: <span className="text-[#57D19A]">&quot;conditions_economiques_mutualisees&quot;</span>,{`
+  `}<span className="text-[#F5A623]">&quot;framework&quot;</span>: <span className="text-[#57D19A]">&quot;B2B2C_cooperative&quot;</span>,{`
+  `}<span className="text-[#F5A623]">&quot;compliance&quot;</span>: [<span className="text-[#57D19A]">&quot;ESS&quot;</span>, <span className="text-[#57D19A]">&quot;RGPD&quot;</span>, <span className="text-[#57D19A]">&quot;SSL256&quot;</span>]{`
+}`}
+                </code>
+              </pre>
+
+              {/* Access secured badge overlay */}
+              <div
+                className="absolute -top-3 -right-3 flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-wider font-bold text-white shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #4a1776 0%, #2a0c4a 100%)', border: '1px solid rgba(245,166,35,0.5)' }}
+              >
+                <ShieldCheck className="w-3 h-3 text-[#F5A623]" />
+                Accès sécurisé
+              </div>
+            </div>
+
+            {/* Legend below the code block */}
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              {['Produits sélectionnés', 'Force collective', 'Coopération mutualisation'].map((t) => (
+                <div
+                  key={t}
+                  className="px-2 py-2 rounded-lg text-[10px] uppercase tracking-wider text-white/60 font-medium"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  {t}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

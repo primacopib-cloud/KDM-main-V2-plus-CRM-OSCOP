@@ -34,6 +34,8 @@ import FavoritesPage from "./pages/FavoritesPage";
 import ShoppingListsPage from "./pages/ShoppingListsPage";
 import ShoppingListDetailPage from "./pages/ShoppingListDetailPage";
 import AdminPlansPage from "./pages/AdminPlansPage";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import PricingPage from "./pages/PricingPage";
 import { FavoritesProvider } from "./components/FavoriteButton";
 import BackButton from "./components/BackButton";
 
@@ -66,7 +68,10 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/offres" element={<OffersPage />} />
           <Route path="/connexion" element={<LoginPage />} />
+          <Route path="/admin/connexion" element={<AdminLoginPage />} />
           <Route path="/inscription" element={<RegisterPage />} />
+          <Route path="/tarifs" element={<PricingPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/auth/google/return" element={<GoogleAuthReturnPage />} />
           <Route path="/admin/stripe-reconciliation" element={<StripeReconciliationPage />} />
