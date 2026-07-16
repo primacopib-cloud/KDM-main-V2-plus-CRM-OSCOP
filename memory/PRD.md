@@ -4,6 +4,13 @@
 
 ---
 
+## 0. RÈGLE D'OR (édictée par l'utilisateur le 16 juin 2026)
+**Aucun fichier ne doit dépasser 500 lignes de code.**
+- Tout NOUVEAU code doit être découpé en modules < 500 lignes dès sa création.
+- ~40 fichiers existants dépassent la limite (pires : `server.py` 1664, `routes_lolodrive_oscoop.py` 1397, `ProductCatalogManager.jsx` 1345, `BuyerSpacePage.jsx` 1314, `AdminPlansPage.jsx` 1191, `WalletPage.jsx` 1090, `api.js` 1031…). Refactoring progressif à planifier, MAIS ne pas toucher aux fichiers du tunnel de paiement (`routes_payment.py`, `CheckoutPage.jsx`, `StripeCheckoutButton.jsx`) avant la validation du test Stripe LIVE 1€.
+
+---
+
 ## 1. Original problem statement
 
 Plateforme coopérative existante (KDMARCHÉ / LOLODRIVE by O'SCOP). L'objectif est de créer une interface web propre pour exploiter l'API V2 existante (moteur transactionnel : PASS Vie Chère, Wallet UC, Commandes, Stripe, Drive, POS, LOLO POINTS, LOLO HOUR) sans modifier les règles métier critiques. Le CRM O'SCOP est la couche relationnelle.
