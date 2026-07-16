@@ -57,12 +57,6 @@ const LandingPage = () => {
               
               {/* Actions */}
               <div className="flex gap-3 flex-wrap mt-5">
-                <Link to="/offres">
-                  <button className="btn-gold inline-flex items-center justify-center gap-2.5 rounded-[14px] px-4 py-3 text-sm font-semibold">
-                    Découvrir les offres
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </Link>
                 <Link to="/tarifs">
                   <button
                     className="force-white inline-flex items-center justify-center gap-2.5 rounded-[14px] px-4 py-3 text-sm font-semibold text-white shadow-lg"
@@ -73,13 +67,6 @@ const LandingPage = () => {
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </Link>
-                <button 
-                  className="btn-ghost inline-flex items-center justify-center gap-2.5 rounded-[14px] px-4 py-3 text-sm font-semibold"
-                  onClick={downloadOffer}
-                >
-                  <Download className="w-4 h-4" />
-                  Télécharger l&apos;offre PDF
-                </button>
               </div>
               
               {/* Mini Stats */}
@@ -145,10 +132,10 @@ const LandingPage = () => {
           >
             <span className="ribbon mb-4 inline-block">Règle absolue</span>
             <h3 className="text-2xl font-bold mt-3 mb-3">
-              Condition d&apos;accès à la Centrale d&apos;Achats
+              Conditions d&apos;accès au dispositif coopératif d&apos;achats mutualisés
             </h3>
             <p className="text-white/75 mb-5 max-w-2xl mx-auto">
-              L&apos;accès aux conditions <strong className="text-white">KDMARCHE – Centrale ESS</strong> est conditionné à une <strong className="text-[#D4AF37]">adhésion O&apos;SCOP active</strong>.
+              L&apos;accès aux conditions économiques mutualisées proposées par <strong className="text-white">KDMARCHE – Centrale Coopérative</strong> est réservé aux membres disposant d&apos;une <strong className="text-[#D4AF37]">adhésion O&apos;SCOP active et à jour</strong>.
             </p>
             
             <div className="inline-flex flex-wrap gap-4 justify-center p-4 rounded-2xl bg-black/20">
