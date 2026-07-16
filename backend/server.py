@@ -80,8 +80,10 @@ app.include_router(export_router)
 
 # Import and include Payment routes
 from routes_payment import payment_router, set_payment_database
+from routes_payment_sepa import payment_sepa_router
 set_payment_database(db)
 app.include_router(payment_router)
+app.include_router(payment_sepa_router)
 
 # Import and include SMS Signature routes
 from routes_signature import signature_router, set_signature_database
@@ -269,6 +271,9 @@ from routes_stripe_reconciliation import (
 )
 set_reconciliation_database(db)
 app.include_router(stripe_reconciliation_router)
+from routes_stripe_health import stripe_health_router, set_stripe_health_database
+set_stripe_health_database(db)
+app.include_router(stripe_health_router)
 
 # Brevo transactional webhooks (delivered/bounced metrics)
 from routes_brevo_webhook import router as brevo_webhook_router, set_brevo_webhook_database, setup_brevo_webhook_indexes

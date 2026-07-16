@@ -1,0 +1,52 @@
+{
+  "summary": "LOT 7 backend refactor validated (27/27 pytest pass incl. buyer-org seed, payment/sepa/checkout v1+v2, stripe reconciliation split, lolodrive checkout). Frontend refactor of CheckoutPage.jsx and StripeReconciliationPage.jsx is BROKEN by 3+ missing imports/undefined references that crash the pages with 'Uncaught ReferenceError'. Fixed 2 of the missing imports myself (checkoutUtils.js lucide icons + CheckoutProgress.jsx partners). At least 2 more remain and require main-agent attention.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/v2/checkout/webhook", "issue": "Returns 500 (KeyError: 'type') when STRIPE_WEBHOOK_SECRET env var is unset and payload has no 'type' key. Dev-fallback path in routes_checkout.py:341 bypasses Stripe signature verification when STRIPE_WEBHOOK_SECRET is empty (only per-account secrets STRIPE_WEBHOOK_SECRETS_OSCOP/KDMARCHE are configured). LIVE-mode security concern + non-graceful error. Pre-existing bug (not a LOT-7 regression) but flagged as HIGH.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/payments/bank-details", "issue": "Endpoint is public (no auth). By design, but worth confirming."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "components/checkout/checkoutUtils.js", "issue": "Missing lucide-react import (Package, Truck, FileSignature, CreditCard used at module load in STEPS array). Caused whole app to crash on mount (blank page across every route). FIXED by test agent (added import).", "selector": "n/a — module-level", "priority": "CRITICAL"},
+      {"component": "components/checkout/CheckoutProgress.jsx", "issue": "References `partners.kdmarche.logo` and `partners.oscop.logo` without importing `partners`. Threw 'partners is not defined' → crashed /checkout. FIXED by test agent (added import from ../../data/mock).", "selector": "header logos", "priority": "CRITICAL"},
+      {"component": "components/checkout/CheckoutPayment.jsx (OrderSummarySidebar)", "issue": "Sidebar uses `nextStep`, `handleSubmitOrder`, `setCurrentStep`, `submitting` — but `nextStep` is neither destructured from props nor imported. Crashes /checkout at Step 0 render with 'nextStep is not defined'. NOT FIXED — needs main agent to pass nextStep as a prop from CheckoutPage.jsx and thread it through.", "selector": "OrderSummarySidebar component", "priority": "CRITICAL"},
+      {"component": "pages/StripeReconciliationPage.jsx", "issue": "References `ByKindCard` (line 301) which is neither imported nor exported from components/reconciliation/ReconciliationCards.jsx (only ModeBadge/TotalCard/AccountTotalCard/RefundStat/RefundBadge exist). Crashes /admin/stripe-reconciliation with 'ByKindCard is not defined'. NOT FIXED — main agent must implement/export ByKindCard.", "selector": "ByKindCard usage", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [
+      {"flow": "Checkout tunnel steps 0→4", "issue": "Cannot progress past step 0 render because OrderSummarySidebar crashes on every step. All 5 checkout steps (Review/Delivery/Preparation/Signature/Payment) currently unreachable in UI.", "affected_selectors": ["/checkout"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lot7_refactor_regression.py",
+    "/app/test_reports/pytest/pytest_lot7.xml"
+  ],
+  "action_items": [
+    "Fix OrderSummarySidebar in components/checkout/CheckoutPayment.jsx: add `nextStep` to its props signature and pass it from CheckoutPage.jsx (also verify `handleSubmitOrder` and other referenced fns are actually threaded).",
+    "Fix StripeReconciliationPage.jsx: implement/export ByKindCard component in components/reconciliation/ReconciliationCards.jsx and import it in StripeReconciliationPage.jsx (line 18 import list).",
+    "Run a props/undefined-var audit across all new components in components/checkout/ and components/reconciliation/ — the refactor left multiple references that were valid in the monolith but broken after split.",
+    "Fix /api/v2/checkout/webhook 500 → return 400 when payload lacks stripe-signature or when parsed payload is malformed. Consider removing the STRIPE_WEBHOOK_SECRET-less dev fallback in LIVE mode.",
+    "After E1 fixes above, re-run test_lot7_refactor_regression.py + retest checkout E2E and stripe reconciliation UI."
+  ],
+  "critical_code_review_comments": [
+    "The verbatim-split refactor of CheckoutPage.jsx did not preserve function-scope closure references: variables like nextStep, partners, setCurrentStep were captured by closure in the monolith but became free identifiers in extracted components. Every extraction of a JSX subtree needs a props audit.",
+    "checkoutUtils.js exported a data structure containing lucide-react component references at module load time — such structures must either (a) be built lazily inside a function/render, or (b) explicitly import their icon deps. Move STEPS into a component or add the import at file top.",
+    "routes_checkout.py stripe_webhook handler: the else-branch that parses `stripe.Event.construct_from(json.loads(payload), stripe.api_key)` bypasses signature verification and is unsafe when STRIPE_MODE=live. Guard it with `if os.getenv('ENV') == 'dev'` at least, or remove it entirely.",
+    "The main-agent claim 'audit props automatique (fix import Link dans CheckoutSteps)' only fixed 1 of the ~4 missing-identifier defects in the refactored checkout components; the audit script is incomplete."
+  ],
+  "updated_files": [
+    "/app/frontend/src/components/checkout/checkoutUtils.js (added missing lucide-react import)",
+    "/app/frontend/src/components/checkout/CheckoutProgress.jsx (added missing partners import)",
+    "/app/backend/tests/test_lot7_refactor_regression.py (new — 27 tests, all passing)"
+  ],
+  "success_rate": {"backend": "100% (27/27)", "frontend": "~30% (landing/login/dashboard/catalogue/add-to-cart OK; checkout tunnel + stripe reconciliation broken)"},
+  "test_credentials": "acheteur-pro@kdmarche.fr / Demo2026! (login route is /connexion, not /login); admin@kdmarche-oscop.fr / AdminKDM2025! (route /admin/connexion → redirects to /superadmin).",
+  "seed_data_creation": "None — buyer-org seed (org-demo-achats) already applied by main agent and verified: /api/v2/catalog/products, /catalog/cart, /orders, /logiscop/pickup-locations?zone_code=GUADELOUPE all return 200 for acheteur-pro.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "STRIPE IS LIVE — never submit a card. Frontend checkout tunnel currently unreachable past step 0 render. To progress, first verify main agent fixes: (1) OrderSummarySidebar props (nextStep + handleSubmitOrder + setCurrentStep), (2) ByKindCard implementation, then re-run /app/backend/tests/test_lot7_refactor_regression.py and do the E2E tunnel test stopping at Step 4 Paiement (no card). Backend regression tests are stable — 27/27.",
+  "rca of the issue": "Root cause of the frontend blank-page + crashes: the LOT 7 verbatim split of CheckoutPage.jsx (981→449 lines) into components/checkout/* extracted JSX subtrees that referenced enclosing closure variables (partners, nextStep, setCurrentStep, handleSubmitOrder) and module-level constants (lucide icons in STEPS). After extraction, these identifiers are neither imported nor threaded as props → module-load crash for icons, render-time ReferenceError for closure vars. Same issue in StripeReconciliationPage.jsx where ByKindCard was likely intended to be extracted into ReconciliationCards.jsx but never actually was. Reproduction: acheteur-pro@kdmarche.fr login → /catalogue → add item → /checkout → app crashes with 'nextStep is not defined'. Mitigation: props audit + missing exports; then verify with the new regression test file."
+}
