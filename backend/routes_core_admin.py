@@ -205,5 +205,5 @@ async def get_all_organizations(
 @admin_core_router.get("/admin/products/pending")
 async def admin_products_pending_alias():
     """Alias for /api/vendor/admin/products/pending"""
-    from routes_vendor import admin_list_pending_products
+    from routes_vendor_admin import admin_list_pending_products
     return await admin_list_pending_products()

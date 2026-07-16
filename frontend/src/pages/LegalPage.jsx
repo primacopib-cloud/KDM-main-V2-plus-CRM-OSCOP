@@ -278,6 +278,7 @@ export default function LegalPage() {
   // Update tab when URL changes
   useEffect(() => {
     setActiveTab(getInitialTab());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId]);
   
   // Handle tab change

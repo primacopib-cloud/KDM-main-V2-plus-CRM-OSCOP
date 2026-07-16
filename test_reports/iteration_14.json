@@ -1,0 +1,54 @@
+{
+  "summary": "LOT 4 refactor regression validation (iteration 14). BACKEND: 15/15 pytest PASS — vendor split (routes_vendor + vendor_models + routes_vendor_admin) and superadmin split (routes_superadmin + routes_superadmin_activity + routes_superadmin_stats) all reachable at their original prefixes; alias /api/admin/products/pending still forwards correctly; Lots 2-3 smoke (/api/health, buyer login, /api/v2/catalog/products, /api/zones) intact. FRONTEND: CRITICAL — the LOT 4 file extraction introduced 5 runtime ReferenceError regressions (missing icon imports / props / constants in the newly extracted child components). I fixed all 5 mechanically (VerbatimMove was NOT verbatim: variables/imports that lived in parent scope were used inside the child modules without being propagated). After my fixes, all four target flows render + interact correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "VendorSpacePage.jsx", "issue": "REGRESSION LOT 4: `Filter` (lucide-react) used at line 289 but removed from imports during modal extraction → 'Filter is not defined' — page crashed with Uncaught runtime error. FIXED by re-adding Filter to lucide-react import.", "selector": "[data-testid='vendor-space']", "priority": "CRITICAL"},
+      {"component": "components/vendor/VendorProductFormModal.jsx", "issue": "REGRESSION LOT 4: extracted modal component was missing imports for `DialogDescription`, `Clock`, `Flag`, `ShoppingCart`, `TrendingUp` — modal crashed on open with 'TrendingUp is not defined' (and cascaded to page-render error). FIXED by adding all 5 to imports.", "selector": "[data-testid='product-name']", "priority": "CRITICAL"},
+      {"component": "components/adminv2/ExportTab.jsx", "issue": "REGRESSION LOT 4: extracted tab uses `hasActiveFilters` (computed in AdminV2Page.jsx line 203) but this value was NOT passed as a prop → 'hasActiveFilters is not defined' → /admin-v2 Export tab crashed. FIXED by computing hasActiveFilters locally inside ExportTab from the exportFilters prop already received.", "selector": "[data-testid='export-filters-btn']", "priority": "CRITICAL"},
+      {"component": "components/adminv2/ExportTab.jsx", "issue": "REGRESSION LOT 4: extracted tab uses `Building2`, `FileText`, `Package`, `Wallet`, `Eye`, `Users` icons in the icons map (line 149-155) but only imported Calendar/Download/Filter/Loader2 → 'Building2 is not defined' after clicking Export CSV tab. FIXED by extending the lucide-react import list.", "selector": "[data-testid='export-filters-btn']", "priority": "CRITICAL"},
+      {"component": "components/catalog/CheckoutDialog.jsx", "issue": "REGRESSION LOT 4: extracted dialog uses `MIN_INSTALLMENT_CENTS` (constant defined in CatalogPage.jsx line 70) without importing/receiving it → 'MIN_INSTALLMENT_CENTS is not defined' → /catalogue crashed. FIXED by inlining `const MIN_INSTALLMENT_CENTS = 550000;` at top of CheckoutDialog.jsx (matches parent value).", "selector": "[data-testid='catalog-page']", "priority": "CRITICAL"},
+      {"component": "components/adminv2/ApplicationsTab.jsx", "issue": "LATENT REGRESSION LOT 4: line 153 references `REJECTION_REASONS` which is not imported (originally in AdminV2Page.jsx scope). Not currently reproducible because no rejected app with reason_code exists in seed, but WILL crash the row render as soon as an application transitions to REJECTED. NOT FIXED — needs main-agent decision on where REJECTION_REASONS should live (adminV2Constants.jsx is the natural home).", "selector": "n/a (data-conditional)", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "WebSocket /api/ws/notifications", "issue": "Pre-existing 400 (empty user_id) — carried over from iterations 11/12/13, NOT a LOT 4 regression.", "affected_selectors": []},
+      {"flow": "Buyer cart/checkout with acheteur-pro", "issue": "Pre-existing: buyer has no organization_id → /api/v2/catalog/cart and /api/v2/orders return 400. The catalog page + cart Sheet still render/open correctly (empty cart), but the add-to-cart / checkout paths cannot be exercised. NOT a LOT 4 regression.", "affected_selectors": ["[data-testid='cart-button']", "[data-testid='checkout-button']"]}
+    ],
+    "design_issues": [
+      {"screen": "/admin-v2 Export CSV → Filtres popover", "issues": ["Uses native browser `<input type='date'>` (mm/dd/yyyy placeholder) for 'Date de début' and 'Date de fin' instead of a shadcn Calendar component. Inconsistent UX and locale mismatch (French app but US date format)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lot4_refactor_regression.py",
+    "/app/test_reports/pytest/lot4_regression.xml"
+  ],
+  "action_items": [
+    "REVIEW my 5 mechanical fixes (VendorSpacePage / VendorProductFormModal / ExportTab / CheckoutDialog) — they restore runtime but you may prefer to prop-drill (hasActiveFilters) and import from a shared constants module (MIN_INSTALLMENT_CENTS) rather than duplicating.",
+    "FIX ApplicationsTab.jsx line 153: REJECTION_REASONS is not defined — move the constant to adminV2Constants.jsx and import it in both AdminV2Page.jsx (DecisionDialog side) and ApplicationsTab.jsx. Currently latent (only triggers when a REJECTED app with reason_code renders).",
+    "GENERAL: run `yarn build` (or eslint no-undef strict) on the whole /app/frontend/src after any file split — the LOT 4 mistakes (5 missing symbols) are exactly the class of bug ESLint's no-undef would catch. Recommended CI safeguard for future LOTS.",
+    "OPTIONAL DESIGN: replace native date inputs in components/adminv2/ExportTab.jsx (lines 71/82) with the shadcn Calendar+Popover pattern used elsewhere."
+  ],
+  "critical_code_review_comments": [
+    "The refactor claim 'Aucune logique modifiée / verbatim move' is factually incorrect for LOT 4 frontend. Extracting JSX into child components inherently changes lexical scope — variables/constants defined in the parent (hasActiveFilters, MIN_INSTALLMENT_CENTS, REJECTION_REASONS) and icons used implicitly must be explicitly propagated (props or imports). This was missed for 5 symbols across 4 files; all 5 were runtime-blocking on page load or first tab click.",
+    "The backend LOT 4 split (vendor_models + vendor_admin + superadmin_activity + superadmin_stats) is clean: all endpoints reachable at unchanged prefixes, alias /api/admin/products/pending forwards correctly, /api/vendor/countries still returns { countries: [...] } payload, /api/superadmin/advanced-stats & /alerts & /recent-activity all 200.",
+    "Test file `test_lot4_refactor_regression.py` (15 cases, ~1.5s runtime) covers all target endpoints + a Lots-2-3 smoke — reusable regression baseline for future refactors.",
+    "The three extracted-parent pages (VendorSpacePage / AdminV2Page / CatalogPage) are now well below the 500-line threshold (418 / 362 / 410). Objective met, but at the cost of shared-scope bugs — needs a lint pass."
+  ],
+  "updated_files": [
+    "/app/frontend/src/pages/VendorSpacePage.jsx (added Filter to lucide-react import)",
+    "/app/frontend/src/components/vendor/VendorProductFormModal.jsx (added DialogDescription + Clock/Flag/ShoppingCart/TrendingUp icons)",
+    "/app/frontend/src/components/adminv2/ExportTab.jsx (converted arrow expression body to block, computed hasActiveFilters locally, extended lucide-react import with Building2/FileText/Package/Wallet/Eye/Users)",
+    "/app/frontend/src/components/catalog/CheckoutDialog.jsx (added const MIN_INSTALLMENT_CENTS = 550000)",
+    "/app/backend/tests/test_lot4_refactor_regression.py (new)"
+  ],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "100% of target flows after my fixes (vendor page + product modal, admin-v2 3 tabs + export panel, catalog + cart sheet, superadmin dashboard + advanced-stats). WITHOUT my fixes it was 25% (only superadmin worked)."},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; acheteur-pro@kdmarche.fr / Demo2026! ; vendor-pro@kdmarche.fr / Demo2026! (vendor-demo-pro) — from /app/memory/test_credentials.md",
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "LOT 4 backend refactor is clean (15/15 pytest at /app/backend/tests/test_lot4_refactor_regression.py, JUnit at /app/test_reports/pytest/lot4_regression.xml). Frontend LOT 4 had 5 missing-symbol regressions in extracted components which I fixed mechanically to unblock — main agent should validate whether to keep my inline-const/local-recompute approach or refactor to shared constants + prop-drilling. One LATENT issue remains: ApplicationsTab.jsx line 153 uses undefined REJECTION_REASONS (only crashes on a REJECTED application with a reason_code — no such seed data exists today). Pre-existing non-regressions (WebSocket 400, buyer with no org_id → cart 400) unchanged.",
+  "rca of the issue": "Root cause: LOT 4 frontend refactor extracted JSX subtrees into new files but did not audit the lexical closure of each extracted subtree. Symbols that were resolved via the parent module scope (icon imports at page top, computed useState-derived values like hasActiveFilters, module-scope constants like MIN_INSTALLMENT_CENTS, REJECTION_REASONS) became undefined once relocated. Reproduction: open any of /espace-vendeur, /admin-v2 (Export tab), /catalogue → 'X is not defined' ReferenceError overlay. Mitigation (applied): add missing lucide-react icons to child imports; inline module-scope constants at top of child (or import from a shared module); pass parent-derived booleans through recompute or props. Long-term: enforce eslint no-undef strict + a yarn build gate before any file-split PR."
+}

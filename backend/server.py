@@ -68,8 +68,10 @@ app.include_router(orders_router)
 
 # Import and include GED (Document Management) routes
 from routes_ged import ged_router, set_ged_database
+from routes_ged_admin import ged_admin_router
 set_ged_database(db)
 app.include_router(ged_router)
+app.include_router(ged_admin_router)
 
 # Import and include Export routes
 from routes_export import export_router, set_export_database
@@ -83,13 +85,21 @@ app.include_router(payment_router)
 
 # Import and include SMS Signature routes
 from routes_signature import signature_router, set_signature_database
+from routes_signature_admin import signature_admin_router
 set_signature_database(db)
 app.include_router(signature_router)
+app.include_router(signature_admin_router)
 
-# Import and include Super Admin routes
+# Import and include Super Admin routes (activity & advanced stats split into modules)
 from routes_superadmin import superadmin_router, set_superadmin_database
+from routes_superadmin_activity import superadmin_activity_router, set_superadmin_activity_database
+from routes_superadmin_stats import superadmin_stats_router, set_superadmin_stats_database
 set_superadmin_database(db)
+set_superadmin_activity_database(db)
+set_superadmin_stats_database(db)
 app.include_router(superadmin_router)
+app.include_router(superadmin_activity_router)
+app.include_router(superadmin_stats_router)
 
 # Import and include Preparation routes (Zone-based preparation options)
 from routes_preparation import preparation_router, set_preparation_database
@@ -106,10 +116,13 @@ from routes_b2b import b2b_router, set_b2b_database
 set_b2b_database(db)
 app.include_router(b2b_router)
 
-# Import and include Vendor routes
+# Import and include Vendor routes (admin endpoints split into routes_vendor_admin)
 from routes_vendor import vendor_router, set_vendor_database
+from routes_vendor_admin import vendor_admin_router, set_vendor_admin_database
 set_vendor_database(db)
+set_vendor_admin_database(db)
 app.include_router(vendor_router)
+app.include_router(vendor_admin_router)
 
 # Import and include OPA Bundle routes
 from routes_opa_bundle import opa_bundle_router, set_opa_bundle_database
@@ -148,8 +161,10 @@ app.include_router(logiscop_router)
 
 # Import and include V1 LOGI'SCOP routes (OpenAPI v1 endpoints)
 from routes_v1_logiscop import v1_logiscop_router, set_v1_logiscop_database
+from routes_v1_logiscop_orders import v1_logiscop_orders_router
 set_v1_logiscop_database(db)
 app.include_router(v1_logiscop_router)
+app.include_router(v1_logiscop_orders_router)
 
 # Import and include Contracts routes
 from routes_contracts import contracts_router, set_contracts_database
@@ -194,14 +209,24 @@ app.include_router(shopping_lists_router, prefix="/api")
 
 # Import and include Super Admin Plans & Credits Routes
 from routes_admin_plans import admin_plans_router, set_admin_plans_database
+from routes_admin_plans_credits import admin_plans_credits_router
 set_admin_plans_database(db)
 app.include_router(admin_plans_router, prefix="/api")
+app.include_router(admin_plans_credits_router, prefix="/api")
 
 
 # Import and include LOLODRIVE by O'SCOP routes (PASS Vie Chère, UC, Lolo Points, Events, POS)
-from routes_lolodrive_oscoop import lolodrive_router, set_lolodrive_database, ensure_lolodrive_indexes
+from routes_lolodrive_oscoop import lolodrive_router, set_lolodrive_database
+from routes_lolodrive_pos import lolodrive_pos_router
+from routes_lolodrive_points import lolodrive_points_router
+from routes_lolodrive_manager import lolodrive_manager_router
+from routes_lolodrive_admin import lolodrive_admin_router, ensure_lolodrive_indexes
 set_lolodrive_database(db)
 app.include_router(lolodrive_router)
+app.include_router(lolodrive_pos_router)
+app.include_router(lolodrive_points_router)
+app.include_router(lolodrive_manager_router)
+app.include_router(lolodrive_admin_router)
 
 # Import and include LOLODRIVE Stripe Checkout (hosted page) for PASS/Recharge/Order
 from routes_lolodrive_checkout import (

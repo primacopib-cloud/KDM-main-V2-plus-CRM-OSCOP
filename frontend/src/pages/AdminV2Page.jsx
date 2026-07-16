@@ -32,50 +32,12 @@ import {
 import { partners } from '../data/mock';
 import { authAPI, applicationsAPIV2, adminAPIV2, exportAPI } from '../services/api';
 import NotificationsDropdown from '../components/NotificationsDropdown';
+import { ApplicationsTab } from '../components/adminv2/ApplicationsTab';
+import { OrganizationsTab } from '../components/adminv2/OrganizationsTab';
+import { ExportTab } from '../components/adminv2/ExportTab';
+import { DecisionDialog } from '../components/adminv2/DecisionDialog';
 
 // Application status configuration
-const APP_STATUSES = {
-  DRAFT: { label: 'Brouillon', color: 'bg-gray-500/20 text-gray-400', icon: FileText },
-  SUBMITTED: { label: 'Soumis', color: 'bg-yellow-500/20 text-yellow-400', icon: Clock },
-  PENDING_REVIEW: { label: 'En révision', color: 'bg-blue-500/20 text-blue-400', icon: Eye },
-  APPROVED: { label: 'Approuvé', color: 'bg-green-500/20 text-green-400', icon: CheckCircle2 },
-  REJECTED: { label: 'Rejeté', color: 'bg-red-500/20 text-red-400', icon: XCircle },
-};
-
-// Org status configuration
-const ORG_STATUSES = {
-  DRAFT: { label: 'Brouillon', color: 'bg-gray-500/20 text-gray-400' },
-  SUBMITTED: { label: 'Soumis', color: 'bg-yellow-500/20 text-yellow-400' },
-  PENDING_REVIEW: { label: 'En révision', color: 'bg-blue-500/20 text-blue-400' },
-  APPROVED: { label: 'Approuvé', color: 'bg-green-500/20 text-green-400' },
-  REJECTED: { label: 'Rejeté', color: 'bg-red-500/20 text-red-400' },
-  SUSPENDED: { label: 'Suspendu', color: 'bg-orange-500/20 text-orange-400' },
-  CLOSED: { label: 'Fermé', color: 'bg-gray-500/20 text-gray-400' },
-};
-
-// Rejection reasons
-const REJECTION_REASONS = [
-  { code: 'INCOMPLETE_DOCS', label: 'Documents incomplets ou illisibles' },
-  { code: 'INVALID_REGISTRATION', label: 'Numéro d\'immatriculation invalide' },
-  { code: 'INELIGIBLE_ACTIVITY', label: 'Activité non éligible' },
-  { code: 'DUPLICATE', label: 'Demande en doublon' },
-  { code: 'FRAUD_SUSPICION', label: 'Suspicion de fraude' },
-  { code: 'OTHER', label: 'Autre raison' },
-];
-
-// Format date
-const formatDate = (dateStr) => {
-  if (!dateStr) return '---';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
 export default function AdminV2Page() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -139,6 +101,7 @@ export default function AdminV2Page() {
     };
 
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const loadData = async () => {
@@ -161,6 +124,7 @@ export default function AdminV2Page() {
     if (!loading) {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appStatusFilter, orgStatusFilter]);
 
   // Handle decision
@@ -353,510 +317,48 @@ export default function AdminV2Page() {
           </TabsList>
 
           {/* Applications Tab */}
-          <TabsContent value="applications">
-            {/* Filter */}
-            <div className="flex gap-3 mb-4">
-              <Select value={appStatusFilter} onValueChange={setAppStatusFilter}>
-                <SelectTrigger className="w-[200px] bg-white/[0.04] border-white/10 text-white">
-                  <SelectValue placeholder="Filtrer par statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="PENDING_REVIEW">En révision</SelectItem>
-                  <SelectItem value="SUBMITTED">Soumis</SelectItem>
-                  <SelectItem value="APPROVED">Approuvé</SelectItem>
-                  <SelectItem value="REJECTED">Rejeté</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <ApplicationsTab
+            applications={applications}
+            appStatusFilter={appStatusFilter}
+            setAppStatusFilter={setAppStatusFilter}
+            expandedApp={expandedApp}
+            setExpandedApp={setExpandedApp}
+            openDecisionDialog={openDecisionDialog}
+          />
 
-            {/* Applications List */}
-            <div className="space-y-3">
-              {applications.length === 0 ? (
-                <div className="text-center py-12 text-white/50">
-                  <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucune demande</p>
-                </div>
-              ) : (
-                applications.map(app => {
-                  const statusConfig = APP_STATUSES[app.status] || APP_STATUSES.SUBMITTED;
-                  const StatusIcon = statusConfig.icon;
-                  const isExpanded = expandedApp === app.id;
-                  const canDecide = ['SUBMITTED', 'PENDING_REVIEW'].includes(app.status);
+          <OrganizationsTab
+            organizations={organizations}
+            orgStatusFilter={orgStatusFilter}
+            setOrgStatusFilter={setOrgStatusFilter}
+          />
 
-                  return (
-                    <Collapsible 
-                      key={app.id}
-                      open={isExpanded}
-                      onOpenChange={() => setExpandedApp(isExpanded ? null : app.id)}
-                    >
-                      <div className="glass-panel-soft rounded-[18px] overflow-hidden">
-                        <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${statusConfig.color.split(' ')[0]}`}>
-                              <StatusIcon className={`w-5 h-5 ${statusConfig.color.split(' ')[1]}`} />
-                            </div>
-                            <div className="text-left">
-                              <p className="font-semibold text-white/90">{app.org?.legal_name || 'Organisation'}</p>
-                              <p className="text-xs text-white/50">
-                                {app.org?.registration_id} · {formatDate(app.created_at)}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-3">
-                            <Badge className={statusConfig.color}>
-                              {statusConfig.label}
-                            </Badge>
-                            {isExpanded ? (
-                              <ChevronUp className="w-5 h-5 text-white/40" />
-                            ) : (
-                              <ChevronDown className="w-5 h-5 text-white/40" />
-                            )}
-                          </div>
-                        </CollapsibleTrigger>
-
-                        <CollapsibleContent>
-                          <div className="px-4 pb-4 border-t border-white/[0.06] pt-4">
-                            <div className="grid md:grid-cols-2 gap-6">
-                              {/* Organization info */}
-                              <div>
-                                <h4 className="text-sm font-semibold text-white/70 mb-3">Informations entreprise</h4>
-                                <div className="space-y-2 text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <Building2 className="w-4 h-4 text-white/40" />
-                                    <span className="text-white/60">Raison sociale:</span>
-                                    <span className="text-white/90">{app.org?.legal_name}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <FileText className="w-4 h-4 text-white/40" />
-                                    <span className="text-white/60">SIRET:</span>
-                                    <span className="text-white/90">{app.org?.registration_id}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-white/40" />
-                                    <span className="text-white/60">Territoire:</span>
-                                    <span className="text-white/90">{app.org?.territory}</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Documents */}
-                              <div>
-                                <h4 className="text-sm font-semibold text-white/70 mb-3">Documents fournis</h4>
-                                {app.documents?.length > 0 ? (
-                                  <div className="space-y-2">
-                                    {app.documents.map((doc, idx) => (
-                                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
-                                        <FileText className="w-4 h-4 text-[#D4AF37]" />
-                                        <span className="text-sm text-white/80">{doc.doc_type}</span>
-                                        <Badge variant="outline" className="text-[10px] ml-auto">
-                                          {doc.verified ? 'Vérifié' : 'Non vérifié'}
-                                        </Badge>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="text-sm text-white/50">Aucun document</p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Actions */}
-                            {canDecide && (
-                              <div className="mt-4 pt-4 border-t border-white/[0.06] flex gap-3 justify-end">
-                                <Button
-                                  variant="outline"
-                                  onClick={() => openDecisionDialog(app, 'REJECTED')}
-                                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                >
-                                  <XCircle className="w-4 h-4 mr-2" />
-                                  Rejeter
-                                </Button>
-                                <Button
-                                  onClick={() => openDecisionDialog(app, 'APPROVED')}
-                                  className="bg-green-500 hover:bg-green-600 text-white"
-                                >
-                                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                                  Approuver
-                                </Button>
-                              </div>
-                            )}
-
-                            {/* Decision info if already decided */}
-                            {app.status === 'REJECTED' && app.reason_code && (
-                              <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                                <p className="text-sm text-red-400">
-                                  <strong>Raison du rejet:</strong> {REJECTION_REASONS.find(r => r.code === app.reason_code)?.label || app.reason_code}
-                                </p>
-                                {app.comment && (
-                                  <p className="text-sm text-red-400/80 mt-1">{app.comment}</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </CollapsibleContent>
-                      </div>
-                    </Collapsible>
-                  );
-                })
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Organizations Tab */}
-          <TabsContent value="organizations">
-            {/* Filter */}
-            <div className="flex gap-3 mb-4">
-              <Select value={orgStatusFilter} onValueChange={setOrgStatusFilter}>
-                <SelectTrigger className="w-[200px] bg-white/[0.04] border-white/10 text-white">
-                  <SelectValue placeholder="Filtrer par statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="APPROVED">Approuvé</SelectItem>
-                  <SelectItem value="PENDING_REVIEW">En révision</SelectItem>
-                  <SelectItem value="SUSPENDED">Suspendu</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Organizations List */}
-            <div className="glass-panel-soft rounded-[18px] overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/[0.08]">
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Organisation</th>
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">SIRET</th>
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Territoire</th>
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Statut</th>
-                      <th className="text-left p-4 text-xs uppercase tracking-wider text-white/60 font-semibold">Créé le</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {organizations.map(org => {
-                      const statusConfig = ORG_STATUSES[org.status] || ORG_STATUSES.DRAFT;
-                      return (
-                        <tr key={org.id} className="border-b border-white/[0.04] hover:bg-white/[0.02]">
-                          <td className="p-4">
-                            <p className="font-medium text-white/90">{org.legal_name}</p>
-                          </td>
-                          <td className="p-4 text-white/70 font-mono text-sm">{org.registration_id}</td>
-                          <td className="p-4">
-                            <Badge variant="outline" className="text-white/60 border-white/20">
-                              {org.territory}
-                            </Badge>
-                          </td>
-                          <td className="p-4">
-                            <Badge className={statusConfig.color}>
-                              {statusConfig.label}
-                            </Badge>
-                          </td>
-                          <td className="p-4 text-white/50 text-sm">{formatDate(org.created_at)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {organizations.length === 0 && (
-                <div className="text-center py-12 text-white/50">
-                  <Building2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucune organisation</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Export Tab */}
-          <TabsContent value="export">
-            <div className="glass-panel-soft rounded-[18px] p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#D9B35A]/10 flex items-center justify-center">
-                    <Download className="w-5 h-5 text-[#D9B35A]" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Export des données</h3>
-                    <p className="text-sm text-white/50">Téléchargez les données au format CSV (Excel compatible)</p>
-                  </div>
-                </div>
-                
-                {/* Filters Toggle */}
-                <Popover open={showFilters} onOpenChange={setShowFilters}>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className={`border-white/10 ${hasActiveFilters ? 'bg-[#D9B35A]/10 border-[#D9B35A]/30' : ''}`}
-                      data-testid="export-filters-btn"
-                    >
-                      <Filter className={`w-4 h-4 mr-2 ${hasActiveFilters ? 'text-[#D9B35A]' : ''}`} />
-                      Filtres
-                      {hasActiveFilters && (
-                        <Badge className="ml-2 bg-[#D9B35A] text-black text-xs px-1.5">
-                          {[exportFilters.dateFrom, exportFilters.dateTo, exportFilters.statusFilter].filter(Boolean).length}
-                        </Badge>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 bg-[#0a0d14] border-white/10 text-white" align="end">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-sm">Filtres d'export</h4>
-                        {hasActiveFilters && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={clearExportFilters}
-                            className="h-auto p-1 text-xs text-white/50 hover:text-white"
-                          >
-                            <X className="w-3 h-3 mr-1" />
-                            Réinitialiser
-                          </Button>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label className="text-xs text-white/60">Date de début</Label>
-                        <Input
-                          type="date"
-                          value={exportFilters.dateFrom}
-                          onChange={(e) => setExportFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-                          className="bg-white/[0.04] border-white/10 text-white [color-scheme:dark]"
-                          data-testid="export-date-from"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label className="text-xs text-white/60">Date de fin</Label>
-                        <Input
-                          type="date"
-                          value={exportFilters.dateTo}
-                          onChange={(e) => setExportFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-                          className="bg-white/[0.04] border-white/10 text-white [color-scheme:dark]"
-                          data-testid="export-date-to"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label className="text-xs text-white/60">Statut</Label>
-                        <Select 
-                          value={exportFilters.statusFilter} 
-                          onValueChange={(value) => setExportFilters(prev => ({ ...prev, statusFilter: value === 'all' ? '' : value }))}
-                        >
-                          <SelectTrigger className="bg-white/[0.04] border-white/10 text-white" data-testid="export-status-filter">
-                            <SelectValue placeholder="Tous les statuts" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Tous les statuts</SelectItem>
-                            <SelectItem value="DRAFT">Brouillon</SelectItem>
-                            <SelectItem value="SUBMITTED">Soumis</SelectItem>
-                            <SelectItem value="PENDING_REVIEW">En révision</SelectItem>
-                            <SelectItem value="APPROVED">Approuvé</SelectItem>
-                            <SelectItem value="REJECTED">Rejeté</SelectItem>
-                            <SelectItem value="SUSPENDED">Suspendu</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="pt-2 border-t border-white/[0.08]">
-                        <p className="text-xs text-white/40">
-                          Les filtres s'appliquent à tous les exports. Laissez vide pour exporter toutes les données.
-                        </p>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              {/* Active Filters Display */}
-              {hasActiveFilters && (
-                <div className="mb-4 flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-white/50">Filtres actifs:</span>
-                  {exportFilters.dateFrom && (
-                    <Badge variant="outline" className="text-xs border-[#D9B35A]/30 text-[#D9B35A]">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      Depuis: {exportFilters.dateFrom}
-                    </Badge>
-                  )}
-                  {exportFilters.dateTo && (
-                    <Badge variant="outline" className="text-xs border-[#D9B35A]/30 text-[#D9B35A]">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      Jusqu'à: {exportFilters.dateTo}
-                    </Badge>
-                  )}
-                  {exportFilters.statusFilter && (
-                    <Badge variant="outline" className="text-xs border-[#D9B35A]/30 text-[#D9B35A]">
-                      Statut: {exportFilters.statusFilter}
-                    </Badge>
-                  )}
-                </div>
-              )}
-
-              {exportSummary ? (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {exportSummary.exports_available.map((exp) => {
-                    const icons = {
-                      organizations: Building2,
-                      applications: FileText,
-                      orders: Package,
-                      transactions: Wallet,
-                      audit_log: Eye,
-                      products: Package,
-                      users: Users,
-                    };
-                    const Icon = icons[exp.type] || FileText;
-
-                    return (
-                      <div 
-                        key={exp.type}
-                        className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.04] transition-colors"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center">
-                              <Icon className="w-4 h-4 text-white/60" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-white/90">{exp.label}</p>
-                              <p className="text-xs text-white/40">{exp.count} entrées</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleExportDownload(exp.type)}
-                          disabled={exportLoading[exp.type] || exp.count === 0}
-                          className="w-full border-white/10 hover:bg-white/[0.04]"
-                          data-testid={`export-${exp.type}-btn`}
-                        >
-                          {exportLoading[exp.type] ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Export en cours...
-                            </>
-                          ) : (
-                            <>
-                              <Download className="w-4 h-4 mr-2" />
-                              Télécharger CSV
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-white/50">
-                  <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin" />
-                  <p>Chargement des options d'export...</p>
-                </div>
-              )}
-
-              <div className="mt-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                <p className="text-sm text-blue-400">
-                  <strong>Note:</strong> Les fichiers CSV sont encodés en UTF-8 avec BOM et utilisent le point-virgule (;) 
-                  comme séparateur pour une compatibilité optimale avec Excel français.
-                </p>
-              </div>
-            </div>
-          </TabsContent>
+          <ExportTab
+            applications={applications}
+            organizations={organizations}
+            exportSummary={exportSummary}
+            exportLoading={exportLoading}
+            exportFilters={exportFilters}
+            setExportFilters={setExportFilters}
+            showFilters={showFilters}
+            setShowFilters={setShowFilters}
+            handleExportDownload={handleExportDownload}
+            clearExportFilters={clearExportFilters}
+          />
         </Tabs>
       </div>
 
-      {/* Decision Dialog */}
-      <Dialog open={decisionDialogOpen} onOpenChange={setDecisionDialogOpen}>
-        <DialogContent className="bg-[#0a0d14] border-white/10 text-white sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {decisionType === 'APPROVED' ? (
-                <CheckCircle2 className="w-5 h-5 text-green-400" />
-              ) : (
-                <XCircle className="w-5 h-5 text-red-400" />
-              )}
-              {decisionType === 'APPROVED' ? 'Approuver la demande' : 'Rejeter la demande'}
-            </DialogTitle>
-            <DialogDescription className="text-white/60">
-              {selectedApp?.org?.legal_name}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {decisionType === 'REJECTED' && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Raison du rejet *</label>
-                <Select value={rejectionReason} onValueChange={setRejectionReason}>
-                  <SelectTrigger className="w-full bg-white/[0.04] border-white/10">
-                    <SelectValue placeholder="Sélectionner une raison" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REJECTION_REASONS.map(reason => (
-                      <SelectItem key={reason.code} value={reason.code}>
-                        {reason.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Commentaire (optionnel)</label>
-              <Textarea
-                placeholder="Ajouter un commentaire..."
-                value={decisionComment}
-                onChange={(e) => setDecisionComment(e.target.value)}
-                className="bg-white/[0.04] border-white/10"
-                rows={3}
-              />
-            </div>
-
-            {decisionType === 'APPROVED' && (
-              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                <p className="text-sm text-green-400">
-                  L'approbation va créer automatiquement :
-                </p>
-                <ul className="text-xs text-green-400/80 mt-1 space-y-1">
-                  <li>• Un wallet avec crédits initiaux</li>
-                  <li>• L'accès à la zone du territoire</li>
-                  <li>• Le compte partenaire KDMARCHE</li>
-                </ul>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter className="flex gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => setDecisionDialogOpen(false)}
-              className="border-white/10"
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleDecision}
-              disabled={submittingDecision || (decisionType === 'REJECTED' && !rejectionReason)}
-              className={decisionType === 'APPROVED' 
-                ? 'bg-green-500 hover:bg-green-600 text-white'
-                : 'bg-red-500 hover:bg-red-600 text-white'
-              }
-            >
-              {submittingDecision ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : decisionType === 'APPROVED' ? (
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-              ) : (
-                <XCircle className="w-4 h-4 mr-2" />
-              )}
-              {decisionType === 'APPROVED' ? 'Confirmer l\'approbation' : 'Confirmer le rejet'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DecisionDialog
+        decisionDialogOpen={decisionDialogOpen}
+        setDecisionDialogOpen={setDecisionDialogOpen}
+        selectedApp={selectedApp}
+        decisionType={decisionType}
+        rejectionReason={rejectionReason}
+        setRejectionReason={setRejectionReason}
+        decisionComment={decisionComment}
+        setDecisionComment={setDecisionComment}
+        submittingDecision={submittingDecision}
+        handleDecision={handleDecision}
+      />
     </div>
   );
 }

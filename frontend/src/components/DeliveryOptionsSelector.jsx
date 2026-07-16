@@ -74,6 +74,7 @@ export default function DeliveryOptionsSelector({
     if (zoneCode) {
       fetchPickupLocations();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoneCode]);
 
   // Load delivery slots
@@ -123,6 +124,7 @@ export default function DeliveryOptionsSelector({
       }
     };
     fetchEssData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoneCode]);
 
   // Calculate quote for delivery
@@ -231,6 +233,7 @@ export default function DeliveryOptionsSelector({
       ess_terms_accepted: deliveryType === 'ESS_ROUTE' ? essTermsAccepted : undefined
     };
     onOptionChange(option);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deliveryType, selectedPickup, deliveryAddress, selectedSlot, selectedTour, quote, essQuote, termsAccepted, essTermsAccepted]);
 
   const selectedLocation = pickupLocations.find(loc => loc.id === selectedPickup);

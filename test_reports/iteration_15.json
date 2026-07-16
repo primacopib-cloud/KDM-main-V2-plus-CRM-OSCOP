@@ -1,0 +1,40 @@
+{
+  "summary": "LOT 5 refactor regression validation (iteration 15). BACKEND: 33/33 pytest PASS on new /app/backend/tests/test_lot5_refactor_regression.py covering all 8 backend splits (lolodrive x5 modules, signature admin/public, email_alerts import-time, v1 logiscop quote/orders, opa_bundle, admin_plans + credits, schema_v2 facade, ged + ged_admin). LOT 4 baseline test 15/15 still green. FRONTEND: LOT 5 frontend split (legalDocuments.js facade over data/legal/{variables,cgv,convention,ess,logiscop}.js) works perfectly — /legal renders all 5 documents (CGV KDMARCHE, CG O'SCOP, Convention, Charte ESS, LOGI'SCOP + Contrat transport + Tournées ESS tabs), zero unresolved {variable} placeholders, zero JS errors. LOT 4 latent fix VERIFIED: /admin-v2 default tab (Applications) renders without ReferenceError (REJECTION_REASONS now imported from adminV2Constants). /catalogue renders with buyer login (MIN_INSTALLMENT_CENTS via catalogUtils). Vendor space, admin dashboard, buyer dashboard all clean.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "WebSocket /api/ws/notifications", "issue": "Pre-existing 400/403 (empty user_id) — carried from iter 11-14, NOT a LOT 5 regression.", "affected_selectors": []},
+      {"flow": "Buyer cart/checkout (acheteur-pro)", "issue": "Pre-existing: buyer has no organization_id → 'Accès limité' banner on /catalogue; add-to-cart/checkout paths not exercisable. NOT a LOT 5 regression.", "affected_selectors": ["[data-testid='cart-button']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lot5_refactor_regression.py",
+    "/app/backend/tests/test_lot4_refactor_regression.py",
+    "/app/test_reports/pytest/lot5_regression.xml"
+  ],
+  "action_items": [
+    "None blocking. LOT 5 mechanical split (8 backend files → 20+ modules + 1 frontend facade) is clean — no import errors, all endpoints reachable at unchanged prefixes, all frontend routes render without ReferenceError.",
+    "Documentation nit for the review request: 3 endpoint paths in the request differ from the code (source of truth is code): /api/lolodrive/points → /api/lolodrive/lolo-points ; /api/lolodrive/delivery/zones → /api/lolodrive/logistics/zones ; /api/lolodrive/admin/stripe-mode → /api/lolodrive/admin/stripe/mode ; /api/opa/bundle/data → /api/opa/bundle/data.json ; /api/admin/plans/ (list) → /api/admin/plans/subscriptions. Test file uses the actual paths.",
+    "OPTIONAL: /mentions-legales is NOT a defined React route (only /legal and /legal/:docId in App.js) — if the review request expected /mentions-legales to work, add a redirect. Currently /mentions-legales falls to a page that only shows the header nav (blank body)."
+  ],
+  "critical_code_review_comments": [
+    "LOT 5 backend split is genuinely a 'verbatim move' this time: 8 large files (7000+ lines total) → 20+ focused modules, all endpoints reachable at their original prefixes, no logic drift detected via smoke + status code contract tests. Server boots clean (email_alerts import + include_router order OK).",
+    "The legalDocuments.js facade (47 lines) cleanly re-exports 5 sub-modules totalling 1041 lines. Variable templating still resolves — 0 unresolved {var} tokens found across all 5 rendered docs. Well done.",
+    "test_lot5_refactor_regression.py (33 cases, ~3s runtime) is reusable regression baseline for future LOTs — covers reachability + auth-gated 200s + non-500 tolerance for Stripe-adjacent + validation-error routes (safe with LIVE keys)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lot5_refactor_regression.py (new, 33 tests)"
+  ],
+  "success_rate": {"backend": "100% (33/33 LOT 5 + 15/15 LOT 4 baseline)", "frontend": "100% of tested LOT 5 flows (/legal all 5 docs render clean, /admin-v2 Applications tab clean, /catalogue renders, /espace-vendeur renders, all authentications OK)"},
+  "test_credentials": "From /app/memory/test_credentials.md: admin@kdmarche-oscop.fr / AdminKDM2025! ; acheteur-pro@kdmarche.fr / Demo2026! ; vendor-pro@kdmarche.fr / Demo2026! ; gerant@lolopoint.fr / Demo2026!",
+  "seed_data_creation": "None.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "LOT 5 is validated (33/33 backend pytest + frontend smoke on /legal, /admin-v2, /catalogue, /espace-vendeur). Use pytest /app/backend/tests/test_lot5_refactor_regression.py -v (with REACT_APP_BACKEND_URL exported from frontend/.env) for future regression runs. Known non-regressions unchanged from prior iterations: WebSocket /api/ws/notifications 400 (empty user_id) and acheteur-pro missing organization_id → cart paths blocked. Stripe LIVE keys still in place — test only reachability, never trigger real PaymentIntents.",
+  "rca of the issue": "N/A — no regressions found. Initial 5 test failures were TEST-FILE bugs (paths in review request did not match actual routes); fixed the test file to use correct paths from the routers themselves (grep confirmed): /lolodrive/lolo-points, /lolodrive/logistics/zones, /lolodrive/admin/stripe/mode, /opa/bundle/data.json, /admin/plans/subscriptions."
+}

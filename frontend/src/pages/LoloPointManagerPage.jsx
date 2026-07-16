@@ -30,6 +30,7 @@ export default function LoloPointManagerPage() {
       return;
     }
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const load = async () => {

@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 import uuid
 
 # Import email alerts
-from email_service import (
+from email_alerts import (
     send_large_order_alert,
     send_stock_rupture_alert,
     send_low_stock_alert,
@@ -478,7 +478,7 @@ async def test_email_alert(alert_type: str = "large_order"):
     Test email alert system
     alert_type: large_order, stock_rupture, low_stock, payment_failed, org_application
     """
-    from email_service import (
+    from email_alerts import (
         send_large_order_alert,
         send_stock_rupture_alert,
         send_low_stock_alert,

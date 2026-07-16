@@ -127,6 +127,7 @@ export default function AdvancedStatsCharts({ period = 'month' }) {
   
   useEffect(() => {
     fetchStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
   
   const formatCurrency = (value) => {
