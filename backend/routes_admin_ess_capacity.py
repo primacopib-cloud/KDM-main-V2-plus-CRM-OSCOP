@@ -29,7 +29,7 @@ def set_admin_ess_capacity_database(database):
 
 from routes_admin_ess import (
     ZoneRef, RouteCapacityBase, RouteCapacityCreate, RouteCapacityUpdate,
-    RouteCapacityResponse, BulkCapacityCreate, get_zone_by_code, get_zone_ref,
+    RouteCapacityResponse, BulkCapacityCreate, get_zone_by_code, get_zone_ref, generate_id,
 )
 
 # ============== ROUTE CAPACITY ENDPOINTS ==============

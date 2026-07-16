@@ -1,4 +1,5 @@
 import { ArrowLeft, FileText, Scale, Building2, CreditCard, Truck, Shield, Handshake, CheckCircle2, XCircle, Download, ChevronRight, Leaf, Package, FileSignature, Route } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { Button } from '../ui/button';
 import { replaceVariables, auditComplianceTable } from '../../data/legalDocuments';
 
@@ -15,7 +16,7 @@ export const renderContent = (content) => {
       return (
         <li key={`line-${idx}-${line.slice(0, 24)}`} className="ml-4 text-white/70 text-sm leading-relaxed list-none flex items-start gap-2 mb-1.5">
           <ChevronRight className="w-3 h-3 mt-1 text-white/40 flex-shrink-0" />
-          <span dangerouslySetInnerHTML={{ __html: processedLine.replace(/^[-—]\s*/, '') }} />
+          <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processedLine.replace(/^[-—]\s*/, '')) }} />
         </li>
       );
     }
@@ -27,7 +28,7 @@ export const renderContent = (content) => {
     
     return (
       <p key={`p-${idx}-${line.slice(0, 24)}`} className="text-white/70 text-sm leading-relaxed mb-2" 
-         dangerouslySetInnerHTML={{ __html: processedLine }} />
+         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processedLine) }} />
     );
   });
 };
@@ -210,7 +211,7 @@ export const LegalDocument = ({ document }) => {
       <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08]">
         {document.sections.map((section, idx) => (
           <DocumentSection 
-            key={idx}
+            key={section.number || section.title || idx}
             number={section.number}
             title={section.title}
             content={section.content}

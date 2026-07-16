@@ -29,7 +29,7 @@ def set_admin_ess_rules_database(database):
 
 from routes_admin_ess import (
     ZoneRef, RoutePriorityRuleBase, RoutePriorityRuleCreate, RoutePriorityRuleUpdate,
-    RoutePriorityRuleResponse, BulkRulesCreate, get_zone_by_code, get_zone_ref,
+    RoutePriorityRuleResponse, BulkRulesCreate, get_zone_by_code, get_zone_ref, generate_id,
 )
 
 # ============== PRIORITY RULES ENDPOINTS ==============

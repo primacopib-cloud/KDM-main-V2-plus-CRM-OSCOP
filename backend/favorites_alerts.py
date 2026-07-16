@@ -45,62 +45,73 @@ async def alert_favorites(product_id: str, zone_code: str, alert_type: str, extr
         "new_price": f"{extra.get('new_price_cents', 0) / 100:.2f}",
         "old_price": f"{extra.get('old_price_cents', 0) / 100:.2f}",
     }
-    title = tpl["title"]
-    message = tpl["message"].format(**fmt)
-    subject = tpl["subject"].format(**fmt)
+    content = {
+        "title": tpl["title"],
+        "message": tpl["message"].format(**fmt),
+        "subject": tpl["subject"].format(**fmt),
+    }
 
     cursor = db.user_favorites.find({"favorites.product_id": product_id}, {"_id": 0, "user_id": 1, "favorites": 1})
     fav_docs = await cursor.to_list(1000)
-    sent = 0
     cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
 
+    sent = 0
     for doc in fav_docs:
-        user_id = doc["user_id"]
         entry = next((f for f in doc.get("favorites", []) if f.get("product_id") == product_id), None)
         if entry and entry.get("alerts_enabled", True) is False:
             continue
-        already = await db.favorites_alerts_log.find_one({
-            "user_id": user_id, "product_id": product_id,
-            "alert_type": alert_type, "sent_at": {"$gte": cutoff},
-        })
-        if already:
+        if await _already_alerted(doc["user_id"], product_id, alert_type, cutoff):
             continue
-
-        notification = await create_notification(
-            notification_type=f"favorite_{alert_type}",
-            title=title,
-            message=message,
-            target_user_id=user_id,
-            data={"product_id": product_id, "zone_code": zone_code, **extra},
-            priority="normal",
-        )
-        try:
-            await send_notification(notification)
-        except Exception as exc:
-            logger.warning(f"WS favorite alert failed for {user_id}: {exc}")
-
-        user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "name": 1, "first_name": 1})
-        if user and user.get("email"):
-            try:
-                await send_email(
-                    to_email=user["email"],
-                    to_name=user.get("name") or user.get("first_name"),
-                    subject=subject,
-                    html_content=_email_html(title, message, product),
-                    tags=["favorite-alert", alert_type],
-                )
-            except Exception as exc:
-                logger.warning(f"Email favorite alert failed for {user['email']}: {exc}")
-
-        await db.favorites_alerts_log.insert_one({
-            "user_id": user_id, "product_id": product_id,
-            "alert_type": alert_type, "zone_code": zone_code,
-            "sent_at": datetime.now(timezone.utc).isoformat(),
-        })
+        await _notify_user(doc["user_id"], product_id, zone_code, alert_type, content, product, extra)
         sent += 1
 
     logger.info(f"Favorites alert '{alert_type}' for product {product_id}: {sent} notified")
     return sent
+
+
+async def _already_alerted(user_id: str, product_id: str, alert_type: str, cutoff: str) -> bool:
+    doc = await db.favorites_alerts_log.find_one({
+        "user_id": user_id, "product_id": product_id,
+        "alert_type": alert_type, "sent_at": {"$gte": cutoff},
+    })
+    return doc is not None
+
+
+async def _notify_user(
+    user_id: str, product_id: str, zone_code: str,
+    alert_type: str, content: dict, product: dict, extra: dict,
+) -> None:
+    notification = await create_notification(
+        notification_type=f"favorite_{alert_type}",
+        title=content["title"],
+        message=content["message"],
+        target_user_id=user_id,
+        data={"product_id": product_id, "zone_code": zone_code, **extra},
+        priority="normal",
+    )
+    try:
+        await send_notification(notification)
+    except Exception as exc:
+        logger.warning(f"WS favorite alert failed for {user_id}: {exc}")
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "name": 1, "first_name": 1})
+    if user and user.get("email"):
+        try:
+            await send_email(
+                to_email=user["email"],
+                to_name=user.get("name") or user.get("first_name"),
+                subject=content["subject"],
+                html_content=_email_html(content["title"], content["message"], product),
+                tags=["favorite-alert", alert_type],
+            )
+        except Exception as exc:
+            logger.warning(f"Email favorite alert failed for {user['email']}: {exc}")
+
+    await db.favorites_alerts_log.insert_one({
+        "user_id": user_id, "product_id": product_id,
+        "alert_type": alert_type, "zone_code": zone_code,
+        "sent_at": datetime.now(timezone.utc).isoformat(),
+    })
 
 
 def _email_html(title: str, message: str, product: dict) -> str:

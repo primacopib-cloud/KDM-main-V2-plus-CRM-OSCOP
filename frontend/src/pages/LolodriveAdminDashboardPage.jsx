@@ -117,8 +117,8 @@ export default function LolodriveAdminDashboardPage() {
           {dash?.alerts && dash.alerts.length > 0 && (
             <SectionCard className="mb-6" title={i18n.t('adm.alertes_operationnelles')}>
               <div className="space-y-2" data-testid="alerts-section">
-                {dash.alerts.map((a, idx) => (
-                  <AlertRow key={idx} severity={a.severity} message={a.message} />
+                {dash.alerts.map((a) => (
+                  <AlertRow key={`${a.severity}-${a.message}`} severity={a.severity} message={a.message} />
                 ))}
               </div>
             </SectionCard>

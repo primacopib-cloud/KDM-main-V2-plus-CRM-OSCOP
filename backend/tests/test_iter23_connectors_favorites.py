@@ -15,10 +15,10 @@ from pymongo import MongoClient
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://coop-dashboard-8.preview.emergentagent.com").rstrip("/")
 
-ADMIN_EMAIL = "admin@kdmarche-oscop.fr"
-ADMIN_PASSWORD = "AdminKDM2025!"
-BUYER_EMAIL = "acheteur-pro@kdmarche.fr"
-BUYER_PASSWORD = "Demo2026!"
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@kdmarche-oscop.fr")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "AdminKDM2025!")
+BUYER_EMAIL = os.environ.get("TEST_BUYER_EMAIL", "acheteur-pro@kdmarche.fr")
+BUYER_PASSWORD = os.environ.get("TEST_BUYER_PASSWORD", "Demo2026!")
 
 TEST_PRODUCT_ID = "61c31a9c-d072-4988-9a39-76ca46520bba"  # Riz long grain 5kg
 TEST_ZONE = "MARTINIQUE"

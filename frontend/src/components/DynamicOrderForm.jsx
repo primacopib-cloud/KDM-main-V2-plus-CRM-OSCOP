@@ -307,9 +307,9 @@ const DynamicOrderForm = ({
               { icon: Truck, label: 'Incoterm EXW', color: '#d4af37' },
               { icon: MapPin, label: zoneCode, color: '#10b981' },
               ...(isVatExonerated ? [{ icon: CheckCircle2, label: 'TVA 0%', color: '#10b981' }] : []),
-            ].map((tag, idx) => (
+            ].map((tag) => (
               <span 
-                key={idx}
+                key={tag.label}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs text-white/90"
                 style={{ 
                   background: 'rgba(255,255,255,0.08)',
@@ -392,7 +392,7 @@ const DynamicOrderForm = ({
               {products.length > 0 ? products.map((product, idx) => {
                 const barcodeValue = product.barcode || generateBarcode(product.sku);
                 return (
-                  <tr key={idx} className={idx % 2 === 1 ? 'bg-purple-50/30' : ''}>
+                  <tr key={product.sku || product.label || idx} className={idx % 2 === 1 ? 'bg-purple-50/30' : ''}>
                     <td className="py-3 px-4">
                       <p className="font-semibold text-gray-900">{product.label}</p>
                       <p className="text-xs text-gray-500">SKU: {product.sku} {product.dlc ? `· DLC: ${product.dlc}` : ''}</p>

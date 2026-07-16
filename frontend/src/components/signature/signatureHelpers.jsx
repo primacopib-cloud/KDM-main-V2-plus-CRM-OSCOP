@@ -116,7 +116,7 @@ export const OTPInput = ({ length = 6, value, onChange, disabled }) => {
     <div className="flex gap-2 justify-center">
       {Array.from({ length }).map((_, index) => (
         <input
-          key={index}
+          key={`otp-slot-${index}`}
           ref={el => inputRefs.current[index] = el}
           type="text"
           inputMode="numeric"

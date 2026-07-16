@@ -14,7 +14,6 @@ from schema_v2 import (
     OrgStatus, SubscriptionStatus, PartnerProvisionStatus,
     WalletStatus, CustomerRole, OscopRole, KdmRole, ZoneKind
 )
-from abac_engine import *  # noqa: F401,F403
 from abac_engine import (
     PolicySubject, PolicyResource, PolicyContext, PolicyInput, PolicyData,
     PolicyResult, ABACPolicyEngine,

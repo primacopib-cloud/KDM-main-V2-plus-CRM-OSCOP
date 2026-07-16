@@ -4,10 +4,10 @@ export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
 export const API_V2 = `${BACKEND_URL}/api/v2`;
 
-// Auth now lives in an httpOnly cookie; localStorage 'token' only exists for legacy sessions.
+// Auth lives in an httpOnly cookie; no token is ever read from localStorage.
 // 'cookie-session' is a placeholder that satisfies legacy guards; the backend authenticates via cookie.
 export const getSessionToken = () =>
-  localStorage.getItem('token') || (localStorage.getItem('user') ? 'cookie-session' : null);
+  localStorage.getItem('user') ? 'cookie-session' : null;
 
 export const getAuthHeaders = () => {
   const token = getSessionToken();

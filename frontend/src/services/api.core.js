@@ -278,11 +278,10 @@ export const exportAPI = {
     if (params.dateTo) searchParams.append('date_to', params.dateTo);
     if (params.orgId) searchParams.append('org_id', params.orgId);
 
-    const token = localStorage.getItem('token');
     const url = `${API}/admin/export/${type}?${searchParams}`;
 
     return fetch(url, {
-      headers: { Authorization: `Bearer ${token}` }
+      credentials: 'include'
     }).then(res => {
       if (!res.ok) throw new Error('Export failed');
       return res.blob();

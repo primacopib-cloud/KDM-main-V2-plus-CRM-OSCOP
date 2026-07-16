@@ -1,0 +1,26 @@
+{
+  "summary": "Iteration 24 — Non-regression pass after external code-review fixes (wildcard imports, generate_id fix, favorites_alerts refactor, DOMPurify, stable keys, http.js token, api.core.js CSV credentials). Backend pytest 10/10 PASS. Frontend: /legal renders sanitized markdown (5 <strong> tags, no errors), admin login → /admin/connecteurs shows both cards + sync queue (1 SUCCESS, 1 ERROR, Retry visible), buyer login → /catalogue shows 8 product cards, /alertes-favoris switch renders with no errors. CSV export summary + /api/admin/export/orders return 200 text/csv with cookie-only auth (no Bearer). Favorites 0→N restock on GUYANE returns restock_alert_triggered=true after refactor.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter24_review_regression.py",
+    "/app/test_reports/pytest/iter24_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "All refactored modules still respect the <500 lines rule.",
+    "routes_admin_ess_rules.py returns 400 when no route_policy exists for zone_code; consider auto-creating (or documenting) — current behavior is correct but easy to trip on in tests.",
+    "http.js getSessionToken returns 'cookie-session' placeholder — fine, but any downstream code that Bearer-headers this string will send 'Authorization: Bearer cookie-session' which is harmless (backend ignores) but slightly noisy. Consider grep and remove such headers in favor of credentials:'include'.",
+    "favorites_alerts.py _already_alerted / _notify_user split reads clean; behavior unchanged (verified by 0→N restock triggering restock_alert_triggered=true)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter24_review_regression.py (new)"
+  ],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "100% (7/7 target flows)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; acheteur-pro@kdmarche.fr / Demo2026! — both worked.",
+  "seed_data_creation": "Purged favorites_alerts_log for product 61c31a9c-d072-4988-9a39-76ca46520bba zone GUYANE before restock test. Stock in GUYANE zone left at 50 after test (was 0 before). Test capacity + rule rows are self-cleaned via DELETE.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "test_iter24_review_regression.py is the regression suite for review fixes. Note: /api/connectors/{name}/health (NOT /api/connectors/health/{name}) — path shape confirmed. Rules POST returns 400 when zone has no route_policy — test uses in (201,400) to prove generate_id NameError is gone. Favorites GUYANE zone is used to avoid 24h anti-spam on MARTINIQUE/GUADELOUPE.",
+  "rca of the issue": "N/A — no regressions found. All 8 fixes from the external code review are validated in situ."
+}

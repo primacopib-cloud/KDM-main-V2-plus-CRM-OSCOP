@@ -180,8 +180,8 @@ export const NutritionTab = ({ product }) => (
                     <div>
                       <p className="text-sm font-medium text-red-400 mb-2">Contient</p>
                       <div className="flex flex-wrap gap-2">
-                        {product.allergens.contains.map((a, i) => (
-                          <Badge key={i} className="bg-red-500/20 text-red-400 border-red-500/30">{a}</Badge>
+                        {product.allergens.contains.map((a) => (
+                          <Badge key={a} className="bg-red-500/20 text-red-400 border-red-500/30">{a}</Badge>
                         ))}
                       </div>
                     </div>
