@@ -33,7 +33,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               
               {/* Category badge */}
               <Badge variant="outline" className="w-fit mb-2 text-[10px] text-white/60 border-white/20">
-                {product.category_name || 'Produit'}
+                {tData(product.category_name) || tData('Produit')}
               </Badge>
               
               {/* Product info */}

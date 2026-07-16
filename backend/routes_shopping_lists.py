@@ -13,6 +13,7 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from shopping_lists_common import (
+    get_current_user_from_request,
     ListFrequency, ShoppingListItem, ShoppingListCreate, ShoppingListUpdate,
     ShoppingListResponse, ShoppingListSummary,
     get_current_user_from_token, enrich_items_with_products, calculate_total,
@@ -46,8 +47,7 @@ async def get_shopping_lists(
     GET /api/shopping-lists
     Get all shopping lists for the current user
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -94,8 +94,7 @@ async def create_shopping_list(data: ShoppingListCreate, request: Request):
     POST /api/shopping-lists
     Create a new shopping list
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -171,8 +170,7 @@ async def get_shopping_list(list_id: str, request: Request):
     GET /api/shopping-lists/{list_id}
     Get a specific shopping list with full details
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -209,8 +207,7 @@ async def update_shopping_list(list_id: str, data: ShoppingListUpdate, request: 
     PATCH /api/shopping-lists/{list_id}
     Update shopping list metadata
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -265,8 +262,7 @@ async def delete_shopping_list(list_id: str, request: Request):
     DELETE /api/shopping-lists/{list_id}
     Delete a shopping list
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     

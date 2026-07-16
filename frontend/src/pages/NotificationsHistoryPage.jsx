@@ -1,3 +1,4 @@
+import { getSessionToken } from '../services/http';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -45,7 +46,7 @@ export default function NotificationsHistoryPage() {
   const [readFilter, setReadFilter] = useState('all'); // all, read, unread
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = getSessionToken();
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : ''
@@ -76,7 +77,7 @@ export default function NotificationsHistoryPage() {
         params.append('search', searchQuery.trim());
       }
       
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       const res = await fetch(`${API_URL}/api/notifications/history?${params}`, {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });
@@ -98,7 +99,7 @@ export default function NotificationsHistoryPage() {
 
   const fetchTypes = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       const res = await fetch(`${API_URL}/api/notifications/types`, {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });

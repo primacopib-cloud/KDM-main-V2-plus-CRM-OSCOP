@@ -1,3 +1,4 @@
+import Seo from '../components/Seo';
 import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -28,6 +29,7 @@ import TerritorySelector from '../components/TerritorySelector';
 const LandingPage = () => {
   return (
     <div className="min-h-screen">
+      <Seo titleKey="seo.landing_title" descKey="seo.landing_desc" />
       <NavBar />
       
       {/* Hero Section */}

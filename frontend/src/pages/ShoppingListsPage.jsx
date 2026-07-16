@@ -1,3 +1,4 @@
+import { getSessionToken } from '../services/http';
 import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -73,7 +74,7 @@ export default function ShoppingListsPage() {
   });
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = getSessionToken();
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : ''
@@ -90,7 +91,7 @@ export default function ShoppingListsPage() {
         params.append('frequency', filterFrequency);
       }
 
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       const res = await fetch(`${API_URL}/api/shopping-lists?${params}`, {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });

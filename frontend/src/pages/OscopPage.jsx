@@ -1,3 +1,4 @@
+import Seo from '../components/Seo';
 import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -12,6 +13,7 @@ import Footer from '../components/Footer';
 export default function OscopPage() {
   return (
     <div className="min-h-screen text-white">
+      <Seo titleKey="seo.oscop_title" descKey="seo.oscop_desc" />
       <NavBar />
 
       {/* Hero — Vert lime × Or métallisé */}

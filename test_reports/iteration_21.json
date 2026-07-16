@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration 21 — Full validation of JWT cookie migration + SEO + tData + Admin Plans crash fix. Backend: 16/16 pytest passed (login HttpOnly Set-Cookie, /auth/me by cookie only, legacy Bearer fallback, POST /auth/logout clears cookie, 401 without creds, all buyer/admin authenticated endpoints accessible via cookie). Frontend: buyer & admin login through UI both put ZERO tokens in localStorage and set the httpOnly+Secure+SameSite=Lax access_token cookie; buyer authenticated pages (/dashboard, /espace-acheteur €69.44, /commandes, /wallet, /favoris, /listes-achats) all load; admin pages (/superadmin, /admin/plans, /admin/plans?lang=en with 'Basic access...' and '/ month', /admin-v2, /admin/produits) all render; logout via header icon clears cookie and /espace-acheteur redirects to /connexion?redirect=/espace-acheteur; /auth/google/return does not crash. SEO on /?lang=en and /tarifs?lang=en verified: EN title, html lang=en, 4 hreflang links (fr/en/es/x-default), canonical, translated meta description. 1 CRITICAL regression found: /catalogue throws 'ReferenceError: tData is not defined' — CatalogPage.jsx uses tData(cat.name) at line 362 without importing tData.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CatalogPage (/catalogue and /catalogue?lang=en)", "issue": "CRITICAL: Runtime crash 'ReferenceError: tData is not defined' at CatalogPage.jsx line 362 (`{tData(cat.name)}` inside the categories map). tData is neither imported nor destructured. The whole /catalogue page shows the react-error-overlay. Fix: add `import { tData } from '../i18n/tData';` (or the correct relative path) at the top of /app/frontend/src/pages/CatalogPage.jsx. Impact: buyers can no longer browse the catalogue, cannot add products to cart via UI, and toggling favorites via the ❤ button is untestable from the UI.", "selector": "route /catalogue", "priority": "CRITICAL"},
+      {"component": "WebSocket /ws/notifications", "issue": "Repeated WS connection failures because the URL is built with an empty user_id (`?user_id=&is_admin=false`). Since the JWT was removed from localStorage, the WS URL builder likely no longer resolves the user id. Not blocking UI but generates continuous console errors on every authenticated page.", "selector": "ws://.../ws/notifications", "priority": "MEDIUM"},
+      {"component": "/admin/plans PlansTab card", "issue": "Small residual: the plans list shows '+1 autres' (French plural) even in EN. All other plan strings translate correctly via tData.", "selector": "PlansTab plan features footer '+N autres'", "priority": "LOW"},
+      {"component": "Console noise 'qt' errors", "issue": "Dozens of minified 'qt' console.error entries fire on multiple pages (already flagged in iter20). Not blocking but should be traced (likely a swallowed throw inside a chart/util).", "selector": "browser console", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Add to cart / Favorites via /catalogue", "issue": "Cannot exercise these flows because CatalogPage crashes on render (tData ReferenceError). Backend /api/v2/catalog/products and /api/user-prefs/favorites both return 200 with cookie auth, so the integration is server-side healthy; only the UI page is blocked.", "affected_selectors": ["route /catalogue"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_auth_cookie_migration.py",
+    "/app/test_reports/pytest/iter21_auth_cookie.xml"
+  ],
+  "action_items": [
+    "FIX CRITICAL: Add `import { tData } from '../i18n/tData';` (correct relative path) to /app/frontend/src/pages/CatalogPage.jsx — used at line 362 without import. Grep the rest of the codebase for other files using tData() without the corresponding import.",
+    "Fix WebSocket notifications URL to read user_id from the `user` object in localStorage (or from /api/auth/me) instead of the removed token — currently emits `?user_id=&is_admin=false`.",
+    "Localize '+1 autres' in the plans card feature list (add plural pass to tData or use t('common.plusMore', {count})).",
+    "Trace and silence the recurring minified 'qt' console error (persists from iter20)."
+  ],
+  "critical_code_review_comments": [
+    "Recurring pattern: newly-introduced i18n helpers (tData in this iteration, i18n.t in iter20) are being called at JSX render time without their import — this took down /admin/plans in iter20 and now takes down /catalogue in iter21. Recommend either (a) a shared eslint rule `no-undef` enforcement on JSX identifiers, or (b) always exposing tData through the `useTranslation()` hook wrapper so the import is co-located with the hook call.",
+    "Cookie migration looks solid on the server side: Set-Cookie is HttpOnly+Secure+SameSite=Lax on login, cleared on logout, legacy Bearer path still honored — but the frontend's WebSocket URL builder was not updated in the migration and now has an empty user_id, causing continuous reconnect failures on every authenticated page."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_auth_cookie_migration.py (new — 17 tests, 16 pass 1 skip)"
+  ],
+  "success_rate": {"backend": "100% (16/16 cookie migration tests pass; 1 dashboard endpoint skipped due to unknown path)", "frontend": "~85% (auth cookie flow, SEO, admin plans crash fix, admin/superadmin/admin-v2/admin-produits, logout, google-return all pass; /catalogue crashes)"},
+  "test_credentials": "Buyer acheteur-pro@kdmarche.fr / Demo2026! and Admin admin@kdmarche-oscop.fr / AdminKDM2025! — both authenticated via UI and via curl.",
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Auth cookie migration is validated end-to-end (backend curl + UI). Next testing agent only needs to retest /catalogue after tData import fix, verify add-to-cart toast + ❤ favorites toggle from /catalogue, and re-check /catalogue?lang=en shows translated category tabs (Food/Beverages/Grocery...). Also verify the /ws/notifications URL now carries a real user_id. Backend endpoints confirmed accessible via cookie: /api/v2/orders, /api/user-prefs/favorites, /api/shopping-lists, /api/v2/catalog/products, /api/v2/catalog/categories, /api/admin/plans/subscriptions, /api/admin/plans/options, /api/catalog/admin/products, /api/admin/stats, /api/v2/admin/applications. Iter20 crash on /admin/plans (missing `import i18n`) is FIXED. Contrast on /admin/plans looks good (dark bg + light text).",
+  "rca of the issue": "CatalogPage.jsx crash: line 362 renders `{tData(cat.name)}` inside a `.map()` callback but the file's import list (line 21 `import i18n from '@/i18n'` + other imports) never includes `tData`. React catches the ReferenceError and renders the dev error overlay. This is the same root-cause pattern that killed /admin/plans in iter20 (`i18n.t` used without `import i18n`) — an i18n helper introduced without its import statement. Reproduction: login as any buyer → open /catalogue → red overlay. Mitigation: add `import { tData } from '../i18n/tData';` and grep the codebase (`grep -rn tData\\( /app/frontend/src`) for other files needing the same import."
+}

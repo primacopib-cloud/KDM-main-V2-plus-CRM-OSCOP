@@ -50,14 +50,9 @@ async def init_default_options():
 
 async def get_current_user_prep(request):
     """Get current user from token"""
-    from auth import decode_token
+    from auth import decode_token, extract_user_id_from_request
     
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Token manquant")
-    
-    token = auth_header.split(" ")[1]
-    user_id = decode_token(token)
+    user_id = extract_user_id_from_request(request)
     
     if not user_id:
         raise HTTPException(status_code=401, detail="Token invalide")

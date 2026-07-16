@@ -74,4 +74,13 @@ async def get_current_user_from_token(authorization: str = None):
         print(f"Auth error: {e}")
     return None
 
+async def get_current_user_from_request(request):
+    """Resolve user from Authorization header or httpOnly cookie."""
+    from auth import extract_user_id_from_request
+    user_id = extract_user_id_from_request(request)
+    if not user_id:
+        return None
+    return await db.users.find_one({"id": user_id})
+
+
 

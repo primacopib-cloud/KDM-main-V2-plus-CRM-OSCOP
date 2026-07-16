@@ -103,6 +103,15 @@ async def get_current_user_from_token(authorization: str = None):
         pass
     return None
 
+async def get_current_user_from_request(request):
+    """Resolve user from Authorization header or httpOnly cookie."""
+    from auth import extract_user_id_from_request
+    user_id = extract_user_id_from_request(request)
+    if not user_id:
+        return None
+    return await db.users.find_one({"id": user_id})
+
+
 
 def get_date_range(date_filter: DateFilter) -> tuple:
     """Get start and end dates for filter"""
@@ -145,8 +154,7 @@ async def get_notification_history(
     Get paginated notification history with advanced filtering.
     Supports filtering by type, date range, read status, and text search.
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -271,8 +279,7 @@ async def get_notification_types(request: Request):
     
     Get available notification types with labels and icons.
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -304,8 +311,7 @@ async def clear_read_notifications(request: Request):
     
     Delete all read notifications (older than 30 days).
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -338,8 +344,7 @@ async def get_notification_stats(request: Request):
     
     Get notification statistics for the current user.
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     

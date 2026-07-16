@@ -13,6 +13,7 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from user_prefs_common import (
+    get_current_user_from_request,
     ShortcutItem, ShortcutCreate, ShortcutUpdate, ShortcutsResponse, ReorderRequest,
     get_current_user_from_token, set_user_prefs_common_database,
 )
@@ -41,8 +42,7 @@ async def get_shortcuts(request: Request):
     GET /api/user-prefs/shortcuts
     Get user's pinned shortcuts
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -67,8 +67,7 @@ async def create_shortcut(shortcut: ShortcutCreate, request: Request):
     POST /api/user-prefs/shortcuts
     Create a new pinned shortcut
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -121,8 +120,7 @@ async def update_shortcut(shortcut_id: str, update: ShortcutUpdate, request: Req
     PATCH /api/user-prefs/shortcuts/{shortcut_id}
     Update an existing shortcut
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -169,8 +167,7 @@ async def delete_shortcut(shortcut_id: str, request: Request):
     DELETE /api/user-prefs/shortcuts/{shortcut_id}
     Remove a shortcut
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -203,8 +200,7 @@ async def reorder_shortcuts(reorder_data: ReorderRequest, request: Request):
     POST /api/user-prefs/shortcuts/reorder
     Reorder shortcuts by providing the new order of IDs
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -247,8 +243,7 @@ async def get_shortcut_suggestions(request: Request):
     GET /api/user-prefs/shortcuts/suggestions
     Get suggested shortcuts based on user's navigation history
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     

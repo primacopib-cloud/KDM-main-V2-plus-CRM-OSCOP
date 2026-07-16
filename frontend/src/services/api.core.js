@@ -24,7 +24,7 @@ export const authAPI = {
       body: JSON.stringify({ email, password }),
     });
 
-    localStorage.setItem('token', data.access_token);
+    // JWT is stored in an httpOnly cookie by the backend (not accessible to JS)
     localStorage.setItem('user', JSON.stringify(data.user));
 
     return data;
@@ -33,6 +33,7 @@ export const authAPI = {
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
   },
 
   getMe: async () => {
@@ -45,7 +46,7 @@ export const authAPI = {
   },
 
   isAuthenticated: () => {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem('user');
   },
 
   // Emergent-managed Google OAuth
@@ -63,7 +64,6 @@ export const authAPI = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Erreur authentification');
-    if (data.access_token) localStorage.setItem('token', data.access_token);
     if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
     return data;
   },

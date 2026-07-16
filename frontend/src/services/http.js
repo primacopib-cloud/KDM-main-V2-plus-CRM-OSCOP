@@ -4,13 +4,19 @@ export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
 export const API_V2 = `${BACKEND_URL}/api/v2`;
 
+// Auth now lives in an httpOnly cookie; localStorage 'token' only exists for legacy sessions.
+// 'cookie-session' is a placeholder that satisfies legacy guards; the backend authenticates via cookie.
+export const getSessionToken = () =>
+  localStorage.getItem('token') || (localStorage.getItem('user') ? 'cookie-session' : null);
+
 export const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = getSessionToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 export const apiCall = async (endpoint, options = {}) => {
   const response = await fetch(`${API}${endpoint}`, {
+    credentials: 'include',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -30,6 +36,7 @@ export const apiCall = async (endpoint, options = {}) => {
 
 export const apiCallV2 = async (endpoint, options = {}) => {
   const response = await fetch(`${API_V2}${endpoint}`, {
+    credentials: 'include',
     ...options,
     headers: {
       'Content-Type': 'application/json',

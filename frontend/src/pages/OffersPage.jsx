@@ -1,3 +1,4 @@
+import Seo from '../components/Seo';
 import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -9,6 +10,7 @@ import Footer from '../components/Footer';
 const OffersPage = () => {
   return (
     <div className="min-h-screen">
+      <Seo titleKey="seo.offers_title" descKey="seo.offers_desc" />
       <Header />
       
       {/* Hero */}

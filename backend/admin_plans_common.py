@@ -159,6 +159,18 @@ async def get_current_admin(authorization: str = None):
         print(f"Auth error: {e}")
     return None
 
+async def get_current_admin_from_request(request):
+    """Resolve admin from Authorization header or httpOnly cookie."""
+    from auth import extract_user_id_from_request
+    user_id = extract_user_id_from_request(request)
+    if not user_id:
+        return None
+    user = await db.users.find_one({"id": user_id})
+    if user and (user.get("role") == "admin" or user.get("is_admin") is True):
+        return user
+    return None
+
+
 
 def slugify(text: str) -> str:
     """Generate a slug from text"""

@@ -325,5 +325,19 @@
     "disponibles_one": "{{count}} producto disponible",
     "disponibles_other": "{{count}} productos disponibles",
     "toast_prix_indispo": "Precio no disponible para su organización"
+  },
+  "seo": {
+    "landing_title": "KDMARCHÉ — El ecosistema cooperativo de ultramar",
+    "landing_desc": "Central de compras cooperativa B2B2C: PASS Vida Cara, red LOLODRIVE, precios estructurales mutualizados y gobernanza ESS en los territorios de ultramar.",
+    "pricing_title": "Tarifas y Suscripciones O'SCOP",
+    "pricing_desc": "Elija su acceso a la central: precios estructurales B2B mutualizados vía KDMARCHE, sin permanencia.",
+    "offers_title": "Nuestras ofertas de adhesión",
+    "offers_desc": "Suscripciones O'SCOP y wallet de créditos: acceda a precios estructurales B2B de hasta -50%.",
+    "logiscop_title": "LOGI'SCOP — Logística cooperativa",
+    "logiscop_desc": "El brazo logístico de la red cooperativa: consolidación, transporte marítimo/aéreo y distribución en puntos en ultramar.",
+    "oscop_title": "O'SCOP — Gobernanza ESS",
+    "oscop_desc": "La cooperativa que organiza el acceso solidario a lo esencial: 1 persona = 1 voto, márgenes limitados, impacto territorial.",
+    "login_title": "Acceso de miembros",
+    "register_title": "Crear una cuenta"
   }
 }

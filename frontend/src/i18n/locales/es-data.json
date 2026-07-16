@@ -1,0 +1,32 @@
+{
+ "data": {
+  "alimentaire": "Alimentación",
+  "boissons": "Bebidas",
+  "hygiene": "Higiene",
+  "epicerie": "Ultramarinos",
+  "produits_frais": "Productos frescos",
+  "surgeles": "Congelados",
+  "cuisine": "Cocina",
+  "frais": "Fresco",
+  "mois": "mes",
+  "acces_de_base_a_la_centrale_d_achats_kdmarche_b2b": "Acceso básico a la central de compras KDMARCHE B2B",
+  "pour_les_structures_qui_commandent_en_gros_volumes": "Para estructuras que piden grandes volúmenes",
+  "pour_les_cooperatives_multi_zones_et_projets_structurants": "Para cooperativas multizona y proyectos estructurantes",
+  "acces_a_la_centrale_d_achats_kdmarche_b2b": "Acceso a la central de compras KDMARCHE B2B",
+  "1_zone_geographique_incluse": "1 zona geográfica incluida",
+  "acces_aux_prix_structurels_mutualises": "Acceso a los precios estructurales mutualizados",
+  "wallet_credits_de_base": "Wallet de créditos básico",
+  "acces_promos_flash_de_la_zone": "Acceso a promos flash de la zona",
+  "acces_prioritaire_aux_volumes": "Acceso prioritario a los volúmenes",
+  "acces_elargi_aux_gammes_kdmarche": "Acceso ampliado a las gamas KDMARCHE",
+  "wallet_credits_renforce": "Wallet de créditos reforzado",
+  "acces_multi_categories": "Acceso multicategoría",
+  "reporting_d_usage": "Informes de uso",
+  "acces_multi_zones": "Acceso multizona",
+  "acces_projets_collectifs": "Acceso a proyectos colectivos",
+  "reporting_ess_impact": "Informes ESS / impacto",
+  "appui_structuration_cooperative": "Apoyo a la estructuración cooperativa",
+  "acces_fournisseurs_strategiques": "Acceso a proveedores estratégicos",
+  "produit": "Producto"
+ }
+}

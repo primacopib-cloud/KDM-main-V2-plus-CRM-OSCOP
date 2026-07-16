@@ -1,3 +1,4 @@
+import { getSessionToken } from '../services/http';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -40,7 +41,7 @@ export default function QuickShortcuts({ variant = 'navbar' }) {
   const location = useLocation();
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = getSessionToken();
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : ''
@@ -49,7 +50,7 @@ export default function QuickShortcuts({ variant = 'navbar' }) {
 
   const fetchShortcuts = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       const res = await fetch(`${API_URL}/api/user-prefs/shortcuts`, {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });
@@ -66,7 +67,7 @@ export default function QuickShortcuts({ variant = 'navbar' }) {
 
   const fetchSuggestions = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       const res = await fetch(`${API_URL}/api/user-prefs/shortcuts/suggestions`, {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });

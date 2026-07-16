@@ -325,5 +325,19 @@
     "disponibles_one": "{{count}} produit disponible",
     "disponibles_other": "{{count}} produits disponibles",
     "toast_prix_indispo": "Prix non disponible pour votre organisation"
+  },
+  "seo": {
+    "landing_title": "KDMARCHÉ — L'écosystème coopératif des Outre-mer",
+    "landing_desc": "Centrale d'achat coopérative B2B2C : PASS Vie Chère, réseau LOLODRIVE, prix structurels mutualisés et gouvernance ESS dans les Outre-mer.",
+    "pricing_title": "Tarifs & Abonnements O'SCOP",
+    "pricing_desc": "Choisissez votre accès à la centrale : prix structurels B2B mutualisés via KDMARCHE, formules sans engagement.",
+    "offers_title": "Nos offres d'adhésion",
+    "offers_desc": "Abonnements O'SCOP et wallet crédits : accédez aux prix structurels B2B jusqu'à -50%.",
+    "logiscop_title": "LOGI'SCOP — Logistique coopérative",
+    "logiscop_desc": "Le bras logistique du réseau coopératif : consolidation, acheminement maritime/aérien et distribution relais dans les DOM.",
+    "oscop_title": "O'SCOP — Gouvernance ESS",
+    "oscop_desc": "La coopérative qui organise l'accès solidaire aux essentiels : 1 personne = 1 voix, marges plafonnées, impact territorial.",
+    "login_title": "Connexion membre",
+    "register_title": "Créer un compte"
   }
 }

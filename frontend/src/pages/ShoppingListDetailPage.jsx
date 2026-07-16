@@ -1,3 +1,4 @@
+import { getSessionToken } from '../services/http';
 import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
@@ -39,7 +40,7 @@ export default function ShoppingListDetailPage() {
   const [productSearch, setProductSearch] = useState('');
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = getSessionToken();
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : ''
@@ -49,7 +50,7 @@ export default function ShoppingListDetailPage() {
   const fetchList = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       const res = await fetch(`${API_URL}/api/shopping-lists/${listId}`, {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });
@@ -71,7 +72,7 @@ export default function ShoppingListDetailPage() {
   const fetchAvailableProducts = useCallback(async () => {
     setProductsLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       const params = new URLSearchParams({ page_size: '50', zone_code: 'GUADELOUPE' });
       if (productSearch.trim()) {
         params.append('search', productSearch.trim());

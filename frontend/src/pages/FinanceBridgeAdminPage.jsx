@@ -8,6 +8,7 @@
  *   • Tableau des sync-events
  *   • 2 actions rapides : pousser un client KDM / pousser une commande LOLODRIVE
  */
+import { getSessionToken } from '../services/http';
 import i18n from '@/i18n';
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -39,7 +40,7 @@ function fmtDateTime(iso) {
 }
 
 const authHeader = () => {
-  const t = localStorage.getItem("token");
+  const t = getSessionToken();
   return t ? { Authorization: `Bearer ${t}` } : {};
 };
 

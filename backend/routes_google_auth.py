@@ -254,13 +254,14 @@ async def google_callback(request: Request, code: Optional[str] = None, state: O
         user = new_user
 
     # Issue our JWT (same one used for email/password login)
-    from auth import create_access_token
+    from auth import create_access_token, set_auth_cookie
     jwt_token = create_access_token(data={"sub": user["id"]})
 
-    # Redirect to frontend with token in query string (frontend reads it & stores it)
+    # Set the httpOnly auth cookie and redirect WITHOUT the token in the URL
     safe_path = post_login_redirect if post_login_redirect.startswith("/") else "/dashboard"
-    return_url = f"{front}/auth/google/return?token={jwt_token}&next={safe_path}"
+    return_url = f"{front}/auth/google/return?next={safe_path}"
     response = RedirectResponse(url=return_url, status_code=302)
+    set_auth_cookie(response, jwt_token)
     response.delete_cookie(key=STATE_COOKIE, path="/")
     return response
 

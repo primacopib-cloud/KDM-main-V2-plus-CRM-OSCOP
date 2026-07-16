@@ -1,3 +1,4 @@
+import Seo from '../components/Seo';
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -103,6 +104,7 @@ const RegisterPage = () => {
         `
       }}
     >
+      <Seo titleKey="seo.register_title" />
       <div className="w-full max-w-2xl">
         <Link to="/" className="inline-flex items-center text-white/60 hover:text-white mb-6 transition-colors text-sm">
           <ArrowLeft className="w-4 h-4 mr-2" />

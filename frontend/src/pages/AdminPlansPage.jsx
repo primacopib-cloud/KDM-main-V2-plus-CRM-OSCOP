@@ -165,7 +165,7 @@ const AdminPlansPage = () => {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: '#070A10' }}
+        style={{ background: '#0B1220' }}
       >
         <Loader2 className="w-10 h-10 animate-spin" style={{ color: '#D9B35A' }} />
       </div>
@@ -173,7 +173,7 @@ const AdminPlansPage = () => {
   }
 
   return (
-    <div style={{ background: '#070A10', minHeight: '100vh' }}>
+    <div className="on-dark" style={{ background: 'linear-gradient(180deg, #0B1220 0%, #0E1526 60%, #0B1220 100%)', minHeight: '100vh' }}>
       <NavBar />
       <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-12 max-w-7xl mx-auto">
         {/* Header */}
@@ -189,7 +189,7 @@ const AdminPlansPage = () => {
             <h1 className="text-3xl sm:text-4xl font-bold text-white">
               {i18n.t('adm.plans_options_credits')}
             </h1>
-            <p className="text-white/60 text-sm mt-1">
+            <p className="text-white/75 text-sm mt-1">
               {i18n.t('adm.gerez_dynamiquement')}
             </p>
           </div>
@@ -211,7 +211,7 @@ const AdminPlansPage = () => {
             />
             <StatsCard
               icon={Users}
-              label="Abonnements"
+              label={i18n.t('adm.abonnement')}
               value={stats.subscriptions.active}
               color="#9CFF7A"
             />

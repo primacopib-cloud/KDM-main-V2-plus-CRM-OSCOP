@@ -1,3 +1,4 @@
+import { getSessionToken } from '../services/http';
 import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -65,7 +66,7 @@ export default function BuyerSpacePage() {
 
       try {
         // Get user profile with org info from v2 API
-        const token = localStorage.getItem('token');
+        const token = getSessionToken();
         const API_BASE = process.env.REACT_APP_BACKEND_URL;
         
         // Try to get extended user profile
@@ -240,7 +241,7 @@ export default function BuyerSpacePage() {
     toast.info(i18n.t('buyer.toast_pdf'));
     
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       const response = await fetch(`${API_URL}/api/v2/pdf/invoice/${invoice.id}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });

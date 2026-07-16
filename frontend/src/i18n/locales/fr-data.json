@@ -1,0 +1,32 @@
+{
+ "data": {
+  "alimentaire": "Alimentaire",
+  "boissons": "Boissons",
+  "hygiene": "Hygiène",
+  "epicerie": "Épicerie",
+  "produits_frais": "Produits frais",
+  "surgeles": "Surgelés",
+  "cuisine": "Cuisine",
+  "frais": "Frais",
+  "mois": "mois",
+  "acces_de_base_a_la_centrale_d_achats_kdmarche_b2b": "Accès de base à la centrale d'achats KDMARCHE B2B",
+  "pour_les_structures_qui_commandent_en_gros_volumes": "Pour les structures qui commandent en gros volumes",
+  "pour_les_cooperatives_multi_zones_et_projets_structurants": "Pour les coopératives multi-zones et projets structurants",
+  "acces_a_la_centrale_d_achats_kdmarche_b2b": "Accès à la centrale d'achats KDMARCHE B2B",
+  "1_zone_geographique_incluse": "1 zone géographique incluse",
+  "acces_aux_prix_structurels_mutualises": "Accès aux prix structurels mutualisés",
+  "wallet_credits_de_base": "Wallet crédits de base",
+  "acces_promos_flash_de_la_zone": "Accès promos flash de la zone",
+  "acces_prioritaire_aux_volumes": "Accès prioritaire aux volumes",
+  "acces_elargi_aux_gammes_kdmarche": "Accès élargi aux gammes KDMARCHE",
+  "wallet_credits_renforce": "Wallet crédits renforcé",
+  "acces_multi_categories": "Accès multi-catégories",
+  "reporting_d_usage": "Reporting d'usage",
+  "acces_multi_zones": "Accès multi-zones",
+  "acces_projets_collectifs": "Accès projets collectifs",
+  "reporting_ess_impact": "Reporting ESS / impact",
+  "appui_structuration_cooperative": "Appui structuration coopérative",
+  "acces_fournisseurs_strategiques": "Accès fournisseurs stratégiques",
+  "produit": "Produit"
+ }
+}

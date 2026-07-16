@@ -359,7 +359,7 @@ export default function CatalogPage() {
                   : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
               }`}
             >
-              {cat.name}
+              {tData(cat.name)}
             </button>
           ))}
         </div>

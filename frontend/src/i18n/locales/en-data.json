@@ -1,0 +1,32 @@
+{
+ "data": {
+  "alimentaire": "Food",
+  "boissons": "Beverages",
+  "hygiene": "Hygiene",
+  "epicerie": "Grocery",
+  "produits_frais": "Fresh products",
+  "surgeles": "Frozen",
+  "cuisine": "Kitchen",
+  "frais": "Fresh",
+  "mois": "month",
+  "acces_de_base_a_la_centrale_d_achats_kdmarche_b2b": "Basic access to the KDMARCHE B2B purchasing hub",
+  "pour_les_structures_qui_commandent_en_gros_volumes": "For structures ordering large volumes",
+  "pour_les_cooperatives_multi_zones_et_projets_structurants": "For multi-zone cooperatives and structuring projects",
+  "acces_a_la_centrale_d_achats_kdmarche_b2b": "Access to the KDMARCHE B2B purchasing hub",
+  "1_zone_geographique_incluse": "1 geographic zone included",
+  "acces_aux_prix_structurels_mutualises": "Access to pooled structural prices",
+  "wallet_credits_de_base": "Basic credits wallet",
+  "acces_promos_flash_de_la_zone": "Access to zone flash deals",
+  "acces_prioritaire_aux_volumes": "Priority access to volumes",
+  "acces_elargi_aux_gammes_kdmarche": "Extended access to KDMARCHE ranges",
+  "wallet_credits_renforce": "Boosted credits wallet",
+  "acces_multi_categories": "Multi-category access",
+  "reporting_d_usage": "Usage reporting",
+  "acces_multi_zones": "Multi-zone access",
+  "acces_projets_collectifs": "Access to collective projects",
+  "reporting_ess_impact": "SSE / impact reporting",
+  "appui_structuration_cooperative": "Cooperative structuring support",
+  "acces_fournisseurs_strategiques": "Access to strategic suppliers",
+  "produit": "Product"
+ }
+}

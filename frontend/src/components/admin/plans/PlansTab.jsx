@@ -1,4 +1,5 @@
 import i18n from '@/i18n';
+import { tData } from '@/i18n/tData';
 import { Plus, Pencil, Trash2, CheckCircle2, Star } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { formatPrice } from './shared';
@@ -35,7 +36,7 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
           )}
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-xs text-white/50">{p.slug}</div>
+              <div className="text-xs text-white/65">{p.slug}</div>
               <h3 className="text-lg font-bold text-white">{p.name}</h3>
             </div>
             <div
@@ -49,26 +50,26 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
             </div>
           </div>
           {p.description && (
-            <p className="text-white/60 text-sm mt-1">{p.description}</p>
+            <p className="text-white/80 text-sm mt-1">{tData(p.description)}</p>
           )}
           <div className="mt-3">
             <span className="text-3xl font-bold" style={{ color: p.color || '#D9B35A' }}>
               {formatPrice(p.price_cents)}
             </span>
-            <span className="text-white/60 text-sm">/ {p.period}</span>
+            <span className="text-white/75 text-sm">/ {tData(p.period)}</span>
           </div>
-          <div className="text-xs text-white/50 mt-1">
+          <div className="text-xs text-white/65 mt-1">
             {i18n.t('adm.plan_meta', { credits: p.default_credits, zones: p.max_zones, users: p.max_users })}
           </div>
-          <ul className="space-y-1 mt-3 text-sm text-white/70">
+          <ul className="space-y-1 mt-3 text-sm text-white/85">
             {(p.features || []).slice(0, 4).map((f) => (
               <li key={`feat-${p.id || p.code}-${f}`} className="flex items-start gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#D9B35A' }} />
-                <span>{f}</span>
+                <span>{tData(f)}</span>
               </li>
             ))}
             {(p.features || []).length > 4 && (
-              <li className="text-xs text-white/40">
+              <li className="text-xs text-white/60">
                 +{p.features.length - 4} autres
               </li>
             )}

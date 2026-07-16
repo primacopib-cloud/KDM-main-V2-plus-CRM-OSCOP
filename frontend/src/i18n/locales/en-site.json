@@ -325,5 +325,19 @@
     "disponibles_one": "{{count}} product available",
     "disponibles_other": "{{count}} products available",
     "toast_prix_indispo": "Price not available for your organization"
+  },
+  "seo": {
+    "landing_title": "KDMARCHÉ — The cooperative ecosystem of the overseas territories",
+    "landing_desc": "B2B2C cooperative purchasing hub: Cost-of-Living PASS, LOLODRIVE network, pooled structural prices and SSE governance in the French overseas territories.",
+    "pricing_title": "O'SCOP Pricing & Subscriptions",
+    "pricing_desc": "Choose your access to the hub: pooled structural B2B prices via KDMARCHE, no long-term commitment.",
+    "offers_title": "Our membership offers",
+    "offers_desc": "O'SCOP subscriptions and credits wallet: access structural B2B prices up to -50%.",
+    "logiscop_title": "LOGI'SCOP — Cooperative logistics",
+    "logiscop_desc": "The logistics arm of the cooperative network: consolidation, sea/air shipping and relay distribution in the overseas territories.",
+    "oscop_title": "O'SCOP — SSE Governance",
+    "oscop_desc": "The cooperative organizing solidarity-based access to essentials: 1 person = 1 vote, capped margins, territorial impact.",
+    "login_title": "Member login",
+    "register_title": "Create an account"
   }
 }

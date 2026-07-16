@@ -1,3 +1,4 @@
+import { getSessionToken } from '../services/http';
 import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
@@ -230,7 +231,7 @@ export default function CheckoutPage() {
       toast.info(i18n.t('checkout.toast_commande_creee_redirection', { number: order.order_number }));
       
       // 2. Create Stripe checkout session
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       const checkoutResponse = await fetch(`${API_URL}/api/v2/checkout/create-session`, {
         method: 'POST',
         headers: {

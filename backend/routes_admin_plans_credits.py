@@ -7,6 +7,7 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from admin_plans_common import (
+    get_current_admin_from_request,
     get_current_admin, slugify, CreditAdjustment, CreditHistoryItem,
 )
 
@@ -32,8 +33,7 @@ async def list_users_with_credits(
     GET /api/admin/plans/credits/users
     List users/orgs with their credit balances
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -84,8 +84,7 @@ async def get_user_credits(user_id: str, request: Request):
     GET /api/admin/plans/credits/users/{user_id}
     Get credit details for a specific user
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -123,8 +122,7 @@ async def adjust_user_credits(user_id: str, data: CreditAdjustment, request: Req
     POST /api/admin/plans/credits/users/{user_id}/adjust
     Add or deduct credits from a user
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -190,8 +188,7 @@ async def bulk_adjust_credits(request: Request):
     Bulk adjust credits for multiple users
     Body: { "adjustments": [{ "user_id": "...", "amount": 100, "reason": "..." }] }
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -266,8 +263,7 @@ async def get_plans_stats(request: Request):
     GET /api/admin/plans/stats
     Get statistics about plans and credits
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     

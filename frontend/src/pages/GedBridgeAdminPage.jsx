@@ -10,6 +10,7 @@
  * Volontairement compacte : aucun refactor lourd, design aligné sur la charte
  * premium light (glass-panel, or métallisé, bleu logistique).
  */
+import { getSessionToken } from '../services/http';
 import i18n from '@/i18n';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -52,7 +53,7 @@ export default function GedBridgeAdminPage() {
   const [retryingId, setRetryingId] = useState(null);
 
   const authHeader = () => {
-    const token = localStorage.getItem("token");
+    const token = getSessionToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 

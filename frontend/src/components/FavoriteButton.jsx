@@ -1,3 +1,4 @@
+import { getSessionToken } from '../services/http';
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { Heart } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,7 +13,7 @@ export function FavoritesProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('token');
+    const token = getSessionToken();
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : ''
@@ -20,7 +21,7 @@ export function FavoritesProvider({ children }) {
   }, []);
 
   const fetchFavoriteIds = useCallback(async () => {
-    const token = localStorage.getItem('token');
+    const token = getSessionToken();
     if (!token) {
       setLoading(false);
       return;
@@ -47,7 +48,7 @@ export function FavoritesProvider({ children }) {
   }, [fetchFavoriteIds]);
 
   const toggleFavorite = useCallback(async (productId, productName) => {
-    const token = localStorage.getItem('token');
+    const token = getSessionToken();
     if (!token) {
       toast.error('Veuillez vous connecter pour ajouter des favoris');
       return false;

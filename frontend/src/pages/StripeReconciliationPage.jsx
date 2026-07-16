@@ -1,3 +1,4 @@
+import { getSessionToken } from '../services/http';
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -38,7 +39,7 @@ export default function StripeReconciliationPage() {
     setLoading(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
+      const token = getSessionToken();
       const resp = await fetch(
         `${API}/admin/stripe/reconciliation?date_from=${dateFrom}&date_to=${dateTo}`,
         { headers: { Authorization: `Bearer ${token}` } },
@@ -65,7 +66,7 @@ export default function StripeReconciliationPage() {
   const fetchTransactions = useCallback(async () => {
     setTxLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getSessionToken();
       const params = new URLSearchParams({
         date_from: dateFrom,
         date_to: dateTo,
@@ -103,7 +104,7 @@ export default function StripeReconciliationPage() {
 
   const handleExportCsv = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getSessionToken();
       const resp = await fetch(
         `${API}/admin/stripe/reconciliation/export.csv?date_from=${dateFrom}&date_to=${dateTo}`,
         { headers: { Authorization: `Bearer ${token}` } },

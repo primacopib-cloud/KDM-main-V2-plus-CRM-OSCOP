@@ -58,14 +58,9 @@ def dict_to_csv_row(data: dict, columns: List[str]) -> List[str]:
 
 async def check_admin(request: Request):
     """Check if request is from admin"""
-    from auth import decode_token
+    from auth import decode_token, extract_user_id_from_request
     
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Token manquant")
-    
-    token = auth_header.split(" ")[1]
-    user_id = decode_token(token)
+    user_id = extract_user_id_from_request(request)
     
     if not user_id:
         raise HTTPException(status_code=401, detail="Token invalide")

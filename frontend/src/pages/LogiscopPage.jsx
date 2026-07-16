@@ -1,3 +1,4 @@
+import Seo from '../components/Seo';
 import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -12,6 +13,7 @@ import Footer from '../components/Footer';
 export default function LogiscopPage() {
   return (
     <div className="min-h-screen text-white">
+      <Seo titleKey="seo.logiscop_title" descKey="seo.logiscop_desc" />
       <NavBar />
 
       {/* Hero — Bleu logistique × Orange énergie */}

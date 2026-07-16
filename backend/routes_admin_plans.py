@@ -13,6 +13,7 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from admin_plans_common import (
+    get_current_admin_from_request,
     get_current_admin, slugify, PlanPeriod,
     SubscriptionPlanCreate, SubscriptionPlanUpdate, SubscriptionPlanResponse,
     PlanOptionCreate, PlanOptionUpdate, PlanOptionResponse,
@@ -44,8 +45,7 @@ async def list_subscription_plans(
     GET /api/admin/plans/subscriptions
     List all subscription plans
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -86,8 +86,7 @@ async def create_subscription_plan(data: SubscriptionPlanCreate, request: Reques
     POST /api/admin/plans/subscriptions
     Create a new subscription plan
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -151,8 +150,7 @@ async def get_subscription_plan(plan_id: str, request: Request):
     GET /api/admin/plans/subscriptions/{plan_id}
     Get a specific subscription plan
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -189,8 +187,7 @@ async def update_subscription_plan(plan_id: str, data: SubscriptionPlanUpdate, r
     PATCH /api/admin/plans/subscriptions/{plan_id}
     Update a subscription plan
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -239,8 +236,7 @@ async def delete_subscription_plan(plan_id: str, request: Request, force: bool =
     DELETE /api/admin/plans/subscriptions/{plan_id}
     Delete a subscription plan (soft delete by default, force=true for hard delete)
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -275,8 +271,7 @@ async def list_plan_options(request: Request, include_inactive: bool = False):
     GET /api/admin/plans/options
     List all plan options/addons
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -305,8 +300,7 @@ async def create_plan_option(data: PlanOptionCreate, request: Request):
     POST /api/admin/plans/options
     Create a new plan option/addon
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -351,8 +345,7 @@ async def update_plan_option(option_id: str, data: PlanOptionUpdate, request: Re
     PATCH /api/admin/plans/options/{option_id}
     Update a plan option
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
@@ -394,8 +387,7 @@ async def delete_plan_option(option_id: str, request: Request):
     DELETE /api/admin/plans/options/{option_id}
     Delete a plan option
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    admin = await get_current_admin(authorization)
+    admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     

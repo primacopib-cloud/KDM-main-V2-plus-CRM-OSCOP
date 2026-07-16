@@ -1,3 +1,4 @@
+import Seo from '../components/Seo';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '../components/ui/input';
@@ -63,6 +64,7 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row" data-testid="login-page">
+      <Seo titleKey="seo.login_title" />
       {/* ─────────────── LEFT PANEL (deep blue KDMARCHE) ─────────────── */}
       <aside
         className="on-dark relative hidden lg:flex lg:w-1/2 flex-col justify-between p-10 xl:p-14 overflow-hidden"

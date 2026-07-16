@@ -1,3 +1,4 @@
+import { getSessionToken } from '../services/http';
 import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -33,7 +34,7 @@ export default function FavoritesPage() {
   const [quantities, setQuantities] = useState({});
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = getSessionToken();
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : ''
@@ -45,7 +46,7 @@ export default function FavoritesPage() {
     else setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getSessionToken();
       const res = await fetch(`${API_URL}/api/user-prefs/favorites?include_details=true`, {
         headers: { 'Authorization': token ? `Bearer ${token}` : '' }
       });

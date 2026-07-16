@@ -22,7 +22,6 @@ export default function GoogleAuthReturnPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = searchParams.get("token");
     const next = searchParams.get("next") || "/dashboard";
     const googleError = searchParams.get("google_error");
 
@@ -33,17 +32,8 @@ export default function GoogleAuthReturnPage() {
       return;
     }
 
-    if (!token) {
-      setError("missing_token");
-      toast.error("Token manquant après redirection Google");
-      setTimeout(() => navigate("/connexion", { replace: true }), 2500);
-      return;
-    }
-
-    // Persist token the exact same way email/password login does
-    localStorage.setItem("token", token);
-
-    // Hydrate user from /api/auth/me
+    // The backend has set an httpOnly auth cookie during the OAuth callback.
+    // Hydrate user from /api/auth/me (cookie is sent automatically).
     authAPI
       .getMe()
       .then((user) => {
@@ -53,7 +43,6 @@ export default function GoogleAuthReturnPage() {
         navigate(safeNext, { replace: true });
       })
       .catch(() => {
-        localStorage.removeItem("token");
         setError("hydration_failed");
         toast.error("Impossible de charger votre profil.");
         setTimeout(() => navigate("/connexion", { replace: true }), 2500);

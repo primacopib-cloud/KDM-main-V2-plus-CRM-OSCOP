@@ -7,7 +7,7 @@ import uuid
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from user_prefs_common import get_current_user_from_token
+from user_prefs_common import get_current_user_from_token, get_current_user_from_request
 
 client = AsyncIOMotorClient(os.environ.get('MONGO_URL'))
 db = client[os.environ.get('DB_NAME', 'b2b_ess_db')]
@@ -49,8 +49,7 @@ async def get_favorites(request: Request, include_details: bool = True):
     GET /api/user-prefs/favorites
     Get user's favorite products
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -102,8 +101,7 @@ async def get_favorite_ids(request: Request):
     GET /api/user-prefs/favorites/ids
     Get just the list of favorite product IDs (lightweight)
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -124,8 +122,7 @@ async def add_favorite(product_id: str, request: Request):
     POST /api/user-prefs/favorites/{product_id}
     Add a product to favorites
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -176,8 +173,7 @@ async def remove_favorite(product_id: str, request: Request):
     DELETE /api/user-prefs/favorites/{product_id}
     Remove a product from favorites
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -222,8 +218,7 @@ async def toggle_favorite(product_id: str, request: Request):
     POST /api/user-prefs/favorites/{product_id}/toggle
     Toggle favorite status (add if not present, remove if present)
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -283,8 +278,7 @@ async def clear_all_favorites(request: Request):
     DELETE /api/user-prefs/favorites
     Clear all favorites
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     

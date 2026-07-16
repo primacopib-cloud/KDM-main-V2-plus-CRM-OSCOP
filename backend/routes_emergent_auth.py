@@ -135,9 +135,10 @@ async def exchange_session(payload: SessionExchange, response: Response):
         path="/",
     )
 
-    # Also issue a JWT so the existing app hooks keep working
-    from auth import create_access_token  # local import to avoid circular
+    # Also issue a JWT in an httpOnly cookie so the existing app hooks keep working
+    from auth import create_access_token, set_auth_cookie  # local import to avoid circular
     access_token = create_access_token(data={"sub": user["id"]})
+    set_auth_cookie(response, access_token)
 
     return {
         "user": {

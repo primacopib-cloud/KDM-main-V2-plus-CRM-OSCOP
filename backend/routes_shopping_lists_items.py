@@ -7,6 +7,7 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from shopping_lists_common import (
+    get_current_user_from_request,
     ListFrequency, ShoppingListItem, ShoppingListResponse, AddItemRequest, UpdateItemRequest,
     get_current_user_from_token, enrich_items_with_products, calculate_total,
 )
@@ -28,8 +29,7 @@ async def add_item_to_list(list_id: str, item: AddItemRequest, request: Request)
     POST /api/shopping-lists/{list_id}/items
     Add a product to the shopping list
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -107,8 +107,7 @@ async def update_item_in_list(list_id: str, product_id: str, data: UpdateItemReq
     PATCH /api/shopping-lists/{list_id}/items/{product_id}
     Update item quantity or notes
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -171,8 +170,7 @@ async def remove_item_from_list(list_id: str, product_id: str, request: Request)
     DELETE /api/shopping-lists/{list_id}/items/{product_id}
     Remove a product from the shopping list
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -208,8 +206,7 @@ async def use_shopping_list(list_id: str, request: Request):
     Mark list as used (increment counter, update last_used_at)
     Returns the list items ready to be added to cart
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     
@@ -247,8 +244,7 @@ async def duplicate_shopping_list(list_id: str, request: Request, new_name: Opti
     POST /api/shopping-lists/{list_id}/duplicate
     Create a copy of an existing shopping list
     """
-    authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    user = await get_current_user_from_token(authorization)
+    user = await get_current_user_from_request(request)
     if not user:
         raise HTTPException(status_code=401, detail="Non authentifié")
     

@@ -2,13 +2,13 @@
 import logging
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Response
 
 from models import (
     UserCreate, UserLogin, UserResponse, UserInDB, Token,
     PasswordResetRequest, PasswordResetConfirm, PasswordResetToken,
 )
-from auth import get_password_hash, verify_password, create_access_token
+from auth import get_password_hash, verify_password, create_access_token, set_auth_cookie, clear_auth_cookie
 from subscriptions import get_plan_default_credits
 from email_service import send_password_reset_email
 from db import get_database
@@ -69,8 +69,8 @@ async def register(user_data: UserCreate):
 
 
 @auth_core_router.post("/auth/login", response_model=Token)
-async def login(credentials: UserLogin):
-    """Login and get access token."""
+async def login(credentials: UserLogin, response: Response):
+    """Login: sets an httpOnly auth cookie and returns the token (legacy)."""
     user = await get_user_by_email(credentials.email)
     if not user:
         raise HTTPException(
@@ -85,6 +85,7 @@ async def login(credentials: UserLogin):
         )
 
     access_token = create_access_token(data={"sub": user["id"]})
+    set_auth_cookie(response, access_token)
 
     logger.info(f"User logged in: {credentials.email}")
 
@@ -104,6 +105,13 @@ async def login(credentials: UserLogin):
             created_at=user["created_at"]
         )
     )
+
+
+@auth_core_router.post("/auth/logout", response_model=dict)
+async def logout(response: Response):
+    """Logout: clears the httpOnly auth cookie."""
+    clear_auth_cookie(response)
+    return {"message": "Déconnexion réussie"}
 
 
 @auth_core_router.get("/auth/me", response_model=UserResponse)

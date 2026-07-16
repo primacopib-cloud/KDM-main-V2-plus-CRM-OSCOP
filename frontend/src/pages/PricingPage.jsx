@@ -1,3 +1,4 @@
+import Seo from '../components/Seo';
 import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -79,6 +80,7 @@ const TIERS = [
 const PricingPage = () => {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }} data-testid="pricing-page">
+      <Seo titleKey="seo.pricing_title" descKey="seo.pricing_desc" />
       <NavBar />
 
       {/* Hero */}
