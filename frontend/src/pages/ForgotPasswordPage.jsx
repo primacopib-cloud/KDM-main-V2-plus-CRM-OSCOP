@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Input } from '../components/ui/input';
@@ -8,6 +9,7 @@ import { toast } from 'sonner';
 import { passwordAPI } from '../services/api';
 
 const ForgotPasswordPage = () => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [email, setEmail] = useState('');
@@ -19,7 +21,7 @@ const ForgotPasswordPage = () => {
     try {
       await passwordAPI.forgotPassword(email);
       setIsSubmitted(true);
-      toast.success('Email envoyé !');
+      toast.success(t('auth.email_sent'));
     } catch (error) {
       // Always show success to prevent email enumeration
       setIsSubmitted(true);
@@ -62,7 +64,7 @@ const ForgotPasswordPage = () => {
                 style={{ filter: 'drop-shadow(0 3px 10px rgba(212,175,55,0.45))' }}
               />
             </div>
-            <h1 className="text-2xl font-bold">Mot de passe oublié</h1>
+            <h1 className="text-2xl font-bold">{t('auth.forgot_password_title')}</h1>
             <p className="text-white/60 text-sm mt-1">
               {isSubmitted 
                 ? "Vérifiez votre boîte email" 
@@ -94,7 +96,7 @@ const ForgotPasswordPage = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white/80 text-sm">Email</Label>
+                <Label htmlFor="email" className="text-white/80 text-sm">{t('auth.email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                   <Input

@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -163,7 +164,7 @@ export default function CatalogPage() {
     try {
       const updatedCart = await catalogAPI.addToCart(product.id, product.min_order_qty || 1);
       setCart(updatedCart);
-      toast.success(`${product.name} ajouté au panier`);
+      toast.success(i18n.t('catalog.toast_ajoute_panier', { name: product.name }));
     } catch (error) {
       toast.error(error.message || 'Erreur lors de l\'ajout');
     } finally {
@@ -188,7 +189,7 @@ export default function CatalogPage() {
         setCart(updatedCart);
       }
     } catch (error) {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error(i18n.t('catalog.toast_maj_erreur'));
     } finally {
       setCartLoading(false);
     }
@@ -206,7 +207,7 @@ export default function CatalogPage() {
           .filter(i => i.id !== itemId)
           .reduce((sum, i) => sum + (i.unit_price_ht_cents * i.quantity), 0),
       }));
-      toast.success('Article retiré du panier');
+      toast.success(i18n.t('catalog.toast_retire_panier'));
     } catch (error) {
       toast.error('Erreur lors de la suppression');
     } finally {
@@ -243,7 +244,7 @@ export default function CatalogPage() {
   // Submit order
   const handleSubmitOrder = async () => {
     if (!selectedPickup) {
-      toast.error('Veuillez sélectionner un point d\'enlèvement');
+      toast.error(i18n.t('checkout.toast_select_enlevement'));
       return;
     }
 
@@ -257,9 +258,9 @@ export default function CatalogPage() {
       const order = await ordersAPIV2.create(cart.id, selectedPickup, orderNotes || null, useInstallment);
       
       if (useInstallment && order.is_installment) {
-        toast.success(`Commande ${order.order_number} créée en 4× !`);
+        toast.success(i18n.t('catalog.toast_commande_4x', { number: order.order_number }));
       } else {
-        toast.success(`Commande ${order.order_number} créée avec succès !`);
+        toast.success(i18n.t('checkout.toast_commande_creee', { number: order.order_number }));
       }
       
       setCart({ items: [], total_ht_cents: 0 });
@@ -313,7 +314,7 @@ export default function CatalogPage() {
         {/* Title & Search */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold mb-1">Catalogue KDMARCHE</h1>
+            <h1 className="text-2xl font-bold mb-1">{i18n.t('catalog.catalogue_kdmarche')}</h1>
             <p className="text-white/60 text-sm">
               {products.length} produit{products.length > 1 ? 's' : ''} disponible{products.length > 1 ? 's' : ''}
             </p>
@@ -323,7 +324,7 @@ export default function CatalogPage() {
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
               <Input
-                placeholder="Rechercher..."
+                placeholder={i18n.t('catalog.rechercher')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && loadProducts()}
@@ -346,7 +347,7 @@ export default function CatalogPage() {
                 : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
             }`}
           >
-            Tous
+            {i18n.t('lolodrive.tous')}
           </button>
           {categories.map(cat => (
             <button
@@ -369,9 +370,9 @@ export default function CatalogPage() {
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-amber-400">Accès limité</p>
+                <p className="font-medium text-amber-400">{i18n.t('catalog.acces_limite')}</p>
                 <p className="text-sm text-amber-400/80">
-                  Les prix ne sont pas visibles. Votre organisation doit être approuvée et avoir un abonnement actif.
+                  {i18n.t('catalog.les_prix_ne_sont')}
                 </p>
               </div>
             </div>

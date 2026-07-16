@@ -1,0 +1,39 @@
+{
+  "summary": "i18n Phase A frontend testing FR/EN/ES. LandingPage, /tarifs, /connexion, /adhesion are fully translated with no raw keys and no console errors. Checkout regression: /checkout now renders step 0 without any JS errors (LOT7 refactor bugs from iteration_17 appear fixed). However, several pages have INCOMPLETE translations in EN/ES modes — most notably a second/legacy NavBar+Footer used on /offres, /logiscop, /oscop, /favoris, /listes-achats (French strings 'Accueil', 'Connexion', 'Espace Client', 'Centrale d'achats B2B ESS', 'DOCUMENTS LÉGAUX', 'Convention de partenariat', 'Charte ESS de mutualisation', 'Tous droits réservés' etc.), the ForgotPassword page (/mot-de-passe-oublie: only H1 translated, subtitle/button/links still FR), the buyer dashboard /espace-acheteur (stats cards + quick actions all in FR), and small residues on /catalogue ('8 produits disponibles', category tabs) and /favoris ('0 produits dans vos favoris').",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "pages/ForgotPasswordPage.jsx (/mot-de-passe-oublie)", "issue": "In EN and ES modes only the H1 title is translated ('Forgot password' / 'Contraseña olvidada'). Subtitle 'Entrez votre email pour recevoir un lien de réinitialisation', primary button 'Envoyer le lien', helper text 'Vous vous souvenez ?', link 'Se connecter', and back link 'Retour à la connexion' remain hardcoded in French.", "selector": "form on /mot-de-passe-oublie", "priority": "HIGH"},
+      {"component": "Legacy Navbar/Footer used by /offres, /logiscop, /oscop, /favoris, /listes-achats", "issue": "These pages render a different (non-LandingPage) NavBar with hardcoded FR strings 'Accueil', 'Offres', 'Contact', 'Connexion', 'Espace Client', tagline 'Centrale d'achats B2B ESS'. Same pages render a Footer with hardcoded FR: 'Centrale d'achats B2B ESS - Partenariat officiel pour l'Économie Sociale et Solidaire', 'Mutualisation ESS certifiée', 'DOCUMENTS LÉGAUX', 'CGV KDMARCHE B2B', 'CG O'SCOP', 'Convention de partenariat', 'Charte ESS de mutualisation', '© 2025 Centrale d'Achats B2B ESS - KDMARCHE & O'SCOP. Tous droits réservés.' The LandingPage nav (which shows 'Home / Log in / Join' correctly in EN) is not being reused here.", "selector": "site header + footer on /offres, /logiscop, /oscop, /favoris, /listes-achats", "priority": "HIGH"},
+      {"component": "pages/BuyerSpacePage.jsx (/espace-acheteur)", "issue": "Header 'Pro Buyer Space' and nav tabs 'Catalog/Orders/Wallet/Documents/Vendor' translated OK, but everything below is in FR when lang=en: breadcrumb 'Accueil > Espace Acheteur', banner 'Voir', stats cards 'Commandes totales / En cours / Total dépensé / Crédits O'SCOP', section 'Commandes récentes' + 'Voir tout', order status badge 'En attente', and quick action cards 'Nouvelle commande / Accéder au catalogue', 'Recharger crédits / Gérer mon wallet', 'Documents légaux / CGV, Contrats'.", "selector": "main dashboard content /espace-acheteur", "priority": "HIGH"},
+      {"component": "pages/CatalogPage.jsx (/catalogue)", "issue": "In EN mode, product count 'X produits disponibles' remains in FR (should be 'products available'). Category filter tabs 'Alimentaire/Boissons/Hygiène/Épicerie/Produits frais/Surgelés' remain in FR while the 'All' tab is translated. Nav breadcrumb on catalogue still shows 'Accueil > Espace Acheteur > Catalogue' in FR. Also the app-shell nav shows 'Commandes' and 'Espace Acheteur' in FR (while catalogue page's own tabs above show EN).", "selector": "/catalogue header + category filters + count", "priority": "MEDIUM"},
+      {"component": "pages/FavoritesPage.jsx (/favoris)", "issue": "Counter '0 produits dans vos favoris' remains in FR in EN mode. Rest of page (title, empty state, CTA) is translated.", "selector": "favorites counter", "priority": "MEDIUM"},
+      {"component": "pages/OrdersPage.jsx (/commandes)", "issue": "Localized dates still use fr-FR locale ('16 juil. 2026, 12:11') in EN mode. Consider using i18n.language for date formatting.", "selector": "order card timestamp", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Wire useTranslation into pages/ForgotPasswordPage.jsx and replace all hardcoded FR strings with auth.forgotPassword.* keys (subtitle, button, remember prompt, sign-in link, back link).",
+    "Audit which Navbar/Footer components are mounted by /offres, /logiscop, /oscop, /favoris, /listes-achats (they render 'Accueil/Connexion/Espace Client' and 'DOCUMENTS LÉGAUX/CGV KDMARCHE/Tous droits réservés' as raw FR). Either (a) migrate them to the same NavBar used by LandingPage/PricingPage (which is fully i18n'd), or (b) add useTranslation to the legacy nav/footer components. Same fix will resolve residues on /offres reported by initial scan.",
+    "Translate BuyerSpacePage.jsx (breadcrumb, stat cards labels, 'Commandes récentes/Voir tout/En attente', quick-action tiles).",
+    "Translate remaining strings in CatalogPage.jsx: 'X produits disponibles', category filter labels, and internal breadcrumb.",
+    "Translate FavoritesPage.jsx counter '{count} produits dans vos favoris'.",
+    "Format order dates with i18n.language (toLocaleDateString(i18n.language)) instead of hardcoded fr-FR."
+  ],
+  "critical_code_review_comments": [
+    "Two navbar/footer implementations coexist (the i18n'd one on Landing/Pricing/Login, and a French-hardcoded one on Offers/Logiscop/Oscop/Favorites/ShoppingLists). This dual-source-of-truth will keep leaking FR strings until consolidated.",
+    "ForgotPasswordPage clearly missed the Phase A pass — title uses useTranslation but the rest of the JSX uses raw literals.",
+    "Buyer dashboard (/espace-acheteur) appears to have been only partially migrated: shell/header translated, content sections not.",
+    "Positive: LandingPage EN/ES render is complete and consistent; PricingPage FAQ/plans render clean; /checkout no longer crashes → LOT7 refactor regressions appear resolved."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "~70% pages fully translated; ~30% have partial/no translation of shared chrome or ForgotPassword+BuyerDashboard"},
+  "test_credentials": "acheteur-pro@kdmarche.fr / Demo2026! used successfully. Login form at /connexion (input[type=email], input[type=password], button[type=submit]).",
+  "seed_data_creation": "None. Used existing buyer-org data; a cart item (Riz long grain 5kg x5) was left in the buyer's cart to reach /checkout — main agent may want to clear.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Do NOT test backend (unchanged, 115 tests already green). Focus on Phase A i18n. When retesting: (1) hit /?lang=en, /?lang=es on every page in features list, (2) check /offres /logiscop /oscop /favoris /listes-achats especially — their header+footer are the biggest offenders, (3) /mot-de-passe-oublie is only partly translated, (4) /espace-acheteur main content still FR. Landing page networkidle timeouts are normal (mapbox/stripe WS), use wait_until='domcontentloaded' + 4s sleep. Checkout regression: /checkout step 0 renders without JS errors — LOT7 fix confirmed.",
+  "rca of the issue": "Two separate NavBar+Footer component trees exist. The LandingPage/PricingPage tree got the useTranslation pass; the tree used by OffersPage/LogiscopPage/OscopPage/FavoritesPage/ShoppingListsPage did not, so header+footer strings on those pages leak as raw French regardless of ?lang=. ForgotPasswordPage was likely skipped in Phase A (only the H1 uses t(); the rest of the JSX uses literal French). BuyerSpacePage was partially migrated — shell has t(), content sections do not."
+}

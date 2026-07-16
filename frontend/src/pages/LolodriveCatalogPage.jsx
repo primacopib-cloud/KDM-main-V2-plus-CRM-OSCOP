@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Plus, Minus, Sparkles, Tag, Trash2, Wallet, CreditCard } from 'lucide-react';
@@ -108,7 +109,7 @@ export default function LolodriveCatalogPage() {
 
   return (
     <LolodriveLayout
-      title="Catalogue LOLODRIVE"
+      title={i18n.t('lolodrive.catalogue_lolodrive')}
       subtitle={passActive
         ? "PASS actif — prix PASS visibles sur les ESSENTIELS, paiement en UC autorisé."
         : "PASS inactif — activez votre PASS pour bénéficier des prix réduits."}
@@ -123,11 +124,11 @@ export default function LolodriveCatalogPage() {
           </SheetTrigger>
           <SheetContent className="bg-[#0a0a0f] border-white/10 text-white w-full sm:max-w-md">
             <SheetHeader>
-              <SheetTitle className="text-white">Mon panier</SheetTitle>
+              <SheetTitle className="text-white">{i18n.t('lolodrive.mon_panier')}</SheetTitle>
             </SheetHeader>
             <div className="mt-4 space-y-2 max-h-[40vh] overflow-y-auto">
               {cartItems.length === 0 && (
-                <div className="text-sm text-white/40 text-center py-8">Panier vide</div>
+                <div className="text-sm text-white/40 text-center py-8">{i18n.t('lolodrive.panier_vide')}</div>
               )}
               {cartItems.map(({ sku, qty }) => {
                 const p = products.find((x) => x.sku === sku);
@@ -152,26 +153,26 @@ export default function LolodriveCatalogPage() {
             {cartItems.length > 0 && (
               <div className="mt-4 space-y-3">
                 <div className="flex justify-between font-bold">
-                  <span>Sous-total</span>
+                  <span>{i18n.t('lolodrive.sous_total')}</span>
                   <span>{fmtEUR(cartTotal)}</span>
                 </div>
                 <div>
-                  <label className="text-xs text-white/60">Mode de retrait</label>
+                  <label className="text-xs text-white/60">{i18n.t('lolodrive.mode_de_retrait')}</label>
                   <Select value={fulfillment} onValueChange={setFulfillment}>
                     <SelectTrigger className="bg-white/[0.04] border-white/10 mt-1" data-testid="fulfillment-select">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="DRIVE">Drive</SelectItem>
-                      <SelectItem value="DELIVERY">Livraison</SelectItem>
-                      <SelectItem value="LOLO_POINT">Relais LOLODRIVE</SelectItem>
+                      <SelectItem value="DRIVE">{i18n.t('lolodrive.drive')}</SelectItem>
+                      <SelectItem value="DELIVERY">{i18n.t('lolodrive.livraison')}</SelectItem>
+                      <SelectItem value="LOLO_POINT">{i18n.t('lolodrive.relais_lolodrive')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 {fulfillment === 'LOLO_POINT' && (
                   <Select value={selectedPoint} onValueChange={setSelectedPoint}>
                     <SelectTrigger className="bg-white/[0.04] border-white/10" data-testid="lolo-point-select">
-                      <SelectValue placeholder="Choisir un relais LOLODRIVE" />
+                      <SelectValue placeholder={i18n.t('lolodrive.choisir_un_relais_lolodrive')} />
                     </SelectTrigger>
                     <SelectContent>
                       {loloPoints.map((p) => (
@@ -205,13 +206,13 @@ export default function LolodriveCatalogPage() {
 
       <Tabs value={filter} onValueChange={setFilter} className="mb-6">
         <TabsList className="bg-white/[0.04] border border-white/10">
-          <TabsTrigger value="" data-testid="tab-all">Tous</TabsTrigger>
-          <TabsTrigger value="ESSENTIAL" data-testid="tab-essential">Essentiels (25)</TabsTrigger>
-          <TabsTrigger value="NORMAL" data-testid="tab-normal">Hors25</TabsTrigger>
+          <TabsTrigger value="" data-testid="tab-all">{i18n.t('lolodrive.tous')}</TabsTrigger>
+          <TabsTrigger value="ESSENTIAL" data-testid="tab-essential">{i18n.t('lolodrive.essentiels_25')}</TabsTrigger>
+          <TabsTrigger value="NORMAL" data-testid="tab-normal">{i18n.t('lolodrive.hors25')}</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {loading && <div className="text-center text-white/50 py-12">Chargement…</div>}
+      {loading && <div className="text-center text-white/50 py-12">{i18n.t('lolodrive.chargement')}</div>}
 
       {!loading && (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -227,7 +228,7 @@ export default function LolodriveCatalogPage() {
                 <div className="flex gap-1 mb-2">
                   {p.catalog_type === 'ESSENTIAL'
                     ? <Badge color="#D9B35A"><Sparkles className="w-3 h-3 mr-1 inline" />ESSENTIEL</Badge>
-                    : <Badge color="#7c3aed">Hors25</Badge>}
+                    : <Badge color="#7c3aed">{i18n.t('lolodrive.hors25')}</Badge>}
                 </div>
                 <div className="font-medium text-sm leading-tight mb-1">{p.name}</div>
                 <div className="text-xs text-white/40 mb-3">{p.brand} · {p.sku}</div>

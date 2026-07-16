@@ -1,21 +1,27 @@
 import React from 'react';
 import { partners } from '../data/mock';
 import { ShoppingCart, Settings } from 'lucide-react';
+import i18n from '@/i18n';
 
 const PartnersSection = () => {
+  const kdmResponsibilities = i18n.t('partners.kdm_responsibilities', { returnObjects: true });
+  const kdmAssumes = i18n.t('partners.kdm_assumes_list', { returnObjects: true });
+  const oscopResponsibilities = i18n.t('partners.oscop_responsibilities', { returnObjects: true });
+  const oscopRestrictions = i18n.t('partners.oscop_restrictions', { returnObjects: true });
+
   return (
     <section className="py-8 px-5">
       <div className="max-w-[1160px] mx-auto">
         <div className="text-center mb-6">
           <span className="pill mb-3 inline-flex">
-            <span className="font-bold text-white/90">Logique du partenariat</span>
+            <span className="font-bold text-white/90">{i18n.t('partners.badge')}</span>
           </span>
-          <h3 className="text-[22px] font-bold tracking-tight mt-3 mb-2">Séparation stricte des fonctions</h3>
+          <h3 className="text-[22px] font-bold tracking-tight mt-3 mb-2">{i18n.t('partners.title')}</h3>
           <p className="text-white/70 text-sm max-w-2xl mx-auto">
-            Un seul vend les produits (KDMARCHE) • L'autre ne vend rien (O'SCOP)
+            {i18n.t('partners.subtitle')}
           </p>
           <p className="text-xs text-white/50 mt-1">
-            Ce cloisonnement est volontaire, contractuel et opposable.
+            {i18n.t('partners.note')}
           </p>
         </div>
 
@@ -36,16 +42,16 @@ const PartnersSection = () => {
               />
               <span className="pill">
                 <ShoppingCart className="w-3 h-3" />
-                <span className="text-[#D9B35A] font-semibold">B2B Opérationnel</span>
+                <span className="text-[#D9B35A] font-semibold">{i18n.t('partners.kdm_badge')}</span>
               </span>
-              <h4 className="text-base font-bold mt-3 text-white/90">{partners.kdmarche.role}</h4>
+              <h4 className="text-base font-bold mt-3 text-white/90">{i18n.t('partners.kdm_role')}</h4>
             </div>
             
             <div className="space-y-4">
               <div>
-                <h5 className="text-xs uppercase tracking-wider text-white/60 mb-2.5">Rôle</h5>
+                <h5 className="text-xs uppercase tracking-wider text-white/60 mb-2.5">{i18n.t('partners.role_label')}</h5>
                 <ul className="space-y-2">
-                  {partners.kdmarche.responsibilities.map((item, index) => (
+                  {(Array.isArray(kdmResponsibilities) ? kdmResponsibilities : []).map((item, index) => (
                     <li key={index} className="flex items-start gap-2.5 text-white/75 text-sm">
                       <div className="icon-dot gold mt-0.5"></div>
                       <span>{item}</span>
@@ -55,9 +61,9 @@ const PartnersSection = () => {
               </div>
               
               <div className="p-3.5 rounded-2xl" style={{ background: 'rgba(217,179,90,0.08)', border: '1px solid rgba(217,179,90,0.15)' }}>
-                <h5 className="text-xs uppercase tracking-wider text-[#D9B35A] mb-2">KDMARCHE assume seul</h5>
+                <h5 className="text-xs uppercase tracking-wider text-[#D9B35A] mb-2">{i18n.t('partners.kdm_assumes')}</h5>
                 <div className="flex flex-wrap gap-1.5">
-                  {partners.kdmarche.assumes.map((item, index) => (
+                  {(Array.isArray(kdmAssumes) ? kdmAssumes : []).map((item, index) => (
                     <span key={index} className="pill text-xs">
                       {item}
                     </span>
@@ -83,16 +89,16 @@ const PartnersSection = () => {
               />
               <span className="pill">
                 <Settings className="w-3 h-3" />
-                <span className="text-[#D4AF37] font-semibold">Ingénierie ESS</span>
+                <span className="text-[#D4AF37] font-semibold">{i18n.t('partners.oscop_badge')}</span>
               </span>
-              <h4 className="text-base font-bold mt-3 text-white/90">{partners.oscop.role}</h4>
+              <h4 className="text-base font-bold mt-3 text-white/90">{i18n.t('partners.oscop_role')}</h4>
             </div>
             
             <div className="space-y-4">
               <div>
-                <h5 className="text-xs uppercase tracking-wider text-white/60 mb-2.5">Rôle exclusif</h5>
+                <h5 className="text-xs uppercase tracking-wider text-white/60 mb-2.5">{i18n.t('partners.role_exclusive')}</h5>
                 <ul className="space-y-2">
-                  {partners.oscop.responsibilities.map((item, index) => (
+                  {(Array.isArray(oscopResponsibilities) ? oscopResponsibilities : []).map((item, index) => (
                     <li key={index} className="flex items-start gap-2.5 text-white/75 text-sm">
                       <div className="icon-dot green mt-0.5"></div>
                       <span>{item}</span>
@@ -102,9 +108,9 @@ const PartnersSection = () => {
               </div>
               
               <div className="p-3.5 rounded-2xl" style={{ background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.15)' }}>
-                <h5 className="text-xs uppercase tracking-wider text-[#FF6B6B] mb-2">O'SCOP ne fait pas</h5>
+                <h5 className="text-xs uppercase tracking-wider text-[#FF6B6B] mb-2">{i18n.t('partners.oscop_not')}</h5>
                 <ul className="space-y-1.5">
-                  {partners.oscop.restrictions.map((item, index) => (
+                  {(Array.isArray(oscopRestrictions) ? oscopRestrictions : []).map((item, index) => (
                     <li key={index} className="flex items-center gap-2 text-[#FF6B6B]/80 text-sm">
                       <div className="cross-icon" style={{ width: '14px', height: '14px' }}></div>
                       <span>{item}</span>

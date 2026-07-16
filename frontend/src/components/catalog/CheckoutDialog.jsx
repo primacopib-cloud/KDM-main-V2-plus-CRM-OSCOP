@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import {
   Calendar, Check, Clock, CreditCard, Loader2, MapPin,
 } from 'lucide-react';
@@ -169,7 +170,7 @@ export const CheckoutDialog = ({
             {/* EXW Warning */}
             <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <p className="text-xs text-amber-400">
-                <strong>Incoterm EXW :</strong> L'enlèvement, le transport et les formalités sont à votre charge.
+                <strong>{i18n.t('checkout.incoterm_exw')}</strong> {i18n.t('checkout.incoterm_exw_desc')}
               </p>
             </div>
           </div>

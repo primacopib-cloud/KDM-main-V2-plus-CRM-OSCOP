@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import {
   Package, MapPin, CreditCard, FileText, CheckCircle2, ArrowLeft,
@@ -20,7 +21,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                 <div className="glass-panel-soft rounded-[18px] p-6">
                   <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-[#D9B35A]" />
-                    Mode de paiement
+                    {i18n.t('checkout.mode_de_paiement')}
                   </h2>
                   
                   <div className="space-y-4">
@@ -42,10 +43,10 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                           <div className="flex-1">
                             <p className="font-medium text-white flex items-center gap-2">
                               <Calendar className="w-4 h-4 text-purple-400" />
-                              Paiement en 4× sans frais cachés
+                              {i18n.t('checkout.paiement_en_4_sans')}
                             </p>
                             <p className="text-xs text-white/50 mt-1">
-                              À partir de 5 500€ HT. Frais: 20% HT + TVA
+                              {i18n.t('checkout.a_partir_de_5')}
                             </p>
                           </div>
                           <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
@@ -72,10 +73,10 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                         <div className="flex-1">
                           <p className="font-medium text-white flex items-center gap-2">
                             <CreditCard className="w-4 h-4 text-[#D9B35A]" />
-                            Carte bancaire
+                            {i18n.t('checkout.carte_bancaire')}
                           </p>
                           <p className="text-xs text-white/50 mt-1">
-                            Visa, Mastercard, American Express
+                            {i18n.t('checkout.visa_mastercard_american_express')}
                           </p>
                         </div>
                         <div className="flex gap-1">
@@ -106,10 +107,10 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                         <div className="flex-1">
                           <p className="font-medium text-white flex items-center gap-2">
                             <Building2 className="w-4 h-4 text-blue-400" />
-                            Prélèvement SEPA
+                            {i18n.t('checkout.prelevement_sepa')}
                           </p>
                           <p className="text-xs text-white/50 mt-1">
-                            Débit automatique depuis votre compte bancaire
+                            {i18n.t('checkout.debit_automatique_depuis_votre')}
                           </p>
                         </div>
                         <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">SEPA</Badge>
@@ -123,7 +124,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                       <Lock className="w-4 h-4 text-emerald-400" />
-                      Paiement sécurisé
+                      {i18n.t('checkout.paiement_securise')}
                     </h3>
                     <div className="flex items-center gap-2">
                       <img 
@@ -133,7 +134,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                         onError={(e) => e.target.style.display = 'none'}
                       />
                       <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
-                        SSL 256-bit
+                        {i18n.t('checkout.ssl_256_bit')}
                       </Badge>
                     </div>
                   </div>
@@ -141,14 +142,14 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                   {/* Payment Info */}
                   <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-white/60">Montant à régler</span>
+                      <span className="text-white/60">{i18n.t('checkout.montant_a_regler')}</span>
                       <span className="text-2xl font-bold text-[#D9B35A]">
                         {formatCurrency(useInstallment ? totals.installmentTotal : totals.totalTTC)}
                       </span>
                     </div>
                     {useInstallment && (
                       <p className="text-xs text-purple-400">
-                        Dont {formatCurrency(totals.installmentFees)} de frais (4 échéances de {formatCurrency(Math.ceil((totals.installmentTotal || totals.totalTTC) / 4))})
+                        {i18n.t('checkout.dont_frais', { fees: formatCurrency(totals.installmentFees), installment: formatCurrency(Math.ceil((totals.installmentTotal || totals.totalTTC) / 4)) })}
                       </p>
                     )}
                   </div>
@@ -163,7 +164,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                     {processingPayment ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Traitement en cours...
+                        {i18n.t('checkout.traitement_en_cours')}
                       </>
                     ) : (
                       <>
@@ -177,21 +178,21 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                     <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                       <p className="text-xs text-amber-400 flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
-                        Veuillez d'abord signer le bon de commande à l'étape précédente.
+                        {i18n.t('checkout.veuillez_d_abord_signer')}
                       </p>
                     </div>
                   )}
 
                   <p className="text-xs text-white/40 text-center mt-4">
-                    En cliquant sur "Payer", vous acceptez nos conditions générales de vente et autorisez le prélèvement du montant indiqué.
+                    {i18n.t('checkout.en_cliquant_sur_payer')}
                   </p>
                 </div>
 
                 {/* Notes */}
                 <div className="glass-panel-soft rounded-[18px] p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Notes (optionnel)</h3>
+                  <h3 className="text-lg font-semibold text-white mb-4">{i18n.t('checkout.notes_optionnel')}</h3>
                   <Input
-                    placeholder="Instructions particulières pour la commande..."
+                    placeholder={i18n.t('checkout.notes_placeholder')}
                     value={orderNotes}
                     onChange={(e) => setOrderNotes(e.target.value)}
                     className="bg-white/[0.04] border-white/10"
@@ -202,7 +203,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                 {/* EXW Warning */}
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
                   <p className="text-sm text-amber-400">
-                    <strong>Incoterm EXW :</strong> L'enlèvement, le transport et les formalités douanières sont à votre charge.
+                    <strong>{i18n.t('checkout.incoterm_exw')}</strong> {i18n.t('checkout.incoterm_exw_desc')}
                   </p>
                 </div>
               </div>
@@ -215,29 +216,29 @@ export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, su
           {/* Sidebar - Order Summary */}
           <div className="lg:col-span-1">
             <div className="sticky top-[140px] glass-panel-soft rounded-[18px] p-6">
-              <h3 className="text-lg font-bold text-white mb-4">Récapitulatif</h3>
+              <h3 className="text-lg font-bold text-white mb-4">{i18n.t('checkout.recapitulatif')}</h3>
               
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-white/60">Marchandises HT</span>
+                  <span className="text-white/60">{i18n.t('checkout.marchandises_ht')}</span>
                   <span className="font-medium text-white">{formatCurrency(totals.productsHT)}</span>
                 </div>
                 
                 {totals.preparationHT > 0 && (
                   <div className="flex justify-between text-emerald-400">
-                    <span>Frais préparation HT</span>
+                    <span>{i18n.t('checkout.frais_preparation_ht')}</span>
                     <span className="font-medium">{formatCurrency(totals.preparationHT)}</span>
                   </div>
                 )}
                 
                 <div className="flex justify-between border-t border-white/[0.08] pt-3">
-                  <span className="text-white/60">Total HT</span>
+                  <span className="text-white/60">{i18n.t('checkout.total_ht')}</span>
                   <span className="font-bold text-white">{formatCurrency(totals.totalHT)}</span>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-white/60">
-                    TVA {totals.isExonerated ? '(exonérée)' : `(${totals.tvaRate}%)`}
+                    {i18n.t('checkout.tva')} {totals.isExonerated ? i18n.t('checkout.tva_exoneree') : `(${totals.tvaRate}%)`}
                   </span>
                   <span className={totals.isExonerated ? 'text-emerald-400' : 'text-white'}>
                     {formatCurrency(totals.tva)}
@@ -245,7 +246,7 @@ export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, su
                 </div>
                 
                 <div className="flex justify-between border-t border-white/[0.08] pt-3">
-                  <span className="font-semibold text-white">Total TTC</span>
+                  <span className="font-semibold text-white">{i18n.t('checkout.total_ttc')}</span>
                   <span className="text-2xl font-bold text-[#D9B35A]">{formatCurrency(totals.totalTTC)}</span>
                 </div>
               </div>
@@ -254,12 +255,12 @@ export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, su
               <div className="mt-6 space-y-2">
                 <Badge className="w-full justify-center bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
                   <Truck className="w-3 h-3 mr-1" />
-                  Incoterm EXW
+                  {i18n.t('checkout.incoterm_exw_2')}
                 </Badge>
                 {signatureComplete && (
                   <Badge className="w-full justify-center bg-purple-500/20 text-purple-400 border-purple-500/30">
                     <Shield className="w-3 h-3 mr-1" />
-                    Signé électroniquement
+                    {i18n.t('checkout.signe_electroniquement')}
                   </Badge>
                 )}
               </div>
@@ -271,7 +272,7 @@ export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, su
                     onClick={nextStep}
                     className="w-full bg-[#D9B35A] hover:bg-[#c9a34a] text-black"
                   >
-                    Continuer
+                    {i18n.t('checkout.continuer')}
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 ) : (
@@ -296,7 +297,7 @@ export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, su
                     className="w-full border-white/10 text-white/70"
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
-                    Étape précédente
+                    {i18n.t('checkout.etape_precedente')}
                   </Button>
                 )}
               </div>

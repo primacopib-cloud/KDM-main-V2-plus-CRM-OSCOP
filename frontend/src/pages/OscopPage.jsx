@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Users, HeartHandshake, Sprout, Vote, Leaf, Award, BarChart3 } from 'lucide-react';
@@ -25,7 +26,7 @@ export default function OscopPage() {
               className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wider"
               style={{ background: 'rgba(140,198,62,0.15)', color: '#8CC63E', border: '1px solid rgba(140,198,62,0.45)' }}
             >
-              <HeartHandshake className="w-3 h-3" /> Gouvernance ESS
+              <HeartHandshake className="w-3 h-3" /> {i18n.t('oscop.badge')}
             </span>
             <h1
               className="font-display text-5xl md:text-6xl font-bold leading-[1.05] mt-4 mb-3 tracking-tight italic"
@@ -33,12 +34,10 @@ export default function OscopPage() {
               <span style={{ color: '#8CC63E' }}>O</span>'<span style={{ color: '#D4AF37' }}>SCOP</span>
             </h1>
             <p className="text-base text-white/80 max-w-[55ch] mb-2">
-              <strong>Objectif SCOP Outre-mer</strong> — la coopérative qui organise l'accès solidaire aux essentiels
-              dans les DOM-TOM.
+              <strong>{i18n.t('oscop.objectif_scop_outre_mer')}</strong> — {i18n.t('oscop.hero_desc')}
             </p>
             <p className="text-sm text-white/60 max-w-[55ch] mb-6 italic">
-              "1 personne = 1 voix" — gouvernance partagée par les coopérateurs, plafonnement des marges,
-              redistribution des bénéfices au service du pouvoir d'achat local.
+              {i18n.t('oscop.hero_quote')}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link to="/inscription">
@@ -47,19 +46,19 @@ export default function OscopPage() {
                   style={{ background: 'linear-gradient(135deg, #8CC63E, #D4AF37)', color: '#0a1f08', boxShadow: '0 10px 30px rgba(140,198,62,0.35)' }}
                   data-testid="oscop-cta-coop"
                 >
-                  Rejoindre la coopérative <ArrowRight className="w-4 h-4" />
+                  {i18n.t('oscop.rejoindre')} <ArrowRight className="w-4 h-4" />
                 </button>
               </Link>
               <Link to="/reporting-impact" className="inline-flex items-center gap-2 rounded-[14px] px-5 py-3 text-sm font-medium border border-white/15 hover:bg-white/[0.05] transition-all">
-                Reporting impact ESS
+                {i18n.t('oscop.reporting_impact_ess')}
               </Link>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Pillar icon={Vote} label="Gouvernance" value="1=1" sub="1 voix par coopérateur" />
-            <Pillar icon={Sprout} label="Coopérateurs" value="2 410+" sub="Antilles · Guyane · Réunion" />
-            <Pillar icon={Award} label="Marges plafonnées" value="6%" sub="Sur les essentiels" />
-            <Pillar icon={Leaf} label="Impact ESS" value="320 k€" sub="Redistribués 2026" />
+            <Pillar icon={Vote} label={i18n.t('oscop.gouvernance')} value="1=1" sub={i18n.t('oscop.sub_gouvernance')} />
+            <Pillar icon={Sprout} label={i18n.t('oscop.cooperateurs')} value="2 410+" sub={i18n.t('oscop.sub_cooperateurs')} />
+            <Pillar icon={Award} label={i18n.t('oscop.marges_plafonnees')} value="6%" sub={i18n.t('oscop.sub_marges')} />
+            <Pillar icon={Leaf} label={i18n.t('oscop.impact_ess')} value="320 k€" sub={i18n.t('oscop.sub_impact')} />
           </div>
         </div>
       </section>
@@ -68,23 +67,23 @@ export default function OscopPage() {
       <section className="px-5 py-12">
         <div className="max-w-[1160px] mx-auto">
           <h2 className="text-3xl font-display font-bold text-center mb-10">
-            Trois piliers <span className="text-vert-lime">coopératifs</span>
+            {i18n.t('oscop.trois_piliers')} <span className="text-vert-lime">{i18n.t('oscop.cooperatifs')}</span>
           </h2>
           <div className="grid md:grid-cols-3 gap-5">
             <Card
               icon={HeartHandshake}
-              title="Mutualisation"
-              desc="Achats groupés, négociation collective, plafonnement des prix sur les 25 essentiels du PASS Vie Chère. Aucune marge spéculative."
+              title={i18n.t('oscop.mutualisation')}
+              desc={i18n.t('oscop.achats_groupes_negociation_collective')}
             />
             <Card
               icon={Users}
-              title="Gouvernance partagée"
-              desc="Chaque coopérateur dispose d'une voix égale — décisions prises en assemblée, transparence des comptes, redistribution démocratique."
+              title={i18n.t('oscop.gouvernance_partagee')}
+              desc={i18n.t('oscop.chaque_cooperateur_dispose_d')}
             />
             <Card
               icon={Leaf}
-              title="Impact territorial"
-              desc="Producteurs locaux prioritaires, relais coopératifs commerçants rémunérés (commissions plafonnées), reporting ESS public."
+              title={i18n.t('oscop.impact_territorial')}
+              desc={i18n.t('oscop.producteurs_locaux_prioritaires_relais')}
             />
           </div>
         </div>
@@ -94,11 +93,11 @@ export default function OscopPage() {
       <section className="px-5 pb-12">
         <div className="max-w-[800px] mx-auto rounded-[20px] p-8 text-center border" style={{ background: 'linear-gradient(135deg, rgba(140,198,62,0.10), rgba(212,175,55,0.10))', borderColor: 'rgba(212,175,55,0.3)' }}>
           <BarChart3 className="w-10 h-10 mx-auto mb-3 text-or-metallise" />
-          <h3 className="font-display text-2xl font-bold mb-2">Voir l'impact ESS en temps réel</h3>
-          <p className="text-sm text-white/70 mb-5">Tableaux de bord ouverts : volumes, redistributions, plafonnements respectés.</p>
+          <h3 className="font-display text-2xl font-bold mb-2">{i18n.t('oscop.voir_l_impact_ess')}</h3>
+          <p className="text-sm text-white/70 mb-5">{i18n.t('oscop.tableaux_de_bord_ouverts')}</p>
           <Link to="/reporting-impact">
             <button className="btn-gold inline-flex items-center gap-2 rounded-[14px] px-5 py-3 text-sm font-semibold">
-              Consulter le reporting <ArrowRight className="w-4 h-4" />
+              {i18n.t('oscop.consulter_reporting')} <ArrowRight className="w-4 h-4" />
             </button>
           </Link>
         </div>

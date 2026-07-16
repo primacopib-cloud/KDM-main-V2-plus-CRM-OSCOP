@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { subscriptionPlans } from '../data/mock';
 import { ArrowRight, Wallet } from 'lucide-react';
+import i18n from '@/i18n';
 
 const PricingSection = () => {
   return (
@@ -10,15 +11,17 @@ const PricingSection = () => {
         <div className="section-title mb-6">
           <div>
             <span className="pill mb-3 inline-flex">
-              <span className="font-bold text-[#D9B35A]">Abonnements O'SCOP</span>
+              <span className="font-bold text-[#D9B35A]">{i18n.t('offers.abonnements_o_scop')}</span>
             </span>
-            <h3 className="text-[22px] font-bold tracking-tight mt-3 mb-1">Accès à KDMARCHE B2B</h3>
-            <p className="text-white/70 text-sm m-0">Choisissez la formule adaptée pour accéder aux prix structurels mutualisés</p>
+            <h3 className="text-[22px] font-bold tracking-tight mt-3 mb-1">{i18n.t('offers.acces_kdmarche_b2b')}</h3>
+            <p className="text-white/70 text-sm m-0">{i18n.t('offers.choisissez_la_formule')}</p>
           </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-3.5">
-          {subscriptionPlans.map((plan) => (
+          {subscriptionPlans.map((plan) => {
+            const features = i18n.t(`offers.features_${plan.id.replace(/-/g, '_')}`, { returnObjects: true });
+            return (
             <div 
               key={plan.id}
               className={`rounded-[22px] p-5 flex flex-col gap-3 relative overflow-hidden ${
@@ -30,7 +33,6 @@ const PricingSection = () => {
                   : 'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03))'
               }}
             >
-              {/* Glow effect */}
               <div 
                 className="absolute -top-[55%] -right-[35%] w-80 h-80 pointer-events-none"
                 style={{
@@ -40,7 +42,7 @@ const PricingSection = () => {
               ></div>
               
               {plan.popular && (
-                <span className="ribbon absolute top-3.5 right-3.5">Recommandé</span>
+                <span className="ribbon absolute top-3.5 right-3.5">{i18n.t('offers.recommande')}</span>
               )}
               
               <div className="relative">
@@ -48,7 +50,7 @@ const PricingSection = () => {
                   <div>
                     <div className="font-extrabold text-base tracking-wide">{plan.name}</div>
                     <span className="text-xs tracking-wider uppercase text-white/75 border border-white/12 bg-white/[0.04] px-2.5 py-1.5 rounded-full inline-block mt-2">
-                      Mensuel
+                      {i18n.t('lists.mensuel')}
                     </span>
                   </div>
                 </div>
@@ -56,11 +58,11 @@ const PricingSection = () => {
                 <div className="text-[34px] font-black tracking-tight mt-2">
                   {plan.price}<span className="text-lg font-normal text-white/65">€</span>
                 </div>
-                <div className="text-white/65 text-[13px] -mt-1">HT / {plan.period}</div>
+                <div className="text-white/65 text-[13px] -mt-1">{i18n.t('offers.ht_mois')}</div>
               </div>
               
               <ul className="m-0 p-0 list-none grid gap-2.5 relative">
-                {plan.features.map((feature, index) => (
+                {(Array.isArray(features) ? features : plan.features).map((feature, index) => (
                   <li key={index} className="flex gap-2.5 items-start text-white/75 text-[13px]">
                     <div className={`icon-dot ${plan.popular ? 'gold' : 'green'} mt-0.5`}></div>
                     <span>{feature}</span>
@@ -75,7 +77,7 @@ const PricingSection = () => {
                       plan.popular ? 'btn-gold' : 'btn-ghost'
                     }`}
                   >
-                    Choisir cette offre
+                    {i18n.t('offers.choisir_cette_offre')}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </Link>
@@ -83,11 +85,12 @@ const PricingSection = () => {
               
               {!plan.popular && (
                 <div className="text-white/60 text-xs border-t border-white/10 pt-3 mt-1 relative">
-                  Sans engagement de durée
+                  {i18n.t('offers.sans_engagement_de_duree')}
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Wallet Credits Info */}
@@ -97,12 +100,12 @@ const PricingSection = () => {
               <Wallet className="w-6 h-6 text-[#D9B35A]" />
             </div>
             <div>
-              <h4 className="font-bold text-base mb-1">Wallet Crédits O'SCOP</h4>
+              <h4 className="font-bold text-base mb-1">{i18n.t('offers.wallet_credits_oscop')}</h4>
               <p className="text-white/70 text-sm mb-0">
-                Les crédits financent <strong className="text-white/90">l'usage intensif</strong>, <strong className="text-white/90">l'accès prioritaire</strong>, <strong className="text-white/90">les zones supplémentaires</strong> et <strong className="text-white/90">les services ESS</strong>.
+                {i18n.t('offers.credits_financent_detail')}
               </p>
               <p className="text-white/50 text-xs mt-2 p-2.5 rounded-xl bg-black/20 inline-block">
-                ⚠️ Les crédits n'impactent jamais le prix des produits vendus par KDMARCHE.
+                {i18n.t('offers.credits_warning')}
               </p>
             </div>
           </div>

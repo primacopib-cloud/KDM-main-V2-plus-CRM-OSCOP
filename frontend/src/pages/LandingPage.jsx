@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { downloadOffer, lolodriveAPI } from '../services/api';
@@ -14,7 +15,7 @@ import {
   Building2,
   MapPin
 } from 'lucide-react';
-import { partners, subscriptionPlans, logisticsSteps, officialStatement, priceAdvantages, compliancePoints } from '../data/mock';
+import { partners, subscriptionPlans, logisticsSteps } from '../data/mock';
 import PricingSection from '../components/PricingSection';
 import PartnersSection from '../components/PartnersSection';
 import LogisticsSection from '../components/LogisticsSection';
@@ -39,20 +40,20 @@ const LandingPage = () => {
               <div className="flex items-center gap-2.5 flex-wrap mb-3.5">
                 <div className="badge-status">
                   <span className="dot pulse-glow"></span>
-                  Partenariat actif
+                  {i18n.t('landing.partenariat_actif')}
                 </div>
                 <span className="pill">
                   <span className="font-bold text-white/90">ESS</span>
-                  <span className="text-white/65">Économie Sociale et Solidaire</span>
+                  <span className="text-white/65">{i18n.t('landing.economie_sociale_et_solidaire')}</span>
                 </span>
               </div>
               
               <h2 className="text-[40px] leading-[1.05] font-bold tracking-tight my-2.5">
-                Communityplace <span className="text-[#D9B35A]">coopérative B2B2C</span>
+                Communityplace <span className="text-[#D9B35A]">{i18n.t('landing.cooperative_b2b2c')}</span>
               </h2>
               
               <p className="text-white/75 text-base max-w-[60ch] m-0">
-                {officialStatement}
+                {i18n.t('landing.official_statement')}
               </p>
               
               {/* Actions */}
@@ -63,7 +64,7 @@ const LandingPage = () => {
                     style={{ background: 'linear-gradient(135deg, #5B2E8C 0%, #2A1045 100%)' }}
                     data-testid="hero-cta-acces-pro"
                   >
-                    Découvrir l&apos;Accès Pro Mutualisé
+                    {i18n.t('landing.decouvrir_l_acces_pro')}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </Link>
@@ -72,35 +73,35 @@ const LandingPage = () => {
               {/* Mini Stats */}
               <div className="grid grid-cols-3 gap-3 mt-5">
                 <div className="mini-card">
-                  <div className="text-xs text-white/65 uppercase tracking-wider">Prix</div>
-                  <div className="text-sm mt-1.5 text-white/90 font-bold">Jusqu&apos;à –50%</div>
+                  <div className="text-xs text-white/65 uppercase tracking-wider">{i18n.t('landing.prix')}</div>
+                  <div className="text-sm mt-1.5 text-white/90 font-bold">{i18n.t('landing.jusqu_a_50')}</div>
                 </div>
                 <div className="mini-card">
-                  <div className="text-xs text-white/65 uppercase tracking-wider">Modèle</div>
+                  <div className="text-xs text-white/65 uppercase tracking-wider">{i18n.t('landing.modele')}</div>
                   <div className="text-sm mt-1.5 text-white/90 font-bold">B2B EXW</div>
                 </div>
                 <div className="mini-card">
-                  <div className="text-xs text-white/65 uppercase tracking-wider">Commission</div>
-                  <div className="text-sm mt-1.5 text-white/90 font-bold">0% produit</div>
+                  <div className="text-xs text-white/65 uppercase tracking-wider">{i18n.t('landing.commission')}</div>
+                  <div className="text-sm mt-1.5 text-white/90 font-bold">{i18n.t('landing.0_produit')}</div>
                 </div>
               </div>
             </div>
             
             {/* Side Card */}
             <div className="glass-panel-soft rounded-[26px] p-5 flex flex-col gap-3.5" style={{ boxShadow: '0 16px 50px rgba(0,0,0,0.35)' }}>
-              <h3 className="text-sm tracking-wider uppercase text-white/75 font-semibold m-0">Avantages clés</h3>
+              <h3 className="text-sm tracking-wider uppercase text-white/75 font-semibold m-0">{i18n.t('landing.avantages_cles')}</h3>
               
               {/* Callout */}
               <div className="callout-gold">
-                <strong className="text-white/90">Prix structurels B2B</strong>
+                <strong className="text-white/90">{i18n.t('landing.prix_structurels_b2b')}</strong>
                 <p className="text-sm text-white/70 mt-1 mb-0">
-                  Il ne s&apos;agit ni de remises, ni de promotions, mais de prix résultant d&apos;une mutualisation ESS.
+                  {i18n.t('landing.il_ne_s_agit')}
                 </p>
               </div>
               
               {/* List */}
               <ul className="grid gap-2.5 m-0 p-0 list-none">
-                {priceAdvantages.map((advantage) => (
+                {(i18n.t('landing.advantages', { returnObjects: true }) || []).map((advantage) => (
                   <li 
                     key={`advantage-${advantage.slice(0, 32)}`}
                     className="flex gap-2.5 items-start p-2.5 px-3 rounded-2xl bg-white/[0.03] border border-white/[0.08]"
@@ -130,20 +131,16 @@ const LandingPage = () => {
               border: '1px solid rgba(217,179,90,0.25)'
             }}
           >
-            <span className="ribbon mb-4 inline-block">Règle absolue</span>
+            <span className="ribbon mb-4 inline-block">{i18n.t('landing.regle_absolue')}</span>
             <h3 className="text-2xl font-bold mt-3 mb-3">
-              Conditions d&apos;accès au dispositif coopératif d&apos;achats mutualisés
+              {i18n.t('landing.conditions_d_acces_au')}
             </h3>
             <p className="text-white/75 mb-5 max-w-2xl mx-auto">
-              L&apos;accès aux conditions économiques mutualisées proposées par <strong className="text-white">KDMARCHE – Centrale Coopérative</strong> est réservé aux membres disposant d&apos;une <strong className="text-[#D4AF37]">adhésion O&apos;SCOP active et à jour</strong>.
+              {i18n.t('landing.acces_conditions_prefix')}<strong className="text-white">{i18n.t('landing.kdmarche_centrale_cooperative')}</strong>{i18n.t('landing.est_reserve_aux_membres')}<strong className="text-[#D4AF37]">{i18n.t('landing.adhesion_o_scop_active')}</strong>.
             </p>
             
             <div className="inline-flex flex-wrap gap-4 justify-center p-4 rounded-2xl bg-black/20">
-              {[
-                "Pas d'accès aux prix mutualisés",
-                "Pas d'accès à la centrale B2B",
-                "Pas d'accès aux zones"
-              ].map((item) => (
+              {(i18n.t('landing.exclusions_list', { returnObjects: true }) || []).map((item) => (
                 <div key={`no-pass-${item.slice(0, 32)}`} className="flex items-center gap-2 text-[#FF6B6B] text-sm">
                   <div className="cross-icon"></div>
                   <span>{item}</span>
@@ -165,8 +162,8 @@ const LandingPage = () => {
         <div className="max-w-[1160px] mx-auto">
           <div className="section-title mb-4">
             <div>
-              <h3 className="text-[22px] font-bold tracking-tight m-0">Conformité Juridique & Administrative</h3>
-              <p className="text-white/70 text-sm mt-1 m-0">Le partenariat garantit une transparence totale</p>
+              <h3 className="text-[22px] font-bold tracking-tight m-0">{i18n.t('landing.conformite_juridique_administrative')}</h3>
+              <p className="text-white/70 text-sm mt-1 m-0">{i18n.t('landing.le_partenariat_garantit_une')}</p>
             </div>
           </div>
           
@@ -174,10 +171,10 @@ const LandingPage = () => {
             <div className="glass-panel-soft rounded-[18px] p-5">
               <h4 className="text-sm tracking-wider uppercase text-[#D4AF37] font-semibold mb-4 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" />
-                Garanties
+                {i18n.t('landing.garanties')}
               </h4>
               <div className="space-y-2.5">
-                {compliancePoints.guaranteed.map((point) => (
+                {(i18n.t('landing.compliance_guaranteed', { returnObjects: true }) || []).map((point) => (
                   <div key={`guaranteed-${point.slice(0, 32)}`} className="flex items-center gap-2.5 text-white/80 text-sm">
                     <div className="check-icon"></div>
                     <span>{point}</span>
@@ -189,10 +186,10 @@ const LandingPage = () => {
             <div className="glass-panel-soft rounded-[18px] p-5">
               <h4 className="text-sm tracking-wider uppercase text-[#D9B35A] font-semibold mb-4 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4" />
-                Exclusions
+                {i18n.t('landing.exclusions')}
               </h4>
               <div className="space-y-2.5">
-                {compliancePoints.excluded.map((point) => (
+                {(i18n.t('landing.compliance_excluded', { returnObjects: true }) || []).map((point) => (
                   <div key={`excluded-${point.slice(0, 32)}`} className="flex items-center gap-2.5 text-white/80 text-sm">
                     <div className="cross-icon"></div>
                     <span>{point}</span>
@@ -216,10 +213,10 @@ const LandingPage = () => {
           <div className="text-center mb-6">
             <span className="badge-status mb-4 inline-flex">
               <span className="dot"></span>
-              Formulaire de contact
+              {i18n.t('landing.formulaire_de_contact')}
             </span>
-            <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2">Demande de Devis</h3>
-            <p className="text-white/70 text-sm">Contactez-nous pour rejoindre la centrale d&apos;achats ESS</p>
+            <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2">{i18n.t('landing.demande_de_devis')}</h3>
+            <p className="text-white/70 text-sm">{i18n.t('landing.contactez_nous_pour_rejoindre')}</p>
           </div>
           
           <ContactForm />
@@ -276,14 +273,13 @@ export const PublicLolodriveMapSection = () => {
         <div className="text-center mb-5">
           <span className="badge-status mb-3 inline-flex">
             <span className="dot pulse-glow"></span>
-            Réseau LOLODRIVE
+            {i18n.t('landing.reseau_lolodrive')}
           </span>
           <h3 className="text-[28px] font-display font-bold tracking-tight mt-2 mb-2">
-            Trouvez le relais coopératif <span className="text-or-metallise">le plus proche</span>
+            {i18n.t('landing.find_relay_prefix')} <span className="text-or-metallise">{i18n.t('landing.le_plus_proche')}</span>
           </h3>
           <p className="text-white/70 text-sm max-w-[60ch] mx-auto">
-            <strong>LOLODRIVE by O&apos;SCOP</strong> est le réseau coopératif de proximité de KDMARCHÉ : retrait drive, livraison locale,
-            relais commerçants et POS terrain. <strong>Cliquez sur un relais</strong> pour activer votre PASS Vie Chère sur place.
+            <strong>{i18n.t('landing.lolodrive_by_o_scop')}</strong>{i18n.t('landing.lolodrive_desc_mid')}<strong>{i18n.t('landing.cliquez_sur_un_relais')}</strong>{i18n.t('landing.lolodrive_desc_suffix')}
           </p>
         </div>
 
@@ -296,7 +292,7 @@ export const PublicLolodriveMapSection = () => {
           />
           <div className="text-xs text-white/60 inline-flex items-center gap-1.5" data-testid="public-points-count">
             <MapPin className="w-3.5 h-3.5 text-or-metallise" />
-            <strong className="text-white/90">{points.length}</strong> relais{points.length > 1 ? ' actifs' : ' actif'}
+            <strong className="text-white/90">{points.length}</strong> {points.length > 1 ? i18n.t('landing.relay_count_active') : i18n.t('landing.relay_count_active_one')}
           </div>
         </div>
 
@@ -305,7 +301,7 @@ export const PublicLolodriveMapSection = () => {
         <div className="mt-3 text-center">
           <Link to="/inscription">
             <button className="btn-gold inline-flex items-center justify-center gap-2.5 rounded-[14px] px-5 py-3 text-sm font-semibold" data-testid="join-network-btn">
-              Devenir relais LOLODRIVE
+              {i18n.t('landing.devenir_relais_lolodrive')}
               <ArrowRight className="w-4 h-4" />
             </button>
           </Link>
@@ -325,7 +321,7 @@ export const PublicLolodriveMapSection = () => {
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-or-metallise mb-1">Relais LOLODRIVE</div>
+                  <div className="text-[11px] uppercase tracking-wider text-or-metallise mb-1">{i18n.t('landing.relais_lolodrive')}</div>
                   <h3 className="text-2xl font-display font-bold leading-tight">{selected.name}</h3>
                   <div className="font-mono text-xs text-white/40 mt-1">{selected.code} · {selected.territory}</div>
                 </div>
@@ -334,26 +330,26 @@ export const PublicLolodriveMapSection = () => {
               <div className="separator-premium"><span className="dot"></span></div>
               <div className="space-y-2 text-sm mb-5">
                 <div className="flex items-start gap-2"><MapPin className="w-4 h-4 mt-0.5 text-violet-premium flex-shrink-0" /><span>{selected.address || '—'}, {selected.city || '—'}</span></div>
-                {selected.zone_name && <div className="text-xs text-white/50 ml-6">Zone : {selected.zone_name}</div>}
+                {selected.zone_name && <div className="text-xs text-white/50 ml-6">{i18n.t('landing.zone_label')} {selected.zone_name}</div>}
               </div>
               <div className="grid grid-cols-2 gap-3 mb-5 text-center">
                 <div className="rounded-lg bg-vert-lime/10 border border-vert-lime/30 p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-vert-lime mb-0.5">Drive</div>
-                  <div className="text-xs text-white/80">Retrait coopératif</div>
+                  <div className="text-[10px] uppercase tracking-wider text-vert-lime mb-0.5">{i18n.t('landing.drive')}</div>
+                  <div className="text-xs text-white/80">{i18n.t('landing.retrait_cooperatif')}</div>
                 </div>
                 <div className="rounded-lg bg-violet-premium/10 border border-violet-premium/30 p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-violet-premium mb-0.5">Livraison</div>
-                  <div className="text-xs text-white/80">Livraison locale</div>
+                  <div className="text-[10px] uppercase tracking-wider text-violet-premium mb-0.5">{i18n.t('landing.livraison')}</div>
+                  <div className="text-xs text-white/80">{i18n.t('landing.livraison_locale')}</div>
                 </div>
               </div>
               <Link to="/inscription" onClick={() => activateHere(selected)} data-testid="activate-pass-here-btn">
                 <button className="btn-gold w-full inline-flex items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-semibold">
-                  Activer mon PASS ici
+                  {i18n.t('landing.activer_mon_pass_ici')}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </Link>
               <p className="text-[11px] text-white/40 mt-3 text-center">
-                Vous serez redirigé vers l&apos;inscription PASS, ce relais sera pré-sélectionné comme point de retrait.
+                {i18n.t('landing.vous_serez_redirige_vers')}
               </p>
             </div>
           </div>
@@ -394,23 +390,20 @@ export const CooperativeApiSection = () => {
               }}
             >
               <Zap className="w-3 h-3" />
-              API Coopérative B2B2C
+              {i18n.t('landing.api_cooperative_b2b2c')}
             </span>
             <h3
               className="text-4xl lg:text-5xl font-serif font-semibold text-white leading-[1.05] mb-5"
               style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", serif' }}
             >
-              Accès Pro <span className="text-[#F5A623]">Mutualisé</span>
+              {i18n.t('landing.acces_pro')} <span className="text-[#F5A623]">{i18n.t('landing.mutualise')}</span>
             </h3>
             <p className="text-white/80 text-base leading-relaxed mb-4">
-              Dispositif API réservé aux membres professionnels : bénéficiez d&apos;un{' '}
-              <strong className="text-white">accès coopératif</strong> à des produits et solutions sélectionnés,
-              avec des conditions économiques issues de la force collective du réseau.
+              {i18n.t('landing.api_p1_prefix')}
+              <strong className="text-white">{i18n.t('landing.acces_cooperatif')}</strong>{i18n.t('landing.api_p1_suffix')}
             </p>
             <p className="text-white/60 text-sm leading-relaxed mb-6">
-              Cadre coopératif B2B2C — les conditions économiques associées résultent de la mutualisation collective
-              des volumes, contributions et services du réseau. <em>Il ne s&apos;agit ni de remises, ni de promotions,
-              mais de conditions structurelles.</em>
+              {i18n.t('landing.api_p2')}<em>{i18n.t('landing.api_p2_em')}</em>
             </p>
 
             <div className="flex flex-wrap gap-3 mb-8">
@@ -420,24 +413,24 @@ export const CooperativeApiSection = () => {
                 style={{ background: 'linear-gradient(135deg, #F5A623 0%, #D9B35A 100%)' }}
                 data-testid="coop-cta-tarifs"
               >
-                Accéder à l&apos;API <ArrowRight className="w-4 h-4" />
+                {i18n.t('landing.acceder_api')} <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/adhesion"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white border border-white/25 hover:bg-white/5"
                 data-testid="coop-cta-adhesion"
               >
-                Adhérer à la Centrale
+                {i18n.t('landing.adherer_a_la_centrale')}
               </Link>
             </div>
 
             {/* Pillars */}
             <div className="grid grid-cols-2 gap-3 max-w-lg">
               {[
-                { icon: ShieldCheck, label: 'Sécurisé', desc: 'Accès authentifié et protégé' },
-                { icon: Users, label: 'Mutualisé', desc: 'Conditions issues du collectif' },
-                { icon: CheckCircle2, label: 'Coopératif', desc: 'Modèle éthique et solidaire' },
-                { icon: Zap, label: 'Performant', desc: 'Services sélectionnés' },
+                { icon: ShieldCheck, label: i18n.t('landing.securise'), desc: i18n.t('landing.acces_authentifie_et_protege') },
+                { icon: Users, label: i18n.t('pricing.mutualise'), desc: i18n.t('landing.conditions_issues_du_collectif') },
+                { icon: CheckCircle2, label: i18n.t('landing.cooperatif'), desc: i18n.t('landing.modele_ethique_et_solidaire') },
+                { icon: Zap, label: i18n.t('landing.performant'), desc: i18n.t('landing.services_selectionnes') },
               ].map((p) => {
                 const Icon = p.icon;
                 return (
@@ -479,7 +472,7 @@ export const CooperativeApiSection = () => {
 
             {/* Legend below the visual */}
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-              {['Produits sélectionnés', 'Force collective', 'Coopération mutualisation'].map((t) => (
+              {(i18n.t('landing.chips', { returnObjects: true }) || []).map((t) => (
                 <div
                   key={t}
                   className="px-2 py-2 rounded-lg text-[10px] uppercase tracking-wider text-white/60 font-medium"

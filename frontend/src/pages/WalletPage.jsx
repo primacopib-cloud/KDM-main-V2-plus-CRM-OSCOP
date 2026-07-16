@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -63,7 +64,7 @@ export default function WalletPage() {
 
     if (attempts >= maxAttempts) {
       setPaymentChecking(false);
-      toast.error('Vérification du paiement expirée. Vérifiez votre email.');
+      toast.error(i18n.t('wallet.toast_verif_expiree'));
       navigate('/wallet', { replace: true });
       return;
     }
@@ -73,14 +74,14 @@ export default function WalletPage() {
 
       if (status.payment_status === 'paid' && status.credited) {
         setPaymentChecking(false);
-        toast.success(`${status.credits} crédits ajoutés avec succès !`);
+        toast.success(i18n.t('wallet.toast_credits_ajoutes', { count: status.credits }));
         navigate('/wallet', { replace: true });
         const userData = await authAPI.getMe();
         setUser(userData);
         return;
       } else if (status.status === 'EXPIRED') {
         setPaymentChecking(false);
-        toast.error('Session de paiement expirée');
+        toast.error(i18n.t('wallet.toast_session_expiree'));
         navigate('/wallet', { replace: true });
         return;
       }
@@ -89,7 +90,7 @@ export default function WalletPage() {
     } catch (error) {
       console.error('Payment status error:', error);
       setPaymentChecking(false);
-      toast.error('Erreur vérification paiement');
+      toast.error(i18n.t('wallet.toast_erreur_verif'));
       navigate('/wallet', { replace: true });
     }
   }, [navigate]);
@@ -103,7 +104,7 @@ export default function WalletPage() {
       setPaymentChecking(true);
       pollPaymentStatus(sessionId);
     } else if (paymentStatus === 'cancelled') {
-      toast.error('Paiement annulé');
+      toast.error(i18n.t('wallet.toast_annule'));
       navigate('/wallet', { replace: true });
     }
   }, [searchParams, navigate, pollPaymentStatus]);
@@ -112,7 +113,7 @@ export default function WalletPage() {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
-    toast.success('Copié !');
+    toast.success(i18n.t('wallet.toast_copie'));
   };
 
   // Load data — runs once on mount; `navigate` is stable (react-router)
@@ -167,7 +168,7 @@ export default function WalletPage() {
       ]);
       setWallet(walletData);
       setLedger(ledgerData);
-      toast.success('Wallet actualisé');
+      toast.success(i18n.t('wallet.toast_actualise'));
     } catch (error) {
       toast.error('Erreur lors de l\'actualisation');
     }
@@ -181,7 +182,7 @@ export default function WalletPage() {
       const response = await paymentAPI.createCheckout(pkg.id);
       window.location.href = response.checkout_url;
     } catch (error) {
-      toast.error(error.message || 'Erreur création paiement');
+      toast.error(error.message || i18n.t('wallet.toast_erreur_paiement'));
       setCheckoutLoading(false);
     }
   };
@@ -199,9 +200,9 @@ export default function WalletPage() {
       const response = await paymentAPI.createBankTransfer(pkg.id, companyName);
       setTransferReference(response);
       setBankDetails(response.bank_details);
-      toast.success('Référence de virement générée');
+      toast.success(i18n.t('wallet.toast_virement'));
     } catch (error) {
-      toast.error(error.message || 'Erreur création virement');
+      toast.error(error.message || i18n.t('wallet.toast_erreur_virement'));
     } finally {
       setCheckoutLoading(false);
     }
@@ -218,11 +219,11 @@ export default function WalletPage() {
 
     try {
       const response = await paymentAPI.createSepaSetup(pkg.id, sepaIban, sepaName, sepaEmail);
-      toast.success('Mandat SEPA créé. Confirmation en cours...');
+      toast.success(i18n.t('wallet.toast_sepa'));
 
       const confirmResponse = await paymentAPI.confirmSepaPayment(response.setup_id);
       if (confirmResponse.status === 'succeeded') {
-        toast.success(`${confirmResponse.credits} crédits ajoutés !`);
+        toast.success(i18n.t('wallet.toast_credits_courts', { count: confirmResponse.credits }));
         const userData = await authAPI.getMe();
         setUser(userData);
         setBuyCreditsOpen(false);
@@ -251,14 +252,14 @@ export default function WalletPage() {
 
   const handleTopup = async () => {
     if (!orgId || topupAmount < 10) {
-      toast.error('Montant minimum: 10 crédits');
+      toast.error(i18n.t('wallet.toast_montant_min'));
       return;
     }
 
     setTopupLoading(true);
     try {
       await walletAPIV2.topup(orgId, topupAmount);
-      toast.success(`${topupAmount} crédits ajoutés avec succès`);
+      toast.success(i18n.t('wallet.toast_credits_ajoutes_2', { count: topupAmount }));
       setTopupOpen(false);
       setTopupAmount(100);
       refreshWallet();
@@ -275,7 +276,7 @@ export default function WalletPage() {
     setZoneLoading(true);
     try {
       await zonesAPIV2.addEntitlement(orgId, selectedZone.id);
-      toast.success(`Zone ${selectedZone.name} activée`);
+      toast.success(i18n.t('wallet.toast_zone', { name: selectedZone.name }));
       setZoneDialogOpen(false);
       setSelectedZone(null);
 
@@ -297,7 +298,7 @@ export default function WalletPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}>
         <Loader2 className="w-8 h-8 animate-spin text-[#D9B35A]" />
         {paymentChecking && (
-          <p className="text-white/60 text-sm">Vérification du paiement en cours...</p>
+          <p className="text-white/60 text-sm">{i18n.t('wallet.verification_du_paiement_en')}</p>
         )}
       </div>
     );
@@ -329,7 +330,7 @@ export default function WalletPage() {
           <div className="flex items-center gap-1.5">
             {user && (
               <span className="text-[#D9B35A] text-xs font-medium">
-                {formatCredits(user.credits || 0)} crédits
+                {formatCredits(user.credits || 0)} {i18n.t('wallet.credits')}
               </span>
             )}
             <Button variant="ghost" size="sm" onClick={refreshWallet} className="h-6 w-6 p-0 hover:bg-white/10">
@@ -341,18 +342,18 @@ export default function WalletPage() {
 
       <div className="max-w-[1160px] mx-auto px-5 py-4">
         <div className="mb-4">
-          <h1 className="text-2xl font-bold mb-1">Wallet & Crédits</h1>
-          <p className="text-white/60 text-sm">Gérez vos crédits et achetez des packs</p>
+          <h1 className="text-2xl font-bold mb-1">{i18n.t('wallet.wallet_credits')}</h1>
+          <p className="text-white/60 text-sm">{i18n.t('wallet.gerez_vos_credits_et')}</p>
         </div>
 
         {/* User Credits Card (always visible) */}
         <div className="mb-6 glass-panel-soft rounded-[18px] p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/60 mb-1">Vos crédits personnels</p>
+              <p className="text-sm text-white/60 mb-1">{i18n.t('wallet.vos_credits_personnels')}</p>
               <p className="text-3xl font-bold text-[#D9B35A]">
                 {formatCredits(user?.credits || 0)}
-                <span className="text-base font-normal text-white/50 ml-2">crédits</span>
+                <span className="text-base font-normal text-white/50 ml-2">{i18n.t('wallet.credits')}</span>
               </p>
             </div>
             <Button
@@ -361,7 +362,7 @@ export default function WalletPage() {
               data-testid="buy-credits-btn"
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
-              Acheter des crédits
+              {i18n.t('wallet.acheter_des_credits')}
             </Button>
           </div>
         </div>
@@ -372,12 +373,12 @@ export default function WalletPage() {
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-blue-400">Organisation B2B</p>
+                <p className="font-medium text-blue-400">{i18n.t('wallet.organisation_b2b')}</p>
                 <p className="text-sm text-blue-400/80">
-                  Pour accéder au wallet organisation et aux zones, associez-vous à une organisation B2B.
+                  {i18n.t('wallet.pour_acceder_au_wallet')}
                 </p>
                 <Link to="/onboarding" className="text-sm text-blue-400 underline mt-2 inline-block">
-                  Demander l&apos;adhésion →
+                  {i18n.t('wallet.demander_l_adhesion')}
                 </Link>
               </div>
             </div>

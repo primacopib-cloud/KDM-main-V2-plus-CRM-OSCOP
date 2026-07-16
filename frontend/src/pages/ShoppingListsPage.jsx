@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -128,14 +129,14 @@ export default function ShoppingListsPage() {
         setLists(prev => [newList, ...prev]);
         setShowCreateDialog(false);
         setFormData({ name: '', description: '', frequency: 'custom', color: '#D9B35A' });
-        toast.success('Liste créée !', { icon: '📋' });
+        toast.success(i18n.t('lists.toast_creee'), { icon: '📋' });
       } else {
         const err = await res.json();
-        toast.error(err.detail || 'Erreur lors de la création');
+        toast.error(err.detail || i18n.t('lists.toast_erreur_creation'));
       }
     } catch (error) {
       console.error('Error creating list:', error);
-      toast.error('Erreur lors de la création');
+      toast.error(i18n.t('lists.toast_erreur_creation'));
     }
   };
 
@@ -159,11 +160,11 @@ export default function ShoppingListsPage() {
         setLists(prev => prev.map(l => l.id === updated.id ? { ...l, ...updated } : l));
         setShowEditDialog(false);
         setEditingList(null);
-        toast.success('Liste mise à jour');
+        toast.success(i18n.t('lists.toast_maj'));
       }
     } catch (error) {
       console.error('Error updating list:', error);
-      toast.error('Erreur lors de la mise à jour');
+      toast.error(i18n.t('lists.toast_erreur_maj'));
     }
   };
 
@@ -177,7 +178,7 @@ export default function ShoppingListsPage() {
       if (res.ok) {
         setLists(prev => prev.filter(l => l.id !== listId));
         setShowDeleteConfirm(null);
-        toast.info('Liste supprimée');
+        toast.info(i18n.t('lists.toast_supprimee'));
       }
     } catch (error) {
       console.error('Error deleting list:', error);
@@ -195,7 +196,7 @@ export default function ShoppingListsPage() {
       if (res.ok) {
         const newList = await res.json();
         setLists(prev => [newList, ...prev]);
-        toast.success('Liste dupliquée !', { icon: '📋' });
+        toast.success(i18n.t('lists.toast_dupliquee'), { icon: '📋' });
       }
     } catch (error) {
       console.error('Error duplicating list:', error);
@@ -218,7 +219,7 @@ export default function ShoppingListsPage() {
             ? { ...l, use_count: (l.use_count || 0) + 1, last_used_at: new Date().toISOString() }
             : l
         ));
-        toast.success(`${data.items_count} produit(s) prêts à être ajoutés au panier`, {
+        toast.success(i18n.t('lists.toast_prets', { count: data.items_count }), {
           icon: '🛒',
           action: {
             label: 'Voir le panier',
@@ -270,10 +271,10 @@ export default function ShoppingListsPage() {
             <div className="flex-1">
               <h1 className="text-2xl font-bold flex items-center gap-3">
                 <ShoppingCart className="w-7 h-7 text-[#D9B35A]" />
-                Mes Listes d'Achats
+                {i18n.t('lists.mes_listes_d_achats')}
               </h1>
               <p className="text-white/60">
-                Organisez vos commandes récurrentes
+                {i18n.t('lists.organisez_vos_commandes_recurrentes')}
               </p>
             </div>
             <Button
@@ -282,7 +283,7 @@ export default function ShoppingListsPage() {
               data-testid="create-list-btn"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Nouvelle liste
+              {i18n.t('lists.nouvelle_liste')}
             </Button>
           </div>
 
@@ -302,7 +303,7 @@ export default function ShoppingListsPage() {
           {loading ? (
             <div className="py-20 text-center">
               <div className="w-10 h-10 border-2 border-[#D9B35A] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-white/50">Chargement des listes...</p>
+              <p className="text-white/50">{i18n.t('lists.chargement_des_listes')}</p>
             </div>
           ) : filteredLists.length === 0 ? (
             <div
@@ -313,16 +314,16 @@ export default function ShoppingListsPage() {
               }}
             >
               <ShoppingCart className="w-16 h-16 text-white/20 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Aucune liste d'achats</h2>
+              <h2 className="text-xl font-semibold mb-2">{i18n.t('lists.aucune_liste_d_achats')}</h2>
               <p className="text-white/50 mb-6">
-                Créez votre première liste pour organiser vos commandes récurrentes.
+                {i18n.t('lists.creez_votre_premiere_liste')}
               </p>
               <Button
                 onClick={() => setShowCreateDialog(true)}
                 className="bg-[#D9B35A] hover:bg-[#C9A34A] text-black"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Créer ma première liste
+                {i18n.t('lists.creer_ma_premiere_liste')}
               </Button>
             </div>
           ) : (
@@ -364,15 +365,15 @@ export default function ShoppingListsPage() {
                           <DropdownMenuContent align="end" className="bg-[#0A0E17] border-white/10">
                             <DropdownMenuItem onClick={() => navigate(`/listes-achats/${list.id}`)}>
                               <Edit2 className="w-4 h-4 mr-2" />
-                              Modifier les produits
+                              {i18n.t('lists.modifier_les_produits')}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEditDialog(list)}>
                               <Settings className="w-4 h-4 mr-2" />
-                              Paramètres
+                              {i18n.t('lists.parametres')}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDuplicate(list.id)}>
                               <Copy className="w-4 h-4 mr-2" />
-                              Dupliquer
+                              {i18n.t('lists.dupliquer')}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-white/10" />
                             <DropdownMenuItem 
@@ -380,7 +381,7 @@ export default function ShoppingListsPage() {
                               className="text-red-400 focus:text-red-400"
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
-                              Supprimer
+                              {i18n.t('lists.supprimer')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -404,21 +405,21 @@ export default function ShoppingListsPage() {
                       {/* Stats */}
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-white/40">Produits</p>
+                          <p className="text-white/40">{i18n.t('lists.produits')}</p>
                           <p className="font-medium">{list.items_count} article{list.items_count !== 1 ? 's' : ''}</p>
                         </div>
                         <div>
-                          <p className="text-white/40">Total HT</p>
+                          <p className="text-white/40">{i18n.t('lists.total_ht')}</p>
                           <p className="font-medium text-[#D9B35A]">
                             {formatPrice(list.total_ht_cents)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-white/40">Utilisations</p>
+                          <p className="text-white/40">{i18n.t('lists.utilisations')}</p>
                           <p className="font-medium">{list.use_count || 0}x</p>
                         </div>
                         <div>
-                          <p className="text-white/40">Dernière utilisation</p>
+                          <p className="text-white/40">{i18n.t('lists.derniere_utilisation')}</p>
                           <p className="font-medium text-xs">{formatDate(list.last_used_at)}</p>
                         </div>
                       </div>
@@ -433,7 +434,7 @@ export default function ShoppingListsPage() {
                         data-testid={`use-list-${list.id}`}
                       >
                         <Play className="w-4 h-4 mr-2" />
-                        Utiliser cette liste
+                        {i18n.t('lists.utiliser_cette_liste')}
                       </Button>
                     </div>
                   </div>

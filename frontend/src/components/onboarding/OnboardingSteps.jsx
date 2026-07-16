@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import {
   Building2, FileText, Upload, CheckCircle2, ArrowRight, ArrowLeft,
   MapPin, AlertCircle, Loader2, Info, ExternalLink, User
@@ -57,15 +58,15 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Building2 className="w-5 h-5 text-amber-500" />
-          Informations de l'entreprise
+          {i18n.t('onboarding.informations_de_l_entreprise')}
         </CardTitle>
         <CardDescription>
-          Renseignez les informations légales de votre entreprise pour rejoindre la centrale d'achats B2B.
+          {i18n.t('onboarding.renseignez_les_informations_legales')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="legalName">Raison sociale *</Label>
+          <Label htmlFor="legalName">{i18n.t('onboarding.raison_sociale')}</Label>
           <Input
             id="legalName"
             placeholder="Ex: SARL MonEntreprise"
@@ -76,7 +77,7 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="registrationId">SIRET *</Label>
+          <Label htmlFor="registrationId">{i18n.t('onboarding.siret')}</Label>
           <Input
             id="registrationId"
             placeholder="Ex: 123 456 789 00012"
@@ -86,12 +87,12 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
             data-testid="input-siret"
           />
           <p className="text-xs text-gray-500">
-            Numéro SIRET à 14 chiffres de votre établissement
+            {i18n.t('onboarding.numero_siret_a_14')}
           </p>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="territory">Territoire principal *</Label>
+          <Label htmlFor="territory">{i18n.t('onboarding.territoire_principal')}</Label>
           <Select
             value={formData.territory}
             onValueChange={(value) => setFormData(prev => ({ ...prev, territory: value }))}
@@ -111,7 +112,7 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
             </SelectContent>
           </Select>
           <p className="text-xs text-gray-500">
-            Zone géographique principale pour vos commandes (enlèvement EXW)
+            {i18n.t('onboarding.zone_geographique_principale_pour')}
           </p>
         </div>
         
@@ -119,12 +120,12 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
         <div className="border-t pt-6 mt-6">
           <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <User className="w-4 h-4" />
-            Contact principal
+            {i18n.t('onboarding.contact_principal')}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="contactName">Nom du contact *</Label>
+              <Label htmlFor="contactName">{i18n.t('onboarding.nom_du_contact')}</Label>
               <Input
                 id="contactName"
                 placeholder="Ex: Jean Dupont"
@@ -135,7 +136,7 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="contactEmail">Email *</Label>
+              <Label htmlFor="contactEmail">{i18n.t('onboarding.email')}</Label>
               <Input
                 id="contactEmail"
                 type="email"
@@ -147,7 +148,7 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="contactPhone">Téléphone *</Label>
+              <Label htmlFor="contactPhone">{i18n.t('onboarding.telephone')}</Label>
               <Input
                 id="contactPhone"
                 type="tel"
@@ -159,7 +160,7 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="address">Adresse (optionnel)</Label>
+              <Label htmlFor="address">{i18n.t('onboarding.adresse_optionnel')}</Label>
               <Input
                 id="address"
                 placeholder="Adresse de l'entreprise"
@@ -171,7 +172,7 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="description">Description de l'activité (optionnel)</Label>
+          <Label htmlFor="description">{i18n.t('onboarding.description_de_l_activite')}</Label>
           <Textarea
             id="description"
             placeholder="Décrivez brièvement votre activité..."
@@ -186,10 +187,9 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
           <div className="flex gap-3">
             <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-amber-800">
-              <p className="font-medium">Accès B2B exclusif</p>
+              <p className="font-medium">{i18n.t('onboarding.acces_b2b_exclusif')}</p>
               <p className="mt-1">
-                L'accès à la centrale d'achats est réservé aux professionnels. 
-                Votre dossier sera vérifié par notre équipe conformité.
+                {i18n.t('onboarding.l_acces_a_la')}
               </p>
             </div>
           </div>
@@ -219,10 +219,10 @@ export const OnboardingStep2 = ({ documents, legalDocs, createdOrg, loading, set
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-amber-500" />
-          Documents justificatifs
+          {i18n.t('onboarding.documents_justificatifs')}
         </CardTitle>
         <CardDescription>
-          Téléversez les documents requis pour valider votre dossier d'adhésion.
+          {i18n.t('onboarding.televersez_les_documents_requis')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -255,7 +255,7 @@ export const OnboardingStep2 = ({ documents, legalDocs, createdOrg, loading, set
               {documents[doc.type] && (
                 <Badge className="bg-green-100 text-green-700">
                   <CheckCircle2 className="w-3 h-3 mr-1" />
-                  Ajouté
+                  {i18n.t('onboarding.ajoute')}
                 </Badge>
               )}
             </div>
@@ -309,7 +309,7 @@ export const OnboardingStep2 = ({ documents, legalDocs, createdOrg, loading, set
             disabled={loading}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour
+            {i18n.t('orders.retour')}
           </Button>
           <Button
             onClick={handleUploadDocuments}
@@ -335,9 +335,9 @@ export const OnboardingStep3 = ({ createdOrg, uploadedDocs, navigate }) => (
         <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
           <CheckCircle2 className="w-8 h-8 text-green-600" />
         </div>
-        <CardTitle>Dossier soumis avec succès !</CardTitle>
+        <CardTitle>{i18n.t('onboarding.dossier_soumis_avec_succes')}</CardTitle>
         <CardDescription>
-          Votre demande d'adhésion est en cours d'examen par notre équipe.
+          {i18n.t('onboarding.votre_demande_d_adhesion')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -348,9 +348,9 @@ export const OnboardingStep3 = ({ createdOrg, uploadedDocs, navigate }) => (
               <Loader2 className="w-6 h-6 text-amber-600 animate-spin" />
             </div>
             <div>
-              <p className="font-semibold text-amber-900">En attente de validation</p>
+              <p className="font-semibold text-amber-900">{i18n.t('onboarding.en_attente_de_validation')}</p>
               <p className="text-sm text-amber-700">
-                Notre équipe conformité examine votre dossier. Vous recevrez une notification dès la décision.
+                {i18n.t('onboarding.notre_equipe_conformite_examine')}
               </p>
             </div>
           </div>
@@ -359,10 +359,10 @@ export const OnboardingStep3 = ({ createdOrg, uploadedDocs, navigate }) => (
         {/* Organization recap */}
         {createdOrg && (
           <div className="border rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3">Récapitulatif</h4>
+            <h4 className="font-medium text-gray-900 mb-3">{i18n.t('onboarding.recapitulatif')}</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Raison sociale</span>
+                <span className="text-gray-500">{i18n.t('onboarding.raison_sociale_2')}</span>
                 <span className="font-medium">{createdOrg.legal_name}</span>
               </div>
               <div className="flex justify-between">
@@ -370,13 +370,13 @@ export const OnboardingStep3 = ({ createdOrg, uploadedDocs, navigate }) => (
                 <span className="font-medium">{createdOrg.registration_id}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Territoire</span>
+                <span className="text-gray-500">{i18n.t('onboarding.territoire')}</span>
                 <span className="font-medium">
                   {TERRITORIES.find(t => t.code === createdOrg.territory)?.name || createdOrg.territory}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Documents</span>
+                <span className="text-gray-500">{i18n.t('onboarding.documents')}</span>
                 <span className="font-medium text-green-600">
                   {Object.keys(documents).length || uploadedDocs.length} fichier(s) envoyé(s)
                 </span>
@@ -387,19 +387,19 @@ export const OnboardingStep3 = ({ createdOrg, uploadedDocs, navigate }) => (
         
         {/* Next steps */}
         <div className="bg-gray-50 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-3">Prochaines étapes</h4>
+          <h4 className="font-medium text-gray-900 mb-3">{i18n.t('onboarding.prochaines_etapes')}</h4>
           <ul className="space-y-3 text-sm text-gray-600">
             <li className="flex items-start gap-2">
               <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs flex-shrink-0">1</span>
-              <span>Notre équipe vérifie vos documents (délai: 24-48h)</span>
+              <span>{i18n.t('onboarding.notre_equipe_verifie_vos')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs flex-shrink-0">2</span>
-              <span>Vous recevez une notification de décision</span>
+              <span>{i18n.t('onboarding.vous_recevez_une_notification')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs flex-shrink-0">3</span>
-              <span>Si approuvé, vous pouvez accéder au catalogue et passer commande</span>
+              <span>{i18n.t('onboarding.si_approuve_vous_pouvez')}</span>
             </li>
           </ul>
         </div>
@@ -410,7 +410,7 @@ export const OnboardingStep3 = ({ createdOrg, uploadedDocs, navigate }) => (
             className="bg-amber-500 hover:bg-amber-600"
             data-testid="btn-go-dashboard"
           >
-            Aller au tableau de bord
+            {i18n.t('onboarding.aller_au_tableau_de')}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>

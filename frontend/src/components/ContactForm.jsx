@@ -7,6 +7,7 @@ import { subscriptionPlans } from '../data/mock';
 import { Send, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { quoteAPI } from '../services/api';
+import i18n from '@/i18n';
 
 const ContactForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +37,7 @@ const ContactForm = () => {
     try {
       await quoteAPI.create(formData);
       setIsSubmitted(true);
-      toast.success('Demande envoyée avec succès !');
+      toast.success(i18n.t('contact.toast_success'));
       
       // Reset after 3 seconds
       setTimeout(() => {
@@ -51,7 +52,7 @@ const ContactForm = () => {
         });
       }, 3000);
     } catch (error) {
-      toast.error(error.message || 'Erreur lors de l\'envoi');
+      toast.error(error.message || i18n.t('contact.toast_error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -63,9 +64,9 @@ const ContactForm = () => {
         <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.30)' }}>
           <CheckCircle2 className="w-10 h-10 text-[#D4AF37]" />
         </div>
-        <h3 className="text-2xl font-bold mb-4">Demande envoyée !</h3>
+        <h3 className="text-2xl font-bold mb-4">{i18n.t('contact.sent_title')}</h3>
         <p className="text-white/70">
-          Nous avons bien reçu votre demande de devis. Notre équipe vous contactera dans les plus brefs délais.
+          {i18n.t('contact.sent_desc')}
         </p>
       </div>
     );
@@ -76,26 +77,26 @@ const ContactForm = () => {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="company" className="text-white/80 text-sm">Nom de l&apos;entreprise *</Label>
+            <Label htmlFor="company" className="text-white/80 text-sm">{i18n.t('contact.company_label')}</Label>
             <Input
               id="company"
               name="company"
               value={formData.company}
               onChange={handleChange}
-              placeholder="SARL / SAS / SCOP..."
+              placeholder={i18n.t('contact.company_placeholder')}
               required
               className="h-12 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50 focus:ring-[#D9B35A]/20"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="contactName" className="text-white/80 text-sm">Nom du contact *</Label>
+            <Label htmlFor="contactName" className="text-white/80 text-sm">{i18n.t('contact.contact_label')}</Label>
             <Input
               id="contactName"
               name="contactName"
               value={formData.contactName}
               onChange={handleChange}
-              placeholder="Prénom Nom"
+              placeholder={i18n.t('contact.contact_placeholder')}
               required
               className="h-12 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50 focus:ring-[#D9B35A]/20"
             />
@@ -104,7 +105,7 @@ const ContactForm = () => {
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-white/80 text-sm">Email professionnel *</Label>
+            <Label htmlFor="email" className="text-white/80 text-sm">{i18n.t('contact.email_label')}</Label>
             <Input
               id="email"
               name="email"
@@ -118,7 +119,7 @@ const ContactForm = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="phone" className="text-white/80 text-sm">Téléphone *</Label>
+            <Label htmlFor="phone" className="text-white/80 text-sm">{i18n.t('contact.phone_label')}</Label>
             <Input
               id="phone"
               name="phone"
@@ -133,30 +134,30 @@ const ContactForm = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="plan" className="text-white/80 text-sm">Offre intéressée</Label>
+          <Label htmlFor="plan" className="text-white/80 text-sm">{i18n.t('contact.plan_label')}</Label>
           <Select value={formData.plan} onValueChange={handlePlanChange}>
             <SelectTrigger className="h-12 bg-white/[0.04] border-white/10 text-white rounded-xl focus:border-[#D9B35A]/50 focus:ring-[#D9B35A]/20">
-              <SelectValue placeholder="Sélectionnez une offre" />
+              <SelectValue placeholder={i18n.t('contact.select_offer')} />
             </SelectTrigger>
             <SelectContent className="bg-[#0d1117] border-white/10">
               {subscriptionPlans.map((plan) => (
                 <SelectItem key={plan.id} value={plan.id} className="text-white/80 focus:bg-white/10 focus:text-white">
-                  {plan.name} - {plan.price}€ HT/{plan.period}
+                  {plan.name} - {plan.price}€ HT/{i18n.t('common.month')}
                 </SelectItem>
               ))}
-              <SelectItem value="undecided" className="text-white/80 focus:bg-white/10 focus:text-white">Je ne sais pas encore</SelectItem>
+              <SelectItem value="undecided" className="text-white/80 focus:bg-white/10 focus:text-white">{i18n.t('contact.undecided')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="message" className="text-white/80 text-sm">Message / Besoins spécifiques</Label>
+          <Label htmlFor="message" className="text-white/80 text-sm">{i18n.t('contact.message_label')}</Label>
           <Textarea
             id="message"
             name="message"
             value={formData.message}
             onChange={handleChange}
-            placeholder="Décrivez votre activité, vos besoins, vos questions..."
+            placeholder={i18n.t('contact.message_placeholder')}
             rows={4}
             className="resize-none bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50 focus:ring-[#D9B35A]/20"
           />
@@ -170,18 +171,18 @@ const ContactForm = () => {
           {isSubmitting ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              Envoi en cours...
+              {i18n.t('contact.sending')}
             </>
           ) : (
             <>
               <Send className="w-5 h-5" />
-              Envoyer ma demande de devis
+              {i18n.t('contact.send')}
             </>
           )}
         </button>
 
         <p className="text-xs text-white/50 text-center">
-          En soumettant ce formulaire, vous acceptez d&apos;être contacté par notre équipe commerciale.
+          {i18n.t('contact.disclaimer')}
         </p>
       </form>
     </div>

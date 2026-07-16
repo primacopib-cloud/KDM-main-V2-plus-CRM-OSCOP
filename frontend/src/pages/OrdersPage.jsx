@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -25,13 +26,13 @@ import { authAPI, ordersAPIV2 } from '../services/api';
 
 // Order status configuration
 const ORDER_STATUSES = {
-  DRAFT: { label: 'Brouillon', color: 'bg-gray-500/20 text-gray-400', icon: FileText },
-  PENDING: { label: 'En attente', color: 'bg-yellow-500/20 text-yellow-400', icon: Clock },
-  CONFIRMED: { label: 'Confirmée', color: 'bg-blue-500/20 text-blue-400', icon: CheckCircle2 },
-  PROCESSING: { label: 'En préparation', color: 'bg-purple-500/20 text-purple-400', icon: Package },
-  READY_FOR_PICKUP: { label: 'Prête à enlever', color: 'bg-[#D4AF37]/20 text-[#D4AF37]', icon: Truck },
-  COMPLETED: { label: 'Terminée', color: 'bg-green-500/20 text-green-400', icon: CheckCircle2 },
-  CANCELED: { label: 'Annulée', color: 'bg-red-500/20 text-red-400', icon: XCircle },
+  DRAFT: { label: i18n.t('orders.brouillon'), color: 'bg-gray-500/20 text-gray-400', icon: FileText },
+  PENDING: { label: i18n.t('orders.en_attente'), color: 'bg-yellow-500/20 text-yellow-400', icon: Clock },
+  CONFIRMED: { label: i18n.t('orders.confirmee'), color: 'bg-blue-500/20 text-blue-400', icon: CheckCircle2 },
+  PROCESSING: { label: i18n.t('orders.en_preparation'), color: 'bg-purple-500/20 text-purple-400', icon: Package },
+  READY_FOR_PICKUP: { label: i18n.t('orders.prete_a_enlever'), color: 'bg-[#D4AF37]/20 text-[#D4AF37]', icon: Truck },
+  COMPLETED: { label: i18n.t('orders.terminee'), color: 'bg-green-500/20 text-green-400', icon: CheckCircle2 },
+  CANCELED: { label: i18n.t('orders.annulee'), color: 'bg-red-500/20 text-red-400', icon: XCircle },
 };
 
 // Format price
@@ -96,7 +97,7 @@ export default function OrdersPage() {
       const filter = statusFilter === 'all' ? null : statusFilter;
       const data = await ordersAPIV2.list(filter, 0, 50);
       setOrders(data);
-      toast.success('Commandes actualisées');
+      toast.success(i18n.t('orders.toast_actualisees'));
     } catch (error) {
       toast.error('Erreur lors de l\'actualisation');
     } finally {
@@ -114,7 +115,7 @@ export default function OrdersPage() {
       setOrders(prev => prev.map(o => 
         o.id === orderToCancel.id ? { ...o, status: 'CANCELED' } : o
       ));
-      toast.success('Commande annulée');
+      toast.success(i18n.t('orders.toast_annulee'));
       setCancelDialogOpen(false);
       setOrderToCancel(null);
     } catch (error) {
@@ -155,7 +156,7 @@ export default function OrdersPage() {
           <div className="flex items-center gap-4">
             <Link to="/dashboard" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm hidden sm:inline">Retour</span>
+              <span className="text-sm hidden sm:inline">{i18n.t('orders.retour')}</span>
             </Link>
             <div className="flex items-center gap-3">
               <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-12 w-auto object-contain" />
@@ -179,14 +180,14 @@ export default function OrdersPage() {
         {/* Title */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold mb-1">Mes commandes</h1>
-            <p className="text-white/60 text-sm">Historique et suivi de vos commandes</p>
+            <h1 className="text-2xl font-bold mb-1">{i18n.t('orders.mes_commandes')}</h1>
+            <p className="text-white/60 text-sm">{i18n.t('orders.historique_et_suivi_de')}</p>
           </div>
           
           <Link to="/catalogue">
             <Button className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black">
               <Package className="w-4 h-4 mr-2" />
-              Nouvelle commande
+              {i18n.t('orders.nouvelle_commande')}
             </Button>
           </Link>
         </div>
@@ -194,19 +195,19 @@ export default function OrdersPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div className="glass-panel-soft rounded-[14px] p-4">
-            <p className="text-xs text-white/50 mb-1">Total</p>
+            <p className="text-xs text-white/50 mb-1">{i18n.t('orders.total')}</p>
             <p className="text-2xl font-bold">{stats.total}</p>
           </div>
           <div className="glass-panel-soft rounded-[14px] p-4">
-            <p className="text-xs text-white/50 mb-1">En cours</p>
+            <p className="text-xs text-white/50 mb-1">{i18n.t('orders.en_cours')}</p>
             <p className="text-2xl font-bold text-yellow-400">{stats.pending}</p>
           </div>
           <div className="glass-panel-soft rounded-[14px] p-4">
-            <p className="text-xs text-white/50 mb-1">À enlever</p>
+            <p className="text-xs text-white/50 mb-1">{i18n.t('orders.a_enlever')}</p>
             <p className="text-2xl font-bold text-[#D4AF37]">{stats.ready}</p>
           </div>
           <div className="glass-panel-soft rounded-[14px] p-4">
-            <p className="text-xs text-white/50 mb-1">Terminées</p>
+            <p className="text-xs text-white/50 mb-1">{i18n.t('orders.terminees')}</p>
             <p className="text-2xl font-bold text-green-400">{stats.completed}</p>
           </div>
         </div>
@@ -215,16 +216,16 @@ export default function OrdersPage() {
         <div className="flex gap-3 mb-6">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[200px] bg-white/[0.04] border-white/10 text-white">
-              <SelectValue placeholder="Filtrer par statut" />
+              <SelectValue placeholder={i18n.t('orders.filtrer_par_statut')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous les statuts</SelectItem>
-              <SelectItem value="PENDING">En attente</SelectItem>
-              <SelectItem value="CONFIRMED">Confirmée</SelectItem>
-              <SelectItem value="PROCESSING">En préparation</SelectItem>
-              <SelectItem value="READY_FOR_PICKUP">Prête à enlever</SelectItem>
-              <SelectItem value="COMPLETED">Terminée</SelectItem>
-              <SelectItem value="CANCELED">Annulée</SelectItem>
+              <SelectItem value="all">{i18n.t('orders.tous_les_statuts')}</SelectItem>
+              <SelectItem value="PENDING">{i18n.t('orders.en_attente')}</SelectItem>
+              <SelectItem value="CONFIRMED">{i18n.t('orders.confirmee')}</SelectItem>
+              <SelectItem value="PROCESSING">{i18n.t('orders.en_preparation')}</SelectItem>
+              <SelectItem value="READY_FOR_PICKUP">{i18n.t('orders.prete_a_enlever')}</SelectItem>
+              <SelectItem value="COMPLETED">{i18n.t('orders.terminee')}</SelectItem>
+              <SelectItem value="CANCELED">{i18n.t('orders.annulee')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -234,11 +235,11 @@ export default function OrdersPage() {
           {orders.length === 0 ? (
             <div className="text-center py-20 text-white/50">
               <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">Aucune commande</p>
-              <p className="text-sm mb-4">Commencez par parcourir le catalogue</p>
+              <p className="text-lg">{i18n.t('orders.aucune_commande')}</p>
+              <p className="text-sm mb-4">{i18n.t('orders.commencez_par_parcourir_le')}</p>
               <Link to="/catalogue">
                 <Button className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black">
-                  Voir le catalogue
+                  {i18n.t('orders.voir_le_catalogue')}
                 </Button>
               </Link>
             </div>
@@ -288,7 +289,7 @@ export default function OrdersPage() {
                         <div className="grid md:grid-cols-2 gap-6">
                           {/* Items */}
                           <div>
-                            <h4 className="text-sm font-semibold text-white/70 mb-3">Articles</h4>
+                            <h4 className="text-sm font-semibold text-white/70 mb-3">{i18n.t('orders.articles')}</h4>
                             <div className="space-y-2">
                               {order.items?.map((item, idx) => (
                                 <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-white/[0.02]">
@@ -304,7 +305,7 @@ export default function OrdersPage() {
 
                           {/* Pickup info */}
                           <div>
-                            <h4 className="text-sm font-semibold text-white/70 mb-3">Point d'enlèvement (EXW)</h4>
+                            <h4 className="text-sm font-semibold text-white/70 mb-3">{i18n.t('orders.point_d_enlevement_exw')}</h4>
                             {order.pickup_location ? (
                               <div className="p-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/20">
                                 <div className="flex items-start gap-2">
@@ -317,13 +318,13 @@ export default function OrdersPage() {
                                 </div>
                               </div>
                             ) : (
-                              <p className="text-white/50 text-sm">Non défini</p>
+                              <p className="text-white/50 text-sm">{i18n.t('orders.non_defini')}</p>
                             )}
 
                             {/* Total */}
                             <div className="mt-4 p-3 rounded-xl bg-white/[0.04]">
                               <div className="flex justify-between items-center">
-                                <span className="text-white/70">Total HT</span>
+                                <span className="text-white/70">{i18n.t('orders.total_ht')}</span>
                                 <span className="text-xl font-bold text-[#D9B35A]">{formatPrice(order.total_ht_cents)}</span>
                               </div>
                             </div>
@@ -342,7 +343,7 @@ export default function OrdersPage() {
                               className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                             >
                               <XCircle className="w-4 h-4 mr-2" />
-                              Annuler la commande
+                              {i18n.t('orders.annuler_la_commande')}
                             </Button>
                           </div>
                         )}
@@ -362,11 +363,11 @@ export default function OrdersPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-400" />
-              Annuler la commande
+              {i18n.t('orders.annuler_la_commande')}
             </DialogTitle>
             <DialogDescription className="text-white/60">
-              Êtes-vous sûr de vouloir annuler la commande {orderToCancel?.order_number} ?
-              Cette action est irréversible.
+              {i18n.t('orders.etes_vous_sur', { number: orderToCancel?.order_number })}
+              {i18n.t('orders.action_irreversible')}
             </DialogDescription>
           </DialogHeader>
           
@@ -376,7 +377,7 @@ export default function OrdersPage() {
               onClick={() => setCancelDialogOpen(false)}
               className="border-white/10"
             >
-              Non, conserver
+              {i18n.t('orders.non_conserver')}
             </Button>
             <Button 
               onClick={handleCancelOrder}

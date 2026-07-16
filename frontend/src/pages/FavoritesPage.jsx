@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -81,7 +82,7 @@ export default function FavoritesPage() {
       if (res.ok) {
         setFavorites(prev => prev.filter(f => f.product_id !== productId));
         refreshFavorites();
-        toast.info(`${productName || 'Produit'} retiré des favoris`);
+        toast.info(i18n.t('favorites.toast_retire', { name: productName || i18n.t('favorites.produit') }));
       }
     } catch (error) {
       console.error('Error removing favorite:', error);
@@ -90,7 +91,7 @@ export default function FavoritesPage() {
   };
 
   const handleClearAll = async () => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer tous vos favoris ?')) return;
+    if (!window.confirm(i18n.t('favorites.confirm_vider'))) return;
     await clearAllFavorites();
     setFavorites([]);
   };
@@ -98,7 +99,7 @@ export default function FavoritesPage() {
   const handleAddToCart = (product) => {
     const qty = quantities[product.product_id] || 1;
     // This would integrate with your cart system
-    toast.success(`${qty}x ${product.product_name} ajouté au panier`, {
+    toast.success(i18n.t('favorites.toast_ajoute', { qty, name: product.product_name }), {
       icon: '🛒'
     });
   };
@@ -107,7 +108,7 @@ export default function FavoritesPage() {
     const itemsToAdd = favorites.filter(f => f.product_name);
     if (itemsToAdd.length === 0) return;
     
-    toast.success(`${itemsToAdd.length} produit(s) ajouté(s) au panier`, {
+    toast.success(i18n.t('favorites.toast_ajoutes', { count: itemsToAdd.length }), {
       icon: '🛒'
     });
   };
@@ -156,7 +157,7 @@ export default function FavoritesPage() {
             <div className="flex-1">
               <h1 className="text-2xl font-bold flex items-center gap-3">
                 <Heart className="w-7 h-7 text-red-500 fill-red-500" />
-                Mes Favoris
+                {i18n.t('favorites.mes_favoris')}
               </h1>
               <p className="text-white/60">
                 {favorites.length} produit{favorites.length !== 1 ? 's' : ''} dans vos favoris
@@ -170,7 +171,7 @@ export default function FavoritesPage() {
               className="text-white/60"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Actualiser
+              {i18n.t('favorites.actualiser')}
             </Button>
           </div>
 
@@ -190,7 +191,7 @@ export default function FavoritesPage() {
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Rechercher dans mes favoris..."
+                    placeholder={i18n.t('favorites.rechercher_dans_mes_favoris')}
                     className="pl-10 bg-white/[0.04] border-white/10"
                     data-testid="favorites-search"
                   />
@@ -219,7 +220,7 @@ export default function FavoritesPage() {
                     className="bg-[#D9B35A] hover:bg-[#C9A34A] text-black"
                   >
                     <ShoppingCart className="w-4 h-4 mr-2" />
-                    Tout ajouter au panier
+                    {i18n.t('favorites.tout_ajouter_au_panier')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -227,7 +228,7 @@ export default function FavoritesPage() {
                     className="text-red-400 hover:text-red-300"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Vider
+                    {i18n.t('favorites.vider')}
                   </Button>
                 </div>
               </div>
@@ -238,7 +239,7 @@ export default function FavoritesPage() {
           {loading ? (
             <div className="py-20 text-center">
               <div className="w-10 h-10 border-2 border-[#D9B35A] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-white/50">Chargement de vos favoris...</p>
+              <p className="text-white/50">{i18n.t('favorites.chargement_de_vos_favoris')}</p>
             </div>
           ) : favorites.length === 0 ? (
             <div
@@ -249,27 +250,27 @@ export default function FavoritesPage() {
               }}
             >
               <Heart className="w-16 h-16 text-white/20 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Aucun favori</h2>
+              <h2 className="text-xl font-semibold mb-2">{i18n.t('favorites.aucun_favori')}</h2>
               <p className="text-white/50 mb-6">
-                Vous n'avez pas encore ajouté de produits à vos favoris.
+                {i18n.t('favorites.vous_n_avez_pas')}
               </p>
               <Button
                 onClick={() => navigate('/catalogue')}
                 className="bg-[#D9B35A] hover:bg-[#C9A34A] text-black"
               >
                 <Package className="w-4 h-4 mr-2" />
-                Parcourir le catalogue
+                {i18n.t('favorites.parcourir_le_catalogue')}
               </Button>
             </div>
           ) : filteredFavorites.length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-white/50">Aucun résultat pour "{searchQuery}"</p>
+              <p className="text-white/50">{i18n.t('favorites.aucun_resultat', { query: searchQuery })}</p>
               <Button
                 variant="ghost"
                 onClick={() => setSearchQuery('')}
                 className="mt-4"
               >
-                Effacer la recherche
+                {i18n.t('favorites.effacer_la_recherche')}
               </Button>
             </div>
           ) : viewMode === 'grid' ? (
@@ -302,7 +303,7 @@ export default function FavoritesPage() {
                     <button
                       onClick={() => handleRemoveFavorite(fav.product_id, fav.product_name)}
                       className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-red-500/80 transition-colors opacity-0 group-hover:opacity-100"
-                      title="Retirer des favoris"
+                      title={i18n.t('favorites.retirer_des_favoris')}
                     >
                       <Heart className="w-4 h-4 fill-red-500 text-red-500" />
                     </button>
@@ -347,12 +348,12 @@ export default function FavoritesPage() {
                         disabled={!fav.product_name}
                       >
                         <ShoppingCart className="w-3 h-3 mr-1" />
-                        Ajouter
+                        {i18n.t('favorites.ajouter')}
                       </Button>
                     </div>
 
                     <p className="text-xs text-white/30 mt-3">
-                      Ajouté le {formatDate(fav.added_at)}
+                      {i18n.t('favorites.ajoute_le')} {formatDate(fav.added_at)}
                     </p>
                   </div>
                 </div>
@@ -396,7 +397,7 @@ export default function FavoritesPage() {
                         {fav.product_name || 'Produit non disponible'}
                       </h3>
                       <p className="text-xs text-white/30">
-                        Ajouté le {formatDate(fav.added_at)}
+                        {i18n.t('favorites.ajoute_le')} {formatDate(fav.added_at)}
                       </p>
                     </div>
 
@@ -443,7 +444,7 @@ export default function FavoritesPage() {
                       <button
                         onClick={() => handleRemoveFavorite(fav.product_id, fav.product_name)}
                         className="p-2 rounded-lg hover:bg-red-500/20 text-red-400"
-                        title="Retirer des favoris"
+                        title={i18n.t('favorites.retirer_des_favoris')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

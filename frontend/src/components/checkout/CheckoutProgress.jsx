@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -28,7 +29,7 @@ export const CheckoutProgress = ({ currentStep, goToStep, navigate }) => (
               className="text-white/60 hover:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour
+              {i18n.t('orders.retour')}
             </Button>
             <div className="flex items-center gap-3">
               <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-10 w-auto object-contain" />
@@ -37,7 +38,7 @@ export const CheckoutProgress = ({ currentStep, goToStep, navigate }) => (
             </div>
           </div>
           
-          <h1 className="text-lg font-bold text-white">Finaliser la commande</h1>
+          <h1 className="text-lg font-bold text-white">{i18n.t('checkout.finaliser_la_commande')}</h1>
         </div>
 
         {/* Steps Progress */}

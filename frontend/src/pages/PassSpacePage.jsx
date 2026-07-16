@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -129,15 +130,15 @@ export default function PassSpacePage() {
 
   return (
     <LolodriveLayout
-      title="Mon Espace PASS"
-      subtitle="PASS Vie Chère, wallet UC, mes commandes et économies réalisées."
+      title={i18n.t('pass.mon_espace_pass')}
+      subtitle={i18n.t('pass.pass_vie_chere_wallet')}
       actions={
         <Button variant="outline" size="sm" onClick={load} data-testid="refresh-btn">
           <RefreshCw className="w-4 h-4 mr-2" /> Actualiser
         </Button>
       }
     >
-      {loading && <div className="text-center text-white/50 py-12">Chargement…</div>}
+      {loading && <div className="text-center text-white/50 py-12">{i18n.t('pass.chargement')}</div>}
       {!loading && data && (
         <>
           <PreselectedRelayBadge testId="pass-preselected-relay" className="mb-4" />
@@ -149,17 +150,17 @@ export default function PassSpacePage() {
               <div className="relative flex flex-wrap gap-6 items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge color="#D9B35A">PASS Vie Chère actif</Badge>
+                    <Badge color="#D9B35A">{i18n.t('pass.pass_vie_chere_actif')}</Badge>
                     {expirationLevel === 'critical' && (
                       <Badge color="#ef4444">
                         <AlertTriangle className="w-3 h-3 mr-1 inline" />
-                        Expire bientôt
+                        {i18n.t('pass.expire_bientot')}
                       </Badge>
                     )}
                   </div>
                   <div className="mt-3 text-5xl font-bold tracking-tight">
                     {data.wallet.balance_uc}
-                    <span className="text-base text-white/40 font-normal ml-2">UC disponibles</span>
+                    <span className="text-base text-white/40 font-normal ml-2">{i18n.t('pass.uc_disponibles')}</span>
                   </div>
                   <div className="text-sm mt-2 flex items-center gap-3 flex-wrap">
                     <span className={
@@ -176,9 +177,9 @@ export default function PassSpacePage() {
                   </div>
                   <div className="text-xs text-white/40 mt-2 max-w-md">
                     {data.pass.is_auto_renew ? (
-                      <>Renouvellement automatique <strong className="text-emerald-400">activé</strong>. À l'expiration, un nouveau PASS sera proposé.</>
+                      <>{i18n.t('pass.renouvellement_automatique')}<strong className="text-emerald-400">{i18n.t('pass.active')}</strong>{i18n.t('pass.a_l_expiration_un')}</>
                     ) : (
-                      <>Pas de renouvellement automatique. À l'expiration, votre PASS sera désactivé. Les UC non utilisés ne sont pas remboursables (unité d'usage interne).</>
+                      <>{i18n.t('pass.pas_de_renouvellement_automatique')}</>
                     )}
                   </div>
                   <div className="mt-2">
@@ -210,16 +211,16 @@ export default function PassSpacePage() {
                     </DialogTrigger>
                     <DialogContent className="bg-[#15151c] border-white/10 text-white">
                       <DialogHeader>
-                        <DialogTitle>Recharger mon wallet UC</DialogTitle>
+                        <DialogTitle>{i18n.t('pass.recharger_mon_wallet_uc')}</DialogTitle>
                       </DialogHeader>
                       <p className="text-xs text-white/50 mb-2">
-                        Le wallet UC est rechargeable uniquement si votre PASS est actif. Aucun renouvellement automatique.
+                        {i18n.t('pass.le_wallet_uc_est')}
                       </p>
                       <RadioGroup value={selectedPack} onValueChange={setSelectedPack} className="space-y-2">
                         {[
-                          { id: 'MINI', label: 'Mini', amount: '20 €', uc: '200 UC' },
-                          { id: 'STANDARD', label: 'Standard', amount: '40 €', uc: '400 UC' },
-                          { id: 'MAXI', label: 'Maxi', amount: '70 €', uc: '720 UC ✨', bonus: true },
+                          { id: 'MINI', label: i18n.t('pass.mini'), amount: '20 €', uc: '200 UC' },
+                          { id: 'STANDARD', label: i18n.t('pass.standard'), amount: '40 €', uc: '400 UC' },
+                          { id: 'MAXI', label: i18n.t('pass.maxi'), amount: '70 €', uc: '720 UC ✨', bonus: true },
                         ].map((p) => (
                           <label
                             key={p.id}
@@ -231,7 +232,7 @@ export default function PassSpacePage() {
                             <div className="flex-1">
                               <div className="font-medium flex items-center gap-2">
                                 {p.label}
-                                {p.bonus && <Badge color="#D9B35A">Bonus +20 UC</Badge>}
+                                {p.bonus && <Badge color="#D9B35A">{i18n.t('pass.bonus_20_uc')}</Badge>}
                               </div>
                               <div className="text-xs text-white/40">{p.amount} → {p.uc}</div>
                             </div>
@@ -240,7 +241,7 @@ export default function PassSpacePage() {
                       </RadioGroup>
                       <Button onClick={recharge} data-testid="confirm-recharge-btn"
                         style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
-                        Payer par CB (Stripe Checkout)
+                        {i18n.t('pass.payer_par_cb_stripe')}
                       </Button>
                     </DialogContent>
                   </Dialog>
@@ -248,8 +249,8 @@ export default function PassSpacePage() {
               </div>
             ) : (
               <div className="relative">
-                <Badge color="#666">PASS inactif</Badge>
-                <h2 className="text-2xl font-bold mt-3">Activez votre PASS Vie Chère</h2>
+                <Badge color="#666">{i18n.t('pass.pass_inactif')}</Badge>
+                <h2 className="text-2xl font-bold mt-3">{i18n.t('pass.activez_votre_pass_vie')}</h2>
                 <p className="text-sm text-white/60 mt-1 mb-4 max-w-2xl">
                   <strong>60 € = 600 UC</strong>, valable 30 jours. Accès aux prix PASS sur les produits ESSENTIELS,
                   paiement en UC sur l'ensemble du catalogue. Sans renouvellement automatique : vous restez maître de votre engagement.
@@ -262,7 +263,7 @@ export default function PassSpacePage() {
                   </Button>
                   <StripeCheckoutButton
                     createSession={(origin) => lolodriveAPI.checkoutPass(origin)}
-                    label="Payer 60 € par CB (Stripe)"
+                    label={i18n.t('pass.payer_60_par_cb')}
                     variant="outline"
                     size="lg"
                     testId="activate-pass-stripe-btn"
@@ -270,7 +271,7 @@ export default function PassSpacePage() {
                   />
                 </div>
                 <p className="text-[11px] text-white/30 mt-3">
-                  Mode démo : active le PASS sans paiement réel. Stripe (test) ouvre un formulaire CB hosted page.
+                  {i18n.t('pass.mode_demo_active_le')}
                 </p>
               </div>
             )}
@@ -278,19 +279,19 @@ export default function PassSpacePage() {
 
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <KpiCard testId="kpi-balance" label="Solde UC" value={data.wallet.balance_uc} icon={Wallet} accent="#D9B35A" />
+            <KpiCard testId="kpi-balance" label={i18n.t('pass.solde_uc')} value={data.wallet.balance_uc} icon={Wallet} accent="#D9B35A" />
             <KpiCard
               testId="kpi-savings"
-              label="Économies réalisées"
+              label={i18n.t('pass.economies_realisees')}
               value={fmtEUR(savings?.savings_cents || 0)}
               sub={savings ? `sur ${savings.essential_items} produit(s) essentiel(s)` : ''}
               icon={Sparkles}
               accent="#10b981"
             />
-            <KpiCard testId="kpi-orders" label="Mes commandes" value={orders.length} sub={`${orders.filter(o => o.status === 'FULFILLED').length} retirée(s)`} icon={ShoppingBag} accent="#7c3aed" />
+            <KpiCard testId="kpi-orders" label={i18n.t('orders.mes_commandes')} value={orders.length} sub={`${orders.filter(o => o.status === 'FULFILLED').length} ${i18n.t('pass.retirees')}`} icon={ShoppingBag} accent="#7c3aed" />
             <KpiCard
               testId="kpi-status"
-              label="Statut PASS"
+              label={i18n.t('pass.statut_pass')}
               value={data.active ? 'ACTIF' : 'INACTIF'}
               sub={data.active ? `${days}j restants` : 'Activez pour économiser'}
               icon={Ticket}
@@ -300,13 +301,13 @@ export default function PassSpacePage() {
 
           {/* Wallet ledger */}
           <SectionCard
-            title="Historique du wallet UC"
+            title={i18n.t('pass.historique_du_wallet_uc')}
             action={<span className="text-xs text-white/40">{ledger.length} mouvement(s)</span>}
             className="mb-6"
           >
             {ledger.length === 0 && (
               <div className="text-sm text-white/40 py-4 text-center">
-                Aucun mouvement encore. Activez votre PASS pour commencer.
+                {i18n.t('pass.aucun_mouvement_encore_activez')}
               </div>
             )}
             <div className="space-y-2">
@@ -337,7 +338,7 @@ export default function PassSpacePage() {
 
           {/* Orders */}
           <SectionCard
-            title="Mes commandes récentes"
+            title={i18n.t('pass.mes_commandes_recentes')}
             action={
               <Link to="/catalogue-lolodrive" className="text-xs text-[#D9B35A] hover:underline flex items-center gap-1" data-testid="goto-catalogue-link">
                 + Nouvelle commande <ArrowRight className="w-3 h-3" />
@@ -346,10 +347,10 @@ export default function PassSpacePage() {
           >
             {orders.length === 0 && (
               <div className="text-sm text-white/40 py-8 text-center">
-                Aucune commande pour le moment.
+                {i18n.t('pass.aucune_commande_pour_le')}
                 <div className="mt-2">
                   <Button asChild size="sm" variant="outline">
-                    <Link to="/catalogue-lolodrive">Découvrir le catalogue</Link>
+                    <Link to="/catalogue-lolodrive">{i18n.t('pass.decouvrir_le_catalogue')}</Link>
                   </Button>
                 </div>
               </div>
@@ -385,23 +386,23 @@ export default function PassSpacePage() {
           {/* Parrainage coopérateur */}
           {referral && (
             <SectionCard
-              title="Parrainage coopérateur"
+              title={i18n.t('pass.parrainage_cooperateur')}
               action={<Badge color="#7c3aed">+{referral.bonus_uc_per_use} UC parrain & filleul</Badge>}
               data-testid="referral-section"
             >
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="rounded-lg p-4 bg-[#7c3aed]/[0.08] border border-[#7c3aed]/30">
-                  <div className="text-xs text-white/50 mb-1">Mon code</div>
+                  <div className="text-xs text-white/50 mb-1">{i18n.t('pass.mon_code')}</div>
                   <div className="flex items-center gap-2 mb-2">
                     <code data-testid="referral-code" className="text-lg font-mono font-bold text-[#a78bfa] tracking-wider">{referral.code}</code>
-                    <Button size="sm" variant="outline" onClick={copyReferral} data-testid="copy-referral-btn" className="text-xs h-7">Copier</Button>
+                    <Button size="sm" variant="outline" onClick={copyReferral} data-testid="copy-referral-btn" className="text-xs h-7">{i18n.t('pass.copier')}</Button>
                   </div>
                   <div className="text-xs text-white/50">
-                    Utilisations : <strong>{referral.uses}/{referral.max_uses}</strong> — chaque filleul vous fait gagner <strong>{referral.bonus_uc_per_use} UC</strong>.
+                    {i18n.t('pass.utilisations_label')} <strong>{referral.uses}/{referral.max_uses}</strong>{i18n.t('pass.chaque_filleul_vous_fait')}<strong>{referral.bonus_uc_per_use} UC</strong>.
                   </div>
                 </div>
                 <div className="rounded-lg p-4 bg-white/[0.03] border border-white/[0.08]">
-                  <div className="text-xs text-white/50 mb-1">J'ai un code de parrainage</div>
+                  <div className="text-xs text-white/50 mb-1">{i18n.t('pass.j_ai_un_code')}</div>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -413,7 +414,7 @@ export default function PassSpacePage() {
                     />
                     <Button onClick={claimReferral} data-testid="claim-referral-btn"
                       style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
-                      Activer
+                      {i18n.t('pass.activer')}
                     </Button>
                   </div>
                   <div className="text-[11px] text-white/40 mt-2">

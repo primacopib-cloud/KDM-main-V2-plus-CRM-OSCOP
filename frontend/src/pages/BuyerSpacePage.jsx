@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
@@ -133,7 +134,7 @@ export default function BuyerSpacePage() {
           newAlerts.push({
             id: 'ready-orders',
             type: 'success',
-            title: `${readyOrders.length} commande(s) prête(s) à enlever`,
+            title: i18n.t('buyer.toast_pretes', { count: readyOrders.length }),
             message: 'Vos commandes sont disponibles au point de retrait EXW.',
             action: () => setActiveTab('orders')
           });
@@ -144,8 +145,8 @@ export default function BuyerSpacePage() {
           newAlerts.push({
             id: 'low-balance',
             type: 'warning',
-            title: 'Solde crédits faible',
-            message: 'Pensez à recharger vos crédits pour vos prochaines commandes.',
+            title: i18n.t('buyer.solde_faible'),
+            message: i18n.t('buyer.solde_faible_msg'),
             action: () => setActiveTab('wallet')
           });
         }
@@ -157,7 +158,7 @@ export default function BuyerSpacePage() {
             id: 'unpaid-invoices',
             type: 'warning',
             title: `${unpaidInvoices.length} facture(s) en attente de paiement`,
-            message: 'Consultez vos factures pour régulariser votre situation.',
+            message: i18n.t('buyer.factures_msg'),
             action: () => setActiveTab('invoices')
           });
         }
@@ -209,7 +210,7 @@ export default function BuyerSpacePage() {
       setWallet(walletData);
       setInvoices(invoicesData?.invoices || []);
       setInvoiceStats(invoiceStatsData);
-      toast.success('Données actualisées');
+      toast.success(i18n.t('buyer.toast_actualise'));
     } catch (error) {
       toast.error('Erreur lors de l\'actualisation');
     } finally {
@@ -224,7 +225,7 @@ export default function BuyerSpacePage() {
       setSelectedOrder(fullOrder);
       setOrderModalOpen(true);
     } catch (error) {
-      toast.error('Erreur lors du chargement des détails');
+      toast.error(i18n.t('buyer.toast_erreur_details'));
     }
   };
 
@@ -236,7 +237,7 @@ export default function BuyerSpacePage() {
 
   // Download invoice PDF (placeholder)
   const downloadInvoicePDF = async (invoice) => {
-    toast.info('Génération du PDF en cours...');
+    toast.info(i18n.t('buyer.toast_pdf'));
     
     try {
       const token = localStorage.getItem('token');
@@ -244,7 +245,7 @@ export default function BuyerSpacePage() {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       
-      if (!response.ok) throw new Error('Erreur de génération');
+      if (!response.ok) throw new Error(i18n.t('buyer.toast_erreur_generation'));
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -256,10 +257,10 @@ export default function BuyerSpacePage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      toast.success(`Facture ${invoice.invoice_number} téléchargée`);
+      toast.success(i18n.t('buyer.toast_facture', { number: invoice.invoice_number }));
     } catch (error) {
       console.error('PDF download error:', error);
-      toast.error('Erreur lors du téléchargement du PDF');
+      toast.error(i18n.t('buyer.toast_erreur_pdf'));
     }
   };
 
@@ -288,14 +289,14 @@ export default function BuyerSpacePage() {
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm hidden sm:inline">Accueil</span>
+              <span className="text-sm hidden sm:inline">{i18n.t('buyer.accueil')}</span>
             </Link>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#D9B35A]/20 flex items-center justify-center">
                 <ShoppingBag className="w-5 h-5 text-[#D9B35A]" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-white">Espace Acheteur Pro</h1>
+                <h1 className="text-lg font-bold text-white">{i18n.t('buyer.espace_acheteur_pro')}</h1>
                 <p className="text-xs text-white/50">{user?.company_name || 'Mon compte B2B'}</p>
               </div>
             </div>
@@ -304,23 +305,23 @@ export default function BuyerSpacePage() {
           {/* Quick Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             <Link to="/catalogue" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              Catalogue
+              {i18n.t('buyer.catalogue')}
             </Link>
             <Link to="/commandes" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              Commandes
+              {i18n.t('buyer.commandes')}
             </Link>
             <Link to="/wallet" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              Wallet
+              {i18n.t('buyer.wallet')}
             </Link>
             <Link to="/documents" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              Documents
+              {i18n.t('onboarding.documents')}
             </Link>
             <Link to="/espace-vendeur" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              Vendeur
+              {i18n.t('buyer.vendeur')}
             </Link>
             {(user?.role === 'admin' || user?.email?.includes('admin')) && (
               <Link to="/superadmin" className="px-3 py-1.5 text-xs text-[#D9B35A] hover:bg-[#D9B35A]/10 rounded-lg transition-colors">
-                Admin
+                {i18n.t('buyer.admin')}
               </Link>
             )}
           </nav>
@@ -341,7 +342,7 @@ export default function BuyerSpacePage() {
             <Link to="/catalogue">
               <Button className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black text-sm">
                 <Package className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Catalogue</span>
+                <span className="hidden sm:inline">{i18n.t('buyer.catalogue')}</span>
               </Button>
             </Link>
           </div>
@@ -407,14 +408,14 @@ export default function BuyerSpacePage() {
               className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg"
             >
               <TrendingUp className="w-4 h-4 mr-2" />
-              Tableau de bord
+              {i18n.t('buyer.tableau_de_bord')}
             </TabsTrigger>
             <TabsTrigger 
               value="orders"
               className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg"
             >
               <Package className="w-4 h-4 mr-2" />
-              Commandes
+              {i18n.t('buyer.commandes')}
               {stats.pendingOrders > 0 && (
                 <Badge className="ml-2 bg-amber-500/20 text-amber-400 border-0">{stats.pendingOrders}</Badge>
               )}
@@ -424,14 +425,14 @@ export default function BuyerSpacePage() {
               className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg"
             >
               <FileText className="w-4 h-4 mr-2" />
-              Factures
+              {i18n.t('buyer.factures')}
             </TabsTrigger>
             <TabsTrigger 
               value="wallet"
               className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg"
             >
               <Wallet className="w-4 h-4 mr-2" />
-              Wallet
+              {i18n.t('buyer.wallet')}
             </TabsTrigger>
           </TabsList>
 

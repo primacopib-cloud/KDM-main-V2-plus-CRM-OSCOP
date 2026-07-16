@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -66,7 +67,7 @@ export default function OnboardingPage() {
       try {
         const currentUser = authAPI.getCurrentUser();
         if (!currentUser) {
-          toast.error('Veuillez vous connecter pour accéder à cette page');
+          toast.error(i18n.t('onboarding.toast_connecter'));
           navigate('/connexion?redirect=/onboarding');
           return;
         }
@@ -82,7 +83,7 @@ export default function OnboardingPage() {
             
             // Check org status
             if (org.status === 'APPROVED') {
-              toast.success('Votre organisation est déjà approuvée !');
+              toast.success(i18n.t('onboarding.toast_approuvee'));
               navigate('/dashboard');
               return;
             }
@@ -127,7 +128,7 @@ export default function OnboardingPage() {
       return false;
     }
     if (!formData.territory) {
-      toast.error('Veuillez sélectionner un territoire');
+      toast.error(i18n.t('onboarding.toast_territoire'));
       return false;
     }
     if (!formData.contactName.trim()) {
@@ -139,7 +140,7 @@ export default function OnboardingPage() {
       return false;
     }
     if (!formData.contactPhone.trim()) {
-      toast.error('Veuillez saisir un numéro de téléphone');
+      toast.error(i18n.t('onboarding.toast_telephone'));
       return false;
     }
     return true;
@@ -180,11 +181,11 @@ export default function OnboardingPage() {
       const app = await applicationsAPIV2.create(org.id);
       setCreatedApp(app);
       
-      toast.success('Organisation créée avec succès');
+      toast.success(i18n.t('onboarding.toast_org_creee'));
       setCurrentStep(2);
       
     } catch (error) {
-      toast.error(error.message || 'Erreur lors de la création');
+      toast.error(error.message || i18n.t('onboarding.toast_erreur_creation'));
     } finally {
       setLoading(false);
     }
@@ -207,7 +208,7 @@ export default function OnboardingPage() {
   const handleUploadDocuments = async () => {
     if (!validateStep2()) return;
     if (!createdApp) {
-      toast.error('Erreur: application non trouvée');
+      toast.error(i18n.t('onboarding.toast_app_introuvable'));
       return;
     }
     
@@ -291,7 +292,7 @@ export default function OnboardingPage() {
         <main className="max-w-4xl mx-auto px-4 py-12">
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-amber-500 animate-spin mb-4" />
-            <p className="text-gray-500">Chargement...</p>
+            <p className="text-gray-500">{i18n.t('onboarding.chargement')}</p>
           </div>
         </main>
         <Footer />
@@ -307,10 +308,10 @@ export default function OnboardingPage() {
         {/* Title */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Demande d'adhésion B2B
+            {i18n.t('onboarding.demande_d_adhesion_b2b')}
           </h1>
           <p className="text-gray-600">
-            Rejoignez la centrale d'achats KDMARCHE × O'SCOP
+            {i18n.t('onboarding.rejoignez_la_centrale_d')}
           </p>
         </div>
         

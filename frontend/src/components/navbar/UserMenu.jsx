@@ -6,7 +6,7 @@ import {
   FileSignature, MapPin, CreditCard, Home, Heart, Truck, HeartHandshake, Server,
 } from 'lucide-react';
 
-export const UserMenu = ({ user, showUserMenu, setShowUserMenu, handleLogout, unreadCount }) => (
+export const UserMenu = ({ user, showUserMenu, setShowUserMenu, handleLogout, unreadCount, t }) => (
                 <div className="relative">
                   <button 
                     onClick={() => setShowUserMenu(!showUserMenu)}
@@ -16,7 +16,7 @@ export const UserMenu = ({ user, showUserMenu, setShowUserMenu, handleLogout, un
                       <User className="w-3.5 h-3.5 text-black" />
                     </div>
                     <span className="text-sm text-white/90 hidden md:block max-w-[120px] truncate">
-                      {user?.contact_name || user?.email?.split('@')[0] || 'Mon compte'}
+                      {user?.contact_name || user?.email?.split('@')[0] || t('nav.my_account')}
                     </span>
                     <ChevronDown className="w-3.5 h-3.5 text-white/50" />
                   </button>
@@ -51,7 +51,7 @@ export const UserMenu = ({ user, showUserMenu, setShowUserMenu, handleLogout, un
                               data-testid={`user-menu-${item.href.replace(/\//g, '-')}`}
                             >
                               <Icon className="w-4 h-4" />
-                              {item.label}
+                              {item.label.startsWith('nav.') ? t(item.label) : item.label}
                               {item.href === '/wallet' && (
                                 <span className="ml-auto text-xs text-[#D9B35A]">{user?.credits || 0} cr</span>
                               )}
@@ -65,7 +65,7 @@ export const UserMenu = ({ user, showUserMenu, setShowUserMenu, handleLogout, un
                           data-testid="user-menu-notifications"
                         >
                           <Bell className="w-4 h-4" />
-                          Notifications
+                          {t('nav.notifications')}
                           {unreadCount > 0 && (
                             <span className="ml-auto text-xs bg-red-500 text-white rounded-full px-1.5">{unreadCount}</span>
                           )}
@@ -86,7 +86,7 @@ export const UserMenu = ({ user, showUserMenu, setShowUserMenu, handleLogout, un
                                 onClick={() => setShowUserMenu(false)}
                               >
                                 <Icon className="w-4 h-4" />
-                                {item.label}
+                                {item.label.startsWith('nav.') ? t(item.label) : item.label}
                               </Link>
                             );
                           })}
@@ -110,7 +110,7 @@ export const UserMenu = ({ user, showUserMenu, setShowUserMenu, handleLogout, un
                                 data-testid={`admin-menu-${item.href.replace(/\//g, '-')}`}
                               >
                                 <Icon className="w-4 h-4" />
-                                {item.label}
+                                {item.label.startsWith('nav.') ? t(item.label) : item.label}
                               </Link>
                             );
                           })}
@@ -127,7 +127,7 @@ export const UserMenu = ({ user, showUserMenu, setShowUserMenu, handleLogout, un
                           data-testid="user-menu-logout"
                         >
                           <LogOut className="w-4 h-4" />
-                          Déconnexion
+                          {t('nav.logout')}
                         </button>
                       </div>
                     </div>

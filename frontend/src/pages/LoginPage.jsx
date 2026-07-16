@@ -8,6 +8,7 @@ import {
   Handshake, TrendingUp, ShieldCheck, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { authAPI } from '../services/api';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
@@ -17,6 +18,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
  * - Members log in here. Super admins use /admin/connexion.
  */
 const LoginPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -32,10 +34,10 @@ const LoginPage = () => {
     setIsLoading(true);
     try {
       await authAPI.login(formData.email, formData.password);
-      toast.success('Connexion réussie !');
+      toast.success(t('auth.login_success'));
       navigate('/dashboard');
     } catch (error) {
-      toast.error(error.message || 'Identifiants incorrects');
+      toast.error(error.message || t('auth.invalid_credentials'));
     } finally {
       setIsLoading(false);
     }
@@ -44,18 +46,18 @@ const LoginPage = () => {
   const benefits = [
     {
       icon: Handshake,
-      title: 'Centrale d\'achats coopérative B2B2C',
-      desc: 'Accès mutualisé aux produits et solutions sélectionnés du réseau.',
+      title: t('auth.benefit1_title'),
+      desc: t('auth.benefit1_desc'),
     },
     {
       icon: TrendingUp,
-      title: 'Conditions économiques mutualisées',
-      desc: 'Prix structurels issus de la force collective des membres professionnels.',
+      title: t('auth.benefit2_title'),
+      desc: t('auth.benefit2_desc'),
     },
     {
       icon: ShieldCheck,
-      title: 'Cadre sécurisé et traçable',
-      desc: 'RGPD · SSL · Signature électronique · Wallet crédits certifié.',
+      title: t('auth.benefit3_title'),
+      desc: t('auth.benefit3_desc'),
     },
   ];
 
@@ -89,7 +91,7 @@ const LoginPage = () => {
             data-testid="back-home-link"
           >
             <ArrowLeft className="w-4 h-4" />
-            Retour à l&apos;accueil
+            {t('common.back_home')}
           </Link>
           <div className="flex items-center gap-3">
             <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
@@ -112,17 +114,16 @@ const LoginPage = () => {
             }}
           >
             <Sparkles className="w-3 h-3" />
-            Espace Membres
+            {t('auth.members_area')}
           </span>
           <h1
             className="text-4xl xl:text-5xl font-serif font-semibold text-white leading-[1.05] mb-4"
             style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", serif' }}
           >
-            Bienvenue sur la Centrale <span className="text-[#D9B35A]">Coopérative</span> KDMARCHE × O&apos;SCOP
+            {t('auth.welcome_1')} <span className="text-[#D9B35A]">{t('auth.welcome_2')}</span> KDMARCHE × O&apos;SCOP
           </h1>
           <p className="text-white/70 text-base leading-relaxed max-w-md mb-8">
-            API coopérative B2B2C dédiée aux membres professionnels, pour l&apos;accès mutualisé aux produits, services et
-            conditions économiques associées.
+            {t('auth.welcome_subtitle')}
           </p>
 
           <ul className="space-y-4 max-w-md">
@@ -157,7 +158,7 @@ const LoginPage = () => {
           <span>·</span>
           <span>SSL 256-bit</span>
           <span>·</span>
-          <span>Données chiffrées</span>
+          <span>{t('auth.encrypted_data')}</span>
           <span>·</span>
           <span>© 2026 Centrale ESS</span>
         </div>
@@ -182,20 +183,20 @@ const LoginPage = () => {
           <div className="w-full max-w-md">
             <div className="mb-8">
               <p className="text-xs uppercase tracking-[0.15em] text-[#5B2E8C] font-semibold mb-2">
-                Connexion Membres
+                {t('auth.member_login')}
               </p>
               <h2 className="text-3xl font-serif font-semibold text-slate-900 mb-2" style={{ fontFamily: '"Playfair Display", serif' }}>
-                Accéder à votre espace
+                {t('auth.access_your_space')}
               </h2>
               <p className="text-slate-500 text-sm">
-                Identifiez-vous pour rejoindre la Centrale d&apos;Achats coopérative.
+                {t('auth.login_subtitle')}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5" data-testid="login-form">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-slate-700 text-sm font-medium">
-                  Adresse e-mail professionnelle
+                  {t('auth.email_label')}
                 </Label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -216,14 +217,14 @@ const LoginPage = () => {
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="password" className="text-slate-700 text-sm font-medium">
-                    Mot de passe
+                    {t('auth.password_label')}
                   </Label>
                   <Link
                     to="/mot-de-passe-oublie"
                     className="text-xs text-[#5B2E8C] hover:text-[#451F6B] font-medium"
                     data-testid="forgot-password-link"
                   >
-                    Mot de passe oublié ?
+                    {t('auth.forgot_password')}
                   </Link>
                 </div>
                 <div className="relative">
@@ -244,7 +245,7 @@ const LoginPage = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                     tabIndex={-1}
-                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                    aria-label={showPassword ? t('auth.hide_password') : t('auth.show_password')}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -262,11 +263,11 @@ const LoginPage = () => {
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Connexion…
+                    <Loader2 className="w-4 h-4 animate-spin" /> {t('auth.logging_in')}
                   </>
                 ) : (
                   <>
-                    <LogIn className="w-4 h-4" /> Se connecter
+                    <LogIn className="w-4 h-4" /> {t('auth.sign_in')}
                   </>
                 )}
               </button>
@@ -276,7 +277,7 @@ const LoginPage = () => {
                   <div className="w-full border-t border-slate-200" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="px-3 text-[11px] text-slate-400 bg-white uppercase tracking-wider">ou</span>
+                  <span className="px-3 text-[11px] text-slate-400 bg-white uppercase tracking-wider">{t('common.or')}</span>
                 </div>
               </div>
 
@@ -293,13 +294,13 @@ const LoginPage = () => {
                   <path fill="#4CAF50" d="M24 45c5.1 0 9.8-1.9 13.3-5l-6.1-5.2c-2.1 1.4-4.5 2.2-7.2 2.2-5.3 0-9.7-3.4-11.3-8H6.5l-.5.4C9.4 35.8 16.1 40 24 40z"/>
                   <path fill="#1976D2" d="M43.6 20.5H42V20.5H24v7h11.3c-.8 2.3-2.4 4.4-4.6 5.7l6.1 5.2C39.6 35 44 30 44 24c0-1.2-.1-2.4-.4-3.5z"/>
                 </svg>
-                Continuer avec Google
+                {t('auth.continue_google')}
               </a>
 
               <p className="text-center text-sm text-slate-500">
-                Pas encore membre ?{' '}
+                {t('auth.not_member_yet')}{' '}
                 <Link to="/adhesion" className="text-[#5B2E8C] hover:text-[#451F6B] font-semibold" data-testid="signup-link">
-                  Adhérer à la Centrale
+                  {t('auth.join_central')}
                 </Link>
               </p>
             </form>
@@ -316,12 +317,12 @@ const LoginPage = () => {
                     <Shield className="w-4 h-4 text-[#4a1776]" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">Vous êtes administrateur ?</p>
-                    <p className="text-xs text-slate-500">Accédez à l&apos;espace de gestion sécurisé</p>
+                    <p className="text-sm font-semibold text-slate-900">{t('auth.are_you_admin')}</p>
+                    <p className="text-xs text-slate-500">{t('auth.admin_subtitle')}</p>
                   </div>
                 </div>
                 <span className="text-[#4a1776] text-sm font-medium group-hover:translate-x-0.5 transition-transform">
-                  Connexion admin →
+                  {t('auth.admin_login_arrow')}
                 </span>
               </Link>
             </div>

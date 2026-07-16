@@ -22,7 +22,7 @@ export default function LanguageSwitcher({ className = '' }) {
       {LANGS.map((l) => (
         <button
           key={l.code}
-          onClick={() => i18n.changeLanguage(l.code)}
+          onClick={() => i18n.changeLanguage(l.code).then(() => window.location.reload())}
           data-testid={`language-${l.code}`}
           className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all ${
             current === l.code

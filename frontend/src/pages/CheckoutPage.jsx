@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
@@ -191,14 +192,14 @@ export default function CheckoutPage() {
     setSignatureData(data);
     setSignatureComplete(true);
     setSignatureModalOpen(false);
-    toast.success('Document signé avec succès !');
+    toast.success(i18n.t('checkout.toast_document_signe'));
     setCurrentStep(4); // Move to payment step
   };
 
   // Handle payment
   const handlePayment = async () => {
     if (!deliveryOption) {
-      toast.error('Veuillez sélectionner un mode de livraison');
+      toast.error(i18n.t('checkout.toast_select_livraison'));
       setCurrentStep(1);
       return;
     }
@@ -226,7 +227,7 @@ export default function CheckoutPage() {
         useInstallment && totals.totalHT >= MIN_INSTALLMENT_CENTS
       );
       
-      toast.info(`Commande ${order.order_number} créée, redirection vers le paiement...`);
+      toast.info(i18n.t('checkout.toast_commande_creee_redirection', { number: order.order_number }));
       
       // 2. Create Stripe checkout session
       const token = localStorage.getItem('token');
@@ -259,14 +260,14 @@ export default function CheckoutPage() {
           const result = await confirmResponse.json();
           setOrderCreated(order);
           setPaymentSuccess(true);
-          toast.success('Paiement confirmé avec succès !');
+          toast.success(i18n.t('checkout.toast_paiement_confirme'));
           
           // Redirect after delay
           setTimeout(() => {
             navigate('/espace-acheteur?payment=success');
           }, 2000);
         } else {
-          throw new Error('Échec de la confirmation du paiement');
+          throw new Error(i18n.t('checkout.toast_echec_confirmation'));
         }
       } else {
         const sessionData = await checkoutResponse.json();
@@ -278,7 +279,7 @@ export default function CheckoutPage() {
           // Fallback: manual confirmation
           setOrderCreated(order);
           setPaymentSuccess(true);
-          toast.success('Commande confirmée !');
+          toast.success(i18n.t('checkout.toast_commande_confirmee'));
           setTimeout(() => navigate('/espace-acheteur'), 2000);
         }
       }
@@ -294,7 +295,7 @@ export default function CheckoutPage() {
   // Submit order (legacy - kept for compatibility)
   const handleSubmitOrder = async () => {
     if (!selectedPickup) {
-      toast.error('Veuillez sélectionner un point d\'enlèvement');
+      toast.error(i18n.t('checkout.toast_select_enlevement'));
       return;
     }
 
@@ -328,7 +329,7 @@ export default function CheckoutPage() {
       );
       
       setOrderCreated(order);
-      toast.success(`Commande ${order.order_number} créée avec succès !`);
+      toast.success(i18n.t('checkout.toast_commande_creee', { number: order.order_number }));
       
       // Redirect after delay
       setTimeout(() => {
@@ -336,7 +337,7 @@ export default function CheckoutPage() {
       }, 3000);
 
     } catch (error) {
-      toast.error(error.message || 'Erreur lors de la création de la commande');
+      toast.error(error.message || i18n.t('checkout.toast_erreur_creation'));
     } finally {
       setSubmitting(false);
     }
@@ -357,7 +358,7 @@ export default function CheckoutPage() {
         return;
       }
       if (currentStep === 1 && !deliveryOption) {
-        toast.error('Veuillez sélectionner un mode de livraison');
+        toast.error(i18n.t('checkout.toast_select_livraison'));
         return;
       }
       // For LOGI'SCOP delivery, require transport contract acceptance
@@ -388,18 +389,18 @@ export default function CheckoutPage() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
             <CheckCircle2 className="w-10 h-10 text-emerald-400" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Commande confirmée !</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">{i18n.t('checkout.commande_confirmee')}</h1>
           <p className="text-white/60 mb-4">
-            Votre commande <span className="text-[#D9B35A] font-mono">{orderCreated.order_number}</span> a été créée avec succès.
+            {i18n.t('checkout.votre_commande_prefix')} <span className="text-[#D9B35A] font-mono">{orderCreated.order_number}</span> {i18n.t('checkout.creee_avec_succes_suffix')}
           </p>
           <p className="text-sm text-white/50 mb-6">
-            Redirection vers votre espace acheteur...
+            {i18n.t('checkout.redirection_vers_votre_espace')}
           </p>
           <Button 
             onClick={() => navigate('/espace-acheteur')}
             className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black"
           >
-            Voir mes commandes
+            {i18n.t('checkout.voir_mes_commandes')}
           </Button>
         </div>
       </div>

@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { partners } from '../data/mock';
 import { Mail, Phone, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf } from 'lucide-react';
 
 const Footer = () => {
+  const { t } = useTranslation();
   return (
     <footer style={{
       background: 'linear-gradient(180deg, #FBF6EE 0%, #F2E6D3 100%)',
@@ -43,39 +45,39 @@ const Footer = () => {
 
           {/* Navigation */}
           <div>
-            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#D9B35A] mb-4">Navigation</h4>
+            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#D9B35A] mb-4">{t('footer.navigation')}</h4>
             <ul className="space-y-3">
               <li>
-                <Link to="/" className="text-white/60 hover:text-white/90 text-sm transition-colors">Accueil</Link>
+                <Link to="/" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('nav.home')}</Link>
               </li>
               <li>
-                <Link to="/offres" className="text-white/60 hover:text-white/90 text-sm transition-colors">Nos Offres</Link>
+                <Link to="/offres" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.our_offers')}</Link>
               </li>
               <li>
-                <Link to="/tarifs" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-tarifs">Accès Pro Mutualisé</Link>
+                <Link to="/tarifs" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-tarifs">{t('nav.pro_access')}</Link>
               </li>
               <li>
-                <Link to="/catalogue" className="text-white/60 hover:text-white/90 text-sm transition-colors">Catalogue B2B</Link>
+                <Link to="/catalogue" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.b2b_catalog')}</Link>
               </li>
               <li>
-                <Link to="/adhesion" className="text-white/60 hover:text-white/90 text-sm transition-colors">Adhérer</Link>
+                <Link to="/adhesion" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.join')}</Link>
               </li>
               <li>
-                <Link to="/connexion" className="text-white/60 hover:text-white/90 text-sm transition-colors">Espace Client</Link>
+                <Link to="/connexion" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.client_space')}</Link>
               </li>
             </ul>
             
             {/* Espaces Section */}
-            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#D4AF37] mb-4 mt-6">Espaces</h4>
+            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#D4AF37] mb-4 mt-6">{t('footer.spaces')}</h4>
             <ul className="space-y-3">
               <li>
-                <Link to="/espace-acheteur" className="text-white/60 hover:text-white/90 text-sm transition-colors">Espace Acheteur Pro</Link>
+                <Link to="/espace-acheteur" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.buyer_space')}</Link>
               </li>
               <li>
-                <Link to="/espace-vendeur" className="text-white/60 hover:text-white/90 text-sm transition-colors">Espace Vendeur</Link>
+                <Link to="/espace-vendeur" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('nav.vendor_space')}</Link>
               </li>
               <li>
-                <Link to="/superadmin" className="text-white/60 hover:text-white/90 text-sm transition-colors">Administration</Link>
+                <Link to="/superadmin" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.administration')}</Link>
               </li>
             </ul>
           </div>
@@ -133,7 +135,7 @@ const Footer = () => {
                   className="text-white/60 hover:text-white/90 text-sm transition-colors flex items-center gap-2"
                 >
                   <FileText className="w-3.5 h-3.5 text-white/40" />
-                  <span>GED - Documents</span>
+                  <span>{t('footer.ged_documents')}</span>
                 </Link>
               </li>
             </ul>
@@ -141,7 +143,7 @@ const Footer = () => {
 
           {/* Contact */}
           <div>
-            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#D9B35A] mb-4">Contact</h4>
+            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#D9B35A] mb-4">{t('footer.contact')}</h4>
             <ul className="space-y-4">
               <li className="flex items-center gap-3 text-white/60 text-sm">
                 <Mail className="w-4 h-4 text-[#D4AF37]" />
@@ -153,7 +155,7 @@ const Footer = () => {
               </li>
               <li className="flex items-start gap-3 text-white/60 text-sm">
                 <MapPin className="w-4 h-4 text-[#D4AF37] flex-shrink-0 mt-0.5" />
-                <span>Outre-mer & Métropole</span>
+                <span>{t('footer.regions')}</span>
               </li>
             </ul>
           </div>
@@ -166,9 +168,9 @@ const Footer = () => {
             © 2025 Centrale d&apos;Achats B2B ESS - KDMARCHE &amp; O&apos;SCOP. Tous droits réservés.
           </p>
           <div className="flex gap-6">
-            <Link to="/legal/cgv-kdmarche" className="text-white/50 hover:text-white/80 text-xs transition-colors">Mentions légales</Link>
-            <Link to="/documents/politique-confidentialite" className="text-white/50 hover:text-white/80 text-xs transition-colors">Confidentialité</Link>
-            <Link to="/legal/charte-ess" className="text-white/50 hover:text-white/80 text-xs transition-colors">Charte ESS</Link>
+            <Link to="/legal/cgv-kdmarche" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.legal_notice')}</Link>
+            <Link to="/documents/politique-confidentialite" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.privacy')}</Link>
+            <Link to="/legal/charte-ess" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.ess_charter')}</Link>
           </div>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -23,7 +24,7 @@ export const ReviewStep = ({ currentStep, cart }) => (
               <div className="glass-panel-soft rounded-[18px] p-6">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <Package className="w-5 h-5 text-[#D9B35A]" />
-                  Récapitulatif de la commande
+                  {i18n.t('checkout.recapitulatif_de_la_commande')}
                 </h3>
                 
                 {/* Cart Items */}
@@ -47,11 +48,11 @@ export const ReviewStep = ({ currentStep, cart }) => (
                 
                 <div className="border-t border-white/10 pt-4">
                   <div className="flex justify-between text-white/70 mb-2">
-                    <span>Sous-total produits HT</span>
+                    <span>{i18n.t('checkout.sous_total_produits_ht')}</span>
                     <span>{formatCurrency(cart?.subtotal_ht_cents || 0)}</span>
                   </div>
                   <div className="flex justify-between text-white font-semibold">
-                    <span>Total articles</span>
+                    <span>{i18n.t('checkout.total_articles')}</span>
                     <span>{cart?.items?.reduce((sum, i) => sum + i.quantity, 0) || 0}</span>
                   </div>
                 </div>
@@ -67,12 +68,12 @@ export const DeliveryStep = ({ currentStep, cart, zones, selectedZone, setSelect
               <div className="glass-panel-soft rounded-[18px] p-6">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <Truck className="w-5 h-5 text-[#D4AF37]" />
-                  Mode de livraison LOGI'SCOP
+                  {i18n.t('checkout.mode_de_livraison_logi')}
                 </h3>
                 
                 {/* Zone Selection */}
                 <div className="mb-6">
-                  <Label className="text-white/70 mb-2 block">Zone géographique</Label>
+                  <Label className="text-white/70 mb-2 block">{i18n.t('checkout.zone_geographique')}</Label>
                   <Select value={selectedZone} onValueChange={setSelectedZone}>
                     <SelectTrigger className="bg-white/[0.04] border-white/10">
                       <SelectValue />
@@ -117,12 +118,11 @@ export const DeliveryStep = ({ currentStep, cart, zones, selectedZone, setSelect
                             target="_blank"
                             className="text-amber-400 hover:text-amber-300 underline underline-offset-2"
                           >
-                            Contrat de Transport LOGI'SCOP
+                            {i18n.t('checkout.contrat_de_transport_logi')}
                           </Link>
                         </Label>
                         <p className="text-xs text-white/50 mt-2 leading-relaxed">
-                          La livraison LOGI'SCOP est une prestation de transport indépendante, 
-                          distincte de la vente des marchandises, exécutée par un opérateur logistique ESS.
+                          {i18n.t('checkout.livraison_logiscop_desc')}
                         </p>
                       </div>
                     </div>
@@ -161,7 +161,7 @@ export const SignatureStep = ({ currentStep, signatureComplete, signatureData, s
               <div className="glass-panel-soft rounded-[18px] p-6">
                 <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                   <FileSignature className="w-5 h-5 text-purple-400" />
-                  Signature électronique
+                  {i18n.t('checkout.signature_electronique')}
                 </h2>
                 
                 {signatureComplete ? (
@@ -169,13 +169,13 @@ export const SignatureStep = ({ currentStep, signatureComplete, signatureData, s
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
                       <CheckCircle2 className="w-8 h-8 text-emerald-400" />
                     </div>
-                    <p className="text-lg font-medium text-white mb-2">Document signé</p>
+                    <p className="text-lg font-medium text-white mb-2">{i18n.t('checkout.document_signe')}</p>
                     <p className="text-sm text-white/60 mb-4">
-                      Votre bon de commande a été signé électroniquement.
+                      {i18n.t('checkout.votre_bon_de_commande')}
                     </p>
                     <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
                       <Shield className="w-3 h-3 mr-1" />
-                      Signature eIDAS niveau AES
+                      {i18n.t('checkout.signature_eidas_niveau_aes')}
                     </Badge>
                     {signatureData?.signature_hash && (
                       <p className="text-xs text-white/40 mt-4 font-mono">
@@ -188,19 +188,19 @@ export const SignatureStep = ({ currentStep, signatureComplete, signatureData, s
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center">
                       <FileSignature className="w-8 h-8 text-purple-400" />
                     </div>
-                    <p className="text-lg font-medium text-white mb-2">Signature requise</p>
+                    <p className="text-lg font-medium text-white mb-2">{i18n.t('checkout.signature_requise')}</p>
                     <p className="text-sm text-white/60 mb-6">
-                      Signez votre bon de commande par SMS (code OTP) pour valider votre commande.
+                      {i18n.t('checkout.signez_votre_bon_de')}
                     </p>
                     <Button 
                       onClick={() => setSignatureModalOpen(true)}
                       className="bg-purple-600 hover:bg-purple-700 text-white"
                     >
                       <FileSignature className="w-4 h-4 mr-2" />
-                      Signer le bon de commande
+                      {i18n.t('checkout.signer_le_bon_de')}
                     </Button>
                     <p className="text-xs text-white/40 mt-4">
-                      Conformité eIDAS niveau AES (Advanced Electronic Signature)
+                      {i18n.t('checkout.conformite_eidas_niveau_aes')}
                     </p>
                   </div>
                 )}

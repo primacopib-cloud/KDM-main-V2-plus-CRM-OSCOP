@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { Trash2, Check } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -24,14 +25,14 @@ export const ShoppingListDialogs = ({
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="bg-[#0A0E17] border-white/10 text-white">
           <DialogHeader>
-            <DialogTitle>Nouvelle liste d'achats</DialogTitle>
+            <DialogTitle>{i18n.t('lists.nouvelle_liste_d_achats')}</DialogTitle>
             <DialogDescription className="text-white/60">
               Créez une liste pour organiser vos commandes récurrentes
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Nom de la liste *</Label>
+              <Label>{i18n.t('lists.nom_de_la_liste')}</Label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -41,7 +42,7 @@ export const ShoppingListDialogs = ({
               />
             </div>
             <div>
-              <Label>Description</Label>
+              <Label>{i18n.t('lists.description')}</Label>
               <Input
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -50,7 +51,7 @@ export const ShoppingListDialogs = ({
               />
             </div>
             <div>
-              <Label>Fréquence</Label>
+              <Label>{i18n.t('lists.frequence')}</Label>
               <Select 
                 value={formData.frequency} 
                 onValueChange={(v) => setFormData({ ...formData, frequency: v })}
@@ -59,17 +60,17 @@ export const ShoppingListDialogs = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                  <SelectItem value="biweekly">Bi-mensuel</SelectItem>
-                  <SelectItem value="monthly">Mensuel</SelectItem>
-                  <SelectItem value="quarterly">Trimestriel</SelectItem>
-                  <SelectItem value="one_time">Ponctuel</SelectItem>
-                  <SelectItem value="custom">Personnalisé</SelectItem>
+                  <SelectItem value="weekly">{i18n.t('lists.hebdomadaire')}</SelectItem>
+                  <SelectItem value="biweekly">{i18n.t('lists.bi_mensuel')}</SelectItem>
+                  <SelectItem value="monthly">{i18n.t('lists.mensuel')}</SelectItem>
+                  <SelectItem value="quarterly">{i18n.t('lists.trimestriel')}</SelectItem>
+                  <SelectItem value="one_time">{i18n.t('lists.ponctuel')}</SelectItem>
+                  <SelectItem value="custom">{i18n.t('lists.personnalise')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Couleur</Label>
+              <Label>{i18n.t('lists.couleur')}</Label>
               <div className="flex gap-2 mt-2">
                 {colorOptions.map((color) => (
                   <button
@@ -107,11 +108,11 @@ export const ShoppingListDialogs = ({
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="bg-[#0A0E17] border-white/10 text-white">
           <DialogHeader>
-            <DialogTitle>Modifier la liste</DialogTitle>
+            <DialogTitle>{i18n.t('lists.modifier_la_liste')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Nom de la liste *</Label>
+              <Label>{i18n.t('lists.nom_de_la_liste')}</Label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -119,7 +120,7 @@ export const ShoppingListDialogs = ({
               />
             </div>
             <div>
-              <Label>Description</Label>
+              <Label>{i18n.t('lists.description')}</Label>
               <Input
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -127,7 +128,7 @@ export const ShoppingListDialogs = ({
               />
             </div>
             <div>
-              <Label>Fréquence</Label>
+              <Label>{i18n.t('lists.frequence')}</Label>
               <Select 
                 value={formData.frequency} 
                 onValueChange={(v) => setFormData({ ...formData, frequency: v })}
@@ -136,17 +137,17 @@ export const ShoppingListDialogs = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                  <SelectItem value="biweekly">Bi-mensuel</SelectItem>
-                  <SelectItem value="monthly">Mensuel</SelectItem>
-                  <SelectItem value="quarterly">Trimestriel</SelectItem>
-                  <SelectItem value="one_time">Ponctuel</SelectItem>
-                  <SelectItem value="custom">Personnalisé</SelectItem>
+                  <SelectItem value="weekly">{i18n.t('lists.hebdomadaire')}</SelectItem>
+                  <SelectItem value="biweekly">{i18n.t('lists.bi_mensuel')}</SelectItem>
+                  <SelectItem value="monthly">{i18n.t('lists.mensuel')}</SelectItem>
+                  <SelectItem value="quarterly">{i18n.t('lists.trimestriel')}</SelectItem>
+                  <SelectItem value="one_time">{i18n.t('lists.ponctuel')}</SelectItem>
+                  <SelectItem value="custom">{i18n.t('lists.personnalise')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Couleur</Label>
+              <Label>{i18n.t('lists.couleur')}</Label>
               <div className="flex gap-2 mt-2">
                 {colorOptions.map((color) => (
                   <button
@@ -183,7 +184,7 @@ export const ShoppingListDialogs = ({
       <Dialog open={!!showDeleteConfirm} onOpenChange={() => setShowDeleteConfirm(null)}>
         <DialogContent className="bg-[#0A0E17] border-white/10 text-white">
           <DialogHeader>
-            <DialogTitle>Supprimer la liste ?</DialogTitle>
+            <DialogTitle>{i18n.t('lists.supprimer_la_liste')}</DialogTitle>
             <DialogDescription className="text-white/60">
               Cette action est irréversible. Tous les produits de cette liste seront perdus.
             </DialogDescription>

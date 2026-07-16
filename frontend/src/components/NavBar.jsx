@@ -14,6 +14,7 @@ import NavigationHistoryDropdown from './NavigationHistoryDropdown';
 import QuickShortcuts from './QuickShortcuts';
 import { useFavorites } from './FavoriteButton';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 // Favorites nav button with count
 function FavoritesNavButton() {
@@ -24,7 +25,7 @@ function FavoritesNavButton() {
       to="/favoris" 
       className="relative p-2 rounded-lg hover:bg-white/[0.06] transition-colors"
       data-testid="favorites-nav-link"
-      title="Mes favoris"
+      title="Favoris"
     >
       <Heart className={`w-4 h-4 ${count > 0 ? 'text-red-400 fill-red-400' : 'text-white/70'}`} />
       {count > 0 && (
@@ -41,6 +42,7 @@ import { getNavItems } from './navbar/navItems';
 import { UserMenu } from './navbar/UserMenu';
 
 const NavBar = ({ variant = 'default' }) => {
+  const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -135,7 +137,7 @@ const NavBar = ({ variant = 'default' }) => {
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {item.label}
+                  {item.label.startsWith('nav.') ? t(item.label) : item.label}
                 </Link>
               );
             })}
@@ -188,6 +190,7 @@ const NavBar = ({ variant = 'default' }) => {
                   setShowUserMenu={setShowUserMenu}
                   handleLogout={handleLogout}
                   unreadCount={unreadCount}
+                  t={t}
                 />
               </>
             ) : (
@@ -195,13 +198,13 @@ const NavBar = ({ variant = 'default' }) => {
                 <Link to="/connexion">
                   <button className="btn-ghost inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium">
                     <LogIn className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Connexion</span>
+                    <span className="hidden sm:inline">{t('nav.login')}</span>
                   </button>
                 </Link>
                 <Link to="/adhesion">
                   <button className="btn-gold inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium">
                     <User className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Adhérer</span>
+                    <span className="hidden sm:inline">{t('footer.join')}</span>
                   </button>
                 </Link>
               </div>
@@ -232,7 +235,7 @@ const NavBar = ({ variant = 'default' }) => {
           >
             {isAuthenticated && user && (
               <div className="p-3 mb-3 rounded-xl bg-white/[0.04] border border-white/10">
-                <p className="text-sm font-medium text-white">{user.contact_name || 'Utilisateur'}</p>
+                <p className="text-sm font-medium text-white">{user.contact_name || t('nav.user')}</p>
                 <p className="text-xs text-white/50">{user.email}</p>
               </div>
             )}
@@ -253,7 +256,7 @@ const NavBar = ({ variant = 'default' }) => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Icon className="w-4 h-4" />
-                    {item.label}
+                    {item.label.startsWith('nav.') ? t(item.label) : item.label}
                   </Link>
                 );
               })}
@@ -262,7 +265,7 @@ const NavBar = ({ variant = 'default' }) => {
             {isAuthenticated && (nav.dropdown.buyer.length > 0 || nav.dropdown.admin.length > 0) && (
               <>
                 <div className="mt-3 pt-3 border-t border-white/10">
-                  <p className="text-[10px] uppercase tracking-wider text-white/40 px-4 pb-2 font-semibold">Mon compte</p>
+                  <p className="text-[10px] uppercase tracking-wider text-white/40 px-4 pb-2 font-semibold">{t('nav.my_account')}</p>
                   {nav.dropdown.buyer.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -273,14 +276,14 @@ const NavBar = ({ variant = 'default' }) => {
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         <Icon className="w-4 h-4" />
-                        {item.label}
+                        {item.label.startsWith('nav.') ? t(item.label) : item.label}
                       </Link>
                     );
                   })}
                 </div>
                 {nav.dropdown.vendor.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-white/10">
-                    <p className="text-[10px] uppercase tracking-wider text-white/40 px-4 pb-2 font-semibold">Vendeur</p>
+                    <p className="text-[10px] uppercase tracking-wider text-white/40 px-4 pb-2 font-semibold">{t('nav.vendor')}</p>
                     {nav.dropdown.vendor.map((item) => {
                       const Icon = item.icon;
                       return (
@@ -291,7 +294,7 @@ const NavBar = ({ variant = 'default' }) => {
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
                           <Icon className="w-4 h-4" />
-                          {item.label}
+                          {item.label.startsWith('nav.') ? t(item.label) : item.label}
                         </Link>
                       );
                     })}
@@ -299,7 +302,7 @@ const NavBar = ({ variant = 'default' }) => {
                 )}
                 {nav.dropdown.admin.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-white/10">
-                    <p className="text-[10px] uppercase tracking-wider text-[#D9B35A]/70 px-4 pb-2 font-semibold">Administration</p>
+                    <p className="text-[10px] uppercase tracking-wider text-[#D9B35A]/70 px-4 pb-2 font-semibold">{t('nav.administration')}</p>
                     {nav.dropdown.admin.map((item) => {
                       const Icon = item.icon;
                       return (
@@ -310,7 +313,7 @@ const NavBar = ({ variant = 'default' }) => {
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
                           <Icon className="w-4 h-4" />
-                          {item.label}
+                          {item.label.startsWith('nav.') ? t(item.label) : item.label}
                         </Link>
                       );
                     })}
@@ -329,20 +332,20 @@ const NavBar = ({ variant = 'default' }) => {
                   className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl w-full"
                 >
                   <LogOut className="w-4 h-4" />
-                  Déconnexion
+                  {t('nav.logout')}
                 </button>
               ) : (
                 <div className="flex flex-col gap-2">
                   <Link to="/connexion" onClick={() => setIsMobileMenuOpen(false)}>
                     <button className="btn-ghost w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold">
                       <LogIn className="w-4 h-4" />
-                      Connexion
+                      {t('nav.login')}
                     </button>
                   </Link>
                   <Link to="/adhesion" onClick={() => setIsMobileMenuOpen(false)}>
                     <button className="btn-gold w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold">
                       <User className="w-4 h-4" />
-                      Adhérer
+                      {t('footer.join')}
                     </button>
                   </Link>
                 </div>

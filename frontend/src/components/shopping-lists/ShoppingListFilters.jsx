@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { Search, RefreshCw, Calendar } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -39,13 +40,13 @@ export const ShoppingListFilters = ({
                   <SelectValue placeholder="Fréquence" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes fréquences</SelectItem>
-                  <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                  <SelectItem value="biweekly">Bi-mensuel</SelectItem>
-                  <SelectItem value="monthly">Mensuel</SelectItem>
-                  <SelectItem value="quarterly">Trimestriel</SelectItem>
-                  <SelectItem value="one_time">Ponctuel</SelectItem>
-                  <SelectItem value="custom">Personnalisé</SelectItem>
+                  <SelectItem value="all">{i18n.t('lists.toutes_frequences')}</SelectItem>
+                  <SelectItem value="weekly">{i18n.t('lists.hebdomadaire')}</SelectItem>
+                  <SelectItem value="biweekly">{i18n.t('lists.bi_mensuel')}</SelectItem>
+                  <SelectItem value="monthly">{i18n.t('lists.mensuel')}</SelectItem>
+                  <SelectItem value="quarterly">{i18n.t('lists.trimestriel')}</SelectItem>
+                  <SelectItem value="one_time">{i18n.t('lists.ponctuel')}</SelectItem>
+                  <SelectItem value="custom">{i18n.t('lists.personnalise')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -55,10 +56,10 @@ export const ShoppingListFilters = ({
                   <SelectValue placeholder="Trier par" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="created_at">Date création</SelectItem>
-                  <SelectItem value="last_used_at">Dernière utilisation</SelectItem>
-                  <SelectItem value="use_count">Plus utilisées</SelectItem>
-                  <SelectItem value="name">Nom A-Z</SelectItem>
+                  <SelectItem value="created_at">{i18n.t('lists.date_creation')}</SelectItem>
+                  <SelectItem value="last_used_at">{i18n.t('lists.derniere_utilisation')}</SelectItem>
+                  <SelectItem value="use_count">{i18n.t('lists.plus_utilisees')}</SelectItem>
+                  <SelectItem value="name">{i18n.t('lists.nom_a_z')}</SelectItem>
                 </SelectContent>
               </Select>
 

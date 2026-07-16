@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '../components/ui/input';
@@ -12,6 +13,7 @@ import { authAPI } from '../services/api';
 import PreselectedRelayBadge from '../components/PreselectedRelayBadge';
 
 const RegisterPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedPlan = searchParams.get('plan') || '';
@@ -61,12 +63,12 @@ const RegisterPage = () => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Les mots de passe ne correspondent pas');
+      toast.error(t('auth.passwords_mismatch'));
       return;
     }
     
     if (!formData.acceptTerms) {
-      toast.error('Veuillez accepter les conditions générales');
+      toast.error(t('auth.accept_terms_error'));
       return;
     }
     
@@ -78,10 +80,10 @@ const RegisterPage = () => {
         phone: getFullPhoneNumber(),
       };
       await authAPI.register(submitData);
-      toast.success('Compte créé avec succès !');
+      toast.success(t('auth.account_created'));
       navigate('/connexion');
     } catch (error) {
-      toast.error(error.message || 'Erreur lors de la création du compte');
+      toast.error(error.message || t('auth.account_creation_error'));
     } finally {
       setIsLoading(false);
     }
@@ -124,8 +126,8 @@ const RegisterPage = () => {
                 style={{ filter: 'drop-shadow(0 3px 10px rgba(212,175,55,0.45))' }}
               />
             </div>
-            <h1 className="text-2xl font-bold">Créer un compte</h1>
-            <p className="text-white/60 text-sm mt-1">Rejoignez la centrale d'achats B2B ESS</p>
+            <h1 className="text-2xl font-bold">{t('auth.create_account')}</h1>
+            <p className="text-white/60 text-sm mt-1">{t('auth.register_subtitle')}</p>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -139,13 +141,13 @@ const RegisterPage = () => {
               
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="companyName" className="text-white/80 text-sm">Raison sociale *</Label>
+                  <Label htmlFor="companyName" className="text-white/80 text-sm">{t('auth.company_name')} *</Label>
                   <Input
                     id="companyName"
                     name="companyName"
                     value={formData.companyName}
                     onChange={handleChange}
-                    placeholder="Nom de l'entreprise"
+                    placeholder={t('auth.company_placeholder')}
                     required
                     className="h-11 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50"
                   />
@@ -218,7 +220,7 @@ const RegisterPage = () => {
                     name="contactName"
                     value={formData.contactName}
                     onChange={handleChange}
-                    placeholder="Prénom Nom"
+                    placeholder={t('auth.fullname_placeholder')}
                     required
                     className="h-11 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50"
                   />
@@ -277,7 +279,7 @@ const RegisterPage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white/80 text-sm">Email professionnel *</Label>
+                <Label htmlFor="email" className="text-white/80 text-sm">{t('auth.professional_email')} *</Label>
                 <Input
                   id="email"
                   name="email"
@@ -308,7 +310,7 @@ const RegisterPage = () => {
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleChange}
-                      placeholder="Min. 8 caractères"
+                      placeholder={t('auth.password_min')}
                       required
                       minLength={8}
                       className="h-11 pr-11 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50"
@@ -332,7 +334,7 @@ const RegisterPage = () => {
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      placeholder="Confirmer le mot de passe"
+                      placeholder={t('auth.confirm_password_placeholder')}
                       required
                       className="h-11 pr-11 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50"
                     />
@@ -351,13 +353,13 @@ const RegisterPage = () => {
 
             {/* Plan Selection */}
             <div className="space-y-3">
-              <Label className="text-white/80 text-sm">Formule d'abonnement O'SCOP</Label>
+              <Label className="text-white/80 text-sm">{t('auth.oscop_plan')}</Label>
               <Select 
                 value={formData.plan} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, plan: value }))}
               >
                 <SelectTrigger className="h-11 bg-white/[0.04] border-white/10 text-white rounded-xl focus:border-[#D9B35A]/50">
-                  <SelectValue placeholder="Sélectionnez une formule" />
+                  <SelectValue placeholder={t('auth.select_plan')} />
                 </SelectTrigger>
                 <SelectContent className="bg-[#0d1117] border-white/10">
                   {subscriptionPlans.map((plan) => (
@@ -393,7 +395,7 @@ const RegisterPage = () => {
                 className="border-white/20 data-[state=checked]:bg-[#D9B35A] data-[state=checked]:border-[#D9B35A]"
               />
               <Label htmlFor="acceptTerms" className="text-sm text-white/60 cursor-pointer">
-                J'accepte les <a href="#" className="text-[#D9B35A] hover:underline">conditions générales</a> et la <a href="#" className="text-[#D9B35A] hover:underline">politique de confidentialité</a>
+                {t('auth.accept_terms_1')} <a href="#" className="text-[#D9B35A] hover:underline">{t('auth.terms')}</a> {t('auth.accept_terms_2')} <a href="#" className="text-[#D9B35A] hover:underline">{t('auth.privacy_policy')}</a>
               </Label>
             </div>
 
@@ -405,18 +407,18 @@ const RegisterPage = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Création en cours...
+                  {t('auth.creating')}
                 </>
               ) : (
                 <>
                   <UserPlus className="w-4 h-4" />
-                  Créer mon compte
+                  {t('auth.create_my_account')}
                 </>
               )}
             </button>
             
             <p className="text-center text-sm text-white/60">
-              Déjà un compte ? <Link to="/connexion" className="text-[#D9B35A] hover:text-[#F2D07A] font-medium">Se connecter</Link>
+              {t('auth.already_account')} <Link to="/connexion" className="text-[#D9B35A] hover:text-[#F2D07A] font-medium">{t('auth.sign_in')}</Link>
             </p>
           </form>
         </div>

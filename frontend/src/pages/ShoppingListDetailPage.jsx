@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
@@ -210,7 +211,7 @@ export default function ShoppingListDetailPage() {
         <main className="pt-24 pb-16">
           <div className="max-w-4xl mx-auto px-4 py-20 text-center">
             <div className="w-10 h-10 border-2 border-[#D9B35A] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-white/50">Chargement de la liste...</p>
+            <p className="text-white/50">{i18n.t('lists.chargement_de_la_liste')}</p>
           </div>
         </main>
       </div>
@@ -264,7 +265,7 @@ export default function ShoppingListDetailPage() {
                 className="border-white/20"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Ajouter
+                {i18n.t('favorites.ajouter')}
               </Button>
               <Button
                 onClick={handleUseList}
@@ -272,7 +273,7 @@ export default function ShoppingListDetailPage() {
                 disabled={list.items_count === 0}
               >
                 <Play className="w-4 h-4 mr-2" />
-                Utiliser
+                {i18n.t('lists.utiliser')}
               </Button>
             </div>
           </div>
@@ -314,7 +315,7 @@ export default function ShoppingListDetailPage() {
                   className="bg-[#D9B35A] hover:bg-[#C9A34A] text-black"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Ajouter des produits
+                  {i18n.t('lists.ajouter_des_produits')}
                 </Button>
               </div>
             ) : (
@@ -356,7 +357,7 @@ export default function ShoppingListDetailPage() {
                       <p className="font-bold text-[#D9B35A]">
                         {formatPrice(item.price_ht_cents)}
                       </p>
-                      <p className="text-xs text-white/40">HT / unité</p>
+                      <p className="text-xs text-white/40">{i18n.t('lists.ht_unite')}</p>
                     </div>
 
                     {/* Quantity */}
@@ -384,7 +385,7 @@ export default function ShoppingListDetailPage() {
                       <p className="font-bold">
                         {formatPrice((item.price_ht_cents || 0) * item.quantity)}
                       </p>
-                      <p className="text-xs text-white/40">Sous-total</p>
+                      <p className="text-xs text-white/40">{i18n.t('lists.sous_total')}</p>
                     </div>
 
                     {/* Remove */}
@@ -403,7 +404,7 @@ export default function ShoppingListDetailPage() {
             {/* Total */}
             {list.items_count > 0 && (
               <div className="p-4 border-t border-white/[0.06] flex items-center justify-between">
-                <span className="text-white/60">Total HT estimé</span>
+                <span className="text-white/60">{i18n.t('lists.total_ht_estime')}</span>
                 <span className="text-2xl font-bold text-[#D9B35A]">
                   {formatPrice(list.total_ht_cents)}
                 </span>
@@ -419,7 +420,7 @@ export default function ShoppingListDetailPage() {
       <Dialog open={showAddProducts} onOpenChange={setShowAddProducts}>
         <DialogContent className="bg-[#0A0E17] border-white/10 text-white max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Ajouter des produits</DialogTitle>
+            <DialogTitle>{i18n.t('lists.ajouter_des_produits')}</DialogTitle>
           </DialogHeader>
           
           {/* Search */}
@@ -483,7 +484,7 @@ export default function ShoppingListDetailPage() {
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowAddProducts(false)}>
-              Fermer
+              {i18n.t('lists.fermer')}
             </Button>
           </DialogFooter>
         </DialogContent>

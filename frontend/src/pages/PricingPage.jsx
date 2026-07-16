@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import NavBar from '../components/NavBar';
@@ -15,61 +16,61 @@ const TIERS = [
   {
     id: 'ess-acces-pro',
     name: 'ESS ACCÈS PRO',
-    tagline: 'Démarrage coopératif',
+    tagline: i18n.t('pricing.demarrage_cooperatif'),
     price: 149,
-    period: 'HT / mois',
+    period: i18n.t('offers.ht_mois'),
     accent: '#5B2E8C',
     accentSoft: 'rgba(76,42,110,0.08)',
     accentBorder: 'rgba(76,42,110,0.22)',
     features: [
-      { icon: Package, label: 'Accès à la centrale d\'achats KDMARCHE B2B' },
-      { icon: MapPin, label: '1 zone géographique incluse' },
-      { icon: TrendingUp, label: 'Accès aux prix structurels mutualisés' },
-      { icon: Wallet, label: 'Wallet crédits de base' },
+      { icon: Package, label: i18n.t('pricing.acces_a_la_centrale') },
+      { icon: MapPin, label: i18n.t('pricing.1_zone_geographique_incluse') },
+      { icon: TrendingUp, label: i18n.t('pricing.acces_aux_prix_structurels') },
+      { icon: Wallet, label: i18n.t('pricing.wallet_credits_de_base') },
     ],
-    cta: 'S\'inscrire',
+    cta: i18n.t('pricing.s_inscrire'),
     ctaLink: '/adhesion?plan=ess-acces-pro',
     recommended: false,
   },
   {
     id: 'ess-volume-pro',
     name: 'ESS VOLUME PRO',
-    tagline: 'Le choix des membres actifs',
+    tagline: i18n.t('pricing.le_choix_des_membres'),
     price: 349,
-    period: 'HT / mois',
+    period: i18n.t('offers.ht_mois'),
     accent: '#D9B35A',
     accentSoft: 'rgba(217,179,90,0.10)',
     accentBorder: 'rgba(217,179,90,0.35)',
     features: [
-      { icon: TrendingUp, label: 'Accès prioritaire aux volumes' },
-      { icon: Package, label: 'Accès élargi aux gammes KDMARCHE' },
-      { icon: Wallet, label: 'Wallet crédits renforcé' },
-      { icon: HeartHandshake, label: 'Accès multi-catégories' },
-      { icon: Sparkles, label: 'Reporting d\'usage' },
-      { icon: MapPin, label: 'Accès promos flash de la zone' },
+      { icon: TrendingUp, label: i18n.t('pricing.acces_prioritaire_aux_volumes') },
+      { icon: Package, label: i18n.t('pricing.acces_elargi_aux_gammes') },
+      { icon: Wallet, label: i18n.t('pricing.wallet_credits_renforce') },
+      { icon: HeartHandshake, label: i18n.t('pricing.acces_multi_categories') },
+      { icon: Sparkles, label: i18n.t('pricing.reporting_d_usage') },
+      { icon: MapPin, label: i18n.t('pricing.acces_promos_flash_de') },
     ],
-    cta: 'S\'inscrire maintenant',
+    cta: i18n.t('offers.s_inscrire_maintenant'),
     ctaLink: '/adhesion?plan=ess-volume-pro',
     recommended: true,
   },
   {
     id: 'ess-impact-pro',
     name: 'ESS IMPACT PRO',
-    tagline: 'Coopérative en projet',
+    tagline: i18n.t('pricing.cooperative_en_projet'),
     price: 749,
-    period: 'HT / mois',
+    period: i18n.t('offers.ht_mois'),
     accent: '#4a1776',
     accentSoft: 'rgba(74,23,118,0.08)',
     accentBorder: 'rgba(74,23,118,0.28)',
     features: [
-      { icon: MapPin, label: 'Accès multi-zones' },
-      { icon: Users, label: 'Accès projets collectifs' },
-      { icon: LineChart, label: 'Reporting ESS / impact' },
-      { icon: HeartHandshake, label: 'Appui structuration coopérative' },
-      { icon: ShieldCheck, label: 'Accompagnement compliance ESS' },
-      { icon: Handshake, label: 'Contact dédié référent réseau' },
+      { icon: MapPin, label: i18n.t('pricing.acces_multi_zones') },
+      { icon: Users, label: i18n.t('pricing.acces_projets_collectifs') },
+      { icon: LineChart, label: i18n.t('pricing.reporting_ess_impact') },
+      { icon: HeartHandshake, label: i18n.t('pricing.appui_structuration_cooperative') },
+      { icon: ShieldCheck, label: i18n.t('pricing.accompagnement_compliance_ess') },
+      { icon: Handshake, label: i18n.t('pricing.contact_dedie_referent_reseau') },
     ],
-    cta: 'S\'inscrire',
+    cta: i18n.t('pricing.s_inscrire'),
     ctaLink: '/adhesion?plan=ess-impact-pro',
     recommended: false,
   },
@@ -93,18 +94,17 @@ const PricingPage = () => {
             data-testid="pricing-badge"
           >
             <Sparkles className="w-3 h-3" />
-            Abonnements O&apos;SCOP
+            {i18n.t('offers.abonnements_o_scop')}
           </span>
           <h1
             className="text-4xl sm:text-5xl lg:text-6xl font-serif font-semibold text-[#2A1045] leading-[1.05] mb-4"
             style={{ fontFamily: '"Playfair Display", serif' }}
             data-testid="pricing-title"
           >
-            Accès Pro <span className="text-[#D9B35A]">Mutualisé</span>
+            {i18n.t('landing.acces_pro')} <span className="text-[#D9B35A]">{i18n.t('pricing.mutualise')}</span>
           </h1>
           <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
-            Choisissez votre accès à la Centrale : prix structurels B2B mutualisés via KDMARCHE, dans un cadre
-            coopératif B2B2C dédié aux membres professionnels.
+            {i18n.t('pricing.choisissez_votre_acces_a')}
           </p>
         </div>
       </section>
@@ -122,10 +122,10 @@ const PricingPage = () => {
       <section className="pb-16 px-4">
         <div className="max-w-5xl mx-auto grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { icon: ShieldCheck, title: 'Sécurisé', desc: 'RGPD · SSL · Wallet certifié' },
-            { icon: Handshake, title: 'Mutualisé', desc: 'Conditions issues du collectif' },
-            { icon: HeartHandshake, title: 'Coopératif', desc: 'Modèle éthique et solidaire' },
-            { icon: TrendingUp, title: 'Performant', desc: 'Solutions et services sélectionnés' },
+            { icon: ShieldCheck, title: i18n.t('landing.securise'), desc: i18n.t('pricing.rgpd_ssl_wallet_certifie') },
+            { icon: Handshake, title: i18n.t('pricing.mutualise'), desc: i18n.t('landing.conditions_issues_du_collectif') },
+            { icon: HeartHandshake, title: i18n.t('landing.cooperatif'), desc: i18n.t('landing.modele_ethique_et_solidaire') },
+            { icon: TrendingUp, title: i18n.t('landing.performant'), desc: i18n.t('pricing.solutions_et_services_selectionnes') },
           ].map((f) => {
             const Icon = f.icon;
             return (
@@ -150,29 +150,25 @@ const PricingPage = () => {
       <section className="pb-24 px-4">
         <div className="max-w-3xl mx-auto p-8 rounded-2xl bg-white/80 border border-[#D9B35A]/25 backdrop-blur-sm">
           <h3 className="text-xl font-serif font-semibold text-[#2A1045] mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>
-            Questions fréquentes
+            {i18n.t('pricing.questions_frequentes')}
           </h3>
           <div className="space-y-4 text-sm">
             <div>
-              <p className="font-semibold text-[#2A1045]">Puis-je changer de formule à tout moment ?</p>
+              <p className="font-semibold text-[#2A1045]">{i18n.t('pricing.puis_je_changer_de')}</p>
               <p className="text-slate-600 mt-1">
-                Oui, changement de formule possible chaque mois. L&apos;écart tarifaire est calculé au prorata et
-                imputé au wallet crédits.
+                {i18n.t('pricing.oui_changement_de_formule')}
               </p>
             </div>
             <div>
-              <p className="font-semibold text-[#2A1045]">Qui peut adhérer ?</p>
+              <p className="font-semibold text-[#2A1045]">{i18n.t('pricing.qui_peut_adherer')}</p>
               <p className="text-slate-600 mt-1">
-                Toute structure professionnelle (SIRET obligatoire) : coopératives, associations ESS, PME, artisans,
-                restaurateurs, épiceries, collectivités.
+                {i18n.t('pricing.qui_peut_adherer_answer')}
               </p>
             </div>
             <div>
-              <p className="font-semibold text-[#2A1045]">Comment se calculent les prix mutualisés ?</p>
+              <p className="font-semibold text-[#2A1045]">{i18n.t('pricing.comment_se_calculent_les')}</p>
               <p className="text-slate-600 mt-1">
-                Les prix résultent de la force collective des membres : volumes agrégés, contributions et services
-                mutualisés du réseau. Il ne s&apos;agit ni de remises, ni de promotions, mais de <strong>conditions
-                économiques structurelles</strong>.
+                {i18n.t('pricing.comment_answer')}
               </p>
             </div>
           </div>
@@ -183,14 +179,14 @@ const PricingPage = () => {
               style={{ background: 'linear-gradient(135deg, #5B2E8C 0%, #451F6B 100%)' }}
               data-testid="cta-adhesion"
             >
-              Adhérer à la Centrale
+              {i18n.t('landing.adherer_a_la_centrale')}
             </Link>
             <Link
               to="/#contact"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#4a1776] border border-[#4a1776]/25 hover:bg-[#4a1776]/5"
               data-testid="cta-contact"
             >
-              Parler à un conseiller
+              {i18n.t('pricing.parler_a_un_conseiller')}
             </Link>
           </div>
         </div>
@@ -215,7 +211,7 @@ const PricingCard = ({ tier }) => {
           style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)' }}
           data-testid="pricing-recommended-badge"
         >
-          Recommandé
+          {i18n.t('offers.recommande')}
         </span>
       )}
       <div>
@@ -231,7 +227,7 @@ const PricingCard = ({ tier }) => {
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-semibold mb-3"
           style={{ background: tier.accentSoft, color: tier.accent }}
         >
-          Mensuel
+          {i18n.t('lists.mensuel')}
         </div>
 
         <div className="flex items-baseline gap-1 mb-6">
