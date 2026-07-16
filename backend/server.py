@@ -328,6 +328,11 @@ set_favorites_alerts_database(db)
 set_stock_admin_database(db)
 app.include_router(stock_admin_router)
 
+# Centre d'alertes favoris (préférences par produit + historique)
+from routes_favorites_alerts_center import favorites_alerts_center_router, set_favorites_alerts_center_database
+set_favorites_alerts_center_database(db)
+app.include_router(favorites_alerts_center_router, prefix="/api")
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)

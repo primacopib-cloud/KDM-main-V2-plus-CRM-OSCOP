@@ -695,3 +695,9 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 - Testé iteration_23 : backend 10/10, frontend 7/7 (100%).
 - Compte de service `bridge@kdmarche.fr` à créer côté CRM par l'utilisateur (login refusé actuellement, admin@felixia.fr utilisé en attendant — basculer via .env).
 - Restant : corriger upload GED côté CRM distant, connecter les 7 autres apps (1 adaptateur + .env chacune), test Stripe LIVE 1€ (attente utilisateur).
+
+### 2026-06 — Centre d'alertes favoris (acheteur) — TERMINÉ
+- Page `/alertes-favoris` (FavoriteAlertsPage.jsx) : liste des favoris avec switch alertes ON/OFF par produit + historique des alertes reçues (restock/promo). Lien menu acheteur « Alertes favoris ».
+- Backend `routes_favorites_alerts_center.py` : GET /api/user-prefs/favorites/alerts-center, PUT /api/user-prefs/favorites/{product_id}/alerts. `favorites_alerts.py` respecte `alerts_enabled` (testé : OFF → 0 notifié).
+- i18n fr/en/es (`fav_alerts.*` + nav.favorite_alerts).
+- Auto-testé (curl e2e + screenshot). Les 7 autres apps à connecter : l'utilisateur fournira la liste plus tard.

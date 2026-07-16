@@ -347,5 +347,19 @@
     "bon_commande": "Orden de compra",
     "fiche_produit": "Ficha de producto",
     "statistiques": "Estadísticas"
+  },
+  "fav_alerts": {
+    "title": "Alertas de favoritos",
+    "subtitle": "Consulta todas tus alertas (reposición, promos) y gestiónalas por producto.",
+    "refresh": "Actualizar",
+    "prefs_title": "Mis productos favoritos — alertas",
+    "no_favorites": "Aún no tienes favoritos.",
+    "browse_catalog": "Explorar el catálogo",
+    "alerts_on": "Alertas activadas",
+    "alerts_off": "Alertas desactivadas",
+    "toast_on": "Alertas activadas para este producto",
+    "toast_off": "Alertas desactivadas para este producto",
+    "history_title": "Historial de alertas",
+    "no_alerts": "Sin alertas recibidas todavía."
   }
 }

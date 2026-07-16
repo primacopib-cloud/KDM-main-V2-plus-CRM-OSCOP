@@ -347,5 +347,19 @@
     "bon_commande": "Bon de commande",
     "fiche_produit": "Fiche produit",
     "statistiques": "Statistiques"
+  },
+  "fav_alerts": {
+    "title": "Alertes favoris",
+    "subtitle": "Retrouvez toutes vos alertes (retour en stock, promos) et gérez-les produit par produit.",
+    "refresh": "Actualiser",
+    "prefs_title": "Mes produits favoris — alertes",
+    "no_favorites": "Vous n'avez pas encore de favoris.",
+    "browse_catalog": "Parcourir le catalogue",
+    "alerts_on": "Alertes activées",
+    "alerts_off": "Alertes coupées",
+    "toast_on": "Alertes activées pour ce produit",
+    "toast_off": "Alertes coupées pour ce produit",
+    "history_title": "Historique des alertes reçues",
+    "no_alerts": "Aucune alerte reçue pour l'instant."
   }
 }

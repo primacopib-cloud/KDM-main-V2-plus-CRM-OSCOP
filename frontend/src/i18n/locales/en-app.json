@@ -347,5 +347,19 @@
     "bon_commande": "Purchase order",
     "fiche_produit": "Product sheet",
     "statistiques": "Statistics"
+  },
+  "fav_alerts": {
+    "title": "Favorite alerts",
+    "subtitle": "See all your alerts (restock, promos) and manage them per product.",
+    "refresh": "Refresh",
+    "prefs_title": "My favorite products — alerts",
+    "no_favorites": "You have no favorites yet.",
+    "browse_catalog": "Browse the catalog",
+    "alerts_on": "Alerts on",
+    "alerts_off": "Alerts off",
+    "toast_on": "Alerts enabled for this product",
+    "toast_off": "Alerts disabled for this product",
+    "history_title": "Alerts history",
+    "no_alerts": "No alerts received yet."
   }
 }

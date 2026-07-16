@@ -56,6 +56,7 @@ import StripeReconciliationPage from "./pages/StripeReconciliationPage";
 import GedBridgeAdminPage from "./pages/GedBridgeAdminPage";
 import FinanceBridgeAdminPage from "./pages/FinanceBridgeAdminPage";
 import ConnectorsAdminPage from "./pages/ConnectorsAdminPage";
+import FavoriteAlertsPage from "./pages/FavoriteAlertsPage";
 import LogiscopPage from "./pages/LogiscopPage";
 import OscopPage from "./pages/OscopPage";
 
@@ -132,6 +133,7 @@ function App() {
           {/* Favorites */}
           <Route path="/favoris" element={<FavoritesPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/alertes-favoris" element={<FavoriteAlertsPage />} />
           {/* Shopping Lists */}
           <Route path="/listes-achats" element={<ShoppingListsPage />} />
           <Route path="/shopping-lists" element={<ShoppingListsPage />} />

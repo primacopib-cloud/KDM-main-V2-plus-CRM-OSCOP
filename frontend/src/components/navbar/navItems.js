@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ShoppingCart, Package, FileText,
   Wallet, Users, Shield, BarChart3,
-  Store, Building2, MapPin, CreditCard, Home, Truck, HeartHandshake, Server, Settings, Plug,
+  Store, Building2, MapPin, CreditCard, Home, Truck, HeartHandshake, Server, Settings, Plug, Heart,
 } from 'lucide-react';
 
 export const getNavItems = (userRole, isAdmin) => {
@@ -29,6 +29,7 @@ export const getNavItems = (userRole, isAdmin) => {
         { href: '/wallet', label: 'nav.wallet', icon: Wallet },
         { href: '/documents', label: 'nav.documents', icon: FileText },
         { href: '/listes-achats', label: 'nav.shopping_lists', icon: ShoppingCart },
+        { href: '/alertes-favoris', label: 'nav.favorite_alerts', icon: Heart },
       ],
       vendor: userRole === 'vendor' || isAdmin ? [
         { href: '/espace-vendeur', label: 'nav.vendor_space', icon: Store },

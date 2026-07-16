@@ -55,7 +55,8 @@
     "my_account": "Mon compte",
     "vendor": "Vendeur",
     "administration": "Administration",
-    "connectors": "Connecteurs"
+    "connectors": "Connecteurs",
+    "favorite_alerts": "Alertes favoris"
   },
   "footer": {
     "navigation": "Navigation",

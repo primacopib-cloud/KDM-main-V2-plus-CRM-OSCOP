@@ -49,13 +49,16 @@ async def alert_favorites(product_id: str, zone_code: str, alert_type: str, extr
     message = tpl["message"].format(**fmt)
     subject = tpl["subject"].format(**fmt)
 
-    cursor = db.user_favorites.find({"favorites.product_id": product_id}, {"_id": 0, "user_id": 1})
+    cursor = db.user_favorites.find({"favorites.product_id": product_id}, {"_id": 0, "user_id": 1, "favorites": 1})
     fav_docs = await cursor.to_list(1000)
     sent = 0
     cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
 
     for doc in fav_docs:
         user_id = doc["user_id"]
+        entry = next((f for f in doc.get("favorites", []) if f.get("product_id") == product_id), None)
+        if entry and entry.get("alerts_enabled", True) is False:
+            continue
         already = await db.favorites_alerts_log.find_one({
             "user_id": user_id, "product_id": product_id,
             "alert_type": alert_type, "sent_at": {"$gte": cutoff},
