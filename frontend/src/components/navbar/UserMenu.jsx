@@ -6,7 +6,7 @@ import {
   FileSignature, MapPin, CreditCard, Home, Heart, Truck, HeartHandshake, Server,
 } from 'lucide-react';
 
-export const UserMenu = ({ user, showUserMenu, setShowUserMenu, handleLogout }) => (
+export const UserMenu = ({ user, showUserMenu, setShowUserMenu, handleLogout, unreadCount }) => (
                 <div className="relative">
                   <button 
                     onClick={() => setShowUserMenu(!showUserMenu)}

@@ -425,6 +425,9 @@ export default function DeliveryOptionsSelector({
         setSelectedSlot={setSelectedSlot}
         deliveryAddress={deliveryAddress}
         setDeliveryAddress={setDeliveryAddress}
+        weightKg={weightKg}
+        volumeM3={volumeM3}
+        itemsCount={itemsCount}
       />
       {/* Terms Acceptance */}
       <div className="flex items-start gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/10">

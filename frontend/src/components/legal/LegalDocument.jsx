@@ -1,4 +1,5 @@
 import { ArrowLeft, FileText, Scale, Building2, CreditCard, Truck, Shield, Handshake, CheckCircle2, XCircle, Download, ChevronRight, Leaf, Package, FileSignature, Route } from 'lucide-react';
+import { Button } from '../ui/button';
 import { replaceVariables, auditComplianceTable } from '../../data/legalDocuments';
 
 export const renderContent = (content) => {

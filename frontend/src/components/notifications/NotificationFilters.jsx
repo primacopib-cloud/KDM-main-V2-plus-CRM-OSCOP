@@ -11,7 +11,7 @@ import { dateFilterOptions } from './notificationUtils';
 
 export const NotificationFilters = ({
   searchQuery, setSearchQuery, handleSearch, selectedType, setSelectedType, types,
-  dateFilter, setDateFilter, readFilter, setReadFilter, resetFilters,
+  dateFilter, setDateFilter, readFilter, setReadFilter, resetFilters, setPage,
   handleMarkAllAsRead, handleClearRead, stats, total,
 }) => (
   <>

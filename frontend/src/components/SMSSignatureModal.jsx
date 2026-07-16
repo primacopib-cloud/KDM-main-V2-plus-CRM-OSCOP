@@ -206,7 +206,7 @@ export default function SMSSignatureModal({
         {/* Content */}
         <div className="p-6">
           {/* Step: Preview */}
-          <PreviewStep step={step} documentPreview={documentPreview} documentTitle={documentTitle} documentType={documentType} signerInfo={signerInfo} loading={loading} handleDecline={handleDecline} handleInitiateSignature={handleInitiateSignature} />
+          <PreviewStep step={step} documentPreview={documentPreview} documentTitle={documentTitle} documentType={documentType} documentRef={documentRef} signerInfo={signerInfo} loading={loading} handleDecline={handleDecline} handleInitiateSignature={handleInitiateSignature} />
           {/* Step: OTP Verification */}
           {step === 'otp' && (
             <div className="space-y-6">

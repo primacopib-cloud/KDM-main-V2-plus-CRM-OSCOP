@@ -294,6 +294,8 @@ export default function ShoppingListsPage() {
             setSortBy={setSortBy}
             refreshing={refreshing}
             fetchLists={fetchLists}
+            filterFrequency={filterFrequency}
+            setFilterFrequency={setFilterFrequency}
           />
 
           {/* Lists Grid */}
@@ -454,6 +456,8 @@ export default function ShoppingListsPage() {
         handleCreate={handleCreate}
         handleUpdate={handleUpdate}
         handleDelete={handleDelete}
+        showDeleteConfirm={showDeleteConfirm}
+        setShowDeleteConfirm={setShowDeleteConfirm}
       />
     </div>
   );

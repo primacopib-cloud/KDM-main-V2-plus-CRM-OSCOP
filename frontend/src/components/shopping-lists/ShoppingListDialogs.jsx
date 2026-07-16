@@ -15,6 +15,7 @@ import { COLOR_OPTIONS } from './shoppingListConstants';
 export const ShoppingListDialogs = ({
   showCreateDialog, setShowCreateDialog, showEditDialog, setShowEditDialog,
   formData, setFormData, handleCreate, handleUpdate, handleDelete,
+  showDeleteConfirm, setShowDeleteConfirm,
 }) => {
   const colorOptions = COLOR_OPTIONS;
   return (

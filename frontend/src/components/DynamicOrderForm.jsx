@@ -447,6 +447,7 @@ const DynamicOrderForm = ({
           getPricingModeLabel={getPricingModeLabel}
           getTypeColor={getTypeColor}
           formatCurrency={formatCurrency}
+          zoneCode={zoneCode}
         />
         <TotalsAndSignatures
           calculatedTotals={calculatedTotals}

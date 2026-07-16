@@ -279,6 +279,7 @@ export default function NotificationsHistoryPage() {
             readFilter={readFilter}
             setReadFilter={setReadFilter}
             resetFilters={resetFilters}
+            setPage={setPage}
             handleMarkAllAsRead={handleMarkAllAsRead}
             handleClearRead={handleClearRead}
             stats={stats}

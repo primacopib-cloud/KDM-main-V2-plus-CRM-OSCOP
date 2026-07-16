@@ -13,7 +13,7 @@ import { formatCurrency } from './deliveryUtils';
 
 export const StandardDeliverySection = ({
   deliveryType, quote, deliverySlots, selectedSlot, setSelectedSlot,
-  deliveryAddress, setDeliveryAddress,
+  deliveryAddress, setDeliveryAddress, weightKg, volumeM3, itemsCount,
 }) => (
   <>
       {/* DELIVERY - Address & Slot Selection */}

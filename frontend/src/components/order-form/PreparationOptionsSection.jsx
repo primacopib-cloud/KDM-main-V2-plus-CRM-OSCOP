@@ -5,12 +5,13 @@ import {
 } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { replaceVariables } from '../../data/legalDocuments';
 
 export const PreparationOptionsSection = ({
   preparationOptions, selectedOptions, quantities, loading, error, calculating,
   calculatedTotals, toggleOption, updateQuantity, getPricingModeLabel,
-  getTypeColor, formatCurrency,
+  getTypeColor, formatCurrency, zoneCode,
 }) => (
   <>
         {/* ===== PREPARATION OPTIONS - ZONE BASED ===== */}

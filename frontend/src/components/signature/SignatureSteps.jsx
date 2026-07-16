@@ -13,7 +13,7 @@ import {
   Smartphone
 } from 'lucide-react';
 
-export const PreviewStep = ({ step, documentPreview, documentTitle, documentType, signerInfo, loading, handleDecline, handleInitiateSignature }) => (
+export const PreviewStep = ({ step, documentPreview, documentTitle, documentType, documentRef, signerInfo, loading, handleDecline, handleInitiateSignature }) => (
   <>
           {step === 'preview' && (
             <div className="space-y-6">

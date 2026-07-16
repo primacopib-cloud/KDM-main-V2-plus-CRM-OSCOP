@@ -187,6 +187,7 @@ const NavBar = ({ variant = 'default' }) => {
                   showUserMenu={showUserMenu}
                   setShowUserMenu={setShowUserMenu}
                   handleLogout={handleLogout}
+                  unreadCount={unreadCount}
                 />
               </>
             ) : (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, Calendar } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import {
@@ -8,6 +8,7 @@ import {
 
 export const ShoppingListFilters = ({
   lists, searchQuery, setSearchQuery, sortBy, setSortBy, refreshing, fetchLists,
+  filterFrequency, setFilterFrequency,
 }) => (
   <>
           {/* Filters */}
