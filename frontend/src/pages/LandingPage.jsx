@@ -63,6 +63,16 @@ const LandingPage = () => {
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </Link>
+                <Link to="/tarifs">
+                  <button
+                    className="force-white inline-flex items-center justify-center gap-2.5 rounded-[14px] px-4 py-3 text-sm font-semibold text-white shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #5B2E8C 0%, #2A1045 100%)' }}
+                    data-testid="hero-cta-acces-pro"
+                  >
+                    Découvrir l&apos;Accès Pro Mutualisé
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </Link>
                 <button 
                   className="btn-ghost inline-flex items-center justify-center gap-2.5 rounded-[14px] px-4 py-3 text-sm font-semibold"
                   onClick={downloadOffer}
@@ -375,7 +385,7 @@ export const CooperativeApiSection = () => {
   return (
     <section
       id="cooperative-api"
-      className="py-16 px-5 relative"
+      className="on-dark py-16 px-5 relative"
       style={{
         background:
           'radial-gradient(1000px 500px at 10% 0%, rgba(245,166,35,0.10), transparent 60%), ' +
@@ -463,48 +473,24 @@ export const CooperativeApiSection = () => {
             </div>
           </div>
 
-          {/* RIGHT: schema visuel (API JSON) */}
+          {/* RIGHT: visuel high-tech */}
           <div className="relative">
             <div
-              className="relative rounded-2xl p-6 lg:p-7 overflow-hidden"
+              className="relative rounded-2xl overflow-hidden"
               style={{
-                background: 'linear-gradient(180deg, #1a0430 0%, #2a0c4a 100%)',
-                border: '1px solid rgba(245,166,35,0.25)',
-                boxShadow: '0 24px 64px rgba(74,23,118,0.4)',
+                border: '1px solid rgba(245,166,35,0.35)',
+                boxShadow: '0 24px 64px rgba(74,23,118,0.5)',
               }}
+              data-testid="api-hightech-visual"
             >
-              <div className="flex items-center gap-1.5 mb-4">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
-                <span className="ml-auto text-[10px] text-white/40 uppercase tracking-wider">
-                  KDMARCHE Pro API
-                </span>
-              </div>
-              <pre className="text-[13px] leading-relaxed font-mono text-white/85 overflow-x-auto">
-                <code>
-{`{
-  `}<span className="text-[#F5A623]">&quot;service_name&quot;</span>: <span className="text-[#D4AF37]">&quot;CommunityPlace Pro Cooperative API&quot;</span>,{`
-  `}<span className="text-[#F5A623]">&quot;target_users&quot;</span>: <span className="text-[#D4AF37]">&quot;membres_professionnels&quot;</span>,{`
-  `}<span className="text-[#F5A623]">&quot;access_model&quot;</span>: <span className="text-[#D4AF37]">&quot;acces_cooperatif_mutualise&quot;</span>,{`
-  `}<span className="text-[#F5A623]">&quot;pricing_basis&quot;</span>: <span className="text-[#D4AF37]">&quot;conditions_economiques_mutualisees&quot;</span>,{`
-  `}<span className="text-[#F5A623]">&quot;framework&quot;</span>: <span className="text-[#D4AF37]">&quot;B2B2C_cooperative&quot;</span>,{`
-  `}<span className="text-[#F5A623]">&quot;compliance&quot;</span>: [<span className="text-[#D4AF37]">&quot;ESS&quot;</span>, <span className="text-[#D4AF37]">&quot;RGPD&quot;</span>, <span className="text-[#D4AF37]">&quot;SSL256&quot;</span>]{`
-}`}
-                </code>
-              </pre>
-
-              {/* Access secured badge overlay */}
-              <div
-                className="absolute -top-3 -right-3 flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] uppercase tracking-wider font-bold text-white shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #4a1776 0%, #2a0c4a 100%)', border: '1px solid rgba(245,166,35,0.5)' }}
-              >
-                <ShieldCheck className="w-3 h-3 text-[#F5A623]" />
-                Accès sécurisé
-              </div>
+              <img
+                src="/images/api-hightech.webp"
+                alt="Plateforme API coopérative sécurisée KDMARCHE Pro"
+                className="w-full h-auto object-cover block"
+              />
             </div>
 
-            {/* Legend below the code block */}
+            {/* Legend below the visual */}
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
               {['Produits sélectionnés', 'Force collective', 'Coopération mutualisation'].map((t) => (
                 <div

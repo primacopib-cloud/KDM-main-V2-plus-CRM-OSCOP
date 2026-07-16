@@ -113,6 +113,9 @@ h4, h5, h6 {
   width: 8px; height: 8px; background: var(--kdm-or-metallise); transform: rotate(45deg);
 }
 
+/* Hide platform badge */
+#emergent-badge { display: none !important; }
+
 /* Premium ribbon — top-corner gold ribbon (matches the charte image) */
 .premium-ribbon-top {
   position: fixed;
@@ -383,6 +386,7 @@ input:focus, select:focus, textarea:focus {
 .on-dark h1, .on-dark h2, .on-dark h3 { color: #FFFFFF; }
 .force-white { color: #FFFFFF !important; }
 .force-white * { color: #FFFFFF !important; }
+.bg-\[\#4a1776\], .bg-\[\#5B2E8C\], .bg-\[\#2A1045\], .bg-\[\#451F6B\] { color: #FFFFFF; }
 .on-dark .border-white\/10 { border-color: rgba(255,255,255,0.12) !important; }
 .on-dark .border-white\/15 { border-color: rgba(255,255,255,0.16) !important; }
 .on-dark .border-white\/20 { border-color: rgba(255,255,255,0.22) !important; }

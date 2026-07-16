@@ -17,6 +17,7 @@ Exigences produit étendues :
 - Scaffolding i18n (FR, EN, ES)
 - **Charte graphique premium STRICTEMENT alignée sur le visuel fourni** (fond clair beige perle, accents or métallisé, typographies Playfair/Montserrat, palette Bleu Logistique #0B4D87 / Orange Énergie #FF7A00 / Violet Premium #6C4C8E / Vert Lime #8CC63E / Rose Magenta #E6007E / Rouge Corail #FF5A4A / Or Métallisé #D4AF37)
 - **MISE À JOUR (16 juin 2026)** : charte globale basculée en **Violet KDMARCHE (#5B2E8C / #2A1045 / #451F6B) + Or O'SCOP (#D4AF37)** sur TOUTES les pages (remplacement des bleus marine #0B4D87/#0B1F3B et du vert #57D19A dans 37 fichiers). Logos officiels : `/logos/kdmarche-pro.webp` (KD Marché Pro) et `/logos/oscop.webp` (Objectif SCOP Outremer), trimés et servis localement via `partners` dans `mock.js`. Menu « Tarifs » renommé « Accès Pro Mutualisé » (navbar + footer + titre page /tarifs). Classes CSS utilitaires : `.on-dark` (restaure le texte blanc sur panneaux violets) et `.force-white` (texte blanc sur boutons à fond dégradé inline).
+- **MISE À JOUR (16 juin 2026 — bis)** : section « API Coopérative B2B2C » de la landing passée en `on-dark` (texte blanc sur violet), bloc JSON « Accès sécurisé » remplacé par un visuel high-tech généré (`/images/api-hightech.webp`, bouclier holographique violet-or). CTA « Découvrir l'Accès Pro Mutualisé » ajouté dans le hero. Email de bienvenue (`send_welcome_email`) rebrandé violet-or avec logos (`FRONTEND_URL/logos/*.png`, variable `FRONTEND_URL` ajoutée au backend/.env).
 
 ## 2. Architecture
 

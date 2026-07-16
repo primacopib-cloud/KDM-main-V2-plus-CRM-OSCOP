@@ -194,7 +194,7 @@ def send_contact_notification(admin_email: str, contact_data: dict):
 
 def send_welcome_email(to: str, user_name: str, company_name: str):
     """
-    Send welcome email after registration
+    Send welcome email after registration — charte violet KDMARCHE + or O'SCOP
     """
     subject = "Bienvenue sur KDMARCHE × O'SCOP !"
     
@@ -204,22 +204,30 @@ def send_welcome_email(to: str, user_name: str, company_name: str):
     <head>
         <meta charset="utf-8">
         <style>
-            body {{ font-family: Arial, sans-serif; background-color: #070A10; color: #ffffff; padding: 40px 20px; }}
-            .container {{ max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border-radius: 22px; padding: 40px; border: 1px solid rgba(255,255,255,0.10); }}
-            .header {{ text-align: center; margin-bottom: 30px; }}
-            .header h1 {{ color: #D9B35A; font-size: 28px; margin: 0; }}
-            .content {{ color: rgba(255,255,255,0.85); line-height: 1.6; }}
-            .btn {{ display: inline-block; background: linear-gradient(135deg, #D9B35A, #F2D07A); color: #000; padding: 14px 28px; text-decoration: none; border-radius: 14px; font-weight: 600; margin: 20px 0; }}
-            .feature {{ display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(87,209,154,0.08); border-radius: 10px; margin: 10px 0; }}
-            .feature-icon {{ color: #57D19A; font-size: 20px; }}
-            .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); font-size: 12px; text-align: center; }}
+            body {{ font-family: Arial, sans-serif; background-color: #F5F1F9; color: #2A1045; padding: 40px 20px; margin: 0; }}
+            .container {{ max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 22px; overflow: hidden; border: 1px solid rgba(91,46,140,0.15); box-shadow: 0 12px 40px rgba(42,16,69,0.12); }}
+            .banner {{ background: linear-gradient(135deg, #2A1045 0%, #5B2E8C 60%, #451F6B 100%); padding: 32px 40px; text-align: center; border-bottom: 4px solid #D4AF37; }}
+            .banner .logos {{ margin-bottom: 18px; }}
+            .banner .logo-chip {{ display: inline-block; background: #FFFFFF; border-radius: 14px; padding: 8px 12px; margin: 0 6px; vertical-align: middle; }}
+            .banner img {{ height: 48px; width: auto; display: block; }}
+            .banner h1 {{ color: #D4AF37; font-size: 28px; margin: 0; }}
+            .banner p {{ color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px; }}
+            .content {{ padding: 32px 40px; color: #3A2A4E; line-height: 1.6; }}
+            .btn {{ display: inline-block; background: linear-gradient(135deg, #D4AF37, #F2D07A); color: #2A1045; padding: 14px 28px; text-decoration: none; border-radius: 14px; font-weight: 700; margin: 20px 0; }}
+            .feature {{ padding: 14px 16px; background: rgba(91,46,140,0.06); border: 1px solid rgba(91,46,140,0.12); border-radius: 10px; margin: 10px 0; color: #3A2A4E; }}
+            .feature-icon {{ color: #D4AF37; font-weight: bold; margin-right: 10px; }}
+            .footer {{ padding: 20px 40px 28px; border-top: 1px solid rgba(91,46,140,0.12); color: rgba(42,16,69,0.55); font-size: 12px; text-align: center; }}
         </style>
     </head>
     <body>
         <div class="container">
-            <div class="header">
+            <div class="banner">
+                <div class="logos">
+                    <span class="logo-chip"><img src="{FRONTEND_URL}/logos/kdmarche-pro.png" alt="KD Marché Pro"></span>
+                    <span class="logo-chip"><img src="{FRONTEND_URL}/logos/oscop.png" alt="Objectif SCOP Outremer"></span>
+                </div>
                 <h1>Bienvenue !</h1>
-                <p style="color: rgba(255,255,255,0.6); margin-top: 8px;">KDMARCHE × O'SCOP</p>
+                <p>KDMARCHE × O'SCOP — Centrale Coopérative ESS</p>
             </div>
             <div class="content">
                 <p>Bonjour {user_name},</p>
@@ -242,7 +250,7 @@ def send_welcome_email(to: str, user_name: str, company_name: str):
                 </center>
             </div>
             <div class="footer">
-                <p>KDMARCHE × O'SCOP - Centrale d'achats B2B ESS</p>
+                <p>KDMARCHE × O'SCOP - Centrale d'achats B2B ESS · Accès Pro Mutualisé</p>
             </div>
         </div>
     </body>
