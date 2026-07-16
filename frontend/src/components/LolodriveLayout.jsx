@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, Home, LogOut } from 'lucide-react';
@@ -77,10 +78,10 @@ export default function LolodriveLayout({ title, subtitle, children, actions }) 
 
       <footer className="mt-16 border-t border-white/[0.06]">
         <div className="max-w-7xl mx-auto px-6 py-6 text-xs text-white/40 flex flex-wrap justify-between gap-3">
-          <div>© 2026 KDMARCHÉ × O&apos;SCOP — Plateforme coopérative ESS</div>
+          <div>{i18n.t('adm.plateforme_cooperative')}</div>
           <div className="flex gap-4">
-            <Link to="/legal" className="hover:text-white/70">Mentions légales</Link>
-            <Link to="/legal/charte-ess" className="hover:text-white/70">Charte ESS</Link>
+            <Link to="/legal" className="hover:text-white/70">{i18n.t('footer.legal_notice')}</Link>
+            <Link to="/legal/charte-ess" className="hover:text-white/70">{i18n.t('footer.ess_charter')}</Link>
           </div>
         </div>
       </footer>
@@ -131,5 +132,5 @@ export const Badge = ({ children, color = '#D9B35A', ...rest }) => (
 
 export const fmtEUR = (cents) => {
   if (cents == null) return '—';
-  return `${(cents / 100).toFixed(2)} €`;
+  return new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'EUR' }).format(cents / 100);
 };

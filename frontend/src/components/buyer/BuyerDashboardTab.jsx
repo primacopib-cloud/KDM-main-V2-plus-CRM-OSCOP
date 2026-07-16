@@ -104,7 +104,7 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
                           </div>
                           <div className="text-right">
                             <Badge variant="outline" className={status.color}>{status.label}</Badge>
-                            <p className="text-sm font-semibold text-[#D9B35A] mt-1">{formatCurrency(order.total_ttc_cents)} TTC</p>
+                            <p className="text-sm font-semibold text-[#D9B35A] mt-1">{formatCurrency(order.total_ttc_cents)} {i18n.t('buyer.ttc')}</p>
                           </div>
                         </div>
                       );

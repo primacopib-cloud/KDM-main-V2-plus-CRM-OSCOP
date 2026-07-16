@@ -161,7 +161,7 @@ const AdminProductsPage = () => {
             {pendingCount > 0 && (
               <Badge className="bg-amber-100 text-amber-700 text-lg px-4 py-2">
                 <AlertTriangle className="w-5 h-5 mr-2" />
-                {pendingCount} en attente
+                {i18n.t('adm.en_attente_count', { count: pendingCount })}
               </Badge>
             )}
           </div>
@@ -209,7 +209,7 @@ const AdminProductsPage = () => {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <TabsList className="bg-white border">
               <TabsTrigger value="pending" className="gap-2">
-                <Clock className="w-4 h-4" /> En attente
+                <Clock className="w-4 h-4" /> {i18n.t('adm.en_attente')}
               </TabsTrigger>
               <TabsTrigger value="approved" className="gap-2">
                 <CheckCircle2 className="w-4 h-4" /> {i18n.t('adm.approuves')}
@@ -265,7 +265,7 @@ const AdminProductsPage = () => {
                               {formatCurrency(product.price_ht)} HT
                             </span>
                             <span className="text-gray-500">
-                              TVA: {product.tva_rate}%
+                              {i18n.t('adm.tva')}: {product.tva_rate}%
                             </span>
                             <span className="text-gray-500">
                               Stock: {product.stock_quantity}
@@ -306,7 +306,7 @@ const AdminProductsPage = () => {
                                 className="bg-emerald-600 hover:bg-emerald-700"
                                 onClick={() => handleApprove(product.id)}
                               >
-                                <CheckCircle2 className="w-4 h-4 mr-1" /> Approuver
+                                <CheckCircle2 className="w-4 h-4 mr-1" /> {i18n.t('adm.approuver')}
                               </Button>
                             </>
                           )}

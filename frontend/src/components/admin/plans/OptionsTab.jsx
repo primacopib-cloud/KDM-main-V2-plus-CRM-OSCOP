@@ -11,7 +11,7 @@ export const OptionsTab = ({ options, onCreate, onEdit, onDelete }) => (
         data-testid="create-option-btn"
         style={{ background: '#D9B35A', color: '#070A10' }}
       >
-        <Plus className="w-4 h-4 mr-2" /> Nouvelle option
+        <Plus className="w-4 h-4 mr-2" /> {i18n.t('adm.nouvelle_option')}
       </Button>
     </div>
     <div

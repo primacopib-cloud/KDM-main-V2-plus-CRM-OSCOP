@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { Plus, Pencil, Trash2, CheckCircle2, Star } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { formatPrice } from './shared';
@@ -10,7 +11,7 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
         data-testid="create-plan-btn"
         style={{ background: '#D9B35A', color: '#070A10' }}
       >
-        <Plus className="w-4 h-4 mr-2" /> Nouveau plan
+        <Plus className="w-4 h-4 mr-2" /> {i18n.t('adm.nouveau_plan')}
       </Button>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -29,7 +30,7 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
               className="absolute -top-3 right-4 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1"
               style={{ background: '#D9B35A', color: '#070A10' }}
             >
-              <Star className="w-3 h-3" /> Populaire
+              <Star className="w-3 h-3" /> {i18n.t('adm.populaire')}
             </div>
           )}
           <div className="flex items-start justify-between">
@@ -44,7 +45,7 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
                 color: p.active ? '#9CFF7A' : '#FF8787',
               }}
             >
-              {p.active ? 'Actif' : 'Inactif'}
+              {p.active ? i18n.t('adm.actif') : i18n.t('adm.inactif')}
             </div>
           </div>
           {p.description && (

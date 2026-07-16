@@ -136,13 +136,13 @@ const VendorSpacePage = () => {
             {/* Quick Navigation */}
             <nav className="hidden md:flex items-center gap-1 mr-4">
               <Link to="/" className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                Accueil
+                {i18n.t('nav.home')}
               </Link>
               <Link to="/espace-acheteur" className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                Espace Acheteur
+                {i18n.t('breadcrumb.espace_acheteur')}
               </Link>
               <Link to="/catalogue" className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                Catalogue
+                {i18n.t('nav.catalog')}
               </Link>
               <Link to="/superadmin" className="px-3 py-1.5 text-xs text-purple-600 hover:bg-purple-50 rounded-lg transition-colors">
                 Admin
@@ -175,13 +175,13 @@ const VendorSpacePage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white border">
             <TabsTrigger value="dashboard" className="gap-2">
-              <TrendingUp className="w-4 h-4" /> Tableau de bord
+              <TrendingUp className="w-4 h-4" /> {i18n.t('buyer.tableau_de_bord')}
             </TabsTrigger>
             <TabsTrigger value="products" className="gap-2">
-              <Package className="w-4 h-4" /> Mes produits
+              <Package className="w-4 h-4" /> {i18n.t('adm.mes_produits')}
             </TabsTrigger>
             <TabsTrigger value="orders" className="gap-2">
-              <ShoppingCart className="w-4 h-4" /> Commandes
+              <ShoppingCart className="w-4 h-4" /> {i18n.t('adm.commandes')}
             </TabsTrigger>
           </TabsList>
 
@@ -198,7 +198,7 @@ const VendorSpacePage = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-gray-500">
-                    sur {dashboard?.products?.total || 0} soumis
+                    {i18n.t('adm.sur_soumis', { count: dashboard?.products?.total || 0 })}
                   </p>
                 </CardContent>
               </Card>

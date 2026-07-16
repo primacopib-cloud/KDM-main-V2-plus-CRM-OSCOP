@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 /**
  * Floating "back to previous page" button.
  *
@@ -61,12 +62,12 @@ export default function BackButton() {
       type="button"
       onClick={handleClick}
       data-testid="back-office-back-btn"
-      aria-label="Retour à la page précédente"
-      title="Retour à la page précédente"
+      aria-label={i18n.t('common.back')}
+      title={i18n.t('common.back')}
       className="back-office-back-btn"
     >
       <ArrowLeft size={14} aria-hidden="true" />
-      <span>Retour</span>
+      <span>{i18n.t('common.back')}</span>
     </button>
   );
 }

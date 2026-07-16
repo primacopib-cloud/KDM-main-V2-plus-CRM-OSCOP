@@ -68,7 +68,7 @@ export default function LolodriveAdminDashboardPage() {
   return (
     <LolodriveLayout
       title={i18n.t('adm.dashboard_super_admin')}
-      subtitle="Pilotage global LOLODRIVE by O'SCOP — moteur transactionnel V2 + couche relationnelle CRM."
+      subtitle={i18n.t('adm.pilotage_global')}
       actions={
         <>
           <Tabs value={period} onValueChange={setPeriod}>
@@ -79,7 +79,7 @@ export default function LolodriveAdminDashboardPage() {
             </TabsList>
           </Tabs>
           <Button variant="outline" size="sm" onClick={() => load()} data-testid="refresh-btn">
-            <RefreshCw className="w-4 h-4 mr-2" /> Actualiser
+            <RefreshCw className="w-4 h-4 mr-2" /> {i18n.t('adm.actualiser')}
           </Button>
           <Button size="sm" onClick={rebuildCRM} data-testid="rebuild-crm-btn"
             style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
@@ -94,7 +94,7 @@ export default function LolodriveAdminDashboardPage() {
           {/* KPI primaires */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <KpiCard testId="kpi-pass-active" label={i18n.t('adm.pass_actifs')} value={kpi.pass_active} sub={i18n.t('adm.a_l_instant_t')} icon={Ticket} accent="#D9B35A" />
-            <KpiCard testId="kpi-orders-count" label={`Commandes (${PERIODS[period].label})`} value={kpi.orders?.count || 0} sub={fmtEUR(totalRevenue)} icon={ShoppingBag} accent="#10b981" />
+            <KpiCard testId="kpi-orders-count" label={i18n.t('adm.commandes_period', { period: PERIODS[period].label })} value={kpi.orders?.count || 0} sub={fmtEUR(totalRevenue)} icon={ShoppingBag} accent="#10b981" />
             <KpiCard testId="kpi-points-active" label={i18n.t('adm.relais_lolodrive_actifs')} value={kpi.lolo_points_active} icon={Store} accent="#7c3aed" />
             <KpiCard testId="kpi-events-active" label={i18n.t('adm.lolo_hour_actifs')} value={kpi.events_active} icon={Sparkles} accent="#ec4899" />
           </div>
@@ -103,9 +103,9 @@ export default function LolodriveAdminDashboardPage() {
           {dash && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <KpiCard testId="kpi-ca-today" label={i18n.t('adm.ca_aujourd_hui')} value={fmtEUR(dash.ca_today.revenue_cents)}
-                sub={`${dash.ca_today.orders} commande(s)`} icon={TrendingUp} accent="#10b981" />
+                sub={i18n.t('adm.commandes_count', { count: dash.ca_today.orders })} icon={TrendingUp} accent="#10b981" />
               <KpiCard testId="kpi-ca-month" label={i18n.t('adm.ca_mois_en_cours')} value={fmtEUR(dash.ca_month.revenue_cents)}
-                sub={`${dash.ca_month.orders} commande(s)`} icon={BarChart3} accent="#3b82f6" />
+                sub={i18n.t('adm.commandes_count', { count: dash.ca_month.orders })} icon={BarChart3} accent="#3b82f6" />
               <KpiCard testId="kpi-uc-circulation" label={i18n.t('adm.uc_en_circulation')} value={dash.uc_in_circulation}
                 sub={i18n.t('adm.somme_des_wallets_actifs')} icon={Wallet} accent="#D9B35A" />
               <KpiCard testId="kpi-uc-consumed" label={i18n.t('adm.uc_consommees')} value={dash.uc_consumed}
@@ -201,7 +201,7 @@ export default function LolodriveAdminDashboardPage() {
                     <div className="min-w-0">
                       <div className="font-mono text-sm font-semibold truncate">{o.order_number}</div>
                       <div className="text-xs text-white/40">
-                        {o.fulfillment_type} · {o.items?.length || 0} article(s) · {fmtEUR(o.total_cents)}
+                        {o.fulfillment_type} · {i18n.t('orders.articles_count', { count: o.items?.length || 0 })} · {fmtEUR(o.total_cents)}
                       </div>
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export default function LolodriveAdminDashboardPage() {
             >
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <KpiCard testId="kpi-contacts" label="Contacts" value={impact.crm_contacts} icon={HeartHandshake} accent="#ec4899" />
-                <KpiCard testId="kpi-orgs" label="Partenaires" value={impact.partners} icon={Building2} accent="#3b82f6" />
+                <KpiCard testId="kpi-orgs" label={i18n.t('adm.partenaires')} value={impact.partners} icon={Building2} accent="#3b82f6" />
                 <KpiCard testId="kpi-opps" label={i18n.t('adm.opportunites')} value={impact.crm_opportunities} icon={Activity} accent="#D9B35A" />
                 <KpiCard testId="kpi-dossiers" label={i18n.t('adm.dossiers_ouverts')} value={impact.crm_dossiers} icon={Leaf} accent="#10b981" />
               </div>

@@ -408,6 +408,16 @@
   "stock_faible_count": "{{count}} stock faible",
   "vendus_sub": "{{value}} vendus",
   "nouveaux_period": "Nouveaux ({{period}})",
-  "alertes_count": "{{count}} alerte(s)"
+  "alertes_count": "{{count}} alerte(s)",
+  "approuver": "Approuver",
+  "mes_produits": "Mes produits",
+  "commandes_period": "Commandes ({{period}})",
+  "commandes_count": "{{count}} commande(s)",
+  "partenaires": "Partenaires",
+  "pilotage_global": "Pilotage global LOLODRIVE by O'SCOP — moteur transactionnel V2 + couche relationnelle CRM.",
+  "plateforme_cooperative": "© 2026 KDMARCHÉ × O'SCOP — Plateforme coopérative ESS",
+  "populaire": "Populaire",
+  "mensuel_lc": "/mois",
+  "sur_soumis": "sur {{count}} soumis"
  }
 }

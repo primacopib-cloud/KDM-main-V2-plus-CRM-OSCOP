@@ -666,3 +666,16 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 
 **Restant (Phase B — P1)** : Espaces Admin, SuperAdmin, Vendor, Dashboard Lolodrive (namespaces à créer). Les catégories produits viennent de la DB (données FR, non couvertes par i18n UI).
 **Note testing agent** : préférer `<Trans>` aux clés prefix/suffix pour les futures locales.
+
+### 2026-06 — i18n Phase B (Admin/SuperAdmin/Vendeur/Lolodrive) + Devise locale — TERMINÉ
+**Devise & dates locales :**
+- 37+ fichiers : `Intl.NumberFormat('fr-FR')` / `toLocaleDateString('fr-FR')` → `i18n.language` (EN : €1,234.56 · Jul 16 ; FR : 1 234,56 € · 16 juil.). `fmtEUR` de LolodriveLayout localisé aussi.
+
+**Phase B i18n (~420 clés, namespace `adm`) :**
+- Nouveaux fichiers : `{fr,en,es}-admin.json` (~420 lignes chacun, < 500 ✅), mergés dans i18n/index.js
+- Pages : AdminLoginPage, AdminPage, AdminPlansPage (+plans/*), AdminProductsPage (+ProductDetailModal), AdminV2Page (+adminv2/*), SuperAdminPage (+superadmin/*), VendorSpacePage (+vendor/*), LolodriveAdminDashboardPage (+LolodriveLayout), BackButton, NotificationToast (Connecté/Déconnecté)
+- Extraction automatisée par scripts regex (texte JSX, placeholder/title/label/sub, toasts, labels JS) + passes manuelles multilignes
+
+**Tests** : iteration_20 (1 CRITICAL trouvé : import i18n manquant dans PlansTab → crash /admin/plans — corrigé ; + résidus FR Lolodrive/Vendor/AdminProducts/BackButton — tous corrigés et vérifiés par screenshots EN/ES post-fix)
+**Notes** : la route Lolodrive admin est `/lolodrive`. Textes générés côté serveur (alertes type "11 commande(s) payée(s) en attente >2h", noms de catégories DB, features des plans en DB) non couverts par i18n frontend — nécessiterait i18n des données backend (backlog).
+**i18n est désormais COMPLET (Phase A + B) sur ~910 clés × 3 langues.**
