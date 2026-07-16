@@ -1,0 +1,31 @@
+{
+  "summary": "Backend + frontend regression validation of LOT 2 refactoring (server.py split into routes_core_auth/users/admin/notifications/orgs.py + shared core_deps.py; SuperAdminPage.jsx decomposed into /components/superadmin/*). 22/22 backend pytest cases PASS on the external preview URL. Frontend smoke: admin login -> /superadmin renders KPIs and all 5 tabs (Dashboard/Statistiques/Catalogue/Utilisateurs/Commandes) are clickable; buyer login -> /wallet renders with wallet-page + buy-credits-btn data-testids and 250 credits. No regression detected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "WebSocket /api/ws/notifications", "issue": "Console 'WebSocket error: Event' observed on /superadmin — pre-existing (iteration_11), not a regression. user_id empty in query string.", "affected_selectors": []}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lot2_refactor_regression.py",
+    "/app/test_reports/pytest/lot2_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is now 435 lines and only contains app bootstrap + include_router calls — clean.",
+    "Some routers are included WITHOUT explicit prefix='/api' (they rely on internal APIRouter(prefix='/api/...')). The 5 new core_* routers were verified to expose all expected /api/* paths (auth/users/admin/notifications/orgs) — 22 endpoints tested return 200.",
+    "core_deps.py centralization of get_current_user / check_admin / create_notification via db.get_database() works correctly across all extracted routers — no auth or db-context regression.",
+    "Consider adding a lightweight route-inventory test that snapshots app.routes so future refactors don't silently drop endpoints."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lot2_refactor_regression.py"
+  ],
+  "success_rate": {"backend": "100% (22/22)", "frontend": "100% of smoke flows pass"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "test_register_and_login creates TEST_lot2_<uuid>@example.com users on each run — safe to leave (prefixed TEST_); test_create_quote_public creates a TEST_ quote request per run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "LOT 2 backend refactor is regression-safe. Use test_lot2_refactor_regression.py as smoke suite. Admin login page is /admin/connexion, button label 'Accès sécurisé'. Buyer login page is /connexion, button label 'Se connecter'. /subscriptions returns {plans: [...]} (dict, not list). /auth/register requires: email, password, contact_name, phone, company_name, siret. WebSocket 400 on /api/ws/notifications is a known pre-existing issue — do not flag as regression."
+}
