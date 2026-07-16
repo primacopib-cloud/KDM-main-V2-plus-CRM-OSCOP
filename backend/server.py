@@ -44,15 +44,26 @@ app.include_router(admin_core_router)
 app.include_router(notifications_core_router)
 app.include_router(orgs_core_router)
 
-# Import and include v2 routes
+# Import and include v2 routes (applications & billing split into dedicated modules)
 from routes_v2 import api_v2_router, set_database
+from routes_v2_applications import applications_v2_router, set_applications_v2_database
+from routes_v2_billing import billing_v2_router, set_billing_v2_database
 set_database(db)
+set_applications_v2_database(db)
+set_billing_v2_database(db)
 app.include_router(api_v2_router)
+app.include_router(applications_v2_router)
+app.include_router(billing_v2_router)
 
-# Import and include catalog routes
-from routes_catalog import catalog_router, orders_router, set_catalog_database
+# Import and include catalog routes (cart & orders split into dedicated modules)
+from routes_catalog import catalog_router, set_catalog_database
+from routes_cart_v2 import cart_router, set_cart_database
+from routes_orders_v2 import orders_router, set_orders_database
 set_catalog_database(db)
+set_cart_database(db)
+set_orders_database(db)
 app.include_router(catalog_router)
+app.include_router(cart_router)
 app.include_router(orders_router)
 
 # Import and include GED (Document Management) routes
@@ -155,10 +166,16 @@ from routes_ess import ess_router, set_ess_database
 set_ess_database(db)
 app.include_router(ess_router)
 
-# Import and include Admin ESS Routes (CRUD policies, rules, capacity)
+# Import and include Admin ESS Routes (CRUD policies, rules, capacity — split into 3 modules)
 from routes_admin_ess import admin_ess_router, set_admin_ess_database
+from routes_admin_ess_rules import admin_ess_rules_router, set_admin_ess_rules_database
+from routes_admin_ess_capacity import admin_ess_capacity_router, set_admin_ess_capacity_database
 set_admin_ess_database(db)
+set_admin_ess_rules_database(db)
+set_admin_ess_capacity_database(db)
 app.include_router(admin_ess_router)
+app.include_router(admin_ess_rules_router)
+app.include_router(admin_ess_capacity_router)
 
 # Import and include User Preferences Routes (shortcuts)
 from routes_user_prefs import user_prefs_router, set_user_prefs_database

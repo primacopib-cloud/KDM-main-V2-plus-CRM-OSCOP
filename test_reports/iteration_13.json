@@ -1,0 +1,43 @@
+{
+  "summary": "LOT 3 refactor regression validation: backend split of routes_catalog (→routes_cart_v2 + routes_orders_v2), routes_v2 (→routes_v2_applications + routes_v2_billing), routes_admin_ess (→routes_admin_ess_rules + routes_admin_ess_capacity); frontend split of BuyerSpacePage.jsx (→components/buyer/*) and ProductCatalogManager.jsx (→components/catalog-manager/*). 15/15 backend pytest cases PASS on the preview URL — all previously inlined endpoints still reachable at the same paths (/api/v2/catalog/*, /api/v2/orders*, /api/v2/plans, /api/v2/me, /api/v2/admin/orgs, /api/v2/admin/applications, /api/admin/v1/routes/{stats,zones,policies,rules,capacity}). Frontend smoke: buyer login → /espace-acheteur renders (data-testid buyer-space-page) with all 4 tabs (Tableau de bord/Commandes/Factures/Wallet) clickable; admin login → /superadmin Catalogue tab loads ProductCatalogManager, 'Nouveau produit' opens the modal with 4 dynamic tabs (Informations/Prix & Stock/Alimentaire/Logistique — 'Alimentaire vs Technique' is toggled by category as designed); /wallet regression OK.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/v2/catalog/cart, /api/v2/catalog/cart/items, /api/v2/orders", "issue": "Buyer acheteur-pro@kdmarche.fr returns 400 'Aucune organisation associée' because /api/v2/me → organization_id=null in seed data. PRE-EXISTING (verbatim code move); NOT a Lot 3 regression. Blocks E2E cart/order test with this account. Suggested fix: seed the buyer with an organization_id (e.g. link to a demo org in seed_demo_personas.py)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Buyer Orders tab — 'Détails' modal", "issue": "onClick=viewOrderDetails is correctly wired in components/buyer/BuyerOrdersTab.jsx L128 with data-testid=order-details-btn-{order_number}, but E2E click test was NOT possible because buyer has 0 orders (org missing → /api/v2/orders returns 400). Code review verified; behavioral test requires seeded order.", "affected_selectors": ["[data-testid^='order-details-btn-']"]},
+      {"flow": "WebSocket /api/ws/notifications", "issue": "Pre-existing 400 (empty user_id in query) — carried over from iteration_11/12, not a regression.", "affected_selectors": []}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lot3_refactor_regression.py",
+    "/app/test_reports/pytest/lot3_regression.xml"
+  ],
+  "action_items": [
+    "Seed the demo buyer acheteur-pro@kdmarche.fr with an organization_id so /api/v2/catalog/cart, /api/v2/orders and the 'Détails' modal E2E path become testable. Currently these routes are reachable (verbatim refactor is safe) but return 400 for this user.",
+    "Optional: add a seeded order for acheteur-pro so the newly-wired 'Détails' button (Lot 3 bug fix) can be validated end-to-end by a follow-up test iteration."
+  ],
+  "critical_code_review_comments": [
+    "server.py cleanly includes the 6 new Lot 3 routers with set_*_database setters — same pattern as Lot 2. All expected paths verified reachable.",
+    "cart_router and orders_router keep the same '/api/v2/catalog' and '/api/v2/orders' prefixes → zero URL surface change, frontend contracts preserved.",
+    "billing_v2_router and applications_v2_router share prefix '/api/v2' — verified no collision with residual routes in routes_v2.py (test_plans/me/admin_orgs/admin_applications all 200).",
+    "admin_ess_rules_router and admin_ess_capacity_router share prefix '/api/admin/v1/routes' with the residual routes_admin_ess router — /rules and /capacity list endpoints return 200 (admin token).",
+    "BuyerOrdersTab.jsx: onClick={() => viewOrderDetails(order)} correctly wired on the Détails button (data-testid=order-details-btn-{order_number}) — fixes the previously dead button. Function downloadOrderPDF removal not visually verifiable, but grep confirms no dangling references.",
+    "ProductCatalogManager.jsx (460 lines) + extracted components/catalog-manager/{CountryFlag,constants,FormInputs,BasicPricingTabs,SpecializedTabs} → modal opens correctly, tabs render, form inputs accept data, no console errors during interaction."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lot3_refactor_regression.py"
+  ],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "100% of smoke flows pass (dashboard render, tabs, catalog manager modal, wallet regression)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; acheteur-pro@kdmarche.fr / Demo2026! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. Buyer seed lacks organization_id — flagged as action item.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "LOT 3 refactor is regression-safe on the backend (15/15 pytest) and on the frontend (buyer space + superadmin catalog manager both render + interact correctly). Known limitation: the demo buyer has no organization_id, so cart/orders v2 always 400 for this account — this is a SEED issue, not a Lot 3 regression (code is a verbatim move; behaviour matches pre-refactor). The 'Détails' modal wiring fix (BuyerOrdersTab.jsx onClick=viewOrderDetails) was verified via code review only — E2E click cannot be exercised until at least one order is seeded for the buyer. WebSocket 400 on /api/ws/notifications remains a known pre-existing non-regression. Test file: /app/backend/tests/test_lot3_refactor_regression.py (JUnit XML at /app/test_reports/pytest/lot3_regression.xml).",
+  "rca of the issue": "N/A — no functional regression introduced by Lot 3. The two backend 400s observed (cart/orders) trace to buyer.organization_id=null in the seed persona; verified via GET /api/v2/me for acheteur-pro. Reproduction: login as acheteur-pro; GET /api/v2/catalog/cart → 400 'Aucune organisation associée'. Mitigation: extend seed_demo_personas.py (or seed_lolodrive.py) to attach an organization_id (e.g. an approved B2B org owned by user-buyer-pro) so the buyer workflows become end-to-end testable."
+}
