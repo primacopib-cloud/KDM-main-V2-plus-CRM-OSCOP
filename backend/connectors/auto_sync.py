@@ -161,5 +161,5 @@ async def retry_event(event: dict) -> dict:
 
 def _excerpt(resp) -> dict:
     if isinstance(resp, dict):
-        return {k: resp[k] for k in list(resp)[:6]}
+        return {k: str(resp[k])[:300] for k in list(resp)[:6]}
     return {"raw": str(resp)[:200]}

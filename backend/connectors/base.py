@@ -25,6 +25,7 @@ async def ensure_connectors_indexes(database) -> None:
     await database.connector_sync_events.create_index([("connector", 1), ("created_at", -1)])
     await database.connector_sync_events.create_index([("status", 1), ("created_at", -1)])
     await database.favorites_alerts_log.create_index([("user_id", 1), ("product_id", 1), ("alert_type", 1), ("sent_at", -1)])
+    await database.user_favorites.create_index("favorites.product_id")
 
 
 def _now() -> str:

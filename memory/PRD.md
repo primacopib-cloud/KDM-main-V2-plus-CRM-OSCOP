@@ -685,3 +685,13 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 - Fixes: imports `tData` ajoutés; WebSocket notifications ne se connecte plus avec `user_id` vide (`NotificationToast.jsx` guard `if (!userId)`); `SuperAdminPage.jsx` lit l'id via `JSON.parse(localStorage.getItem('user'))?.id`; localisation `+N autres` via `adm.plus_more` / `buyer.plus_more_items` (fr/en/es).
 - Validé par testing_agent iteration_22: 100% (6/6 flows) — catalogue, add-to-cart, favoris, i18n EN, WebSocket user_id réel, logout/régression. 0 erreur console.
 - Restant: Test Stripe LIVE 1€ (attente utilisateur), pont GED ESS externe, microservice finance-api.
+
+### 2026-06 — Socle Connecteurs multi-apps + Connecteur n°1 O'SCOP + Alertes favoris — TERMINÉ
+- **Socle connecteurs** (`/app/backend/connectors/`): file unifiée `connector_sync_events` (retry, journal), registre extensible (8+ apps prévues). Routes `/api/connectors/*` (admin). Page admin `/admin/connecteurs` (cartes santé, push manuel, file avec retry + compteur tentatives). Lien menu ADMINISTRATION.
+- **Connecteur oscop-ged / oscop-finance** vers CRM réel https://objectifscopoutremer.com (login Bearer via OSCOP_CRM_URL/EMAIL/PASSWORD dans .env, token cache + relogin 401). Health OK live. Push paiement `/api/paiements` : SUCCESS live (paiement test créé puis supprimé côté CRM). Push GED `/api/ged/documents/upload` : ERROR — **bug côté CRM distant** ("Path parameters cannot have a default value"), à corriger dans le projet objectifscopoutremer ; l'événement reste en file avec retry.
+- **Sync auto** : commande payée (checkout_handlers) → facture PDF vers GED + paiement vers Finance ; contrat signé (routes_contracts) → document vers GED. Non bloquant (asyncio).
+- **Alertes favoris** (`favorites_alerts.py` + `routes_stock_admin.py`): PUT /api/catalog/admin/stock/{id} (restock 0→>0) et /price/{id} (baisse prix) → notification in-app + email Brevo (201 vérifiés), anti-spam 24h.
+- **Fix bug pré-existant** : `UserMenu` crashait (`nav is not defined`) au clic sur l'avatar — prop `nav` désormais passée depuis NavBar.
+- Testé iteration_23 : backend 10/10, frontend 7/7 (100%).
+- Compte de service `bridge@kdmarche.fr` à créer côté CRM par l'utilisateur (login refusé actuellement, admin@felixia.fr utilisé en attendant — basculer via .env).
+- Restant : corriger upload GED côté CRM distant, connecter les 7 autres apps (1 adaptateur + .env chacune), test Stripe LIVE 1€ (attente utilisateur).

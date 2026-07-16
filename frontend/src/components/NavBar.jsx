@@ -186,6 +186,7 @@ const NavBar = ({ variant = 'default' }) => {
 
                 <UserMenu
                   user={user}
+                  nav={nav}
                   showUserMenu={showUserMenu}
                   setShowUserMenu={setShowUserMenu}
                   handleLogout={handleLogout}

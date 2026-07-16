@@ -59,6 +59,9 @@ export const ConnectorSyncTable = ({ events, retryingId, onRetry }) => {
                   >
                     <Icon size={12} /> {e.status}
                   </span>
+                  {e.attempts > 1 && (
+                    <span className="block text-[10px] opacity-50 mt-0.5">×{e.attempts}</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-right">
                   {e.status === 'ERROR' && (
