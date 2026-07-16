@@ -95,7 +95,7 @@ export const BuyerOrdersTab = ({
                               </div>
                             ))}
                             {(order.items?.length || 0) > 3 && (
-                              <p className="text-xs text-white/40 text-center">+ {order.items.length - 3} autres articles</p>
+                              <p className="text-xs text-white/40 text-center">{i18n.t('buyer.plus_more_items', { count: order.items.length - 3 })}</p>
                             )}
                           </div>
 

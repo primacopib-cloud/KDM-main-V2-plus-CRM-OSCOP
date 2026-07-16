@@ -1,0 +1,25 @@
+{
+  "summary": "Iteration 22 — Full re-validation of the 3 P0/P1 fixes from iteration 21. All target flows PASS. (1) /catalogue: page renders WITHOUT ReferenceError, 8 products shown, category tabs render, add-to-cart triggers toast + cart badge increments (10→...), favorite toggle works (heart icon fill/unfill visually confirmed). (2) /catalogue?lang=en shows fully translated category tabs (Food / Beverages / Hygiene / Grocery / Fresh products / Frozen) and 'KDMARCHE Catalog' / '8 products available'. (3) WebSocket /ws/notifications now carries a REAL user_id on authenticated pages (observed `wss://.../ws/notifications?user_id=user-admin&is_admin=true` for admin) and NO connection attempt is made before login (empty user_id guarded by `if (!userId) return` in NotificationToast useEffect). (4) /admin/plans and /admin/plans?lang=en render without crash; the previous residual '+1 autres' is now correctly localized to '+1 more' in EN (3 occurrences found, zero '+N autres' leaking in EN). (5) Regression checks: buyer login → /espace-acheteur renders (Sophie Verger / Restaurant La Caravelle, 250 crédits, ESS ACCÈS PRO active); logout via POST /api/auth/logout returns 200, subsequent /api/auth/me returns 401 (cookie cleared). Console errors on tested pages: 0 (only 3 expected 401s captured during the post-logout /auth/me probe). Backend not re-tested per instructions (was 16/16 in iter21).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "The recurring i18n-import-missing footgun (iter20 = i18n.t without import, iter21 = tData without import) is now patched in both CatalogPage.jsx and ProductsGrid.jsx, but as flagged in iter21 the codebase would still benefit from a lint rule (`no-undef` on JSX identifiers) so this class of bug is caught at build time rather than at runtime on the user's screen.",
+    "NotificationToast.jsx now correctly gates `connect()` behind `if (!userId) return` — good defensive fix. However, the WebSocket URL builder still concatenates `user_id=${userId || ''}` on line 114 as a belt-and-braces; consider removing the `|| ''` fallback so any future mis-wire fails loudly instead of silently connecting with an empty id.",
+    "The recurring minified 'qt' console error mentioned in iter20/iter21 was NOT observed during this iteration's runs on /catalogue, /admin/plans, /dashboard, /espace-acheteur — it appears silenced or only reproducible on other routes. No action needed unless it resurfaces.",
+    "SuperAdminPage now reads userId from `JSON.parse(localStorage.getItem('user'))?.id` — verified live: WS connects with `user_id=user-admin` for admin, confirming the fix."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not re-tested (was 16/16 in iter21)", "frontend": "100% on the 6 target flows"},
+  "test_credentials": "Buyer acheteur-pro@kdmarche.fr / Demo2026! ; Admin admin@kdmarche-oscop.fr / AdminKDM2025! — both worked.",
+  "seed_data_creation": "None.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All iter21 regressions are resolved. /catalogue works FR and EN, add-to-cart + favorites integrate, admin plans '+N more/autres' is localized correctly, WebSocket user_id populated for admin and gated for empty ids, logout+cookie clear works. If any new work touches i18n helpers (tData / i18n.t) grep the codebase (`grep -rn 'tData(\\|i18n.t(' /app/frontend/src`) to ensure imports are colocated with usage — this has broken the app twice in a row.",
+  "rca of the issue": "N/A — all iter21 bugs are fixed. Verified: (a) CatalogPage.jsx line 2 now has `import { tData } from '@/i18n/tData';` and line 363 renders `{tData(cat.name)}` without ReferenceError; (b) ProductsGrid.jsx imports tData; (c) NotificationToast.jsx useEffect line 191-195 guards `if (!userId) return undefined` before calling `connect()`; (d) admin plans/features render `+1 more` in EN thanks to `adm.plus_more` / `buyer.plus_more_items` i18n keys."
+}

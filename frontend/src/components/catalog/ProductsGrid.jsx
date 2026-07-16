@@ -1,4 +1,5 @@
 import { Loader2, Package, Plus } from 'lucide-react';
+import { tData } from '@/i18n/tData';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { FavoriteButton } from '../FavoriteButton';

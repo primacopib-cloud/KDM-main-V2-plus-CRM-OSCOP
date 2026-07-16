@@ -189,9 +189,10 @@ export function useNotificationWebSocket(userId, isAdmin = false) {
   }, []);
   
   useEffect(() => {
+    if (!userId) return undefined;
     connect();
     return () => disconnect();
-  }, [connect, disconnect]);
+  }, [userId, connect, disconnect]);
   
   return {
     isConnected,

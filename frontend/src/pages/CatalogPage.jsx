@@ -1,4 +1,5 @@
 import i18n from '@/i18n';
+import { tData } from '@/i18n/tData';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';

@@ -23,7 +23,7 @@ export default function SuperAdminPage() {
 
   // WebSocket notifications
   const { isConnected } = useNotificationWebSocket(
-    localStorage.getItem('userId'),
+    JSON.parse(localStorage.getItem('user') || 'null')?.id,
     true // isAdmin
   );
 

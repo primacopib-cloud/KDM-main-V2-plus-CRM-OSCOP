@@ -70,7 +70,7 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
             ))}
             {(p.features || []).length > 4 && (
               <li className="text-xs text-white/60">
-                +{p.features.length - 4} autres
+                {i18n.t('adm.plus_more', { count: p.features.length - 4 })}
               </li>
             )}
           </ul>
