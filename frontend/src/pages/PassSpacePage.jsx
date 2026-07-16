@@ -366,7 +366,7 @@ export default function PassSpacePage() {
                     <div className="min-w-0">
                       <div className="text-sm font-medium font-mono truncate">{o.order_number}</div>
                       <div className="text-xs text-white/40">
-                        {o.fulfillment_type} · {o.items?.length || 0} article(s) ·{' '}
+                        {o.fulfillment_type} · {i18n.t('orders.articles_count', { count: o.items?.length || 0 })} ·{' '}
                         {new Date(o.created_at).toLocaleDateString('fr-FR')}
                       </div>
                     </div>

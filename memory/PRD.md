@@ -646,3 +646,23 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 ### Test E2E LIVE Stripe (P0 — en attente utilisateur)
 - L'utilisateur doit effectuer un paiement réel de 1€ (PASS ou produit ORDER) puis procéder à un refund depuis le dashboard Stripe.
 - Vérifier les logs webhook : `tail -f /var/log/supervisor/backend.err.log | grep -iE 'stripe|webhook'`.
+
+### 2026-06 — i18n Phase A COMPLÈTE (FR/EN/ES) — Vitrine & Parcours Client
+**Architecture i18n :**
+- 9 fichiers de locales (< 500 lignes chacun) : `{fr,en,es}.json` (common/nav/footer/auth), `{fr,en,es}-site.json` (landing/partners/logistics/contact/offers/pricing/logiscop/oscop/catalog), `{fr,en,es}-app.json` (buyer/checkout/favorites/lists/lolodrive/onboarding/orders/pass/relay/wallet)
+- Merge par spread dans `i18n/index.js` ; détection `?lang=` > localStorage > navigator > FR
+- `LanguageSwitcher` : changeLanguage + reload (les pages utilisent `i18n.t()` hors hook)
+- ~490 clés × 3 langues
+
+**Bugs corrigés :**
+- ✅ NavBar plantait tout le site : `useTranslation` importé mais hook jamais appelé → `t is not defined` (crash React total)
+- ✅ Clés `auth.*`, `footer.*`, `nav.*` référencées mais absentes des JSON (pages auth affichaient les clés brutes)
+- ✅ LanguageSwitcher ne rechargeait pas la page (i18n.t hors hook non réactif)
+
+**Pages traduites (Phase A)** : Landing (+ PricingSection, PartnersSection, LogisticsSection, ContactForm), Header, Footer, Breadcrumb, Login, Register, ForgotPassword, Tarifs, Offres, LOGI'SCOP, O'SCOP, Catalog, Checkout (+ CheckoutSteps/Payment/Dialog + toasts), Orders, Wallet, Favorites, ShoppingLists, Onboarding, PassSpace, BuyerSpace (+ Dashboard/Invoices/Orders tabs, buyerUtils statuts/dates via getters i18n)
+- Dates : `toLocaleDateString(i18n.language)` partout dans le parcours client
+
+**Tests** : iteration_18 (6 issues détectées) + iteration_19 (6/6 fixes PASS) + vérif visuelle finale (breadcrumb + recent orders EN OK). ~90-100% frontend PASS.
+
+**Restant (Phase B — P1)** : Espaces Admin, SuperAdmin, Vendor, Dashboard Lolodrive (namespaces à créer). Les catégories produits viennent de la DB (données FR, non couvertes par i18n UI).
+**Note testing agent** : préférer `<Trans>` aux clés prefix/suffix pour les futures locales.

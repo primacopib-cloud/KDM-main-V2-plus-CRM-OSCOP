@@ -99,7 +99,7 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
                             </div>
                             <div>
                               <p className="font-medium text-white/90 text-sm">{order.order_number}</p>
-                              <p className="text-xs text-white/50">{formatShortDate(order.created_at)} · {order.items_count} article(s)</p>
+                              <p className="text-xs text-white/50">{formatShortDate(order.created_at)} · {i18n.t('orders.articles_count', { count: order.items_count })}</p>
                             </div>
                           </div>
                           <div className="text-right">

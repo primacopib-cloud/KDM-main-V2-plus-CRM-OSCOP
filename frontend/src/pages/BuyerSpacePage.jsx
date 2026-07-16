@@ -297,7 +297,7 @@ export default function BuyerSpacePage() {
               </div>
               <div>
                 <h1 className="text-lg font-bold text-white">{i18n.t('buyer.espace_acheteur_pro')}</h1>
-                <p className="text-xs text-white/50">{user?.company_name || 'Mon compte B2B'}</p>
+                <p className="text-xs text-white/50">{user?.company_name || i18n.t('buyer.mon_compte_b2b')}</p>
               </div>
             </div>
           </div>

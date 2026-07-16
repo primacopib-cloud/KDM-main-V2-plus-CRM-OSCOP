@@ -1,35 +1,36 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
+import i18n from '@/i18n';
 
 // Route configuration with labels and parent paths
 const routeConfig = {
-  '/': { label: 'Accueil', icon: Home },
-  '/offres': { label: 'Offres', parent: '/' },
-  '/connexion': { label: 'Connexion', parent: '/' },
-  '/inscription': { label: 'Inscription', parent: '/' },
-  '/adhesion': { label: 'Adhésion', parent: '/' },
-  '/dashboard': { label: 'Tableau de bord', parent: '/' },
-  '/espace-acheteur': { label: 'Espace Acheteur', parent: '/' },
-  '/catalogue': { label: 'Catalogue', parent: '/espace-acheteur' },
-  '/commandes': { label: 'Commandes', parent: '/espace-acheteur' },
+  '/': { label: 'nav.home', icon: Home },
+  '/offres': { label: 'footer.our_offers', parent: '/' },
+  '/connexion': { label: 'nav.login', parent: '/' },
+  '/inscription': { label: 'breadcrumb.inscription', parent: '/' },
+  '/adhesion': { label: 'footer.join', parent: '/' },
+  '/dashboard': { label: 'buyer.tableau_de_bord', parent: '/' },
+  '/espace-acheteur': { label: 'breadcrumb.espace_acheteur', parent: '/' },
+  '/catalogue': { label: 'nav.catalog', parent: '/espace-acheteur' },
+  '/commandes': { label: 'buyer.commandes', parent: '/espace-acheteur' },
   '/wallet': { label: 'Wallet', parent: '/espace-acheteur' },
-  '/documents': { label: 'Documents', parent: '/espace-acheteur' },
-  '/checkout': { label: 'Paiement', parent: '/catalogue' },
-  '/espace-vendeur': { label: 'Espace Vendeur', parent: '/' },
-  '/superadmin': { label: 'Super Admin', parent: '/' },
-  '/admin-v2': { label: 'Admin Organisations', parent: '/superadmin' },
-  '/admin/produits': { label: 'Validation Produits', parent: '/superadmin' },
-  '/legal': { label: 'Documents Légaux', parent: '/' },
-  '/legal/cgv-kdmarche': { label: 'CGV KDMARCHE', parent: '/legal' },
-  '/legal/cg-oscop': { label: 'CG O\'SCOP', parent: '/legal' },
-  '/legal/convention': { label: 'Convention', parent: '/legal' },
-  '/legal/charte-ess': { label: 'Charte ESS', parent: '/legal' },
-  '/signature': { label: 'Signature', parent: '/espace-acheteur' },
-  '/bon-de-commande': { label: 'Bon de commande', parent: '/catalogue' },
-  '/bon-de-commande-dynamique': { label: 'Bon de commande', parent: '/catalogue' },
-  '/fiche-produit': { label: 'Fiche produit', parent: '/catalogue' },
-  '/statistiques': { label: 'Statistiques', parent: '/espace-acheteur' },
+  '/documents': { label: 'nav.documents', parent: '/espace-acheteur' },
+  '/checkout': { label: 'breadcrumb.paiement', parent: '/catalogue' },
+  '/espace-vendeur': { label: 'nav.vendor_space', parent: '/' },
+  '/superadmin': { label: 'nav.super_admin', parent: '/' },
+  '/admin-v2': { label: 'nav.admin_orgs', parent: '/superadmin' },
+  '/admin/produits': { label: 'nav.product_validation', parent: '/superadmin' },
+  '/legal': { label: 'footer.legal_docs', parent: '/' },
+  '/legal/cgv-kdmarche': { label: 'footer.cgv_kdmarche', parent: '/legal' },
+  '/legal/cg-oscop': { label: 'footer.cg_oscop', parent: '/legal' },
+  '/legal/convention': { label: 'footer.convention', parent: '/legal' },
+  '/legal/charte-ess': { label: 'footer.ess_charter', parent: '/legal' },
+  '/signature': { label: 'breadcrumb.signature', parent: '/espace-acheteur' },
+  '/bon-de-commande': { label: 'breadcrumb.bon_commande', parent: '/catalogue' },
+  '/bon-de-commande-dynamique': { label: 'breadcrumb.bon_commande', parent: '/catalogue' },
+  '/fiche-produit': { label: 'breadcrumb.fiche_produit', parent: '/catalogue' },
+  '/statistiques': { label: 'breadcrumb.statistiques', parent: '/espace-acheteur' },
 };
 
 // Build breadcrumb path from current route
@@ -41,10 +42,10 @@ const buildBreadcrumbPath = (pathname) => {
   if (pathname.startsWith('/legal/') && !routeConfig[pathname]) {
     const docId = pathname.split('/')[2];
     const docLabels = {
-      'cgv-kdmarche': 'CGV KDMARCHE',
-      'cg-oscop': 'CG O\'SCOP',
-      'convention': 'Convention',
-      'charte-ess': 'Charte ESS',
+      'cgv-kdmarche': i18n.t('footer.cgv_kdmarche'),
+      'cg-oscop': i18n.t('footer.cg_oscop'),
+      'convention': i18n.t('footer.convention'),
+      'charte-ess': i18n.t('footer.ess_charter'),
     };
     path.unshift({
       path: pathname,
@@ -58,7 +59,7 @@ const buildBreadcrumbPath = (pathname) => {
     const config = routeConfig[currentPath];
     path.unshift({
       path: currentPath,
-      label: config.label,
+      label: i18n.t(config.label),
       icon: config.icon,
       isLast: path.length === 0
     });

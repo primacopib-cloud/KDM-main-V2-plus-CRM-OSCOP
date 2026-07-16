@@ -33,7 +33,8 @@
     "documents_legaux": "Documents légaux",
     "cgv_contrats": "CGV, Contrats",
     "payee": "Payée",
-    "en_attente": "En attente"
+    "en_attente": "En attente",
+    "mon_compte_b2b": "Mon compte B2B"
   },
   "checkout": {
     "finaliser_la_commande": "Finaliser la commande",
@@ -256,7 +257,8 @@
     "toast_actualisees": "Commandes actualisées",
     "toast_annulee": "Commande annulée",
     "etes_vous_sur": "Êtes-vous sûr de vouloir annuler la commande {{number}} ?",
-    "action_irreversible": "Cette action est irréversible."
+    "action_irreversible": "Cette action est irréversible.",
+    "articles_count": "{{count}} article(s)"
   },
   "pass": {
     "mon_espace_pass": "Mon Espace PASS",
@@ -329,6 +331,19 @@
     "toast_credits_courts": "{{count}} crédits ajoutés !",
     "toast_montant_min": "Montant minimum: 10 crédits",
     "toast_credits_ajoutes_2": "{{count}} crédits ajoutés avec succès",
-    "toast_zone": "Zone {{name}} activée"
+    "toast_zone": "Zone {{name}} activée",
+    "achat_credits": "Achat crédits",
+    "utilisation": "Utilisation",
+    "remboursement": "Remboursement",
+    "ajustement": "Ajustement"
+  },
+  "breadcrumb": {
+    "inscription": "Inscription",
+    "espace_acheteur": "Espace Acheteur",
+    "paiement": "Paiement",
+    "signature": "Signature",
+    "bon_commande": "Bon de commande",
+    "fiche_produit": "Fiche produit",
+    "statistiques": "Statistiques"
   }
 }
