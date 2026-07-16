@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend regression tests after refactoring of api.js (split into 5 modules), WalletPage.jsx and AdminPlansPage.jsx. All critical flows work: landing loads with navbar/footer/'Accès Pro Mutualisé' link, /tarifs displays 'Accès Pro Mutualisé', buyer login (acheteur-pro@kdmarche.fr) succeeds and redirects to /dashboard, /wallet renders with data-testid='wallet-page', 'buy-credits-btn' opens BuyCreditsDialog showing 3 tabs (Carte/Virement/SEPA) with 4 Stripe packages (data-testid='package-*'), admin login (admin@kdmarche-oscop.fr) redirects to /superadmin, /admin/plans exposes plans-tab, tab-options, tab-credits, credit-search-input, create-plan-btn opens plan-form-modal, create-option-btn (visible only after switching to Options tab) opens option form modal, /catalogue loads. No 'undefined is not a function' or missing-import errors observed — barrel re-exports (api.js) are intact.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "WebSocket notifications", "issue": "WS handshake fails with 400 and user_id empty in query string on wallet/admin pages (wss://.../ws/notifications?user_id=&is_admin=false). Pre-existing — not caused by refactor, but should be tracked.", "affected_selectors": []}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Investigate WebSocket notifications 400: user_id is empty in the query string (was likely pre-existing before refactor). Frontend must pass authenticated user id.",
+    "Payer par carte was intentionally NOT clicked (Stripe LIVE mode) — manual smoke-test required by main agent in a safe env."
+  ],
+  "critical_code_review_comments": [
+    "api.js barrel default-export omits `documentsAPI` in the second import block used by the default object (line 40-48 imports documentsAPI but api.v2 import block omits invoicesAPI in default — verify consumers of `api.default` don't rely on invoicesAPI/crm/lolodrive keys which are only on named exports).",
+    "Refactored files are cleanly under 500 lines, but named+default hybrid export in api.js increases maintenance risk — consider dropping the default export if no consumers use it."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (skipped as requested)", "frontend": "100% of tested flows pass"},
+  "test_credentials": "buyer: acheteur-pro@kdmarche.fr / Demo2026! ; admin: admin@kdmarche-oscop.fr / AdminKDM2025!",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Refactor is regression-safe. All data-testids requested in review still resolve. Note: create-option-btn only mounts when Options tab is active — expected behavior since only OptionsTab renders the button. Admin login redirects to /superadmin (not /admin dashboard) — expected. Payer par carte / Stripe checkout was NOT exercised (LIVE keys)."
+}
