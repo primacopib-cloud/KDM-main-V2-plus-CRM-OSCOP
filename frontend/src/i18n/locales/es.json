@@ -70,7 +70,16 @@
     "regions": "Guadalupe · Martinica · Guayana Francesa · Reunión · Mayotte",
     "legal_notice": "Aviso legal y CGV",
     "ess_charter": "Carta ESS",
-    "privacy": "Política de privacidad"
+    "privacy": "Política de privacidad",
+    "tagline": "Central de compras B2B ESS - Alianza oficial para la Economía Social y Solidaria.",
+    "ess_certified": "Mutualización ESS certificada",
+    "legal_docs": "Documentos Legales",
+    "cgv_kdmarche": "CGV KDMARCHE B2B",
+    "cg_oscop": "CG O'SCOP",
+    "convention": "Convenio de alianza",
+    "charte_mutualisation": "Carta ESS de mutualización",
+    "copyright": "© 2025 Central de Compras B2B ESS - KDMARCHE & O'SCOP. Todos los derechos reservados.",
+    "hub_short": "Central de compras B2B ESS"
   },
   "auth": {
     "members_area": "Espacio de miembros",
@@ -125,7 +134,16 @@
     "account_creation_error": "Error al crear la cuenta",
     "already_account": "¿Ya tiene una cuenta?",
     "forgot_password_title": "Contraseña olvidada",
-    "email_sent": "Si existe una cuenta, se ha enviado un correo de restablecimiento."
+    "email_sent": "Si existe una cuenta, se ha enviado un correo de restablecimiento.",
+    "check_inbox": "Revise su bandeja de entrada",
+    "forgot_subtitle": "Introduzca su correo para recibir un enlace de restablecimiento",
+    "reset_sent_prefix": "Si existe una cuenta con la dirección ",
+    "reset_sent_suffix": ", recibirá un correo con las instrucciones de restablecimiento.",
+    "link_expires": "El enlace caduca en 1 hora.",
+    "back_to_login": "Volver al inicio de sesión",
+    "sending": "Enviando...",
+    "send_link": "Enviar el enlace",
+    "remember": "¿Recuerda su contraseña?"
   },
   "landing": {
     "hero_badge": "Communityplace cooperativa B2B2C",

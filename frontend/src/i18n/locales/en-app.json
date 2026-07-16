@@ -18,7 +18,22 @@
     "toast_pdf": "Generating PDF...",
     "toast_erreur_generation": "Generation error",
     "toast_facture": "Invoice {{number}} downloaded",
-    "toast_erreur_pdf": "Error downloading PDF"
+    "toast_erreur_pdf": "Error downloading PDF",
+    "commandes_totales": "Total orders",
+    "en_cours": "In progress",
+    "total_depense": "Total spent",
+    "credits_oscop": "O'SCOP Credits",
+    "commandes_recentes": "Recent orders",
+    "voir_tout": "View all",
+    "voir": "View",
+    "nouvelle_commande": "New order",
+    "acceder_catalogue": "Go to catalog",
+    "recharger_credits": "Top up credits",
+    "gerer_wallet": "Manage my wallet",
+    "documents_legaux": "Legal documents",
+    "cgv_contrats": "T&Cs, Contracts",
+    "payee": "Paid",
+    "en_attente": "Pending"
   },
   "checkout": {
     "finaliser_la_commande": "Complete order",
@@ -100,7 +115,9 @@
     "toast_ajoute": "{{qty}}x {{name}} added to cart",
     "toast_ajoutes": "{{count}} product(s) added to cart",
     "aucun_resultat": "No results for \"{{query}}\"",
-    "ajoute_le": "Added on"
+    "ajoute_le": "Added on",
+    "count_one": "{{count}} product in your favorites",
+    "count_other": "{{count}} products in your favorites"
   },
   "lists": {
     "mes_listes_d_achats": "My Shopping Lists",

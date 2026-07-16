@@ -133,7 +133,7 @@ export default function FavoritesPage() {
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString(i18n.language, {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
@@ -160,7 +160,7 @@ export default function FavoritesPage() {
                 {i18n.t('favorites.mes_favoris')}
               </h1>
               <p className="text-white/60">
-                {favorites.length} produit{favorites.length !== 1 ? 's' : ''} dans vos favoris
+                {i18n.t('favorites.count', { count: favorites.length })}
               </p>
             </div>
             <Button

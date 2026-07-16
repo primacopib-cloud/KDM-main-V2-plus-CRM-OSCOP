@@ -321,6 +321,9 @@
     "toast_maj_erreur": "Erreur lors de la mise à jour",
     "toast_retire_panier": "Article retiré du panier",
     "toast_commande_4x": "Commande {{number}} créée en 4× !",
-    "brouillon": "Brouillon"
+    "brouillon": "Brouillon",
+    "disponibles_one": "{{count}} produit disponible",
+    "disponibles_other": "{{count}} produits disponibles",
+    "toast_prix_indispo": "Prix non disponible pour votre organisation"
   }
 }

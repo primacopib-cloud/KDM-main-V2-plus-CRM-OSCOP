@@ -70,7 +70,16 @@
     "regions": "Guadeloupe · Martinique · French Guiana · Réunion · Mayotte",
     "legal_notice": "Legal notice & T&Cs",
     "ess_charter": "SSE Charter",
-    "privacy": "Privacy policy"
+    "privacy": "Privacy policy",
+    "tagline": "B2B SSE purchasing hub - Official partnership for the Social and Solidarity Economy.",
+    "ess_certified": "Certified SSE pooling",
+    "legal_docs": "Legal Documents",
+    "cgv_kdmarche": "KDMARCHE B2B T&Cs",
+    "cg_oscop": "O'SCOP T&Cs",
+    "convention": "Partnership agreement",
+    "charte_mutualisation": "SSE pooling charter",
+    "copyright": "© 2025 B2B SSE Purchasing Hub - KDMARCHE & O'SCOP. All rights reserved.",
+    "hub_short": "B2B SSE purchasing hub"
   },
   "auth": {
     "members_area": "Members area",
@@ -125,7 +134,16 @@
     "account_creation_error": "Error while creating the account",
     "already_account": "Already have an account?",
     "forgot_password_title": "Forgot password",
-    "email_sent": "If an account exists, a reset email has been sent."
+    "email_sent": "If an account exists, a reset email has been sent.",
+    "check_inbox": "Check your inbox",
+    "forgot_subtitle": "Enter your email to receive a reset link",
+    "reset_sent_prefix": "If an account exists with the address ",
+    "reset_sent_suffix": ", you will receive an email with reset instructions.",
+    "link_expires": "The link expires in 1 hour.",
+    "back_to_login": "Back to login",
+    "sending": "Sending...",
+    "send_link": "Send the link",
+    "remember": "Remember your password?"
   },
   "landing": {
     "hero_badge": "B2B2C cooperative communityplace",

@@ -31,14 +31,14 @@ const Footer = () => {
               />
             </div>
             <p className="text-white/60 text-sm leading-relaxed">
-              Centrale d&apos;achats B2B ESS - Partenariat officiel pour l&apos;Économie Sociale et Solidaire.
+              {t('footer.tagline')}
             </p>
             
             {/* ESS Official Clause Badge */}
             <div className="mt-4 p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/20">
               <p className="text-xs text-[#10B981] font-medium flex items-center gap-2">
                 <Leaf className="w-3.5 h-3.5" />
-                Mutualisation ESS certifiée
+                {t('footer.ess_certified')}
               </p>
             </div>
           </div>
@@ -86,7 +86,7 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-sm uppercase tracking-wider text-[#D9B35A] mb-4 flex items-center gap-2">
               <Scale className="w-4 h-4" />
-              Documents Légaux
+              {t('footer.legal_docs')}
             </h4>
             <ul className="space-y-3">
               <li>
@@ -96,7 +96,7 @@ const Footer = () => {
                   data-testid="footer-link-cgv-kdmarche"
                 >
                   <Truck className="w-3.5 h-3.5 text-[#D9B35A]" />
-                  <span>CGV KDMARCHE B2B</span>
+                  <span>{t('footer.cgv_kdmarche')}</span>
                 </Link>
               </li>
               <li>
@@ -106,7 +106,7 @@ const Footer = () => {
                   data-testid="footer-link-cg-oscop"
                 >
                   <CreditCard className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>CG O&apos;SCOP</span>
+                  <span>{t('footer.cg_oscop')}</span>
                 </Link>
               </li>
               <li>
@@ -116,7 +116,7 @@ const Footer = () => {
                   data-testid="footer-link-convention"
                 >
                   <Handshake className="w-3.5 h-3.5 text-[#8B5CF6]" />
-                  <span>Convention de partenariat</span>
+                  <span>{t('footer.convention')}</span>
                 </Link>
               </li>
               <li>
@@ -126,7 +126,7 @@ const Footer = () => {
                   data-testid="footer-link-charte-ess"
                 >
                   <Leaf className="w-3.5 h-3.5 text-[#10B981]" />
-                  <span>Charte ESS de mutualisation</span>
+                  <span>{t('footer.charte_mutualisation')}</span>
                 </Link>
               </li>
               <li>
@@ -165,7 +165,7 @@ const Footer = () => {
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-white/50 text-xs">
-            © 2025 Centrale d&apos;Achats B2B ESS - KDMARCHE &amp; O&apos;SCOP. Tous droits réservés.
+            {t('footer.copyright')}
           </p>
           <div className="flex gap-6">
             <Link to="/legal/cgv-kdmarche" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.legal_notice')}</Link>

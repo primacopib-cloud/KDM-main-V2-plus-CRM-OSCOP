@@ -18,7 +18,22 @@
     "toast_pdf": "Generando PDF...",
     "toast_erreur_generation": "Error de generación",
     "toast_facture": "Factura {{number}} descargada",
-    "toast_erreur_pdf": "Error al descargar el PDF"
+    "toast_erreur_pdf": "Error al descargar el PDF",
+    "commandes_totales": "Pedidos totales",
+    "en_cours": "En curso",
+    "total_depense": "Total gastado",
+    "credits_oscop": "Créditos O'SCOP",
+    "commandes_recentes": "Pedidos recientes",
+    "voir_tout": "Ver todo",
+    "voir": "Ver",
+    "nouvelle_commande": "Nuevo pedido",
+    "acceder_catalogue": "Ir al catálogo",
+    "recharger_credits": "Recargar créditos",
+    "gerer_wallet": "Gestionar mi wallet",
+    "documents_legaux": "Documentos legales",
+    "cgv_contrats": "CGV, Contratos",
+    "payee": "Pagada",
+    "en_attente": "Pendiente"
   },
   "checkout": {
     "finaliser_la_commande": "Finalizar el pedido",
@@ -100,7 +115,9 @@
     "toast_ajoute": "{{qty}}x {{name}} añadido al carrito",
     "toast_ajoutes": "{{count}} producto(s) añadido(s) al carrito",
     "aucun_resultat": "Sin resultados para \"{{query}}\"",
-    "ajoute_le": "Añadido el"
+    "ajoute_le": "Añadido el",
+    "count_one": "{{count}} producto en sus favoritos",
+    "count_other": "{{count}} productos en sus favoritos"
   },
   "lists": {
     "mes_listes_d_achats": "Mis Listas de Compra",

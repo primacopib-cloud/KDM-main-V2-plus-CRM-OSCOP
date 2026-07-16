@@ -156,7 +156,7 @@ export default function CatalogPage() {
   // Add to cart
   const handleAddToCart = async (product) => {
     if (!product.price_visible) {
-      toast.error('Prix non disponible pour votre organisation');
+      toast.error(i18n.t('catalog.toast_prix_indispo'));
       return;
     }
 
@@ -316,7 +316,7 @@ export default function CatalogPage() {
           <div>
             <h1 className="text-2xl font-bold mb-1">{i18n.t('catalog.catalogue_kdmarche')}</h1>
             <p className="text-white/60 text-sm">
-              {products.length} produit{products.length > 1 ? 's' : ''} disponible{products.length > 1 ? 's' : ''}
+              {i18n.t('catalog.disponibles', { count: products.length })}
             </p>
           </div>
           

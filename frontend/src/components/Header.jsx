@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { partners } from '../data/mock';
@@ -17,9 +18,9 @@ const Header = () => {
   }, []);
 
   const navLinks = [
-    { href: '/', label: 'Accueil' },
-    { href: '/offres', label: 'Offres' },
-    { href: '/#contact', label: 'Contact' },
+    { href: '/', label: i18n.t('nav.home') },
+    { href: '/offres', label: i18n.t('footer.our_offers') },
+    { href: '/#contact', label: i18n.t('footer.contact') },
   ];
 
   return (
@@ -54,7 +55,7 @@ const Header = () => {
               <h1 className="text-xs tracking-wider uppercase text-white/85 font-semibold m-0">
                 KDMARCHE × O&apos;SCOP
               </h1>
-              <p className="text-[10px] text-white/50 mt-0">Centrale d&apos;achats B2B ESS</p>
+              <p className="text-[10px] text-white/50 mt-0">{i18n.t('footer.hub_short')}</p>
             </div>
           </Link>
 
@@ -78,13 +79,13 @@ const Header = () => {
             <Link to="/connexion">
               <button className="btn-ghost inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium">
                 <LogIn className="w-3.5 h-3.5" />
-                Connexion
+                {i18n.t('nav.login')}
               </button>
             </Link>
             <Link to="/inscription">
               <button className="btn-gold inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium">
                 <User className="w-3.5 h-3.5" />
-                Espace Client
+                {i18n.t('footer.client_space')}
               </button>
             </Link>
           </div>
@@ -124,13 +125,13 @@ const Header = () => {
               <Link to="/connexion" onClick={() => setIsMobileMenuOpen(false)}>
                 <button className="btn-ghost w-full inline-flex items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold">
                   <LogIn className="w-4 h-4" />
-                  Connexion
+                  {i18n.t('nav.login')}
                 </button>
               </Link>
               <Link to="/inscription" onClick={() => setIsMobileMenuOpen(false)}>
                 <button className="btn-gold w-full inline-flex items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold">
                   <User className="w-4 h-4" />
-                  Espace Client
+                  {i18n.t('footer.client_space')}
                 </button>
               </Link>
             </nav>

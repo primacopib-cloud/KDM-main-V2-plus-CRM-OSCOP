@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import {
   FileText, Search, Filter, Eye, Download, Receipt, Euro, Clock, CheckCircle2,
 } from 'lucide-react';
@@ -42,7 +43,7 @@ export const BuyerInvoicesTab = ({
                 <Card className="bg-white/[0.04] border-white/[0.08]">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs text-white/50">En attente</p>
+                      <p className="text-xs text-white/50">{i18n.t('buyer.en_attente')}</p>
                       <Clock className="w-4 h-4 text-amber-400" />
                     </div>
                     <p className="text-2xl font-bold text-amber-400">{invoiceStats.total_pending}</p>
@@ -80,7 +81,7 @@ export const BuyerInvoicesTab = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="PENDING">En attente</SelectItem>
+                  <SelectItem value="PENDING">{i18n.t('buyer.en_attente')}</SelectItem>
                   <SelectItem value="PAID">Payée</SelectItem>
                   <SelectItem value="PARTIAL">Partiel</SelectItem>
                 </SelectContent>
@@ -142,7 +143,7 @@ export const BuyerInvoicesTab = ({
                                 : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                               }
                             >
-                              {isPaid ? 'Payée' : 'En attente'}
+                              {isPaid ? i18n.t('buyer.payee') : i18n.t('buyer.en_attente')}
                             </Badge>
                           </div>
                           

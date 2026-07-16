@@ -321,6 +321,9 @@
     "toast_maj_erreur": "Update error",
     "toast_retire_panier": "Item removed from cart",
     "toast_commande_4x": "Order {{number}} created in 4× installments!",
-    "brouillon": "Draft"
+    "brouillon": "Draft",
+    "disponibles_one": "{{count}} product available",
+    "disponibles_other": "{{count}} products available",
+    "toast_prix_indispo": "Price not available for your organization"
   }
 }

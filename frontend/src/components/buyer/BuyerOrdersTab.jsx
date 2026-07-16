@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { Link } from 'react-router-dom';
 import {
   Package, FileText, Search, Filter, Eye, Download, MapPin,
@@ -35,7 +36,7 @@ export const BuyerOrdersTab = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="PENDING">En attente</SelectItem>
+                  <SelectItem value="PENDING">{i18n.t('buyer.en_attente')}</SelectItem>
                   <SelectItem value="CONFIRMED">Confirmée</SelectItem>
                   <SelectItem value="PROCESSING">En préparation</SelectItem>
                   <SelectItem value="READY_FOR_PICKUP">Prête à enlever</SelectItem>

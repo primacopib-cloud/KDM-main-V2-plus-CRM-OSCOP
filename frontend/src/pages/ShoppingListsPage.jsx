@@ -42,7 +42,7 @@ function formatPrice(cents) {
 function formatDate(dateStr) {
   if (!dateStr) return 'Jamais';
   const date = new Date(dateStr);
-  return date.toLocaleDateString('fr-FR', {
+  return date.toLocaleDateString(i18n.language, {
     day: 'numeric',
     month: 'short',
     year: 'numeric'

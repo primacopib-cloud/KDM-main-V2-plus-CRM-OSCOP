@@ -1,0 +1,29 @@
+{
+  "summary": "Frontend-only retest of i18n Phase A FR/EN/ES fixes (iter 18 follow-up). All 6 targeted fixes VERIFIED PASS with EN and ES on preview URL. Minor residual FR leaks detected inside BuyerDashboardTab 'Recent orders' card.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "BuyerDashboardTab (Recent orders card on /espace-acheteur)", "issue": "In EN, order row still renders French date '16 juil.', qualifier '1 article(s)' and status 'En attente'. Date should be locale-formatted (Jul 16) and 'article(s)' / 'En attente' should be translated. The main /commandes page renders correctly ('Jul 16, 2026, 12:11 PM' + 'Pending'), so the same helpers/keys need to be reused inside BuyerDashboardTab.", "selector": "[data-testid=buyer-dashboard] recent-orders row", "priority": "MEDIUM"},
+      {"component": "Header duplicate rendering on /espace-acheteur", "issue": "Two navigation strips render on top of each other in EN: an outer strip (Home / Pro Buyer Space / Catalog / Orders / Wallet / Documents / Vendor / Catalog) then a legacy one (Accueil / Espace Acheteur). The second one shows French labels 'Accueil' and 'Espace Acheteur' — indicating a legacy sub-header or breadcrumb is not going through i18n. Confirmed present when ?lang=en.", "selector": "buyer space top area", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_19.json"],
+  "action_items": [
+    "In BuyerDashboardTab Recent orders row: use i18n date formatter (respect i18n.language) and translate 'article(s)' and status label 'En attente' -> t('orders.status.pending').",
+    "Locate the second/legacy header shown on /espace-acheteur ('Accueil' / 'Espace Acheteur' breadcrumb) and route strings through i18next (or remove if duplicate)."
+  ],
+  "critical_code_review_comments": [
+    "ForgotPasswordPage uses t('auth.reset_sent_prefix') + <strong>{email}</strong> + t('auth.reset_sent_suffix') — this string-split pattern is fragile for i18n. Prefer <Trans i18nKey='auth.reset_sent' values={{email}} components={{strong:<strong/>}}/>.",
+    "Same anti-pattern is likely repeated wherever prefix/suffix keys were introduced; consider a codemod to <Trans/> before adding more locales."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped per request)", "frontend": "~90% (6/6 fixes pass; 2 residual FR leaks inside buyer dashboard)"},
+  "test_credentials": "acheteur-pro@kdmarche.fr / Demo2026! — login OK, redirected to /dashboard then navigated to buyer routes.",
+  "seed_data_creation": "None. Used existing test order KDM-20260716-60C1CBA8.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Verified: /mot-de-passe-oublie (EN+ES fully translated), Header on /offres (Home/Our offers/Contact/Log in/Client space) EN+ES OK, Footer legal docs section EN+ES OK, /espace-acheteur KPI cards (Total orders/In progress/Total spent/O'SCOP Credits/Recent orders/View all) EN OK, catalogue '8 products available' EN OK, favoris '0 products in your favorites' EN OK, /commandes dates 'Jul 16, 2026, 12:11 PM' EN OK. Remaining leaks are ONLY inside BuyerDashboardTab Recent orders card ('16 juil.', '1 article(s)', 'En attente') and a duplicate breadcrumb showing 'Accueil / Espace Acheteur'. No console 'not defined' errors, no raw i18n keys observed. WebSocket warning is unrelated infra noise.",
+  "rca of the issue": "BuyerDashboardTab appears to render its own Recent orders row locally instead of reusing the OrdersPage formatter (which was fixed in iter 18 to use i18n.language). The status label and 'article(s)' string are hardcoded in French in the same component."
+}

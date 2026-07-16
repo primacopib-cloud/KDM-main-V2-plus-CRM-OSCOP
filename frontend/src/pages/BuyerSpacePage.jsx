@@ -392,7 +392,7 @@ export default function BuyerSpacePage() {
                     onClick={alert.action}
                     className="text-white/60 hover:text-white"
                   >
-                    Voir <ChevronRight className="w-4 h-4 ml-1" />
+                    {i18n.t('buyer.voir')} <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 )}
               </div>

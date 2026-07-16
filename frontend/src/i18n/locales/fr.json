@@ -70,7 +70,16 @@
     "regions": "Guadeloupe · Martinique · Guyane · La Réunion · Mayotte",
     "legal_notice": "Mentions légales & CGV",
     "ess_charter": "Charte ESS",
-    "privacy": "Politique de confidentialité"
+    "privacy": "Politique de confidentialité",
+    "tagline": "Centrale d'achats B2B ESS - Partenariat officiel pour l'Économie Sociale et Solidaire.",
+    "ess_certified": "Mutualisation ESS certifiée",
+    "legal_docs": "Documents Légaux",
+    "cgv_kdmarche": "CGV KDMARCHE B2B",
+    "cg_oscop": "CG O'SCOP",
+    "convention": "Convention de partenariat",
+    "charte_mutualisation": "Charte ESS de mutualisation",
+    "copyright": "© 2025 Centrale d'Achats B2B ESS - KDMARCHE & O'SCOP. Tous droits réservés.",
+    "hub_short": "Centrale d'achats B2B ESS"
   },
   "auth": {
     "members_area": "Espace membres",
@@ -125,7 +134,16 @@
     "account_creation_error": "Erreur lors de la création du compte",
     "already_account": "Déjà un compte ?",
     "forgot_password_title": "Mot de passe oublié",
-    "email_sent": "Si un compte existe, un e-mail de réinitialisation a été envoyé."
+    "email_sent": "Si un compte existe, un e-mail de réinitialisation a été envoyé.",
+    "check_inbox": "Vérifiez votre boîte email",
+    "forgot_subtitle": "Entrez votre email pour recevoir un lien de réinitialisation",
+    "reset_sent_prefix": "Si un compte existe avec l'adresse ",
+    "reset_sent_suffix": ", vous recevrez un email avec les instructions de réinitialisation.",
+    "link_expires": "Le lien expire dans 1 heure.",
+    "back_to_login": "Retour à la connexion",
+    "sending": "Envoi en cours...",
+    "send_link": "Envoyer le lien",
+    "remember": "Vous vous souvenez ?"
   },
   "landing": {
     "hero_badge": "Communityplace coopérative B2B2C",

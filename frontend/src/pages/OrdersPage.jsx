@@ -45,7 +45,7 @@ const formatPrice = (cents) => {
 const formatDate = (dateStr) => {
   if (!dateStr) return '---';
   const date = new Date(dateStr);
-  return date.toLocaleDateString('fr-FR', {
+  return date.toLocaleDateString(i18n.language, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

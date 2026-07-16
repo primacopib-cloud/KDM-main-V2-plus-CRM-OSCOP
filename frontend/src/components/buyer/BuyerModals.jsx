@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import {
   Package, ShoppingBag, MapPin, FileText, Receipt, Download,
 } from 'lucide-react';
@@ -131,7 +132,7 @@ export const BuyerModals = ({
                       : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                     }
                   >
-                    {selectedInvoice.payment_status === 'PAID' ? 'Payée' : 'En attente'}
+                    {selectedInvoice.payment_status === 'PAID' ? i18n.t('buyer.payee') : i18n.t('buyer.en_attente')}
                   </Badge>
                 </div>
               </div>

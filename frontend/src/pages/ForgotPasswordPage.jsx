@@ -44,7 +44,7 @@ const ForgotPasswordPage = () => {
       <div className="w-full max-w-md">
         <Link to="/connexion" className="inline-flex items-center text-white/60 hover:text-white mb-6 transition-colors text-sm">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Retour à la connexion
+          {t('auth.back_to_login')}
         </Link>
         
         <div className="glass-panel rounded-[26px] p-8">
@@ -66,10 +66,7 @@ const ForgotPasswordPage = () => {
             </div>
             <h1 className="text-2xl font-bold">{t('auth.forgot_password_title')}</h1>
             <p className="text-white/60 text-sm mt-1">
-              {isSubmitted 
-                ? "Vérifiez votre boîte email" 
-                : "Entrez votre email pour recevoir un lien de réinitialisation"
-              }
+              {isSubmitted ? t('auth.check_inbox') : t('auth.forgot_subtitle')}
             </p>
           </div>
           
@@ -80,16 +77,15 @@ const ForgotPasswordPage = () => {
               </div>
               <div className="space-y-2">
                 <p className="text-white/80">
-                  Si un compte existe avec l'adresse <strong className="text-white">{email}</strong>, 
-                  vous recevrez un email avec les instructions de réinitialisation.
+                  {t('auth.reset_sent_prefix')}<strong className="text-white">{email}</strong>{t('auth.reset_sent_suffix')}
                 </p>
                 <p className="text-white/50 text-sm">
-                  Le lien expire dans 1 heure.
+                  {t('auth.link_expires')}
                 </p>
               </div>
               <Link to="/connexion">
                 <button className="btn-ghost w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-[14px] text-sm font-semibold mt-4">
-                  Retour à la connexion
+                  {t('auth.back_to_login')}
                 </button>
               </Link>
             </div>
@@ -122,18 +118,18 @@ const ForgotPasswordPage = () => {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Envoi en cours...
+                    {t('auth.sending')}
                   </>
                 ) : (
                   <>
                     <Mail className="w-4 h-4" />
-                    Envoyer le lien
+                    {t('auth.send_link')}
                   </>
                 )}
               </button>
               
               <p className="text-center text-sm text-white/60">
-                Vous vous souvenez ? <Link to="/connexion" className="text-[#D9B35A] hover:text-[#F2D07A] font-medium">Se connecter</Link>
+                {t('auth.remember')} <Link to="/connexion" className="text-[#D9B35A] hover:text-[#F2D07A] font-medium">{t('auth.sign_in')}</Link>
               </p>
             </form>
           )}

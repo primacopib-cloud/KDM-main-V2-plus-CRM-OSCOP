@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import { Link } from 'react-router-dom';
 import {
   Package, Clock, TrendingUp, Wallet, ChevronRight, FileText,
@@ -15,7 +16,7 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
               <Card className="bg-white/[0.04] border-white/[0.08]">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-white/50">Commandes totales</p>
+                    <p className="text-xs text-white/50">{i18n.t('buyer.commandes_totales')}</p>
                     <Package className="w-4 h-4 text-[#D9B35A]" />
                   </div>
                   <p className="text-2xl font-bold text-white">{stats.totalOrders}</p>
@@ -25,7 +26,7 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
               <Card className="bg-white/[0.04] border-white/[0.08]">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-white/50">En cours</p>
+                    <p className="text-xs text-white/50">{i18n.t('buyer.en_cours')}</p>
                     <Clock className="w-4 h-4 text-amber-400" />
                   </div>
                   <p className="text-2xl font-bold text-amber-400">{stats.pendingOrders}</p>
@@ -35,7 +36,7 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
               <Card className="bg-white/[0.04] border-white/[0.08]">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-white/50">Total dépensé</p>
+                    <p className="text-xs text-white/50">{i18n.t('buyer.total_depense')}</p>
                     <TrendingUp className="w-4 h-4 text-emerald-400" />
                   </div>
                   <p className="text-2xl font-bold text-emerald-400">{formatCurrency(stats.totalSpent)}</p>
@@ -45,7 +46,7 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
               <Card className="bg-white/[0.04] border-white/[0.08]">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-white/50">Crédits O'SCOP</p>
+                    <p className="text-xs text-white/50">{i18n.t('buyer.credits_oscop')}</p>
                     <Wallet className="w-4 h-4 text-purple-400" />
                   </div>
                   <p className="text-2xl font-bold text-purple-400">{formatCurrency(stats.creditsBalance)}</p>
@@ -59,7 +60,7 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white flex items-center gap-2">
                     <Package className="w-5 h-5 text-[#D9B35A]" />
-                    Commandes récentes
+                    {i18n.t('buyer.commandes_recentes')}
                   </CardTitle>
                   <Button 
                     variant="ghost" 
@@ -67,7 +68,7 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
                     onClick={() => setActiveTab('orders')}
                     className="text-white/60 hover:text-white"
                   >
-                    Voir tout <ChevronRight className="w-4 h-4 ml-1" />
+                    {i18n.t('buyer.voir_tout')} <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 </div>
               </CardHeader>
@@ -122,8 +123,8 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
                       <Package className="w-6 h-6 text-[#D9B35A]" />
                     </div>
                     <div>
-                      <p className="font-semibold text-white">Nouvelle commande</p>
-                      <p className="text-xs text-white/60">Accéder au catalogue</p>
+                      <p className="font-semibold text-white">{i18n.t('buyer.nouvelle_commande')}</p>
+                      <p className="text-xs text-white/60">{i18n.t('buyer.acceder_catalogue')}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -136,8 +137,8 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
                       <Wallet className="w-6 h-6 text-purple-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-white">Recharger crédits</p>
-                      <p className="text-xs text-white/60">Gérer mon wallet</p>
+                      <p className="font-semibold text-white">{i18n.t('buyer.recharger_credits')}</p>
+                      <p className="text-xs text-white/60">{i18n.t('buyer.gerer_wallet')}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -150,8 +151,8 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
                       <FileText className="w-6 h-6 text-emerald-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-white">Documents légaux</p>
-                      <p className="text-xs text-white/60">CGV, Contrats</p>
+                      <p className="font-semibold text-white">{i18n.t('buyer.documents_legaux')}</p>
+                      <p className="text-xs text-white/60">{i18n.t('buyer.cgv_contrats')}</p>
                     </div>
                   </CardContent>
                 </Card>
