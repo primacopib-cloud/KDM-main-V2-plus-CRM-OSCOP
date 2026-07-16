@@ -679,3 +679,9 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 **Tests** : iteration_20 (1 CRITICAL trouvé : import i18n manquant dans PlansTab → crash /admin/plans — corrigé ; + résidus FR Lolodrive/Vendor/AdminProducts/BackButton — tous corrigés et vérifiés par screenshots EN/ES post-fix)
 **Notes** : la route Lolodrive admin est `/lolodrive`. Textes générés côté serveur (alertes type "11 commande(s) payée(s) en attente >2h", noms de catégories DB, features des plans en DB) non couverts par i18n frontend — nécessiterait i18n des données backend (backlog).
 **i18n est désormais COMPLET (Phase A + B) sur ~910 clés × 3 langues.**
+
+### 2026-06 — Fix P0 crash /catalogue (post-migration cookies httpOnly) — TERMINÉ
+- Cause: `tData()` utilisé sans import dans `CatalogPage.jsx` et `components/catalog/ProductsGrid.jsx` → ReferenceError.
+- Fixes: imports `tData` ajoutés; WebSocket notifications ne se connecte plus avec `user_id` vide (`NotificationToast.jsx` guard `if (!userId)`); `SuperAdminPage.jsx` lit l'id via `JSON.parse(localStorage.getItem('user'))?.id`; localisation `+N autres` via `adm.plus_more` / `buyer.plus_more_items` (fr/en/es).
+- Validé par testing_agent iteration_22: 100% (6/6 flows) — catalogue, add-to-cart, favoris, i18n EN, WebSocket user_id réel, logout/régression. 0 erreur console.
+- Restant: Test Stripe LIVE 1€ (attente utilisateur), pont GED ESS externe, microservice finance-api.
