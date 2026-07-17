@@ -14,6 +14,7 @@ import NavigationHistoryDropdown from './NavigationHistoryDropdown';
 import QuickShortcuts from './QuickShortcuts';
 import { useFavorites } from './FavoriteButton';
 import LanguageSwitcher from './LanguageSwitcher';
+import CommunityplaceBadge from './CommunityplaceBadge';
 import { useTranslation } from 'react-i18next';
 
 // Favorites nav button with count
@@ -119,6 +120,7 @@ const NavBar = ({ variant = 'default' }) => {
                 className="h-11 w-auto object-contain hidden sm:block"
               />
             </div>
+            <CommunityplaceBadge size="sm" className="hidden md:inline-flex" />
           </Link>
 
           {/* Desktop Navigation */}

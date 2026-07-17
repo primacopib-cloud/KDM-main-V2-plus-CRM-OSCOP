@@ -752,3 +752,4 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 
 ## 2026-07-17 — Renommage de marque
 - "Centrale d'achat(s)" remplacé par "Communityplace" dans toute l'app (26 fichiers : frontend FR/EN/ES i18n, textes légaux, backend emails/PDF/API). Équivalents EN ("purchasing hub") et ES ("central de compras") également remplacés par la marque Communityplace.
+- Badge "Communityplace" (pastille dorée avec icône Store) ajouté dans les 2 en-têtes : Header.jsx (site vitrine) et NavBar.jsx (application). Composant réutilisable : frontend/src/components/CommunityplaceBadge.jsx.

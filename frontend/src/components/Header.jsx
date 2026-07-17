@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { partners } from '../data/mock';
 import { Menu, X, User, LogIn, Download } from 'lucide-react';
+import CommunityplaceBadge from './CommunityplaceBadge';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -57,6 +58,7 @@ const Header = () => {
               </h1>
               <p className="text-[10px] text-white/50 mt-0">{i18n.t('footer.hub_short')}</p>
             </div>
+            <CommunityplaceBadge size="sm" className="hidden sm:inline-flex" />
           </Link>
 
           {/* Desktop Navigation */}
