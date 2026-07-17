@@ -23,7 +23,7 @@ auth_core_router = APIRouter(prefix="/api")
 
 @auth_core_router.get("/")
 async def root():
-    return {"message": "Centrale d'achats B2B ESS - API", "status": "active"}
+    return {"message": "Communityplace B2B ESS - API", "status": "active"}
 
 
 @auth_core_router.get("/health")

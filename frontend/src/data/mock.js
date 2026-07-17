@@ -51,7 +51,7 @@ export const subscriptionPlans = [
     period: "mois",
     highlight: false,
     features: [
-      "Accès à la centrale d'achats KDMARCHE B2B",
+      "Accès à la Communityplace KDMARCHE B2B",
       "1 zone géographique incluse",
       "Accès aux prix structurels mutualisés",
       "Wallet crédits de base",
@@ -135,7 +135,7 @@ export const contractualDocuments = [
   "CGV KDMARCHE B2B",
   "Charte ESS de mutualisation",
   "FAQ clients & administrations",
-  "Page web commune \"Centrale d'achats ESS\""
+  "Page web commune \"Communityplace ESS\""
 ];
 
 export const mockUsers = [

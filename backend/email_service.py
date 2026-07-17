@@ -90,7 +90,7 @@ def send_password_reset_email(to: str, reset_token: str, user_name: str):
         <div class="container">
             <div class="header">
                 <h1>KDMARCHE × O'SCOP</h1>
-                <p style="color: rgba(255,255,255,0.6); margin-top: 8px;">Centrale d'achats B2B ESS</p>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 8px;">Communityplace B2B ESS</p>
             </div>
             <div class="content">
                 <p>Bonjour {user_name},</p>
@@ -104,7 +104,7 @@ def send_password_reset_email(to: str, reset_token: str, user_name: str):
                 </div>
             </div>
             <div class="footer">
-                <p>KDMARCHE × O'SCOP - Centrale d'achats B2B ESS</p>
+                <p>KDMARCHE × O'SCOP - Communityplace B2B ESS</p>
                 <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
             </div>
         </div>
@@ -124,7 +124,7 @@ def send_password_reset_email(to: str, reset_token: str, user_name: str):
     
     Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.
     
-    KDMARCHE × O'SCOP - Centrale d'achats B2B ESS
+    KDMARCHE × O'SCOP - Communityplace B2B ESS
     """
     
     return send_email(to, subject, html_content, plain_content)
@@ -231,7 +231,7 @@ def send_welcome_email(to: str, user_name: str, company_name: str):
             </div>
             <div class="content">
                 <p>Bonjour {user_name},</p>
-                <p>Votre compte pour <strong>{company_name}</strong> a été créé avec succès sur la centrale d'achats B2B ESS.</p>
+                <p>Votre compte pour <strong>{company_name}</strong> a été créé avec succès sur la Communityplace B2B ESS.</p>
                 <p>Voici ce que vous pouvez faire :</p>
                 <div class="feature">
                     <span class="feature-icon">✓</span>
@@ -250,7 +250,7 @@ def send_welcome_email(to: str, user_name: str, company_name: str):
                 </center>
             </div>
             <div class="footer">
-                <p>KDMARCHE × O'SCOP - Centrale d'achats B2B ESS · Accès Pro Mutualisé</p>
+                <p>KDMARCHE × O'SCOP - Communityplace B2B ESS · Accès Pro Mutualisé</p>
             </div>
         </div>
     </body>

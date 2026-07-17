@@ -120,7 +120,7 @@ async def get_signature_certificate(signature_id: str):
         },
         "audit_trail": signature.get("audit_trail", []),
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "issuer": "KDMARCHE × O'SCOP - Centrale d'Achats B2B ESS"
+        "issuer": "KDMARCHE × O'SCOP - Communityplace B2B ESS"
     }
     
     return certificate

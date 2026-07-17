@@ -1,7 +1,7 @@
 export const conventionContent = {
   id: "convention",
   title: "Convention de partenariat KDMARCHE – O'SCOP",
-  subtitle: "Centrale d'achats B2B ESS — Séparation stricte des rôles, flux et rémunérations",
+  subtitle: "Communityplace B2B ESS — Séparation stricte des rôles, flux et rémunérations",
   version: "{{VERSION}}",
   dateEffet: "{{DATE_EFFET}}",
   reference: "{{REF_CONVENTION}}",
@@ -29,7 +29,7 @@ export const conventionContent = {
     {
       number: "1",
       title: "Objet",
-      content: `La présente convention a pour objet de définir les conditions dans lesquelles les Parties coopèrent afin d'opérer une **centrale d'achats B2B à vocation ESS**, reposant sur une **séparation stricte** des rôles, des flux financiers et des responsabilités.`
+      content: `La présente convention a pour objet de définir les conditions dans lesquelles les Parties coopèrent afin d'opérer une **Communityplace B2B à vocation ESS**, reposant sur une **séparation stricte** des rôles, des flux financiers et des responsabilités.`
     },
     {
       number: "2",

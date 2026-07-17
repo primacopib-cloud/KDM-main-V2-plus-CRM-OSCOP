@@ -103,7 +103,7 @@ DEFAULT_DOCUMENTS = [
         "version": "1.0.0",
         "version_number": 1,
         "title": "Convention de partenariat KDMARCHE – O'SCOP",
-        "description": "Centrale d'achats B2B ESS — Partenariat (séparation stricte des rôles et flux)",
+        "description": "Communityplace B2B ESS — Partenariat (séparation stricte des rôles et flux)",
         "filename": "convention-kdmarche-oscop.html",
         "tags": ["partenariat", "b2b", "ess", "convention"],
         "audience": ["B2B", "ADMIN", "LEGAL"],

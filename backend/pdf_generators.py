@@ -68,7 +68,7 @@ def generate_order_pdf(order: dict, org: dict = None, signature_data: dict = Non
     
     # ===== HEADER =====
     elements.append(Paragraph("KDMARCHE × O'SCOP", title_style))
-    elements.append(Paragraph("Centrale d'Achats B2B - Économie Sociale et Solidaire", subtitle_style))
+    elements.append(Paragraph("Communityplace B2B - Économie Sociale et Solidaire", subtitle_style))
     
     # ===== ORDER INFO =====
     elements.append(Paragraph("BON DE COMMANDE", ParagraphStyle(
@@ -243,7 +243,7 @@ def generate_order_pdf(order: dict, org: dict = None, signature_data: dict = Non
     # ===== FOOTER =====
     elements.append(Spacer(1, 30))
     footer_text = """
-    KDMARCHE × O'SCOP - Centrale d'Achats B2B ESS<br/>
+    KDMARCHE × O'SCOP - Communityplace B2B ESS<br/>
     Conditions générales de vente disponibles sur kdmarche-oscop.fr<br/>
     Document généré automatiquement - Ne pas renvoyer
     """

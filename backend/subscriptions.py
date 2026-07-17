@@ -12,7 +12,7 @@ SUBSCRIPTION_PLANS = [
         "id": "ess-acces-pro",
         "slug": "ess-acces-pro",
         "name": "ESS ACCÈS PRO",
-        "description": "Accès de base à la centrale d'achats KDMARCHE B2B",
+        "description": "Accès de base à la Communityplace KDMARCHE B2B",
         "price_cents": 14900,
         "price": 149,
         "period": "mois",
@@ -24,7 +24,7 @@ SUBSCRIPTION_PLANS = [
         "default_credits": 100,
         "color": "#D9B35A",
         "features": [
-            "Accès à la centrale d'achats KDMARCHE B2B",
+            "Accès à la Communityplace KDMARCHE B2B",
             "1 zone géographique incluse",
             "Accès aux prix structurels mutualisés",
             "Wallet crédits de base",

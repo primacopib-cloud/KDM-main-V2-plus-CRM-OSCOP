@@ -194,7 +194,7 @@ export const cgOscopContent = {
     {
       number: "11",
       title: "Conformité – Audit – Prévention de requalification",
-      content: `**11.1.** O'SCOP ne fournit aucune assurance, ne mutualise aucun risque et n'indemnise aucun sinistre dans le cadre de la centrale d'achats.
+      content: `**11.1.** O'SCOP ne fournit aucune assurance, ne mutualise aucun risque et n'indemnise aucun sinistre dans le cadre de la Communityplace.
 
 **11.2.** O'SCOP ne manipule pas de fonds pour compte de tiers concernant les marchandises.
 

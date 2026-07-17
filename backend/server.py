@@ -31,7 +31,7 @@ db = client[os.environ.get('DB_NAME', 'b2b_ess_db')]
 set_shared_database(db)
 
 # Create the main app
-app = FastAPI(title="Centrale d'achats B2B ESS API")
+app = FastAPI(title="Communityplace B2B ESS API")
 
 
 @app.get("/health")

@@ -80,7 +80,7 @@ def generate_offer_pdf() -> BytesIO:
     
     # Header
     story.append(Paragraph("OFFRE COMMERCIALE OFFICIELLE", title_style))
-    story.append(Paragraph("Centrale d'achats B2B ESS", subtitle_style))
+    story.append(Paragraph("Communityplace B2B ESS", subtitle_style))
     story.append(Paragraph("Partenariat KDMARCHE – O'SCOP", subtitle_style))
     story.append(Spacer(1, 20))
     
@@ -240,7 +240,7 @@ def generate_offer_pdf() -> BytesIO:
         body_style
     ))
     story.append(Paragraph(
-        "© 2025 Centrale d'Achats B2B ESS - KDMARCHE & O'SCOP",
+        "© 2025 Communityplace B2B ESS - KDMARCHE & O'SCOP",
         body_style
     ))
     

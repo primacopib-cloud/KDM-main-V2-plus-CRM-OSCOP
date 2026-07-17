@@ -1,7 +1,7 @@
 export const charteESSContent = {
   id: "charte-ess",
   title: "Charte ESS de Mutualisation",
-  subtitle: "Centrale d'achats B2B ESS — Transparence · Non-spéculation · Traçabilité",
+  subtitle: "Communityplace B2B ESS — Transparence · Non-spéculation · Traçabilité",
   version: "{{VERSION}}",
   dateEffet: "{{DATE_EFFET}}",
   reference: "{{REF_CHARTE_ESS_MUT}}",

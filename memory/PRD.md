@@ -749,3 +749,6 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Stripe PROD vérifié : mode LIVE, 2 clés configurées (oscop sk_live_51ScyA…, kdmarche sk_live_51Fqcz…). ⚠️ last_webhook_received=null → l'utilisateur doit vérifier dans le dashboard Stripe que les webhooks pointent vers https://coop-dashboard-8.emergent.host (endpoints: /api/checkout/webhook, /api/webhook/stripe, /api/lolodrive/stripe/webhook).
 - TEST 1€ LIVE : à exécuter PAR L'UTILISATEUR avec sa carte sur l'app publiée ; ensuite l'agent vérifie la réconciliation et procède au remboursement.
 - ⚠️ Redéploiement nécessaire pour activer les nouveaux flux + variables (IABOIS_*, OSCOPGE_*, COPPAM_*, CRMESS_*) en production.
+
+## 2026-07-17 — Renommage de marque
+- "Centrale d'achat(s)" remplacé par "Communityplace" dans toute l'app (26 fichiers : frontend FR/EN/ES i18n, textes légaux, backend emails/PDF/API). Équivalents EN ("purchasing hub") et ES ("central de compras") également remplacés par la marque Communityplace.

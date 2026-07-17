@@ -148,7 +148,7 @@ def _wrap_html(title: str, body_html: str) -> str:
     </div>
     <p style=\"color:rgba(255,255,255,0.4);font-size:11px;text-align:center;margin-top:24px;\">
       Email transactionnel automatique — Ne pas répondre.<br/>
-      © {datetime.utcnow().year} KDMARCHÉ × O'SCOP — Centrale d'achats coopérative ESS
+      © {datetime.utcnow().year} KDMARCHÉ × O'SCOP — Communityplace coopérative ESS
     </p>
   </div>
 </body></html>"""

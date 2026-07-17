@@ -114,7 +114,7 @@ LEGAL_DOCUMENTS = {
         "id": "convention",
         "title": "Convention de partenariat KDMARCHE – O'SCOP",
         "filename": "convention-kdmarche-oscop.html",
-        "description": "Centrale d'achats B2B ESS — Partenariat (séparation stricte des rôles)",
+        "description": "Communityplace B2B ESS — Partenariat (séparation stricte des rôles)",
         "type": "partnership"
     },
     "cg-oscop": {
