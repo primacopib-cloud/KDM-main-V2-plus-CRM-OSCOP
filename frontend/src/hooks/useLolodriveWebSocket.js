@@ -44,14 +44,16 @@ export default function useLolodriveWebSocket({ isAdmin = false, userId = null, 
         setConnected(true);
         // Periodic ping
         pingTimerRef.current = setInterval(() => {
-          try { ws.send(JSON.stringify({ type: 'ping' })); } catch { /* ignore */ }
+          try { ws.send(JSON.stringify({ type: 'ping' })); } catch (err) { console.debug('WS ping failed:', err); }
         }, PING_INTERVAL_MS);
       };
       ws.onmessage = (evt) => {
         try {
           const data = JSON.parse(evt.data);
           onMessageRef.current?.(data);
-        } catch { /* ignore */ }
+        } catch (err) {
+          console.debug('WS message parse failed:', err);
+        }
       };
       ws.onerror = () => {
         // Will trigger onclose
@@ -76,7 +78,7 @@ export default function useLolodriveWebSocket({ isAdmin = false, userId = null, 
       if (pingTimerRef.current) clearInterval(pingTimerRef.current);
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       if (wsRef.current) {
-        try { wsRef.current.close(); } catch { /* ignore */ }
+        try { wsRef.current.close(); } catch (err) { console.debug('WS close failed:', err); }
       }
     };
   }, [enabled, isAdmin, userId]);

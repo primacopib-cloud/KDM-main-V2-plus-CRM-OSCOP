@@ -63,8 +63,8 @@ const PartnersSection = () => {
               <div className="p-3.5 rounded-2xl" style={{ background: 'rgba(217,179,90,0.08)', border: '1px solid rgba(217,179,90,0.15)' }}>
                 <h5 className="text-xs uppercase tracking-wider text-[#D9B35A] mb-2">{i18n.t('partners.kdm_assumes')}</h5>
                 <div className="flex flex-wrap gap-1.5">
-                  {(Array.isArray(kdmAssumes) ? kdmAssumes : []).map((item, index) => (
-                    <span key={index} className="pill text-xs">
+                  {(Array.isArray(kdmAssumes) ? kdmAssumes : []).map((item) => (
+                    <span key={item} className="pill text-xs">
                       {item}
                     </span>
                   ))}
@@ -98,8 +98,8 @@ const PartnersSection = () => {
               <div>
                 <h5 className="text-xs uppercase tracking-wider text-white/60 mb-2.5">{i18n.t('partners.role_exclusive')}</h5>
                 <ul className="space-y-2">
-                  {(Array.isArray(oscopResponsibilities) ? oscopResponsibilities : []).map((item, index) => (
-                    <li key={index} className="flex items-start gap-2.5 text-white/75 text-sm">
+                  {(Array.isArray(oscopResponsibilities) ? oscopResponsibilities : []).map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-white/75 text-sm">
                       <div className="icon-dot green mt-0.5"></div>
                       <span>{item}</span>
                     </li>

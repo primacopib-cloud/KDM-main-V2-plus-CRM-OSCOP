@@ -1,0 +1,41 @@
+{
+  "summary": "Iteration 25 — Non-regression of 2nd code-review pass (wildcard imports → explicit imports, stable keys). Backend 10/10 PASS (test_iter25_review_regression.py) covering schema_catalog re-exports (v2 catalog/cart/orders), logiscop TRANSPORT_RATES_PER_M3 (quote+rates), payment_models (packages+bank-details). CRITICAL FRONTEND REGRESSION found & fixed: LogisticsSection.jsx line 33 `.map((step) => {` lost its `index` param during 'keys stables' refactor but lines 45 & 48 still referenced `index` → ReferenceError 'index is not defined' → LandingPage entirely blank (root innerHTML empty on `/`). Fix applied: restored `.map((step, index) => {`. After fix, landing renders in full (Hero + Benefits + Partnership + Pricing/Partners/Logistics), admin-v2 → Applications tab loads (empty state, no crash), /super-admin (mounts AdvancedStatsCharts) renders without JS errors, buyer login → /catalogue OK, admin login → /admin/connecteurs OK (both cards + sync queue visible).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "LogisticsSection",
+        "issue": "ReferenceError 'index is not defined' — crashes entire LandingPage. Root cause: 2nd-pass 'keys stables' refactor changed `.map((step, index) => …)` to `.map((step) => …)` on line 33 but lines 45 (`{String(index + 1)…}`) and 48 (`stepLabels[index]`) still use `index`. FIXED by testing agent (parameter restored). Note: `key={step.step}` on line 37 is fine.",
+        "selector": "/app/frontend/src/components/LogisticsSection.jsx:33",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter25_review_regression.py",
+    "/app/test_reports/pytest/iter25_results.xml"
+  ],
+  "action_items": [
+    "Review the 2nd-pass 'keys stables' refactor for any other .map() where the `index` parameter was dropped while still being referenced in the callback (PartnersSection lines 54/113 still use `key={index}` — parameter is present, so OK; AdvancedStatsCharts and ApplicationsTab checked — OK; PricingSection checked — OK). Only LogisticsSection was broken.",
+    "Consider adding an ErrorBoundary around the landing sections so a single component crash doesn't wipe the entire page (React already warned: 'Consider adding an error boundary')."
+  ],
+  "critical_code_review_comments": [
+    "LogisticsSection.jsx: any refactor that removes a map callback parameter must be paired with an audit of its references — an ESLint rule like `no-undef` on JSX expressions or `react/jsx-key` combined with local `eqeqeq` would have caught this at commit time. Currently nothing prevents this regression from reoccurring.",
+    "LandingPage has no ErrorBoundary — a single child crash blanks the whole page (root becomes empty). Add a top-level or per-section boundary.",
+    "test_iter25_review_regression.py: BASE_URL falls back to reading /app/frontend/.env when REACT_APP_BACKEND_URL is not exported in shell — kept because pytest is run from the pod without those env vars.",
+    "Backend explicit-import refactor is clean: schema_catalog re-exports, logiscop TRANSPORT_RATES_PER_M3 and payment_models CREDIT_PACKAGES/BANK_DETAILS all resolve correctly at import time (server started without error and every touched endpoint returns 200)."
+  ],
+  "updated_files": [
+    "/app/frontend/src/components/LogisticsSection.jsx (restored missing `, index` map parameter — fixes LandingPage blank)",
+    "/app/backend/tests/test_iter25_review_regression.py (new — 10 regression tests)"
+  ],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "100% (7/7 target flows) after 1 fix"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! and acheteur-pro@kdmarche.fr / Demo2026! — both worked (cookie httpOnly login OK).",
+  "seed_data_creation": "None. Cart add-to-cart test used product 0 from /api/v2/catalog/products (best-effort, tolerant of 4xx).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_iter25_review_regression.py = regression suite for 2nd-pass code-review (schema_catalog re-exports, TRANSPORT_RATES_PER_M3, payment_models). LogisticsSection missing-index bug already fixed in this iteration — landing page renders again. When re-running, verify NO 'index is not defined' pageerror on '/' and root innerHTML length > 10000. AdvancedStatsCharts is mounted on /super-admin (Statistics tab), NOT /stats. ApplicationsTab is on /admin-v2 → click role=tab name=Applications.",
+  "rca of the issue": "Regression in 2nd code-review pass 'keys index → keys stables dans LogisticsSection'. In LogisticsSection.jsx the map callback signature was changed from `(step, index) => {` to `(step) => {` (assumption: after stabilizing the key to `step.step`, the `index` variable was no longer needed). However two other JSX expressions inside the same callback still referenced `index` (`{String(index + 1).padStart(2,'0')}` for step numbering and `stepLabels[index]` for i18n label lookup). At runtime this raised `ReferenceError: index is not defined` inside <LogisticsSection>. React unmounted the entire <LandingPage> tree (no ErrorBoundary), so the '/' route rendered an empty `#root` — silent from the user's perspective (no visible error, just a blank cream background). Reproduction: open https://coop-dashboard-8.preview.emergentagent.com/ in clean session; before fix → root innerHTML is empty and pageerror 'index is not defined' is thrown; after fix → hero + all sections render normally. Mitigation applied: restore `index` as a map parameter. Long-term mitigation: add an ErrorBoundary around landing sections and enable eslint `no-undef` in the frontend CI to catch this class of bug pre-commit."
+}

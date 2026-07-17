@@ -34,7 +34,7 @@ const LogisticsSection = () => {
             const style = getStepStyle(step.responsible);
             return (
               <div 
-                key={index}
+                key={step.step}
                 className="rounded-[18px] p-3.5 relative min-h-[140px] flex flex-col"
                 style={{
                   background: 'rgba(255,255,255,0.03)',

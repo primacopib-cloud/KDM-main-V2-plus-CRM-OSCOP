@@ -111,7 +111,7 @@ export const ApplicationsTab = ({
                                 {app.documents?.length > 0 ? (
                                   <div className="space-y-2">
                                     {app.documents.map((doc, idx) => (
-                                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
+                                      <div key={doc.id || `${doc.doc_type}-${idx}`} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
                                         <FileText className="w-4 h-4 text-[#D4AF37]" />
                                         <span className="text-sm text-white/80">{doc.doc_type}</span>
                                         <Badge variant="outline" className="text-[10px] ml-auto">

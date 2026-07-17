@@ -12,7 +12,12 @@ import uuid
 import logging
 import math
 
-from logiscop_models import *  # noqa: F401,F403
+from logiscop_models import (
+    ZONE_NAMES, TRANSPORT_RATES_PER_KG, TRANSPORT_RATES_PER_M3, DELIVERY_SLOTS, PREPARATION_FEES,
+    DEFAULT_PICKUP_LOCATIONS, PickupLocation, ProofOfDelivery,
+    InboundRequest, PreparationRequest, DeliveryRequest,
+    DeliveryQuoteRequest, DeliveryQuoteResponse,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -67,8 +67,8 @@ export default function PosLolodrivePage() {
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
       o.start();
       o.stop(ctx.currentTime + 0.25);
-    } catch {
-      // ignore audio errors
+    } catch (err) {
+      console.debug('Audio beep unavailable:', err);
     }
   };
 

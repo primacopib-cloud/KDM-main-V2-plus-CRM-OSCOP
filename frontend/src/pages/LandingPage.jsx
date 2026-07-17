@@ -264,8 +264,9 @@ export const PublicLolodriveMapSection = () => {
         id: point.id, code: point.code, name: point.name, territory: point.territory,
       }));
       if (point.territory) localStorage.setItem('kdm_territory', point.territory);
-    } catch (_) {
+    } catch (err) {
       // localStorage may be unavailable (private mode, quota exceeded) — preselection is non-critical.
+      console.debug('Preselection storage failed:', err);
     }
   };
 

@@ -95,7 +95,7 @@ export default function OnboardingPage() {
             }
           }
         } catch (e) {
-          // No existing org, start fresh
+          console.debug('No existing org, starting onboarding fresh:', e);
         }
         
         // Load legal documents

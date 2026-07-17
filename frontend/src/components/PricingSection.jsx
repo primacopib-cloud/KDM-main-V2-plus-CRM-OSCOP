@@ -62,8 +62,8 @@ const PricingSection = () => {
               </div>
               
               <ul className="m-0 p-0 list-none grid gap-2.5 relative">
-                {(Array.isArray(features) ? features : plan.features).map((feature, index) => (
-                  <li key={index} className="flex gap-2.5 items-start text-white/75 text-[13px]">
+                {(Array.isArray(features) ? features : plan.features).map((feature) => (
+                  <li key={feature} className="flex gap-2.5 items-start text-white/75 text-[13px]">
                     <div className={`icon-dot ${plan.popular ? 'gold' : 'green'} mt-0.5`}></div>
                     <span>{feature}</span>
                   </li>
