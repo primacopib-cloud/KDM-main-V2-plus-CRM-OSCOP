@@ -723,3 +723,9 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 - Points redondants du rapport (déjà traités passes 1-2) : XSS/DOMPurify en place, hook deps faux positif (ESLint 0 warning), circular imports en lazy imports.
 - Toujours reporté : refactor fonctions legacy complexes + découpage composants <500 lignes.
 NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readiness). Si l'utilisateur en parle → lancer deployment_agent pour scanner les blockers.
+
+### 2026-06 — Fix déploiement production « impossible de publier » — TERMINÉ (iteration_27 : 100%)
+- Cause : `load_dotenv(override=True)` dans server.py écrasait en prod le MONGO_URL injecté par la plateforme avec `localhost:27017` du .env packagé → crash startup (ServerSelectionTimeoutError). En plus, le probe de readiness tapait GET /health (racine) → 404.
+- Fix : load_dotenv SANS override + override sélectif des seules clés STRIPE_* depuis le .env (placeholder pod sk_test_emergent doit rester écrasé en preview) + route racine GET /health → 200.
+- Validé : simulation prod (MONGO_URL plateforme préservé, clé Stripe projet prioritaire), deployment_agent PASS sans blocker, testing_agent 9/9 backend + smoke frontend 100%.
+- L'utilisateur peut relancer le déploiement (bouton Deploy).
