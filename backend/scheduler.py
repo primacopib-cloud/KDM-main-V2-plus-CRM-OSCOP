@@ -19,6 +19,7 @@ AUTO_RENEW_INTERVAL_SECONDS = 6 * 60 * 60
 
 _task: asyncio.Task | None = None
 _iabois_task: asyncio.Task | None = None
+_health_task: asyncio.Task | None = None
 _db = None
 
 
@@ -85,7 +86,7 @@ async def _scheduler_loop():
 
 
 def start_scheduler():
-    global _task, _iabois_task
+    global _task, _iabois_task, _health_task
     if _task is None or _task.done():
         loop = asyncio.get_event_loop()
         _task = loop.create_task(_scheduler_loop())
@@ -94,6 +95,10 @@ def start_scheduler():
         from connectors.iabois_sync import iabois_sync_loop
         _iabois_task = asyncio.get_event_loop().create_task(iabois_sync_loop())
         logger.info("IA Bois sync loop started (every 15 min)")
+    if _health_task is None or _health_task.done():
+        from connectors.health_watch import health_watch_loop
+        _health_task = asyncio.get_event_loop().create_task(health_watch_loop())
+        logger.info("Ecosystem health watch started (every 10 min)")
 
 
 def stop_scheduler():

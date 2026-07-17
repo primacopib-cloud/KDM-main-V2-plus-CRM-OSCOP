@@ -447,6 +447,20 @@
     "iabois_sync": "Synchroniser",
     "iabois_sync_ok": "{{total}} projet(s) importé(s), {{new}} nouveau(x)",
     "iabois_empty": "Aucun projet importé pour l’instant.",
-    "iabois_new": "NOUVEAU"
+    "iabois_new": "NOUVEAU",
+    "iabois_quote_create": "Créer le devis",
+    "iabois_quote_view": "Voir le devis",
+    "iabois_quote_created": "Devis matériaux créé avec succès",
+    "quote_title": "Devis matériaux",
+    "quote_draft": "BROUILLON",
+    "quote_client": "Client",
+    "quote_line": "Désignation",
+    "quote_qty": "Qté",
+    "quote_unit_price": "PU HT",
+    "quote_total": "Total HT",
+    "quote_total_ht": "Total HT",
+    "quote_tva": "TVA ({{rate}}%)",
+    "quote_total_ttc": "Total TTC",
+    "quote_prefill_note": "Lignes pré-remplies à partir des paramètres du projet IA Bois (surface, chambres, toiture…) — ajustables avant envoi au client."
   }
 }

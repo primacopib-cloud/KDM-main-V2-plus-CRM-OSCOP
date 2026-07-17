@@ -447,6 +447,20 @@
     "iabois_sync": "Sincronizar",
     "iabois_sync_ok": "{{total}} proyecto(s) importado(s), {{new}} nuevo(s)",
     "iabois_empty": "Sin proyectos importados todavía.",
-    "iabois_new": "NUEVO"
+    "iabois_new": "NUEVO",
+    "iabois_quote_create": "Crear presupuesto",
+    "iabois_quote_view": "Ver presupuesto",
+    "iabois_quote_created": "Presupuesto de materiales creado con éxito",
+    "quote_title": "Presupuesto de materiales",
+    "quote_draft": "BORRADOR",
+    "quote_client": "Cliente",
+    "quote_line": "Descripción",
+    "quote_qty": "Cant.",
+    "quote_unit_price": "PU sin IVA",
+    "quote_total": "Total sin IVA",
+    "quote_total_ht": "Total sin IVA",
+    "quote_tva": "IVA ({{rate}}%)",
+    "quote_total_ttc": "Total con IVA",
+    "quote_prefill_note": "Líneas prellenadas a partir de los parámetros del proyecto IA Bois (superficie, habitaciones, techo…) — ajustables antes de enviar al cliente."
   }
 }

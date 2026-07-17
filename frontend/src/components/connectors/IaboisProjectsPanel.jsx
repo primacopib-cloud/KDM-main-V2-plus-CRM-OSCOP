@@ -1,7 +1,8 @@
 import i18n from '@/i18n';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { TreePine, RefreshCw, Loader2 } from 'lucide-react';
+import { TreePine, RefreshCw, Loader2, FileText, Eye } from 'lucide-react';
+import { IaboisQuoteModal } from './IaboisQuoteModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -15,6 +16,8 @@ const fmtDate = (iso) => {
 export const IaboisProjectsPanel = () => {
   const [projects, setProjects] = useState([]);
   const [syncing, setSyncing] = useState(false);
+  const [quotingId, setQuotingId] = useState(null);
+  const [quote, setQuote] = useState(null);
 
   const fetchProjects = useCallback(async () => {
     const r = await fetch(`${API}/connectors/iabois/projects`, { credentials: 'include' });
@@ -37,6 +40,25 @@ export const IaboisProjectsPanel = () => {
     } finally {
       setSyncing(false);
     }
+  };
+
+  const createQuote = async (projectId) => {
+    setQuotingId(projectId);
+    try {
+      const r = await fetch(`${API}/connectors/iabois/projects/${projectId}/quote`, { method: 'POST', credentials: 'include' });
+      if (!r.ok) { toast.error('ERROR'); return; }
+      const data = await r.json();
+      if (data.created) toast.success(i18n.t('adm.iabois_quote_created'));
+      setQuote(data.quote);
+      await fetchProjects();
+    } finally {
+      setQuotingId(null);
+    }
+  };
+
+  const viewQuote = async (quoteId) => {
+    const r = await fetch(`${API}/connectors/iabois/quotes/${quoteId}`, { credentials: 'include' });
+    if (r.ok) setQuote(await r.json());
   };
 
   return (
@@ -73,10 +95,33 @@ export const IaboisProjectsPanel = () => {
                   {i18n.t('adm.iabois_new')}
                 </span>
               )}
+              {p.status === 'QUOTED' && p.quote_id ? (
+                <button
+                  type="button"
+                  onClick={() => viewQuote(p.quote_id)}
+                  data-testid={`iabois-view-quote-${p.id}`}
+                  className="btn-ghost h-8 px-3 rounded-lg inline-flex items-center gap-1.5 text-xs shrink-0"
+                  style={{ color: '#B8860B' }}
+                >
+                  <Eye size={12} /> {i18n.t('adm.iabois_quote_view')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => createQuote(p.id)}
+                  disabled={quotingId === p.id}
+                  data-testid={`iabois-create-quote-${p.id}`}
+                  className="btn-primary h-8 px-3 rounded-lg inline-flex items-center gap-1.5 text-xs shrink-0"
+                >
+                  {quotingId === p.id ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />}
+                  {i18n.t('adm.iabois_quote_create')}
+                </button>
+              )}
             </div>
           ))}
         </div>
       )}
+      <IaboisQuoteModal quote={quote} onClose={() => setQuote(null)} />
     </div>
   );
 };

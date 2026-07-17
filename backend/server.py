@@ -338,6 +338,10 @@ set_connectors_routes_database(db)
 app.include_router(connectors_router)
 from connectors.iabois_sync import set_iabois_sync_database
 set_iabois_sync_database(db)
+from connectors.iabois_quotes import set_iabois_quotes_database
+from connectors.health_watch import set_health_watch_database
+set_iabois_quotes_database(db)
+set_health_watch_database(db)
 
 # Alertes favoris (restock/promo) + routes admin stock & prix
 from favorites_alerts import set_favorites_alerts_database

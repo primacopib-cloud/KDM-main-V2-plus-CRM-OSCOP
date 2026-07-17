@@ -447,6 +447,20 @@
     "iabois_sync": "Sync now",
     "iabois_sync_ok": "{{total}} project(s) imported, {{new}} new",
     "iabois_empty": "No projects imported yet.",
-    "iabois_new": "NEW"
+    "iabois_new": "NEW",
+    "iabois_quote_create": "Create quote",
+    "iabois_quote_view": "View quote",
+    "iabois_quote_created": "Materials quote created successfully",
+    "quote_title": "Materials quote",
+    "quote_draft": "DRAFT",
+    "quote_client": "Client",
+    "quote_line": "Description",
+    "quote_qty": "Qty",
+    "quote_unit_price": "Unit price (excl. tax)",
+    "quote_total": "Total (excl. tax)",
+    "quote_total_ht": "Total excl. tax",
+    "quote_tva": "VAT ({{rate}}%)",
+    "quote_total_ttc": "Total incl. tax",
+    "quote_prefill_note": "Lines pre-filled from the IA Bois project parameters (surface, bedrooms, roof…) — adjustable before sending to the client."
   }
 }

@@ -128,6 +128,32 @@ async def list_iabois_projects(limit: int = Query(50, le=200), _: dict = Depends
     return {"projects": docs, "total": len(docs)}
 
 
+@connectors_router.post("/iabois/projects/{project_id}/quote")
+async def create_iabois_quote(project_id: str, _: dict = Depends(_admin)):
+    """Crée un devis matériaux pré-rempli depuis un projet IA Bois (idempotent)."""
+    from connectors.iabois_quotes import create_quote_from_project
+
+    result = await create_quote_from_project(project_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Projet IA Bois introuvable")
+    return result
+
+
+@connectors_router.get("/iabois/quotes/{quote_id}")
+async def get_iabois_quote(quote_id: str, _: dict = Depends(_admin)):
+    quote = await db.iabois_quotes.find_one({"id": quote_id}, {"_id": 0})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Devis introuvable")
+    return quote
+
+
+@connectors_router.get("/health-status")
+async def connectors_health_status(_: dict = Depends(_admin)):
+    """Derniers statuts relevés par la surveillance automatique (health watch)."""
+    docs = await db.connector_health_status.find({}, {"_id": 0}).to_list(50)
+    return {"statuses": docs}
+
+
 @connectors_router.get("/{name}/health")
 async def connector_health(name: str, _: dict = Depends(_admin)):
     registry = {c["name"]: c for c in connectors_base.connectors_registry()}

@@ -759,3 +759,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Validation complète (iteration_29.json) : backend connecteurs 7/7 (ecosystem, sync IA Bois ~44 projets, sync-events, health), frontend 100% (EcosystemPanel /admin, section Communityplace, badge en-tête, aucun résidu "centrale d'achat", non-régression /catalogue). Scheduler confirmé actif (IA Bois 15 min, PASS 6h). 6 apps externes en santé OK.
 - Note testing agent : EcosystemPanel dépend du cookie httpOnly (pas de header Bearer) et n'affiche pas d'état d'erreur en cas de 401/500 (amélioration possible).
 - Reste à faire (P0) : Test Stripe LIVE 1€ + remboursement en production (action utilisateur guidée).
+
+## 2026-07-17 — Alerte Panne Connecteur + Devis IA Bois
+- Health watch écosystème : boucle scheduler toutes les 10 min (connectors/health_watch.py) → email admin (Brevo, repli SendGrid) uniquement sur transition OK→ERROR (critical) ou ERROR→OK (medium). Statuts stockés dans connector_health_status, exposés via GET /api/connectors/health-status. Destinataire : ADMIN_ALERT_EMAIL (défaut admin@kdmarche-oscop.fr).
+- Devis IA Bois 1-clic : POST /api/connectors/iabois/projects/{id}/quote (idempotent) génère un devis matériaux pré-rempli depuis les paramètres du projet (surface, chambres, toit, terrasse, garage) — lignes ossature/isolation/bardage/couverture/menuiseries, TVA 8.5%. Collection iabois_quotes, projet passe en statut QUOTED. UI : boutons "Créer le devis"/"Voir le devis" dans IaboisProjectsPanel + modal IaboisQuoteModal (i18n FR/EN/ES).
+- Testé : curl backend (création + idempotence), simulation transitions health watch (alerts_sent=1 via Brevo), flux UI e2e validé par screenshot (modal devis 57 003,73 € TTC).
