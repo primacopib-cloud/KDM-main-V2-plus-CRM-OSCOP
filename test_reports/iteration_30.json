@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration 30 — Validated 4 new features (health-history modal, LOGI/OSCOP header→footer relocation, language switcher flags, super admin Droits & Rôles tab). Backend: /api/admin/team 401 unauth OK; /api/admin/team/grant 403 as buyer OK; /api/connectors/health-history returns {events:[], total:0} 200 as admin OK. Frontend: 4/4 flows green (language flags flagcdn images + click switches language; header no /logiscop or /oscop link, footer has both testids and /logiscop + /oscop pages render fine; EcosystemPanel card oscop-ia-bois opens eco-history-modal with eco-history-empty as expected and closes via eco-history-close; superadmin Droits & Rôles tab shows both super admin + cooper-test with correct badges; search for 'acheteur' returned acheteur-pro, EXPERT granted, member appears in list, revoke removes it; create member returns temp password + Brevo 'Invitation email sent with credentials'). Cleanup executed: deleted expert-qa-test@kdmarche.fr, restored acheteur-pro role to 'buyer' (was left as customer_org_buyer by revoke endpoint — flagged below).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/admin/team/revoke", "issue": "Revoke sets user.role to 'customer_org_buyer' regardless of the user's original pre-grant role. For acheteur-pro (original role 'buyer'), a revoke turns him into 'customer_org_buyer', a silent regression. Endpoint should either (a) store previous_role at grant-time and restore it on revoke, or (b) fall back to a generic 'user' role. Manually restored to 'buyer' in DB post-test."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_connectors_ecosystem.py (existing suite from iter 29 — not re-run this iteration)"
+  ],
+  "action_items": [
+    "Fix team/revoke logic: persist prior role at grant time (e.g. previous_role field) and restore it on revoke instead of hard-coding 'customer_org_buyer'.",
+    "Consider adding data-testid attributes to the SuperAdminHeader TabsTrigger (e.g. data-testid=\"superadmin-tab-roles\") — currently tabs are only reachable by localized label text."
+  ],
+  "critical_code_review_comments": [
+    "routes_team_roles.py revoke: hard-codes fallback role 'customer_org_buyer', silently downgrading pre-existing buyer/vendor/pos accounts. Should snapshot old role at grant.",
+    "TeamMemberForms.jsx uses fetch('/api/admin/team/create') with credentials:'include' — OK today via httpOnly cookie, but no error banner if request fails outside of the toast; unified auth fetch helper recommended (same comment as iter 29 EcosystemPanel).",
+    "SuperAdminHeader tabs lack data-testids on TabsTrigger — brittle for automation across locales.",
+    "TeamMemberForms.jsx (170 lines) mixes GrantRoleForm + CreateMemberForm + result modal — consider splitting for maintainability."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (3/3 endpoints verified via curl)", "frontend": "100% (4/4 flows PASS)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (super admin); acheteur-pro@kdmarche.fr / Demo2026! (buyer); cooper-test@kdmarche.fr / NmgHyl4STePu (COOPER). Login route: /connexion.",
+  "seed_data_creation": "Temporary: expert-qa-test@kdmarche.fr (EXPERT) created via /api/admin/team/create, then deleted. acheteur-pro granted EXPERT + revoked. Final DB state: expert-qa-test purged; acheteur-pro role restored to 'buyer' manually (post-revoke it was 'customer_org_buyer' — see backend_issues.minor).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 4 new features from PRD delta validated end-to-end. Superadmin route is /superadmin; the 'Droits & Rôles' tab is button[role=tab]:has-text('Droits & Rôles') (localized). role select options are the raw enum values (ADMIN/COOPER/EXPERT/…); use select_option with the value (not label). Confirmation for revoke is a browser confirm() dialog — auto-accept it. Brevo emails do fire on team/create (invitation email sent). eco-history endpoint currently returns 0 events (no connector outages) — eco-history-empty is the expected state.",
+  "rca_of_the_issue": {
+    "title": "Team revoke silently rewrites role to customer_org_buyer",
+    "reproduction": "1) POST /api/admin/team/grant {user_id: 'user-buyer-pro', role: 'EXPERT'} → OK. 2) POST /api/admin/team/revoke {user_id: 'user-buyer-pro'} → user.role becomes 'customer_org_buyer' regardless of prior role. Original role was 'buyer'.",
+    "root_cause": "routes_team_roles.py revoke handler hardcodes the fallback role instead of restoring a snapshotted previous_role.",
+    "mitigation": "Manually reset role to 'buyer' via db.users.update_one({email:'acheteur-pro@kdmarche.fr'}, {$set:{role:'buyer'}, $unset:{role_granted_at:'', role_granted_by:''}}). Long-term: main agent should refactor grant/revoke to snapshot & restore prior role."
+  }
+}

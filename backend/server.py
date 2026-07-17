@@ -342,6 +342,9 @@ from connectors.iabois_quotes import set_iabois_quotes_database
 from connectors.health_watch import set_health_watch_database
 set_iabois_quotes_database(db)
 set_health_watch_database(db)
+from routes_team_roles import team_router, set_team_roles_database
+set_team_roles_database(db)
+app.include_router(team_router)
 
 # Alertes favoris (restock/promo) + routes admin stock & prix
 from favorites_alerts import set_favorites_alerts_database

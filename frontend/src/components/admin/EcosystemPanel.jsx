@@ -2,6 +2,7 @@ import i18n from '@/i18n';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Network, CheckCircle2, XCircle, PowerOff, Loader2, ArrowUpRight } from 'lucide-react';
+import { EcosystemHistoryModal } from './EcosystemHistoryModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -14,6 +15,7 @@ const STATUS = {
 export const EcosystemPanel = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [historyApp, setHistoryApp] = useState(null);
 
   const fetchEcosystem = useCallback(async () => {
     try {
@@ -61,10 +63,13 @@ export const EcosystemPanel = () => {
             const success = app.sync?.SUCCESS || 0;
             const errors = app.sync?.ERROR || 0;
             return (
-              <div
+              <button
+                type="button"
                 key={app.name}
-                className="rounded-xl p-3 bg-white/50 border border-black/5"
+                onClick={() => setHistoryApp(app)}
+                className="rounded-xl p-3 bg-white/50 border border-black/5 text-left cursor-pointer hover:border-[#D9B35A]/50 transition-colors"
                 data-testid={`eco-app-${app.name}`}
+                title={i18n.t('adm.eco_history_hint')}
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-medium text-[#1F2A3A] leading-tight">{app.label.split('—')[0].trim()}</p>
@@ -83,11 +88,12 @@ export const EcosystemPanel = () => {
                     {errors > 0 && <span className="text-[#E64432] ml-2">{errors} ✗</span>}
                   </p>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
       )}
+      {historyApp && <EcosystemHistoryModal app={historyApp} onClose={() => setHistoryApp(null)} />}
     </div>
   );
 };

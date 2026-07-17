@@ -54,6 +54,18 @@ const Footer = () => {
                 <Link to="/offres" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.our_offers')}</Link>
               </li>
               <li>
+                <Link to="/logiscop" className="text-white/60 hover:text-white/90 text-sm transition-colors flex items-center gap-2" data-testid="footer-link-logiscop">
+                  <Truck className="w-3.5 h-3.5 text-[#5B2E8C]" />
+                  <span>LOGI&apos;SCOP</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/oscop" className="text-white/60 hover:text-white/90 text-sm transition-colors flex items-center gap-2" data-testid="footer-link-oscop">
+                  <Handshake className="w-3.5 h-3.5 text-[#8CC63E]" />
+                  <span>O&apos;SCOP</span>
+                </Link>
+              </li>
+              <li>
                 <Link to="/tarifs" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-tarifs">{t('nav.pro_access')}</Link>
               </li>
               <li>

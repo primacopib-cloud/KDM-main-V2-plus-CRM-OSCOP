@@ -154,6 +154,18 @@ async def connectors_health_status(_: dict = Depends(_admin)):
     return {"statuses": docs}
 
 
+@connectors_router.get("/health-history")
+async def connectors_health_history(
+    name: Optional[str] = Query(None),
+    limit: int = Query(50, le=200),
+    _: dict = Depends(_admin),
+):
+    """Chronologie des pannes et rétablissements détectés par le health watch."""
+    query = {"name": name} if name else {}
+    docs = await db.connector_health_events.find(query, {"_id": 0}).sort("at", -1).limit(limit).to_list(limit)
+    return {"events": docs, "total": len(docs)}
+
+
 @connectors_router.get("/{name}/health")
 async def connector_health(name: str, _: dict = Depends(_admin)):
     registry = {c["name"]: c for c in connectors_base.connectors_registry()}

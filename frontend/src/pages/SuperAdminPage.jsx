@@ -10,6 +10,7 @@ import { BreadcrumbPill } from '../components/Breadcrumb';
 import { SuperAdminHeader } from '../components/superadmin/SuperAdminHeader';
 import { DashboardTab } from '../components/superadmin/DashboardTab';
 import { UsersTab, OrdersTab } from '../components/superadmin/UsersOrdersTabs';
+import { TeamRolesTab } from '../components/superadmin/TeamRolesTab';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -126,6 +127,10 @@ export default function SuperAdminPage() {
 
           <TabsContent value="users">
             <UsersTab kpis={kpis} />
+          </TabsContent>
+
+          <TabsContent value="roles">
+            <TeamRolesTab />
           </TabsContent>
 
           <TabsContent value="orders">

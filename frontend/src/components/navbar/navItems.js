@@ -8,8 +8,6 @@ export const getNavItems = (userRole, isAdmin) => {
   // Top bar: keep it lean — 4 public + 2 member shortcuts.
   const baseItems = [
     { href: '/', label: 'nav.home', icon: Home, public: true },
-    { href: '/logiscop', label: "LOGI'SCOP", icon: Truck, public: true, accent: '#5B2E8C' },
-    { href: '/oscop', label: "O'SCOP", icon: HeartHandshake, public: true, accent: '#8CC63E' },
     { href: '/tarifs', label: 'nav.pro_access', icon: CreditCard, public: true },
   ];
 

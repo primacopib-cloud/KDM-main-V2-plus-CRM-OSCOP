@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import uuid
 from datetime import datetime, timezone
 
 from connectors import base as connectors_base
@@ -81,6 +82,12 @@ async def check_and_alert() -> dict:
         await db.connector_health_status.update_one(
             {"name": conn["name"]}, {"$set": update}, upsert=True
         )
+        if prev_status is not None and status != prev_status:
+            await db.connector_health_events.insert_one({
+                "id": str(uuid.uuid4()), "name": conn["name"], "label": conn["label"],
+                "from_status": prev_status, "to_status": status,
+                "error": error, "at": now,
+            })
 
         if prev_status == "OK" and status == "ERROR":
             await _send_alert_email(
