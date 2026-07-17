@@ -18,6 +18,7 @@ PASS_J3_INTERVAL_SECONDS = 6 * 60 * 60
 AUTO_RENEW_INTERVAL_SECONDS = 6 * 60 * 60
 
 _task: asyncio.Task | None = None
+_iabois_task: asyncio.Task | None = None
 _db = None
 
 
@@ -84,11 +85,15 @@ async def _scheduler_loop():
 
 
 def start_scheduler():
-    global _task
+    global _task, _iabois_task
     if _task is None or _task.done():
         loop = asyncio.get_event_loop()
         _task = loop.create_task(_scheduler_loop())
         logger.info("Scheduler started (PASS J-3 + auto-renew every %.1fh)", PASS_J3_INTERVAL_SECONDS / 3600)
+    if _iabois_task is None or _iabois_task.done():
+        from connectors.iabois_sync import iabois_sync_loop
+        _iabois_task = asyncio.get_event_loop().create_task(iabois_sync_loop())
+        logger.info("IA Bois sync loop started (every 15 min)")
 
 
 def stop_scheduler():

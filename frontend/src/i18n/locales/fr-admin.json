@@ -441,6 +441,12 @@
     "conn_col_status": "Statut",
     "eco_title": "Écosystème",
     "eco_summary": "{{ok}}/{{total}} apps en ligne",
-    "eco_manage": "Gérer les connecteurs"
+    "eco_manage": "Gérer les connecteurs",
+    "iabois_title": "Demandes de devis — IA Bois",
+    "iabois_subtitle": "Projets de maisons importés depuis IA Bois (sync auto toutes les 15 min).",
+    "iabois_sync": "Synchroniser",
+    "iabois_sync_ok": "{{total}} projet(s) importé(s), {{new}} nouveau(x)",
+    "iabois_empty": "Aucun projet importé pour l’instant.",
+    "iabois_new": "NOUVEAU"
   }
 }

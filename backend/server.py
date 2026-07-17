@@ -336,6 +336,8 @@ set_connectors_database(db)
 set_auto_sync_database(db)
 set_connectors_routes_database(db)
 app.include_router(connectors_router)
+from connectors.iabois_sync import set_iabois_sync_database
+set_iabois_sync_database(db)
 
 # Alertes favoris (restock/promo) + routes admin stock & prix
 from favorites_alerts import set_favorites_alerts_database

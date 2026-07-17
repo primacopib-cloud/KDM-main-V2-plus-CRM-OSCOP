@@ -118,7 +118,8 @@ async def push_order_paiement_to_finance(order_id: str, event_id: Optional[str] 
 async def sync_contract_signed(contract_id: str) -> dict:
     ged = await push_contract_to_ged(contract_id)
     crmess = await push_contract_to_crmess(contract_id)
-    return {"ged": ged, "crmess": crmess}
+    ge = await push_contract_to_ge(contract_id)
+    return {"ged": ged, "crmess": crmess, "ge": ge}
 
 
 async def push_contract_to_ged(contract_id: str, event_id: Optional[str] = None) -> dict:
@@ -248,6 +249,37 @@ async def push_contract_to_crmess(contract_id: str, event_id: Optional[str] = No
         return {"status": "ERROR", "event_id": event_id, "error": str(exc)[:300]}
 
 
+async def push_contract_to_ge(contract_id: str, event_id: Optional[str] = None) -> dict:
+    """Contrat de transport signé → documents du Groupement d'Employeurs (catégorie logistique)."""
+    from connectors import generic_app
+
+    contract = await db.transport_contracts.find_one({"id": contract_id}, {"_id": 0})
+    if not contract:
+        return {"status": "ERROR", "error": f"Contrat introuvable: {contract_id}"}
+    reference = contract.get("reference") or contract_id
+    if not event_id:
+        event_id = await base.record_event(
+            connector="oscop-ge", action="push_contract", source="contract",
+            source_id=contract_id, detail=f"Contrat signé {reference} → GE",
+        )
+    try:
+        from routes_contracts import get_transport_contract_html
+
+        html_response = await get_transport_contract_html(contract_id)
+        html = html_response.body.decode() if hasattr(html_response, "body") else str(html_response)
+        resp = await generic_app.request(
+            "oscop-ge", "POST", "/api/documents/upload",
+            files={"file": (f"contrat-{reference}.html", html.encode("utf-8"), "text/html")},
+            form_data={"titre": f"KDMARCHÉ — Contrat de transport signé {reference}", "categorie": "logistique"},
+        )
+        await base.mark_event(event_id, "SUCCESS", response_excerpt=_excerpt(resp))
+        return {"status": "SUCCESS", "event_id": event_id}
+    except Exception as exc:
+        await base.mark_event(event_id, "ERROR", error=str(exc)[:500])
+        logger.error(f"GE push contract failed for {contract_id}: {exc}")
+        return {"status": "ERROR", "event_id": event_id, "error": str(exc)[:300]}
+
+
 # ---------------------------------------------------------------------------
 # Retry (depuis la page admin Connecteurs)
 # ---------------------------------------------------------------------------
@@ -259,6 +291,7 @@ _RETRY_HANDLERS = {
     ("coppam", "push_paiement"): push_order_paiement_to_coppam,
     ("crm-ess", "push_invoice"): push_order_invoice_to_crmess,
     ("crm-ess", "push_contract"): push_contract_to_crmess,
+    ("oscop-ge", "push_contract"): push_contract_to_ge,
 }
 
 

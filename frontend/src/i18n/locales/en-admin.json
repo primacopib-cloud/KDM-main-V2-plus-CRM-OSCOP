@@ -441,6 +441,12 @@
     "conn_col_status": "Status",
     "eco_title": "Ecosystem",
     "eco_summary": "{{ok}}/{{total}} apps online",
-    "eco_manage": "Manage connectors"
+    "eco_manage": "Manage connectors",
+    "iabois_title": "Quote requests — IA Bois",
+    "iabois_subtitle": "House projects imported from IA Bois (auto-sync every 15 min).",
+    "iabois_sync": "Sync now",
+    "iabois_sync_ok": "{{total}} project(s) imported, {{new}} new",
+    "iabois_empty": "No projects imported yet.",
+    "iabois_new": "NEW"
   }
 }

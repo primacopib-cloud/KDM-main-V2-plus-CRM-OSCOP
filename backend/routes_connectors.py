@@ -114,6 +114,20 @@ async def retry_sync_event(event_id: str, _: dict = Depends(_admin)):
     return await auto_sync.retry_event(event)
 
 
+@connectors_router.post("/oscop-ia-bois/sync")
+async def sync_iabois_now(_: dict = Depends(_admin)):
+    """Import manuel des projets IA Bois."""
+    from connectors.iabois_sync import pull_iabois_projects
+
+    return await pull_iabois_projects()
+
+
+@connectors_router.get("/iabois/projects")
+async def list_iabois_projects(limit: int = Query(50, le=200), _: dict = Depends(_admin)):
+    docs = await db.iabois_quote_requests.find({}, {"_id": 0}).sort("imported_at", -1).limit(limit).to_list(limit)
+    return {"projects": docs, "total": len(docs)}
+
+
 @connectors_router.get("/{name}/health")
 async def connector_health(name: str, _: dict = Depends(_admin)):
     registry = {c["name"]: c for c in connectors_base.connectors_registry()}

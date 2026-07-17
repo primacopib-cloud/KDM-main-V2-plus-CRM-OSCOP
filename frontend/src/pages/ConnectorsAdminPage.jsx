@@ -6,6 +6,7 @@ import { ArrowLeft, RefreshCw, Send } from 'lucide-react';
 import NavBar from '../components/NavBar';
 import { ConnectorCard } from '../components/connectors/ConnectorCard';
 import { ConnectorSyncTable } from '../components/connectors/ConnectorSyncTable';
+import { IaboisProjectsPanel } from '../components/connectors/IaboisProjectsPanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -128,6 +129,9 @@ export default function ConnectorsAdminPage() {
             />
           ))}
         </div>
+
+        {/* Demandes de devis IA Bois */}
+        <IaboisProjectsPanel />
 
         {/* Push manuel */}
         <div className="glass-panel rounded-2xl p-5 mb-8" data-testid="connectors-manual-push">
