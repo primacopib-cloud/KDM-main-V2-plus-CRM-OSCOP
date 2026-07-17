@@ -25,6 +25,7 @@ import {
 import { toast } from 'sonner';
 import { authAPI, adminAPI, organizationsAPI } from '../services/api';
 import NotificationsDropdown from '../components/NotificationsDropdown';
+import { EcosystemPanel } from '../components/admin/EcosystemPanel';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -188,6 +189,7 @@ const AdminPage = () => {
         {/* Overview Tab */}
         {activeTab === 'overview' && stats && (
           <div className="space-y-6">
+            <EcosystemPanel />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="glass-panel-soft rounded-[18px] p-5">
                 <div className="flex items-center gap-3 mb-3">

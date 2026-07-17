@@ -438,6 +438,9 @@
     "conn_col_connector": "Connector",
     "conn_col_action": "Action",
     "conn_col_detail": "Detail",
-    "conn_col_status": "Status"
+    "conn_col_status": "Status",
+    "eco_title": "Ecosystem",
+    "eco_summary": "{{ok}}/{{total}} apps online",
+    "eco_manage": "Manage connectors"
   }
 }

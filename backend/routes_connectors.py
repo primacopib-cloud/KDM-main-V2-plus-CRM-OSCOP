@@ -30,6 +30,64 @@ async def list_connectors(_: dict = Depends(_admin)):
     return {"connectors": connectors_base.connectors_registry()}
 
 
+@connectors_router.get("/ecosystem")
+async def ecosystem_overview(_: dict = Depends(_admin)):
+    """Vue synthèse : santé live de toutes les apps connectées + compteurs de synchro."""
+    import asyncio
+
+    registry = connectors_base.connectors_registry()
+    oscop_shared: dict = {}
+
+    async def _oscop_health():
+        if "result" not in oscop_shared:
+            try:
+                await oscop_crm.health()
+                oscop_shared["result"] = {"status": "OK"}
+            except Exception as exc:
+                oscop_shared["result"] = {"status": "ERROR", "error": str(exc)[:120]}
+        return oscop_shared["result"]
+
+    async def _health(conn):
+        if not conn["enabled"]:
+            return {"status": "DISABLED"}
+        try:
+            if conn["name"] in ("oscop-ged", "oscop-finance"):
+                return await asyncio.wait_for(_oscop_health(), timeout=10)
+            result = await asyncio.wait_for(generic_app.health(conn["name"]), timeout=10)
+            return {"status": result.get("status", "ERROR"), "error": result.get("error")}
+        except asyncio.TimeoutError:
+            return {"status": "ERROR", "error": "Timeout (10s)"}
+        except Exception as exc:
+            return {"status": "ERROR", "error": str(exc)[:120]}
+
+    ged_finance = [c for c in registry if c["name"] in ("oscop-ged", "oscop-finance")]
+    others = [c for c in registry if c["name"] not in ("oscop-ged", "oscop-finance")]
+    shared = await asyncio.gather(_health(ged_finance[0]) if ged_finance else asyncio.sleep(0),
+                                  *[_health(c) for c in others])
+    health_map = {}
+    if ged_finance:
+        for c in ged_finance:
+            health_map[c["name"]] = shared[0]
+    for conn, h in zip(others, shared[1:]):
+        health_map[conn["name"]] = h
+    healths = [health_map[c["name"]] for c in registry]
+
+    pipeline = [{"$group": {"_id": {"c": "$connector", "s": "$status"}, "n": {"$sum": 1}}}]
+    agg = await db.connector_sync_events.aggregate(pipeline).to_list(100)
+    counts: dict = {}
+    for a in agg:
+        counts.setdefault(a["_id"]["c"], {})[a["_id"]["s"]] = a["n"]
+
+    apps = []
+    for conn, health in zip(registry, healths):
+        apps.append({
+            **{k: conn[k] for k in ("name", "label", "kind", "base_url", "enabled")},
+            "health": health,
+            "sync": counts.get(conn["name"], {}),
+        })
+    return {"apps": apps, "total": len(apps), "ok": sum(1 for a in apps if a["health"]["status"] == "OK")}
+
+
 @connectors_router.get("/sync-events")
 async def list_sync_events(
     connector: Optional[str] = Query(None),
