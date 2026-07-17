@@ -741,3 +741,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Config .env : IABOIS_*, OSCOPGE_*, COPPAM_*, CRMESS_* (URL/EMAIL/PASSWORD ×4).
 - ⚠️ Ces nouvelles variables ne seront en PRODUCTION qu'au prochain déploiement.
 - FLUX MÉTIER PAR APP : à définir avec l'utilisateur (actuellement : santé + socle prêt, pas encore de push automatique pour ces 4 apps).
+
+### 2026-06 — Flux COPPAM + CRM ESS + préparation test Stripe Live — TERMINÉ (iteration_28 : 100%)
+- `sync_order_paid` pousse maintenant vers 4 connecteurs : oscop-ged (facture PDF), oscop-finance (paiement), coppam (encaissement POST /api/invoices — API distante en 500, événements en file avec retry = comportement attendu), crm-ess (facture PDF via POST /api/documents/upload, VALIDÉ live). `sync_contract_signed` → ged + crm-ess.
+- `generic_app.request()` : client authentifié réutilisable (Bearer ou cookie session). COPPAM_MEMBER_ID dans .env.
+- Nettoyage effectué : paiement test oscop + doc test crm-ess supprimés des apps de prod.
+- Stripe PROD vérifié : mode LIVE, 2 clés configurées (oscop sk_live_51ScyA…, kdmarche sk_live_51Fqcz…). ⚠️ last_webhook_received=null → l'utilisateur doit vérifier dans le dashboard Stripe que les webhooks pointent vers https://coop-dashboard-8.emergent.host (endpoints: /api/checkout/webhook, /api/webhook/stripe, /api/lolodrive/stripe/webhook).
+- TEST 1€ LIVE : à exécuter PAR L'UTILISATEUR avec sa carte sur l'app publiée ; ensuite l'agent vérifie la réconciliation et procède au remboursement.
+- ⚠️ Redéploiement nécessaire pour activer les nouveaux flux + variables (IABOIS_*, OSCOPGE_*, COPPAM_*, CRMESS_*) en production.
