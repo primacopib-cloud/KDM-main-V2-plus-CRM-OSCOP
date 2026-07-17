@@ -1,0 +1,30 @@
+{
+  "summary": "Validation flux COPPAM + CRM ESS + 4 connecteurs sur commande payée f002ce0d-... . Backend 6/6 pytest PASS. Frontend /admin/connecteurs affiche les 6 cartes (GED, Finance, IA Bois, GE, COPPAM, CRM ESS), la sync queue montre '3 success · 3 errors' avec crm-ess push_invoice SUCCESS visible. Code review OK: schedule_order_sync est non-bloquant (asyncio.ensure_future), sync_contract_signed pousse vers ged + crmess, _RETRY_HANDLERS contient bien les 6 entrées attendues.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Header admin", "issues": ["Badge 'Disconnected' rouge affiché en haut à droite même après login admin — cosmétique, pré-existant, à investiguer (websocket ? statut connecteurs global ?)"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter28_connectors_coppam_crmess.py",
+    "/app/test_reports/pytest/iter28_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "auto_sync.py L26-32: _schedule utilise asyncio.ensure_future avec add_done_callback qui log les exceptions — non-bloquant confirmé, le checkout n'est jamais impacté.",
+    "auto_sync.py L118-121: sync_contract_signed pousse bien vers oscop-ged ET crm-ess — conforme.",
+    "auto_sync.py L43-48: sync_order_paid déclenche les 4 connecteurs séquentiellement (await). Amélioration possible: asyncio.gather pour paralléliser les 4 push (gain latence x4). Non bloquant car appelé via _schedule.",
+    "generic_app.py L90-108: chaque request() refait un login complet — coûteux (2 round-trips remote par push). Suggestion future: cache token/cookie côté connecteur avec TTL.",
+    "routes_connectors.py L67-73: dispatch health oscop vs generic clean et lisible."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter28_connectors_coppam_crmess.py"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% smoke (login admin + /admin/connecteurs)"},
+  "test_credentials": "Admin: admin@kdmarche-oscop.fr / AdminKDM2025! ; Buyer: acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "aucune — utilise la commande f002ce0d-8512-4274-8743-29698e21e0c4 déjà poussée par le main agent",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter28 valide 4 connecteurs (oscop-ged ERROR attendu, oscop-finance SUCCESS, coppam ERROR attendu bug remote 500, crm-ess push_invoice SUCCESS) sur commande payée. Retry COPPAM: reste ERROR et incrémente attempts, comme attendu. NE PAS appeler POST /api/connectors/push/order/* ni push/contract/* en test — chaque appel crée de VRAIES données en prod remote."
+}

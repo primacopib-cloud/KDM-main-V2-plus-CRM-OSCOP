@@ -43,7 +43,17 @@ def schedule_contract_sync(contract_id: str) -> None:
 async def sync_order_paid(order_id: str) -> dict:
     ged = await push_order_invoice_to_ged(order_id)
     fin = await push_order_paiement_to_finance(order_id)
-    return {"ged": ged, "finance": fin}
+    coppam = await push_order_paiement_to_coppam(order_id)
+    crmess = await push_order_invoice_to_crmess(order_id)
+    return {"ged": ged, "finance": fin, "coppam": coppam, "crmess": crmess}
+
+
+async def _build_invoice_pdf(order_id: str, order: dict):
+    from routes_invoices import generate_invoice_for_order
+    from pdf_generators import generate_invoice_pdf
+
+    invoice = await generate_invoice_for_order(order_id)
+    return invoice, generate_invoice_pdf(invoice, order)
 
 
 async def push_order_invoice_to_ged(order_id: str, event_id: Optional[str] = None) -> dict:
@@ -57,11 +67,7 @@ async def push_order_invoice_to_ged(order_id: str, event_id: Optional[str] = Non
             source_id=order_id, detail=detail,
         )
     try:
-        from routes_invoices import generate_invoice_for_order
-        from pdf_generators import generate_invoice_pdf
-
-        invoice = await generate_invoice_for_order(order_id)
-        pdf_bytes = generate_invoice_pdf(invoice, order)
+        invoice, pdf_bytes = await _build_invoice_pdf(order_id, order)
         filename = f"{invoice.get('invoice_number', order_id)}.pdf"
         resp = await oscop_crm.upload_document(
             filename=filename,
@@ -109,7 +115,13 @@ async def push_order_paiement_to_finance(order_id: str, event_id: Optional[str] 
 # Contrat signé
 # ---------------------------------------------------------------------------
 
-async def sync_contract_signed(contract_id: str, event_id: Optional[str] = None) -> dict:
+async def sync_contract_signed(contract_id: str) -> dict:
+    ged = await push_contract_to_ged(contract_id)
+    crmess = await push_contract_to_crmess(contract_id)
+    return {"ged": ged, "crmess": crmess}
+
+
+async def push_contract_to_ged(contract_id: str, event_id: Optional[str] = None) -> dict:
     contract = await db.transport_contracts.find_one({"id": contract_id}, {"_id": 0})
     if not contract:
         return {"status": "ERROR", "error": f"Contrat introuvable: {contract_id}"}
@@ -141,13 +153,112 @@ async def sync_contract_signed(contract_id: str, event_id: Optional[str] = None)
 
 
 # ---------------------------------------------------------------------------
+# COPPAM (trésorerie) & CRM ESS (documents)
+# ---------------------------------------------------------------------------
+
+async def push_order_paiement_to_coppam(order_id: str, event_id: Optional[str] = None) -> dict:
+    import os
+
+    from connectors import generic_app
+
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        return {"status": "ERROR", "error": f"Commande introuvable: {order_id}"}
+    reference = order.get("order_number") or order_id
+    amount_cents = order.get("amount_paid_cents") or order.get("total_ttc_cents") or 0
+    if not event_id:
+        event_id = await base.record_event(
+            connector="coppam", action="push_paiement", source="order",
+            source_id=order_id, detail=f"Encaissement {reference} — {amount_cents / 100:.2f} €",
+        )
+    try:
+        resp = await generic_app.request("coppam", "POST", "/api/invoices", json_payload={
+            "memberId": os.environ.get("COPPAM_MEMBER_ID", "kdmarche"),
+            "amount": round(amount_cents / 100, 2),
+            "description": f"Encaissement KDMARCHÉ — commande {reference}",
+            "reference": f"KDM-{reference}",
+            "status": "paid",
+        })
+        await base.mark_event(event_id, "SUCCESS", response_excerpt=_excerpt(resp))
+        return {"status": "SUCCESS", "event_id": event_id}
+    except Exception as exc:
+        await base.mark_event(event_id, "ERROR", error=str(exc)[:500])
+        logger.error(f"COPPAM push paiement failed for order {order_id}: {exc}")
+        return {"status": "ERROR", "event_id": event_id, "error": str(exc)[:300]}
+
+
+async def _upload_to_crmess(filename: str, content: bytes, content_type: str, titre: str, type_document: str):
+    from connectors import generic_app
+
+    return await generic_app.request(
+        "crm-ess", "POST", "/api/documents/upload",
+        files={"file": (filename, content, content_type)},
+        form_data={"titre": titre, "type_document": type_document},
+    )
+
+
+async def push_order_invoice_to_crmess(order_id: str, event_id: Optional[str] = None) -> dict:
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        return {"status": "ERROR", "error": f"Commande introuvable: {order_id}"}
+    reference = order.get("order_number") or order_id
+    if not event_id:
+        event_id = await base.record_event(
+            connector="crm-ess", action="push_invoice", source="order",
+            source_id=order_id, detail=f"Facture commande {reference}",
+        )
+    try:
+        invoice, pdf_bytes = await _build_invoice_pdf(order_id, order)
+        resp = await _upload_to_crmess(
+            f"{invoice.get('invoice_number', order_id)}.pdf", pdf_bytes, "application/pdf",
+            f"KDMARCHÉ — Facture {reference}", "facture",
+        )
+        await base.mark_event(event_id, "SUCCESS", response_excerpt=_excerpt(resp))
+        return {"status": "SUCCESS", "event_id": event_id}
+    except Exception as exc:
+        await base.mark_event(event_id, "ERROR", error=str(exc)[:500])
+        logger.error(f"CRM ESS push invoice failed for order {order_id}: {exc}")
+        return {"status": "ERROR", "event_id": event_id, "error": str(exc)[:300]}
+
+
+async def push_contract_to_crmess(contract_id: str, event_id: Optional[str] = None) -> dict:
+    contract = await db.transport_contracts.find_one({"id": contract_id}, {"_id": 0})
+    if not contract:
+        return {"status": "ERROR", "error": f"Contrat introuvable: {contract_id}"}
+    reference = contract.get("reference") or contract_id
+    if not event_id:
+        event_id = await base.record_event(
+            connector="crm-ess", action="push_contract", source="contract",
+            source_id=contract_id, detail=f"Contrat signé {reference}",
+        )
+    try:
+        from routes_contracts import get_transport_contract_html
+
+        html_response = await get_transport_contract_html(contract_id)
+        html = html_response.body.decode() if hasattr(html_response, "body") else str(html_response)
+        resp = await _upload_to_crmess(
+            f"contrat-{reference}.html", html.encode("utf-8"), "text/html",
+            f"KDMARCHÉ — Contrat de transport signé {reference}", "contrat",
+        )
+        await base.mark_event(event_id, "SUCCESS", response_excerpt=_excerpt(resp))
+        return {"status": "SUCCESS", "event_id": event_id}
+    except Exception as exc:
+        await base.mark_event(event_id, "ERROR", error=str(exc)[:500])
+        logger.error(f"CRM ESS push contract failed for {contract_id}: {exc}")
+        return {"status": "ERROR", "event_id": event_id, "error": str(exc)[:300]}
+
+
+# ---------------------------------------------------------------------------
 # Retry (depuis la page admin Connecteurs)
 # ---------------------------------------------------------------------------
 
 _RETRY_HANDLERS = {
     ("oscop-ged", "push_invoice"): push_order_invoice_to_ged,
     ("oscop-finance", "push_paiement"): push_order_paiement_to_finance,
-    ("oscop-ged", "push_contract"): sync_contract_signed,
+    ("oscop-ged", "push_contract"): push_contract_to_ged,
+    ("coppam", "push_paiement"): push_order_paiement_to_coppam,
+    ("crm-ess", "push_invoice"): push_order_invoice_to_crmess,
+    ("crm-ess", "push_contract"): push_contract_to_crmess,
 }
 
 

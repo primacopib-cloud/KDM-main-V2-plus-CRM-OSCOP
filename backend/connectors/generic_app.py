@@ -66,6 +66,59 @@ def app_config(definition: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+class GenericAppError(RuntimeError):
+    pass
+
+
+async def request(
+    name: str,
+    method: str,
+    path: str,
+    *,
+    json_payload: Optional[Dict[str, Any]] = None,
+    files: Optional[Dict[str, Any]] = None,
+    form_data: Optional[Dict[str, Any]] = None,
+) -> Any:
+    """Appel authentifié vers une app générique (Bearer ou cookie de session)."""
+    definition = app_def(name)
+    if not definition:
+        raise GenericAppError(f"Connecteur inconnu: {name}")
+    cfg = app_config(definition)
+    if not cfg["enabled"]:
+        raise GenericAppError(f"Connecteur {name} désactivé : variables {definition['env_prefix']}_* manquantes")
+
+    async with httpx.AsyncClient(timeout=25) as client:
+        login = await client.post(
+            f"{cfg['base_url']}/api/auth/login",
+            json={"email": cfg["email"], "password": cfg["password"]},
+        )
+        if login.status_code != 200:
+            raise GenericAppError(f"{name}: login refusé ({login.status_code})")
+
+        headers = {}
+        if definition["token_field"]:
+            token = login.json().get(definition["token_field"])
+            if not token:
+                raise GenericAppError(f"{name}: champ {definition['token_field']} absent du login")
+            headers["Authorization"] = f"Bearer {token}"
+
+        resp = await client.request(
+            method, f"{cfg['base_url']}{path}",
+            headers=headers, json=json_payload, files=files, data=form_data,
+        )
+
+    if resp.status_code >= 400:
+        try:
+            detail = resp.json()
+        except ValueError:
+            detail = resp.text[:200]
+        raise GenericAppError(f"{name} {method} {path} -> {resp.status_code}: {str(detail)[:250]}")
+    try:
+        return resp.json()
+    except ValueError:
+        return resp.text[:300]
+
+
 async def health(name: str) -> Dict[str, Any]:
     definition = app_def(name)
     if not definition:
