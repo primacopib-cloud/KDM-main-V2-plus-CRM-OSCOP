@@ -1,3 +1,5 @@
+import i18n from '@/i18n';
+
 export const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export const ACCOUNT_LABEL = {
   oscop: "O'SCOP OUTREMER",

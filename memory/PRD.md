@@ -715,3 +715,11 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 - Régression introduite puis corrigée : LogisticsSection avait perdu le paramètre `index` encore utilisé (landing blanche) — corrigé par testing agent (restauré `(step, index)`), + 2 keys PartnersSection restantes corrigées ensuite (blocs dupliqués).
 - Validé iteration_25 : backend 10/10, frontend 7/7. Landing vérifiée visuellement après le dernier fix.
 - Toujours reporté (décision maintenue) : refactor fonctions legacy complexes + découpage composants 400-460 lignes (< règle d'or 500). Suggestion testing agent en backlog : ErrorBoundary autour des sections landing.
+
+### 2026-06 — Revue de code externe, 3e passe — TERMINÉ (iteration_26 + pytest 20/20)
+- Backend : wildcard imports → ré-exports explicites (schema_catalog_cart, schema_product_card, schema_v2 — attention: schema_v2_zones exporte aussi PartnerAccountInDB, AuditLogEntry, OutboxEvent*, DEFAULT_ZONES/PLANS) ; secrets test_iter25 → env vars. Auto-testé : pytest iter23+iter25 = 20/20.
+- Frontend : objets chart inline → constantes module (StripeReconciliationPage, LoloPointManagerPage, SignatureDemoPage) ; useNavigationHistory : localStorage → sessionStorage.
+- Régression détectée par testing agent (iter26) et corrigée : import i18n manquant dans reconciliationUtils.js (page stripe-reconciliation cassée) — vérifiée visuellement après fix.
+- Points redondants du rapport (déjà traités passes 1-2) : XSS/DOMPurify en place, hook deps faux positif (ESLint 0 warning), circular imports en lazy imports.
+- Toujours reporté : refactor fonctions legacy complexes + découpage composants <500 lignes.
+NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readiness). Si l'utilisateur en parle → lancer deployment_agent pour scanner les blockers.
