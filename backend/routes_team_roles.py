@@ -42,7 +42,8 @@ SUPER_ROLES = {"SUPER_ADMIN", "OSCOP_SUPER_ADMIN"}
 STAFF_ROLES = set(ASSIGNABLE_ROLES) | SUPER_ROLES
 
 USER_FIELDS = {"_id": 0, "id": 1, "email": 1, "contact_name": 1, "company_name": 1,
-               "role": 1, "is_admin": 1, "created_at": 1, "role_granted_at": 1, "role_granted_by": 1}
+               "role": 1, "is_admin": 1, "created_at": 1, "role_granted_at": 1,
+               "role_granted_by": 1, "previous_role": 1}
 
 
 async def _super_admin(user_id: str = Depends(get_current_user_id)) -> dict:
@@ -108,10 +109,10 @@ async def grant_role(payload: GrantPayload, admin: dict = Depends(_super_admin))
     if (target.get("role") or "").upper() in SUPER_ROLES:
         raise HTTPException(status_code=403, detail="Impossible de modifier un super administrateur")
     now = datetime.now(timezone.utc).isoformat()
-    await db.users.update_one(
-        {"id": payload.user_id},
-        {"$set": {"role": payload.role, "role_granted_at": now, "role_granted_by": admin["email"], "updated_at": now}},
-    )
+    update = {"role": payload.role, "role_granted_at": now, "role_granted_by": admin["email"], "updated_at": now}
+    if target.get("role") not in STAFF_ROLES and "previous_role" not in target:
+        update["previous_role"] = target.get("role") or "customer_org_buyer"
+    await db.users.update_one({"id": payload.user_id}, {"$set": update})
     return {"status": "SUCCESS", "user_id": payload.user_id, "role": payload.role}
 
 
@@ -123,11 +124,13 @@ async def revoke_role(payload: RevokePayload, admin: dict = Depends(_super_admin
     if (target.get("role") or "").upper() in SUPER_ROLES or target.get("is_admin"):
         raise HTTPException(status_code=403, detail="Impossible de révoquer un super administrateur")
     now = datetime.now(timezone.utc).isoformat()
+    restored_role = target.get("previous_role") or "customer_org_buyer"
     await db.users.update_one(
         {"id": payload.user_id},
-        {"$set": {"role": "customer_org_buyer", "role_granted_at": now, "role_granted_by": admin["email"], "updated_at": now}},
+        {"$set": {"role": restored_role, "updated_at": now},
+         "$unset": {"previous_role": "", "role_granted_at": "", "role_granted_by": ""}},
     )
-    return {"status": "SUCCESS", "user_id": payload.user_id}
+    return {"status": "SUCCESS", "user_id": payload.user_id, "restored_role": restored_role}
 
 
 async def _send_welcome_email(email: str, name: str, role_label: str, temp_password: str) -> bool:

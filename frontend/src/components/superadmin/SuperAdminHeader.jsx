@@ -102,6 +102,7 @@ export const SuperAdminHeader = ({
             <TabsTrigger
               key={t.value}
               value={t.value}
+              data-testid={`superadmin-tab-${t.value}`}
               className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg"
             >
               <t.icon className="w-4 h-4 mr-2" />
