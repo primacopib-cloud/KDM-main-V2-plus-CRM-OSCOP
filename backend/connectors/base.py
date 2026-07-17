@@ -87,9 +87,10 @@ async def mark_event(
 
 def connectors_registry() -> List[Dict[str, Any]]:
     from connectors.oscop_crm import oscop_config
+    from connectors.generic_app import GENERIC_APPS, app_config
 
     cfg = oscop_config()
-    return [
+    registry = [
         {
             "name": "oscop-ged",
             "label": "GED ESS — Objectif SCOP Outremer",
@@ -107,3 +108,14 @@ def connectors_registry() -> List[Dict[str, Any]]:
             "description": "Push des paiements encaissés vers /api/paiements du CRM.",
         },
     ]
+    for definition in GENERIC_APPS:
+        app_cfg = app_config(definition)
+        registry.append({
+            "name": definition["name"],
+            "label": definition["label"],
+            "kind": definition["kind"],
+            "base_url": app_cfg["base_url"],
+            "enabled": app_cfg["enabled"],
+            "description": definition["description"],
+        })
+    return registry

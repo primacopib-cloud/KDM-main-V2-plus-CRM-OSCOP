@@ -9,6 +9,7 @@ from admin_guard import require_admin
 from auth import get_current_user_id
 from connectors import base as connectors_base
 from connectors import auto_sync, oscop_crm
+from connectors import generic_app
 
 connectors_router = APIRouter(prefix="/api/connectors", tags=["Connectors"])
 
@@ -63,11 +64,13 @@ async def connector_health(name: str, _: dict = Depends(_admin)):
         raise HTTPException(status_code=404, detail="Connecteur inconnu")
     if not conn["enabled"]:
         return {"name": name, "status": "DISABLED", "detail": "Variables .env manquantes"}
-    try:
-        external = await oscop_crm.health()
-        return {"name": name, "status": "OK", "external": external}
-    except Exception as exc:
-        return {"name": name, "status": "ERROR", "error": str(exc)[:300]}
+    if name in ("oscop-ged", "oscop-finance"):
+        try:
+            external = await oscop_crm.health()
+            return {"name": name, "status": "OK", "external": external}
+        except Exception as exc:
+            return {"name": name, "status": "ERROR", "error": str(exc)[:300]}
+    return await generic_app.health(name)
 
 
 @connectors_router.post("/push/order/{order_id}")

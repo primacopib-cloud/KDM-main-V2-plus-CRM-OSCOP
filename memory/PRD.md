@@ -729,3 +729,15 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Fix : load_dotenv SANS override + override sélectif des seules clés STRIPE_* depuis le .env (placeholder pod sk_test_emergent doit rester écrasé en preview) + route racine GET /health → 200.
 - Validé : simulation prod (MONGO_URL plateforme préservé, clé Stripe projet prioritaire), deployment_agent PASS sans blocker, testing_agent 9/9 backend + smoke frontend 100%.
 - L'utilisateur peut relancer le déploiement (bouton Deploy).
+
+### 2026-06 — Connecteurs des 4 apps supplémentaires + vérif prod — TERMINÉ
+- Vérification PRODUCTION (https://coop-dashboard-8.emergent.host) : login admin OK, connecteurs oscop enabled, health oscop-ged OK — les variables OSCOP sont bien reprises en prod. ✅
+- Nouveau `connectors/generic_app.py` : adaptateur générique (login → Bearer token ou cookie session, health). 4 apps branchées :
+  - oscop-ia-bois (https://oscop-ia-bois.emergent.host, token, /api/health) — OK
+  - oscop-ge (https://ge-outremer-hub.emergent.host, access_token, /api/auth/me) — OK
+  - coppam (https://treasury-dash-4.emergent.host, cookie session, /api/auth/session) — OK
+  - crm-ess (https://fastapi-react-crm-4.emergent.host, ws_token, /api/health) — OK (= app du zip CRM-ESS-main)
+- Registre étendu (6 connecteurs), dispatch health dans routes_connectors. Page admin affiche les 6 cartes, test santé COPPAM vérifié via UI (badge OK).
+- Config .env : IABOIS_*, OSCOPGE_*, COPPAM_*, CRMESS_* (URL/EMAIL/PASSWORD ×4).
+- ⚠️ Ces nouvelles variables ne seront en PRODUCTION qu'au prochain déploiement.
+- FLUX MÉTIER PAR APP : à définir avec l'utilisateur (actuellement : santé + socle prêt, pas encore de push automatique pour ces 4 apps).
