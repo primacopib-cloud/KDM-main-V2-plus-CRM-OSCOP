@@ -6,6 +6,8 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { partners } from '../data/mock';
+
+const SAMPLE_FEES = [{ label: 'Frais de préparation', description: 'Pick & pack', amount_ht: 45 }];
 import SMSSignatureModal from '../components/SMSSignatureModal';
 import OrderFormPreview from '../components/OrderFormPreview';
 import { toast } from 'sonner';
@@ -240,7 +242,7 @@ export default function SignatureDemoPage() {
               <OrderFormPreview 
                 orderData={orderData}
                 products={sampleProducts}
-                fees={[{ label: 'Frais de préparation', description: 'Pick & pack', amount_ht: 45 }]}
+                fees={SAMPLE_FEES}
                 totals={totals}
                 signatureData={{
                   clientName: `${signerInfo.first_name} ${signerInfo.last_name}`,

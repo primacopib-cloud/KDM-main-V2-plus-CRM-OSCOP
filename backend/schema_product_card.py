@@ -8,7 +8,12 @@ from typing import Optional, List, Dict, Any
 from enum import Enum
 from datetime import datetime, date
 
-from schema_product_card_parts import *  # noqa: F401,F403
+from schema_product_card_parts import (  # noqa: F401 — ré-exports
+    ProductCategory, ProductStatus, UnitType, TemperatureRange, HazardClass,
+    Dimensions, Weight, Pricing, Stock, Packaging, Origin,
+    NutritionInfo, Allergens, Conservation, TechnicalSpecs,
+    Warranty, Compliance, Media, Logistics,
+)
 from schema_product_card_parts import (
     ProductCategory, ProductStatus, UnitType, TemperatureRange, HazardClass,
     Dimensions, Weight, Pricing, Stock, Packaging, Origin, NutritionInfo,

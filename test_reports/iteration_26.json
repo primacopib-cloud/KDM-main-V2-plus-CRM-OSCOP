@@ -1,0 +1,32 @@
+{
+  "summary": "Non-régression frontend 3e passe (iter 26). Testé: /admin/stripe-reconciliation, /lolo-point/dashboard, /signature, navigation history (session vs local storage), /admin/connecteurs. Login admin OK (admin@kdmarche-oscop.fr). Résultat: 1 régression CRITIQUE détectée sur StripeReconciliationPage (ReferenceError i18n dans formatEur/fmtDateTime), les 3 autres pages OK, sessionStorage nav_history confirmé (localStorage null).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "StripeReconciliationPage (via reconciliationUtils.js)",
+        "issue": "Uncaught ReferenceError: i18n is not defined — dans formatEur() (ligne 24) et fmtDateTime() (ligne 40) de /app/frontend/src/components/reconciliation/reconciliationUtils.js. L'objet i18n est utilisé (i18n.language) mais n'est pas importé. Résultat: overlay 'Uncaught runtime errors' bloque la page /admin/stripe-reconciliation, TotalCard crash, tout le BarChart 'Encaissements quotidiens' est inaccessible. La page fetch les données (svg recharts présent dans le DOM initial) mais l'error boundary React échoue et l'overlay dev s'affiche par-dessus.",
+        "selector": "reconciliationUtils.js:24 (formatEur) et :40 (fmtDateTime)",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "URGENT: Ajouter l'import i18n manquant dans /app/frontend/src/components/reconciliation/reconciliationUtils.js — ex: `import i18n from '../../i18n';` (ou l'équivalent selon la config i18next du projet). Sans ça, la page /admin/stripe-reconciliation est totalement cassée pour l'admin. À vérifier: la fonction formatEur est aussi appelée depuis d'autres pages (grep 'formatEur' → risque de propagation)."
+  ],
+  "critical_code_review_comments": [
+    "reconciliationUtils.js utilise une variable globale i18n non déclarée / non importée → ESLint no-undef aurait dû l'attraper. Un lint strict (no-undef) sur le repo frontend éviterait ce type de régression.",
+    "L'error boundary conseillée par React (message dans la console warning) n'est pas en place autour de TotalCard — envisager un ErrorBoundary global pour éviter le crash complet de la page à cause d'une simple fonction utilitaire."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped, déjà 20/20)", "frontend": "80% (4/5 pages OK, StripeReconciliation cassée)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (utilisé et fonctionnel)",
+  "seed_data_creation": "aucune",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Testé sous compte super_admin. LoloPointManagerPage rend le message 'Aucun relais assigné' car super_admin n'a pas de relais lié (pas de crash, comportement attendu, layout Recharts non déclenché). Pour valider vraiment les graphs Area/Bar de LoloPointManagerPage il faudrait un compte lolo_point_manager avec relais assigné. /admin/connecteurs et /signature rendus sans erreur. sessionStorage nav_history contient bien 4 entrées, localStorage.nav_history == null (migration OK). La régression i18n est le seul point bloquant.",
+  "rca of the issue": "REPRO: se connecter admin → aller sur /admin/stripe-reconciliation → overlay 'Uncaught runtime errors: i18n is not defined ReferenceError' apparaît (stack: formatEur → TotalCard → beginWork). CAUSE: dans /app/frontend/src/components/reconciliation/reconciliationUtils.js, `i18n.language` est référencé aux lignes 24 et 40 sans que `i18n` soit importé (aucun import statement dans le fichier). Probablement une régression d'un refactor précédent (déplacement des utilitaires depuis un fichier qui avait l'import). MITIGATION: ajouter `import i18n from '../../i18n';` en haut du fichier (ou récupérer la langue via un autre mécanisme si le module i18n n'est pas dispo côté utils — ex: passer `locale` en paramètre)."
+}

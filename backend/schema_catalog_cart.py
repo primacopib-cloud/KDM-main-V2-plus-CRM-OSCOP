@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import uuid
 
-from schema_catalog_enums import *  # noqa: F401,F403
+from schema_catalog_enums import CartStatus, OrderStatus  # noqa: F401 — aussi ré-exportés
 
 # ============== CART ==============
 

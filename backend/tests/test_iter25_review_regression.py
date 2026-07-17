@@ -18,10 +18,10 @@ def _read_frontend_url():
 
 BASE_URL = (os.environ.get("REACT_APP_BACKEND_URL") or _read_frontend_url()).rstrip("/")
 
-ADMIN_EMAIL = "admin@kdmarche-oscop.fr"
-ADMIN_PASSWORD = "AdminKDM2025!"
-BUYER_EMAIL = "acheteur-pro@kdmarche.fr"
-BUYER_PASSWORD = "Demo2026!"
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "admin@kdmarche-oscop.fr")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "AdminKDM2025!")
+BUYER_EMAIL = os.environ.get("TEST_BUYER_EMAIL", "acheteur-pro@kdmarche.fr")
+BUYER_PASSWORD = os.environ.get("TEST_BUYER_PASSWORD", "Demo2026!")
 
 
 def _login(email, password):

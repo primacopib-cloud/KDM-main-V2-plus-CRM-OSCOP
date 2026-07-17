@@ -19,6 +19,12 @@ import {
   ModeBadge, TotalCard, AccountTotalCard, RefundStat, RefundBadge, ByKindCard,
 } from "../components/reconciliation/ReconciliationCards";
 
+const CHART_MARGIN = { top: 10, right: 12, left: 0, bottom: 8 };
+const TICK_11 = { fontSize: 11 };
+const TOOLTIP_STYLE = { background: "#fff", border: "1px solid rgba(212,175,55,0.3)", borderRadius: 12 };
+const BAR_RADIUS_FLAT = [0, 0, 0, 0];
+const BAR_RADIUS_TOP = [6, 6, 0, 0];
+
 
 export default function StripeReconciliationPage() {
   const navigate = useNavigate();
@@ -274,23 +280,23 @@ export default function StripeReconciliationPage() {
               </h2>
               <div style={{ width: "100%", height: 320 }}>
                 <ResponsiveContainer>
-                  <BarChart data={data.by_day} margin={{ top: 10, right: 12, left: 0, bottom: 8 }}>
+                  <BarChart data={data.by_day} margin={CHART_MARGIN}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(31,42,58,0.08)" />
-                    <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="rgba(31,42,58,0.6)" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="rgba(31,42,58,0.6)" tickFormatter={(v) => `${v} €`} />
+                    <XAxis dataKey="day" tick={TICK_11} stroke="rgba(31,42,58,0.6)" />
+                    <YAxis tick={TICK_11} stroke="rgba(31,42,58,0.6)" tickFormatter={(v) => `${v} €`} />
                     <Tooltip
                       formatter={(value, name) => {
                         const a = name.replace("_net_eur", "").replace("_eur", "");
                         return [`${Number(value).toFixed(2)} €`, ACCOUNT_LABEL[a] || name];
                       }}
                       labelFormatter={(d) => `Jour : ${d}`}
-                      contentStyle={{ background: "#fff", border: "1px solid rgba(212,175,55,0.3)", borderRadius: 12 }}
+                      contentStyle={TOOLTIP_STYLE}
                     />
                     <Legend
                       formatter={(v) => ACCOUNT_LABEL[v.replace("_net_eur", "").replace("_eur", "")] || v}
                     />
-                    <Bar dataKey="oscop_net_eur" stackId="x" fill={ACCOUNT_COLOR.oscop} radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="kdmarche_net_eur" stackId="x" fill={ACCOUNT_COLOR.kdmarche} radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="oscop_net_eur" stackId="x" fill={ACCOUNT_COLOR.oscop} radius={BAR_RADIUS_FLAT} />
+                    <Bar dataKey="kdmarche_net_eur" stackId="x" fill={ACCOUNT_COLOR.kdmarche} radius={BAR_RADIUS_TOP} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

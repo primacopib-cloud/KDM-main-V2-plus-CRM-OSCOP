@@ -80,7 +80,7 @@ export function useNavigationHistory() {
   // Load history from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = sessionStorage.getItem(STORAGE_KEY);
       if (stored) {
         setHistory(JSON.parse(stored));
       }
@@ -115,7 +115,7 @@ export function useNavigationHistory() {
       
       // Save to localStorage
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
       } catch (e) {
         console.error('Failed to save navigation history:', e);
       }
@@ -127,14 +127,14 @@ export function useNavigationHistory() {
   // Clear history
   const clearHistory = useCallback(() => {
     setHistory([]);
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
   }, []);
 
   // Remove single item
   const removeItem = useCallback((path) => {
     setHistory(prev => {
       const newHistory = prev.filter(item => item.path !== path);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
       return newHistory;
     });
   }, []);

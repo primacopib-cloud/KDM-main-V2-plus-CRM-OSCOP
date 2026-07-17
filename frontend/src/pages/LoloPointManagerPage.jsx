@@ -10,6 +10,9 @@ import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { lolodriveAPI, authAPI } from '../services/api';
 import { toast } from 'sonner';
+
+const TICK_DARK = { fontSize: 10, fill: 'rgba(255,255,255,0.4)' };
+const TOOLTIP_DARK = { background: '#15151c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 };
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar,
 } from 'recharts';
@@ -178,9 +181,9 @@ export default function LoloPointManagerPage() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} tickFormatter={(d) => d.slice(5)} />
-                    <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} />
-                    <Tooltip contentStyle={{ background: '#15151c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }} formatter={(v) => `${v} €`} />
+                    <XAxis dataKey="date" tick={TICK_DARK} tickFormatter={(d) => d.slice(5)} />
+                    <YAxis tick={TICK_DARK} />
+                    <Tooltip contentStyle={TOOLTIP_DARK} formatter={(v) => `${v} €`} />
                     <Area type="monotone" dataKey="revenue_eur" stroke="#D9B35A" fill="url(#grad-revenue)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -190,9 +193,9 @@ export default function LoloPointManagerPage() {
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={series}>
                     <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} tickFormatter={(d) => d.slice(5)} />
-                    <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} allowDecimals={false} />
-                    <Tooltip contentStyle={{ background: '#15151c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }} />
+                    <XAxis dataKey="date" tick={TICK_DARK} tickFormatter={(d) => d.slice(5)} />
+                    <YAxis tick={TICK_DARK} allowDecimals={false} />
+                    <Tooltip contentStyle={TOOLTIP_DARK} />
                     <Bar dataKey="orders" fill="#7c3aed" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
