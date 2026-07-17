@@ -25,6 +25,7 @@ import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 import LoloPointsMap from '../components/LoloPointsMap';
 import TerritorySelector from '../components/TerritorySelector';
+import WhyCommunityplaceSection from '../components/WhyCommunityplaceSection';
 
 const LandingPage = () => {
   return (
@@ -119,6 +120,9 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Pourquoi Communityplace ? */}
+      <WhyCommunityplaceSection />
 
       {/* Partners Section */}
       <PartnersSection />

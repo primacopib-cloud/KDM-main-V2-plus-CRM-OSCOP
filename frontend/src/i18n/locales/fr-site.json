@@ -1,5 +1,15 @@
 {
   "landing": {
+    "why_cp_badge": "Nouvelle marque",
+    "why_cp_title_prefix": "Pourquoi",
+    "why_cp_title": "Communityplace ?",
+    "why_cp_intro": "Notre plateforme d'achats mutualisés devient Communityplace : une place de marché coopérative où la communauté fait la force. Même mission ESS, même gouvernance partagée — un nom qui dit enfin ce que nous sommes.",
+    "why_cp_card1_title": "Community",
+    "why_cp_card1_desc": "Une communauté d'acheteurs pros, de producteurs locaux et de relais LOLODRIVE qui mutualisent leurs volumes pour obtenir de meilleurs prix.",
+    "why_cp_card2_title": "Place",
+    "why_cp_card2_desc": "Une place de marché unique pour les Outre-mer : catalogue B2B, PASS Vie Chère, circuits courts et prix structurels mutualisés.",
+    "why_cp_card3_title": "Coopérative",
+    "why_cp_card3_desc": "1 personne = 1 voix. Gouvernance ESS, marges plafonnées et bénéfices redistribués au service du pouvoir d'achat local.",
     "hero_badge": "Communityplace coopérative B2B2C",
     "hero_h1": "L'écosystème coopératif des Outre-mer",
     "hero_subtitle": "PASS Vie Chère, Réseau LOLODRIVE, gouvernance ESS — pour rendre l'essentiel accessible à tous.",

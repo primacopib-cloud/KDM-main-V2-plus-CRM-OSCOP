@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 29 — Validated (1) backend connectors ecosystem/IA Bois flow (7/7 pytest tests pass) and (2) frontend Communityplace rebranding: EcosystemPanel on /admin, 'Pourquoi Communityplace ?' landing section, Communityplace badge in header, absence of 'centrale d'achat', /catalogue non-regression. Fixed one E1 blocker: LandingPage.jsx had a stray closing brace at line 497 AND was missing the WhyCommunityplaceSection import — landing page was entirely blank in browser. After fix all UI checks green.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_connectors_ecosystem.py",
+    "/app/test_reports/pytest/iteration_29.xml"
+  ],
+  "action_items": [
+    "None — all requested flows validated. Blockers fixed in place (stray `};` at LandingPage.jsx L497 + missing `import WhyCommunityplaceSection from ...`). E1 should be aware these two defects existed in delivered code."
+  ],
+  "critical_code_review_comments": [
+    "EcosystemPanel.jsx uses fetch with credentials:'include' but no Authorization header. It works today because backend also accepts JWT via httpOnly cookie (get_current_user_id falls back to cookie). If auth is ever migrated to header-only Bearer, this panel will silently render empty (no error banner). Consider centralised authenticated fetch helper or explicit Bearer header.",
+    "EcosystemPanel silently swallows failed responses (`if (r.ok)` — no state for error). Users would see an empty grid indefinitely on 401/500.",
+    "LandingPage.jsx (497 lines) mixes the main page + several exported sub-sections (PublicLolodriveMapSection, CooperativeApiSection). Splitting sub-sections into their own files would have prevented the missing-import + stray-brace bugs caught here."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_connectors_ecosystem.py (new pytest suite)",
+    "/app/frontend/src/pages/LandingPage.jsx (removed extra `};` at line 497, added `import WhyCommunityplaceSection` — E1 must be informed)"
+  ],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% (all data-testids validated after fix)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! and acheteur-pro@kdmarche.fr / Demo2026! — both work. Login route is /connexion (not /login).",
+  "seed_data_creation": "None. IA Bois manual sync executed (read-only against external prod) — imported ~44 projects, event logged as SUCCESS.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Scheduler confirmed running (IA Bois sync loop started every 15 min + PASS auto-renew every 6h). All 6 external ecosystem apps (GED, Finance, IA Bois, GE, Coppam, CRM ESS) reported health OK during test. Login route is /connexion, admin dashboard at /admin. EcosystemPanel appears in the Overview tab of /admin. `data-testid=eco-app-{name}` names observed: oscop-ged, oscop-finance, oscop-ia-bois, oscop-ge, coppam, crm-ess.",
+  "rca_of_the_issue": {
+    "title": "Landing page fully blank in production preview",
+    "reproduction": "Open https://coop-dashboard-8.preview.emergentagent.com/ — before fix: React error 'WhyCommunityplaceSection is not defined' + Babel parse error 'Unexpected token (497:0)' → LandingPage crashed, body reduced to boot script only.",
+    "root_cause": "Two defects in /app/frontend/src/pages/LandingPage.jsx introduced with the Communityplace section: (a) extra `};` on line 497 closed a non-existent block, breaking JSX parsing; (b) `<WhyCommunityplaceSection />` used at line 124 without corresponding import.",
+    "mitigation": "Removed stray `};`; added `import WhyCommunityplaceSection from '../components/WhyCommunityplaceSection';`. Webpack recompiled successfully; landing renders all sections (badge in header, Why-Communityplace 3 cards, no 'centrale d'achat' occurrences)."
+  }
+}

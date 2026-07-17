@@ -1,5 +1,15 @@
 {
   "landing": {
+    "why_cp_badge": "Nueva marca",
+    "why_cp_title_prefix": "¿Por qué",
+    "why_cp_title": "Communityplace?",
+    "why_cp_intro": "Nuestra plataforma de compras mutualizadas se convierte en Communityplace: un mercado cooperativo donde la comunidad es la fuerza. Misma misión ESS, misma gobernanza compartida — un nombre que por fin dice lo que somos.",
+    "why_cp_card1_title": "Community",
+    "why_cp_card1_desc": "Una comunidad de compradores profesionales, productores locales y relevos LOLODRIVE que mutualizan sus volúmenes para obtener mejores precios.",
+    "why_cp_card2_title": "Place",
+    "why_cp_card2_desc": "Un mercado único para los territorios de ultramar: catálogo B2B, PASS Vida Cara, circuitos cortos y precios estructurales mutualizados.",
+    "why_cp_card3_title": "Cooperativa",
+    "why_cp_card3_desc": "1 persona = 1 voto. Gobernanza ESS, márgenes limitados y beneficios redistribuidos al servicio del poder adquisitivo local.",
     "hero_badge": "Communityplace cooperativa B2B2C",
     "hero_h1": "El ecosistema cooperativo de ultramar",
     "hero_subtitle": "PASS Vida Cara, Red LOLODRIVE, gobernanza ESS — para hacer lo esencial accesible a todos.",
