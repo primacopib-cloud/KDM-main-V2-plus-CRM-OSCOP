@@ -51,8 +51,8 @@ const PartnersSection = () => {
               <div>
                 <h5 className="text-xs uppercase tracking-wider text-white/60 mb-2.5">{i18n.t('partners.role_label')}</h5>
                 <ul className="space-y-2">
-                  {(Array.isArray(kdmResponsibilities) ? kdmResponsibilities : []).map((item, index) => (
-                    <li key={index} className="flex items-start gap-2.5 text-white/75 text-sm">
+                  {(Array.isArray(kdmResponsibilities) ? kdmResponsibilities : []).map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-white/75 text-sm">
                       <div className="icon-dot gold mt-0.5"></div>
                       <span>{item}</span>
                     </li>
@@ -110,8 +110,8 @@ const PartnersSection = () => {
               <div className="p-3.5 rounded-2xl" style={{ background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.15)' }}>
                 <h5 className="text-xs uppercase tracking-wider text-[#FF6B6B] mb-2">{i18n.t('partners.oscop_not')}</h5>
                 <ul className="space-y-1.5">
-                  {(Array.isArray(oscopRestrictions) ? oscopRestrictions : []).map((item, index) => (
-                    <li key={index} className="flex items-center gap-2 text-[#FF6B6B]/80 text-sm">
+                  {(Array.isArray(oscopRestrictions) ? oscopRestrictions : []).map((item) => (
+                    <li key={item} className="flex items-center gap-2 text-[#FF6B6B]/80 text-sm">
                       <div className="cross-icon" style={{ width: '14px', height: '14px' }}></div>
                       <span>{item}</span>
                     </li>

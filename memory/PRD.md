@@ -708,3 +708,10 @@ Toujours `sudo supervisorctl restart backend` après changement (force le rechar
 - Vérifié : « 122 missing hook deps » du rapport = FAUX POSITIF (eslint react-hooks/exhaustive-deps = 0 warning sur tout src/). « Circular imports » déjà atténués par imports in-function (serveur démarre sans erreur).
 - REPORTÉ (risque régression > gain, code legacy testé) : refactor des fonctions legacy complexes (logiscop_v1_pricing, lolodrive_checkout_apply, ess_models...) et découpage des 5 composants 400-460 lignes (tous < règle d'or 500).
 - Non-régression validée par testing_agent iteration_24 : backend 10/10, frontend 7/7.
+
+### 2026-06 — Revue de code externe, 2e passe — TERMINÉ (iteration_25 : 100%)
+- Backend : wildcard imports → explicites dans routes_logiscop (avec TRANSPORT_RATES_PER_M3), routes_payment, schema_catalog (ré-exports explicites enums+cart).
+- Frontend : catches silencieux → console.debug (PosLolodrive, Onboarding, Landing, useLolodriveWebSocket ×3) ; keys index → stables (ApplicationsTab, PricingSection, PartnersSection ×4, LogisticsSection, AdvancedStatsCharts).
+- Régression introduite puis corrigée : LogisticsSection avait perdu le paramètre `index` encore utilisé (landing blanche) — corrigé par testing agent (restauré `(step, index)`), + 2 keys PartnersSection restantes corrigées ensuite (blocs dupliqués).
+- Validé iteration_25 : backend 10/10, frontend 7/7. Landing vérifiée visuellement après le dernier fix.
+- Toujours reporté (décision maintenue) : refactor fonctions legacy complexes + découpage composants 400-460 lignes (< règle d'or 500). Suggestion testing agent en backlog : ErrorBoundary autour des sections landing.
