@@ -10,9 +10,19 @@ from pathlib import Path
 from subscriptions import seed_subscription_plans
 
 ROOT_DIR = Path(__file__).parent
-# Force override of pod-level env vars (e.g. STRIPE_API_KEY=sk_test_emergent is set
-# at the Kubernetes pod level and would otherwise shadow our project-specific .env values).
-load_dotenv(ROOT_DIR / '.env', override=True)
+# Load .env WITHOUT override: platform-injected vars (MONGO_URL, DB_NAME in production)
+# must always win. Only Stripe keys are selectively overridden from .env because the
+# preview pod injects a placeholder STRIPE_API_KEY=sk_test_emergent at pod level.
+load_dotenv(ROOT_DIR / '.env')
+from dotenv import dotenv_values  # noqa: E402
+_env_file_values = dotenv_values(ROOT_DIR / '.env')
+for _stripe_key in (
+    "STRIPE_API_KEY", "STRIPE_LIVE_KEY", "STRIPE_KDMARCHE_API_KEY",
+    "STRIPE_KDMARCHE_LIVE_KEY", "STRIPE_WEBHOOK_SECRETS_OSCOP",
+    "STRIPE_WEBHOOK_SECRETS_KDMARCHE", "STRIPE_MODE",
+):
+    if _env_file_values.get(_stripe_key):
+        os.environ[_stripe_key] = _env_file_values[_stripe_key]
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -22,6 +32,12 @@ set_shared_database(db)
 
 # Create the main app
 app = FastAPI(title="Centrale d'achats B2B ESS API")
+
+
+@app.get("/health")
+async def root_health():
+    """Root health endpoint for deployment readiness probes."""
+    return {"status": "ok"}
 
 # Configure logging
 logging.basicConfig(
