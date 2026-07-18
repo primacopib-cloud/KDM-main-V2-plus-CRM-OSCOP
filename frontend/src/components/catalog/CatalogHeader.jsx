@@ -107,6 +107,17 @@ export const CatalogHeader = ({
                 </SheetHeader>
 
                 <div className="mt-6 flex flex-col h-[calc(100vh-200px)]">
+                  {cart.alerts?.length > 0 && (
+                    <div className="mb-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1" data-testid="cart-alerts-banner">
+                      {cart.alerts.map((a) => (
+                        <p key={`${a.type}-${a.item_id}`} className={`text-xs ${a.type === 'UNAVAILABLE' ? 'text-red-400' : 'text-amber-400'}`}>
+                          {a.type === 'PRICE_CHANGED' && `⚠ Prix modifié : ${a.product_name} — ${formatPrice(a.old_price_ht_cents)} → ${formatPrice(a.new_price_ht_cents)} HT`}
+                          {a.type === 'UNAVAILABLE' && `✕ Indisponible : ${a.product_name}`}
+                          {a.type === 'AVAILABLE_AGAIN' && `✓ De nouveau disponible : ${a.product_name}`}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                   {cart.items?.length === 0 ? (
                     <div className="flex-1 flex items-center justify-center text-white/50">
                       <div className="text-center">
@@ -120,12 +131,17 @@ export const CatalogHeader = ({
                         {cart.items?.map(item => (
                           <div 
                             key={item.id} 
-                            className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08]"
+                            className={`p-3 rounded-xl border ${item.unavailable ? 'bg-red-500/[0.06] border-red-500/25' : 'bg-white/[0.04] border-white/[0.08]'}`}
                           >
                             <div className="flex justify-between items-start mb-2">
                               <div className="flex-1">
                                 <p className="font-medium text-white/90 text-sm">{item.product_name}</p>
                                 <p className="text-xs text-white/50">{item.product_sku}</p>
+                                {item.unavailable && (
+                                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400" data-testid={`cart-item-unavailable-${item.id}`}>
+                                    INDISPONIBLE
+                                  </span>
+                                )}
                               </div>
                               <button 
                                 onClick={() => handleRemoveFromCart(item.id)}
@@ -168,7 +184,7 @@ export const CatalogHeader = ({
                         <Button 
                           className="w-full bg-[#D9B35A] hover:bg-[#c9a34a] text-black font-semibold"
                           onClick={() => navigate('/checkout')}
-                          disabled={cart.items?.length === 0}
+                          disabled={cart.items?.length === 0 || cart.items?.some(i => i.unavailable)}
                           data-testid="checkout-button"
                         >
                           Passer commande (EXW)

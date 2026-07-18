@@ -342,9 +342,9 @@ const DashboardPage = () => {
                 <h3 className="font-semibold">Besoin d&apos;aide ?</h3>
               </div>
               <p className="text-white/60 text-sm mb-4">Notre équipe est disponible pour vous accompagner.</p>
-              <a href="mailto:contact@centrale-ess.fr?subject=Support%20Communityplace" data-testid="dashboard-contact-support-btn" className="btn-gold w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold">
+              <Link to="/contact" data-testid="dashboard-contact-support-btn" className="btn-gold w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold">
                 Contacter le support
-              </a>
+              </Link>
             </div>
           </div>
         </div>

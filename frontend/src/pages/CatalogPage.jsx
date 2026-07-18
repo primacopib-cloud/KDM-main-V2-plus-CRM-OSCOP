@@ -110,6 +110,15 @@ export default function CatalogPage() {
         try {
           const cartData = await catalogAPI.getCart();
           setCart(cartData);
+          (cartData.alerts || []).filter(a => a.new).forEach(a => {
+            if (a.type === 'PRICE_CHANGED') {
+              toast.warning(`Prix modifié : ${a.product_name} — ${(a.old_price_ht_cents / 100).toFixed(2)} € → ${(a.new_price_ht_cents / 100).toFixed(2)} € HT`);
+            } else if (a.type === 'UNAVAILABLE') {
+              toast.error(`Produit indisponible : ${a.product_name}`);
+            } else if (a.type === 'AVAILABLE_AGAIN') {
+              toast.success(`De nouveau disponible : ${a.product_name}`);
+            }
+          });
         } catch (e) {
           // Cart may not exist yet
           console.log('No cart found');

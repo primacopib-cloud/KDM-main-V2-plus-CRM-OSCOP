@@ -25,6 +25,7 @@ class CartItemResponse(BaseModel):
     quantity: int
     price_ht_cents: int
     line_total_ht_cents: int
+    unavailable: bool = False
 
     class Config:
         from_attributes = True
@@ -41,6 +42,7 @@ class CartResponse(BaseModel):
     subtotal_ht_cents: int = 0
     tax_cents: int = 0
     total_ttc_cents: int = 0
+    alerts: List[Dict[str, Any]] = []
     created_at: datetime
     updated_at: datetime
 

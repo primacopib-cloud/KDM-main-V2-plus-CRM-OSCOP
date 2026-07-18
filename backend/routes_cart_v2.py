@@ -76,7 +76,8 @@ async def get_cart(current_user: dict = Depends(get_current_user_catalog)):
         ).dict()
         await db.carts.insert_one(cart)
     
-    return await _build_cart_response(cart)
+    alerts = await _refresh_cart_items(cart)
+    return await _build_cart_response(cart, alerts)
 
 
 @cart_router.post("/cart/items", response_model=CartResponse)
@@ -257,7 +258,63 @@ async def clear_cart(current_user: dict = Depends(get_current_user_catalog)):
     return {"message": "Panier vidé"}
 
 
-async def _build_cart_response(cart: dict) -> CartResponse:
+async def _refresh_cart_items(cart: dict) -> list:
+    """Détecte les changements de prix / indisponibilités et met le panier à jour."""
+    alerts = []
+    items = cart.get("items", [])
+    if not items:
+        return alerts
+    changed = False
+    for it in items:
+        product = await db.products.find_one({"id": it["product_id"]})
+        zone_price = await db.zone_prices.find_one({
+            "product_id": it["product_id"],
+            "zone_code": cart["zone_code"],
+            "is_active": True,
+        })
+        available = product and product.get("status") == ProductStatus.ACTIVE.value and zone_price
+        if not available:
+            if not it.get("unavailable"):
+                it["unavailable"] = True
+                changed = True
+                alerts.append({"type": "UNAVAILABLE", "item_id": it["id"], "product_name": it["product_name"], "new": True})
+            else:
+                alerts.append({"type": "UNAVAILABLE", "item_id": it["id"], "product_name": it["product_name"], "new": False})
+            continue
+        if it.get("unavailable"):
+            it["unavailable"] = False
+            changed = True
+            alerts.append({"type": "AVAILABLE_AGAIN", "item_id": it["id"], "product_name": it["product_name"], "new": True})
+        if zone_price["price_ht_cents"] != it["price_ht_cents"]:
+            alerts.append({
+                "type": "PRICE_CHANGED", "item_id": it["id"], "product_name": it["product_name"],
+                "old_price_ht_cents": it["price_ht_cents"], "new_price_ht_cents": zone_price["price_ht_cents"],
+                "new": True,
+            })
+            it["price_ht_cents"] = zone_price["price_ht_cents"]
+            it["line_total_ht_cents"] = zone_price["price_ht_cents"] * it["quantity"]
+            changed = True
+    if changed:
+        subtotal = sum(i["line_total_ht_cents"] for i in items if not i.get("unavailable"))
+        tax = int(subtotal * 0.085)
+        cart["subtotal_ht_cents"] = subtotal
+        cart["tax_cents"] = tax
+        cart["total_ttc_cents"] = subtotal + tax
+        cart["updated_at"] = datetime.utcnow()
+        await db.carts.update_one(
+            {"id": cart["id"]},
+            {"$set": {
+                "items": items,
+                "subtotal_ht_cents": subtotal,
+                "tax_cents": tax,
+                "total_ttc_cents": cart["total_ttc_cents"],
+                "updated_at": cart["updated_at"],
+            }}
+        )
+    return alerts
+
+
+async def _build_cart_response(cart: dict, alerts: list = None) -> CartResponse:
     """Build cart response"""
     items = []
     for item in cart.get("items", []):
@@ -271,6 +328,7 @@ async def _build_cart_response(cart: dict) -> CartResponse:
             quantity=item["quantity"],
             price_ht_cents=item["price_ht_cents"],
             line_total_ht_cents=item["line_total_ht_cents"],
+            unavailable=bool(item.get("unavailable")),
         ))
     
     return CartResponse(
@@ -283,6 +341,7 @@ async def _build_cart_response(cart: dict) -> CartResponse:
         subtotal_ht_cents=cart.get("subtotal_ht_cents", 0),
         tax_cents=cart.get("tax_cents", 0),
         total_ttc_cents=cart.get("total_ttc_cents", 0),
+        alerts=alerts or [],
         created_at=cart["created_at"],
         updated_at=cart["updated_at"],
     )

@@ -877,3 +877,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - FIX CrediscopBadge : variante publique pour visiteurs non connectés → badge "GALERIE SPOTS" (Link /kdmarche), ajouté au NavBar branche non-authentifiée. Skip du fetch /me/crediscop si non connecté.
 - Faux positif rapport : /kdmarche fonctionne (vérifié par screenshot).
 - Vérifications screenshot : boutons naviguent, panier affiche 128,00 € HT / Total 144,59 €, badge public cliquable → /kdmarche.
+
+## 2026-07-18 — Formulaire Contact Support (Brevo) + Alertes Panier
+- Page /contact (+ alias /support) : SupportContactPage.jsx — formulaire (nom, email, catégorie, sujet, message), préremplissage user connecté, écran de confirmation avec n° de ticket.
+- Backend routes_support.py : POST /api/support/contact → ticket en base (support_tickets, n° SUP-YYYYMMDD-XXXXXX) + 2 emails Brevo (équipe support via SUPPORT_CONTACT_EMAIL=contact@centrale-ess.fr dans .env, confirmation à l'expéditeur). Validé E2E (201 Brevo, ticket créé).
+- Bouton "Contacter le support" du dashboard acheteur pointe désormais vers /contact.
+- Alertes panier : _refresh_cart_items() dans routes_cart_v2.py au GET /api/v2/catalog/cart — détecte PRICE_CHANGED (met à jour prix + totaux, alerte one-shot), UNAVAILABLE (flag persistant item.unavailable, exclu du sous-total), AVAILABLE_AGAIN. CartResponse.alerts + CartItemResponse.unavailable.
+- Frontend : toasts au chargement du catalogue, bannière data-testid=cart-alerts-banner dans le drawer, badge INDISPONIBLE rouge sur l'item, bouton checkout désactivé si item indisponible.
+- Validé par curl (3 scénarios) + screenshots UI (toast prix, bannière indisponible, checkout désactivé, formulaire contact soumis avec succès).
