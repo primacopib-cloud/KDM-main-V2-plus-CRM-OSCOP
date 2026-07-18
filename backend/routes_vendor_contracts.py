@@ -145,7 +145,113 @@ async def release_retention(
          }}}
     )
     logger.info("Release %s cents on contract %s by %s", payload.amount_cents, contract["contract_number"], admin.get("email"))
+
+    # Email Brevo au vendeur
+    vendor = await db.vendors.find_one({"id": contract["vendor_id"]}, {"_id": 0, "email": 1, "company_name": 1, "contact_name": 1})
+    if vendor and vendor.get("email"):
+        try:
+            import brevo_service
+            from brevo_service import _wrap_html
+            remaining = available - payload.amount_cents
+            body = f"""
+              <h2 style=\"color:#D9B35A;margin:0 0 12px;font-size:18px;\">Restitution de garantie — {contract['contract_number']}</h2>
+              <p style=\"color:rgba(255,255,255,0.8);font-size:14px;\">
+                Bonjour {vendor.get('contact_name') or vendor.get('company_name')},<br/><br/>
+                Une restitution de garantie a été effectuée sur votre contrat d'engagement de volume
+                relatif au produit <strong>{contract['product_name']}</strong> :
+              </p>
+              <div style=\"background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;color:rgba(255,255,255,0.85);font-size:14px;\">
+                <strong>Montant restitué :</strong> {payload.amount_cents / 100:.2f} €<br/>
+                <strong>Solde de garantie restant :</strong> {remaining / 100:.2f} €<br/>
+                <strong>Motif :</strong> {payload.note.strip()}
+              </div>
+              <p style=\"color:rgba(255,255,255,0.55);font-size:12px;margin-top:14px;\">
+                Le détail complet est disponible dans votre espace vendeur, onglet Contrats.
+              </p>
+            """
+            await brevo_service.send_email(
+                to_email=vendor["email"], to_name=vendor.get("contact_name") or vendor.get("company_name"),
+                subject=f"Restitution de garantie {payload.amount_cents / 100:.2f} € — contrat {contract['contract_number']}",
+                html_content=_wrap_html("Restitution de garantie", body),
+                tags=["retention-release"],
+            )
+            logger.info("Release notification sent to %s", vendor["email"])
+        except Exception as e:
+            logger.error("Release notification failed: %s", e)
+
     return {"ok": True, "released_cents": payload.amount_cents, "remaining_cents": available - payload.amount_cents}
+
+
+@contracts_router.get("/admin/report-pdf")
+async def guarantees_report_pdf(user_id: str = Depends(get_current_user_id)):
+    """État PDF des garanties par territoire (assemblées / commissaire aux comptes)."""
+    await require_admin(user_id)
+    from fastapi.responses import StreamingResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import mm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    contracts = await db.volume_contracts.find({}, {"_id": 0}).sort("created_at", 1).to_list(2000)
+    grouped = {}
+    for c in contracts:
+        vendor = await db.vendors.find_one({"id": c["vendor_id"]}, {"_id": 0, "company_name": 1, "country": 1})
+        terr = COUNTRY_TERRITORY.get((vendor or {}).get("country"), (vendor or {}).get("country") or "Autre")
+        c["vendor_name"] = (vendor or {}).get("company_name") or c["vendor_id"]
+        grouped.setdefault(terr, []).append(c)
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=15 * mm, bottomMargin=15 * mm)
+    styles = getSampleStyleSheet()
+    h = ParagraphStyle("h", parent=styles["Heading2"], textColor=colors.HexColor("#4C2A6E"))
+    small = ParagraphStyle("small", parent=styles["Normal"], fontSize=8.5, textColor=colors.HexColor("#5C4B36"))
+    date_str = datetime.utcnow().strftime("%d/%m/%Y")
+    elements = [
+        Paragraph("ÉTAT DES GARANTIES DE RÉTENTION — CONTRATS D'ENGAGEMENT DE VOLUME", styles["Title"]),
+        Paragraph(f"Coopérative Communityplace / KDMARCHÉ × O'SCOP — édité le {date_str} — "
+                  f"document destiné aux assemblées et au commissaire aux comptes", small),
+        Spacer(1, 6 * mm),
+    ]
+    tbl_style = TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#4C2A6E")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#D9B35A")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, colors.HexColor("#FBF6EC")]),
+        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#F3E9D2")),
+        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+    ])
+    grand = {"retained": 0, "released": 0, "net": 0}
+    for terr in sorted(grouped):
+        rows = [["Contrat", "Fournisseur", "Produit", "Signé le", "Retenu (€)", "Restitué (€)", "Solde net (€)"]]
+        sub = {"retained": 0, "released": 0}
+        for c in grouped[terr]:
+            ret, rel = c.get("retained_cents", 0), c.get("released_cents", 0)
+            sub["retained"] += ret
+            sub["released"] += rel
+            rows.append([
+                c["contract_number"], c["vendor_name"], (c.get("product_name") or "")[:40],
+                c["created_at"].strftime("%d/%m/%Y") if c.get("created_at") else "",
+                f"{ret / 100:,.2f}", f"{rel / 100:,.2f}", f"{(ret - rel) / 100:,.2f}",
+            ])
+        rows.append(["", "", "", f"Sous-total {terr}", f"{sub['retained'] / 100:,.2f}",
+                     f"{sub['released'] / 100:,.2f}", f"{(sub['retained'] - sub['released']) / 100:,.2f}"])
+        grand["retained"] += sub["retained"]
+        grand["released"] += sub["released"]
+        table = Table(rows, repeatRows=1)
+        table.setStyle(tbl_style)
+        elements += [Paragraph(f"Territoire : {terr} — {len(grouped[terr])} contrat(s)", h), table, Spacer(1, 6 * mm)]
+    grand["net"] = grand["retained"] - grand["released"]
+    elements.append(Paragraph(
+        f"<b>TOTAL GÉNÉRAL — Retenu : {grand['retained'] / 100:,.2f} € · "
+        f"Restitué : {grand['released'] / 100:,.2f} € · Garanties nettes détenues : {grand['net'] / 100:,.2f} €</b>",
+        ParagraphStyle("total", parent=styles["Normal"], fontSize=11, textColor=colors.HexColor("#4C2A6E"))))
+    doc.build(elements)
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="application/pdf",
+                             headers={"Content-Disposition": f'attachment; filename="etat-garanties-{datetime.utcnow().strftime("%Y%m%d")}.pdf"'})
 
 
 @contracts_router.get("/{vendor_id}")

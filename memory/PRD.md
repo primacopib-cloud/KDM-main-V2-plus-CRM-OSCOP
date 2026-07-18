@@ -935,3 +935,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - GET /api/vendor/contracts/admin/all : tous les contrats enrichis (vendor_name, territoire via vendors.country mappé GP/MQ/GF/RE/FR) + agrégats par territoire (retenu/restitué/net) + total_net_cents.
 - UI : nouvel onglet Super Admin "Contrats" (AdminContractsTab.jsx) — cartes de garanties nettes par territoire, liste des contrats avec barre de progression, bouton Restituer (prompts montant+motif), registre du contrat dépliable (rétentions par facture + restitutions).
 - Vérifié par curl + screenshot (total 52,95 €, registre affichant rétention 82,95 € et restitution 30,00 € tracée).
+
+## 2026-07-18 — Email restitution vendeur + Rapport garanties PDF
+- Email Brevo au vendeur à chaque restitution (release_retention) : montant restitué, solde de garantie restant, motif. Validé (log "Release notification sent" + Brevo 201).
+- GET /api/vendor/contracts/admin/report-pdf (admin) : état PDF paysage des garanties groupé par territoire (tableaux contrats + sous-totaux territoire + total général retenu/restitué/net) pour assemblées et commissaire aux comptes. Bouton "Rapport garanties PDF" dans l'onglet Contrats admin.
+- Validé par curl (PDF 200, 2659 octets) + screenshot (bouton visible, solde 47,95 € après restitutions 35 €).

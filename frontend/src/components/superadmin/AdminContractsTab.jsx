@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FileSignature, Loader2, Undo2, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileSignature, Loader2, Undo2, MapPin, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiCall } from '../../services/http';
 
@@ -89,10 +89,31 @@ export const AdminContractsTab = () => {
 
   return (
     <div className="space-y-5" data-testid="admin-contracts-tab">
-      <h2 className="text-lg font-semibold flex items-center gap-2 text-[#4C2A6E]">
-        <FileSignature className="w-5 h-5 text-[#D9B35A]" /> Contrats d'engagement de volume
-        <span className="text-sm font-normal text-[#8A785F]">— garanties nettes détenues : <strong className="text-[#4C2A6E]" data-testid="contracts-total-net">{eur(data.total_net_cents)}</strong></span>
-      </h2>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-lg font-semibold flex items-center gap-2 text-[#4C2A6E]">
+          <FileSignature className="w-5 h-5 text-[#D9B35A]" /> Contrats d'engagement de volume
+          <span className="text-sm font-normal text-[#8A785F]">— garanties nettes détenues : <strong className="text-[#4C2A6E]" data-testid="contracts-total-net">{eur(data.total_net_cents)}</strong></span>
+        </h2>
+        <button
+          onClick={async () => {
+            try {
+              const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/vendor/contracts/admin/report-pdf`, { credentials: 'include' });
+              if (!r.ok) throw new Error('Export impossible');
+              const blob = await r.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `etat-garanties-${new Date().toISOString().slice(0, 10)}.pdf`;
+              a.click();
+              URL.revokeObjectURL(url);
+              toast.success('État des garanties PDF téléchargé');
+            } catch (e) { toast.error(e.message); }
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-white text-[#4C2A6E] border border-[#E9DCC0] hover:border-[#D9B35A]/50 transition-colors"
+          data-testid="contracts-report-pdf-btn">
+          <FileText className="w-3.5 h-3.5" /> Rapport garanties PDF
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="contracts-territories">
         {Object.entries(data.by_territory).map(([terr, t]) => (
