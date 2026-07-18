@@ -42,7 +42,9 @@ const LoginPage = () => {
       }
       toast.success(t('auth.login_success'));
       const next = new URLSearchParams(window.location.search).get('next');
-      navigate(next && next.startsWith('/') ? next : '/dashboard');
+      const u = data?.user;
+      const isSuperAdmin = u?.is_admin || ['SUPER_ADMIN', 'ADMIN', 'admin'].includes(u?.role);
+      navigate(next && next.startsWith('/') ? next : (isSuperAdmin ? '/superadmin' : '/dashboard'));
     } catch (error) {
       toast.error(error.message || t('auth.invalid_credentials'));
     } finally {

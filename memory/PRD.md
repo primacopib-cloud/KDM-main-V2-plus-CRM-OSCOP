@@ -961,3 +961,10 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Nouveau routes_wallet_packs_admin.py : CRUD /api/admin/wallet-packs (création, modification, suppression, masquage via `active`) — collection wallet_credit_packs seedée depuis CREDIT_PACKAGES. /api/payments/packages + checkout lisent désormais la base (pack masqué = non listé + achat refusé). Guard admin (403 non-admin validé).
 - Onglet "Packs de crédits" dans /admin/plans (WalletPacksTab + WalletPackFormModal) : table avec compteur d'achats, toggle œil masquer/afficher, modal create/edit. Validé UI (création Pack COOPER 50cr/25€, masquage, exclusion du dialog wallet).
 - Reçu PDF Brevo à l'acheteur après achat crédits wallet (_send_wallet_receipt_email dans routes_payment.py, réutilise pdf_credit_invoice) — appelé aux 2 chemins de crédit (polling + webhook), idempotent. Validé E2E : paiement test 4242 → "Wallet receipt email sent" + Brevo 201, solde 450→550.
+
+## 2026-07-18 — Emails paiement (succès/échec), dashboard super admin unifié, charte violet/or
+- Email succès : sujet "✓ Paiement réussi — Votre facture KDMARCHÉ" avec facture PDF jointe (déjà en place, sujet clarifié).
+- Email échec : _send_payment_failed_email + _notify_payment_failure_once (flag failure_notified, idempotent) — déclenché au polling (session expirée) et au webhook (checkout.session.expired / async_payment_failed). Validé : Brevo 201, un seul envoi malgré double appel.
+- Connexion super admin (is_admin ou rôle SUPER_ADMIN/ADMIN/admin) → redirection directe vers /superadmin (dashboard unifié 13 onglets). Le paramètre ?next= reste prioritaire. Login acheteur → /dashboard inchangé (validé).
+- SuperAdminHeader : liens "Plans & Crédits" (/admin/plans) et "Connecteurs" (/admin/connecteurs) ajoutés à la nav.
+- AdminPlansPage : charte violet et or (fond dégradé #2A1045→#451F6B, cartes stats bordure or, barre d'onglets or, modals #221038). Validé par screenshot.

@@ -47,7 +47,7 @@ export const CreditAdjustModal = ({ open, onClose, onSave, user }) => {
     >
       <div
         className="rounded-2xl max-w-md w-full"
-        style={{ background: '#0f1623', border: '1px solid rgba(217,179,90,0.3)' }}
+        style={{ background: '#221038', border: '1px solid rgba(217,179,90,0.3)' }}
       >
         <div className="flex items-center justify-between p-5 border-b border-white/10">
           <h2 className="text-lg font-bold text-white">{i18n.t('adm.ajuster_credits')}</h2>

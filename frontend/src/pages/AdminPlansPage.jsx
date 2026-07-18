@@ -218,7 +218,7 @@ const AdminPlansPage = () => {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: '#0B1220' }}
+        style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}
       >
         <Loader2 className="w-10 h-10 animate-spin" style={{ color: '#D9B35A' }} />
       </div>
@@ -226,7 +226,7 @@ const AdminPlansPage = () => {
   }
 
   return (
-    <div className="on-dark" style={{ background: 'linear-gradient(180deg, #0B1220 0%, #0E1526 60%, #0B1220 100%)', minHeight: '100vh' }}>
+    <div className="on-dark" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)', minHeight: '100vh' }}>
       <NavBar />
       <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-12 max-w-7xl mx-auto">
         {/* Header */}
@@ -280,7 +280,7 @@ const AdminPlansPage = () => {
         {/* Tabs */}
         <div
           className="flex gap-2 mb-6 p-1 rounded-xl w-fit"
-          style={{ background: 'rgba(255,255,255,0.05)' }}
+          style={{ background: 'rgba(217,179,90,0.08)', border: '1px solid rgba(217,179,90,0.25)' }}
         >
           {[
             { id: 'plans', label: i18n.t('adm.plans_d_abonnement'), icon: Layers },

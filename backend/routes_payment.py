@@ -49,6 +49,41 @@ def _wallet_stripe_key() -> str:
     return api_key
 
 
+async def _send_payment_failed_email(user: dict, transaction: dict, reason: str = "expiré") -> None:
+    """Email Brevo à l'acheteur quand le paiement carte échoue ou expire."""
+    try:
+        from brevo_service import is_brevo_configured, send_email, _wrap_html
+        if not is_brevo_configured() or not user.get("email"):
+            return
+        body = (
+            f"<p>Bonjour {user.get('contact_name') or ''},</p>"
+            f"<p>Votre paiement par carte de <strong>{float(transaction['amount']):.2f} €</strong> "
+            f"({transaction['credits']} crédits) n'a pas abouti : <strong>paiement {reason}</strong>.</p>"
+            "<p>Aucun montant n'a été débité et aucun crédit n'a été ajouté.</p>"
+            "<p>Vous pouvez relancer l'achat à tout moment depuis votre espace CREDI&rsquo;SCOP "
+            "(bouton « Acheter des crédits »).</p>"
+        )
+        await send_email(
+            to_email=user["email"], to_name=user.get("contact_name"),
+            subject="✗ Échec du paiement — Achat de crédits KDMARCHÉ",
+            html_content=_wrap_html("Paiement non abouti", body),
+            tags=["wallet-payment-failed"],
+        )
+        logger.info(f"Payment failed email sent to {user['email']} (session {transaction['session_id']})")
+    except Exception as exc:
+        logger.error(f"Payment failed email error: {exc}")
+
+
+async def _notify_payment_failure_once(user: dict, transaction: dict, reason: str) -> None:
+    """Envoie l'email d'échec une seule fois par transaction (idempotent)."""
+    claim = await db.payment_transactions.update_one(
+        {"session_id": transaction["session_id"], "failure_notified": {"$ne": True}},
+        {"$set": {"failure_notified": True, "updated_at": datetime.now(timezone.utc)}},
+    )
+    if claim.modified_count == 1:
+        await _send_payment_failed_email(user, transaction, reason)
+
+
 async def _send_wallet_receipt_email(user: dict, transaction: dict) -> None:
     """Reçu PDF envoyé par email Brevo à l'acheteur après achat de crédits wallet."""
     try:
@@ -77,7 +112,7 @@ async def _send_wallet_receipt_email(user: dict, transaction: dict) -> None:
         )
         await send_email(
             to_email=user["email"], to_name=client["contact_name"] or None,
-            subject=f"Votre reçu KDMARCHÉ — {pack['name']} ({transaction['credits']} crédits)",
+            subject=f"✓ Paiement réussi — Votre facture KDMARCHÉ ({transaction['credits']} crédits)",
             html_content=_wrap_html("Reçu — Achat de crédits", body),
             tags=["wallet-credit-receipt"],
             attachments=[{
@@ -236,6 +271,7 @@ async def get_payment_status(
                 
         elif stripe_session_status == "expired":
             new_status = PaymentStatus.EXPIRED.value
+            await _notify_payment_failure_once(user, transaction, "expiré")
         
         # Update transaction
         await db.payment_transactions.update_one(
@@ -322,6 +358,20 @@ async def handle_stripe_webhook(request: Request):
                 buyer = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
                 if buyer:
                     await _send_wallet_receipt_email(buyer, transaction)
+        
+        # Handle payment failure / expiration
+        elif event["type"] in ("checkout.session.expired", "checkout.session.async_payment_failed"):
+            transaction = await db.payment_transactions.find_one({"session_id": session_id})
+            if transaction:
+                reason = "expiré" if event["type"] == "checkout.session.expired" else "refusé"
+                await db.payment_transactions.update_one(
+                    {"session_id": session_id},
+                    {"$set": {"status": PaymentStatus.EXPIRED.value if reason == "expiré" else PaymentStatus.FAILED.value,
+                              "updated_at": datetime.now(timezone.utc)}}
+                )
+                buyer = await db.users.find_one({"id": transaction["user_id"]}, {"_id": 0, "password_hash": 0})
+                if buyer:
+                    await _notify_payment_failure_once(buyer, transaction, reason)
         
         return {"received": True}
         

@@ -29,6 +29,8 @@ const NAV_LINKS = [
   { to: '/catalogue', label: i18n.t('adm.catalogue') },
   { to: '/admin-v2', label: i18n.t('adm.admin_orgs') },
   { to: '/admin/produits', label: i18n.t('adm.validation') },
+  { to: '/admin/plans', label: 'Plans & Crédits' },
+  { to: '/admin/connecteurs', label: 'Connecteurs' },
 ];
 
 const TABS = [

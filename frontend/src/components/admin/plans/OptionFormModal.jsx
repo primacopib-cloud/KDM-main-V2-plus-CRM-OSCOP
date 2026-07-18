@@ -67,7 +67,7 @@ export const OptionFormModal = ({ open, onClose, onSave, initialData, isEdit, pl
     >
       <div
         className="rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto"
-        style={{ background: '#0f1623', border: '1px solid rgba(217,179,90,0.3)' }}
+        style={{ background: '#221038', border: '1px solid rgba(217,179,90,0.3)' }}
       >
         <div className="flex items-center justify-between p-5 border-b border-white/10">
           <h2 className="text-xl font-bold text-white">

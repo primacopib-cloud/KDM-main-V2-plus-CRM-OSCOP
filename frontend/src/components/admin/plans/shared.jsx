@@ -5,7 +5,7 @@ export const StatsCard = ({ icon: Icon, label, value, color = '#D9B35A' }) => (
     className="p-4 rounded-xl"
     style={{
       background: 'rgba(255,255,255,0.06)',
-      border: '1px solid rgba(255,255,255,0.14)',
+      border: '1px solid rgba(217,179,90,0.35)',
     }}
   >
     <div className="flex items-center gap-3">
