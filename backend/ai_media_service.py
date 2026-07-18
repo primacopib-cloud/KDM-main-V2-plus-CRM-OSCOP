@@ -71,16 +71,20 @@ def is_video_configured() -> bool:
     return bool(os.environ.get("FAL_KEY"))
 
 
-async def submit_product_video(prompt: str, image_url_abs: str | None = None) -> tuple[str, str]:
+async def submit_product_video(prompt: str, image_url_abs: str | None = None,
+                               language: str = "fr") -> tuple[str, str]:
     """Soumet un spot vidéo à fal.ai (Veo 3). Retourne (model, request_id) pour suivi résilient."""
     if not is_video_configured():
         raise RuntimeError("FAL_KEY non configurée")
     import fal_client
 
+    lang_names = {"fr": "French", "en": "English", "es": "Spanish"}
+    lang = lang_names.get(language, "French")
     ad_prompt = (
         f"Cinematic professional product advertisement: {prompt}. "
         "Studio quality, dramatic lighting, smooth camera movement, ultra professional commercial spot. "
-        "Minimal on-screen text (less than 20% of frame)."
+        "Minimal on-screen text (less than 20% of frame). "
+        f"All spoken voice-over narration and any on-screen text must be in {lang}."
     )
     if image_url_abs:
         model = "fal-ai/veo3/fast/image-to-video"

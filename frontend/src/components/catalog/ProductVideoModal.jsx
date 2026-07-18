@@ -1,7 +1,27 @@
+import { useState } from 'react';
 import { X, Clapperboard } from 'lucide-react';
 
+const API = process.env.REACT_APP_BACKEND_URL;
+const LANG_LABELS = { fr: '🇫🇷 FR', en: '🇬🇧 EN', es: '🇪🇸 ES' };
+
 export const ProductVideoModal = ({ product, onClose }) => {
+  const variants = product?.video_urls && Object.keys(product.video_urls).length > 1 ? product.video_urls : null;
+  const [lang, setLang] = useState(variants ? (variants.fr ? 'fr' : Object.keys(variants)[0]) : null);
+  const [counted, setCounted] = useState(false);
+
   if (!product) return null;
+  const rawUrl = (variants && lang && variants[lang]) || product.video_url;
+  const src = rawUrl.startsWith('http') ? rawUrl : `${API}${rawUrl}`;
+
+  const trackView = () => {
+    if (counted) return;
+    setCounted(true);
+    fetch(`${API}/api/public/kdmarche-video-view`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: product.id }),
+    }).catch(() => {});
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
       onClick={onClose} data-testid="product-video-modal">
@@ -11,10 +31,21 @@ export const ProductVideoModal = ({ product, onClose }) => {
           <p className="text-sm font-semibold text-white flex items-center gap-2">
             <Clapperboard size={15} className="text-[#D9B35A]" /> Spot vidéo — {product.name}
           </p>
-          <button type="button" onClick={onClose} data-testid="product-video-close"
-            className="text-white/60 hover:text-white p-1"><X size={18} /></button>
+          <div className="flex items-center gap-2">
+            {variants && Object.keys(variants).map((code) => (
+              <button key={code} type="button" onClick={() => setLang(code)}
+                data-testid={`product-video-lang-${code}`}
+                className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+                  lang === code ? 'bg-[#D9B35A] text-black' : 'bg-white/10 text-white/70 hover:bg-white/20'
+                }`}>
+                {LANG_LABELS[code] || code.toUpperCase()}
+              </button>
+            ))}
+            <button type="button" onClick={onClose} data-testid="product-video-close"
+              className="text-white/60 hover:text-white p-1"><X size={18} /></button>
+          </div>
         </div>
-        <video src={product.video_url} controls autoPlay playsInline
+        <video key={src} src={src} controls autoPlay playsInline onPlay={trackView}
           className="w-full aspect-video bg-black" data-testid="product-video-player" />
       </div>
     </div>

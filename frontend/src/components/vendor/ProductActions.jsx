@@ -4,25 +4,45 @@ import { Button } from '../ui/button';
 import { VideoShareButtons } from './VideoShareButtons';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+const LANG_LABELS = { fr: '🇫🇷 FR', en: '🇬🇧 EN', es: '🇪🇸 ES' };
 
-const VendorVideoModal = ({ product, onClose }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-    onClick={onClose} data-testid="vendor-video-modal">
-    <div className="rounded-[20px] p-5 max-w-xl w-full bg-white" onClick={(e) => e.stopPropagation()}
-      style={{ boxShadow: '0 24px 64px rgba(76,42,110,0.3)' }}>
-      <div className="flex items-start justify-between mb-3">
-        <h3 className="font-display text-lg text-[#1F2A3A] flex items-center gap-2">
-          <Clapperboard size={16} className="text-purple-600" /> Spot vidéo — {product.name}
-        </h3>
-        <button type="button" onClick={onClose} data-testid="vendor-video-close"
-          className="opacity-50 hover:opacity-100 p-1"><X size={18} /></button>
+const VendorVideoModal = ({ product, onClose }) => {
+  const variants = product.video_urls && Object.keys(product.video_urls).length > 1 ? product.video_urls : null;
+  const [lang, setLang] = useState(variants ? (variants.fr ? 'fr' : Object.keys(variants)[0]) : null);
+  const rawUrl = (variants && lang && variants[lang]) || product.video_url;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      onClick={onClose} data-testid="vendor-video-modal">
+      <div className="rounded-[20px] p-5 max-w-xl w-full bg-white" onClick={(e) => e.stopPropagation()}
+        style={{ boxShadow: '0 24px 64px rgba(76,42,110,0.3)' }}>
+        <div className="flex items-start justify-between mb-3">
+          <h3 className="font-display text-lg text-[#1F2A3A] flex items-center gap-2">
+            <Clapperboard size={16} className="text-purple-600" /> Spot vidéo — {product.name}
+          </h3>
+          <button type="button" onClick={onClose} data-testid="vendor-video-close"
+            className="opacity-50 hover:opacity-100 p-1"><X size={18} /></button>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          {variants && Object.keys(variants).map((code) => (
+            <button key={code} type="button" onClick={() => setLang(code)}
+              data-testid={`vendor-video-lang-${code}`}
+              className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+                lang === code ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}>
+              {LANG_LABELS[code] || code.toUpperCase()}
+            </button>
+          ))}
+          <span className="ml-auto text-xs text-gray-500 inline-flex items-center gap-1" data-testid="vendor-video-views">
+            <Eye size={13} /> {product.video_views || 0} vue{(product.video_views || 0) > 1 ? 's' : ''}
+          </span>
+        </div>
+        <video key={rawUrl} src={rawUrl.startsWith('http') ? rawUrl : `${API_URL}${rawUrl}`}
+          controls playsInline className="w-full rounded-xl bg-black aspect-video" data-testid="vendor-video-player" />
+        <VideoShareButtons videoUrl={rawUrl} productName={product.name} />
       </div>
-      <video src={product.video_url.startsWith('http') ? product.video_url : `${API_URL}${product.video_url}`}
-        controls playsInline className="w-full rounded-xl bg-black aspect-video" data-testid="vendor-video-player" />
-      <VideoShareButtons videoUrl={product.video_url} productName={product.name} />
     </div>
-  </div>
-);
+  );
+};
 
 export const ProductActions = ({ product, vendorId, onView, onEdit, onAI }) => {
   const [videoOpen, setVideoOpen] = useState(false);

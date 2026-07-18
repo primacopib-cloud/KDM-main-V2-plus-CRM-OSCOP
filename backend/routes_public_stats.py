@@ -1,5 +1,6 @@
 """Statistiques publiques temps réel pour la page vitrine KDMARCHÉ — /api/public/kdmarche-stats."""
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 public_stats_router = APIRouter(prefix="/api/public", tags=["Public Stats"])
 
@@ -17,21 +18,41 @@ async def kdmarche_videos(limit: int = 6):
     limit = min(max(limit, 1), 12)
     jobs = await db.ai_video_jobs.find(
         {"status": "DONE", "video_url": {"$ne": None}}, {"_id": 0}
-    ).sort("created_at", -1).to_list(limit)
+    ).sort("created_at", -1).to_list(limit * 3)
     videos = []
+    seen_products = set()
     for job in jobs:
+        if job["product_id"] in seen_products or len(videos) >= limit:
+            continue
+        seen_products.add(job["product_id"])
         product = await db.vendor_products.find_one(
-            {"id": job["product_id"]}, {"_id": 0, "name": 1}) or {}
+            {"id": job["product_id"]}, {"_id": 0, "name": 1, "video_views": 1}) or {}
         vendor = await db.vendors.find_one(
             {"id": job["vendor_id"]}, {"_id": 0, "company_name": 1}) or {}
         videos.append({
             "id": job["id"],
+            "product_id": job["product_id"],
             "video_url": job["video_url"],
+            "language": job.get("language", "fr"),
             "product_name": product.get("name", "Produit"),
             "vendor_name": vendor.get("company_name", "Vendeur KDMARCHÉ"),
+            "views": int(product.get("video_views") or 0),
             "created_at": job.get("created_at"),
         })
     return {"videos": videos, "total": len(videos)}
+
+
+class VideoViewPayload(BaseModel):
+    product_id: str
+
+
+@public_stats_router.post("/kdmarche-video-view")
+async def track_video_view(payload: VideoViewPayload):
+    """Incrémente le compteur de vues du spot vidéo d'un produit."""
+    result = await db.vendor_products.update_one(
+        {"id": payload.product_id}, {"$inc": {"video_views": 1}})
+    await db.products.update_one({"id": payload.product_id}, {"$inc": {"video_views": 1}})
+    return {"ok": result.matched_count == 1}
 
 
 @public_stats_router.get("/kdmarche-stats")

@@ -115,6 +115,7 @@ class ProductResponse(BaseModel):
     max_order_qty: Optional[int] = None
     image_url: Optional[str] = None
     video_url: Optional[str] = None
+    video_urls: Optional[dict] = None
     tags: List[str] = []
     status: str
     # Price (only if authorized)

@@ -37,6 +37,7 @@ class EnhanceImagePayload(BaseModel):
 class GenerateVideoPayload(BaseModel):
     prompt: str
     image_url: str | None = None
+    language: str = "fr"
 
 
 async def _get_product(vendor_id: str, product_id: str) -> dict:
@@ -114,7 +115,8 @@ async def ai_generate_video(vendor_id: str, product_id: str, payload: GenerateVi
     await _consume_ai(vendor_id, "ai_video_generation", f"Spot vidéo pour {product['name']}", product)
     job = {
         "id": str(uuid.uuid4()), "vendor_id": vendor_id, "product_id": product_id,
-        "prompt": payload.prompt, "status": "RUNNING", "video_url": None,
+        "prompt": payload.prompt, "language": payload.language or "fr",
+        "status": "RUNNING", "video_url": None,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.ai_video_jobs.insert_one({**job})
@@ -124,7 +126,7 @@ async def ai_generate_video(vendor_id: str, product_id: str, payload: GenerateVi
 
 async def _finalize_video_job(job_id: str, video_url: str) -> None:
     """Sauvegarde la vidéo en local, marque le job DONE et lie la vidéo au produit vendeur."""
-    job = await db.ai_video_jobs.find_one({"id": job_id}, {"_id": 0, "product_id": 1})
+    job = await db.ai_video_jobs.find_one({"id": job_id}, {"_id": 0, "product_id": 1, "language": 1})
     local_url = video_url
     try:
         local_url = await ai_media_service.download_video_locally(video_url, job_id)
@@ -136,8 +138,10 @@ async def _finalize_video_job(job_id: str, video_url: str) -> None:
                   "finished_at": datetime.now(timezone.utc).isoformat()}},
     )
     if job:
-        await db.vendor_products.update_one({"id": job["product_id"]}, {"$set": {"video_url": local_url}})
-        await db.products.update_one({"id": job["product_id"]}, {"$set": {"video_url": local_url}})
+        lang = job.get("language") or "fr"
+        update = {"video_url": local_url, f"video_urls.{lang}": local_url}
+        await db.vendor_products.update_one({"id": job["product_id"]}, {"$set": update})
+        await db.products.update_one({"id": job["product_id"]}, {"$set": update})
     try:
         await _send_video_ready_email(job_id)
     except Exception:
@@ -190,7 +194,8 @@ async def _run_video_job(job_id: str, payload: GenerateVideoPayload) -> None:
         if payload.image_url:
             base = os.environ.get("FRONTEND_URL", "")
             image_abs = payload.image_url if payload.image_url.startswith("http") else f"{base}{payload.image_url}"
-        model, request_id = await ai_media_service.submit_product_video(payload.prompt, image_abs)
+        model, request_id = await ai_media_service.submit_product_video(
+            payload.prompt, image_abs, payload.language or "fr")
         await db.ai_video_jobs.update_one(
             {"id": job_id}, {"$set": {"fal_model": model, "fal_request_id": request_id}}
         )

@@ -21,6 +21,7 @@ export const AIStudioModal = ({ product, vendorId, onClose, onMediaAdded }) => {
   const [pricing, setPricing] = useState({});
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [videoJob, setVideoJob] = useState(null);
+  const [videoLang, setVideoLang] = useState('fr');
 
   const refreshCredits = useCallback(async () => {
     const r = await fetch(`${API_URL}/api/vendor/credits/${vendorId}`);
@@ -57,7 +58,7 @@ export const AIStudioModal = ({ product, vendorId, onClose, onMediaAdded }) => {
       let body = {};
       if (tab === 'generate') { url += 'generate-image'; body = { prompt }; }
       if (tab === 'enhance') { url += 'enhance-image'; body = { image_url: selectedImage, instructions: prompt }; }
-      if (tab === 'video') { url += 'generate-video'; body = { prompt, image_url: selectedImage || null }; }
+      if (tab === 'video') { url += 'generate-video'; body = { prompt, image_url: selectedImage || null, language: videoLang }; }
       const r = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       });
@@ -145,6 +146,26 @@ export const AIStudioModal = ({ product, vendorId, onClose, onMediaAdded }) => {
             : 'Décrivez le spot publicitaire (~20 s, moins de 20% de texte à l\u2019écran)…'}
           className="w-full h-24 p-3 rounded-lg border border-gray-200 text-sm text-[#1F2A3A] mb-3"
         />
+
+        {tab === 'video' && (
+          <div className="mb-3" data-testid="ai-video-lang-selector">
+            <p className="text-xs opacity-60 mb-1.5">Langue de la voix off (marchés export) :</p>
+            <div className="flex gap-2">
+              {[['fr', '🇫🇷 Français'], ['en', '🇬🇧 English'], ['es', '🇪🇸 Español']].map(([code, label]) => (
+                <button key={code} type="button" onClick={() => setVideoLang(code)}
+                  data-testid={`ai-video-lang-${code}`}
+                  className={`h-8 px-3 rounded-lg text-xs font-medium border transition-all ${
+                    videoLang === code ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {(product.video_urls?.[videoLang]) && (
+              <p className="text-[11px] text-amber-600 mt-1.5">Une variante {videoLang.toUpperCase()} existe déjà — elle sera remplacée.</p>
+            )}
+          </div>
+        )}
 
         {tab === 'video' && !videoEnabled && (
           <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3" data-testid="ai-video-key-warning">

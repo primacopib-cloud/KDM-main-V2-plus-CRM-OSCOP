@@ -1,7 +1,47 @@
 import { useState, useEffect } from 'react';
-import { Clapperboard, Sparkles } from 'lucide-react';
+import { Clapperboard, Sparkles, Eye } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const VideoCard = ({ v }) => {
+  const [counted, setCounted] = useState(false);
+  const [views, setViews] = useState(v.views || 0);
+
+  const trackView = () => {
+    if (counted) return;
+    setCounted(true);
+    setViews((n) => n + 1);
+    fetch(`${API}/public/kdmarche-video-view`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: v.product_id }),
+    }).catch(() => {});
+  };
+
+  return (
+    <div className="glass-panel-soft rounded-[20px] overflow-hidden" data-testid={`kdm-video-card-${v.id}`}>
+      <video
+        src={v.video_url.startsWith('http') ? v.video_url : `${process.env.REACT_APP_BACKEND_URL}${v.video_url}`}
+        controls preload="metadata" playsInline onPlay={trackView}
+        className="w-full aspect-video object-cover bg-black"
+        data-testid={`kdm-video-player-${v.id}`}
+      />
+      <div className="p-4 flex items-start gap-3">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: '#D9B35A1c', border: '1px solid #D9B35A55' }}>
+          <Clapperboard className="w-4 h-4 text-[#D9B35A]" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold truncate">{v.product_name}</p>
+          <p className="text-xs text-white/55 truncate">{v.vendor_name}</p>
+        </div>
+        <span className="text-[11px] text-white/50 inline-flex items-center gap-1 shrink-0"
+          data-testid={`kdm-video-views-${v.id}`}>
+          <Eye size={12} /> {views}
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export const VideoShowcase = () => {
   const [videos, setVideos] = useState([]);
@@ -29,28 +69,7 @@ export const VideoShowcase = () => {
         Mettez vos produits en scène en quelques clics, vous aussi.
       </p>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {videos.map((v) => (
-          <div key={v.id} className="glass-panel-soft rounded-[20px] overflow-hidden" data-testid={`kdm-video-card-${v.id}`}>
-            <video
-              src={v.video_url}
-              controls
-              preload="metadata"
-              playsInline
-              className="w-full aspect-video object-cover bg-black"
-              data-testid={`kdm-video-player-${v.id}`}
-            />
-            <div className="p-4 flex items-start gap-3">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: '#D9B35A1c', border: '1px solid #D9B35A55' }}>
-                <Clapperboard className="w-4 h-4 text-[#D9B35A]" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold truncate">{v.product_name}</p>
-                <p className="text-xs text-white/55 truncate">{v.vendor_name}</p>
-              </div>
-            </div>
-          </div>
-        ))}
+        {videos.map((v) => <VideoCard key={v.id} v={v} />)}
       </div>
     </section>
   );

@@ -559,6 +559,13 @@ Exigences produit étendues :
 - ✅ **Fiche PDF produit** (`pdf_product_sheet.py`) : bloc "🎬 SPOT VIDÉO" avec lien cliquable + **QR code** (reportlab QrCodeWidget) vers la vidéo — uniquement si `video_url`. Testé curl : PDF 7,5 Ko, /URI + lien présents.
 - ✅ **Email Brevo "spot prêt"** (`routes_vendor_ai._send_video_ready_email`, appelé par `_finalize_video_job`) : bouton "▶ Regarder le spot" + lien Espace Vendeur, tag `video-ready`. Testé réel : Brevo 201 Created.
 
+### 2026-07-18 — Spots multi-langues (FR/EN/ES) + Stats de vues (VALIDÉS)
+- ✅ **Voix off multi-langues** : sélecteur 🇫🇷/🇬🇧/🇪🇸 dans le Studio IA (onglet vidéo). Le prompt Veo3 force la langue de narration (`ai_media_service.submit_product_video(language)`). Variantes stockées dans `video_urls.{lang}` sur `vendor_products` + `products` (migration `video_urls.fr` faite pour l'existant). **Testé réel** : spot EN généré (job `8aa3c90e`, image-to-video, voix off anglaise), les 2 variantes FR/EN coexistent.
+- ✅ **Chips de langue** dans la modal vidéo catalogue acheteur (`ProductVideoModal`) et la modal vendeur (`VendorVideoModal`) — bascule instantanée entre variantes (screenshot validé, src change bien).
+- ✅ **Stats de vues** : `POST /api/public/kdmarche-video-view {product_id}` incrémente `video_views` (vendor_products + products). Tracking au 1er play dans la galerie publique et la modal catalogue (pas côté vendeur). Affichage : compteur 👁 dans les cartes galerie + "X vues" dans la modal vendeur. Testé curl : compteur passe à 1.
+- ✅ Galerie `/kdmarche` dédupliquée (une carte par produit, spot le plus récent) + champ `language` et `views` exposés.
+- ℹ️ Solde vendeur démo re-crédité à 102 par admin_grant (2 générations réelles consommées dans la session).
+
 ## 4. Backlog
 
 ### P1 — Internationalisation

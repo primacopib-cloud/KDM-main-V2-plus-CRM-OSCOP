@@ -278,6 +278,7 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
         max_order_qty=product.get("max_order_qty"),
         image_url=product.get("image_url"),
         video_url=product.get("video_url"),
+        video_urls=product.get("video_urls"),
         tags=product.get("tags", []),
         status=product["status"],
         price_visible=price_visible,
