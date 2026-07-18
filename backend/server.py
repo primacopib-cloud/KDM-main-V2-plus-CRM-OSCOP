@@ -245,6 +245,8 @@ set_wallet_packs_database(db)
 app.include_router(admin_plans_router, prefix="/api")
 app.include_router(admin_plans_credits_router, prefix="/api")
 app.include_router(wallet_packs_router)
+from routes_email_previews import email_previews_router
+app.include_router(email_previews_router)
 
 
 # Import and include LOLODRIVE by O'SCOP routes (PASS Vie Chère, UC, Lolo Points, Events, POS)

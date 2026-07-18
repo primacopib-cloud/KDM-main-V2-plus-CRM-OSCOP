@@ -995,3 +995,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 
 ## 2026-07-18 — Logo en en-tête des emails Brevo
 - _wrap_html (brevo_service.py) : logo violet/or sur pastille ivoire arrondie en tête du bandeau (img depuis FRONTEND_URL/logos/kdmarche-pro-gold.png — pointera vers la prod après déploiement). Testé par envoi réel Brevo (messageId OK).
+
+## 2026-07-18 — Galerie aperçu emails (Super Admin) + logo texte blanc sur violet
+- Variante logo /logos/kdmarche-pro-white.png : "KD MARCHÉ" en BLANC (Pro or) pour usage sur fonds violets. Image sociale social-share.png refaite avec cette variante posée directement sur le violet + favicons regénérés (fond violet, logo blanc).
+- routes_email_previews.py : GET /api/admin/email-previews (admin only, 403 sinon) — 14 modèles factices représentatifs rendus via _wrap_html (Paiements, Panier & Commandes, Vendeurs, Support, Comptes, Administration).
+- Onglet "Emails" (14e) dans le Super Admin : EmailPreviewsTab.jsx — liste par catégorie + aperçu iframe srcDoc avec objet. Validé UI (14 modèles, aperçu LOGI'SCOP avec logo en-tête).
