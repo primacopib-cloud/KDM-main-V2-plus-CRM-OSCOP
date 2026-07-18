@@ -35,6 +35,7 @@ const RegisterPage = () => {
     plan: preselectedPlan,
     acceptTerms: false,
     country: defaultCountry.code,
+    accountType: 'buyer',
   });
 
   const handleChange = (e) => {
@@ -140,6 +141,33 @@ const RegisterPage = () => {
                 <Building2 className="w-4 h-4" />
                 Informations entreprise
               </h3>
+
+              <div className="space-y-2">
+                <Label className="text-white/80 text-sm">Statut *</Label>
+                <div className="grid grid-cols-2 gap-3" data-testid="account-type-selector">
+                  {[
+                    ['buyer', 'Acheteur pro', 'Accédez au catalogue B2B et commandez'],
+                    ['vendor', 'Vendeur pro', 'Publiez vos produits et vos spots vidéo'],
+                  ].map(([value, label, desc]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, accountType: value }))}
+                      data-testid={`account-type-${value}`}
+                      className="rounded-xl p-3 text-left transition-all"
+                      style={{
+                        background: formData.accountType === value ? 'rgba(217,179,90,0.14)' : 'rgba(31,42,58,0.04)',
+                        border: formData.accountType === value ? '1.5px solid rgba(184,134,11,0.7)' : '1px solid rgba(31,42,58,0.15)',
+                      }}
+                    >
+                      <p className="text-sm font-semibold" style={{ color: formData.accountType === value ? '#B8860B' : '#1F2A3A' }}>
+                        {label}
+                      </p>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'rgba(31,42,58,0.55)' }}>{desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
               
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">

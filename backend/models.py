@@ -29,6 +29,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
     plan: Optional[SubscriptionPlan] = SubscriptionPlan.ESS_ACCES_PRO
+    account_type: Optional[str] = "buyer"  # buyer | vendor
 
 
 class UserLogin(BaseModel):

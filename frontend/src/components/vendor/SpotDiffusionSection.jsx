@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { CalendarClock, Loader2 } from 'lucide-react';
+import { getAuthHeaders } from '../../services/http';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -12,7 +13,7 @@ export const SpotDiffusionSection = ({ vendorId, productId }) => {
   const refresh = useCallback(async () => {
     const [gRes, dRes] = await Promise.all([
       fetch(`${API}/diffusion-grid`),
-      fetch(`${API}/vendor/diffusion/${vendorId}`),
+      fetch(`${API}/vendor/diffusion/${vendorId}`, { headers: getAuthHeaders(), credentials: 'include' }),
     ]);
     if (gRes.ok) setOptions((await gRes.json()).options || []);
     if (dRes.ok) {
@@ -29,7 +30,8 @@ export const SpotDiffusionSection = ({ vendorId, productId }) => {
     setBooking(option.id);
     try {
       const r = await fetch(`${API}/vendor/diffusion/${vendorId}/${productId}/book`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        credentials: 'include',
         body: JSON.stringify({ grid_id: option.id }),
       });
       const d = await r.json();

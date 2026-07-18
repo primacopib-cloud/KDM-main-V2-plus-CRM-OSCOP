@@ -101,9 +101,19 @@ class BookPayload(BaseModel):
     grid_id: str
 
 
+async def _check_vendor_access(user_id: str, vendor_id: str) -> None:
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "vendor_id": 1, "role": 1, "is_admin": 1})
+    if not user:
+        raise HTTPException(status_code=401, detail="Non authentifié")
+    if user.get("vendor_id") == vendor_id or user.get("is_admin") or user.get("role") in ("admin", "SUPER_ADMIN"):
+        return
+    raise HTTPException(status_code=403, detail="Accès réservé au vendeur propriétaire")
+
+
 @diffusion_router.get("/vendor/diffusion/{vendor_id}")
-async def vendor_diffusions(vendor_id: str):
+async def vendor_diffusions(vendor_id: str, user_id: str = Depends(get_current_user_id)):
     """Diffusions du vendeur, avec statut recalculé."""
+    await _check_vendor_access(user_id, vendor_id)
     now = datetime.now(timezone.utc).isoformat()
     items = await db.spot_diffusions.find({"vendor_id": vendor_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
     for item in items:
@@ -113,8 +123,10 @@ async def vendor_diffusions(vendor_id: str):
 
 
 @diffusion_router.post("/vendor/diffusion/{vendor_id}/{product_id}/book")
-async def book_diffusion(vendor_id: str, product_id: str, payload: BookPayload):
+async def book_diffusion(vendor_id: str, product_id: str, payload: BookPayload,
+                         user_id: str = Depends(get_current_user_id)):
     """Réserve une fenêtre de diffusion en galerie, payée en crédits coopératifs."""
+    await _check_vendor_access(user_id, vendor_id)
     option = await db.diffusion_grid.find_one({"id": payload.grid_id, "active": True}, {"_id": 0})
     if not option:
         raise HTTPException(status_code=404, detail="Option de diffusion introuvable ou inactive")
@@ -134,7 +146,10 @@ async def book_diffusion(vendor_id: str, product_id: str, payload: BookPayload):
     starts = datetime.fromisoformat(existing["ends_at"]) if existing else now
     ends = starts + _duration(option["unit"], option["quantity"])
 
-    await db.vendors.update_one({"id": vendor_id}, {"$inc": {"credits": -price}})
+    debit = await db.vendors.update_one(
+        {"id": vendor_id, "credits": {"$gte": price}}, {"$inc": {"credits": -price}})
+    if debit.modified_count == 0:
+        raise HTTPException(status_code=402, detail=f"Crédits insuffisants ({balance} cc, requis {price} cc)")
     await db.credit_transactions.insert_one({
         "id": str(uuid.uuid4()), "vendor_id": vendor_id, "action": "spot_diffusion",
         "cost": price, "detail": f"Diffusion galerie {option['label']} — {product.get('name', product_id)}",

@@ -46,6 +46,7 @@ async def register(user_data: UserCreate):
         )
 
     plan = user_data.plan.value if user_data.plan else "ess-acces-pro"
+    account_type = "vendor" if user_data.account_type == "vendor" else "buyer"
     user_in_db = UserInDB(
         email=user_data.email,
         password_hash=get_password_hash(user_data.password),
@@ -57,7 +58,24 @@ async def register(user_data: UserCreate):
         credits=await get_plan_default_credits(db, plan)
     )
 
-    await db.users.insert_one(user_in_db.dict())
+    user_doc = user_in_db.dict()
+    user_doc["role"] = account_type
+    if account_type == "vendor":
+        import uuid as _uuid
+        vendor_id = f"vendor-{_uuid.uuid4().hex[:12]}"
+        await db.vendors.insert_one({
+            "id": vendor_id,
+            "company_name": user_data.company_name,
+            "contact_name": user_data.contact_name,
+            "email": user_data.email,
+            "phone": user_data.phone,
+            "siret": user_data.siret,
+            "status": "pending",
+            "credits": 0,
+            "created_at": user_in_db.created_at.isoformat(),
+        })
+        user_doc["vendor_id"] = vendor_id
+    await db.users.insert_one(user_doc)
 
     logger.info(f"New user registered: {user_data.email}")
 

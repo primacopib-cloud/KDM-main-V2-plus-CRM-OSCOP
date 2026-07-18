@@ -14,6 +14,7 @@ export const authAPI = {
         contact_name: userData.contactName,
         phone: userData.phone,
         plan: userData.plan || 'ess-acces-pro',
+        account_type: userData.accountType || 'buyer',
       }),
     });
   },

@@ -1,0 +1,24 @@
+{
+  "summary": "Iter39 — Full backend + UI validation of Spot Diffusion Grid & vendor reservation security + Register account_type. All 11 pytest cases PASS. 24h/5cc paid reservation executed once as authorized (balance 22→17 cc, prolongation from previous ends_at confirmed, credit_transaction inserted). Insufficient-credits path returns 402 with atomic debit (balance stays 17). Public gallery filtered correctly (Rhum blanc only, VSOP excluded). UI /inscription: 'Statut' selector visible, Vendeur pro highlighted in gold, vendor signup end-to-end succeeded (redirect /connexion, DB shows role=vendor + vendors doc status=pending credits=0, cleaned up). Vendor UI: Spot vidéo modal on Rhum blanc shows spot-diffusion-section with active diffusion (until 18/08/2026) and 3 grid options; CREDI'SCOP counter = 17. No UI reservation click performed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter39_spot_diffusion_and_register.py",
+    "/app/test_reports/pytest/pytest_iter39.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "spot_diffusion.py _check_vendor_access is correct: reads user.vendor_id/is_admin/role before granting access; buyer token receives 403, missing token 401 via get_current_user_id.",
+    "Atomic debit uses vendors.update_one({credits:{$gte:price}}, $inc:-price) — safe against races. Verified via 402 path leaving balance unchanged.",
+    "Register creates users.role + vendors doc with vendor_id link when account_type='vendor'; buyer path does not create vendor_id — verified in DB.",
+    "diffusion_router.get('/diffusion-grid') is public which matches spec; admin endpoints properly gated by require_admin.",
+    "Minor suggestion: /api/me/crediscop returns key 'balance' not 'credits' — main agent may want to standardize response keys across endpoints (docs mention 'credits' elsewhere)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter39_spot_diffusion_and_register.py"],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (register vendor UI + vendor spot modal)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; vendor-pro@kdmarche.fr / Demo2026! ; acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "Registered two QA accounts (qa-vendeur-{ts}@test.fr and qa-acheteur-{ts}@test.fr) — DELETED after assertions. UI-registered account qa-ui-vendeur-1784350277@test.fr — DELETED (users + linked vendors doc). Grid options left ACTIVE (5cc/15cc/40cc) as instructed.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Vendor solde is now 17 cc after the authorized 24h/5cc booking. Diffusion for vp-damoiseau-rhum-blanc extended to ~2026-08-18. Public /api/public/kdmarche-videos returns key 'videos' with items containing 'product_name' (not 'name'/'title'). /api/me/crediscop returns 'balance' not 'credits'. Diffusion grid endpoints: public /api/diffusion-grid, admin /api/admin/diffusion-grid (POST validates unit ∈ {hours,days,months} and quantity>0)."
+}
