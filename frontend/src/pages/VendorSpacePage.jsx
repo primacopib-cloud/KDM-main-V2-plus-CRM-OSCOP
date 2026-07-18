@@ -1,6 +1,6 @@
 import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   Package, Plus, CheckCircle2, Building2, TrendingUp, ShoppingCart,
   Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Coins,
@@ -48,6 +48,12 @@ const VendorSpacePage = () => {
   const [aiProduct, setAiProduct] = useState(null);
   const [credits, setCredits] = useState(null);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [rechargeParams] = useSearchParams();
+
+  useEffect(() => {
+    if (rechargeParams.get('recharge') === '1') setCreditsModalOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch dashboard data
   const fetchDashboard = useCallback(async () => {

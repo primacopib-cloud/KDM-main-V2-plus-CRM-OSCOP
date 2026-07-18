@@ -11,7 +11,7 @@ export const TopupDialog = ({ open, onOpenChange, amount, setAmount, loading, on
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Plus className="w-5 h-5 text-[#D9B35A]" />
-          Recharger le wallet
+          Recharger mon CREDI&rsquo;SCOP
         </DialogTitle>
         <DialogDescription className="text-white/60">
           Ajoutez des crédits à votre compte O&apos;SCOP

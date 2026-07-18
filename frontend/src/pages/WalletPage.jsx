@@ -2,11 +2,12 @@ import i18n from '@/i18n';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, AlertCircle, Loader2, RefreshCw, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Loader2, RefreshCw, ShoppingCart, FileDown } from 'lucide-react';
 
 import { Button } from '../components/ui/button';
 import { partners } from '../data/mock';
 import { authAPI, walletAPIV2, zonesAPIV2, paymentAPI } from '../services/api';
+import { API, getAuthHeaders } from '../services/http';
 import { formatCredits } from '../components/wallet/walletUtils';
 import { WalletOrgTabs } from '../components/wallet/WalletOrgTabs';
 import { TopupDialog, ZoneAddDialog } from '../components/wallet/WalletDialogs';
@@ -29,6 +30,29 @@ export default function WalletPage() {
 
   // Top-up dialog (legacy - keep for org wallet)
   const [topupOpen, setTopupOpen] = useState(false);
+  const [statementLoading, setStatementLoading] = useState(false);
+
+  const downloadStatement = async () => {
+    setStatementLoading(true);
+    try {
+      const r = await fetch(`${API}/me/crediscop/statement.pdf`, {
+        headers: getAuthHeaders(), credentials: 'include',
+      });
+      if (!r.ok) throw new Error('Échec de génération');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'releve-crediscop.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relevé CREDI\u2019SCOP téléchargé');
+    } catch {
+      toast.error('Impossible de générer le relevé');
+    } finally {
+      setStatementLoading(false);
+    }
+  };
   const [topupAmount, setTopupAmount] = useState(100);
   const [topupLoading, setTopupLoading] = useState(false);
 
@@ -97,6 +121,10 @@ export default function WalletPage() {
 
   // Check for payment return
   useEffect(() => {
+    if (searchParams.get('topup') === '1') {
+      setTopupOpen(true);
+      return;
+    }
     const paymentStatus = searchParams.get('payment');
     const sessionId = searchParams.get('session_id');
 
@@ -341,8 +369,9 @@ export default function WalletPage() {
       </header>
 
       <div className="max-w-[1160px] mx-auto px-5 py-4">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold mb-1" data-testid="crediscop-title">Mon CREDI&rsquo;SCOP</h1>
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold mb-1" data-testid="crediscop-title">Mon CREDI&rsquo;SCOP</h1>
           <p className="text-[#D9B35A] text-xs uppercase tracking-[0.15em] font-semibold mb-1" data-testid="crediscop-tagline">
             Mes droits coopératifs mobilisables
           </p>
@@ -350,6 +379,18 @@ export default function WalletPage() {
             Capital d&rsquo;usage coopératif : consultez, recevez et mobilisez vos droits d&rsquo;usage,
             crédits coopératifs, contributions valorisées et avantages mutualisés au sein de l&rsquo;écosystème O&rsquo;SCOP.
           </p>
+          </div>
+          <button
+            type="button"
+            onClick={downloadStatement}
+            disabled={statementLoading}
+            data-testid="crediscop-statement-btn"
+            className="inline-flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-semibold transition-colors hover:brightness-110 disabled:opacity-50"
+            style={{ background: 'rgba(217,179,90,0.14)', border: '1px solid rgba(217,179,90,0.45)', color: '#D9B35A' }}
+          >
+            <FileDown className="w-4 h-4" />
+            {statementLoading ? 'Génération…' : 'Relevé CREDI\u2019SCOP (PDF)'}
+          </button>
         </div>
 
         {/* User Credits Card (always visible) */}

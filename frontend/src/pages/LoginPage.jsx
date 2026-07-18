@@ -41,7 +41,8 @@ const LoginPage = () => {
         return;
       }
       toast.success(t('auth.login_success'));
-      navigate('/dashboard');
+      const next = new URLSearchParams(window.location.search).get('next');
+      navigate(next && next.startsWith('/') ? next : '/dashboard');
     } catch (error) {
       toast.error(error.message || t('auth.invalid_credentials'));
     } finally {

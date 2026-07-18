@@ -598,6 +598,11 @@ Exigences produit étendues :
 - ✅ **Badge doré `CrediscopBadge`** (rafraîchi toutes les 60 s, cliquable) monté dans : NavBar principale (desktop + menu mobile, couvre COOPER/Expert via RoleSpaceLayout), header Espace Acheteur (`BuyerSpacePage`), header Catalogue (`CatalogHeader`). Header Espace Vendeur : badge crédits existant rebadgé "62 CREDI'SCOP". Screenshots validés (acheteur, catalogue, vendeur).
 - ✅ **Spec récepteur spots** : `/app/memory/RECEPTEUR_SPOTS_ECOSYSTEME.md` — endpoint `POST /api/kdmarche/spots` à implémenter dans les 4 apps externes (payload exact, auth Bearer admin, upsert par product_id, test de validation via bouton Diffuser).
 
+### 2026-07-18 — Badge Accès galerie + Recharge directe + Relevé CREDI'SCOP unifié (VALIDÉS self-test)
+- ✅ **Badge "Accès" galerie vidéo** (/kdmarche, `AccessBadge` dans VideoShowcase) : non connecté → `/connexion?next=/catalogue` (LoginPage supporte désormais le param `next`), connecté → `/catalogue` direct. Testé E2E : login avec next atterrit bien au catalogue.
+- ✅ **Recharge depuis badge CREDI'SCOP** : clic → vendeur `/espace-vendeur?recharge=1` (ouvre CreditPacksModal automatiquement), autres profils `/wallet?topup=1` (ouvre TopupDialog automatiquement). Modal renommée "Recharger mon CREDI'SCOP". Testé E2E les deux profils.
+- ✅ **Relevé CREDI'SCOP unifié** : `GET /api/me/crediscop/statement` (JSON) + `/statement.pdf` (PDF reportlab avec soldes par compartiment — Crédits IA Vendeur / CREDI'SCOP Organisation / Personnel —, 40 derniers mouvements unifiés, mention juridique). Bouton "Relevé CREDI'SCOP (PDF)" sur la page /wallet (téléchargement blob authentifié). Testé : PDF 2,7 Ko valide, vendeur 19 mouvements, acheteur solde org 500.
+
 ## 4. Backlog
 
 ### P1 — Internationalisation

@@ -97,7 +97,7 @@
     "pass_vie_chere_60_600": "PASS Vie Chère : 60 € = 600 UC, 30 jours,",
     "sans_renouvellement_automatique": "sans renouvellement automatique",
     "essentiels_prix_pass_visible_si": "ESSENTIELS : prix PASS visible si PASS actif. Hors25 : prix normal, payable en UC sans avantage.",
-    "le_crm_ne_duplique_pas": "Le CRM ne duplique pas le wallet UC. La V2 reste la source de vérité transactionnelle.",
+    "le_crm_ne_duplique_pas": "Le CRM ne duplique pas le CREDI'SCOP UC. La V2 reste la source de vérité transactionnelle.",
     "dashboard_super_admin": "Dashboard Super Admin",
     "alertes_operationnelles": "Alertes opérationnelles",
     "top_produits_30_jours": "Top produits (30 jours)",

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Clapperboard, Sparkles, Eye, Trophy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Clapperboard, Sparkles, Eye, Trophy, LockKeyhole, ShoppingBag } from 'lucide-react';
+import { authAPI } from '../../services/api';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -29,6 +31,21 @@ const TopSpots = ({ videos }) => {
         ))}
       </div>
     </div>
+  );
+};
+
+const AccessBadge = ({ productId }) => {
+  const navigate = useNavigate();
+  const connected = authAPI.isAuthenticated();
+  const go = () => navigate(connected ? '/catalogue' : '/connexion?next=/catalogue');
+  return (
+    <button type="button" onClick={go}
+      data-testid={`kdm-video-access-${productId}`}
+      title={connected ? 'Accéder au catalogue produit' : 'Connectez-vous pour accéder au catalogue'}
+      className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-[11px] font-bold text-black transition-all hover:brightness-110 shrink-0"
+      style={{ background: '#D9B35A' }}>
+      {connected ? <ShoppingBag size={12} /> : <LockKeyhole size={12} />} Accès
+    </button>
   );
 };
 
@@ -67,6 +84,9 @@ const VideoCard = ({ v }) => {
           data-testid={`kdm-video-views-${v.id}`}>
           <Eye size={12} /> {views}
         </span>
+      </div>
+      <div className="px-4 pb-4 -mt-1 flex justify-end">
+        <AccessBadge productId={v.product_id} />
       </div>
     </div>
   );
