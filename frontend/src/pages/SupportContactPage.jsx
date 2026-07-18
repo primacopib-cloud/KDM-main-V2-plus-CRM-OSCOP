@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { apiCall } from '../services/http';
+import { MySupportTickets } from '../components/support/MySupportTickets';
 
 const CATEGORIES = [
   { value: 'GENERAL', label: 'Question générale' },
@@ -120,6 +121,8 @@ export default function SupportContactPage() {
             </p>
           </form>
         )}
+
+        {u.email && <MySupportTickets refreshKey={sentTicket || ''} />}
       </main>
       <Footer />
     </div>

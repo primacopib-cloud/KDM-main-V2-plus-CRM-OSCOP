@@ -104,6 +104,23 @@ async def submit_contact(form: ContactForm):
     return {"ok": True, "ticket_number": ticket_id}
 
 
+@support_router.get("/admin/open-count")
+async def open_tickets_count(user_id: str = Depends(get_current_user_id)):
+    await require_admin(user_id)
+    return {"open": await db.support_tickets.count_documents({"status": "OPEN"})}
+
+
+@support_router.get("/my-tickets")
+async def my_tickets(user_id: str = Depends(get_current_user_id)):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1})
+    if not user or not user.get("email"):
+        raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    tickets = await db.support_tickets.find(
+        {"email": user["email"].lower()}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return {"tickets": tickets}
+
+
 # ============== ADMIN — GESTION DES TICKETS ==============
 
 class TicketReply(BaseModel):

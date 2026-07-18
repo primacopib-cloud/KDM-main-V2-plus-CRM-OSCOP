@@ -1,4 +1,5 @@
 import i18n from '@/i18n';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins, LifeBuoy,
@@ -8,6 +9,18 @@ import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { partners } from '../../data/mock';
 import { ConnectionStatus } from '../NotificationToast';
 import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
+import { apiCall } from '../../services/http';
+
+const useOpenTicketsCount = () => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const load = () => apiCall('/support/admin/open-count').then((d) => setCount(d.open)).catch(() => {});
+    load();
+    const interval = setInterval(load, 60000);
+    return () => clearInterval(interval);
+  }, []);
+  return count;
+};
 
 const NAV_LINKS = [
   { to: '/', label: i18n.t('adm.accueil') },
@@ -33,7 +46,9 @@ const TABS = [
 
 export const SuperAdminHeader = ({
   activeTab, setActiveTab, period, setPeriod, onRefresh, isConnected,
-}) => (
+}) => {
+  const openTickets = useOpenTicketsCount();
+  return (
   <header
     className="sticky top-0 z-50"
     style={{
@@ -111,10 +126,19 @@ export const SuperAdminHeader = ({
             >
               <t.icon className="w-4 h-4 mr-2" />
               {t.label}
+              {t.value === 'support' && openTickets > 0 && (
+                <span
+                  className="ml-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold inline-flex items-center justify-center"
+                  data-testid="support-open-count-badge"
+                >
+                  {openTickets > 9 ? '9+' : openTickets}
+                </span>
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
     </div>
   </header>
-);
+  );
+};

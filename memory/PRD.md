@@ -893,3 +893,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
   * Backend 403 sur POST /api/v2/orgs/{org}/wallet/topup (recharge gratuite supprimée), POST /api/payments/bank-transfer (virement), POST /api/payments/sepa/setup (SEPA).
   * Frontend : BuyCreditsDialog réécrit carte-only (onglets Virement/SEPA supprimés), TopupDialog retiré de WalletPage, ?topup=1 et bouton recharge ouvrent le dialog Stripe carte.
 - Validé par curl (403 sur les 3 voies interdites, tickets reply/close OK) + screenshots (onglet Support avec réponse affichée, dialog wallet carte-only).
+
+## 2026-07-18 — Badge tickets ouverts + Historique client support
+- Badge rouge compteur sur l'onglet "Support" du Super Admin (SuperAdminHeader.jsx, hook useOpenTicketsCount, refresh 60s) via GET /api/support/admin/open-count (admin only, 403 sinon).
+- Historique client : GET /api/support/my-tickets (tickets liés à l'email du user connecté). Section "Mes demandes" sur /contact (MySupportTickets.jsx) : statut, message, réponses du support, rafraîchie après nouvel envoi.
+- Validé par curl (open-count=1, my-tickets buyer, 403 non-admin) + screenshots (badge "1" visible, section Mes demandes dépliée).
