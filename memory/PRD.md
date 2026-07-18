@@ -575,6 +575,13 @@ Exigences produit étendues :
 - ✅ **Trio export complet** : variante 🇪🇸 générée en réel (job `62419e17`, image-to-video, voix off espagnole) → le Rhum blanc dispose des 3 variantes `video_urls: {fr, en, es}`, exposées au catalogue B2B et servies localement (200 video/mp4). Solde vendeur : 52.
 - ✅ **Top des spots** : classement 🥇🥈🥉 des spots les plus vus (filtre views > 0, calcul client depuis `/api/public/kdmarche-videos`) affiché au-dessus de la galerie `/kdmarche` (`TopSpots` dans `VideoShowcase.jsx`, testid `kdm-top-spots`). Screenshot validé.
 
+### 2026-07-18 — Plans (programmation/masquage) + Crédits par profil + Broadcast spots + Rapport mensuel (VALIDÉS testing_agent iteration_37 : 100%)
+- ✅ **Programmation des plans** : champs `visible`, `visible_from`, `visible_until` sur les plans (admin_plans_common + routes_admin_plans). Nouvel endpoint public `GET /api/public/plans` (filtre actif+visible+fenêtre). UI : toggle œil sur les cartes (`toggle-visible-plan-{slug}`), badges Masqué/Programmé/Expiré, switch + dates dans PlanFormModal. `/tarifs` (PricingPage) filtre ses cartes via l'API publique.
+- ✅ **Crédits par profil** : `POST /api/admin/plans/credits/grant-by-profile {profile, amount}` — vendor → vendors.credits, autres rôles → wallets.balance_credits (fix DuplicateKeyError : org_id `user-{id}` dans $setOnInsert, aussi corrigé dans adjust_user_credits). UI : bloc `ProfileGrantBar` dans l'onglet Crédits utilisateurs de /admin/plans.
+- ✅ **Diffusion spots vers l'écosystème** : `POST /api/connectors/broadcast-spots` — push du payload spots (produit, vendeur, vues, vidéos multilingues en URLs absolues) vers les 4 apps génériques via le hub, journalisé dans connector_sync_events (retry possible). Bouton "Diffuser les spots vidéo" sur /admin/connecteurs. ⚠️ Les apps externes doivent implémenter le récepteur `POST /api/kdmarche/spots` (404 attendus pour l'instant).
+- ✅ **Rapport mensuel vendeur** : `vendor_monthly_report.py` — email Brevo (spots, vues cumulées, meilleur spot, commandes, CA HT), idempotent par mois (`monthly_report_sent`), envoyé le 1er du mois par le scheduler + déclenchement manuel `POST /api/admin/vendor-reports/send?force=true` (testé réel : 1 email Brevo).
+- Testing_agent iteration_37 : 3/3 backend + 4/4 UI flows PASS, état des plans restauré.
+
 ## 4. Backlog
 
 ### P1 — Internationalisation
