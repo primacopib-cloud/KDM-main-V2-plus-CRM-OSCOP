@@ -974,3 +974,10 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - GET /api/payments/receipt/{session_id}.pdf : re-téléchargement facture (propriétaire uniquement, paid uniquement — 404 sinon, validé). Section "Mes achats de crédits" (CreditPurchaseHistory.jsx) sur /wallet : statuts Payé/En attente/Échoué + bouton Facture PDF sur les payés.
 - **WALLET EN LIVE** : _wallet_stripe_key() utilise stripe_accounts.get_stripe_key("oscop") → suit STRIPE_MODE=live (clé sk_live O'SCOP). Validé : session cs_live_ créée puis expirée proprement (aucun débit). Les anciennes sessions cs_test_ ne sont plus consultables par l'endpoint status (attendu).
 - Correction régression : /api/payments/packages relisait CREDIT_PACKAGES en dur (édit écrasé) → rebranché sur get_active_wallet_packs (packs DB Super Admin).
+
+## 2026-07-18 — CHARTE VIOLET & OR GLOBALE (toutes pages, tous espaces)
+- index.css : thème "VIOLET PREMIUM DARK" — tokens (--bg #2A1045, --bg-2 #451F6B, --text ivoire #F3EDE4), body dégradé violet + radials or, titres h1-h3 or clair #E9CF8E, Shadcn tokens violets (card #2E1450, popover #2B1548, primary or), suppression des overrides light (text-white/bg-white/X reviennent au natif Tailwind = parfait sur sombre), inputs violets translucides, surface-card violet, dialogs violets.
+- Overrides pastel globaux en fin d'index.css : bg-*-50/100 → teintes translucides sombres, text-*-600..900 → variantes claires, borders → translucides (22 couleurs Tailwind couvertes). bg-white → rgba(255,255,255,0.06).
+- App.css : glass-panel/glass-panel-soft/badge-status/panneaux → violets translucides bordure or.
+- sed global JSX : gradient crème #FBF6EE→#F5EBD8 remplacé par violet #2A1045→#451F6B (22 fichiers), headers rgba(255,253,247,x) → rgba(30,12,52,x) (19 fichiers), Footer/LolodriveLayout, LoginPage/AdminLoginPage (panneau droit #2B1548, textes slate→white/x, liens violets→or), MySpotsWidget corrigé via overrides.
+- Testing agent iteration_43 : 12 pages auditées, 95% (1 widget pastel corrigé ensuite via overrides). Aucune illisibilité bloquante, login/panier/navigation fonctionnels.
