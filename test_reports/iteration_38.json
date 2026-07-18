@@ -1,0 +1,41 @@
+{
+  "summary": "Backend regression after backend/.env password quoting fix (iter 38). All critical connector + auth tests PASS. 6/6 OSCOP connectors healthy (status=OK, error=null) proving quoted credentials load correctly after restart. 3/3 auth logins work (passwords with '!' don't contain literal quotes). Quick regression endpoints (plans, videos, vendor credits) all pass.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_connectors_regression.py",
+    "/app/test_reports/pytest/pytest_results_iter38.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_connectors_regression.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "n/a (skipped as requested)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025!, vendor-pro@kdmarche.fr / Demo2026!, acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Regression test file backend/tests/test_connectors_regression.py covers connectors health-status (6 apps), sync-events, auth for 3 roles, public plans/videos, vendor credits. Response keys: health-status returns {statuses:[{name,status,error,...}]}, vendor credits returns {credits, transactions, pricing} (no 'balance' key).",
+  "detailed_results": {
+    "connectors_health": {
+      "oscop-ged": "OK",
+      "oscop-finance": "OK",
+      "oscop-ia-bois": "OK",
+      "oscop-ge": "OK",
+      "coppam": "OK",
+      "crm-ess": "OK"
+    },
+    "auth_logins": {"admin": "200 OK", "vendor": "200 OK", "buyer": "200 OK"},
+    "public_plans_count": 3,
+    "public_videos_count": 2,
+    "vendor_credits_balance": 62
+  }
+}
