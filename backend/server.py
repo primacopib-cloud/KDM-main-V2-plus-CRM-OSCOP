@@ -74,12 +74,15 @@ app.include_router(billing_v2_router)
 # Import and include catalog routes (cart & orders split into dedicated modules)
 from routes_catalog import catalog_router, set_catalog_database
 from routes_cart_v2 import cart_router, set_cart_database
+from routes_cart_suggestions import suggestions_router, set_suggestions_database
 from routes_orders_v2 import orders_router, set_orders_database
 set_catalog_database(db)
 set_cart_database(db)
+set_suggestions_database(db)
 set_orders_database(db)
 app.include_router(catalog_router)
 app.include_router(cart_router)
+app.include_router(suggestions_router)
 app.include_router(orders_router)
 
 # Import and include GED (Document Management) routes

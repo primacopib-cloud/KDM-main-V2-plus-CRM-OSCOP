@@ -313,6 +313,7 @@ export default function CatalogPage() {
         cartTotal={cartTotal}
         handleUpdateQuantity={handleUpdateQuantity}
         handleRemoveFromCart={handleRemoveFromCart}
+        handleAddToCart={handleAddToCart}
         navigate={navigate}
       />
       {/* Main Content */}

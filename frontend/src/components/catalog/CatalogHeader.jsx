@@ -13,11 +13,12 @@ import { partners } from '../../data/mock';
 import { CrediscopBadge } from '../CrediscopBadge';
 import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
 import { formatPrice } from './catalogUtils';
+import { CartSuggestions } from './CartSuggestions';
 
 export const CatalogHeader = ({
   zones, selectedZone, setSelectedZone, cart, cartOpen, setCartOpen,
   cartLoading, cartItemCount, cartTotal, handleUpdateQuantity,
-  handleRemoveFromCart, navigate,
+  handleRemoveFromCart, handleAddToCart, navigate,
 }) => (
       <header 
         className="sticky top-0 z-50"
@@ -174,6 +175,12 @@ export const CatalogHeader = ({
                             </div>
                           </div>
                         ))}
+
+                        <CartSuggestions
+                          cart={cart}
+                          cartLoading={cartLoading}
+                          onAddProduct={handleAddToCart}
+                        />
                       </div>
 
                       <div className="pt-4 border-t border-white/[0.08] space-y-4">

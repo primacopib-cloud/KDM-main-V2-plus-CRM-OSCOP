@@ -945,3 +945,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - BuyCreditsDialog : pré-sélection auto du Pack Starter à l'ouverture (bouton actif immédiatement, libellé avec prix du pack). Cause : bouton grisé sans indication qu'un pack devait être sélectionné.
 - FloatingMiniCart (catalogue) : pastille flottante bas-droite avec nombre d'articles, total € HT et équivalent crédits (taux 1 crédit = 0,50 €, constante CREDIT_RATE_EUR dans catalogUtils.js). Clic → ouvre le panier.
 - Validé via automatisation navigateur (11 articles, 144,59 € HT ≈ 289 crédits, ouverture du panier OK).
+
+## 2026-07-18 — Suggestions Panier (cross-sell)
+- GET /api/v2/catalog/cart/suggestions : produits complémentaires classés par co-occurrence dans les commandes passées, complétés par même catégorie puis produits populaires (exclut le panier, filtre ACTIVE + prix zone actif).
+- Nouveau fichier routes_cart_suggestions.py (enregistré dans server.py) + composant CartSuggestions.jsx intégré au Sheet panier (CatalogHeader) avec ajout en 1 clic (qté mini auto).
+- Validé E2E navigateur : 4 suggestions "Souvent commandés ensemble", ajout Huile de tournesol → panier 11→15 articles, total recalculé, liste rafraîchie.

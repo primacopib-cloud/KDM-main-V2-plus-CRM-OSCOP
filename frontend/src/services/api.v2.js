@@ -158,6 +158,10 @@ export const catalogAPI = {
     return apiCallV2('/catalog/cart');
   },
 
+  getCartSuggestions: async (limit = 4) => {
+    return apiCallV2(`/catalog/cart/suggestions?limit=${limit}`);
+  },
+
   addToCart: async (productId, quantity) => {
     return apiCallV2('/catalog/cart/items', {
       method: 'POST',
