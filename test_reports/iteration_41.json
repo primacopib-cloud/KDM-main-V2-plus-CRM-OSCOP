@@ -1,0 +1,27 @@
+{
+  "summary": "Iter41 — Toutes les features de la session validées. Backend (6/6 pytest PASSED): flux complet BUYER_PRO adhésion (register → login → POST /api/v2/orgs member_type=BUYER_PRO → POST /orgs/{id}/applications → insertion Mongo REGISTRATION_DOC+ID_SIGNATORY → POST /submit → POST /decision APPROVED par admin) → GET /api/v2/admin/member-registry?member_type=BUYER_PRO retourne bien la nouvelle org (siret, territory=GUADELOUPE, status=ACTIVE, contact_email). Registre 403 pour non-admin. Registre VENDOR_PRO contient 'REGISTRE VENDEUR TEST SARL'. Stats support: 200 admin (avg_first_response_hours=2.3, total=3, by_category, by_status), 401 non-admin. Ticket public POST /api/support/contact 200 OK. Frontend: /contact FAQ (data-testid=support-faq) rendue avec 6 questions (faq-trigger-0..5), premier accordéon ouvert affiche le contenu, formulaire ticket toujours présent en dessous. Super Admin /support onglet: support-stats + support-avg-response '2.3 h' + support-by-category chips (Technique·1, Commande·1, Général·1) visibles. Dashboard admin: thème clair OK — valeurs KPI en violet foncé lisibles, 6 StatCards (Revenue, Orders, Users, Organizations, Total products, CREDI'SCOP Credits), sections Sales & Orders / Users & Organizations / Product Catalog / Alerts / Recent activity / Quick actions, aucun texte invisible. Onglet Registres: filtre Vendeurs pro (1) montre REGISTRE VENDEUR TEST SARL SIRET/GUADELOUPE/contact/ACTIVE; filtre Acheteurs pro montre 1 entrée créée par notre test backend (TEST BUYER PRO). /onboarding utilisateur sans org: Step 1 affiche AVANT la raison sociale les deux cartes 'Acheteur pro' (adhesion-member-type-buyer_pro) et 'Vendeur pro' (adhesion-member-type-vendor_pro), cliquables, sélection visuelle OK.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter41_buyer_pro_registry.py",
+    "/app/test_reports/pytest/iter41_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_v2_applications.py L268-289: enregistrement au registre membre bien idempotent via upsert (bon). Recommande d'ajouter aussi contact_phone (currently only contact_name/email récupérés depuis users).",
+    "routes_member_registry.py: OK, exclut _id, tri par registered_at desc, filtre BUYER_PRO/VENDOR_PRO validé. Manque potentiellement pagination si volume grand (limité à 500)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter41_buyer_pro_registry.py (nouveau)"
+  ],
+  "success_rate": {"backend": "100% (6/6 pytest)", "frontend": "100% (FAQ + support stats + dashboard clair + registre BUYER/VENDOR + onboarding member-type selector tous validés)"},
+  "test_credentials": "admin@kdmarche-oscop.fr/AdminKDM2025!, acheteur-pro@kdmarche.fr/Demo2026!",
+  "seed_data_creation": "Un compte de test créé par le flux BUYER_PRO (TEST BUYER PRO cff9af73 dans member_registry) et un compte onboarding TEST-onb-*@kdm-test.fr — pollution mineure, prefixe TEST- pour cleanup ultérieur.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Toutes les features de la session sont fonctionnelles. Le registre Acheteurs pro contient désormais 1 entrée (TEST BUYER PRO cff9af73) issue de notre test, si le main agent veut retrouver l'état vide initial du filtre buyer_pro il faudra supprimer db.member_registry où siret commence par '9947...'. Le flux backend BUYER_PRO est réutilisable dans /app/backend/tests/test_iter41_buyer_pro_registry.py."
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { LifeBuoy, Send, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle } from 'lucide-react';
+import { LifeBuoy, Send, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Timer, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiCall } from '../../services/http';
 
@@ -12,6 +12,40 @@ const STATUS_STYLES = {
 const CATEGORY_LABELS = {
   GENERAL: 'Général', COMPTE: 'Compte', COMMANDE: 'Commande',
   PAIEMENT: 'Paiement', CREDISCOP: "CREDI'SCOP", TECHNIQUE: 'Technique',
+};
+
+const formatDelay = (hours) => {
+  if (hours === null || hours === undefined) return '—';
+  if (hours < 1) return `${Math.round(hours * 60)} min`;
+  if (hours < 48) return `${hours} h`;
+  return `${(hours / 24).toFixed(1)} j`;
+};
+
+const SupportStats = ({ stats }) => {
+  if (!stats) return null;
+  return (
+    <div className="grid sm:grid-cols-3 gap-3" data-testid="support-stats">
+      <div className="glass-panel-soft rounded-[16px] p-4">
+        <div className="flex items-center gap-2 text-xs text-white/50 mb-1"><Timer className="w-3.5 h-3.5" /> Délai moyen de 1ère réponse</div>
+        <p className="text-2xl font-bold text-[#D9B35A]" data-testid="support-avg-response">{formatDelay(stats.avg_first_response_hours)}</p>
+      </div>
+      <div className="glass-panel-soft rounded-[16px] p-4">
+        <div className="flex items-center gap-2 text-xs text-white/50 mb-1"><LifeBuoy className="w-3.5 h-3.5" /> Tickets au total</div>
+        <p className="text-2xl font-bold text-white/90">{stats.total}</p>
+        <p className="text-[11px] text-white/45">{stats.by_status?.OPEN || 0} ouverts · {stats.by_status?.ANSWERED || 0} répondus · {stats.by_status?.CLOSED || 0} fermés</p>
+      </div>
+      <div className="glass-panel-soft rounded-[16px] p-4">
+        <div className="flex items-center gap-2 text-xs text-white/50 mb-1"><BarChart3 className="w-3.5 h-3.5" /> Volume par catégorie</div>
+        <div className="flex flex-wrap gap-1.5 mt-1" data-testid="support-by-category">
+          {Object.entries(stats.by_category || {}).sort((a, b) => b[1] - a[1]).map(([cat, n]) => (
+            <span key={cat} className="px-2 py-0.5 rounded-full bg-[#D9B35A]/12 border border-[#D9B35A]/25 text-[10px] font-semibold text-[#D9B35A]">
+              {CATEGORY_LABELS[cat] || cat} · {n}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const TicketCard = ({ ticket, onReply, onClose }) => {
@@ -96,6 +130,7 @@ export const SupportTicketsTab = () => {
   const [counts, setCounts] = useState({});
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
 
   const load = useCallback(async (f = filter) => {
     setLoading(true);
@@ -103,6 +138,7 @@ export const SupportTicketsTab = () => {
       const data = await apiCall(`/support/admin/tickets${f ? `?status_filter=${f}` : ''}`);
       setTickets(data.tickets);
       setCounts(data.counts);
+      apiCall('/support/admin/stats').then(setStats).catch(() => {});
     } catch (e) {
       toast.error(e.message || 'Erreur de chargement des tickets');
     } finally {
@@ -158,6 +194,8 @@ export const SupportTicketsTab = () => {
           ))}
         </div>
       </div>
+
+      <SupportStats stats={stats} />
 
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#D9B35A]" /></div>

@@ -66,6 +66,31 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
+          <Label>Statut de membre *</Label>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { value: 'BUYER_PRO', title: 'Acheteur pro', desc: 'Accédez au catalogue B2B et commandez' },
+              { value: 'VENDOR_PRO', title: 'Vendeur pro', desc: 'Publiez vos produits et vos spots vidéo' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, memberType: opt.value }))}
+                data-testid={`adhesion-member-type-${opt.value.toLowerCase()}`}
+                className={`p-4 rounded-xl border text-left transition-all ${
+                  formData.memberType === opt.value
+                    ? 'border-amber-500 bg-amber-500/10'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <p className={`font-semibold text-sm ${formData.memberType === opt.value ? 'text-amber-600' : ''}`}>{opt.title}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="legalName">{i18n.t('onboarding.raison_sociale')}</Label>
           <Input
             id="legalName"

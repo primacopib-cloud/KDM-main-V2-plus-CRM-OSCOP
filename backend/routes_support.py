@@ -104,6 +104,31 @@ async def submit_contact(form: ContactForm):
     return {"ok": True, "ticket_number": ticket_id}
 
 
+@support_router.get("/admin/stats")
+async def support_stats(user_id: str = Depends(get_current_user_id)):
+    await require_admin(user_id)
+    tickets = await db.support_tickets.find(
+        {}, {"_id": 0, "category": 1, "status": 1, "created_at": 1, "replies": 1}
+    ).to_list(2000)
+    by_category, delays = {}, []
+    by_status = {"OPEN": 0, "ANSWERED": 0, "CLOSED": 0}
+    for t in tickets:
+        cat = t.get("category") or "GENERAL"
+        by_category[cat] = by_category.get(cat, 0) + 1
+        st = t.get("status") or "OPEN"
+        by_status[st] = by_status.get(st, 0) + 1
+        admin_replies = [r for r in (t.get("replies") or []) if not r.get("from_client")]
+        if admin_replies and t.get("created_at"):
+            delays.append((admin_replies[0]["at"] - t["created_at"]).total_seconds())
+    avg_hours = round(sum(delays) / len(delays) / 3600, 1) if delays else None
+    return {
+        "total": len(tickets),
+        "avg_first_response_hours": avg_hours,
+        "by_category": by_category,
+        "by_status": by_status,
+    }
+
+
 @support_router.get("/admin/open-count")
 async def open_tickets_count(user_id: str = Depends(get_current_user_id)):
     await require_admin(user_id)

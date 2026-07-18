@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { LifeBuoy, Send, Loader2, CheckCircle2, Mail } from 'lucide-react';
+import { LifeBuoy, Send, Loader2, CheckCircle2, Mail, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
 import { apiCall } from '../services/http';
 import { MySupportTickets } from '../components/support/MySupportTickets';
 
@@ -13,6 +14,33 @@ const CATEGORIES = [
   { value: 'PAIEMENT', label: 'Paiement & facturation' },
   { value: 'CREDISCOP', label: "CREDI'SCOP & crédits" },
   { value: 'TECHNIQUE', label: 'Problème technique' },
+];
+
+const FAQ_ITEMS = [
+  {
+    q: 'Comment devenir membre Acheteur pro ou Vendeur pro ?',
+    a: "Créez votre compte puis complétez le formulaire d'adhésion B2B avec votre SIRET, votre territoire et votre statut (Acheteur pro ou Vendeur pro). Après validation par nos équipes, vous êtes automatiquement inscrit au registre des membres et recevez 100 crédits de bienvenue.",
+  },
+  {
+    q: 'Comment acheter des crédits CREDI\'SCOP ?',
+    a: "Les crédits sont payables exclusivement par carte bancaire via Stripe. Cliquez sur le badge CREDI'SCOP dans la barre de navigation ou sur le bouton « + » de votre espace, choisissez un pack et réglez en toute sécurité.",
+  },
+  {
+    q: 'Comment fonctionnent les commandes groupées et la livraison ?',
+    a: "Les commandes passent par le catalogue B2B mutualisé de votre territoire. Les prix sont négociés collectivement (EXW). Vous êtes prévenu automatiquement si un prix change ou si un produit devient indisponible dans votre panier.",
+  },
+  {
+    q: 'Puis-je payer ma commande en plusieurs fois ?',
+    a: "Oui, le paiement en 4 fois est disponible par carte bancaire pour les paniers dépassant le montant minimum affiché au moment du règlement.",
+  },
+  {
+    q: 'Comment diffuser un spot vidéo pour mes produits ?',
+    a: "En tant que Vendeur pro, l'AI Studio vous permet de générer des spots vidéo multilingues (FR/EN/ES). Vous pouvez ensuite réserver un créneau dans la grille de diffusion, payable en crédits coopératifs (CC).",
+  },
+  {
+    q: 'Sous quel délai vais-je recevoir une réponse du support ?',
+    a: "Notre équipe coopérative répond sous 24h ouvrées. Vous recevez un email de confirmation avec un numéro de suivi, une notification dès qu'une réponse est disponible, et vous pouvez relancer un ticket fermé si besoin.",
+  },
 ];
 
 const storedUser = () => {
@@ -59,6 +87,23 @@ export default function SupportContactPage() {
           <p className="text-white/60 text-base">
             Notre équipe coopérative vous répond sous 24h ouvrées.
           </p>
+        </div>
+
+        <div className="mb-10" data-testid="support-faq">
+          <h2 className="text-base md:text-lg font-semibold mb-3 flex items-center gap-2">
+            <HelpCircle className="w-5 h-5 text-[#D9B35A]" /> Questions fréquentes
+          </h2>
+          <Accordion type="single" collapsible className="glass-panel-soft rounded-[20px] px-5">
+            {FAQ_ITEMS.map((item, i) => (
+              <AccordionItem key={`faq-${i}`} value={`faq-${i}`} className="border-white/10">
+                <AccordionTrigger className="text-sm text-left hover:no-underline" data-testid={`faq-trigger-${i}`}>
+                  {item.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm text-white/65">{item.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+          <p className="text-xs text-white/40 mt-3 text-center">Vous n'avez pas trouvé votre réponse ? Envoyez-nous un message ci-dessous.</p>
         </div>
 
         {sentTicket ? (

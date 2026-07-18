@@ -41,6 +41,7 @@ class OrgCreate(BaseModel):
     registration_country: str = Field(default="FR", max_length=2)
     registration_id: str = Field(..., min_length=9, max_length=20)  # SIRET
     territory: str = Field(...)  # Primary zone code
+    member_type: str = Field(default="BUYER_PRO")  # BUYER_PRO | VENDOR_PRO
     contact_email: EmailStr
     contact_name: str
     contact_phone: str

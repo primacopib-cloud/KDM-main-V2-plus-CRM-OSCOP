@@ -11,6 +11,7 @@ export const orgsAPIV2 = {
         registration_country: orgData.registrationCountry || 'FR',
         registration_id: orgData.registrationId,
         territory: orgData.territory,
+        member_type: orgData.memberType || 'BUYER_PRO',
         contact_email: orgData.contactEmail,
         contact_name: orgData.contactName,
         contact_phone: orgData.contactPhone,

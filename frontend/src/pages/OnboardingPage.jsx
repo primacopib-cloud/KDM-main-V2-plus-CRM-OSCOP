@@ -43,6 +43,7 @@ export default function OnboardingPage() {
     legalName: '',
     registrationId: '', // SIRET
     territory: '',
+    memberType: 'BUYER_PRO',
     contactName: '',
     contactEmail: '',
     contactPhone: '',
@@ -169,6 +170,7 @@ export default function OnboardingPage() {
         registrationCountry: 'FR',
         registrationId: formData.registrationId.replace(/\s/g, ''),
         territory: formData.territory,
+        memberType: formData.memberType,
         contactName: formData.contactName,
         contactEmail: formData.contactEmail,
         contactPhone: formData.contactPhone,

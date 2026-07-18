@@ -224,7 +224,9 @@ async def create_org(
         registration_id=org_data.registration_id,
         territory=org_data.territory,
     )
-    await db.orgs.insert_one(org.dict())
+    org_doc = org.dict()
+    org_doc["member_type"] = org_data.member_type if org_data.member_type in ("BUYER_PRO", "VENDOR_PRO") else "BUYER_PRO"
+    await db.orgs.insert_one(org_doc)
     
     # Create membership for creator as OWNER
     membership = OrgMembershipInDB(

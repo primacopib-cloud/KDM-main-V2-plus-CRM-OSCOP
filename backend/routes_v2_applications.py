@@ -265,6 +265,29 @@ async def decide_application(
             )
             await db.org_zone_entitlements.insert_one(entitlement.dict())
         
+        # Enregistrement automatique au registre des membres (Acheteur pro / Vendeur pro)
+        owner_ms = await db.org_memberships.find_one({"org_id": org_id, "role": CustomerRole.CUSTOMER_ORG_OWNER.value})
+        owner_user = None
+        if owner_ms:
+            owner_user = await db.users.find_one({"id": owner_ms["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1})
+        member_type = (org or {}).get("member_type") or "BUYER_PRO"
+        await db.member_registry.update_one(
+            {"org_id": org_id},
+            {"$set": {
+                "member_type": member_type,
+                "legal_name": (org or {}).get("legal_name"),
+                "siret": (org or {}).get("registration_id"),
+                "territory": (org or {}).get("territory"),
+                "contact_name": (owner_user or {}).get("contact_name"),
+                "contact_email": (owner_user or {}).get("email"),
+                "application_id": app_id,
+                "registered_at": now,
+                "status": "ACTIVE",
+            }, "$setOnInsert": {"id": str(uuid.uuid4())}},
+            upsert=True,
+        )
+        logger.info("Member registry: %s enregistré comme %s", (org or {}).get("legal_name"), member_type)
+        
         # Emit approval event
         await emit_outbox_event(
             event_type="org.approved",

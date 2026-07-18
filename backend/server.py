@@ -401,6 +401,10 @@ from routes_support import support_router, set_support_database
 set_support_database(db)
 app.include_router(support_router)
 
+from routes_member_registry import registry_router, set_registry_database
+set_registry_database(db)
+app.include_router(registry_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)
