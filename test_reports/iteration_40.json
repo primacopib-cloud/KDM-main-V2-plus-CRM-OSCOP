@@ -1,0 +1,37 @@
+{
+  "summary": "Sweep UI Iter40 — 3 boutons morts confirmés sur /dashboard acheteur (DashboardPage.jsx). Aucun handler onClick sur 'Paramètres', 'Changer de formule', 'Contacter le support'. Homepage CTAs OK (Discover, Join, Log in, sélecteur FR/EN/ES). Buyer flows OK: login, dashboard cards (Catalogue, Mes commandes, Espace Acheteur), Offre commerciale (déclenche download PDF via /api/download-offer), Statistiques. Catalogue + panier (drawer) OK — s'ouvre avec items. Vendor flows OK: login, tabs Dashboard/My products/Orders, add-product-btn ouvre modale, my-spots-widget affiché. Admin flows OK: superadmin tous les tabs (dashboard, stats, catalog, users, roles, buyers, taxonomy, credits & IA avec promo-create-btn/grid-create-btn/reports-send-all-btn/report-resend-*, orders). Aucune erreur console applicative (seuls warnings mapbox 403 non liés). Aucune requête API en 4xx/5xx durant les parcours testés.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "DashboardPage (buyer)", "issue": "Bouton 'Paramètres' n'a AUCUN handler onClick — clic ne fait rien (ni navigation, ni modale, ni toast)", "selector": "button:has-text('Paramètres') @ DashboardPage.jsx:253", "priority": "HIGH"},
+      {"component": "DashboardPage (buyer sidebar)", "issue": "Bouton 'Changer de formule' n'a AUCUN handler onClick — clic ne fait rien", "selector": "button:has-text('Changer de formule') @ DashboardPage.jsx:327", "priority": "HIGH"},
+      {"component": "DashboardPage (buyer support card)", "issue": "Bouton 'Contacter le support' (btn-gold) n'a AUCUN handler onClick — clic ne fait rien", "selector": "button:has-text('Contacter le support') @ DashboardPage.jsx:345", "priority": "HIGH"},
+      {"component": "CrediscopBadge / public", "issue": "Le badge CREDI'SCOP n'est PAS rendu pour utilisateurs non connectés (composant retourne null si data.balance null) — spec demande la visibilité publique pour accès galerie", "selector": "[data-testid='crediscop-nav-badge']", "priority": "MEDIUM"},
+      {"component": "Cart drawer (buyer)", "issue": "Prix HT unitaires et Total HT affichent '---' dans le panier (données prix absentes côté drawer même quand items présents)", "selector": "Panier drawer — Riz long grain 5kg et Rhum blanc AOC 1L affichent '--- HT'", "priority": "MEDIUM"},
+      {"component": "Routes publiques inconnues", "issue": "/kdmarche, /spots, /videos, /galerie, /admin/spots, /admin/diffusion, /admin/grille, /admin/crediscop retournent une page vide (seul un bouton 'Back' visible) — soit routes non implémentées, soit fallback silencieux", "selector": "/kdmarche, /spots, /videos, /galerie, /admin/spots, /admin/diffusion, /admin/grille, /admin/crediscop", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Login page in EN/ES", "issues": ["Après sélection langue EN sur homepage, la page /connexion utilise 'Sign in' (comportement i18n OK, à confirmer que le user peut revenir en FR facilement)"]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "CRITIQUE: Ajouter des onClick handlers (ou envelopper dans <Link>) aux 3 boutons morts de /app/frontend/src/pages/DashboardPage.jsx lignes 253 (Paramètres), 327 (Changer de formule), 345 (Contacter le support). C'est très probablement LE bug utilisateur ('un bouton ne fait rien').",
+    "Corriger l'affichage des prix HT/Total HT dans le drawer panier (les items existent mais prix='---')",
+    "Décider si CrediscopBadge doit afficher un état neutre/CTA login pour les visiteurs non connectés afin d'exposer la galerie de spots (spec du problem statement)",
+    "Vérifier les routes /kdmarche, /spots, /videos, /galerie qui rendent une page vide"
+  ],
+  "critical_code_review_comments": [
+    "DashboardPage.jsx: 3 <button> déclarés sans onClick — anti-pattern, ces éléments trompent l'utilisateur (curseur pointer + hover effect mais aucune action). À convertir en <Link> ou ajouter handler + navigate.",
+    "CrediscopBadge.jsx: retourne null immédiatement si data.balance undefined. Pour être visible avant fetch ou pour anonymes, prévoir un placeholder ou early return conditionnel plus fin.",
+    "Cart drawer: le calcul de prix côté client semble décorrélé des items (items présents mais price=null). Vérifier que le state cart contient bien unit_price."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend only)", "frontend": "~92% (3 boutons morts identifiés sur DashboardPage buyer + 1 badge public manquant + 1 bug prix panier)"},
+  "test_credentials": "acheteur-pro@kdmarche.fr/Demo2026! ; vendor-pro@kdmarche.fr/Demo2026! ; admin@kdmarche-oscop.fr/AdminKDM2025!",
+  "seed_data_creation": "Aucun. Aucun paiement Stripe ni génération IA déclenchée.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iter40 identifie précisément 3 boutons sans handler sur /dashboard buyer (DashboardPage.jsx L253/L327/L345). Après fix par main agent, retester en cliquant chacun et vérifier navigation/modale. Le badge CrediscopBadge n'apparaît pas non plus immédiatement après login (fetch async /api/me/crediscop) — attendre 1-2s avant de tester le selector [data-testid='crediscop-nav-badge']. Le drawer panier montre prix '---' — bug indépendant à investiguer côté state / API cart."
+}
