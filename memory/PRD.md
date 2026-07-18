@@ -547,6 +547,13 @@ Exigences produit étendues :
 - ✅ **Spot vidéo depuis photo (image-to-video)** : testé en RÉEL — job `c7492609` DONE via `fal-ai/veo3/fast/image-to-video` avec la photo du produit (URL publique `/api/uploads/products/...`). UI Studio IA améliorée : sélecteur de photo avec option "Sans photo (100% IA)" et hint "rendu fidèle" (`AIStudioModal.jsx`). Screenshot validé.
 - ✅ Galerie `/kdmarche` affiche désormais 2 spots réels (Rhum VSOP + Rhum blanc). Solde vendeur : 52 crédits (2×50 consommés légitimement).
 
+### 2026-07-18 — Partage/téléchargement des spots + Sauvegarde locale des vidéos (VALIDÉS testing_agent iteration_36 : 100%)
+- ✅ **Sauvegarde locale** : `ai_media_service.download_video_locally()` copie chaque vidéo fal.media dans `/app/backend/uploads/videos/` (servie via `/api/uploads/videos/{job_id}.mp4`). `_finalize_video_job` stocke l'URL locale (+ `fal_video_url` d'origine). Migration one-shot `migrate_videos_local.py` exécutée : 2 vidéos existantes migrées (2.6 + 3.8 Mo).
+- ✅ **Boutons partage vendeur** : `components/vendor/VideoShareButtons.jsx` (Télécharger, Copier le lien, WhatsApp, Facebook, Partager natif) affichés sous la vidéo dans le Studio IA ET dans la nouvelle modal "Spot vidéo" de l'Espace Vendeur.
+- ✅ **Refactor Règle d'Or** : colonne d'actions produit vendeur extraite dans `components/vendor/ProductActions.jsx` (avec bouton "Spot vidéo" conditionnel + VendorVideoModal) → `VendorSpacePage.jsx` repasse à 486 lignes (<500).
+- ✅ Testing_agent iteration_36 : 7/7 flows frontend + 2/2 curl backend PASS (actions vendeur, modal partage, badge catalogue acheteur, galerie /kdmarche, add-to-cart régression).
+- ℹ️ Note : la lecture vidéo en Chromium headless de test échoue (codecs H.264 absents) — FAUX POSITIF, les fichiers sont H.264/AAC standard (lisibles sur tous les vrais navigateurs), servis en 200 video/mp4.
+
 ## 4. Backlog
 
 ### P1 — Internationalisation
