@@ -4,6 +4,7 @@ import { Store, ShoppingBag, Users, Globe2, Package, TrendingUp, HeartHandshake,
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import CommunityplaceBadge from '../components/CommunityplaceBadge';
+import { VideoShowcase } from '../components/kdmarche/VideoShowcase';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -101,6 +102,9 @@ export default function KdmarchePage() {
             ]}
           />
         </section>
+
+        {/* Galerie spots vidéo IA */}
+        <VideoShowcase />
 
         {/* Mutualisation */}
         <section className="max-w-[820px] mx-auto px-5 text-center mb-12" data-testid="kdm-coop-section">

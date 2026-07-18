@@ -11,6 +11,29 @@ def set_public_stats_database(database) -> None:
     db = database
 
 
+@public_stats_router.get("/kdmarche-videos")
+async def kdmarche_videos(limit: int = 6):
+    """Galerie publique des spots vidéo IA générés par les vendeurs (jobs DONE uniquement)."""
+    limit = min(max(limit, 1), 12)
+    jobs = await db.ai_video_jobs.find(
+        {"status": "DONE", "video_url": {"$ne": None}}, {"_id": 0}
+    ).sort("created_at", -1).to_list(limit)
+    videos = []
+    for job in jobs:
+        product = await db.vendor_products.find_one(
+            {"id": job["product_id"]}, {"_id": 0, "name": 1}) or {}
+        vendor = await db.vendors.find_one(
+            {"id": job["vendor_id"]}, {"_id": 0, "company_name": 1}) or {}
+        videos.append({
+            "id": job["id"],
+            "video_url": job["video_url"],
+            "product_name": product.get("name", "Produit"),
+            "vendor_name": vendor.get("company_name", "Vendeur KDMARCHÉ"),
+            "created_at": job.get("created_at"),
+        })
+    return {"videos": videos, "total": len(videos)}
+
+
 @public_stats_router.get("/kdmarche-stats")
 async def kdmarche_stats():
     products = await db.products.count_documents({"status": "ACTIVE"})

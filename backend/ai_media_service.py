@@ -71,8 +71,8 @@ def is_video_configured() -> bool:
     return bool(os.environ.get("FAL_KEY"))
 
 
-async def generate_product_video(prompt: str, image_url_abs: str | None = None) -> dict:
-    """Spot publicitaire produit via fal.ai (Veo 3). Retourne {video_url}. Nécessite FAL_KEY."""
+async def submit_product_video(prompt: str, image_url_abs: str | None = None) -> tuple[str, str]:
+    """Soumet un spot vidéo à fal.ai (Veo 3). Retourne (model, request_id) pour suivi résilient."""
     if not is_video_configured():
         raise RuntimeError("FAL_KEY non configurée")
     import fal_client
@@ -83,15 +83,29 @@ async def generate_product_video(prompt: str, image_url_abs: str | None = None) 
         "Minimal on-screen text (less than 20% of frame)."
     )
     if image_url_abs:
-        handler = await fal_client.submit_async(
-            "fal-ai/veo3/fast/image-to-video",
-            arguments={"prompt": ad_prompt, "image_url": image_url_abs},
-        )
+        model = "fal-ai/veo3/fast/image-to-video"
+        handler = await fal_client.submit_async(model, arguments={"prompt": ad_prompt, "image_url": image_url_abs})
     else:
-        handler = await fal_client.submit_async(
-            "fal-ai/veo3/fast",
-            arguments={"prompt": ad_prompt},
-        )
-    result = await handler.get()
+        model = "fal-ai/veo3/fast"
+        handler = await fal_client.submit_async(model, arguments={"prompt": ad_prompt})
+    return model, handler.request_id
+
+
+async def check_video_status(model: str, request_id: str) -> str:
+    """Statut fal.ai d'une requête vidéo : QUEUED / IN_PROGRESS / COMPLETED."""
+    import fal_client
+
+    status = await fal_client.status_async(model, request_id)
+    return {"Queued": "QUEUED", "InProgress": "IN_PROGRESS", "Completed": "COMPLETED"}.get(
+        type(status).__name__, "IN_PROGRESS")
+
+
+async def get_video_result(model: str, request_id: str) -> dict:
+    """Récupère le résultat d'une requête vidéo fal.ai terminée. Retourne {video_url}."""
+    import fal_client
+
+    result = await fal_client.result_async(model, request_id)
     video = result.get("video") or {}
-    return {"video_url": video.get("url"), "raw": {k: v for k, v in result.items() if k != "video"}}
+    if not video.get("url"):
+        raise RuntimeError("fal.ai n'a retourné aucune vidéo")
+    return {"video_url": video["url"]}

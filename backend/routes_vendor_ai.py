@@ -122,26 +122,43 @@ async def ai_generate_video(vendor_id: str, product_id: str, payload: GenerateVi
     return {"success": True, "job_id": job["id"], "status": "RUNNING"}
 
 
+async def _finalize_video_job(job_id: str, video_url: str) -> None:
+    """Marque le job DONE et lie la vidéo au produit vendeur (+ catalogue B2B si approuvé)."""
+    job = await db.ai_video_jobs.find_one({"id": job_id}, {"_id": 0, "product_id": 1})
+    await db.ai_video_jobs.update_one(
+        {"id": job_id},
+        {"$set": {"status": "DONE", "video_url": video_url,
+                  "finished_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    if job:
+        await db.vendor_products.update_one({"id": job["product_id"]}, {"$set": {"video_url": video_url}})
+        await db.products.update_one({"id": job["product_id"]}, {"$set": {"video_url": video_url}})
+
+
+async def _fail_video_job(job_id: str, error: str) -> None:
+    logger.error("Video job %s failed: %s", job_id, error)
+    job_doc = await db.ai_video_jobs.find_one({"id": job_id, "status": "RUNNING"}, {"_id": 0, "vendor_id": 1})
+    if job_doc:
+        await refund_credits(job_doc["vendor_id"], "ai_video_generation")
+    await db.ai_video_jobs.update_one(
+        {"id": job_id}, {"$set": {"status": "ERROR", "error": error[:300]}}
+    )
+
+
 async def _run_video_job(job_id: str, payload: GenerateVideoPayload) -> None:
     try:
         image_abs = None
         if payload.image_url:
             base = os.environ.get("FRONTEND_URL", "")
             image_abs = payload.image_url if payload.image_url.startswith("http") else f"{base}{payload.image_url}"
-        result = await ai_media_service.generate_product_video(payload.prompt, image_abs)
+        model, request_id = await ai_media_service.submit_product_video(payload.prompt, image_abs)
         await db.ai_video_jobs.update_one(
-            {"id": job_id},
-            {"$set": {"status": "DONE", "video_url": result.get("video_url"),
-                      "finished_at": datetime.now(timezone.utc).isoformat()}},
+            {"id": job_id}, {"$set": {"fal_model": model, "fal_request_id": request_id}}
         )
+        result = await ai_media_service.get_video_result(model, request_id)
+        await _finalize_video_job(job_id, result["video_url"])
     except Exception as exc:
-        logger.error("Video job %s failed: %s", job_id, exc)
-        job_doc = await db.ai_video_jobs.find_one({"id": job_id}, {"_id": 0, "vendor_id": 1})
-        if job_doc:
-            await refund_credits(job_doc["vendor_id"], "ai_video_generation")
-        await db.ai_video_jobs.update_one(
-            {"id": job_id}, {"$set": {"status": "ERROR", "error": str(exc)[:300]}}
-        )
+        await _fail_video_job(job_id, str(exc))
 
 
 @vendor_ai_router.get("/video-jobs/{job_id}")
@@ -149,4 +166,15 @@ async def get_video_job(job_id: str):
     job = await db.ai_video_jobs.find_one({"id": job_id}, {"_id": 0})
     if not job:
         raise HTTPException(status_code=404, detail="Job introuvable")
+    if job["status"] == "RUNNING" and job.get("fal_request_id"):
+        # Auto-réparation : si le process a redémarré, on ré-interroge fal.ai directement
+        try:
+            status = await ai_media_service.check_video_status(job["fal_model"], job["fal_request_id"])
+            if status == "COMPLETED":
+                result = await ai_media_service.get_video_result(job["fal_model"], job["fal_request_id"])
+                await _finalize_video_job(job["id"], result["video_url"])
+                job = await db.ai_video_jobs.find_one({"id": job_id}, {"_id": 0})
+        except Exception as exc:
+            await _fail_video_job(job["id"], str(exc))
+            job = await db.ai_video_jobs.find_one({"id": job_id}, {"_id": 0})
     return job

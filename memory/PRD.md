@@ -536,6 +536,12 @@ Exigences produit étendues :
 - ✅ **Non-régression achat crédits** : testing_agent iteration_35 → 13/13 pass (packs, purchase Stripe LIVE session, status 403 autre user, analytics admin, refund vidéo auto, logins). Suite pytest : `/app/backend/tests/test_iter35_credit_packs_regression.py`. Script manuel : `/app/backend/tests/manual_test_invoice_and_alerts.py`.
 - ❌ **Fal.ai vidéo TOUJOURS BLOQUÉ** : 3 jobs testés (dont 1 après le rechargement annoncé par l'utilisateur) → erreur fal.ai « User is locked. Reason: Exhausted balance ». Clé configurée : `FAL_KEY=bc07ae08-7fa4-…`. Le remboursement automatique des 50 crédits fonctionne (solde vendeur intact à 152). **Action utilisateur requise** : vérifier sur fal.ai/dashboard/billing que le rechargement porte bien sur le compte de CETTE clé, ou fournir une nouvelle clé.
 
+### 2026-07-18 — Vidéo Fal.ai VALIDÉE en réel + Galerie spots vidéo /kdmarche
+- ✅ **Nouvelle clé FAL_KEY** fournie par l'utilisateur (compte rechargé) installée dans backend/.env.
+- ✅ **Spot vidéo réel généré** (Veo3 fast, ~6 min) : `https://v3b.fal.media/files/b/0aa2b08f/sPX6u-mBQgx31ZBifUu57_….mp4` — job DONE, vidéo liée au produit (`vendor_products.video_url` + `products.video_url` pour le catalogue B2B). 50 crédits consommés (solde vendeur 102).
+- ✅ **Résilience jobs vidéo** (`routes_vendor_ai.py` + `ai_media_service.py`) : le `fal_request_id` est désormais persisté dans `ai_video_jobs` ; `GET /video-jobs/{id}` s'auto-répare si le backend a redémarré pendant la génération (re-interroge fal.ai, finalise ou échoue+rembourse). Cause racine du job bloqué : hot-reload tuait la tâche asyncio en vol.
+- ✅ **Galerie publique spots vidéo** : `GET /api/public/kdmarche-videos` (jobs DONE + nom produit + vendeur) + section `VideoShowcase` sur `/kdmarche` (`components/kdmarche/VideoShowcase.jsx`, lecteurs vidéo, data-testid `kdm-video-showcase`). Screenshot validé.
+
 ## 4. Backlog
 
 ### P1 — Internationalisation
