@@ -34,17 +34,19 @@ const PartnersSection = () => {
             ></div>
             
             <div className="text-center mb-4">
-              <img 
-                src={partners.kdmarche.logo} 
-                alt="KDMARCHE" 
-                className="h-56 w-auto object-contain mx-auto mb-3"
-                style={{ filter: 'drop-shadow(0 4px 12px rgba(217,179,90,0.4))' }}
-              />
+              <div className="h-44 flex items-center justify-center mb-3">
+                <img 
+                  src={partners.kdmarche.logo} 
+                  alt="KDMARCHE" 
+                  className="h-40 w-auto object-contain"
+                  style={{ filter: 'drop-shadow(0 4px 12px rgba(217,179,90,0.4))' }}
+                />
+              </div>
               <span className="pill">
                 <ShoppingCart className="w-3 h-3" />
                 <span className="text-[#D9B35A] font-semibold">{i18n.t('partners.kdm_badge')}</span>
               </span>
-              <h4 className="text-base font-bold mt-3 text-white/90">{i18n.t('partners.kdm_role')}</h4>
+              <h4 className="text-base font-bold mt-3 text-white/90 min-h-[48px] flex items-center justify-center">{i18n.t('partners.kdm_role')}</h4>
             </div>
             
             <div className="space-y-4">
@@ -81,17 +83,19 @@ const PartnersSection = () => {
             ></div>
             
             <div className="text-center mb-4">
-              <img 
-                src={partners.oscop.logo} 
-                alt="O'SCOP" 
-                className="h-44 w-auto object-contain mx-auto mb-3"
-                style={{ filter: 'drop-shadow(0 4px 12px rgba(212,175,55,0.4))' }}
-              />
+              <div className="h-44 flex items-center justify-center mb-3">
+                <img 
+                  src={partners.oscop.logo} 
+                  alt="O'SCOP" 
+                  className="h-40 w-auto object-contain"
+                  style={{ filter: 'drop-shadow(0 4px 12px rgba(212,175,55,0.4))' }}
+                />
+              </div>
               <span className="pill">
                 <Settings className="w-3 h-3" />
                 <span className="text-[#D4AF37] font-semibold">{i18n.t('partners.oscop_badge')}</span>
               </span>
-              <h4 className="text-base font-bold mt-3 text-white/90">{i18n.t('partners.oscop_role')}</h4>
+              <h4 className="text-base font-bold mt-3 text-white/90 min-h-[48px] flex items-center justify-center">{i18n.t('partners.oscop_role')}</h4>
             </div>
             
             <div className="space-y-4">
