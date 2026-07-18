@@ -929,3 +929,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Effet radiation : ensure_member_active() dans routes_catalog — 403 si member_registry.status SUSPENDED/RADIE, appliqué à get_user_org_context (catalogue), aux 4 routes panier (routes_cart_v2) et à la création de commande (routes_orders_v2). Validé : 403 en suspension, 200 après réactivation.
 - INCIDENT résolu : sed de nettoyage avait dupliqué la fin de VendorSpacePage.jsx (erreur de compilation) — tronqué + TabsTrigger Contrats réinséré. Fichier à 496 lignes (règle d'or OK).
 - Tests : curl E2E (contrats auto-créés, rétention 8295 cents = 5% de 1659€, idempotence, PDF %PDF-1.4, blocage 403/réactivation, email transporteur) + screenshots UI onglet Contrats.
+
+## 2026-07-18 — Restitution de garantie + Vue Contrats Admin
+- POST /api/vendor/contracts/admin/{contract_id}/release (admin only) : restitution totale/partielle plafonnée à la garantie disponible, motif obligatoire, tracée dans retention_ledger (type RELEASE, montant, auteur, date). Validé : release 30€, refus dépassement (400), 403 non-admin.
+- GET /api/vendor/contracts/admin/all : tous les contrats enrichis (vendor_name, territoire via vendors.country mappé GP/MQ/GF/RE/FR) + agrégats par territoire (retenu/restitué/net) + total_net_cents.
+- UI : nouvel onglet Super Admin "Contrats" (AdminContractsTab.jsx) — cartes de garanties nettes par territoire, liste des contrats avec barre de progression, bouton Restituer (prompts montant+motif), registre du contrat dépliable (rétentions par facture + restitutions).
+- Vérifié par curl + screenshot (total 52,95 €, registre affichant rétention 82,95 € et restitution 30,00 € tracée).

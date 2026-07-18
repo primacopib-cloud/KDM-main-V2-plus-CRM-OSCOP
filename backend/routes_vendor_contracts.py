@@ -4,7 +4,11 @@ import uuid
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel, Field
+
+from auth import get_current_user_id
+from admin_guard import require_admin
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +85,67 @@ async def apply_invoice_retention(database, order: dict) -> None:
         )
         logger.info("Retention %s cents on contract %s (order %s)", retention, contract["contract_number"], order["id"])
     await database.orders.update_one({"id": order["id"]}, {"$set": {"retention_processed": True}})
+
+
+COUNTRY_TERRITORY = {"GP": "Guadeloupe", "MQ": "Martinique", "GF": "Guyane", "RE": "La Réunion", "FR": "Hexagone"}
+
+
+@contracts_router.get("/admin/all")
+async def admin_list_contracts(user_id: str = Depends(get_current_user_id)):
+    """Vue Super Admin : tous les contrats + total des garanties retenues par territoire."""
+    await require_admin(user_id)
+    contracts = await db.volume_contracts.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    by_territory = {}
+    for c in contracts:
+        vendor = await db.vendors.find_one({"id": c["vendor_id"]}, {"_id": 0, "company_name": 1, "country": 1})
+        c["vendor_name"] = (vendor or {}).get("company_name") or c["vendor_id"]
+        country = (vendor or {}).get("country")
+        c["territory"] = COUNTRY_TERRITORY.get(country, country or "Autre")
+        net = c.get("retained_cents", 0) - c.get("released_cents", 0)
+        t = by_territory.setdefault(c["territory"], {"contracts": 0, "retained_cents": 0, "released_cents": 0, "net_cents": 0})
+        t["contracts"] += 1
+        t["retained_cents"] += c.get("retained_cents", 0)
+        t["released_cents"] += c.get("released_cents", 0)
+        t["net_cents"] += net
+    return {
+        "contracts": contracts,
+        "by_territory": by_territory,
+        "total_net_cents": sum(t["net_cents"] for t in by_territory.values()),
+    }
+
+
+class ReleasePayload(BaseModel):
+    amount_cents: int = Field(..., gt=0)
+    note: str = Field(..., min_length=3, max_length=1000)
+
+
+@contracts_router.post("/admin/{contract_id}/release")
+async def release_retention(
+    contract_id: str,
+    payload: ReleasePayload,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Restitution totale ou partielle de la garantie, tracée au registre du contrat."""
+    admin = await require_admin(user_id)
+    contract = await db.volume_contracts.find_one({"id": contract_id}, {"_id": 0})
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contrat introuvable")
+    available = contract.get("retained_cents", 0) - contract.get("released_cents", 0)
+    if payload.amount_cents > available:
+        raise HTTPException(status_code=400, detail=f"Montant supérieur à la garantie disponible ({available / 100:.2f} €)")
+    await db.volume_contracts.update_one(
+        {"id": contract_id},
+        {"$inc": {"released_cents": payload.amount_cents},
+         "$push": {"retention_ledger": {
+             "type": "RELEASE",
+             "release_cents": payload.amount_cents,
+             "note": payload.note.strip(),
+             "by": admin.get("email"),
+             "at": datetime.utcnow(),
+         }}}
+    )
+    logger.info("Release %s cents on contract %s by %s", payload.amount_cents, contract["contract_number"], admin.get("email"))
+    return {"ok": True, "released_cents": payload.amount_cents, "remaining_cents": available - payload.amount_cents}
 
 
 @contracts_router.get("/{vendor_id}")
