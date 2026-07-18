@@ -98,12 +98,16 @@ async def assign_carrier(order_id: str, payload: CarrierAssign, user_id: str = D
     carrier = await db.logiscop_carriers.find_one({"id": payload.carrier_id, "is_active": True}, {"_id": 0})
     if not carrier:
         raise HTTPException(status_code=404, detail="Transporteur introuvable ou inactif")
+    mission_token = str(uuid.uuid4())
     await db.orders.update_one(
         {"id": order_id},
         {"$set": {
             "carrier": {"id": carrier["id"], "name": carrier["name"], "territory": carrier.get("territory")},
             "carrier_assigned_at": datetime.utcnow(),
             "carrier_assigned_by": user.get("email"),
+            "carrier_mission_token": mission_token,
+            "carrier_pickup_confirmed_at": None,
+            "carrier_delivery_confirmed_at": None,
             "updated_at": datetime.utcnow(),
         }}
     )
@@ -133,6 +137,11 @@ async def assign_carrier(order_id: str, payload: CarrierAssign, user_id: str = D
                 <strong>Total :</strong> {order.get('total_ttc_cents', 0) / 100:.2f} € TTC
               </p>
               <table style=\"width:100%;border-collapse:collapse;background:rgba(255,255,255,0.05);border-radius:12px;\">{items_rows}</table>
+              <p style=\"text-align:center;margin:20px 0;\">
+                <a href=\"{mission_url}\" style=\"display:inline-block;background:#D9B35A;color:#111;font-weight:bold;padding:12px 24px;border-radius:12px;text-decoration:none;\">
+                  Suivre la mission — confirmer l'enlèvement et la livraison
+                </a>
+              </p>
               <p style=\"color:rgba(255,255,255,0.55);font-size:12px;margin-top:14px;\">Merci de confirmer la prise en charge auprès de la coopérative.</p>
             """
             await brevo_service.send_email(
@@ -146,3 +155,46 @@ async def assign_carrier(order_id: str, payload: CarrierAssign, user_id: str = D
             logger.error("Carrier notification failed: %s", e)
 
     return {"ok": True, "carrier": carrier["name"]}
+
+
+# ============== SUIVI DE MISSION TRANSPORTEUR (liens publics tokenisés) ==============
+
+@cooper_router.get("/mission/{token}")
+async def get_mission(token: str):
+    order = await db.orders.find_one({"carrier_mission_token": token}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Mission introuvable")
+    pickup = await db.pickup_locations.find_one({"id": order.get("pickup_location_id")}, {"_id": 0}) or {}
+    return {
+        "order_number": order.get("order_number"),
+        "zone_code": order.get("zone_code"),
+        "carrier_name": (order.get("carrier") or {}).get("name"),
+        "pickup_location": {"name": pickup.get("name"), "address": pickup.get("address")},
+        "items": [{"product_name": i["product_name"], "quantity": i["quantity"], "unit": i["unit"]} for i in order.get("items", [])],
+        "total_ttc_cents": order.get("total_ttc_cents", 0),
+        "assigned_at": order.get("carrier_assigned_at"),
+        "pickup_confirmed_at": order.get("carrier_pickup_confirmed_at"),
+        "delivery_confirmed_at": order.get("carrier_delivery_confirmed_at"),
+    }
+
+
+class MissionConfirm(BaseModel):
+    step: str  # PICKUP | DELIVERY
+
+
+@cooper_router.post("/mission/{token}/confirm")
+async def confirm_mission_step(token: str, payload: MissionConfirm):
+    if payload.step not in ("PICKUP", "DELIVERY"):
+        raise HTTPException(status_code=400, detail="Étape invalide (PICKUP ou DELIVERY)")
+    order = await db.orders.find_one({"carrier_mission_token": token}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Mission introuvable")
+    field = "carrier_pickup_confirmed_at" if payload.step == "PICKUP" else "carrier_delivery_confirmed_at"
+    if order.get(field):
+        raise HTTPException(status_code=400, detail="Étape déjà confirmée")
+    if payload.step == "DELIVERY" and not order.get("carrier_pickup_confirmed_at"):
+        raise HTTPException(status_code=400, detail="Confirmez d'abord l'enlèvement")
+    now = datetime.utcnow()
+    await db.orders.update_one({"carrier_mission_token": token}, {"$set": {field: now, "updated_at": now}})
+    logger.info("Mission %s: %s confirmed for order %s", token[:8], payload.step, order["id"])
+    return {"ok": True, "step": payload.step, "at": now.isoformat()}

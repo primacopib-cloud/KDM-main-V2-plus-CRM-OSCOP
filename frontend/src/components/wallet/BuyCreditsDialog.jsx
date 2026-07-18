@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { CreditCard, Loader2, Lock, ShoppingCart, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
@@ -31,7 +32,14 @@ const PackageGrid = ({ packages, selectedPackage, onSelect }) => (
 export const BuyCreditsDialog = ({
   open, onOpenChange, packages, selectedPackage, setSelectedPackage,
   checkoutLoading, onCardPayment,
-}) => (
+}) => {
+  useEffect(() => {
+    if (open && !selectedPackage && packages.length > 0) {
+      setSelectedPackage(packages[0]);
+    }
+  }, [open, selectedPackage, packages, setSelectedPackage]);
+
+  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto bg-[#0a0d14] border-white/10 text-white">
       <DialogHeader>
@@ -53,7 +61,7 @@ export const BuyCreditsDialog = ({
           data-testid="buy-credits-card-btn"
         >
           {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CreditCard className="w-4 h-4 mr-2" />}
-          Payer par carte {selectedPackage && `(${selectedPackage.price}€)`}
+          {selectedPackage ? `Payer par carte (${selectedPackage.price}€)` : 'Sélectionnez un pack ci-dessus'}
         </Button>
         <p className="text-xs text-center text-white/40 mt-2">
           <Lock className="w-3 h-3 inline mr-1" />Paiement sécurisé par carte bancaire via Stripe
@@ -61,4 +69,5 @@ export const BuyCreditsDialog = ({
       </div>
     </DialogContent>
   </Dialog>
-);
+  );
+};

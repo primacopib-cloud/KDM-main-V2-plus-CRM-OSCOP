@@ -88,6 +88,12 @@ async def _scheduler_loop():
                 await send_vendor_monthly_reports()
         except Exception as exc:
             logger.exception("Scheduler monthly report iteration crashed: %s", exc)
+        try:
+            if datetime.utcnow().day == 1:
+                from routes_vendor_contracts import send_monthly_guarantees_report
+                await send_monthly_guarantees_report()
+        except Exception as exc:
+            logger.exception("Scheduler guarantees report iteration crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

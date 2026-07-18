@@ -110,6 +110,8 @@ class OrderResponse(BaseModel):
     ready_at: Optional[datetime] = None
     picked_up_at: Optional[datetime] = None
     carrier: Optional[Dict[str, Any]] = None
+    carrier_pickup_confirmed_at: Optional[datetime] = None
+    carrier_delivery_confirmed_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:

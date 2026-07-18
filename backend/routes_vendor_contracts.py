@@ -182,11 +182,7 @@ async def release_retention(
     return {"ok": True, "released_cents": payload.amount_cents, "remaining_cents": available - payload.amount_cents}
 
 
-@contracts_router.get("/admin/report-pdf")
-async def guarantees_report_pdf(user_id: str = Depends(get_current_user_id)):
-    """État PDF des garanties par territoire (assemblées / commissaire aux comptes)."""
-    await require_admin(user_id)
-    from fastapi.responses import StreamingResponse
+async def _build_guarantees_pdf() -> bytes:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -249,9 +245,56 @@ async def guarantees_report_pdf(user_id: str = Depends(get_current_user_id)):
         f"Restitué : {grand['released'] / 100:,.2f} € · Garanties nettes détenues : {grand['net'] / 100:,.2f} €</b>",
         ParagraphStyle("total", parent=styles["Normal"], fontSize=11, textColor=colors.HexColor("#4C2A6E"))))
     doc.build(elements)
-    buf.seek(0)
-    return StreamingResponse(buf, media_type="application/pdf",
+    return buf.getvalue()
+
+
+@contracts_router.get("/admin/report-pdf")
+async def guarantees_report_pdf(user_id: str = Depends(get_current_user_id)):
+    """État PDF des garanties par territoire (assemblées / commissaire aux comptes)."""
+    await require_admin(user_id)
+    from fastapi.responses import StreamingResponse
+    pdf_bytes = await _build_guarantees_pdf()
+    return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf",
                              headers={"Content-Disposition": f'attachment; filename="etat-garanties-{datetime.utcnow().strftime("%Y%m%d")}.pdf"'})
+
+
+async def send_monthly_guarantees_report(force: bool = False) -> int:
+    """Envoi mensuel automatique de l'état des garanties PDF aux admins (idempotent par mois)."""
+    import base64
+    import brevo_service
+    from brevo_service import is_brevo_configured, _wrap_html
+    if not is_brevo_configured():
+        return 0
+    month_key = datetime.utcnow().strftime("%Y-%m")
+    flag_key = f"guarantees-report-{month_key}"
+    if not force and await db.scheduler_flags.find_one({"key": flag_key}):
+        return 0
+    pdf_b64 = base64.b64encode(await _build_guarantees_pdf()).decode()
+    admins = await db.users.find({"is_admin": True, "email": {"$ne": None}}, {"_id": 0, "email": 1, "contact_name": 1}).to_list(10)
+    body = f"""
+      <h2 style=\"color:#D9B35A;margin:0 0 12px;font-size:18px;\">État mensuel des garanties de rétention</h2>
+      <p style=\"color:rgba(255,255,255,0.8);font-size:14px;\">
+        Veuillez trouver ci-joint l'état des garanties de rétention des contrats d'engagement de volume
+        (par territoire), édité automatiquement pour la clôture du mois {month_key}.<br/><br/>
+        Document destiné aux assemblées et au commissaire aux comptes.
+      </p>
+    """
+    sent = 0
+    for admin in admins:
+        try:
+            await brevo_service.send_email(
+                to_email=admin["email"], to_name=admin.get("contact_name"),
+                subject=f"[Communityplace] État des garanties — clôture {month_key}",
+                html_content=_wrap_html("État mensuel des garanties", body),
+                tags=["guarantees-monthly-report"],
+                attachments=[{"content": pdf_b64, "name": f"etat-garanties-{month_key}.pdf"}],
+            )
+            sent += 1
+        except Exception as e:
+            logger.error("Monthly guarantees report to %s failed: %s", admin["email"], e)
+    await db.scheduler_flags.update_one({"key": flag_key}, {"$set": {"key": flag_key, "sent": sent, "at": datetime.utcnow()}}, upsert=True)
+    logger.info("Monthly guarantees report sent to %d admin(s)", sent)
+    return sent
 
 
 @contracts_router.get("/{vendor_id}")
