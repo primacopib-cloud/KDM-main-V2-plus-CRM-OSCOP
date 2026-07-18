@@ -352,6 +352,15 @@ from routes_team_space import team_space_router, admin_buyers_router, set_team_s
 set_team_space_database(db)
 app.include_router(team_space_router)
 app.include_router(admin_buyers_router)
+from vendor_credits import credits_router, set_vendor_credits_database, seed_credit_pricing
+set_vendor_credits_database(db)
+app.include_router(credits_router)
+from routes_vendor_ai import vendor_ai_router, set_vendor_ai_database
+set_vendor_ai_database(db)
+app.include_router(vendor_ai_router)
+from routes_public_stats import public_stats_router, set_public_stats_database
+set_public_stats_database(db)
+app.include_router(public_stats_router)
 from fastapi.staticfiles import StaticFiles
 _uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(os.path.join(_uploads_dir, "products"), exist_ok=True)
@@ -537,6 +546,10 @@ async def startup_db_client():
         await seed_taxonomy()
     except Exception as e:
         logger.warning(f"Could not seed taxonomy: {e}")
+    try:
+        await seed_credit_pricing()
+    except Exception as e:
+        logger.warning(f"Could not seed credit pricing: {e}")
 
     # Seed default subscription plans if missing
     try:

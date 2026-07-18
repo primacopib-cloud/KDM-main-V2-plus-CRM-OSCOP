@@ -1,0 +1,32 @@
+{
+  "summary": "Iter 33 — Validated 3 KDMARCHÉ features (public vitrine, Studio IA, vendor credits). Backend 9/9 pytest PASS (public stats >0 on 5 metrics; /api/vendor/credits/vendor-demo-pro returns 152 credits + 5 pricing rows + tx list; admin credit-pricing GET requires auth (401), list returns 5 items, PUT photo_upload 1→2→1 works; POST /api/admin/vendors/vendor-demo-pro/credits +10/-10 restores balance; /api/vendor/ai/status={images:true,video:false}; POST generate-video → 503 with FAL_KEY message AND no credit charge; upload-image on vp-damoiseau-rhum-blanc with 3 photos returns 400 'Maximum 3 photos' AND balance unchanged — max-3 check is before consume_credits). Frontend 4/4 flows PASS: /kdmarche renders hero + kdm-live-stats + kdm-pillar-vendors/buyers + kdm-cta-register→/inscription + footer-link-kdmarche; topbar has 'KDMARCHÉ' nav link (visible in EN locale as 'KDMARCHÉ'); /espace-vendeur shows vendor-credits-balance=152, 3 ai-studio-* buttons, modal opens with all testids (ai-studio-modal, ai-studio-credits='Solde:152 crédits · Cette action coûte 10 crédits', 3 tabs, prompt, run); video tab shows ai-video-key-warning + run button DISABLED; superadmin /superadmin → tab 'Crédits & IA' → panneau barème (5 pricing rows editable) + panneau soldes; PUT photo_upload 2 then restored to 1, toast confirmed 'Téléversement d'une photo: 1 crédits'. Non-régression: / (landing) loads with topbar KDMARCHÉ + Pro Access + Join. Budget preserved: generate-image/enhance-image NEVER called.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "VendorCreditsTab", "issue": "The numeric balance '152' inside vendor-credits-row-vendor-demo-pro is rendered as plain text without the documented data-testid='vendor-balance' attribute — row testid exists but inner balance element is not test-selectable.", "selector": "[data-testid=\"vendor-credits-row-vendor-demo-pro\"] [data-testid=\"vendor-balance\"]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter33_kdmarche_credits_ai.py",
+    "/app/test_reports/pytest/iter33.xml"
+  ],
+  "action_items": [
+    "OPTIONAL LOW: Add data-testid='vendor-balance' to the numeric balance span in VendorCreditsTab.jsx (row exists, only inner element lacks the testid)."
+  ],
+  "critical_code_review_comments": [
+    "routes_vendor.py upload_product_image: max-3 photo check is correctly placed BEFORE consume_credits — good (validated by test).",
+    "routes_vendor_ai.py generate-video: 503 raised BEFORE consume_credits when FAL_KEY missing — correct (validated by test).",
+    "vendor_credits.py grant_vendor_credits: uses $inc + returns computed new_balance; correct. But new_balance could race with concurrent consume — consider read-after-write via find_one_and_update returning updated doc for stronger consistency.",
+    "routes_vendor_ai.py ai_generate_image/enhance_image: catches Exception → refund_credits — good pattern. However refund_credits inserts a negative-cost tx but does NOT record balance_after (unlike consume_credits) → minor UX inconsistency in transaction history.",
+    "routes_public_stats.py: 5 count_documents queries on every request without any caching/TTL — fine at current scale but worth a 30s in-memory cache if traffic grows."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter33_kdmarche_credits_ai.py"],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "100% (4/4 flows)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; vendor-demo-pro accessible without login at /espace-vendeur",
+  "seed_data_creation": "No seed data created. photo_upload pricing modified 1→2→1 (restored). Vendor credits +10 then -10 (restored to 152). Product vp-damoiseau-rhum-blanc 3 photos PRESERVED (upload attempt rejected with 400 as expected).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 3 KDMARCHÉ features are production-ready. Video generation deliberately returns 503 (FAL_KEY not configured) — this is expected. generate-image/enhance-image endpoints are NOT covered here (real LLM cost); main agent already validated them (see PRD). Vendor demo-pro balance stable at 152. Photo consumption path verified via 400-before-consume rather than actual upload (to preserve 3 existing photos)."
+}

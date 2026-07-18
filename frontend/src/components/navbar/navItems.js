@@ -8,6 +8,7 @@ export const getNavItems = (userRole, isAdmin) => {
   // Top bar: keep it lean — 4 public + 2 member shortcuts.
   const baseItems = [
     { href: '/', label: 'nav.home', icon: Home, public: true },
+    { href: '/kdmarche', label: 'KDMARCHÉ', icon: Store, public: true, accent: '#D9B35A' },
     { href: '/tarifs', label: 'nav.pro_access', icon: CreditCard, public: true },
   ];
 

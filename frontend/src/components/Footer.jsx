@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { partners } from '../data/mock';
-import { Mail, Phone, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf } from 'lucide-react';
+import { Mail, Phone, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf, Store } from 'lucide-react';
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -52,6 +52,12 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/offres" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.our_offers')}</Link>
+              </li>
+              <li>
+                <Link to="/kdmarche" className="text-white/60 hover:text-white/90 text-sm transition-colors flex items-center gap-2" data-testid="footer-link-kdmarche">
+                  <Store className="w-3.5 h-3.5 text-[#D9B35A]" />
+                  <span>KDMARCHÉ Communityplace</span>
+                </Link>
               </li>
               <li>
                 <Link to="/logiscop" className="text-white/60 hover:text-white/90 text-sm transition-colors flex items-center gap-2" data-testid="footer-link-logiscop">

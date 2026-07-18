@@ -27,6 +27,7 @@ import DynamicOrderPage from "./pages/DynamicOrderPage";
 import VendorSpacePage from "./pages/VendorSpacePage";
 import CooperSpacePage from "./pages/CooperSpacePage";
 import ExpertSpacePage from "./pages/ExpertSpacePage";
+import KdmarchePage from "./pages/KdmarchePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import AdminProductsPage from "./pages/AdminProductsPage";
 import BuyerSpacePage from "./pages/BuyerSpacePage";
@@ -119,6 +120,7 @@ function App() {
           <Route path="/espace-cooper" element={<CooperSpacePage />} />
           <Route path="/espace-expert" element={<ExpertSpacePage />} />
           <Route path="/changer-mot-de-passe" element={<ChangePasswordPage />} />
+          <Route path="/kdmarche" element={<KdmarchePage />} />
           <Route path="/vendor" element={<VendorSpacePage />} />
           {/* Admin Products Validation */}
           <Route path="/admin/produits" element={<AdminProductsPage />} />

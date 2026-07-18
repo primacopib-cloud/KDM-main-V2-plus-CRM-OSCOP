@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Package, Plus, CheckCircle2, Building2, TrendingUp, ShoppingCart,
-  Eye, Edit, Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Download,
+  Eye, Edit, Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Download, Sparkles, Coins,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -19,6 +19,7 @@ import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 import { getStatusBadge } from '../components/vendor/vendorConstants';
 import { VendorProductFormModal as ProductFormModal } from '../components/vendor/VendorProductFormModal';
 import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
+import { AIStudioModal } from '../components/vendor/AIStudioModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -41,6 +42,8 @@ const VendorSpacePage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [viewProduct, setViewProduct] = useState(null);
   const [editProduct, setEditProduct] = useState(null);
+  const [aiProduct, setAiProduct] = useState(null);
+  const [credits, setCredits] = useState(null);
 
   // Fetch dashboard data
   const fetchDashboard = useCallback(async () => {
@@ -85,10 +88,17 @@ const VendorSpacePage = () => {
     }
   }, []);
 
+  const fetchCredits = useCallback(async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/vendor/credits/${vendorId}`);
+      if (r.ok) setCredits((await r.json()).credits);
+    } catch (_e) { /* silent */ }
+  }, [vendorId]);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchDashboard(), fetchProducts(), fetchCountries()]);
+      await Promise.all([fetchDashboard(), fetchProducts(), fetchCountries(), fetchCredits()]);
       setLoading(false);
     };
     loadData();
@@ -155,7 +165,18 @@ const VendorSpacePage = () => {
             <div className="flex items-center gap-3">
               {/* Navigation History */}
               <NavigationHistoryDropdown variant="light" />
-              
+
+              {credits !== null && (
+                <span
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-semibold"
+                  style={{ color: '#B8860B', background: '#D9B35A1c', border: '1px solid #D9B35A55' }}
+                  data-testid="vendor-credits-balance"
+                  title="Crédits disponibles (fiches produits, photos, Studio IA)"
+                >
+                  <Coins className="w-4 h-4" /> {credits}
+                </span>
+              )}
+
               <Button 
                 onClick={() => setIsFormOpen(true)}
                 className="gap-2 bg-purple-600 hover:bg-purple-700"
@@ -388,6 +409,13 @@ const VendorSpacePage = () => {
                           >
                             <Download className="w-3 h-3" /> Fiche PDF
                           </Button>
+                          <Button
+                            size="sm" className="gap-1 bg-purple-600 hover:bg-purple-700 text-white"
+                            onClick={() => setAiProduct(product)}
+                            data-testid={`ai-studio-${product.id}`}
+                          >
+                            <Sparkles className="w-3 h-3" /> Studio IA
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -435,6 +463,15 @@ const VendorSpacePage = () => {
       {/* Product View Modal */}
       {viewProduct && (
         <VendorProductViewModal product={viewProduct} vendorId={vendorId} onClose={() => setViewProduct(null)} />
+      )}
+
+      {/* AI Studio Modal */}
+      {aiProduct && (
+        <AIStudioModal
+          product={aiProduct} vendorId={vendorId}
+          onClose={() => { setAiProduct(null); fetchCredits(); }}
+          onMediaAdded={() => { fetchProducts(); fetchCredits(); }}
+        />
       )}
     </div>
   );

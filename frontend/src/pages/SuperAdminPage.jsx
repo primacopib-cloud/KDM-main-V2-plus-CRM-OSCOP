@@ -13,6 +13,7 @@ import { UsersTab, OrdersTab } from '../components/superadmin/UsersOrdersTabs';
 import { TeamRolesTab } from '../components/superadmin/TeamRolesTab';
 import { BuyersTab } from '../components/superadmin/BuyersTab';
 import { TaxonomyTab } from '../components/superadmin/TaxonomyTab';
+import { VendorCreditsTab } from '../components/superadmin/VendorCreditsTab';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -141,6 +142,10 @@ export default function SuperAdminPage() {
 
           <TabsContent value="taxonomy">
             <TaxonomyTab />
+          </TabsContent>
+
+          <TabsContent value="credits">
+            <VendorCreditsTab />
           </TabsContent>
 
           <TabsContent value="orders">
