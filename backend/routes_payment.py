@@ -42,95 +42,26 @@ from routes_payment_sepa import set_payment_sepa_database
 
 
 def _wallet_stripe_key() -> str:
-    """Clé Stripe du flux crédits wallet (compte O'SCOP, clé test fournie)."""
-    api_key = os.environ.get("STRIPE_API_KEY")
+    """Clé Stripe du flux crédits wallet — compte O'SCOP, suit STRIPE_MODE (live/test)."""
+    from stripe_accounts import get_stripe_key
+    api_key = get_stripe_key("oscop")
     if not api_key:
         raise HTTPException(status_code=500, detail="Stripe non configuré")
     return api_key
 
 
-async def _send_payment_failed_email(user: dict, transaction: dict, reason: str = "expiré") -> None:
-    """Email Brevo à l'acheteur quand le paiement carte échoue ou expire."""
-    try:
-        from brevo_service import is_brevo_configured, send_email, _wrap_html
-        if not is_brevo_configured() or not user.get("email"):
-            return
-        body = (
-            f"<p>Bonjour {user.get('contact_name') or ''},</p>"
-            f"<p>Votre paiement par carte de <strong>{float(transaction['amount']):.2f} €</strong> "
-            f"({transaction['credits']} crédits) n'a pas abouti : <strong>paiement {reason}</strong>.</p>"
-            "<p>Aucun montant n'a été débité et aucun crédit n'a été ajouté.</p>"
-            "<p>Vous pouvez relancer l'achat à tout moment depuis votre espace CREDI&rsquo;SCOP "
-            "(bouton « Acheter des crédits »).</p>"
-        )
-        await send_email(
-            to_email=user["email"], to_name=user.get("contact_name"),
-            subject="✗ Échec du paiement — Achat de crédits KDMARCHÉ",
-            html_content=_wrap_html("Paiement non abouti", body),
-            tags=["wallet-payment-failed"],
-        )
-        logger.info(f"Payment failed email sent to {user['email']} (session {transaction['session_id']})")
-    except Exception as exc:
-        logger.error(f"Payment failed email error: {exc}")
-
-
-async def _notify_payment_failure_once(user: dict, transaction: dict, reason: str) -> None:
-    """Envoie l'email d'échec une seule fois par transaction (idempotent)."""
-    claim = await db.payment_transactions.update_one(
-        {"session_id": transaction["session_id"], "failure_notified": {"$ne": True}},
-        {"$set": {"failure_notified": True, "updated_at": datetime.now(timezone.utc)}},
-    )
-    if claim.modified_count == 1:
-        await _send_payment_failed_email(user, transaction, reason)
-
-
-async def _send_wallet_receipt_email(user: dict, transaction: dict) -> None:
-    """Reçu PDF envoyé par email Brevo à l'acheteur après achat de crédits wallet."""
-    try:
-        import base64
-        from brevo_service import is_brevo_configured, send_email, _wrap_html
-        from pdf_credit_invoice import generate_credit_invoice_pdf
-
-        if not is_brevo_configured() or not user.get("email"):
-            return
-        pack = await db.wallet_credit_packs.find_one({"id": transaction.get("package_id")}, {"_id": 0}) or \
-            {"name": transaction.get("package_id", "Pack de crédits"), "credits": transaction["credits"]}
-        client = {
-            "company_name": user.get("company_name") or user.get("contact_name") or user["email"],
-            "contact_name": user.get("contact_name") or "",
-            "email": user["email"],
-        }
-        pdf = generate_credit_invoice_pdf(
-            client, pack, transaction["credits"], 0,
-            float(transaction["amount"]), transaction["session_id"],
-        )
-        body = (
-            f"<p>Bonjour {client['contact_name']},</p>"
-            f"<p>Merci pour votre achat ! <strong>{transaction['credits']} crédits</strong> "
-            f"ont été ajoutés à votre solde CREDI&rsquo;SCOP pour <strong>{float(transaction['amount']):.2f} €</strong>.</p>"
-            "<p>Vous trouverez votre reçu en pièce jointe.</p>"
-        )
-        await send_email(
-            to_email=user["email"], to_name=client["contact_name"] or None,
-            subject=f"✓ Paiement réussi — Votre facture KDMARCHÉ ({transaction['credits']} crédits)",
-            html_content=_wrap_html("Reçu — Achat de crédits", body),
-            tags=["wallet-credit-receipt"],
-            attachments=[{
-                "content": base64.b64encode(pdf).decode(),
-                "name": f"recu-credits-{transaction['session_id'][-8:]}.pdf",
-            }],
-        )
-        logger.info(f"Wallet receipt email sent to {user['email']} (session {transaction['session_id']})")
-    except Exception as exc:
-        logger.error(f"Wallet receipt email failed: {exc}")
+from payment_emails import (
+    build_receipt_pdf, send_wallet_receipt_email, notify_payment_failure_once,
+)
 
 # ============== ENDPOINTS ==============
 
 @payment_router.get("/packages")
 async def list_packages():
-    """List all available credit packages"""
+    """List all available credit packages (gérés par le Super Admin)"""
+    from routes_wallet_packs_admin import get_active_wallet_packs
     return {
-        "packages": list(CREDIT_PACKAGES.values()),
+        "packages": await get_active_wallet_packs(),
         "currency": "EUR"
     }
 
@@ -267,11 +198,11 @@ async def get_payment_status(
                 credited = True
                 
                 logger.info(f"Credited {credits_to_add} to user {user['id']} for session {session_id}")
-                await _send_wallet_receipt_email(user, transaction)
+                await send_wallet_receipt_email(db, user, transaction)
                 
         elif stripe_session_status == "expired":
             new_status = PaymentStatus.EXPIRED.value
-            await _notify_payment_failure_once(user, transaction, "expiré")
+            await notify_payment_failure_once(db, user, transaction, "expiré")
         
         # Update transaction
         await db.payment_transactions.update_one(
@@ -357,7 +288,7 @@ async def handle_stripe_webhook(request: Request):
                 logger.info(f"Webhook: Credited {credits_to_add} to user {user_id}")
                 buyer = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
                 if buyer:
-                    await _send_wallet_receipt_email(buyer, transaction)
+                    await send_wallet_receipt_email(db, buyer, transaction)
         
         # Handle payment failure / expiration
         elif event["type"] in ("checkout.session.expired", "checkout.session.async_payment_failed"):
@@ -371,13 +302,33 @@ async def handle_stripe_webhook(request: Request):
                 )
                 buyer = await db.users.find_one({"id": transaction["user_id"]}, {"_id": 0, "password_hash": 0})
                 if buyer:
-                    await _notify_payment_failure_once(buyer, transaction, reason)
+                    await notify_payment_failure_once(db, buyer, transaction, reason)
         
         return {"received": True}
         
     except Exception as e:
         logger.error(f"Webhook error: {e}")
         return {"received": True, "error": str(e)}
+
+
+@payment_router.get("/receipt/{session_id}.pdf")
+async def download_receipt_pdf(request: Request, session_id: str):
+    """Re-téléchargement de la facture PDF d'un achat de crédits payé."""
+    from fastapi.responses import Response
+    user = await get_current_user_from_request(request)
+    transaction = await db.payment_transactions.find_one({
+        "session_id": session_id,
+        "user_id": user["id"],
+        "payment_status": "paid",
+    })
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Facture introuvable pour cette transaction")
+    pdf = await build_receipt_pdf(db, user, transaction)
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="facture-credits-{session_id[-8:]}.pdf"'},
+    )
 
 
 @payment_router.get("/history")

@@ -968,3 +968,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Connexion super admin (is_admin ou rôle SUPER_ADMIN/ADMIN/admin) → redirection directe vers /superadmin (dashboard unifié 13 onglets). Le paramètre ?next= reste prioritaire. Login acheteur → /dashboard inchangé (validé).
 - SuperAdminHeader : liens "Plans & Crédits" (/admin/plans) et "Connecteurs" (/admin/connecteurs) ajoutés à la nav.
 - AdminPlansPage : charte violet et or (fond dégradé #2A1045→#451F6B, cartes stats bordure or, barre d'onglets or, modals #221038). Validé par screenshot.
+
+## 2026-07-18 — Historique achats crédits + re-téléchargement facture + PASSAGE LIVE wallet
+- payment_emails.py (nouveau) : build_receipt_pdf, send_wallet_receipt_email, notify_payment_failure_once extraits de routes_payment.py (règle 500 lignes).
+- GET /api/payments/receipt/{session_id}.pdf : re-téléchargement facture (propriétaire uniquement, paid uniquement — 404 sinon, validé). Section "Mes achats de crédits" (CreditPurchaseHistory.jsx) sur /wallet : statuts Payé/En attente/Échoué + bouton Facture PDF sur les payés.
+- **WALLET EN LIVE** : _wallet_stripe_key() utilise stripe_accounts.get_stripe_key("oscop") → suit STRIPE_MODE=live (clé sk_live O'SCOP). Validé : session cs_live_ créée puis expirée proprement (aucun débit). Les anciennes sessions cs_test_ ne sont plus consultables par l'endpoint status (attendu).
+- Correction régression : /api/payments/packages relisait CREDIT_PACKAGES en dur (édit écrasé) → rebranché sur get_active_wallet_packs (packs DB Super Admin).

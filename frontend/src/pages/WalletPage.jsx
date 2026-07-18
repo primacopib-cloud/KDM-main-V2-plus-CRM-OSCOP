@@ -10,6 +10,7 @@ import { authAPI, walletAPIV2, zonesAPIV2, paymentAPI } from '../services/api';
 import { API, getAuthHeaders } from '../services/http';
 import { formatCredits } from '../components/wallet/walletUtils';
 import { WalletOrgTabs } from '../components/wallet/WalletOrgTabs';
+import { CreditPurchaseHistory } from '../components/wallet/CreditPurchaseHistory';
 import { ZoneAddDialog } from '../components/wallet/WalletDialogs';
 import { BuyCreditsDialog } from '../components/wallet/BuyCreditsDialog';
 
@@ -311,6 +312,9 @@ export default function WalletPage() {
             </Button>
           </div>
         </div>
+
+        {/* Historique des achats de crédits */}
+        <CreditPurchaseHistory />
 
         {/* No org info */}
         {!orgId && (
