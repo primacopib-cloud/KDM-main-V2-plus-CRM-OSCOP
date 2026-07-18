@@ -10,6 +10,7 @@ import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
 } from '../ui/sheet';
 import { partners } from '../../data/mock';
+import { CrediscopBadge } from '../CrediscopBadge';
 import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
 import { formatPrice } from './catalogUtils';
 
@@ -59,6 +60,7 @@ export const CatalogHeader = ({
           </nav>
           
           <div className="flex items-center gap-3">
+            <CrediscopBadge className="hidden sm:inline-flex" />
             {/* Navigation History */}
             <NavigationHistoryDropdown variant="dark" />
             

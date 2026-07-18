@@ -389,6 +389,10 @@ from vendor_monthly_report import vendor_reports_router, set_vendor_reports_data
 set_vendor_reports_database(db)
 app.include_router(vendor_reports_router)
 
+from routes_crediscop import crediscop_router, set_crediscop_database
+set_crediscop_database(db)
+app.include_router(crediscop_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)

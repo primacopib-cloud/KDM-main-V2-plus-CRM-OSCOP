@@ -198,9 +198,10 @@ const VendorSpacePage = () => {
                   className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-semibold hover:brightness-95 transition-all"
                   style={{ color: '#B8860B', background: '#D9B35A1c', border: '1px solid #D9B35A55' }}
                   data-testid="vendor-credits-balance"
-                  title="Crédits : cliquez pour recharger et voir l'historique"
+                  title="Mon CREDI'SCOP — crédits IA : cliquez pour recharger et voir l'historique"
                 >
                   <Coins className="w-4 h-4" /> {credits}
+                  <span className="hidden lg:inline text-[10px] font-bold tracking-wide">CREDI&rsquo;SCOP</span>
                   <Plus className="w-3 h-3 opacity-60" />
                 </button>
               )}

@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
 import { BreadcrumbPill } from '../components/Breadcrumb';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
+import { CrediscopBadge } from '../components/CrediscopBadge';
 
 import { authAPI, ordersAPIV2, walletAPIV2, invoicesAPI } from '../services/api';
 import { BuyerDashboardTab } from '../components/buyer/BuyerDashboardTab';
@@ -328,6 +329,9 @@ export default function BuyerSpacePage() {
           </nav>
           
           <div className="flex items-center gap-3">
+            {/* Solde CREDI'SCOP */}
+            <CrediscopBadge />
+
             {/* Navigation History */}
             <NavigationHistoryDropdown variant="dark" />
             

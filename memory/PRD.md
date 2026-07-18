@@ -593,6 +593,11 @@ Exigences produit étendues :
 - ✅ **Spécification CREDI'SCOP écosystème** : document prêt à copier-coller dans chaque app externe → `/app/memory/CREDISCOP_RENOMMAGE_ECOSYSTEME.md` (libellés, signature, définition, mention juridique, règles techniques — ne pas toucher clés/routes/collections).
 - ℹ️ Identifiants apps externes fournis : IA Bois (admin@oscop.local), GE (admin@oscopge.fr), COPPAM (admin@coppam.local), CRM ESS (admin@objectifscop.com) — tous vérifiés OK via health-status.
 
+### 2026-07-18 — Badge CREDI'SCOP nav (tous profils) + Spec récepteur spots (VALIDÉS self-test)
+- ✅ **Endpoint unifié** `GET /api/me/crediscop` (`routes_crediscop.py`) : vendeur → vendors.credits (href /espace-vendeur), membre org → wallets.balance_credits par org_membership (href /wallet), autres profils → wallet perso user_id (grant-by-profile). Testé curl 3 profils : acheteur 500 (org), vendeur 62, COOPER 30 (user).
+- ✅ **Badge doré `CrediscopBadge`** (rafraîchi toutes les 60 s, cliquable) monté dans : NavBar principale (desktop + menu mobile, couvre COOPER/Expert via RoleSpaceLayout), header Espace Acheteur (`BuyerSpacePage`), header Catalogue (`CatalogHeader`). Header Espace Vendeur : badge crédits existant rebadgé "62 CREDI'SCOP". Screenshots validés (acheteur, catalogue, vendeur).
+- ✅ **Spec récepteur spots** : `/app/memory/RECEPTEUR_SPOTS_ECOSYSTEME.md` — endpoint `POST /api/kdmarche/spots` à implémenter dans les 4 apps externes (payload exact, auth Bearer admin, upsert par product_id, test de validation via bouton Diffuser).
+
 ## 4. Backlog
 
 ### P1 — Internationalisation

@@ -15,6 +15,7 @@ import QuickShortcuts from './QuickShortcuts';
 import { useFavorites } from './FavoriteButton';
 import LanguageSwitcher from './LanguageSwitcher';
 import CommunityplaceBadge from './CommunityplaceBadge';
+import { CrediscopBadge } from './CrediscopBadge';
 import { useTranslation } from 'react-i18next';
 
 // Favorites nav button with count
@@ -150,6 +151,9 @@ const NavBar = ({ variant = 'default' }) => {
             <LanguageSwitcher className="hidden md:flex" />
             {isAuthenticated ? (
               <>
+                {/* Solde CREDI'SCOP */}
+                <CrediscopBadge className="hidden sm:inline-flex" />
+
                 {/* Quick Shortcuts */}
                 <div className="hidden md:block">
                   <QuickShortcuts variant="navbar" />
@@ -238,8 +242,13 @@ const NavBar = ({ variant = 'default' }) => {
           >
             {isAuthenticated && user && (
               <div className="p-3 mb-3 rounded-xl bg-white/[0.04] border border-white/10">
-                <p className="text-sm font-medium text-white">{user.contact_name || t('nav.user')}</p>
-                <p className="text-xs text-white/50">{user.email}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white">{user.contact_name || t('nav.user')}</p>
+                    <p className="text-xs text-white/50">{user.email}</p>
+                  </div>
+                  <CrediscopBadge />
+                </div>
               </div>
             )}
 
