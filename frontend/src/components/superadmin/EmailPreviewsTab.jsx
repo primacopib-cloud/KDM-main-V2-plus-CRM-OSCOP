@@ -1,7 +1,38 @@
 import { useEffect, useState } from 'react';
-import { Mail, Loader2, Send } from 'lucide-react';
+import { Mail, Loader2, Send, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
+
+const EmailLogsList = ({ templateId }) => {
+  const [logs, setLogs] = useState(null);
+
+  useEffect(() => {
+    setLogs(null);
+    fetch(`${API}/admin/email-previews/${templateId}/logs`, { headers: getAuthHeaders(), credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => setLogs(d.logs || []))
+      .catch(() => setLogs([]));
+  }, [templateId]);
+
+  if (logs === null) {
+    return <div className="flex justify-center py-3"><Loader2 className="w-4 h-4 animate-spin text-[#D9B35A]" /></div>;
+  }
+  if (logs.length === 0) {
+    return <p className="text-xs text-white/40 py-2">Aucun envoi réel journalisé pour ce modèle.</p>;
+  }
+  return (
+    <div className="max-h-40 overflow-y-auto space-y-1" data-testid="email-logs-list">
+      {logs.map((l, i) => (
+        <div key={i} className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg bg-white/[0.04] text-xs">
+          <span className="text-white/80 truncate">{l.to_email}</span>
+          <span className="text-white/45 flex-shrink-0">
+            {l.sent_at ? new Date(l.sent_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export const EmailPreviewsTab = () => {
   const [templates, setTemplates] = useState([]);
@@ -125,6 +156,12 @@ export const EmailPreviewsTab = () => {
                   M'envoyer un test
                 </button>
               </div>
+            </div>
+            <div className="mb-3 pb-3 border-b border-white/10">
+              <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-[#D9B35A] mb-1.5">
+                <History className="w-3.5 h-3.5" /> Journal des envois
+              </p>
+              <EmailLogsList templateId={selected.id} />
             </div>
             <iframe
               title="email-preview"

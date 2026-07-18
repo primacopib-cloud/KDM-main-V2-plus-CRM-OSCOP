@@ -121,6 +121,21 @@ async def list_email_previews(request: Request):
     }
 
 
+@email_previews_router.get("/{template_id}/logs")
+async def get_template_logs(request: Request, template_id: str, limit: int = 50):
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    tags = _TAG_MAP.get(template_id)
+    if not tags:
+        raise HTTPException(status_code=404, detail="Modèle introuvable")
+    limit = max(1, min(limit, 200))
+    logs = await db.email_logs.find(
+        {"tags": {"$in": tags}}, {"_id": 0, "to_email": 1, "subject": 1, "sent_at": 1}
+    ).sort("sent_at", -1).to_list(limit)
+    return {"logs": logs}
+
+
 @email_previews_router.post("/{template_id}/send-test")
 async def send_test_email(request: Request, template_id: str):
     admin = await get_current_admin_from_request(request)

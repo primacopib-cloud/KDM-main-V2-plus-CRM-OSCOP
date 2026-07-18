@@ -1010,3 +1010,7 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Journalisation des envois réels : brevo_service.send_email → insert dans collection email_logs (to, subject, tags, sent_at) via client Mongo lazy.
 - Stats galerie : _TAG_MAP (14 modèles → tags Brevo réels), agrégation par tag, count + last_sent par modèle + total_sent. UI : badge compteur or par modèle, total sous le titre, détail "X envois réels · dernier : date" dans l'aperçu. Les envois de test (tag email-preview-test) comptent dans le total mais pas par modèle.
 - Validé E2E : envoi taggé low-credits → badge 1 + "1 envoi réel · dernier : 18 juil., 16:38".
+
+## 2026-07-18 — Journal des envois par modèle d'email
+- GET /api/admin/email-previews/{id}/logs (admin only, 403/404 validés) : 50 derniers envois réels du modèle (destinataire, objet, date, tri desc).
+- UI : section "Journal des envois" au-dessus de l'aperçu (EmailLogsList, scrollable max-h-40, message si vide). Validé E2E navigateur.
