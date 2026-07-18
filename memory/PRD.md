@@ -992,3 +992,6 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Logo v3 : swoosh (grande virgule) VIOLET #451F6B, "KD MARCHÉ" violet, "Pro" or ; contre-formes blanches des lettres D/P/O supprimées (flood-fill fond + régions blanches fermées de la moitié basse → transparentes). /logos/kdmarche-pro-gold.png(+webp).
 - PartnersSection ("Séparation stricte des fonctions") : logos harmonisés (h-40 dans conteneur h-44 flex centré), titres de rôle alignés (min-h-[48px]), badges et listes au même niveau entre les 2 cartes. Validé screenshot.
 - Favicon violet/or (favicon.ico multi-tailles + favicon-32/64 + apple-touch-icon + icon-512) et image sociale 1200x630 (/logos/social-share.png : pastille ivoire logo + titres or/ivoire sur violet). index.html : links icons + og:image/twitter:image → social-share.png, theme-color #2A1045. Tous servis en 200.
+
+## 2026-07-18 — Logo en en-tête des emails Brevo
+- _wrap_html (brevo_service.py) : logo violet/or sur pastille ivoire arrondie en tête du bandeau (img depuis FRONTEND_URL/logos/kdmarche-pro-gold.png — pointera vers la prod après déploiement). Testé par envoi réel Brevo (messageId OK).

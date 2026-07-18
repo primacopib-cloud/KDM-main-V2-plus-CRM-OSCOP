@@ -139,11 +139,15 @@ async def send_sms(
 # ============================================================
 
 def _wrap_html(title: str, body_html: str) -> str:
+    logo_url = os.environ.get("FRONTEND_URL", "").rstrip("/") + "/logos/kdmarche-pro-gold.png"
     return f"""<!DOCTYPE html>
 <html><head><meta charset=\"utf-8\"><title>{title}</title></head>
 <body style=\"margin:0;padding:0;background:#1E0C34;font-family:Helvetica,Arial,sans-serif;color:#F3EDE4;\">
   <div style=\"max-width:600px;margin:0 auto;padding:32px 24px;\">
     <div style=\"text-align:center;margin-bottom:24px;background:linear-gradient(135deg,#2A1045 0%,#451F6B 100%);border:1px solid rgba(212,175,55,0.45);border-radius:18px;padding:22px 16px;\">
+      <div style=\"display:inline-block;background:#FBF6EE;border:1px solid rgba(212,175,55,0.5);border-radius:14px;padding:8px 14px;margin-bottom:12px;\">
+        <img src=\"{logo_url}\" alt=\"KD MARCHÉ Pro\" height=\"64\" style=\"height:64px;width:auto;display:block;\"/>
+      </div>
       <h1 style=\"color:#D4AF37;font-size:22px;margin:0;letter-spacing:1px;font-family:Georgia,'Times New Roman',serif;\">KDMARCHÉ × O'SCOP</h1>
       <p style=\"color:rgba(243,237,228,0.65);margin:6px 0 0;font-size:12px;letter-spacing:2px;text-transform:uppercase;\">Communityplace — Coopérative ESS</p>
     </div>
