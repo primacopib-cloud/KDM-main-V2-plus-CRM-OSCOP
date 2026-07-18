@@ -73,7 +73,7 @@ async def consume_credits(vendor_id: str, action: str, detail: str = "",
     })
     if balance >= LOW_CREDIT_THRESHOLD > balance - cost:
         import asyncio
-        asyncio.get_event_loop().create_task(_send_low_credit_alert(vendor_id, balance - cost))
+        asyncio.create_task(_send_low_credit_alert(vendor_id, balance - cost))
     return cost
 
 

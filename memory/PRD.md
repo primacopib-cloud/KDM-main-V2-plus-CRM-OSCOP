@@ -529,6 +529,13 @@ Exigences produit étendues :
 - ✅ ESLint global propre sur `/app/frontend/src`.
 - ✅ Smoke tests sur les 6 pages affectées + Landing : aucune erreur console, comportement préservé.
 
+### 2026-07-18 — Factures PDF crédits + Alerte solde faible : VALIDÉS
+- ✅ **Facture PDF** (`pdf_credit_invoice.py`) : générée après paiement d'un pack (reportlab, en-tête FACTURE, n° CR-YYYYMMDD-xxx, table pack/bonus/total). Testé : PDF 2435 octets valide.
+- ✅ **Email facture Brevo** (`routes_credit_packs._send_invoice_email`) : envoyé au vendeur avec le PDF en pièce jointe après crédit du pack (via polling `/status/{session_id}`). Testé : Brevo 201 Created.
+- ✅ **Alerte crédits faibles** (`vendor_credits._send_low_credit_alert`, seuil `LOW_CREDIT_THRESHOLD=10`) : email envoyé une fois au franchissement du seuil dans `consume_credits`. Testé : franchissement 12→2, Brevo 201. Fix : `asyncio.create_task` (API dépréciée remplacée).
+- ✅ **Non-régression achat crédits** : testing_agent iteration_35 → 13/13 pass (packs, purchase Stripe LIVE session, status 403 autre user, analytics admin, refund vidéo auto, logins). Suite pytest : `/app/backend/tests/test_iter35_credit_packs_regression.py`. Script manuel : `/app/backend/tests/manual_test_invoice_and_alerts.py`.
+- ❌ **Fal.ai vidéo TOUJOURS BLOQUÉ** : 3 jobs testés (dont 1 après le rechargement annoncé par l'utilisateur) → erreur fal.ai « User is locked. Reason: Exhausted balance ». Clé configurée : `FAL_KEY=bc07ae08-7fa4-…`. Le remboursement automatique des 50 crédits fonctionne (solde vendeur intact à 152). **Action utilisateur requise** : vérifier sur fal.ai/dashboard/billing que le rechargement porte bien sur le compte de CETTE clé, ou fournir une nouvelle clé.
+
 ## 4. Backlog
 
 ### P1 — Internationalisation
