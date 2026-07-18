@@ -912,3 +912,13 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Adhésion B2B (/onboarding Step 1) : sélecteur "Acheteur pro / Vendeur pro" (formData.memberType), envoyé via api.v2.js → OrgCreate.member_type persisté sur l'org (routes_v2.py).
 - Registres membres : à l'approbation d'une adhésion (routes_v2_applications.py), upsert automatique dans db.member_registry (member_type, legal_name, siret, territory, contact nom/email/téléphone, registered_at, ACTIVE). Onglet "Registres" Super Admin (MemberRegistryTab.jsx) avec filtres Acheteurs/Vendeurs pro + GET /api/v2/admin/member-registry (admin only).
 - Testing : iteration_41.json — 100% backend (6/6 pytest, flux BUYER_PRO complet E2E) + 100% frontend. Comptes test: test-registre-vendeur@kdmarche.fr / Test2026!.
+
+## 2026-07-18 — Lot COOPER / Partenariats / Conventions / Registres (iteration_42 : 100%)
+- Renommage "CREDI'SCOP Crédits O'SCOP" → "CREDI'SCOP" dans les 6 fichiers locales (fr/en/es × site/app) + BuyerWalletTab.
+- Espace COOPER (/espace-cooper, rôle COOPER) à 4 onglets : Aperçu, Adhésions (valide/rejette via /api/v2/applications/{id}/decision ouvert au rôle COOPER), Produits vendeurs (routes /vendor/admin/products/*), Commandes & Transport (statuts /api/v2/orders/admin/* ouverts au COOPER + assignation transporteur).
+- Transporteurs LOGI'SCOP : collection logiscop_carriers, CRUD admin (POST/PATCH /api/cooper/carriers), liste cooper, POST /api/cooper/orders/{id}/assign-carrier (champ carrier ajouté à OrderResponse).
+- Page publique /partenariat (PartnershipPage.jsx) : formulaire partagé (bouton copie lien pour objectifscopoutremer/kdmarche), POST /api/partnership/request → Brevo + partnership_requests. CTA LogiscopPage pointe dessus.
+- Onglet Super Admin "Conventions" (CoopersConventionsTab.jsx) : COOPER'S en poste, gestion transporteurs, demandes de partenariat avec statuts (RECUE/EN_NEGOCIATION/SIGNEE/RESILIEE/REFUSEE) + historique ($push).
+- Onglet Registres : export CSV (BOM UTF-8, ;) et PDF (reportlab paysage) via /api/v2/admin/member-registry/export ; radiation/suspension/réactivation avec motif obligatoire + historique (PATCH /status), boutons + ligne historique dépliable.
+- Guard require_cooper ajouté à admin_guard.py.
+- Testing : iteration_42.json — 15/15 pytest backend + frontend 100% (fix appliqué : import Fragment dans MemberRegistryTab).
