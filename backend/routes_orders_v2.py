@@ -320,6 +320,7 @@ async def _build_order_response(order: dict, pickup: dict = None) -> OrderRespon
         confirmed_at=order.get("confirmed_at"),
         ready_at=order.get("ready_at"),
         picked_up_at=order.get("picked_up_at"),
+        carrier=order.get("carrier"),
         created_at=order["created_at"],
     )
 
@@ -334,8 +335,8 @@ async def admin_list_orders(
     skip: int = 0,
     limit: int = 50,
 ):
-    """List all orders (admin)"""
-    if not current_user.get("is_admin"):
+    """List all orders (admin ou COOPER)"""
+    if not (current_user.get("is_admin") or (current_user.get("role") or "").upper() == "COOPER"):
         raise HTTPException(status_code=403, detail="Admin requis")
     
     query = {}
@@ -360,8 +361,8 @@ async def admin_update_order_status(
     new_status: OrderStatus,
     current_user: dict = Depends(get_current_user_catalog),
 ):
-    """Update order status (admin)"""
-    if not current_user.get("is_admin"):
+    """Update order status (admin ou COOPER)"""
+    if not (current_user.get("is_admin") or (current_user.get("role") or "").upper() == "COOPER"):
         raise HTTPException(status_code=403, detail="Admin requis")
     
     order = await db.orders.find_one({"id": order_id})

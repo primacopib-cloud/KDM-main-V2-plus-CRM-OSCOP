@@ -405,6 +405,14 @@ from routes_member_registry import registry_router, set_registry_database
 set_registry_database(db)
 app.include_router(registry_router)
 
+from routes_cooper import cooper_router, set_cooper_database
+set_cooper_database(db)
+app.include_router(cooper_router)
+
+from routes_partnership import partnership_router, set_partnership_database
+set_partnership_database(db)
+app.include_router(partnership_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)

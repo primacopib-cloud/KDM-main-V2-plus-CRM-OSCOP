@@ -29,6 +29,7 @@ import CooperSpacePage from "./pages/CooperSpacePage";
 import ExpertSpacePage from "./pages/ExpertSpacePage";
 import KdmarchePage from "./pages/KdmarchePage";
 import SupportContactPage from "./pages/SupportContactPage";
+import PartnershipPage from "./pages/PartnershipPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import AdminProductsPage from "./pages/AdminProductsPage";
 import BuyerSpacePage from "./pages/BuyerSpacePage";
@@ -124,6 +125,7 @@ function App() {
           <Route path="/kdmarche" element={<KdmarchePage />} />
           <Route path="/contact" element={<SupportContactPage />} />
           <Route path="/support" element={<SupportContactPage />} />
+          <Route path="/partenariat" element={<PartnershipPage />} />
           <Route path="/vendor" element={<VendorSpacePage />} />
           {/* Admin Products Validation */}
           <Route path="/admin/produits" element={<AdminProductsPage />} />

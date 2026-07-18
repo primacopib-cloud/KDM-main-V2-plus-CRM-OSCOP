@@ -16,6 +16,7 @@ import { TaxonomyTab } from '../components/superadmin/TaxonomyTab';
 import { VendorCreditsTab } from '../components/superadmin/VendorCreditsTab';
 import { SupportTicketsTab } from '../components/superadmin/SupportTicketsTab';
 import { MemberRegistryTab } from '../components/superadmin/MemberRegistryTab';
+import { CoopersConventionsTab } from '../components/superadmin/CoopersConventionsTab';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -156,6 +157,10 @@ export default function SuperAdminPage() {
 
           <TabsContent value="registry">
             <MemberRegistryTab />
+          </TabsContent>
+
+          <TabsContent value="conventions">
+            <CoopersConventionsTab />
           </TabsContent>
 
           <TabsContent value="orders">

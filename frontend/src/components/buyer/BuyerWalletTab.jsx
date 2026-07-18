@@ -19,7 +19,7 @@ export const BuyerWalletTab = ({ wallet, transactions }) => (
                       {formatCurrency(wallet?.balance_cents || wallet?.balance_credits * 100 || 0)}
                     </p>
                     <p className="text-sm text-white/50 mt-2">
-                      Crédits O'SCOP pour vos commandes
+                      CREDI'SCOP pour vos commandes
                     </p>
                   </div>
                   <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center">

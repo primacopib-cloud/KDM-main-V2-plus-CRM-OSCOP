@@ -40,7 +40,7 @@ export default function LogiscopPage() {
               {i18n.t('logiscop.hero_desc')}
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link to="/inscription">
+              <Link to="/partenariat">
                 <button
                   className="inline-flex items-center gap-2 rounded-[14px] px-5 py-3 text-sm font-semibold transition-all hover:translate-y-[-1px]"
                   style={{ background: 'linear-gradient(135deg, #5B2E8C, #FF7A00)', color: '#fff', boxShadow: '0 10px 30px rgba(76,42,110,0.4)' }}

@@ -210,9 +210,10 @@ async def decide_application(
     current_user: dict = Depends(get_current_user_v2),
     request: Request = None,
 ):
-    """Approve or reject application (compliance admin)"""
-    if not current_user.get("is_admin", False):
-        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    """Approve or reject application (compliance admin ou COOPER)"""
+    _role = (current_user.get("role") or "").upper()
+    if not (current_user.get("is_admin") or _role == "COOPER"):
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs et COOPER'S")
     
     app = await db.b2b_applications.find_one({"id": app_id})
     if not app:
