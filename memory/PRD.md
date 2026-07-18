@@ -779,3 +779,10 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Onglet "Catégories & Taxes" (/superadmin) : routes_taxonomy.py (collections product_categories + tva_rates, seed 8 cat/6 taux au démarrage), CRUD instantané, formulaire produit vendeur hydraté depuis l'API.
 - Photos produits : POST upload-image (multipart PNG/JPEG, max 3, 5 Mo, 1 principale), fichiers dans /app/backend/uploads/products servis via StaticFiles /api/uploads. UI ProductPhotoUploader (préviews, étoile principale).
 - Validation iteration_31.json : backend 11/11, frontend 100% PASS. Post-test : slug vide rejeté (taxonomy), DialogDescription a11y, note champs modifiables en édition.
+
+## 2026-07-18 — Page vitrine KDMARCHÉ + Studio IA + Crédits vendeurs
+- Page publique /kdmarche (KdmarchePage.jsx) : hero Communityplace B2B2C, 5 stats EN DIRECT (GET /api/public/kdmarche-stats), piliers Vendeurs/Acheteurs, CTA inscription. Liens menu topbar + footer.
+- Studio IA vendeur (AIStudioModal.jsx, bouton par produit) : génération d'image studio par prompt + amélioration de photo (Gemini Nano Banana via EMERGENT_LLM_KEY, module llm copié dans le package vendored /app/backend/emergentintegrations — NE PAS écraser payments qui est patché pour Stripe). Spot vidéo Veo 3 via fal.ai : code prêt (routes_vendor_ai.py, job async ai_video_jobs) mais EN ATTENTE de FAL_KEY utilisateur (503 + warning UI tant que non configurée).
+- Crédits vendeurs (vendor_credits.py) : barème credit_pricing seedé (fiche 5, photo 1, image IA 10, amélioration 8, vidéo 50), consume/refund + transactions, consommation branchée sur submit_product/upload-image/IA. Admin : onglet "Crédits & IA" /superadmin (barème éditable + attribution soldes). Solde affiché dans l'espace vendeur. vendor-demo-pro seedé à ~152 crédits.
+- Validation iteration_33.json : backend 9/9, frontend 4/4 PASS. Génération/amélioration IA réelles validées par main agent (images attachées au produit rhum, crédits décomptés, remboursement sur échec).
+- EN ATTENTE UTILISATEUR : clé FAL_KEY (fal.ai/dashboard/keys) pour activer la vidéo ; test Stripe Live 1€ en production.

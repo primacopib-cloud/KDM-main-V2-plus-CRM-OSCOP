@@ -70,9 +70,11 @@ async def refund_credits(vendor_id: str, action: str, detail: str = "") -> None:
     if cost <= 0:
         return
     await db.vendors.update_one({"id": vendor_id}, {"$inc": {"credits": cost}})
+    vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "credits": 1})
     await db.credit_transactions.insert_one({
         "id": str(uuid.uuid4()), "vendor_id": vendor_id, "action": f"refund_{action}",
         "cost": -cost, "detail": detail or "Remboursement suite à échec technique",
+        "balance_after": int((vendor or {}).get("credits") or 0),
         "at": datetime.now(timezone.utc).isoformat(),
     })
 
