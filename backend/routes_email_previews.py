@@ -55,11 +55,55 @@ _TEMPLATES = [
 ]
 
 
+_TAG_MAP = {
+    "payment-success": ["wallet-credit-receipt"],
+    "payment-failed": ["wallet-payment-failed"],
+    "low-credits": ["low-credits"],
+    "cart-price-alert": ["cart-price-alert"],
+    "logiscop-mission": ["carrier-assignment"],
+    "vendor-invoice": ["credit-invoice"],
+    "guarantee-restitution": ["retention-release"],
+    "monthly-report": ["monthly-report"],
+    "video-spot": ["video-ready"],
+    "support-ticket": ["support-confirmation", "support-contact"],
+    "support-reply": ["support-reply", "support-reopen"],
+    "welcome-access": ["team-invite"],
+    "partnership": ["partnership-request"],
+    "guarantee-monthly": ["guarantees-monthly-report"],
+}
+
+db = None
+
+
+def set_email_previews_database(database):
+    global db
+    db = database
+
+
+async def _email_stats() -> dict:
+    tag_counts, tag_last = {}, {}
+    async for row in db.email_logs.aggregate([
+        {"$unwind": "$tags"},
+        {"$group": {"_id": "$tags", "count": {"$sum": 1}, "last": {"$max": "$sent_at"}}},
+    ]):
+        tag_counts[row["_id"]] = row["count"]
+        tag_last[row["_id"]] = row["last"]
+    stats = {}
+    for tpl_id, tags in _TAG_MAP.items():
+        stats[tpl_id] = {
+            "count": sum(tag_counts.get(t, 0) for t in tags),
+            "last_sent": max((tag_last.get(t) for t in tags if tag_last.get(t)), default=None),
+        }
+    return stats
+
+
 @email_previews_router.get("")
 async def list_email_previews(request: Request):
     admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    stats = await _email_stats()
+    total_sent = await db.email_logs.count_documents({})
     return {
         "templates": [
             {
@@ -68,10 +112,12 @@ async def list_email_previews(request: Request):
                 "name": t["name"],
                 "subject": t["subject"],
                 "html": _wrap_html(t["subject"], t["body"]),
+                "stats": stats.get(t["id"], {"count": 0, "last_sent": None}),
             }
             for t in _TEMPLATES
         ],
         "admin_email": admin.get("email"),
+        "total_sent": total_sent,
     }
 
 

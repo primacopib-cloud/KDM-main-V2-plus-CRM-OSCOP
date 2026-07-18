@@ -237,10 +237,10 @@ const NavBar = ({ variant = 'default' }) => {
           <div 
             className="lg:hidden rounded-2xl mb-4 p-4 absolute left-4 right-4 top-16"
             style={{
-              background: '#FFFFFF',
+              background: '#2B1548',
               backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(212,175,55,0.36)',
-              boxShadow: '0 24px 56px rgba(76,42,110,0.18)',
+              border: '1px solid rgba(212,175,55,0.40)',
+              boxShadow: '0 24px 56px rgba(0,0,0,0.45)',
               maxHeight: 'calc(100vh - 100px)',
               overflowY: 'auto'
             }}

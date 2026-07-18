@@ -9,6 +9,7 @@ export const EmailPreviewsTab = () => {
   const [loading, setLoading] = useState(true);
   const [testEmail, setTestEmail] = useState('');
   const [sending, setSending] = useState(false);
+  const [totalSent, setTotalSent] = useState(0);
 
   useEffect(() => {
     fetch(`${API}/admin/email-previews`, { headers: getAuthHeaders(), credentials: 'include' })
@@ -17,6 +18,7 @@ export const EmailPreviewsTab = () => {
         setTemplates(d.templates || []);
         setSelected((d.templates || [])[0] || null);
         setTestEmail(d.admin_email || '');
+        setTotalSent(d.total_sent || 0);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -50,9 +52,12 @@ export const EmailPreviewsTab = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4" data-testid="email-previews-tab">
       <div className="glass-panel-soft rounded-[18px] p-4 max-h-[75vh] overflow-y-auto">
-        <h3 className="flex items-center gap-2 text-sm font-semibold mb-3 text-[#D9B35A]">
+        <h3 className="flex items-center gap-2 text-sm font-semibold mb-1 text-[#D9B35A]">
           <Mail className="w-4 h-4" /> Modèles d'emails ({templates.length})
         </h3>
+        <p className="text-[11px] text-white/45 mb-3" data-testid="email-total-sent">
+          {totalSent.toLocaleString('fr-FR')} envoi{totalSent > 1 ? 's' : ''} réel{totalSent > 1 ? 's' : ''} journalisé{totalSent > 1 ? 's' : ''}
+        </p>
         {categories.map((cat) => (
           <div key={cat} className="mb-3">
             <p className="text-[11px] uppercase tracking-wider text-white/50 mb-1.5">{cat}</p>
@@ -63,13 +68,23 @@ export const EmailPreviewsTab = () => {
                   type="button"
                   onClick={() => setSelected(t)}
                   data-testid={`email-template-${t.id}`}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                     selected?.id === t.id
                       ? 'bg-[#D9B35A]/20 text-[#D9B35A] border border-[#D9B35A]/40'
                       : 'text-white/75 hover:bg-white/[0.06] border border-transparent'
                   }`}
                 >
-                  {t.name}
+                  <span className="truncate">{t.name}</span>
+                  <span
+                    data-testid={`email-count-${t.id}`}
+                    className={`flex-shrink-0 min-w-[26px] text-center text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
+                      (t.stats?.count || 0) > 0
+                        ? 'bg-[#D9B35A]/25 text-[#E9CF8E]'
+                        : 'bg-white/[0.06] text-white/35'
+                    }`}
+                  >
+                    {t.stats?.count || 0}
+                  </span>
                 </button>
               ))}
             </div>
@@ -84,6 +99,10 @@ export const EmailPreviewsTab = () => {
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-wider text-white/50">Objet</p>
                 <p className="text-sm font-medium" data-testid="email-preview-subject">{selected.subject}</p>
+                <p className="text-[11px] text-white/45 mt-0.5" data-testid="email-preview-stats">
+                  {selected.stats?.count || 0} envoi{(selected.stats?.count || 0) > 1 ? 's' : ''} réel{(selected.stats?.count || 0) > 1 ? 's' : ''}
+                  {selected.stats?.last_sent && ` · dernier : ${new Date(selected.stats.last_sent).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                </p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <input

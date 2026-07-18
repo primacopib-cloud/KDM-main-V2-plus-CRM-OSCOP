@@ -1004,3 +1004,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 ## 2026-07-18 — Bouton « M'envoyer un test » dans la galerie emails
 - POST /api/admin/email-previews/{id}/send-test : envoie le modèle réel via Brevo, sujet préfixé [TEST], destinataire = email saisi (défaut : email de l'admin connecté). Validations : 403 non-admin, 404 modèle inconnu, 400 email invalide (tous testés).
 - UI : champ email prérempli + bouton or dans l'en-tête de l'aperçu, toast de confirmation. Testé E2E navigateur (envoi réel messageId Brevo).
+
+## 2026-07-18 — Menu Super Admin institutionnel + Statistiques d'envois emails
+- Fix critique : dropdown UserMenu (navbar/UserMenu.jsx) et menu mobile (NavBar.jsx) avaient background #FFFFFF avec textes blancs (illisible, cf. capture user). Refondus en violet institutionnel #2B1548, bordure or, en-tête dégradé doré (nom/email/société), sections Vendeur/Administration, scrollable max-h-[78vh].
+- Journalisation des envois réels : brevo_service.send_email → insert dans collection email_logs (to, subject, tags, sent_at) via client Mongo lazy.
+- Stats galerie : _TAG_MAP (14 modèles → tags Brevo réels), agrégation par tag, count + last_sent par modèle + total_sent. UI : badge compteur or par modèle, total sous le titre, détail "X envois réels · dernier : date" dans l'aperçu. Les envois de test (tag email-preview-test) comptent dans le total mais pas par modèle.
+- Validé E2E : envoi taggé low-credits → badge 1 + "1 envoi réel · dernier : 18 juil., 16:38".

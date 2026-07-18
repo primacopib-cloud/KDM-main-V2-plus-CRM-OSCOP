@@ -108,7 +108,30 @@ async def send_email(
         payload["tags"] = tags
     if attachments:
         payload["attachment"] = attachments
-    return await _post("/smtp/email", payload)
+    result = await _post("/smtp/email", payload)
+    if result:
+        await _log_email(to_email, subject, tags or [])
+    return result
+
+
+_log_db = None
+
+
+async def _log_email(to_email: str, subject: str, tags: list) -> None:
+    """Journalise chaque envoi réel dans MongoDB (stats galerie emails)."""
+    global _log_db
+    try:
+        if _log_db is None:
+            from motor.motor_asyncio import AsyncIOMotorClient
+            _log_db = AsyncIOMotorClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
+        await _log_db.email_logs.insert_one({
+            "to_email": to_email,
+            "subject": subject,
+            "tags": tags,
+            "sent_at": datetime.utcnow().isoformat(),
+        })
+    except Exception as exc:
+        logger.warning("email log failed: %s", exc)
 
 
 async def send_sms(

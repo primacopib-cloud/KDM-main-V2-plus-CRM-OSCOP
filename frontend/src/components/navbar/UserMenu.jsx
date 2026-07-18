@@ -23,19 +23,20 @@ export const UserMenu = ({ user, nav, showUserMenu, setShowUserMenu, handleLogou
 
                   {showUserMenu && (
                     <div 
-                      className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden shadow-xl z-50"
+                      className="absolute right-0 mt-2 w-64 rounded-xl overflow-hidden shadow-xl z-50"
                       style={{
-                        background: '#FFFFFF',
-                        border: '1px solid rgba(212,175,55,0.34)',
-                        boxShadow: '0 18px 48px rgba(76,42,110,0.18), 0 4px 12px rgba(31,42,58,0.08)',
+                        background: '#2B1548',
+                        border: '1px solid rgba(212,175,55,0.45)',
+                        boxShadow: '0 18px 48px rgba(0,0,0,0.45), 0 4px 12px rgba(212,175,55,0.10)',
                         backdropFilter: 'blur(20px)'
                       }}
                     >
-                      <div className="p-3 border-b border-white/10">
-                        <p className="text-sm font-medium text-white">{user?.contact_name || 'Utilisateur'}</p>
+                      <div className="max-h-[78vh] overflow-y-auto">
+                      <div className="p-3 border-b border-[#D9B35A]/25" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.14), rgba(212,175,55,0.04))' }}>
+                        <p className="text-sm font-semibold text-white">{user?.contact_name || 'Utilisateur'}</p>
                         <p className="text-xs text-white/50 truncate">{user?.email}</p>
                         {user?.company_name && (
-                          <p className="text-xs text-[#D9B35A] mt-1">{user.company_name}</p>
+                          <p className="text-xs text-[#D9B35A] mt-1 font-medium">{user.company_name}</p>
                         )}
                       </div>
                       {/* Buyer/member section */}
@@ -129,6 +130,7 @@ export const UserMenu = ({ user, nav, showUserMenu, setShowUserMenu, handleLogou
                           <LogOut className="w-4 h-4" />
                           {t('nav.logout')}
                         </button>
+                      </div>
                       </div>
                     </div>
                   )}
