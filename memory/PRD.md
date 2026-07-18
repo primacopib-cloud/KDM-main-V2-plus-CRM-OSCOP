@@ -587,6 +587,12 @@ Exigences produit étendues :
 - ✅ **Historique rapports mensuels** : collection `vendor_report_log` alimentée à chaque envoi. Endpoints `GET /api/admin/vendor-reports/history` + `POST /api/admin/vendor-reports/resend/{vendor_id}`. UI : panneau "Rapports mensuels vendeurs" (`VendorReportsPanel.jsx`) dans SuperAdmin > Crédits & IA avec boutons "Envoyer à tous" et "Renvoyer" par ligne (badge renvoyé). Testé réel : resend Brevo SENT.
 - ✅ **Promotions programmées (offres flash)** : champs `starts_at`/`ends_at` sur les promotions crédits + filtre fenêtre dans `_matches` (credit_promotions.py). UI : champs dates "Du/Au" dans le formulaire + badge ⏱ fenêtre sur les lignes. Testé : promo future → 0%, fenêtre active → 50%, expirée → 0%.
 
+### 2026-07-18 — Config Prod Connecteurs + Spec CREDI'SCOP écosystème (VALIDÉS testing_agent iteration_38 : 100%)
+- ✅ **Blockers déploiement corrigés** (trouvés par deployment_agent) : (1) .gitignore bloquait `.env`/`.env.*`/`*.env` → lignes supprimées, (2) 5 mots de passe avec `!` non quotés dans backend/.env (FINANCE_API, IABOIS, OSCOPGE, COPPAM, CRMESS) → quotés. Re-scan deployment_agent : **PASS, prêt à publier**.
+- ✅ **Pont OSCOP vérifié fonctionnel** après corrections : 6/6 connecteurs OK (oscop-ged, oscop-finance, oscop-ia-bois, oscop-ge, coppam, crm-ess) avec les identifiants fournis par l'utilisateur (déjà en .env, tous MATCH). Testing_agent iteration_38 : 100% (santé connecteurs, auth 3 rôles, régressions publiques).
+- ✅ **Spécification CREDI'SCOP écosystème** : document prêt à copier-coller dans chaque app externe → `/app/memory/CREDISCOP_RENOMMAGE_ECOSYSTEME.md` (libellés, signature, définition, mention juridique, règles techniques — ne pas toucher clés/routes/collections).
+- ℹ️ Identifiants apps externes fournis : IA Bois (admin@oscop.local), GE (admin@oscopge.fr), COPPAM (admin@coppam.local), CRM ESS (admin@objectifscop.com) — tous vérifiés OK via health-status.
+
 ## 4. Backlog
 
 ### P1 — Internationalisation
