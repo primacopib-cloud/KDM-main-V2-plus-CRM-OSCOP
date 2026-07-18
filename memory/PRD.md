@@ -571,6 +571,10 @@ Exigences produit étendues :
 - ✅ **Widget "Mes spots vidéo"** (`components/vendor/MySpotsWidget.jsx`, monté dans l'onglet Dashboard de VendorSpacePage) : 3 mini-stats (Spots créés / Vues cumulées / Meilleur spot 🏆) + liste des spots avec drapeaux langues et vues. Screenshot validé (3 spots, 1 vue, best = Rhum blanc).
 - ✅ **Variante auto export** : `ProductVideoModal` (catalogue acheteur) sélectionne la variante correspondant à `i18n.language` (fallback FR → première dispo). Testé : interface `?lang=en` → vidéo EN chargée par défaut (chip EN active).
 
+### 2026-07-18 — Spot Espagnol + Top des spots /kdmarche (VALIDÉS)
+- ✅ **Trio export complet** : variante 🇪🇸 générée en réel (job `62419e17`, image-to-video, voix off espagnole) → le Rhum blanc dispose des 3 variantes `video_urls: {fr, en, es}`, exposées au catalogue B2B et servies localement (200 video/mp4). Solde vendeur : 52.
+- ✅ **Top des spots** : classement 🥇🥈🥉 des spots les plus vus (filtre views > 0, calcul client depuis `/api/public/kdmarche-videos`) affiché au-dessus de la galerie `/kdmarche` (`TopSpots` dans `VideoShowcase.jsx`, testid `kdm-top-spots`). Screenshot validé.
+
 ## 4. Backlog
 
 ### P1 — Internationalisation
