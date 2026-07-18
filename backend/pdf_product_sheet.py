@@ -1,6 +1,9 @@
 """Génération PDF de la fiche produit vendeur (téléchargeable depuis l'Espace Vendeur)."""
+import os
 from io import BytesIO
 
+from reportlab.graphics.barcode.qr import QrCodeWidget
+from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -9,6 +12,32 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 GOLD = colors.HexColor("#B8860B")
 DARK = colors.HexColor("#1F2A3A")
+
+
+def _video_section(video_url: str, styles) -> list:
+    """Bloc 'Spot vidéo' : lien cliquable + QR code vers la vidéo."""
+    base = os.environ.get("FRONTEND_URL", "")
+    abs_url = video_url if video_url.startswith("http") else f"{base}{video_url}"
+    qr = QrCodeWidget(abs_url, barWidth=32 * mm, barHeight=32 * mm)
+    drawing = Drawing(32 * mm, 32 * mm)
+    drawing.add(qr)
+    link = Paragraph(
+        f'Regardez le spot publicitaire de ce produit : '
+        f'<link href="{abs_url}" color="#5B2E8C"><u>{abs_url}</u></link><br/>'
+        f'<i>Ou scannez le QR code ci-contre avec votre téléphone.</i>',
+        styles["Normal"],
+    )
+    table = Table([[link, drawing]], colWidths=[125 * mm, 40 * mm])
+    table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("BOX", (0, 0), (-1, -1), 0.4, colors.HexColor("#E5DCC8")),
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FBF6EE")),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    title = ParagraphStyle("vs", parent=styles["Heading3"], textColor=GOLD)
+    return [Spacer(1, 5 * mm), Paragraph("🎬 SPOT VIDÉO", title), table]
 
 
 def generate_product_sheet_pdf(product: dict) -> bytes:
@@ -57,5 +86,7 @@ def generate_product_sheet_pdf(product: dict) -> bytes:
         Spacer(1, 5 * mm),
         table,
     ]
+    if product.get("video_url"):
+        elements.extend(_video_section(product["video_url"], styles))
     doc.build(elements)
     return buf.getvalue()

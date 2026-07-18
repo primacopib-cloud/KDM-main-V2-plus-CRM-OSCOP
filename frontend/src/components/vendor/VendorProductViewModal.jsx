@@ -1,8 +1,9 @@
-import { Download, X, Package } from 'lucide-react';
+import { Download, X, Package, Clapperboard } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Badge } from '../ui/badge';
 import { getStatusBadge } from './vendorConstants';
+import { VideoShareButtons } from './VideoShareButtons';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -44,6 +45,21 @@ export const VendorProductViewModal = ({ product, vendorId, onClose }) => {
         )}
 
         <p className="text-sm text-gray-600">{product.description}</p>
+
+        {product.video_url && (
+          <div data-testid="view-product-video-section">
+            <p className="text-xs font-semibold text-purple-700 mb-1.5 flex items-center gap-1.5">
+              <Clapperboard size={13} /> Spot vidéo du produit
+            </p>
+            <video
+              src={product.video_url.startsWith('http') ? product.video_url : `${API_URL}${product.video_url}`}
+              controls playsInline preload="metadata"
+              className="w-full rounded-xl bg-black aspect-video"
+              data-testid="view-product-video-player"
+            />
+            <VideoShareButtons videoUrl={product.video_url} productName={product.name} />
+          </div>
+        )}
 
         <div>
           <Row label="SKU" value={product.sku} />

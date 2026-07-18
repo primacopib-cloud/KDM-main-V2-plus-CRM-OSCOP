@@ -138,6 +138,40 @@ async def _finalize_video_job(job_id: str, video_url: str) -> None:
     if job:
         await db.vendor_products.update_one({"id": job["product_id"]}, {"$set": {"video_url": local_url}})
         await db.products.update_one({"id": job["product_id"]}, {"$set": {"video_url": local_url}})
+    try:
+        await _send_video_ready_email(job_id)
+    except Exception:
+        logger.exception("Email 'spot prêt' échoué pour le job %s", job_id)
+
+
+async def _send_video_ready_email(job_id: str) -> None:
+    """Email Brevo au vendeur : son spot vidéo est prêt, avec lien direct."""
+    from brevo_service import is_brevo_configured, send_email, _wrap_html
+
+    if not is_brevo_configured():
+        return
+    job = await db.ai_video_jobs.find_one({"id": job_id}, {"_id": 0})
+    vendor = await db.vendors.find_one({"id": job["vendor_id"]}, {"_id": 0, "email": 1, "contact_name": 1})
+    if not vendor or not vendor.get("email"):
+        return
+    product = await db.vendor_products.find_one({"id": job["product_id"]}, {"_id": 0, "name": 1}) or {}
+    base = os.environ.get("FRONTEND_URL", "")
+    video_link = job["video_url"] if job["video_url"].startswith("http") else f"{base}{job['video_url']}"
+    body = (
+        f"<p>Bonjour {vendor.get('contact_name', '')},</p>"
+        f"<p>🎬 Votre spot vidéo pour <strong>{product.get('name', 'votre produit')}</strong> est prêt !</p>"
+        f"<p><a href='{video_link}' style='display:inline-block;padding:10px 22px;background:#5B2E8C;"
+        f"color:#ffffff;border-radius:8px;text-decoration:none;font-weight:bold'>▶ Regarder le spot</a></p>"
+        f"<p>Il est déjà visible sur votre fiche produit du catalogue B2B et dans votre "
+        f"<a href='{base}/espace-vendeur'>Espace Vendeur</a>, où vous pouvez le télécharger "
+        "et le partager sur vos réseaux (WhatsApp, Facebook…).</p>"
+    )
+    await send_email(
+        to_email=vendor["email"], to_name=vendor.get("contact_name"),
+        subject=f"🎬 Votre spot vidéo « {product.get('name', 'Produit')} » est prêt — KDMARCHÉ",
+        html_content=_wrap_html("Votre spot vidéo est prêt", body),
+        tags=["video-ready"],
+    )
 
 
 async def _fail_video_job(job_id: str, error: str) -> None:

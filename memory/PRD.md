@@ -554,6 +554,11 @@ Exigences produit étendues :
 - ✅ Testing_agent iteration_36 : 7/7 flows frontend + 2/2 curl backend PASS (actions vendeur, modal partage, badge catalogue acheteur, galerie /kdmarche, add-to-cart régression).
 - ℹ️ Note : la lecture vidéo en Chromium headless de test échoue (codecs H.264 absents) — FAUX POSITIF, les fichiers sont H.264/AAC standard (lisibles sur tous les vrais navigateurs), servis en 200 video/mp4.
 
+### 2026-07-18 — Spot sur vitrine produit + Notification "spot prêt" (VALIDÉS)
+- ✅ **Modal "Voir" vendeur** (`VendorProductViewModal.jsx`) : section "Spot vidéo du produit" avec lecteur + boutons de partage (testid `view-product-video-section`). Screenshot validé.
+- ✅ **Fiche PDF produit** (`pdf_product_sheet.py`) : bloc "🎬 SPOT VIDÉO" avec lien cliquable + **QR code** (reportlab QrCodeWidget) vers la vidéo — uniquement si `video_url`. Testé curl : PDF 7,5 Ko, /URI + lien présents.
+- ✅ **Email Brevo "spot prêt"** (`routes_vendor_ai._send_video_ready_email`, appelé par `_finalize_video_job`) : bouton "▶ Regarder le spot" + lien Espace Vendeur, tag `video-ready`. Testé réel : Brevo 201 Created.
+
 ## 4. Backlog
 
 ### P1 — Internationalisation
