@@ -131,8 +131,44 @@ async def credit_pack_status(session_id: str, user: dict = Depends(get_current_u
                 "balance_after": int((vendor or {}).get("credits") or 0),
                 "at": datetime.utcnow().isoformat(),
             })
+            try:
+                await _send_invoice_email(tx, pack_credits, bonus, credited)
+            except Exception as exc:
+                import logging
+                logging.getLogger(__name__).error("Invoice email failed: %s", exc)
     tx_after = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0, "payment_status": 1, "applied": 1})
     return {"payment_status": tx_after["payment_status"], "applied": tx_after.get("applied", False), "credited": credited}
+
+
+async def _send_invoice_email(tx: dict, pack_credits: int, bonus: int, credited: int) -> None:
+    """Facture PDF envoyée par email au vendeur après paiement d'un pack."""
+    import base64
+    from brevo_service import is_brevo_configured, send_email, _wrap_html
+    from pdf_credit_invoice import generate_credit_invoice_pdf
+
+    if not is_brevo_configured():
+        return
+    vendor = await db.vendors.find_one({"id": tx["vendor_id"]}, {"_id": 0}) or {}
+    if not vendor.get("email"):
+        return
+    pack = await db.credit_packs.find_one({"id": tx["pack_id"]}, {"_id": 0}) or \
+        {"name": tx["pack_id"], "credits": pack_credits}
+    amount_eur = tx["amount_cents"] / 100
+    pdf = generate_credit_invoice_pdf(vendor, pack, credited, bonus, amount_eur, tx["session_id"])
+    body = (
+        f"<p>Bonjour {vendor.get('contact_name', '')},</p>"
+        f"<p>Merci pour votre achat ! <strong>{credited} crédits</strong> "
+        + (f"(dont {bonus} offerts) " if bonus else "")
+        + f"ont été ajoutés à votre solde pour <strong>{amount_eur:.2f} €</strong>.</p>"
+        "<p>Vous trouverez votre facture en pièce jointe.</p>"
+    )
+    await send_email(
+        to_email=vendor["email"], to_name=vendor.get("contact_name"),
+        subject=f"Votre facture KDMARCHÉ — {pack['name']} ({credited} crédits)",
+        html_content=_wrap_html("Facture — Pack de crédits", body),
+        tags=["credit-invoice"],
+        attachments=[{"content": base64.b64encode(pdf).decode(), "name": f"facture-credits-{tx['session_id'][-8:]}.pdf"}],
+    )
 
 
 async def _admin(user_id: str = Depends(get_current_user_id)) -> dict:

@@ -92,7 +92,9 @@ async def send_email(
     html_content: str,
     text_content: Optional[str] = None,
     tags: Optional[list] = None,
+    attachments: Optional[list] = None,
 ) -> Optional[Dict[str, Any]]:
+    """attachments: [{"content": base64_str, "name": "facture.pdf"}]"""
     cfg = _settings()
     payload: Dict[str, Any] = {
         "sender": {"email": cfg["sender_email"], "name": cfg["sender_name"]},
@@ -104,6 +106,8 @@ async def send_email(
         payload["textContent"] = text_content
     if tags:
         payload["tags"] = tags
+    if attachments:
+        payload["attachment"] = attachments
     return await _post("/smtp/email", payload)
 
 

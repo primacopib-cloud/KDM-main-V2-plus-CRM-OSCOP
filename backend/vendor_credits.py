@@ -71,7 +71,41 @@ async def consume_credits(vendor_id: str, action: str, detail: str = "",
         "balance_after": balance - cost,
         "at": datetime.now(timezone.utc).isoformat(),
     })
+    if balance >= LOW_CREDIT_THRESHOLD > balance - cost:
+        import asyncio
+        asyncio.get_event_loop().create_task(_send_low_credit_alert(vendor_id, balance - cost))
     return cost
+
+
+LOW_CREDIT_THRESHOLD = 10
+
+
+async def _send_low_credit_alert(vendor_id: str, balance: int) -> None:
+    """Email au vendeur quand son solde passe sous le seuil (envoyé une fois par franchissement)."""
+    try:
+        from brevo_service import is_brevo_configured, send_email, _wrap_html
+        if not is_brevo_configured():
+            return
+        vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "email": 1, "contact_name": 1}) or {}
+        if not vendor.get("email"):
+            return
+        import os
+        link = os.environ.get("FRONTEND_URL", "") + "/espace-vendeur"
+        body = (
+            f"<p>Bonjour {vendor.get('contact_name', '')},</p>"
+            f"<p>Votre solde de crédits KDMARCHÉ est descendu à <strong>{balance} crédits</strong>.</p>"
+            "<p>Pour continuer à créer des fiches produits, téléverser des photos et utiliser le Studio IA, "
+            f"rechargez votre solde depuis votre <a href='{link}'>Espace Vendeur</a> (badge crédits en haut à droite).</p>"
+        )
+        await send_email(
+            to_email=vendor["email"], to_name=vendor.get("contact_name"),
+            subject=f"⚠️ Solde de crédits faible ({balance} restants) — KDMARCHÉ",
+            html_content=_wrap_html("Solde de crédits faible", body),
+            tags=["low-credits"],
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("Low credit alert failed")
 
 
 async def refund_credits(vendor_id: str, action: str, detail: str = "") -> None:
