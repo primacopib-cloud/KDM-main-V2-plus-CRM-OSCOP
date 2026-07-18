@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Mail, Loader2, Send, History, RotateCcw, Search } from 'lucide-react';
+import { Mail, Loader2, Send, History, RotateCcw, Search, Download, Archive } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
@@ -96,6 +96,53 @@ export const EmailPreviewsTab = () => {
   const [testEmail, setTestEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [totalSent, setTotalSent] = useState(0);
+  const [exporting, setExporting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const r = await fetch(`${API}/admin/email-previews/export/csv`, { headers: getAuthHeaders(), credentials: 'include' });
+      if (!r.ok) throw new Error('Export impossible');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `journal-emails-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Journal exporté en CSV');
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const archiveGed = async () => {
+    setArchiving(true);
+    try {
+      const r = await fetch(`${API}/admin/email-previews/archive-ged`, {
+        method: 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ force: true }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Archivage impossible');
+      const msg = {
+        SUCCESS: `Archivé dans la GED ESS (${d.rows} envois — ${d.month})`,
+        EMPTY: `Aucun envoi à archiver pour ${d.month}`,
+        GED_DISABLED: 'GED ESS non configurée',
+        ERROR: `Erreur GED : ${d.error || ''}`,
+      }[d.status] || d.status;
+      (d.status === 'SUCCESS' ? toast.success : toast.warning)(msg);
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setArchiving(false);
+    }
+  };
 
   useEffect(() => {
     fetch(`${API}/admin/email-previews`, { headers: getAuthHeaders(), credentials: 'include' })
@@ -141,9 +188,34 @@ export const EmailPreviewsTab = () => {
         <h3 className="flex items-center gap-2 text-sm font-semibold mb-1 text-[#D9B35A]">
           <Mail className="w-4 h-4" /> Modèles d'emails ({templates.length})
         </h3>
-        <p className="text-[11px] text-white/45 mb-3" data-testid="email-total-sent">
+        <p className="text-[11px] text-white/45 mb-2" data-testid="email-total-sent">
           {totalSent.toLocaleString('fr-FR')} envoi{totalSent > 1 ? 's' : ''} réel{totalSent > 1 ? 's' : ''} journalisé{totalSent > 1 ? 's' : ''}
         </p>
+        <div className="flex gap-2 mb-3">
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={exporting}
+            data-testid="export-csv-btn"
+            className="flex-1 h-8 inline-flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-colors hover:brightness-110 disabled:opacity-50"
+            style={{ background: 'rgba(217,179,90,0.16)', border: '1px solid rgba(217,179,90,0.45)', color: '#E9CF8E' }}
+          >
+            {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            Exporter CSV
+          </button>
+          <button
+            type="button"
+            onClick={archiveGed}
+            disabled={archiving}
+            data-testid="archive-ged-btn"
+            title="Archiver le mois courant dans la GED ESS (automatique chaque 1er du mois)"
+            className="flex-1 h-8 inline-flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-colors hover:brightness-110 disabled:opacity-50"
+            style={{ background: 'rgba(217,179,90,0.16)', border: '1px solid rgba(217,179,90,0.45)', color: '#E9CF8E' }}
+          >
+            {archiving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Archive className="w-3.5 h-3.5" />}
+            Archiver GED
+          </button>
+        </div>
         {categories.map((cat) => (
           <div key={cat} className="mb-3">
             <p className="text-[11px] uppercase tracking-wider text-white/50 mb-1.5">{cat}</p>

@@ -1023,3 +1023,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 ## 2026-07-18 — Recherche par destinataire dans le journal des emails
 - GET /{template_id}/logs?q= : filtre regex insensible à la casse sur to_email (échappé). Testé curl (3 résultats / 0 résultat).
 - UI : champ de recherche avec icône au-dessus du journal, debounce 300ms + AbortController, message "Aucun envoi trouvé pour « x »". Fix : import Search (lucide) manquant avait causé un runtime error, corrigé et validé E2E.
+
+## 2026-07-18 — Export CSV du journal + Archivage automatisé GED ESS
+- GET /api/admin/email-previews/export/csv (?month=YYYY-MM optionnel) : CSV complet UTF-8 BOM ; colonnes Date/Destinataire/Objet/Modèle/Tags. Validé curl + bouton UI "Exporter CSV" (toast).
+- archive_email_logs_to_ged(db, month, force) : CSV mensuel poussé vers la GED ESS (create_document, scope KDMARCHE, family CONFORMITE, csv_base64 en business_metadata), idempotent par mois (email_archive_runs). Endpoint manuel POST /archive-ged (admin, 400 mois invalide) + bouton UI "Archiver GED".
+- Scheduler : chaque 1er du mois, archive automatique du mois précédent (retente tant que non SUCCESS).
+- ⚠️ BLOQUANT EXTERNE : GED_ESS_API_URL=http://localhost:8001 (placeholder → 404 "Not Found", 0 sync GED historique). L'archivage fonctionnera dès que l'URL + token réels de la GEDESS seront fournis (fait partie des 2 applications restantes à connecter).

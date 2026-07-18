@@ -94,6 +94,14 @@ async def _scheduler_loop():
                 await send_monthly_guarantees_report()
         except Exception as exc:
             logger.exception("Scheduler guarantees report iteration crashed: %s", exc)
+        try:
+            if datetime.utcnow().day == 1:
+                from routes_email_previews import archive_email_logs_to_ged
+                prev_month = (datetime.utcnow().replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+                result = await archive_email_logs_to_ged(_db, prev_month)
+                logger.info("Scheduler email GED archive (%s): %s", prev_month, result.get("status"))
+        except Exception as exc:
+            logger.exception("Scheduler email GED archive crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

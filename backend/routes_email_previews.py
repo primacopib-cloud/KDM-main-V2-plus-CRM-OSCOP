@@ -1,7 +1,12 @@
 """Galerie d'aperçu des modèles d'emails de la plateforme (Super Admin)."""
+import base64
+import csv
+import io
 import re
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import Response
 
 from admin_plans_common import get_current_admin_from_request
 from brevo_service import _wrap_html
@@ -171,6 +176,98 @@ async def resend_email_log(request: Request, log_id: str):
     if not result:
         raise HTTPException(status_code=502, detail="Échec de l'envoi Brevo")
     return {"sent": True, "to": log["to_email"], "message_id": result.get("messageId")}
+
+
+def _template_name_for_tags(tags: list) -> str:
+    for tpl_id, tpl_tags in _TAG_MAP.items():
+        if any(t in tpl_tags for t in tags):
+            return next((t["name"] for t in _TEMPLATES if t["id"] == tpl_id), tpl_id)
+    return tags[0] if tags else ""
+
+
+async def _build_logs_csv(month: str | None = None) -> tuple[str, int]:
+    """CSV complet du journal (ou d'un mois YYYY-MM)."""
+    query = {"sent_at": {"$regex": f"^{re.escape(month)}"}} if month else {}
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=";")
+    writer.writerow(["Date d'envoi", "Destinataire", "Objet", "Modèle", "Tags"])
+    rows = 0
+    async for log in db.email_logs.find(query, {"_id": 0, "html": 0}).sort("sent_at", -1):
+        writer.writerow([
+            log.get("sent_at", ""), log.get("to_email", ""), log.get("subject", ""),
+            _template_name_for_tags(log.get("tags", [])), ",".join(log.get("tags", [])),
+        ])
+        rows += 1
+    return buf.getvalue(), rows
+
+
+async def archive_email_logs_to_ged(database, month: str, force: bool = False) -> dict:
+    """Archive le journal du mois dans la GED ESS (idempotent par mois)."""
+    global db
+    if db is None:
+        db = database
+    existing = await db.email_archive_runs.find_one({"month": month, "status": "SUCCESS"})
+    if existing and not force:
+        return {"status": "ALREADY_ARCHIVED", "month": month}
+    csv_content, rows = await _build_logs_csv(month)
+    if rows == 0:
+        return {"status": "EMPTY", "month": month, "rows": 0}
+    from ged_external_client import GedExternalClient, build_ged_business_metadata
+    client = GedExternalClient()
+    if not client.config.enabled:
+        return {"status": "GED_DISABLED", "month": month, "rows": rows}
+    payload = {
+        "title": f"Journal des emails transactionnels — {month}",
+        "source": "kdmarche",
+        "entity_id": f"EMAIL-JOURNAL-{month}",
+        "scope_id": "KDMARCHE",
+        "family": "CONFORMITE",
+        "confidentiality": "INTERNE",
+        "tags": "emails,journal,conformite,archive-mensuelle",
+        "description": f"Archive mensuelle automatisée du journal des emails ({rows} envois) — Communityplace.",
+        "business_metadata": build_ged_business_metadata(
+            source="kdmarche", source_id=f"EMAIL-JOURNAL-{month}",
+            payload={"month": month, "rows": rows, "csv_base64": base64.b64encode(csv_content.encode("utf-8-sig")).decode()},
+        ),
+    }
+    run = {"month": month, "rows": rows, "archived_at": datetime.now(timezone.utc).isoformat()}
+    try:
+        response = await client.create_document(payload)
+        run.update({"status": "SUCCESS", "ged_response": {k: response.get(k) for k in ("id", "reference", "status") if k in response}})
+    except Exception as exc:
+        run.update({"status": "ERROR", "error": str(exc)})
+    await db.email_archive_runs.update_one({"month": month}, {"$set": run}, upsert=True)
+    return run
+
+
+@email_previews_router.get("/export/csv")
+async def export_logs_csv(request: Request, month: str = ""):
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    csv_content, _rows = await _build_logs_csv(month.strip() or None)
+    suffix = month.strip() or datetime.now(timezone.utc).strftime("%Y%m%d")
+    return Response(
+        content=csv_content.encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="journal-emails-{suffix}.csv"'},
+    )
+
+
+@email_previews_router.post("/archive-ged")
+async def archive_to_ged(request: Request):
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    month = (body.get("month") or datetime.now(timezone.utc).strftime("%Y-%m")).strip()
+    if not re.fullmatch(r"\d{4}-\d{2}", month):
+        raise HTTPException(status_code=400, detail="Format de mois invalide (attendu YYYY-MM)")
+    return await archive_email_logs_to_ged(db, month, force=bool(body.get("force")))
 
 
 @email_previews_router.post("/{template_id}/send-test")
