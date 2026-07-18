@@ -12,6 +12,8 @@ import { CreditAdjustModal } from '../components/admin/plans/CreditAdjustModal';
 import { PlansTab } from '../components/admin/plans/PlansTab';
 import { OptionsTab } from '../components/admin/plans/OptionsTab';
 import { CreditsTab } from '../components/admin/plans/CreditsTab';
+import { WalletPacksTab } from '../components/admin/plans/WalletPacksTab';
+import { WalletPackFormModal } from '../components/admin/plans/WalletPackFormModal';
 
 const AdminPlansPage = () => {
   const navigate = useNavigate();
@@ -34,6 +36,11 @@ const AdminPlansPage = () => {
   const [creditSearch, setCreditSearch] = useState('');
   const [creditModalOpen, setCreditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  // Wallet packs
+  const [walletPacks, setWalletPacks] = useState([]);
+  const [packModalOpen, setPackModalOpen] = useState(false);
+  const [editingPack, setEditingPack] = useState(null);
 
   // Guard
   useEffect(() => {
@@ -63,16 +70,18 @@ const AdminPlansPage = () => {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [s, p, o, u] = await Promise.all([
+      const [s, p, o, u, wp] = await Promise.all([
         adminPlansAPI.getStats(),
         adminPlansAPI.listPlans(true),
         adminPlansAPI.listOptions(true),
         adminPlansAPI.listUsersWithCredits('', 1, 20),
+        adminPlansAPI.listWalletPacks().catch(() => ({ packs: [] })),
       ]);
       setStats(s);
       setPlans(p);
       setOptions(o);
       setUsers(u);
+      setWalletPacks(wp.packs || []);
     } catch (e) {
       toast.error(e.message || 'Erreur de chargement');
     } finally {
@@ -145,6 +154,41 @@ const AdminPlansPage = () => {
       await adminPlansAPI.deleteOption(opt.id);
       toast.success(i18n.t('adm.option_supprimee'));
       await loadAll();
+    } catch (e) {
+      toast.error(e.message || 'Erreur');
+    }
+  };
+
+  // --- Wallet pack handlers ---
+  const reloadWalletPacks = async () => {
+    const wp = await adminPlansAPI.listWalletPacks().catch(() => ({ packs: [] }));
+    setWalletPacks(wp.packs || []);
+  };
+  const handleSaveWalletPack = async (data) => {
+    if (editingPack) {
+      await adminPlansAPI.updateWalletPack(editingPack.id, data);
+      toast.success('Pack mis à jour');
+    } else {
+      await adminPlansAPI.createWalletPack(data);
+      toast.success('Pack créé');
+    }
+    await reloadWalletPacks();
+  };
+  const handleDeleteWalletPack = async (pack) => {
+    if (!window.confirm(`Supprimer le pack "${pack.name}" ?`)) return;
+    try {
+      await adminPlansAPI.deleteWalletPack(pack.id);
+      toast.success('Pack supprimé');
+      await reloadWalletPacks();
+    } catch (e) {
+      toast.error(e.message || 'Erreur');
+    }
+  };
+  const handleTogglePackActive = async (pack) => {
+    try {
+      await adminPlansAPI.updateWalletPack(pack.id, { active: !pack.active });
+      toast.success(pack.active ? 'Pack masqué (non achetable)' : 'Pack visible (achetable)');
+      await reloadWalletPacks();
     } catch (e) {
       toast.error(e.message || 'Erreur');
     }
@@ -241,6 +285,7 @@ const AdminPlansPage = () => {
           {[
             { id: 'plans', label: i18n.t('adm.plans_d_abonnement'), icon: Layers },
             { id: 'options', label: i18n.t('adm.options_addons'), icon: Settings2 },
+            { id: 'packs', label: 'Packs de crédits', icon: Coins },
             { id: 'credits', label: i18n.t('adm.credits_utilisateurs'), icon: Coins },
           ].map((t) => (
             <button
@@ -277,6 +322,16 @@ const AdminPlansPage = () => {
           />
         )}
 
+        {activeTab === 'packs' && (
+          <WalletPacksTab
+            packs={walletPacks}
+            onCreate={() => { setEditingPack(null); setPackModalOpen(true); }}
+            onEdit={(p) => { setEditingPack(p); setPackModalOpen(true); }}
+            onDelete={handleDeleteWalletPack}
+            onToggleActive={handleTogglePackActive}
+          />
+        )}
+
         {activeTab === 'credits' && (
           <CreditsTab
             users={users}
@@ -309,6 +364,13 @@ const AdminPlansPage = () => {
         onClose={() => setCreditModalOpen(false)}
         onSave={handleSaveAdjust}
         user={selectedUser}
+      />
+      <WalletPackFormModal
+        open={packModalOpen}
+        onClose={() => setPackModalOpen(false)}
+        onSave={handleSaveWalletPack}
+        initialData={editingPack}
+        isEdit={!!editingPack}
       />
     </div>
   );

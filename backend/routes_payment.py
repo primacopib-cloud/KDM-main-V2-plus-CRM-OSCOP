@@ -48,6 +48,47 @@ def _wallet_stripe_key() -> str:
         raise HTTPException(status_code=500, detail="Stripe non configuré")
     return api_key
 
+
+async def _send_wallet_receipt_email(user: dict, transaction: dict) -> None:
+    """Reçu PDF envoyé par email Brevo à l'acheteur après achat de crédits wallet."""
+    try:
+        import base64
+        from brevo_service import is_brevo_configured, send_email, _wrap_html
+        from pdf_credit_invoice import generate_credit_invoice_pdf
+
+        if not is_brevo_configured() or not user.get("email"):
+            return
+        pack = await db.wallet_credit_packs.find_one({"id": transaction.get("package_id")}, {"_id": 0}) or \
+            {"name": transaction.get("package_id", "Pack de crédits"), "credits": transaction["credits"]}
+        client = {
+            "company_name": user.get("company_name") or user.get("contact_name") or user["email"],
+            "contact_name": user.get("contact_name") or "",
+            "email": user["email"],
+        }
+        pdf = generate_credit_invoice_pdf(
+            client, pack, transaction["credits"], 0,
+            float(transaction["amount"]), transaction["session_id"],
+        )
+        body = (
+            f"<p>Bonjour {client['contact_name']},</p>"
+            f"<p>Merci pour votre achat ! <strong>{transaction['credits']} crédits</strong> "
+            f"ont été ajoutés à votre solde CREDI&rsquo;SCOP pour <strong>{float(transaction['amount']):.2f} €</strong>.</p>"
+            "<p>Vous trouverez votre reçu en pièce jointe.</p>"
+        )
+        await send_email(
+            to_email=user["email"], to_name=client["contact_name"] or None,
+            subject=f"Votre reçu KDMARCHÉ — {pack['name']} ({transaction['credits']} crédits)",
+            html_content=_wrap_html("Reçu — Achat de crédits", body),
+            tags=["wallet-credit-receipt"],
+            attachments=[{
+                "content": base64.b64encode(pdf).decode(),
+                "name": f"recu-credits-{transaction['session_id'][-8:]}.pdf",
+            }],
+        )
+        logger.info(f"Wallet receipt email sent to {user['email']} (session {transaction['session_id']})")
+    except Exception as exc:
+        logger.error(f"Wallet receipt email failed: {exc}")
+
 # ============== ENDPOINTS ==============
 
 @payment_router.get("/packages")
@@ -69,12 +110,13 @@ async def create_checkout_session(
     # Get current user
     user = await get_current_user_from_request(request)
     
-    # Validate package
-    package = CREDIT_PACKAGES.get(checkout_data.package_id)
+    # Validate package (packs gérés par le Super Admin en base)
+    from routes_wallet_packs_admin import get_wallet_pack
+    package = await get_wallet_pack(checkout_data.package_id)
     if not package:
         raise HTTPException(
             status_code=400, 
-            detail=f"Package invalide. Packages disponibles: {list(CREDIT_PACKAGES.keys())}"
+            detail="Package invalide ou masqué"
         )
     
     # Build URLs from frontend origin
@@ -190,6 +232,7 @@ async def get_payment_status(
                 credited = True
                 
                 logger.info(f"Credited {credits_to_add} to user {user['id']} for session {session_id}")
+                await _send_wallet_receipt_email(user, transaction)
                 
         elif stripe_session_status == "expired":
             new_status = PaymentStatus.EXPIRED.value
@@ -276,6 +319,9 @@ async def handle_stripe_webhook(request: Request):
                 )
                 
                 logger.info(f"Webhook: Credited {credits_to_add} to user {user_id}")
+                buyer = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+                if buyer:
+                    await _send_wallet_receipt_email(buyer, transaction)
         
         return {"received": True}
         

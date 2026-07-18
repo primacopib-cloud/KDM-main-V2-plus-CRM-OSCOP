@@ -956,3 +956,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Fix routes_payment.py : SDK stripe officiel (api.stripe.com) avec STRIPE_API_KEY (clé test O'SCOP fournie par l'utilisateur, déjà en .env). Checkout Session hosted + status polling + webhook signature (secrets OSCOP).
 - La clé publique n'est pas nécessaire (Stripe Checkout hébergé = redirection, pas d'Elements côté client).
 - Validé E2E navigateur : clic "Payer par carte" → checkout.stripe.com (cs_test_...) → paiement carte 4242 → retour wallet → +100 crédits (250→350).
+
+## 2026-07-18 — Gestion Super Admin des packs de crédits wallet + Reçu PDF email
+- Nouveau routes_wallet_packs_admin.py : CRUD /api/admin/wallet-packs (création, modification, suppression, masquage via `active`) — collection wallet_credit_packs seedée depuis CREDIT_PACKAGES. /api/payments/packages + checkout lisent désormais la base (pack masqué = non listé + achat refusé). Guard admin (403 non-admin validé).
+- Onglet "Packs de crédits" dans /admin/plans (WalletPacksTab + WalletPackFormModal) : table avec compteur d'achats, toggle œil masquer/afficher, modal create/edit. Validé UI (création Pack COOPER 50cr/25€, masquage, exclusion du dialog wallet).
+- Reçu PDF Brevo à l'acheteur après achat crédits wallet (_send_wallet_receipt_email dans routes_payment.py, réutilise pdf_credit_invoice) — appelé aux 2 chemins de crédit (polling + webhook), idempotent. Validé E2E : paiement test 4242 → "Wallet receipt email sent" + Brevo 201, solde 450→550.

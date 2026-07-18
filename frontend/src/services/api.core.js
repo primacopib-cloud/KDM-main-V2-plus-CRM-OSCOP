@@ -406,4 +406,12 @@ export const adminPlansAPI = {
     }),
 
   getStats: () => apiCall('/admin/plans/stats'),
+
+  listWalletPacks: () => apiCall('/admin/wallet-packs'),
+  createWalletPack: (data) =>
+    apiCall('/admin/wallet-packs', { method: 'POST', body: JSON.stringify(data) }),
+  updateWalletPack: (packId, data) =>
+    apiCall(`/admin/wallet-packs/${packId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteWalletPack: (packId) =>
+    apiCall(`/admin/wallet-packs/${packId}`, { method: 'DELETE' }),
 };

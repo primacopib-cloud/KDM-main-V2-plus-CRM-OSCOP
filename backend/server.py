@@ -239,9 +239,12 @@ app.include_router(shopping_lists_items_router, prefix="/api")
 # Import and include Super Admin Plans & Credits Routes
 from routes_admin_plans import admin_plans_router, set_admin_plans_database
 from routes_admin_plans_credits import admin_plans_credits_router
+from routes_wallet_packs_admin import wallet_packs_router, set_wallet_packs_database
 set_admin_plans_database(db)
+set_wallet_packs_database(db)
 app.include_router(admin_plans_router, prefix="/api")
 app.include_router(admin_plans_credits_router, prefix="/api")
+app.include_router(wallet_packs_router)
 
 
 # Import and include LOLODRIVE by O'SCOP routes (PASS Vie Chère, UC, Lolo Points, Events, POS)
