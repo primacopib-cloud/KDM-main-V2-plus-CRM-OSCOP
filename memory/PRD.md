@@ -1000,3 +1000,7 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Variante logo /logos/kdmarche-pro-white.png : "KD MARCHÉ" en BLANC (Pro or) pour usage sur fonds violets. Image sociale social-share.png refaite avec cette variante posée directement sur le violet + favicons regénérés (fond violet, logo blanc).
 - routes_email_previews.py : GET /api/admin/email-previews (admin only, 403 sinon) — 14 modèles factices représentatifs rendus via _wrap_html (Paiements, Panier & Commandes, Vendeurs, Support, Comptes, Administration).
 - Onglet "Emails" (14e) dans le Super Admin : EmailPreviewsTab.jsx — liste par catégorie + aperçu iframe srcDoc avec objet. Validé UI (14 modèles, aperçu LOGI'SCOP avec logo en-tête).
+
+## 2026-07-18 — Bouton « M'envoyer un test » dans la galerie emails
+- POST /api/admin/email-previews/{id}/send-test : envoie le modèle réel via Brevo, sujet préfixé [TEST], destinataire = email saisi (défaut : email de l'admin connecté). Validations : 403 non-admin, 404 modèle inconnu, 400 email invalide (tous testés).
+- UI : champ email prérempli + bouton or dans l'en-tête de l'aperçu, toast de confirmation. Testé E2E navigateur (envoi réel messageId Brevo).

@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Mail, Loader2 } from 'lucide-react';
+import { Mail, Loader2, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
 export const EmailPreviewsTab = () => {
   const [templates, setTemplates] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [testEmail, setTestEmail] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/admin/email-previews`, { headers: getAuthHeaders(), credentials: 'include' })
@@ -13,9 +16,30 @@ export const EmailPreviewsTab = () => {
       .then((d) => {
         setTemplates(d.templates || []);
         setSelected((d.templates || [])[0] || null);
+        setTestEmail(d.admin_email || '');
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const sendTest = async () => {
+    if (!selected) return;
+    setSending(true);
+    try {
+      const r = await fetch(`${API}/admin/email-previews/${selected.id}/send-test`, {
+        method: 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: testEmail }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Envoi impossible');
+      toast.success(`Email test envoyé à ${d.to}`);
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setSending(false);
+    }
+  };
 
   if (loading) {
     return <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-[#D9B35A]" /></div>;
@@ -56,9 +80,32 @@ export const EmailPreviewsTab = () => {
       <div className="glass-panel-soft rounded-[18px] p-4">
         {selected ? (
           <>
-            <div className="mb-3 pb-3 border-b border-white/10">
-              <p className="text-[11px] uppercase tracking-wider text-white/50">Objet</p>
-              <p className="text-sm font-medium" data-testid="email-preview-subject">{selected.subject}</p>
+            <div className="mb-3 pb-3 border-b border-white/10 flex flex-wrap items-end justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-white/50">Objet</p>
+                <p className="text-sm font-medium" data-testid="email-preview-subject">{selected.subject}</p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  placeholder="votre@email.fr"
+                  data-testid="test-email-input"
+                  className="h-9 w-56 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/40 focus:border-[#D9B35A] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={sendTest}
+                  disabled={sending || !testEmail}
+                  data-testid="send-test-email-btn"
+                  className="h-9 inline-flex items-center gap-1.5 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                  style={{ background: '#D4AF37', color: '#1F0A33' }}
+                >
+                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  M'envoyer un test
+                </button>
+              </div>
             </div>
             <iframe
               title="email-preview"

@@ -70,5 +70,35 @@ async def list_email_previews(request: Request):
                 "html": _wrap_html(t["subject"], t["body"]),
             }
             for t in _TEMPLATES
-        ]
+        ],
+        "admin_email": admin.get("email"),
     }
+
+
+@email_previews_router.post("/{template_id}/send-test")
+async def send_test_email(request: Request, template_id: str):
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    template = next((t for t in _TEMPLATES if t["id"] == template_id), None)
+    if not template:
+        raise HTTPException(status_code=404, detail="Modèle introuvable")
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    to_email = (body.get("email") or admin.get("email") or "").strip()
+    if not to_email or "@" not in to_email:
+        raise HTTPException(status_code=400, detail="Adresse email invalide")
+    from brevo_service import is_brevo_configured, send_email
+    if not is_brevo_configured():
+        raise HTTPException(status_code=503, detail="Brevo non configuré")
+    result = await send_email(
+        to_email=to_email,
+        to_name=admin.get("contact_name"),
+        subject=f"[TEST] {template['subject']}",
+        html_content=_wrap_html(template["subject"], template["body"]),
+        tags=["email-preview-test"],
+    )
+    return {"sent": True, "to": to_email, "message_id": result.get("messageId")}
