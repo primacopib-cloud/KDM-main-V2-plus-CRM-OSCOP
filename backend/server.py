@@ -393,6 +393,10 @@ from routes_crediscop import crediscop_router, set_crediscop_database
 set_crediscop_database(db)
 app.include_router(crediscop_router)
 
+from spot_diffusion import diffusion_router, set_diffusion_database
+set_diffusion_database(db)
+app.include_router(diffusion_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)

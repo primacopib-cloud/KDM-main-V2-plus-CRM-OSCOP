@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Eye, Edit, Download, Sparkles, Clapperboard, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { VideoShareButtons } from './VideoShareButtons';
+import { SpotDiffusionSection } from './SpotDiffusionSection';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const LANG_LABELS = { fr: '🇫🇷 FR', en: '🇬🇧 EN', es: '🇪🇸 ES' };
@@ -39,6 +40,7 @@ const VendorVideoModal = ({ product, onClose }) => {
         <video key={rawUrl} src={rawUrl.startsWith('http') ? rawUrl : `${API_URL}${rawUrl}`}
           controls playsInline className="w-full rounded-xl bg-black aspect-video" data-testid="vendor-video-player" />
         <VideoShareButtons videoUrl={rawUrl} productName={product.name} />
+        <SpotDiffusionSection vendorId={product.vendor_id} productId={product.id} />
       </div>
     </div>
   );

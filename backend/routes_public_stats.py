@@ -37,6 +37,8 @@ async def public_plans():
 async def kdmarche_videos(limit: int = 6):
     """Galerie publique des spots vidéo IA générés par les vendeurs (jobs DONE uniquement)."""
     limit = min(max(limit, 1), 12)
+    from spot_diffusion import active_diffusion_product_ids
+    allowed_products = await active_diffusion_product_ids()
     jobs = await db.ai_video_jobs.find(
         {"status": "DONE", "video_url": {"$ne": None}}, {"_id": 0}
     ).sort("created_at", -1).to_list(limit * 3)
@@ -44,6 +46,8 @@ async def kdmarche_videos(limit: int = 6):
     seen_products = set()
     for job in jobs:
         if job["product_id"] in seen_products or len(videos) >= limit:
+            continue
+        if allowed_products is not None and job["product_id"] not in allowed_products:
             continue
         seen_products.add(job["product_id"])
         product = await db.vendor_products.find_one(

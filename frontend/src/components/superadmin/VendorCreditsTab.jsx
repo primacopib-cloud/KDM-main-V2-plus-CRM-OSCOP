@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Coins, Save, Plus, Sparkles } from 'lucide-react';
 import { CreditPromotionsPanel, CreditAnalyticsPanel } from './CreditPromotionsPanel';
 import { VendorReportsPanel } from './VendorReportsPanel';
+import { DiffusionGridPanel } from './DiffusionGridPanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inputCls = 'h-9 px-2 rounded-lg bg-white/60 border border-black/10 text-sm text-right text-[#1F2A3A]';
@@ -108,6 +109,7 @@ export const VendorCreditsTab = () => {
 
       <CreditAnalyticsPanel />
       <CreditPromotionsPanel />
+      <DiffusionGridPanel />
       <VendorReportsPanel />
     </div>
   );
