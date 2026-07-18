@@ -1,0 +1,40 @@
+{
+  "summary": "Iter 35 non-regression backend testing for KDMARCHÉ credit packs and vendor credits endpoints. 13/13 tests passed. Stripe LIVE session creation validated without triggering payment. Vendor balance still 152 credits as expected (no consumption during test).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter35_credit_packs_regression.py",
+    "/app/test_reports/pytest/iter35_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_credit_packs.py:76 uses asyncio.get_event_loop() in vendor_credits.py:76 for background low-credit alert — deprecated in Python 3.10+, prefer asyncio.create_task() (running loop is already available inside async def). Minor.",
+    "routes_credit_packs.py::credit_pack_status calls stripe.checkout.Session.retrieve synchronously in an async endpoint — could block the event loop on slow Stripe responses. Consider run_in_executor or async stripe client."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "N/A (skipped per request)"},
+  "test_credentials": "vendor-pro@kdmarche.fr / Demo2026!, admin@kdmarche-oscop.fr / AdminKDM2025!, acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "None. One unpaid payment_transactions row (kind=CREDIT_PACK, session_id=cs_...) was created during purchase test — acceptable per request (Stripe not paid, no credit applied).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Full non-regression suite for credit packs is now at /app/backend/tests/test_iter35_credit_packs_regression.py. Uses REACT_APP_BACKEND_URL env var (must be exported when running pytest — not read from frontend/.env). Vendor balance = 152 verified. Stripe LIVE — never call /credit-packs/status with a real paid session unless intentional.",
+  "verified_endpoints": [
+    "GET /api/credit-packs → 3 packs + bonus_percent",
+    "POST /api/credit-packs/purchase → Stripe checkout URL + payment_transaction persisted",
+    "GET /api/credit-packs/status/{sid} → unpaid/applied:false for owner",
+    "GET /api/credit-packs/status/{sid} → 403 for other user",
+    "POST /api/credit-packs/purchase (bad pack_id) → 404",
+    "GET /api/vendor/credits/vendor-demo-pro → 152 credits, 5 pricing actions, transactions",
+    "GET /api/admin/credit-analytics → totals + all ventilations (admin); 403 for vendor",
+    "GET /api/vendor/ai/status → images:true, video:true",
+    "GET /api/vendor/ai/video-jobs/{id} → status ERROR + Exhausted balance",
+    "POST /api/auth/login vendor & admin OK"
+  ]
+}
