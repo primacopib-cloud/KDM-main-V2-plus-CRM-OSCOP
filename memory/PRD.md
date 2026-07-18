@@ -542,6 +542,11 @@ Exigences produit étendues :
 - ✅ **Résilience jobs vidéo** (`routes_vendor_ai.py` + `ai_media_service.py`) : le `fal_request_id` est désormais persisté dans `ai_video_jobs` ; `GET /video-jobs/{id}` s'auto-répare si le backend a redémarré pendant la génération (re-interroge fal.ai, finalise ou échoue+rembourse). Cause racine du job bloqué : hot-reload tuait la tâche asyncio en vol.
 - ✅ **Galerie publique spots vidéo** : `GET /api/public/kdmarche-videos` (jobs DONE + nom produit + vendeur) + section `VideoShowcase` sur `/kdmarche` (`components/kdmarche/VideoShowcase.jsx`, lecteurs vidéo, data-testid `kdm-video-showcase`). Screenshot validé.
 
+### 2026-07-18 — Vidéo sur catalogue B2B + Génération depuis photo (VALIDÉS avec screenshots)
+- ✅ **Vidéo sur fiche catalogue B2B** : `video_url` ajouté à `ProductResponse` (schema_catalog) + `_build_product_response` (routes_catalog). Badge or "Spot vidéo" (Play) sur la carte produit (`ProductsGrid.jsx`) → modal lecteur (`components/catalog/ProductVideoModal.jsx`, data-testid `product-video-modal`). Screenshot validé côté acheteur (`/catalogue`).
+- ✅ **Spot vidéo depuis photo (image-to-video)** : testé en RÉEL — job `c7492609` DONE via `fal-ai/veo3/fast/image-to-video` avec la photo du produit (URL publique `/api/uploads/products/...`). UI Studio IA améliorée : sélecteur de photo avec option "Sans photo (100% IA)" et hint "rendu fidèle" (`AIStudioModal.jsx`). Screenshot validé.
+- ✅ Galerie `/kdmarche` affiche désormais 2 spots réels (Rhum VSOP + Rhum blanc). Solde vendeur : 52 crédits (2×50 consommés légitimement).
+
 ## 4. Backlog
 
 ### P1 — Internationalisation

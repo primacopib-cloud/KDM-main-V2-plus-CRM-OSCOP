@@ -1,11 +1,15 @@
-import { Loader2, Package, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Loader2, Package, Plus, Play } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { FavoriteButton } from '../FavoriteButton';
 import { formatPrice } from './catalogUtils';
+import { ProductVideoModal } from './ProductVideoModal';
 
-export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) => (
+export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) => {
+  const [videoProduct, setVideoProduct] = useState(null);
+  return (
   <>
         {/* Products Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -30,6 +34,15 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                     size="sm"
                   />
                 </div>
+                {/* Spot vidéo badge */}
+                {product.video_url && (
+                  <button type="button"
+                    onClick={() => setVideoProduct(product)}
+                    data-testid={`product-video-badge-${product.sku}`}
+                    className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors shadow-lg">
+                    <Play size={11} fill="currentColor" /> Spot vidéo
+                  </button>
+                )}
               </div>
               
               {/* Category badge */}
@@ -91,5 +104,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
             <p className="text-sm">Essayez de modifier vos filtres</p>
           </div>
         )}
+        {videoProduct && <ProductVideoModal product={videoProduct} onClose={() => setVideoProduct(null)} />}
   </>
-);
+  );
+};

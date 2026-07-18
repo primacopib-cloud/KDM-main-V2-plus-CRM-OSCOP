@@ -107,15 +107,31 @@ export const AIStudioModal = ({ product, vendorId, onClose, onMediaAdded }) => {
 
         {tab !== 'generate' && (product.images || []).length > 0 && (
           <div className="mb-3">
-            <p className="text-xs opacity-60 mb-1.5">{tab === 'enhance' ? 'Photo à améliorer :' : 'Image de référence (optionnel) :'}</p>
-            <div className="flex gap-2">
+            <p className="text-xs opacity-60 mb-1.5">
+              {tab === 'enhance' ? 'Photo à améliorer :' : 'Générer le spot à partir d\u2019une photo du produit (rendu fidèle) :'}
+            </p>
+            <div className="flex gap-2 flex-wrap">
               {(product.images || []).map((img) => (
                 <button key={img.url} type="button" onClick={() => setSelectedImage(img.url)}
+                  data-testid={`ai-ref-image-${img.url.split('/').pop()}`}
                   className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${selectedImage === img.url ? 'border-purple-500' : 'border-transparent opacity-60'}`}>
                   <img src={`${API_URL}${img.url}`} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
+              {tab === 'video' && (
+                <button type="button" onClick={() => setSelectedImage('')}
+                  data-testid="ai-ref-image-none"
+                  className={`w-16 h-16 rounded-lg border-2 text-[10px] font-medium flex items-center justify-center text-center leading-tight px-1 ${
+                    !selectedImage ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-400'}`}>
+                  Sans photo (100% IA)
+                </button>
+              )}
             </div>
+            {tab === 'video' && selectedImage && (
+              <p className="text-[11px] text-purple-700 mt-1.5" data-testid="ai-video-from-photo-hint">
+                🎬 Le spot sera animé à partir de la photo sélectionnée — le produit restera identique à la réalité.
+              </p>
+            )}
           </div>
         )}
 
