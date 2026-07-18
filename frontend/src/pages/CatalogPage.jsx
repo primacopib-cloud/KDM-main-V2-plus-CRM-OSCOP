@@ -35,6 +35,7 @@ import { formatPrice, MIN_INSTALLMENT_CENTS } from '../components/catalog/catalo
 import { CatalogHeader } from '../components/catalog/CatalogHeader';
 import { ProductsGrid } from '../components/catalog/ProductsGrid';
 import { CheckoutDialog } from '../components/catalog/CheckoutDialog';
+import { FloatingMiniCart } from '../components/catalog/FloatingMiniCart';
 
 export default function CatalogPage() {
   const navigate = useNavigate();
@@ -396,6 +397,12 @@ export default function CatalogPage() {
           handleAddToCart={handleAddToCart}
         />
       </div>
+
+      <FloatingMiniCart
+        itemCount={cartItemCount}
+        totalCents={cartTotal}
+        onOpen={() => setCartOpen(true)}
+      />
 
       <CheckoutDialog
         cart={cart}

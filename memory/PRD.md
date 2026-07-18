@@ -940,3 +940,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Email Brevo au vendeur à chaque restitution (release_retention) : montant restitué, solde de garantie restant, motif. Validé (log "Release notification sent" + Brevo 201).
 - GET /api/vendor/contracts/admin/report-pdf (admin) : état PDF paysage des garanties groupé par territoire (tableaux contrats + sous-totaux territoire + total général retenu/restitué/net) pour assemblées et commissaire aux comptes. Bouton "Rapport garanties PDF" dans l'onglet Contrats admin.
 - Validé par curl (PDF 200, 2659 octets) + screenshot (bouton visible, solde 47,95 € après restitutions 35 €).
+
+## 2026-07-18 — Fix bouton "Payer par carte" + Mini-panier flottant catalogue
+- BuyCreditsDialog : pré-sélection auto du Pack Starter à l'ouverture (bouton actif immédiatement, libellé avec prix du pack). Cause : bouton grisé sans indication qu'un pack devait être sélectionné.
+- FloatingMiniCart (catalogue) : pastille flottante bas-droite avec nombre d'articles, total € HT et équivalent crédits (taux 1 crédit = 0,50 €, constante CREDIT_RATE_EUR dans catalogUtils.js). Clic → ouvre le panier.
+- Validé via automatisation navigateur (11 articles, 144,59 € HT ≈ 289 crédits, ouverture du panier OK).
