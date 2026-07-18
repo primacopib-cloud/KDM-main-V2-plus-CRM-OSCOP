@@ -67,6 +67,17 @@ async def get_current_user_catalog(request: Request):
     return user
 
 
+async def ensure_member_active(org_id: str):
+    """Bloque catalogue/panier/commandes si le membre est suspendu ou radié du registre."""
+    entry = await db.member_registry.find_one({"org_id": org_id}, {"_id": 0, "status": 1})
+    if entry and entry.get("status") in ("SUSPENDED", "RADIE"):
+        label = "suspendue" if entry["status"] == "SUSPENDED" else "radiée"
+        raise HTTPException(
+            status_code=403,
+            detail=f"Accès bloqué : votre adhésion coopérative est {label}. Contactez le support (/contact).",
+        )
+
+
 async def get_user_org_context(user: dict):
     """Get user's org, subscription, and access context for ABAC"""
     # Get membership
@@ -75,6 +86,7 @@ async def get_user_org_context(user: dict):
         return None, None, None, None, []
     
     org_id = membership["org_id"]
+    await ensure_member_active(org_id)
     
     # Get org
     org = await db.orgs.find_one({"id": org_id})

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   Package, Plus, CheckCircle2, Building2, TrendingUp, ShoppingCart,
-  Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Coins,
+  Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Coins, FileSignature,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -23,6 +23,7 @@ import { AIStudioModal } from '../components/vendor/AIStudioModal';
 import { ProductActions } from '../components/vendor/ProductActions';
 import { MySpotsWidget } from '../components/vendor/MySpotsWidget';
 import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
+import { VendorContractsTab } from '../components/vendor/VendorContractsTab';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -230,7 +231,6 @@ const VendorSpacePage = () => {
         <div className="mb-6">
           <BreadcrumbPill className="bg-white border border-gray-200" />
         </div>
-
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white border">
             <TabsTrigger value="dashboard" className="gap-2">
@@ -241,6 +241,9 @@ const VendorSpacePage = () => {
             </TabsTrigger>
             <TabsTrigger value="orders" className="gap-2">
               <ShoppingCart className="w-4 h-4" /> {i18n.t('adm.commandes')}
+            </TabsTrigger>
+            <TabsTrigger value="contracts" className="gap-2" data-testid="vendor-tab-contracts">
+              <FileSignature className="w-4 h-4" /> Contrats
             </TabsTrigger>
           </TabsList>
 
@@ -451,17 +454,15 @@ const VendorSpacePage = () => {
 
           {/* Orders Tab */}
           <TabsContent value="orders">
-            <Card>
-              <CardContent className="py-12 text-center">
-                <ShoppingCart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">{i18n.t('adm.commandes')}</h3>
-                <p className="text-gray-500">{i18n.t('adm.les_commandes_de_vos_produits')}</p>
-              </CardContent>
-            </Card>
+            <Card><CardContent className="py-12 text-center"><ShoppingCart className="w-12 h-12 mx-auto text-gray-300 mb-4" /><h3 className="text-lg font-medium text-gray-900 mb-2">{i18n.t('adm.commandes')}</h3><p className="text-gray-500">{i18n.t('adm.les_commandes_de_vos_produits')}</p></CardContent></Card>
+          </TabsContent>
+
+          {/* Contracts Tab */}
+          <TabsContent value="contracts">
+            <VendorContractsTab vendorId={vendorId} />
           </TabsContent>
         </Tabs>
       </main>
-
       {/* Product Form Modal (création + édition) */}
       <ProductFormModal
         isOpen={isFormOpen}
@@ -472,12 +473,10 @@ const VendorSpacePage = () => {
         editProduct={editProduct}
       />
 
-      {/* Product View Modal */}
       {viewProduct && (
         <VendorProductViewModal product={viewProduct} vendorId={vendorId} onClose={() => setViewProduct(null)} />
       )}
 
-      {/* AI Studio Modal */}
       {aiProduct && (
         <AIStudioModal
           product={aiProduct} vendorId={vendorId}
@@ -486,7 +485,6 @@ const VendorSpacePage = () => {
         />
       )}
 
-      {/* Credit Packs & History Modal */}
       {creditsModalOpen && (
         <CreditPacksModal vendorId={vendorId} onClose={() => { setCreditsModalOpen(false); fetchCredits(); }} />
       )}

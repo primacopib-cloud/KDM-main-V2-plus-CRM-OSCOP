@@ -61,6 +61,7 @@ async def create_order(
     membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
     if not membership:
         raise HTTPException(status_code=400, detail="Aucune organisation associée")
+    await ensure_member_active(membership["org_id"])
     
     # Check role
     if membership["role"] not in [CustomerRole.CUSTOMER_ORG_OWNER.value, CustomerRole.CUSTOMER_ORG_BUYER.value]:
@@ -389,5 +390,14 @@ async def admin_update_order_status(
     await db.orders.update_one({"id": order_id}, {"$set": update_data})
     
     updated = await db.orders.find_one({"id": order_id})
+
+    # Rétention de garantie 5% sur facture (contrats d'engagement de volume)
+    if new_status in (OrderStatus.INVOICED, OrderStatus.PAID):
+        try:
+            from routes_vendor_contracts import apply_invoice_retention
+            await apply_invoice_retention(db, updated)
+        except Exception as e:
+            logger.error(f"Invoice retention failed for order {order_id}: {e}")
+
     pickup = await db.pickup_locations.find_one({"id": updated["pickup_location_id"]})
     return await _build_order_response(updated, pickup)

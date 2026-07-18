@@ -108,4 +108,41 @@ async def assign_carrier(order_id: str, payload: CarrierAssign, user_id: str = D
         }}
     )
     logger.info("Carrier %s assigned to order %s by %s", carrier["name"], order_id, user.get("email"))
+
+    # Notification Brevo au transporteur avec le détail de l'enlèvement
+    if carrier.get("contact_email"):
+        try:
+            import brevo_service
+            from brevo_service import _wrap_html
+            pickup = await db.pickup_locations.find_one({"id": order.get("pickup_location_id")}, {"_id": 0}) or {}
+            items_rows = "".join(
+                f"<tr><td style='padding:6px 10px;color:rgba(255,255,255,0.85);font-size:13px;'>{i['product_name']}</td>"
+                f"<td style='padding:6px 10px;color:rgba(255,255,255,0.6);font-size:13px;'>{i['quantity']} × {i['unit']}</td></tr>"
+                for i in order.get("items", [])
+            )
+            body = f"""
+              <h2 style=\"color:#D9B35A;margin:0 0 12px;font-size:18px;\">Nouvelle mission de transport LOGI'SCOP</h2>
+              <p style=\"color:rgba(255,255,255,0.8);font-size:14px;\">
+                Bonjour {carrier.get('contact_name') or carrier['name']},<br/><br/>
+                La commande <strong>{order.get('order_number', order_id)}</strong> vous a été assignée par la coopérative.
+              </p>
+              <p style=\"color:rgba(255,255,255,0.8);font-size:14px;\">
+                <strong>Enlèvement (EXW) :</strong> {pickup.get('name') or 'Point de retrait coopératif'}
+                {f"— {pickup.get('address')}" if pickup.get('address') else ''} ({order.get('zone_code')})<br/>
+                <strong>Articles :</strong> {order.get('items_count', len(order.get('items', [])))} ligne(s) —
+                <strong>Total :</strong> {order.get('total_ttc_cents', 0) / 100:.2f} € TTC
+              </p>
+              <table style=\"width:100%;border-collapse:collapse;background:rgba(255,255,255,0.05);border-radius:12px;\">{items_rows}</table>
+              <p style=\"color:rgba(255,255,255,0.55);font-size:12px;margin-top:14px;\">Merci de confirmer la prise en charge auprès de la coopérative.</p>
+            """
+            await brevo_service.send_email(
+                to_email=carrier["contact_email"], to_name=carrier.get("contact_name") or carrier["name"],
+                subject=f"[LOGI'SCOP] Mission de transport — commande {order.get('order_number', order_id)}",
+                html_content=_wrap_html("Mission de transport", body),
+                tags=["carrier-assignment"],
+            )
+            logger.info("Carrier notification sent to %s", carrier["contact_email"])
+        except Exception as e:
+            logger.error("Carrier notification failed: %s", e)
+
     return {"ok": True, "carrier": carrier["name"]}

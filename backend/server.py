@@ -413,6 +413,10 @@ from routes_partnership import partnership_router, set_partnership_database
 set_partnership_database(db)
 app.include_router(partnership_router)
 
+from routes_vendor_contracts import contracts_router, set_contracts_database
+set_contracts_database(db)
+app.include_router(contracts_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)

@@ -48,7 +48,7 @@ def set_cart_database(database):
     global db
     db = database
 
-from routes_catalog import get_current_user_catalog, get_user_org_context, check_price_access, get_selected_zone
+from routes_catalog import get_current_user_catalog, get_user_org_context, check_price_access, get_selected_zone, ensure_member_active, ensure_member_active
 
 # ============== CART ==============
 
@@ -58,6 +58,7 @@ async def get_cart(current_user: dict = Depends(get_current_user_catalog)):
     membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
     if not membership:
         raise HTTPException(status_code=400, detail="Aucune organisation associée")
+    await ensure_member_active(membership["org_id"])
     
     zone_code = await get_selected_zone(current_user)
     if not zone_code:
@@ -93,6 +94,7 @@ async def add_to_cart(
     membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
     if not membership:
         raise HTTPException(status_code=400, detail="Aucune organisation associée")
+    await ensure_member_active(membership["org_id"])
     
     zone_code = await get_selected_zone(current_user)
     if not zone_code:
@@ -200,6 +202,7 @@ async def remove_from_cart(
     membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
     if not membership:
         raise HTTPException(status_code=400, detail="Aucune organisation associée")
+    await ensure_member_active(membership["org_id"])
     
     zone_code = await get_selected_zone(current_user)
     
@@ -241,6 +244,7 @@ async def clear_cart(current_user: dict = Depends(get_current_user_catalog)):
     membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
     if not membership:
         raise HTTPException(status_code=400, detail="Aucune organisation associée")
+    await ensure_member_active(membership["org_id"])
     
     zone_code = await get_selected_zone(current_user)
     

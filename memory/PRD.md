@@ -922,3 +922,10 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Onglet Registres : export CSV (BOM UTF-8, ;) et PDF (reportlab paysage) via /api/v2/admin/member-registry/export ; radiation/suspension/réactivation avec motif obligatoire + historique (PATCH /status), boutons + ligne historique dépliable.
 - Guard require_cooper ajouté à admin_guard.py.
 - Testing : iteration_42.json — 15/15 pytest backend + frontend 100% (fix appliqué : import Fragment dans MemberRegistryTab).
+
+## 2026-07-18 — Contrats d'engagement de volume, Notification transporteur, Effet radiation
+- Contrats automatisés (routes_vendor_contracts.py, collection volume_contracts) : générés à l'approbation de chaque produit vendeur (hook routes_vendor_admin) + auto-création idempotente au GET /api/vendor/contracts/{vendor_id}. Clauses : engagement volume/capacité/prix plafond/délai + rétention de garantie 5% sur facture HT plafonnée à 20 000 €, restituable. Rétention appliquée au passage INVOICED/PAID (hook admin_update_order_status, apply_invoice_retention, flag orders.retention_processed anti-doublon, ledger par commande). PDF contrat (reportlab) via /pdf. UI : onglet "Contrats" espace vendeur (VendorContractsTab.jsx, barre de progression rétention).
+- Notification transporteur : email Brevo au carrier.contact_email lors de POST /api/cooper/orders/{id}/assign-carrier (détail enlèvement EXW : point de retrait, articles, total). Validé (201 + log).
+- Effet radiation : ensure_member_active() dans routes_catalog — 403 si member_registry.status SUSPENDED/RADIE, appliqué à get_user_org_context (catalogue), aux 4 routes panier (routes_cart_v2) et à la création de commande (routes_orders_v2). Validé : 403 en suspension, 200 après réactivation.
+- INCIDENT résolu : sed de nettoyage avait dupliqué la fin de VendorSpacePage.jsx (erreur de compilation) — tronqué + TabsTrigger Contrats réinséré. Fichier à 496 lignes (règle d'or OK).
+- Tests : curl E2E (contrats auto-créés, rétention 8295 cents = 5% de 1659€, idempotence, PDF %PDF-1.4, blocage 403/réactivation, email transporteur) + screenshots UI onglet Contrats.

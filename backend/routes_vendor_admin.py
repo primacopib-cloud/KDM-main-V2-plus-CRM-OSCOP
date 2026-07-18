@@ -214,6 +214,13 @@ async def admin_approve_product(product_id: str):
         )
 
     logger.info(f"Product approved: {product_id}")
+
+    # Contrat automatisé d'engagement de volume (rétention 5% plafonnée 20 000 €)
+    try:
+        from routes_vendor_contracts import ensure_contract
+        await ensure_contract(db, product["vendor_id"], product)
+    except Exception as e:
+        logger.error(f"Volume contract creation failed for {product_id}: {e}")
     
     return {"success": True, "message": "Produit approuvé et publié au catalogue"}
 
