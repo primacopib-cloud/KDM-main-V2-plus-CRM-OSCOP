@@ -28,7 +28,7 @@ const Header = () => {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300`}
       style={{
-        background: 'rgba(255,253,247,0.86)',
+        background: 'rgba(30,12,52,0.88)',
         backdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(212,175,55,0.32)'
       }}

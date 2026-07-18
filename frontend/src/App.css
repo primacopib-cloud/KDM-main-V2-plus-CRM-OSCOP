@@ -6,20 +6,20 @@
  * GLASS PANEL — Light premium (white veil, gold border)
  * ================================================ */
 .glass-panel {
-  background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.86) 100%);
-  border: 1px solid rgba(212,175,55,0.32);
+  background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 100%);
+  border: 1px solid rgba(212,175,55,0.38);
   box-shadow:
     0 18px 60px rgba(76,42,110,0.10),
     0 2px 6px rgba(31,42,58,0.05),
     inset 0 1px 0 rgba(255,255,255,0.7);
-  color: #1F2A3A;
+  color: #F3EDE4;
 }
 
 .glass-panel-soft {
-  background: rgba(255,255,255,0.78);
-  border: 1px solid rgba(212,175,55,0.22);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(212,175,55,0.30);
   box-shadow: 0 8px 28px rgba(76,42,110,0.06);
-  color: #1F2A3A;
+  color: #F3EDE4;
 }
 
 /* Gradient backgrounds for cards — soft gold halos on cream */
@@ -65,9 +65,9 @@
 
 /* Ghost button — light premium */
 .btn-ghost {
-  background: rgba(255,255,255,0.78);
+  background: rgba(255,255,255,0.06);
   border: 1px solid rgba(212,175,55,0.32);
-  color: #1F2A3A;
+  color: #F3EDE4;
   font-weight: 600;
   box-shadow: 0 2px 6px rgba(31,42,58,0.04);
 }
@@ -91,7 +91,7 @@
   height: 32px;
   padding: 0 12px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.92);
+  background: rgba(43,21,72,0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(31,77,135,0.30);
@@ -130,9 +130,9 @@
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid rgba(140,198,62,0.40);
-  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(140,198,62,0.08));
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(140,198,62,0.12));
   border-radius: 999px;
-  color: #1F2A3A;
+  color: #F3EDE4;
   font-size: 12px;
   font-weight: 600;
   box-shadow: 0 2px 6px rgba(140,198,62,0.10);
@@ -152,7 +152,7 @@
   border: 1px solid rgba(212,175,55,0.45);
   background: linear-gradient(180deg, rgba(212,175,55,0.14), rgba(255,255,255,0.5));
   padding: 14px;
-  color: #1F2A3A;
+  color: #F3EDE4;
   box-shadow: 0 6px 20px rgba(212,175,55,0.10);
 }
 
@@ -249,14 +249,14 @@
 /* Highlight card */
 .card-highlight {
   border: 1px solid rgba(212,175,55,0.55);
-  background: linear-gradient(180deg, rgba(212,175,55,0.16), rgba(255,255,255,0.78));
+  background: linear-gradient(180deg, rgba(212,175,55,0.18), rgba(255,255,255,0.06));
   box-shadow: 0 12px 36px rgba(212,175,55,0.18);
 }
 
 /* Ribbon */
 .ribbon {
   background: linear-gradient(135deg, #D4AF37, #E6C25A 50%, #B8941E);
-  color: #1F2A3A;
+  color: #F3EDE4;
   border: 1px solid rgba(184,148,30,0.65);
   font-size: 11px;
   letter-spacing: 0.09em;
@@ -275,8 +275,8 @@
   padding: 7px 12px;
   border-radius: 999px;
   border: 1px solid rgba(212,175,55,0.30);
-  background: rgba(255,255,255,0.88);
-  color: #1F2A3A;
+  background: rgba(255,255,255,0.07);
+  color: #F3EDE4;
   font-size: 12px;
   font-weight: 500;
   box-shadow: 0 1px 3px rgba(31,42,58,0.04);
@@ -286,9 +286,9 @@
 .mini-card {
   border-radius: 16px;
   border: 1px solid rgba(212,175,55,0.28);
-  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(242,230,211,0.55));
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(69,31,107,0.55));
   padding: 14px;
-  color: #1F2A3A;
+  color: #F3EDE4;
   box-shadow: 0 4px 14px rgba(76,42,110,0.06);
 }
 

@@ -120,7 +120,7 @@ const AdminPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}>
         <Loader2 className="w-8 h-8 animate-spin text-[#D9B35A]" />
       </div>
     );
@@ -133,12 +133,12 @@ const AdminPage = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}>
       {/* Header */}
       <header 
         className="sticky top-0 z-50"
         style={{
-          background: 'rgba(255,253,247,0.86)',
+          background: 'rgba(30,12,52,0.88)',
           backdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(212,175,55,0.32)'
         }}

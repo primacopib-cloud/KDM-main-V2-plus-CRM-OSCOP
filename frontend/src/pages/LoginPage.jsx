@@ -175,12 +175,12 @@ const LoginPage = () => {
       </aside>
 
       {/* ─────────────── RIGHT PANEL (white form) ─────────────── */}
-      <main className="flex-1 flex flex-col bg-white">
+      <main className="flex-1 flex flex-col bg-[#2B1548]">
         {/* Top bar: mobile brand + language */}
         <div className="flex items-center justify-between px-6 lg:px-10 py-5">
           <Link to="/" className="flex items-center gap-2 lg:hidden">
             <img src={partners.kdmarche.logo} alt="KDMARCHE Pro" className="h-10 w-auto object-contain" />
-            <span className="text-slate-400 text-sm">×</span>
+            <span className="text-white/50 text-sm">×</span>
             <img src={partners.oscop.logo} alt="Objectif SCOP Outremer" className="h-9 w-auto object-contain" />
           </Link>
           <div className="ml-auto">
@@ -192,24 +192,24 @@ const LoginPage = () => {
         <div className="flex-1 flex items-center justify-center px-6 lg:px-10 pb-10">
           <div className="w-full max-w-md">
             <div className="mb-8">
-              <p className="text-xs uppercase tracking-[0.15em] text-[#5B2E8C] font-semibold mb-2">
+              <p className="text-xs uppercase tracking-[0.15em] text-[#E9CF8E] font-semibold mb-2">
                 {t('auth.member_login')}
               </p>
-              <h2 className="text-3xl font-serif font-semibold text-slate-900 mb-2" style={{ fontFamily: '"Playfair Display", serif' }}>
+              <h2 className="text-3xl font-serif font-semibold text-white mb-2" style={{ fontFamily: '"Playfair Display", serif' }}>
                 {t('auth.access_your_space')}
               </h2>
-              <p className="text-slate-500 text-sm">
+              <p className="text-white/60 text-sm">
                 {t('auth.login_subtitle')}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5" data-testid="login-form">
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-slate-700 text-sm font-medium">
+                <Label htmlFor="email" className="text-white/80 text-sm font-medium">
                   {t('auth.email_label')}
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                   <Input
                     id="email"
                     name="email"
@@ -219,26 +219,26 @@ const LoginPage = () => {
                     placeholder="contact@entreprise.fr"
                     required
                     data-testid="login-email-input"
-                    className="pl-11 h-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 rounded-xl focus:border-[#5B2E8C] focus:ring-[#5B2E8C]/20"
+                    className="pl-11 h-12 bg-white/5 border-white/15 text-white placeholder:text-white/50 rounded-xl focus:border-[#5B2E8C] focus:ring-[#5B2E8C]/20"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="password" className="text-slate-700 text-sm font-medium">
+                  <Label htmlFor="password" className="text-white/80 text-sm font-medium">
                     {t('auth.password_label')}
                   </Label>
                   <Link
                     to="/mot-de-passe-oublie"
-                    className="text-xs text-[#5B2E8C] hover:text-[#451F6B] font-medium"
+                    className="text-xs text-[#E9CF8E] hover:text-[#451F6B] font-medium"
                     data-testid="forgot-password-link"
                   >
                     {t('auth.forgot_password')}
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                   <Input
                     id="password"
                     name="password"
@@ -248,12 +248,12 @@ const LoginPage = () => {
                     placeholder="••••••••"
                     required
                     data-testid="login-password-input"
-                    className="pl-11 pr-11 h-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 rounded-xl focus:border-[#5B2E8C] focus:ring-[#5B2E8C]/20"
+                    className="pl-11 pr-11 h-12 bg-white/5 border-white/15 text-white placeholder:text-white/50 rounded-xl focus:border-[#5B2E8C] focus:ring-[#5B2E8C]/20"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/70 transition-colors"
                     tabIndex={-1}
                     aria-label={showPassword ? t('auth.hide_password') : t('auth.show_password')}
                   >
@@ -284,10 +284,10 @@ const LoginPage = () => {
 
               <div className="relative my-2">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200" />
+                  <div className="w-full border-t border-white/15" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="px-3 text-[11px] text-slate-400 bg-white uppercase tracking-wider">{t('common.or')}</span>
+                  <span className="px-3 text-[11px] text-white/50 uppercase tracking-wider" style={{ background: '#2B1548' }}>{t('common.or')}</span>
                 </div>
               </div>
 
@@ -296,7 +296,7 @@ const LoginPage = () => {
               <a
                 href={`${process.env.REACT_APP_BACKEND_URL}/api/auth/google/login?redirect_after=/dashboard`}
                 data-testid="google-login-btn"
-                className="w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-xl text-sm font-medium bg-white text-slate-800 border border-slate-200 hover:bg-slate-50 transition-colors"
+                className="w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-xl text-sm font-medium bg-white/10 text-white border border-white/20 hover:bg-white/15 transition-colors"
               >
                 <svg className="w-4 h-4" viewBox="0 0 48 48" aria-hidden="true">
                   <path fill="#FFC107" d="M43.6 20.5H42V20.5H24v7h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5-5C33.6 6.7 29 5 24 5 13 5 4 14 4 25s9 20 20 20c11 0 20-9 20-20 0-1.5-.2-3-.4-4.5z"/>
@@ -307,9 +307,9 @@ const LoginPage = () => {
                 {t('auth.continue_google')}
               </a>
 
-              <p className="text-center text-sm text-slate-500">
+              <p className="text-center text-sm text-white/60">
                 {t('auth.not_member_yet')}{' '}
-                <Link to="/adhesion" className="text-[#5B2E8C] hover:text-[#451F6B] font-semibold" data-testid="signup-link">
+                <Link to="/adhesion" className="text-[#E9CF8E] hover:text-[#451F6B] font-semibold" data-testid="signup-link">
                   {t('auth.join_central')}
                 </Link>
               </p>
@@ -320,18 +320,18 @@ const LoginPage = () => {
               <Link
                 to="/admin/connexion"
                 data-testid="admin-login-link"
-                className="flex items-center justify-between gap-3 p-4 rounded-xl border border-slate-200 hover:border-[#4a1776]/40 hover:bg-[#4a1776]/[0.03] transition-all group"
+                className="flex items-center justify-between gap-3 p-4 rounded-xl border border-white/15 hover:border-[#4a1776]/40 hover:bg-[#4a1776]/[0.03] transition-all group"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-[#4a1776]/10">
-                    <Shield className="w-4 h-4 text-[#4a1776]" />
+                    <Shield className="w-4 h-4 text-[#E9CF8E]" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{t('auth.are_you_admin')}</p>
-                    <p className="text-xs text-slate-500">{t('auth.admin_subtitle')}</p>
+                    <p className="text-sm font-semibold text-white">{t('auth.are_you_admin')}</p>
+                    <p className="text-xs text-white/60">{t('auth.admin_subtitle')}</p>
                   </div>
                 </div>
-                <span className="text-[#4a1776] text-sm font-medium group-hover:translate-x-0.5 transition-transform">
+                <span className="text-[#E9CF8E] text-sm font-medium group-hover:translate-x-0.5 transition-transform">
                   {t('auth.admin_login_arrow')}
                 </span>
               </Link>

@@ -53,7 +53,7 @@ export default function GoogleAuthReturnPage() {
     <div
       data-testid="google-auth-return-page"
       className="min-h-screen flex items-center justify-center px-6"
-      style={{ background: "linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)" }}
+      style={{ background: "linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)" }}
     >
       <div className="glass-panel rounded-2xl p-10 text-center max-w-md w-full">
         {error ? (

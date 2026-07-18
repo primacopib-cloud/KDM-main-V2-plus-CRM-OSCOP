@@ -89,13 +89,13 @@ export default function OrderPreviewPage() {
   return (
     <div 
       className="min-h-screen text-white"
-      style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}
     >
       {/* Header */}
       <header 
         className="sticky top-0 z-50 print:hidden"
         style={{
-          background: 'rgba(255,253,247,0.96)',
+          background: 'rgba(30,12,52,0.94)',
           backdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(212,175,55,0.32)'
         }}

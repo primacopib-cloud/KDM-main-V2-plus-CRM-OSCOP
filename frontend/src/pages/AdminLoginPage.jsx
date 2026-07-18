@@ -147,11 +147,11 @@ const AdminLoginPage = () => {
       </aside>
 
       {/* ─────────────── RIGHT PANEL (white form) ─────────────── */}
-      <main className="flex-1 flex flex-col bg-white">
+      <main className="flex-1 flex flex-col bg-[#2B1548]">
         <div className="flex items-center justify-end px-6 lg:px-10 py-5">
           <Link
             to="/connexion"
-            className="text-sm text-slate-500 hover:text-slate-800 inline-flex items-center gap-2 lg:hidden"
+            className="text-sm text-white/60 hover:text-white/90 inline-flex items-center gap-2 lg:hidden"
             data-testid="back-to-member-login-mobile"
           >
             <ArrowLeft className="w-4 h-4" /> Connexion membres
@@ -161,27 +161,27 @@ const AdminLoginPage = () => {
         <div className="flex-1 flex items-center justify-center px-6 lg:px-10 pb-10">
           <div className="w-full max-w-md">
             <div className="mb-8">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#4a1776] font-bold mb-2 flex items-center gap-2">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#E9CF8E] font-bold mb-2 flex items-center gap-2">
                 <Shield className="w-3.5 h-3.5" /> {i18n.t('adm.connexion_administrateur')}
               </p>
               <h2
-                className="text-3xl font-serif font-semibold text-slate-900 mb-2"
+                className="text-3xl font-serif font-semibold text-white mb-2"
                 style={{ fontFamily: '"Playfair Display", serif' }}
               >
                 {i18n.t('adm.acces_securise')}
               </h2>
-              <p className="text-slate-500 text-sm">
+              <p className="text-white/60 text-sm">
                 {i18n.t('adm.reserve_super_admins')}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5" data-testid="admin-login-form">
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-slate-700 text-sm font-medium">
+                <Label htmlFor="email" className="text-white/80 text-sm font-medium">
                   {i18n.t('adm.adresse_email_admin')}
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                   <Input
                     id="email"
                     name="email"
@@ -191,19 +191,19 @@ const AdminLoginPage = () => {
                     placeholder="admin@kdmarche-oscop.fr"
                     required
                     data-testid="admin-login-email-input"
-                    className="pl-11 h-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 rounded-xl focus:border-[#4a1776] focus:ring-[#4a1776]/20"
+                    className="pl-11 h-12 bg-white/5 border-white/15 text-white placeholder:text-white/50 rounded-xl focus:border-[#4a1776] focus:ring-[#4a1776]/20"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="password" className="text-slate-700 text-sm font-medium">
+                  <Label htmlFor="password" className="text-white/80 text-sm font-medium">
                     {i18n.t('adm.mot_de_passe')}
                   </Label>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                   <Input
                     id="password"
                     name="password"
@@ -213,12 +213,12 @@ const AdminLoginPage = () => {
                     placeholder="••••••••"
                     required
                     data-testid="admin-login-password-input"
-                    className="pl-11 pr-11 h-12 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 rounded-xl focus:border-[#4a1776] focus:ring-[#4a1776]/20"
+                    className="pl-11 pr-11 h-12 bg-white/5 border-white/15 text-white placeholder:text-white/50 rounded-xl focus:border-[#4a1776] focus:ring-[#4a1776]/20"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/70 transition-colors"
                     tabIndex={-1}
                     aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                   >
@@ -248,16 +248,16 @@ const AdminLoginPage = () => {
               </button>
 
               <div
-                className="flex items-start gap-2.5 p-3 rounded-lg text-xs text-slate-600"
+                className="flex items-start gap-2.5 p-3 rounded-lg text-xs text-white/70"
                 style={{
                   background: 'rgba(74,23,118,0.04)',
                   border: '1px solid rgba(74,23,118,0.15)',
                 }}
               >
-                <AlertTriangle className="w-4 h-4 text-[#4a1776] flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-[#E9CF8E] flex-shrink-0 mt-0.5" />
                 <span>
-                  {i18n.t('adm.cet_ecran_reserve_prefix')}<strong className="text-slate-900">{i18n.t('adm.super_administrateurs')}</strong>{i18n.t('adm.comptes_membres_doivent')}{' '}
-                  <Link to="/connexion" className="text-[#5B2E8C] font-medium hover:underline">
+                  {i18n.t('adm.cet_ecran_reserve_prefix')}<strong className="text-white">{i18n.t('adm.super_administrateurs')}</strong>{i18n.t('adm.comptes_membres_doivent')}{' '}
+                  <Link to="/connexion" className="text-[#E9CF8E] font-medium hover:underline">
                     {i18n.t('adm.connexion_standard')}
                   </Link>
                   .

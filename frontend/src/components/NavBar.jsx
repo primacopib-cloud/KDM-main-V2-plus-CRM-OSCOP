@@ -99,7 +99,7 @@ const NavBar = ({ variant = 'default' }) => {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300`}
       style={{
-        background: isScrolled ? 'rgba(255,253,247,0.96)' : 'rgba(255,253,247,0.86)',
+        background: isScrolled ? 'rgba(30,12,52,0.94)' : 'rgba(30,12,52,0.88)',
         backdropFilter: 'blur(14px)',
         borderBottom: '1px solid rgba(212,175,55,0.32)',
         boxShadow: isScrolled ? '0 8px 24px rgba(76,42,110,0.06)' : 'none'

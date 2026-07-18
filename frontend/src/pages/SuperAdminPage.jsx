@@ -61,7 +61,7 @@ export default function SuperAdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}>
         <Loader2 className="w-8 h-8 animate-spin text-[#D9B35A]" />
       </div>
     );
@@ -70,7 +70,7 @@ export default function SuperAdminPage() {
   return (
     <div
       className="min-h-screen text-white"
-      style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}
     >
       <SuperAdminHeader
         activeTab={activeTab}

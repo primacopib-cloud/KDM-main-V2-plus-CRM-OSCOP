@@ -23,7 +23,7 @@ export const CatalogHeader = ({
       <header 
         className="sticky top-0 z-50"
         style={{
-          background: 'rgba(255,253,247,0.86)',
+          background: 'rgba(30,12,52,0.88)',
           backdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(212,175,55,0.32)'
         }}

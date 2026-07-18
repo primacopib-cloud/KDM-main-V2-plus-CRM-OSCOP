@@ -90,7 +90,7 @@ const PricingPage = () => {
   const tiers = visibleSlugs === null ? TIERS : TIERS.filter((t) => visibleSlugs.includes(t.id));
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }} data-testid="pricing-page">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }} data-testid="pricing-page">
       <Seo titleKey="seo.pricing_title" descKey="seo.pricing_desc" />
       <NavBar />
 

@@ -20,15 +20,15 @@
   --kdm-or-metallise: #D4AF37;        /* premium accent */
   --kdm-argent: #C0C0C0;              /* secondary */
 
-  /* Tokens app — LIGHT PREMIUM */
-  --bg: #FBF6EE;
-  --bg-2: #F7EFDF;
-  --panel: rgba(255,255,255,0.78);
-  --panel2: rgba(255,255,255,0.92);
-  --text: #1F2A3A;                     /* anthracite-bleuté pour lisibilité */
-  --muted: rgba(31,42,58,0.65);
-  --soft: rgba(31,42,58,0.10);
-  --line: rgba(212,175,55,0.32);       /* hairline or */
+  /* Tokens app — VIOLET PREMIUM DARK */
+  --bg: #2A1045;
+  --bg-2: #451F6B;
+  --panel: rgba(255,255,255,0.06);
+  --panel2: rgba(255,255,255,0.10);
+  --text: #F3EDE4;                     /* ivoire pour lisibilité sur violet */
+  --muted: rgba(243,237,228,0.65);
+  --soft: rgba(243,237,228,0.10);
+  --line: rgba(212,175,55,0.40);       /* hairline or */
   --gold: #D4AF37;                     /* aligné Or métallisé */
   --gold2: #E6C25A;                    /* highlight */
   --gold-deep: #B8941E;
@@ -48,10 +48,10 @@ body {
   margin: 0;
   font-family: var(--font-body);
   background:
-    radial-gradient(1200px 600px at 8% -5%, rgba(212,175,55,0.18), transparent 60%),
-    radial-gradient(1100px 540px at 95% 0%, rgba(212,175,55,0.14), transparent 60%),
-    radial-gradient(900px 540px at 50% 110%, rgba(108,76,142,0.06), transparent 65%),
-    linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%);
+    radial-gradient(1200px 600px at 8% -5%, rgba(212,175,55,0.14), transparent 60%),
+    radial-gradient(1100px 540px at 95% 0%, rgba(212,175,55,0.10), transparent 60%),
+    radial-gradient(900px 540px at 50% 110%, rgba(108,76,142,0.20), transparent 65%),
+    linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%);
   background-attachment: fixed;
   color: var(--text);
   line-height: 1.5;
@@ -65,7 +65,7 @@ h1, h2, h3, .font-display {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--kdm-bleu-logistique);
+  color: #E9CF8E; /* or clair premium */
 }
 
 h4, h5, h6 {
@@ -133,7 +133,7 @@ code {
   background: rgba(212,175,55,0.10);
   padding: 1px 6px;
   border-radius: 4px;
-  color: var(--kdm-bleu-logistique);
+  color: #E9CF8E;
 }
 
 /* Custom scrollbar — premium gold */
@@ -143,13 +143,13 @@ code {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(242,230,211,0.45);
+  background: rgba(26,9,45,0.55);
 }
 
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #D4AF37, #B8941E);
   border-radius: 6px;
-  border: 2px solid rgba(242,230,211,0.45);
+  border: 2px solid rgba(26,9,45,0.55);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -158,8 +158,8 @@ code {
 
 /* Selection */
 ::selection {
-  background-color: rgba(212,175,55,0.35);
-  color: var(--kdm-anthracite);
+  background-color: rgba(212,175,55,0.45);
+  color: #1F0A33;
 }
 
 /* Smooth scroll */
@@ -169,25 +169,25 @@ html {
 
 @layer base {
   :root {
-    /* Shadcn tokens — LIGHT PREMIUM */
-    --background: 38 60% 96%;             /* perle clair */
-    --foreground: 217 30% 18%;            /* anthracite-bleuté */
-    --card: 0 0% 100%;
-    --card-foreground: 217 30% 18%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 217 30% 18%;
+    /* Shadcn tokens — VIOLET PREMIUM DARK */
+    --background: 273 62% 17%;            /* violet profond */
+    --foreground: 39 33% 92%;             /* ivoire */
+    --card: 271 55% 21%;
+    --card-foreground: 39 33% 92%;
+    --popover: 271 55% 19%;
+    --popover-foreground: 39 33% 92%;
     --primary: 46 65% 52%;                /* Or métallisé #D4AF37 */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 38 50% 92%;              /* beige perle clair */
-    --secondary-foreground: 217 30% 18%;
-    --muted: 38 30% 90%;
-    --muted-foreground: 217 15% 40%;
-    --accent: 86 53% 51%;                 /* Vert lime #8CC63E */
-    --accent-foreground: 0 0% 100%;
+    --primary-foreground: 273 62% 12%;
+    --secondary: 271 45% 26%;             /* violet moyen */
+    --secondary-foreground: 39 33% 92%;
+    --muted: 271 40% 24%;
+    --muted-foreground: 39 20% 72%;
+    --accent: 46 65% 52%;                 /* Or */
+    --accent-foreground: 273 62% 12%;
     --destructive: 6 100% 64%;            /* Rouge corail #FF5A4A */
     --destructive-foreground: 0 0% 100%;
-    --border: 38 35% 84%;                 /* hairline beige */
-    --input: 38 35% 88%;
+    --border: 46 45% 45% / 0.35;          /* hairline or */
+    --input: 271 45% 28%;
     --ring: 46 65% 52%;
     --radius: 0.75rem;
   }
@@ -243,30 +243,6 @@ button, a, input, select, textarea {
  * Keeps existing JSX intact (no per-page rewrite required).
  * =================================================================== */
 
-/* Text — was white/X on dark, now anthracite/X on light */
-.text-white { color: var(--text) !important; }
-.text-white\/95 { color: rgba(31,42,58,0.95) !important; }
-.text-white\/92 { color: rgba(31,42,58,0.92) !important; }
-.text-white\/90 { color: rgba(31,42,58,0.92) !important; }
-.text-white\/86 { color: rgba(31,42,58,0.86) !important; }
-.text-white\/85 { color: rgba(31,42,58,0.85) !important; }
-.text-white\/80 { color: rgba(31,42,58,0.82) !important; }
-.text-white\/75 { color: rgba(31,42,58,0.75) !important; }
-.text-white\/72 { color: rgba(31,42,58,0.72) !important; }
-.text-white\/70 { color: rgba(31,42,58,0.70) !important; }
-.text-white\/65 { color: rgba(31,42,58,0.62) !important; }
-.text-white\/60 { color: rgba(31,42,58,0.58) !important; }
-.text-white\/55 { color: rgba(31,42,58,0.55) !important; }
-.text-white\/50 { color: rgba(31,42,58,0.52) !important; }
-.text-white\/40 { color: rgba(31,42,58,0.42) !important; }
-.text-white\/35 { color: rgba(31,42,58,0.40) !important; }
-.text-white\/30 { color: rgba(31,42,58,0.34) !important; }
-.text-white\/20 { color: rgba(31,42,58,0.26) !important; }
-
-/* Hover variants */
-.hover\:text-white:hover { color: var(--text) !important; }
-.hover\:text-white\/90:hover { color: rgba(31,42,58,0.90) !important; }
-
 /* But preserve white text on solid colored buttons / gradient bars */
 .bg-gradient-cooperatif, .bg-gradient-or, .bg-bleu-logistique,
 .bg-violet-premium, .bg-rose-magenta, .bg-orange-energie,
@@ -288,32 +264,6 @@ button, a, input, select, textarea {
   color: #FFFFFF !important;
 }
 
-/* Backgrounds — was white/[0.0X] on dark, now subtle anthracite tint on light */
-.bg-white\/\[0\.02\] { background-color: rgba(76,42,110,0.025) !important; }
-.bg-white\/\[0\.03\] { background-color: rgba(76,42,110,0.03) !important; }
-.bg-white\/\[0\.04\] { background-color: rgba(255,255,255,0.55) !important; backdrop-filter: blur(6px); }
-.bg-white\/\[0\.06\] { background-color: rgba(255,255,255,0.65) !important; backdrop-filter: blur(8px); }
-.bg-white\/\[0\.08\] { background-color: rgba(255,255,255,0.78) !important; backdrop-filter: blur(8px); }
-.bg-white\/5 { background-color: rgba(255,255,255,0.55) !important; }
-.bg-white\/10 { background-color: rgba(255,255,255,0.78) !important; }
-.bg-white\/15 { background-color: rgba(255,255,255,0.85) !important; }
-.bg-white\/20 { background-color: rgba(255,255,255,0.92) !important; }
-.hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(212,175,55,0.10) !important; }
-.hover\:bg-white\/\[0\.08\]:hover { background-color: rgba(212,175,55,0.14) !important; }
-.hover\:bg-white\/10:hover { background-color: rgba(212,175,55,0.14) !important; }
-.hover\:bg-white\/5:hover { background-color: rgba(212,175,55,0.08) !important; }
-
-/* Borders — was white/X, now soft anthracite hairlines */
-.border-white\/5 { border-color: rgba(31,42,58,0.08) !important; }
-.border-white\/8 { border-color: rgba(31,42,58,0.10) !important; }
-.border-white\/10 { border-color: rgba(212,175,55,0.28) !important; }
-.border-white\/12 { border-color: rgba(212,175,55,0.30) !important; }
-.border-white\/15 { border-color: rgba(212,175,55,0.34) !important; }
-.border-white\/20 { border-color: rgba(212,175,55,0.40) !important; }
-.border-white\/\[0\.08\] { border-color: rgba(31,42,58,0.10) !important; }
-.border-white\/\[0\.10\] { border-color: rgba(31,42,58,0.12) !important; }
-.divide-white\/10 > * + * { border-color: rgba(212,175,55,0.28) !important; }
-
 /* Hardcoded dark hex backgrounds (Tailwind arbitrary values) → cream/white */
 .bg-\[\#070A10\],
 .bg-\[\#0A0F1A\],
@@ -329,27 +279,18 @@ button, a, input, select, textarea {
 .bg-\[\#15192B\],
 .bg-\[\#0F1320\],
 .bg-\[\#0E1320\] {
-  background-color: #FBF6EE !important;
+  background-color: #221038 !important;
   color: var(--text);
 }
-
-.bg-black { background-color: rgba(31,42,58,0.04) !important; color: var(--text); }
-.bg-black\/20 { background-color: rgba(31,42,58,0.04) !important; }
-.bg-black\/30 { background-color: rgba(212,175,55,0.06) !important; }
-.bg-black\/40 { background-color: rgba(31,42,58,0.06) !important; }
-.bg-black\/50 { background-color: rgba(31,42,58,0.08) !important; }
-
-/* Modal/Dialog overlay — keep dim but lighter */
-.bg-black\/80 { background-color: rgba(31,42,58,0.55) !important; }
 
 /* Form inputs — light premium */
 input, select, textarea {
-  background-color: #FFFFFF;
+  background-color: rgba(255,255,255,0.07);
   color: var(--text);
-  border-color: rgba(212,175,55,0.30);
+  border-color: rgba(212,175,55,0.35);
 }
 input::placeholder, textarea::placeholder {
-  color: rgba(31,42,58,0.45);
+  color: rgba(243,237,228,0.45);
 }
 input:focus, select:focus, textarea:focus {
   border-color: var(--kdm-or-metallise);
@@ -360,7 +301,7 @@ input:focus, select:focus, textarea:focus {
 /* Force specific Shadcn dialog content readable on light */
 [role="dialog"] [data-slot="dialog-content"],
 [role="dialog"] .DialogContent,
-.bg-popover { background-color: #FFFFFF !important; color: var(--text) !important; }
+.bg-popover { background-color: #2B1548 !important; color: var(--text) !important; }
 
 /* Tone down red badges — keep red bg but ensure white text */
 .bg-red-500, .bg-red-600 { color: #FFFFFF !important; }
@@ -393,8 +334,8 @@ input:focus, select:focus, textarea:focus {
 
 /* Premium card surface (used on most pages with glass-panel) */
 .surface-card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
-  border: 1px solid rgba(212,175,55,0.30);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  border: 1px solid rgba(212,175,55,0.35);
   box-shadow: var(--shadow);
   border-radius: var(--radius2);
 }

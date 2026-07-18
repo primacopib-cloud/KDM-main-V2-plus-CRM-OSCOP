@@ -19,9 +19,9 @@ export default function LolodriveLayout({ title, subtitle, children, actions }) 
   };
 
   return (
-    <div className="min-h-screen text-anthracite" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 100%)' }}>
       {/* Top bar */}
-      <header className="border-b sticky top-0 z-30 backdrop-blur-xl" style={{ background: 'rgba(255,253,247,0.92)', borderColor: 'rgba(212,175,55,0.32)' }}>
+      <header className="border-b sticky top-0 z-30 backdrop-blur-xl" style={{ background: 'rgba(30,12,52,0.92)', borderColor: 'rgba(212,175,55,0.32)' }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             <div
