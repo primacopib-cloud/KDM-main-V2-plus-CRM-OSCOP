@@ -250,13 +250,13 @@ const DashboardPage = () => {
                   </div>
                 </button>
                 
-                <button className="h-auto p-4 rounded-xl text-left flex items-center gap-3 glass-panel-soft transition-all hover:-translate-y-0.5">
+                <Link to="/changer-mot-de-passe" data-testid="dashboard-settings-btn" className="h-auto p-4 rounded-xl text-left flex items-center gap-3 glass-panel-soft transition-all hover:-translate-y-0.5">
                   <Settings className="w-5 h-5 text-white/70" />
                   <div>
                     <p className="font-medium text-white/90 text-sm">Paramètres</p>
                     <p className="text-xs text-white/60">Gérer mon compte</p>
                   </div>
-                </button>
+                </Link>
                 
                 <Link to="/statistiques" className="h-auto p-4 rounded-xl text-left flex items-center gap-3 transition-all hover:-translate-y-0.5" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
                   <BarChart3 className="w-5 h-5 text-[#D4AF37]" />
@@ -324,9 +324,9 @@ const DashboardPage = () => {
                 <Progress value={50} className="h-2 bg-white/10" />
               </div>
               
-              <button className="btn-ghost w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium">
+              <Link to="/tarifs" data-testid="dashboard-change-plan-btn" className="btn-ghost w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium">
                 Changer de formule
-              </button>
+              </Link>
             </div>
 
             {/* Support */}
@@ -342,9 +342,9 @@ const DashboardPage = () => {
                 <h3 className="font-semibold">Besoin d&apos;aide ?</h3>
               </div>
               <p className="text-white/60 text-sm mb-4">Notre équipe est disponible pour vous accompagner.</p>
-              <button className="btn-gold w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold">
+              <a href="mailto:contact@centrale-ess.fr?subject=Support%20Communityplace" data-testid="dashboard-contact-support-btn" className="btn-gold w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold">
                 Contacter le support
-              </button>
+              </a>
             </div>
           </div>
         </div>

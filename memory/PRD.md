@@ -869,3 +869,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Historiques : vendeur (50 dernières transactions dans le modal), acheteur pro (GET /api/team/my-credits + section repliable BuyerCreditHistory sur /dashboard, ajustements admin loggés).
 - Validation iteration_34.json : backend 7/7, frontend 3/3 PASS. Stripe LIVE : session créée jamais payée.
 - EN ATTENTE : solde fal.ai (vidéos), test Stripe Live 1€ prod, 2 dernières apps écosystème.
+
+## 2026-07-18 — Correction bugs UI signalés ("l'app bugg")
+- Sweep frontend testing_agent (iteration_40.json) suite au signalement utilisateur "un bouton ne fait rien".
+- FIX DashboardPage.jsx : 3 boutons morts → "Paramètres" = Link /changer-mot-de-passe, "Changer de formule" = Link /tarifs, "Contacter le support" = mailto:contact@centrale-ess.fr.
+- FIX prix panier "---" : mismatch de champs API (price_ht_cents/line_total_ht_cents/subtotal_ht_cents) vs frontend (unit_price_ht_cents/total_ht_cents). Corrigé dans CatalogHeader.jsx + CatalogPage.jsx (+ product_sku).
+- FIX CrediscopBadge : variante publique pour visiteurs non connectés → badge "GALERIE SPOTS" (Link /kdmarche), ajouté au NavBar branche non-authentifiée. Skip du fetch /me/crediscop si non connecté.
+- Faux positif rapport : /kdmarche fonctionne (vérifié par screenshot).
+- Vérifications screenshot : boutons naviguent, panier affiche 128,00 € HT / Total 144,59 €, badge public cliquable → /kdmarche.

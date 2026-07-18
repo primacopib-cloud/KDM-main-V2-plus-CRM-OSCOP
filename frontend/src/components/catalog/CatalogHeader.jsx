@@ -125,7 +125,7 @@ export const CatalogHeader = ({
                             <div className="flex justify-between items-start mb-2">
                               <div className="flex-1">
                                 <p className="font-medium text-white/90 text-sm">{item.product_name}</p>
-                                <p className="text-xs text-white/50">{item.sku}</p>
+                                <p className="text-xs text-white/50">{item.product_sku}</p>
                               </div>
                               <button 
                                 onClick={() => handleRemoveFromCart(item.id)}
@@ -153,7 +153,7 @@ export const CatalogHeader = ({
                                 </button>
                               </div>
                               <p className="font-semibold text-[#D9B35A]">
-                                {formatPrice(item.unit_price_ht_cents * item.quantity)} HT
+                                {formatPrice(item.line_total_ht_cents || item.price_ht_cents * item.quantity)} HT
                               </p>
                             </div>
                           </div>

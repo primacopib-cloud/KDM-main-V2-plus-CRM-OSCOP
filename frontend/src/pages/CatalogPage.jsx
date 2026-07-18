@@ -53,7 +53,7 @@ export default function CatalogPage() {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Cart state
-  const [cart, setCart] = useState({ items: [], total_ht_cents: 0 });
+  const [cart, setCart] = useState({ items: [], subtotal_ht_cents: 0 });
   const [cartOpen, setCartOpen] = useState(false);
   const [cartLoading, setCartLoading] = useState(false);
   
@@ -204,9 +204,9 @@ export default function CatalogPage() {
       setCart(prev => ({
         ...prev,
         items: prev.items.filter(i => i.id !== itemId),
-        total_ht_cents: prev.items
+        subtotal_ht_cents: prev.items
           .filter(i => i.id !== itemId)
-          .reduce((sum, i) => sum + (i.unit_price_ht_cents * i.quantity), 0),
+          .reduce((sum, i) => sum + (i.line_total_ht_cents || 0), 0),
       }));
       toast.success(i18n.t('catalog.toast_retire_panier'));
     } catch (error) {
@@ -219,7 +219,7 @@ export default function CatalogPage() {
   // Calculate installment plan when cart changes or installment is selected
   useEffect(() => {
     const calculateInstallment = async () => {
-      if (!cart.total_ht_cents || cart.total_ht_cents < MIN_INSTALLMENT_CENTS) {
+      if (!cart.subtotal_ht_cents || cart.subtotal_ht_cents < MIN_INSTALLMENT_CENTS) {
         setInstallmentPlan(null);
         setUseInstallment(false);
         return;
@@ -227,7 +227,7 @@ export default function CatalogPage() {
       
       setInstallmentLoading(true);
       try {
-        const plan = await installmentAPI.calculate(cart.total_ht_cents);
+        const plan = await installmentAPI.calculate(cart.subtotal_ht_cents);
         setInstallmentPlan(plan);
       } catch (error) {
         console.error('Installment calculation error:', error);
@@ -237,10 +237,10 @@ export default function CatalogPage() {
       }
     };
     
-    if (checkoutOpen && cart.total_ht_cents >= MIN_INSTALLMENT_CENTS) {
+    if (checkoutOpen && cart.subtotal_ht_cents >= MIN_INSTALLMENT_CENTS) {
       calculateInstallment();
     }
-  }, [checkoutOpen, cart.total_ht_cents]);
+  }, [checkoutOpen, cart.subtotal_ht_cents]);
 
   // Submit order
   const handleSubmitOrder = async () => {
@@ -264,7 +264,7 @@ export default function CatalogPage() {
         toast.success(i18n.t('checkout.toast_commande_creee', { number: order.order_number }));
       }
       
-      setCart({ items: [], total_ht_cents: 0 });
+      setCart({ items: [], subtotal_ht_cents: 0 });
       setCheckoutOpen(false);
       setCartOpen(false);
       setUseInstallment(false);
@@ -279,7 +279,7 @@ export default function CatalogPage() {
 
   // Calculate cart totals
   const cartItemCount = cart.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-  const cartTotal = cart.total_ht_cents || cart.items?.reduce((sum, item) => sum + (item.unit_price_ht_cents * item.quantity), 0) || 0;
+  const cartTotal = cart.subtotal_ht_cents || cart.items?.reduce((sum, item) => sum + (item.line_total_ht_cents || 0), 0) || 0;
 
   if (loading) {
     return (

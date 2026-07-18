@@ -202,6 +202,7 @@ const NavBar = ({ variant = 'default' }) => {
               </>
             ) : (
               <div className="flex items-center gap-2">
+                <CrediscopBadge className="hidden sm:inline-flex" />
                 <Link to="/connexion">
                   <button className="btn-ghost inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium">
                     <LogIn className="w-3.5 h-3.5" />
