@@ -142,7 +142,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Modifiez les informations puis enregistrez.'
+              ? 'Champs modifiables : nom, description, prix HT, stock, quantité min., zones et DLC. Les autres champs sont figés après soumission.'
               : 'Remplissez les informations du produit. Il sera soumis pour validation par l\u2019administrateur.'}
           </DialogDescription>
         </DialogHeader>

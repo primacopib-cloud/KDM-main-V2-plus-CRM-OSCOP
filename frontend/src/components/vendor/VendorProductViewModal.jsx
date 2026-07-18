@@ -1,6 +1,6 @@
 import { Download, X, Package } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Badge } from '../ui/badge';
 import { getStatusBadge } from './vendorConstants';
 
@@ -26,6 +26,7 @@ export const VendorProductViewModal = ({ product, vendorId, onClose }) => {
             {product.name}
             {getStatusBadge(product.status)}
           </DialogTitle>
+          <DialogDescription>Fiche détaillée du produit — téléchargeable en PDF.</DialogDescription>
         </DialogHeader>
 
         {(product.images || []).length > 0 && (

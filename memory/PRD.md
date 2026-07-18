@@ -771,3 +771,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Sélecteur de langue : drapeaux images flagcdn (fr/gb/es) à la place des codes texte (LanguageSwitcher.jsx).
 - Droits & Rôles (super admin) : routes_team_roles.py (/api/admin/team — list/search/grant/revoke/create), rôles ADMIN/COOPER/EXPERT + 7 rôles techniques. Création de membre = mdp temporaire affiché + email Brevo. Revoke restaure le rôle d'origine (snapshot previous_role). Guard : mutations réservées SUPER_ADMIN/OSCOP_SUPER_ADMIN/is_admin. UI : onglet "Droits & Rôles" sur /superadmin (TeamRolesTab.jsx + TeamMemberForms.jsx), i18n FR/EN/ES.
 - Validation : iteration_30.json — backend 3/3, frontend 4/4 PASS. Fix post-test : revoke restaure previous_role (re-testé curl : buyer restauré). Compte test : cooper-test@kdmarche.fr (COOPER, voir test_credentials.md).
+
+## 2026-07-17/18 — Espaces rôles + Espace Acheteur + Vendeur fix + Taxonomie + Photos produits
+- Espaces COOPER (/espace-cooper) et EXPERT (/espace-expert) : KPIs via GET /api/team/overview (guard staff), RoleSpaceLayout partagé, liens dans le menu selon rôle.
+- Onglet "Espace Acheteur" (/superadmin) : GET /api/admin/buyers + PATCH credits/suspend, tableau avec crédits éditables et suspension (BuyersTab.jsx).
+- Espace Vendeur : boutons Voir (VendorProductViewModal + fiche), Modifier (formulaire pré-rempli, PUT), Fiche PDF (GET /api/vendor/products/{v}/{p}/pdf via pdf_product_sheet.py reportlab).
+- Onglet "Catégories & Taxes" (/superadmin) : routes_taxonomy.py (collections product_categories + tva_rates, seed 8 cat/6 taux au démarrage), CRUD instantané, formulaire produit vendeur hydraté depuis l'API.
+- Photos produits : POST upload-image (multipart PNG/JPEG, max 3, 5 Mo, 1 principale), fichiers dans /app/backend/uploads/products servis via StaticFiles /api/uploads. UI ProductPhotoUploader (préviews, étoile principale).
+- Validation iteration_31.json : backend 11/11, frontend 100% PASS. Post-test : slug vide rejeté (taxonomy), DialogDescription a11y, note champs modifiables en édition.

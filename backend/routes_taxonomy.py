@@ -70,6 +70,8 @@ async def add_category(payload: CategoryPayload, admin: dict = Depends(_admin)):
     if not label:
         raise HTTPException(status_code=400, detail="Libellé requis")
     value = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")
+    if not value:
+        raise HTTPException(status_code=400, detail="Libellé invalide")
     if await db.product_categories.find_one({"value": value}):
         raise HTTPException(status_code=409, detail="Cette catégorie existe déjà")
     doc = {"id": str(uuid.uuid4()), "value": value, "label": label, "builtin": False,
