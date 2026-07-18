@@ -13,13 +13,6 @@ import logging
 import uuid
 import stripe
 
-from emergentintegrations.payments.stripe.checkout import (
-    StripeCheckout, 
-    CheckoutSessionResponse, 
-    CheckoutStatusResponse, 
-    CheckoutSessionRequest
-)
-
 logger = logging.getLogger(__name__)
 
 # Router
@@ -42,10 +35,18 @@ from payment_models import (
     PaymentMethod, PaymentStatus,
     CreateCheckoutRequest, CheckoutSessionResponseModel,
     CreateBankTransferRequest, BankTransferResponse, PaymentStatusResponse,
-    get_current_user_from_request, get_stripe_checkout,
+    get_current_user_from_request,
 )
 from payment_models import set_payment_models_database
 from routes_payment_sepa import set_payment_sepa_database
+
+
+def _wallet_stripe_key() -> str:
+    """Clé Stripe du flux crédits wallet (compte O'SCOP, clé test fournie)."""
+    api_key = os.environ.get("STRIPE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Stripe non configuré")
+    return api_key
 
 # ============== ENDPOINTS ==============
 
@@ -81,14 +82,23 @@ async def create_checkout_session(
     success_url = f"{origin}/wallet?payment=success&session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin}/wallet?payment=cancelled"
     
-    # Initialize Stripe
-    stripe_checkout = get_stripe_checkout(request)
-    
-    # Create checkout session
+    # Create checkout session via the official Stripe SDK (real api.stripe.com)
     try:
-        checkout_request = CheckoutSessionRequest(
-            amount=package["price"],
-            currency="eur",
+        stripe.api_base = "https://api.stripe.com"
+        session = stripe.checkout.Session.create(
+            api_key=_wallet_stripe_key(),
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "eur",
+                    "unit_amount": int(round(package["price"] * 100)),
+                    "product_data": {
+                        "name": f"KDMARCHÉ — {package['name']} ({package['credits']} crédits)",
+                    },
+                },
+                "quantity": 1,
+            }],
             success_url=success_url,
             cancel_url=cancel_url,
             metadata={
@@ -97,16 +107,14 @@ async def create_checkout_session(
                 "package_id": package["id"],
                 "credits": str(package["credits"]),
                 "source": "wallet_topup"
-            }
+            },
         )
-        
-        session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_request)
         
         # Create payment transaction record
         transaction_id = f"txn_{uuid.uuid4().hex[:12]}"
         transaction = {
             "id": transaction_id,
-            "session_id": session.session_id,
+            "session_id": session.id,
             "user_id": user["id"],
             "user_email": user["email"],
             "package_id": package["id"],
@@ -122,13 +130,13 @@ async def create_checkout_session(
         
         await db.payment_transactions.insert_one(transaction)
         
-        logger.info(f"Checkout session created: {session.session_id} for user {user['id']}")
+        logger.info(f"Checkout session created: {session.id} for user {user['id']}")
         
         return CheckoutSessionResponseModel(
             checkout_url=session.url,
-            session_id=session.session_id,
+            session_id=session.id,
             package=package,
-            expires_at=datetime.now(timezone.utc)
+            expires_at=datetime.fromtimestamp(session.expires_at, tz=timezone.utc)
         )
         
     except Exception as e:
@@ -156,16 +164,17 @@ async def get_payment_status(
         raise HTTPException(status_code=404, detail="Transaction non trouvée")
     
     # Check with Stripe
-    stripe_checkout = get_stripe_checkout(request)
-    
     try:
-        status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
+        stripe.api_base = "https://api.stripe.com"
+        session = stripe.checkout.Session.retrieve(session_id, api_key=_wallet_stripe_key())
+        stripe_payment_status = session.payment_status
+        stripe_session_status = session.status
         
         # Update transaction status
         new_status = PaymentStatus.PENDING.value
         credited = transaction.get("credited", False)
         
-        if status.payment_status == "paid":
+        if stripe_payment_status == "paid":
             new_status = PaymentStatus.PAID.value
             
             # Credit user only once
@@ -182,7 +191,7 @@ async def get_payment_status(
                 
                 logger.info(f"Credited {credits_to_add} to user {user['id']} for session {session_id}")
                 
-        elif status.status == "expired":
+        elif stripe_session_status == "expired":
             new_status = PaymentStatus.EXPIRED.value
         
         # Update transaction
@@ -191,7 +200,7 @@ async def get_payment_status(
             {
                 "$set": {
                     "status": new_status,
-                    "payment_status": status.payment_status,
+                    "payment_status": stripe_payment_status,
                     "credited": credited,
                     "updated_at": datetime.now(timezone.utc)
                 }
@@ -201,7 +210,7 @@ async def get_payment_status(
         return PaymentStatusResponse(
             session_id=session_id,
             status=new_status,
-            payment_status=status.payment_status,
+            payment_status=stripe_payment_status,
             package_id=transaction.get("package_id"),
             credits=transaction.get("credits"),
             amount=transaction.get("amount"),
@@ -216,22 +225,31 @@ async def get_payment_status(
 
 @payment_router.post("/webhook/stripe")
 async def handle_stripe_webhook(request: Request):
-    """Handle Stripe webhook events"""
-    
-    stripe_checkout = get_stripe_checkout(request)
-    
+    """Handle Stripe webhook events (signature vérifiée sur les secrets O'SCOP)"""
     try:
         body = await request.body()
-        signature = request.headers.get("Stripe-Signature")
+        signature = request.headers.get("Stripe-Signature", "")
         
-        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        secrets = [s.strip() for s in os.environ.get("STRIPE_WEBHOOK_SECRETS_OSCOP", "").split(",") if s.strip()]
+        event = None
+        for secret in secrets:
+            try:
+                event = stripe.Webhook.construct_event(body, signature, secret)
+                break
+            except Exception:
+                continue
+        if event is None:
+            logger.warning("Wallet webhook: signature non vérifiée — ignoré (le polling créditera)")
+            return {"received": True, "verified": False}
         
-        logger.info(f"Webhook received: {webhook_response.event_type} for session {webhook_response.session_id}")
+        session = event["data"]["object"]
+        session_id = session.get("id")
+        logger.info(f"Webhook received: {event['type']} for session {session_id}")
         
         # Handle payment success
-        if webhook_response.event_type == "checkout.session.completed":
+        if event["type"] == "checkout.session.completed":
             transaction = await db.payment_transactions.find_one({
-                "session_id": webhook_response.session_id
+                "session_id": session_id
             })
             
             if transaction and not transaction.get("credited", False):
@@ -246,7 +264,7 @@ async def handle_stripe_webhook(request: Request):
                 
                 # Update transaction
                 await db.payment_transactions.update_one(
-                    {"session_id": webhook_response.session_id},
+                    {"session_id": session_id},
                     {
                         "$set": {
                             "status": PaymentStatus.PAID.value,

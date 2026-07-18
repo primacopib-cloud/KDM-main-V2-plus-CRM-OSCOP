@@ -950,3 +950,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - GET /api/v2/catalog/cart/suggestions : produits complémentaires classés par co-occurrence dans les commandes passées, complétés par même catégorie puis produits populaires (exclut le panier, filtre ACTIVE + prix zone actif).
 - Nouveau fichier routes_cart_suggestions.py (enregistré dans server.py) + composant CartSuggestions.jsx intégré au Sheet panier (CatalogHeader) avec ajout en 1 clic (qté mini auto).
 - Validé E2E navigateur : 4 suggestions "Souvent commandés ensemble", ajout Huile de tournesol → panier 11→15 articles, total recalculé, liste rafraîchie.
+
+## 2026-07-18 — Bouton "Payer par carte" (wallet) relié à Stripe TEST réel
+- Cause : /api/payments/checkout utilisait le wrapper emergentintegrations qui renvoyait des URLs factices (checkout.stripe.test) inutilisables.
+- Fix routes_payment.py : SDK stripe officiel (api.stripe.com) avec STRIPE_API_KEY (clé test O'SCOP fournie par l'utilisateur, déjà en .env). Checkout Session hosted + status polling + webhook signature (secrets OSCOP).
+- La clé publique n'est pas nécessaire (Stripe Checkout hébergé = redirection, pas d'Elements côté client).
+- Validé E2E navigateur : clic "Payer par carte" → checkout.stripe.com (cs_test_...) → paiement carte 4242 → retour wallet → +100 crédits (250→350).
