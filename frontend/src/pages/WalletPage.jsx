@@ -10,7 +10,7 @@ import { authAPI, walletAPIV2, zonesAPIV2, paymentAPI } from '../services/api';
 import { API, getAuthHeaders } from '../services/http';
 import { formatCredits } from '../components/wallet/walletUtils';
 import { WalletOrgTabs } from '../components/wallet/WalletOrgTabs';
-import { TopupDialog, ZoneAddDialog } from '../components/wallet/WalletDialogs';
+import { ZoneAddDialog } from '../components/wallet/WalletDialogs';
 import { BuyCreditsDialog } from '../components/wallet/BuyCreditsDialog';
 
 export default function WalletPage() {
@@ -29,7 +29,6 @@ export default function WalletPage() {
   const [entitledZones, setEntitledZones] = useState([]);
 
   // Top-up dialog (legacy - keep for org wallet)
-  const [topupOpen, setTopupOpen] = useState(false);
   const [statementLoading, setStatementLoading] = useState(false);
 
   const downloadStatement = async () => {
@@ -53,8 +52,6 @@ export default function WalletPage() {
       setStatementLoading(false);
     }
   };
-  const [topupAmount, setTopupAmount] = useState(100);
-  const [topupLoading, setTopupLoading] = useState(false);
 
   // Zone add dialog
   const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
@@ -67,19 +64,6 @@ export default function WalletPage() {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [paymentChecking, setPaymentChecking] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('card'); // card, transfer, sepa
-
-  // Bank transfer states
-  const [bankDetails, setBankDetails] = useState(null);
-  const [transferReference, setTransferReference] = useState(null);
-  const [companyName, setCompanyName] = useState('');
-  const [copiedField, setCopiedField] = useState(null);
-
-  // SEPA states
-  const [sepaIban, setSepaIban] = useState('');
-  const [sepaName, setSepaName] = useState('');
-  const [sepaEmail, setSepaEmail] = useState('');
-  const [sepaLoading, setSepaLoading] = useState(false);
 
   // Poll payment status (stable: only depends on `navigate`)
   const pollPaymentStatus = useCallback(async (sessionId, attempts = 0) => {
@@ -122,7 +106,7 @@ export default function WalletPage() {
   // Check for payment return
   useEffect(() => {
     if (searchParams.get('topup') === '1') {
-      setTopupOpen(true);
+      setBuyCreditsOpen(true);
       return;
     }
     const paymentStatus = searchParams.get('payment');
@@ -136,13 +120,6 @@ export default function WalletPage() {
       navigate('/wallet', { replace: true });
     }
   }, [searchParams, navigate, pollPaymentStatus]);
-
-  const copyToClipboard = (text, field) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
-    toast.success(i18n.t('wallet.toast_copie'));
-  };
 
   // Load data — runs once on mount; `navigate` is stable (react-router)
   useEffect(() => {
@@ -215,87 +192,8 @@ export default function WalletPage() {
     }
   };
 
-  const handleBankTransfer = async (pkg) => {
-    if (!companyName.trim()) {
-      toast.error('Veuillez saisir le nom de votre entreprise');
-      return;
-    }
-
-    setSelectedPackage(pkg);
-    setCheckoutLoading(true);
-
-    try {
-      const response = await paymentAPI.createBankTransfer(pkg.id, companyName);
-      setTransferReference(response);
-      setBankDetails(response.bank_details);
-      toast.success(i18n.t('wallet.toast_virement'));
-    } catch (error) {
-      toast.error(error.message || i18n.t('wallet.toast_erreur_virement'));
-    } finally {
-      setCheckoutLoading(false);
-    }
-  };
-
-  const handleSepaSetup = async (pkg) => {
-    if (!sepaIban.trim() || !sepaName.trim() || !sepaEmail.trim()) {
-      toast.error('Veuillez remplir tous les champs SEPA');
-      return;
-    }
-
-    setSelectedPackage(pkg);
-    setSepaLoading(true);
-
-    try {
-      const response = await paymentAPI.createSepaSetup(pkg.id, sepaIban, sepaName, sepaEmail);
-      toast.success(i18n.t('wallet.toast_sepa'));
-
-      const confirmResponse = await paymentAPI.confirmSepaPayment(response.setup_id);
-      if (confirmResponse.status === 'succeeded') {
-        toast.success(i18n.t('wallet.toast_credits_courts', { count: confirmResponse.credits }));
-        const userData = await authAPI.getMe();
-        setUser(userData);
-        setBuyCreditsOpen(false);
-      } else {
-        toast.info('Paiement SEPA en cours de traitement (2-14 jours)');
-      }
-    } catch (error) {
-      toast.error(error.message || 'Erreur SEPA');
-    } finally {
-      setSepaLoading(false);
-    }
-  };
-
-  const openBuyCredits = async () => {
+  const openBuyCredits = () => {
     setBuyCreditsOpen(true);
-    setTransferReference(null);
-    if (!bankDetails) {
-      try {
-        const details = await paymentAPI.getBankDetails();
-        setBankDetails(details.bank_details);
-      } catch (e) {
-        console.error('Failed to load bank details:', e);
-      }
-    }
-  };
-
-  const handleTopup = async () => {
-    if (!orgId || topupAmount < 10) {
-      toast.error(i18n.t('wallet.toast_montant_min'));
-      return;
-    }
-
-    setTopupLoading(true);
-    try {
-      await walletAPIV2.topup(orgId, topupAmount);
-      toast.success(i18n.t('wallet.toast_credits_ajoutes_2', { count: topupAmount }));
-      setTopupOpen(false);
-      setTopupAmount(100);
-      refreshWallet();
-    } catch (error) {
-      toast.error(error.message || 'Erreur lors de la recharge');
-    } finally {
-      setTopupLoading(false);
-    }
   };
 
   const handleAddZone = async () => {
@@ -439,7 +337,7 @@ export default function WalletPage() {
             allZones={allZones}
             entitledZones={entitledZones}
             availableZones={availableZones}
-            onTopupOpen={() => setTopupOpen(true)}
+            onTopupOpen={openBuyCredits}
             onOpenZoneDialog={() => setZoneDialogOpen(true)}
             onZoneClick={(zone) => {
               setSelectedZone(zone);
@@ -448,15 +346,6 @@ export default function WalletPage() {
           />
         )}
       </div>
-
-      <TopupDialog
-        open={topupOpen}
-        onOpenChange={setTopupOpen}
-        amount={topupAmount}
-        setAmount={setTopupAmount}
-        loading={topupLoading}
-        onSubmit={handleTopup}
-      />
 
       <ZoneAddDialog
         open={zoneDialogOpen}
@@ -475,33 +364,14 @@ export default function WalletPage() {
         onOpenChange={(open) => {
           setBuyCreditsOpen(open);
           if (!open) {
-            setTransferReference(null);
             setSelectedPackage(null);
-            setPaymentMethod('card');
           }
         }}
         packages={packages}
         selectedPackage={selectedPackage}
         setSelectedPackage={setSelectedPackage}
-        paymentMethod={paymentMethod}
-        setPaymentMethod={setPaymentMethod}
         checkoutLoading={checkoutLoading}
         onCardPayment={handleCardPayment}
-        companyName={companyName}
-        setCompanyName={setCompanyName}
-        onBankTransfer={handleBankTransfer}
-        transferReference={transferReference}
-        bankDetails={bankDetails}
-        copiedField={copiedField}
-        copyToClipboard={copyToClipboard}
-        sepaIban={sepaIban}
-        setSepaIban={setSepaIban}
-        sepaName={sepaName}
-        setSepaName={setSepaName}
-        sepaEmail={sepaEmail}
-        setSepaEmail={setSepaEmail}
-        sepaLoading={sepaLoading}
-        onSepaSetup={handleSepaSetup}
       />
       <div className="max-w-[1160px] mx-auto px-5 pb-8">
         <p className="text-[11px] text-white/40 leading-relaxed border-t border-white/10 pt-4" data-testid="crediscop-legal">

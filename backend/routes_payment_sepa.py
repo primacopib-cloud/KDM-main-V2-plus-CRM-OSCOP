@@ -31,6 +31,10 @@ async def create_sepa_setup(
     sepa_data: CreateSepaSetupRequest
 ):
     """Create SEPA Direct Debit setup intent"""
+    raise HTTPException(
+        status_code=403,
+        detail="Les crédits sont payables exclusivement par carte bancaire (Stripe).",
+    )
     
     user = await get_current_user_from_request(request)
     

@@ -304,6 +304,10 @@ async def create_bank_transfer(
     transfer_data: CreateBankTransferRequest
 ):
     """Create a bank transfer payment request"""
+    raise HTTPException(
+        status_code=403,
+        detail="Les crédits sont payables exclusivement par carte bancaire (Stripe).",
+    )
     
     user = await get_current_user_from_request(request)
     

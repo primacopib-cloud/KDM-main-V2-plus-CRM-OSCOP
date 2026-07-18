@@ -186,6 +186,10 @@ async def topup_wallet(
     request: Request = None,
 ):
     """Add credits to wallet (purchase)"""
+    raise HTTPException(
+        status_code=403,
+        detail="Les crédits sont payables exclusivement par carte bancaire. Utilisez « Acheter des crédits » (paiement Stripe).",
+    )
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Montant invalide")
     

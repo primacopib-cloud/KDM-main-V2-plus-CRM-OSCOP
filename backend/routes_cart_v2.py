@@ -6,6 +6,7 @@ Products, categories, pricing, cart, orders with ABAC gating
 from fastapi import APIRouter, HTTPException, Depends, status, Request, Query
 from typing import List, Optional
 from datetime import datetime
+import asyncio
 import uuid
 import logging
 
@@ -77,6 +78,9 @@ async def get_cart(current_user: dict = Depends(get_current_user_catalog)):
         await db.carts.insert_one(cart)
     
     alerts = await _refresh_cart_items(cart)
+    price_alerts = [a for a in alerts if a["type"] == "PRICE_CHANGED" and a.get("new")]
+    if price_alerts and current_user.get("email"):
+        asyncio.create_task(_send_price_alert_email(current_user, price_alerts))
     return await _build_cart_response(cart, alerts)
 
 
@@ -256,6 +260,39 @@ async def clear_cart(current_user: dict = Depends(get_current_user_catalog)):
     )
     
     return {"message": "Panier vidé"}
+
+
+async def _send_price_alert_email(user: dict, price_alerts: list):
+    """Email Brevo à l'acheteur quand un produit de son panier change de prix."""
+    import brevo_service
+    from brevo_service import _wrap_html
+    rows = "".join(
+        f"<tr><td style='padding:8px 12px;color:rgba(255,255,255,0.85);font-size:14px;'>{a['product_name']}</td>"
+        f"<td style='padding:8px 12px;color:rgba(255,255,255,0.5);font-size:14px;text-decoration:line-through;'>{a['old_price_ht_cents']/100:.2f} €</td>"
+        f"<td style='padding:8px 12px;color:#D9B35A;font-size:14px;font-weight:bold;'>{a['new_price_ht_cents']/100:.2f} € HT</td></tr>"
+        for a in price_alerts
+    )
+    body = f"""
+      <h2 style=\"color:#D9B35A;margin:0 0 12px;font-size:18px;\">Changement de prix dans votre panier</h2>
+      <p style=\"color:rgba(255,255,255,0.8);font-size:14px;\">
+        Bonjour {user.get('contact_name') or ''},<br/><br/>
+        Le prix de {len(price_alerts)} produit(s) de votre panier KDMARCHÉ a été mis à jour :
+      </p>
+      <table style=\"width:100%;border-collapse:collapse;background:rgba(255,255,255,0.05);border-radius:12px;\">{rows}</table>
+      <p style=\"color:rgba(255,255,255,0.55);font-size:12px;margin-top:16px;\">
+        Votre panier a été automatiquement recalculé avec les nouveaux prix coopératifs.
+      </p>
+    """
+    try:
+        await brevo_service.send_email(
+            to_email=user["email"], to_name=user.get("contact_name"),
+            subject="⚠ Prix mis à jour dans votre panier KDMARCHÉ",
+            html_content=_wrap_html("Alerte prix panier", body),
+            tags=["cart-price-alert"],
+        )
+        logger.info("Price alert email sent to %s (%d items)", user["email"], len(price_alerts))
+    except Exception as e:
+        logger.error("Price alert email failed: %s", e)
 
 
 async def _refresh_cart_items(cart: dict) -> list:

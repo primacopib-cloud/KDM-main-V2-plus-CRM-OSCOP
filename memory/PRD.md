@@ -885,3 +885,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Alertes panier : _refresh_cart_items() dans routes_cart_v2.py au GET /api/v2/catalog/cart — détecte PRICE_CHANGED (met à jour prix + totaux, alerte one-shot), UNAVAILABLE (flag persistant item.unavailable, exclu du sous-total), AVAILABLE_AGAIN. CartResponse.alerts + CartItemResponse.unavailable.
 - Frontend : toasts au chargement du catalogue, bannière data-testid=cart-alerts-banner dans le drawer, badge INDISPONIBLE rouge sur l'item, bouton checkout désactivé si item indisponible.
 - Validé par curl (3 scénarios) + screenshots UI (toast prix, bannière indisponible, checkout désactivé, formulaire contact soumis avec succès).
+
+## 2026-07-18 — Onglet Support Admin + Email alerte prix + Crédits CB uniquement
+- Onglet "Support" dans /superadmin (SupportTicketsTab.jsx) : liste des tickets avec filtres/compteurs (Ouverts/Répondus/Fermés), dépliage du message, réponse par email (Brevo) et fermeture. Routes admin : GET /api/support/admin/tickets, POST .../reply (envoie l'email + status ANSWERED), PATCH .../status. Guard require_admin (admin_guard.py).
+- Email alerte prix : _send_price_alert_email() dans routes_cart_v2.py — envoi Brevo async à l'acheteur au GET cart quand PRICE_CHANGED (tableau ancien/nouveau prix). Validé : log "Price alert email sent" + 201 Brevo.
+- RÈGLE MÉTIER : crédits payables EXCLUSIVEMENT par carte bancaire (Stripe, payment_method_types=["card"]) :
+  * Backend 403 sur POST /api/v2/orgs/{org}/wallet/topup (recharge gratuite supprimée), POST /api/payments/bank-transfer (virement), POST /api/payments/sepa/setup (SEPA).
+  * Frontend : BuyCreditsDialog réécrit carte-only (onglets Virement/SEPA supprimés), TopupDialog retiré de WalletPage, ?topup=1 et bouton recharge ouvrent le dialog Stripe carte.
+- Validé par curl (403 sur les 3 voies interdites, tickets reply/close OK) + screenshots (onglet Support avec réponse affichée, dialog wallet carte-only).

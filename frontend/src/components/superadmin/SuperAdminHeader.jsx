@@ -1,7 +1,7 @@
 import i18n from '@/i18n';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins,
+  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins, LifeBuoy,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
@@ -27,6 +27,7 @@ const TABS = [
   { value: 'buyers', label: 'Espace Acheteur', icon: ShoppingBag },
   { value: 'taxonomy', label: 'Catégories & Taxes', icon: Layers },
   { value: 'credits', label: 'Crédits & IA', icon: Coins },
+  { value: 'support', label: 'Support', icon: LifeBuoy },
   { value: 'orders', label: i18n.t('adm.commandes'), icon: ShoppingCart },
 ];
 
