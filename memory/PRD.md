@@ -898,3 +898,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Badge rouge compteur sur l'onglet "Support" du Super Admin (SuperAdminHeader.jsx, hook useOpenTicketsCount, refresh 60s) via GET /api/support/admin/open-count (admin only, 403 sinon).
 - Historique client : GET /api/support/my-tickets (tickets liés à l'email du user connecté). Section "Mes demandes" sur /contact (MySupportTickets.jsx) : statut, message, réponses du support, rafraîchie après nouvel envoi.
 - Validé par curl (open-count=1, my-tickets buyer, 403 non-admin) + screenshots (badge "1" visible, section Mes demandes dépliée).
+
+## 2026-07-18 — Pastille réponses support + Réouverture ticket client
+- Pastille NavBar (SupportRepliesBadge.jsx, poll 60s) : icône LifeBuoy + compteur rouge quand le support a répondu (flag user_unread posé à chaque réponse admin). Clic → /contact. Endpoints : GET /api/support/my-tickets/unread-count, POST /api/support/my-tickets/mark-read (appelé automatiquement à l'affichage de "Mes demandes").
+- Réouverture : POST /api/support/my-tickets/{id}/reopen (ticket CLOSED du user uniquement, message optionnel poussé dans replies avec from_client=true, email Brevo à l'équipe support). UI : textarea + bouton "Relancer le ticket" sur les tickets fermés dans MySupportTickets.jsx.
+- Fil de conversation différencié client/support dans les deux UIs (client : "Vous" fond blanc / admin tab : "(client)" fond bleu).
+- Validé E2E par curl (reply→unread=1→mark-read=0→close→reopen→OPEN+reply client) + screenshots (pastille "1" navbar, thread complet sur /contact).

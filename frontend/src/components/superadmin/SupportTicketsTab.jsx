@@ -48,10 +48,17 @@ const TicketCard = ({ ticket, onReply, onClose }) => {
           <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white/80 whitespace-pre-wrap">{ticket.message}</div>
 
           {(ticket.replies || []).map((r, i) => (
-            <div key={`${ticket.id}-r${i}`} className="p-3 rounded-xl bg-[#D9B35A]/[0.07] border border-[#D9B35A]/20">
-              <p className="text-xs text-[#D9B35A] font-semibold mb-1">↩ {r.admin_name} — {new Date(r.at).toLocaleString('fr-FR')}</p>
-              <p className="text-sm text-white/80 whitespace-pre-wrap">{r.message}</p>
-            </div>
+            r.from_client ? (
+              <div key={`${ticket.id}-r${i}`} className="p-3 rounded-xl bg-blue-500/[0.07] border border-blue-500/20">
+                <p className="text-xs text-blue-400 font-semibold mb-1">↩ {ticket.name} (client) — {new Date(r.at).toLocaleString('fr-FR')}</p>
+                <p className="text-sm text-white/80 whitespace-pre-wrap">{r.message}</p>
+              </div>
+            ) : (
+              <div key={`${ticket.id}-r${i}`} className="p-3 rounded-xl bg-[#D9B35A]/[0.07] border border-[#D9B35A]/20">
+                <p className="text-xs text-[#D9B35A] font-semibold mb-1">↩ {r.admin_name} — {new Date(r.at).toLocaleString('fr-FR')}</p>
+                <p className="text-sm text-white/80 whitespace-pre-wrap">{r.message}</p>
+              </div>
+            )
           ))}
 
           {ticket.status !== 'CLOSED' && (

@@ -121,6 +121,81 @@ async def my_tickets(user_id: str = Depends(get_current_user_id)):
     return {"tickets": tickets}
 
 
+@support_router.get("/my-tickets/unread-count")
+async def my_unread_count(user_id: str = Depends(get_current_user_id)):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1})
+    if not user or not user.get("email"):
+        return {"unread": 0}
+    unread = await db.support_tickets.count_documents(
+        {"email": user["email"].lower(), "user_unread": True}
+    )
+    return {"unread": unread}
+
+
+@support_router.post("/my-tickets/mark-read")
+async def my_tickets_mark_read(user_id: str = Depends(get_current_user_id)):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1})
+    if not user or not user.get("email"):
+        raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    await db.support_tickets.update_many(
+        {"email": user["email"].lower(), "user_unread": True},
+        {"$set": {"user_unread": False}},
+    )
+    return {"ok": True}
+
+
+class TicketReopen(BaseModel):
+    message: Optional[str] = Field(None, max_length=5000)
+
+
+@support_router.post("/my-tickets/{ticket_id}/reopen")
+async def reopen_ticket(
+    ticket_id: str,
+    payload: TicketReopen,
+    user_id: str = Depends(get_current_user_id),
+):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "contact_name": 1})
+    if not user or not user.get("email"):
+        raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    ticket = await db.support_tickets.find_one(
+        {"id": ticket_id, "email": user["email"].lower()}, {"_id": 0}
+    )
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket introuvable")
+    if ticket["status"] != "CLOSED":
+        raise HTTPException(status_code=400, detail="Seul un ticket fermé peut être relancé")
+
+    update = {"$set": {"status": "OPEN", "updated_at": datetime.utcnow()}}
+    if payload.message and payload.message.strip():
+        update["$push"] = {"replies": {
+            "message": payload.message.strip(),
+            "from_client": True,
+            "at": datetime.utcnow(),
+        }}
+    await db.support_tickets.update_one({"id": ticket_id}, update)
+
+    support_email = os.environ.get("SUPPORT_CONTACT_EMAIL", "contact@centrale-ess.fr")
+    note = (payload.message or "").strip().replace("\n", "<br/>") or "<em>Sans message complémentaire.</em>"
+    body = f"""
+      <h2 style=\"color:#D9B35A;margin:0 0 12px;font-size:18px;\">Ticket relancé — {ticket['ticket_number']}</h2>
+      <p style=\"color:rgba(255,255,255,0.8);font-size:14px;\">
+        {ticket['name']} &lt;{ticket['email']}&gt; a rouvert le ticket : <em>{ticket['subject']}</em>
+      </p>
+      <div style=\"background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;color:rgba(255,255,255,0.85);font-size:14px;\">{note}</div>
+    """
+    try:
+        await brevo_service.send_email(
+            to_email=support_email, to_name="Support Communityplace",
+            subject=f"[Relance {ticket['ticket_number']}] {ticket['subject']}",
+            html_content=_wrap_html("Ticket relancé", body),
+            tags=["support-reopen"],
+        )
+    except Exception as e:
+        logger.error("Brevo reopen email failed: %s", e)
+
+    return {"ok": True, "status": "OPEN"}
+
+
 # ============== ADMIN — GESTION DES TICKETS ==============
 
 class TicketReply(BaseModel):
@@ -163,7 +238,8 @@ async def reply_ticket(
     }
     await db.support_tickets.update_one(
         {"id": ticket_id},
-        {"$push": {"replies": reply_entry}, "$set": {"status": "ANSWERED", "updated_at": datetime.utcnow()}},
+        {"$push": {"replies": reply_entry},
+         "$set": {"status": "ANSWERED", "user_unread": True, "updated_at": datetime.utcnow()}},
     )
 
     reply_html = reply.message.strip().replace("\n", "<br/>")

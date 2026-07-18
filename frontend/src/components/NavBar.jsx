@@ -16,6 +16,7 @@ import { useFavorites } from './FavoriteButton';
 import LanguageSwitcher from './LanguageSwitcher';
 import CommunityplaceBadge from './CommunityplaceBadge';
 import { CrediscopBadge } from './CrediscopBadge';
+import { SupportRepliesBadge } from './SupportRepliesBadge';
 import { useTranslation } from 'react-i18next';
 
 // Favorites nav button with count
@@ -153,6 +154,9 @@ const NavBar = ({ variant = 'default' }) => {
               <>
                 {/* Solde CREDI'SCOP */}
                 <CrediscopBadge className="hidden sm:inline-flex" />
+
+                {/* Réponses support non lues */}
+                <SupportRepliesBadge />
 
                 {/* Quick Shortcuts */}
                 <div className="hidden md:block">
