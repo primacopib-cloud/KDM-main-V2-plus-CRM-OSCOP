@@ -58,7 +58,7 @@ export default function GoogleAuthReturnPage() {
       <div className="glass-panel rounded-2xl p-10 text-center max-w-md w-full">
         {error ? (
           <>
-            <h1 className="font-display text-2xl mb-2" style={{ color: "var(--kdm-bleu-logistique)" }}>
+            <h1 className="font-display text-2xl mb-2" style={{ color: "#F7F2E9" }}>
               Connexion impossible
             </h1>
             <p className="text-sm text-anthracite opacity-70">
@@ -68,7 +68,7 @@ export default function GoogleAuthReturnPage() {
         ) : (
           <>
             <Loader2 className="animate-spin mx-auto mb-4" size={36} style={{ color: "var(--kdm-or-metallise)" }} />
-            <h1 className="font-display text-2xl mb-2" style={{ color: "var(--kdm-bleu-logistique)" }}>
+            <h1 className="font-display text-2xl mb-2" style={{ color: "#F7F2E9" }}>
               Connexion en cours…
             </h1>
             <p className="text-sm text-anthracite opacity-70">

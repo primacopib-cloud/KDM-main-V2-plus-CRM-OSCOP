@@ -137,7 +137,7 @@ export default function GedBridgeAdminPage() {
             >
               <ArrowLeft size={14} /> Admin
             </button>
-            <h1 className="font-display text-3xl sm:text-4xl" style={{ color: "var(--kdm-bleu-logistique)" }}>
+            <h1 className="font-display text-3xl sm:text-4xl" style={{ color: "#F7F2E9" }}>
               Pont GED ESS
             </h1>
             <p className="text-sm opacity-70 mt-2">

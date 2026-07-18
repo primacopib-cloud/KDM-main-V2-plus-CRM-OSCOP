@@ -70,7 +70,7 @@ export default function FavoriteAlertsPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="font-display text-3xl sm:text-4xl flex items-center gap-3" style={{ color: 'var(--kdm-bleu-logistique)' }}>
+            <h1 className="font-display text-3xl sm:text-4xl flex items-center gap-3" style={{ color: '#F7F2E9' }}>
               <BellRing size={30} style={{ color: 'var(--kdm-or-metallise)' }} />
               {i18n.t('fav_alerts.title')}
             </h1>
@@ -87,7 +87,7 @@ export default function FavoriteAlertsPage() {
         </div>
 
         {/* Préférences par produit */}
-        <h2 className="font-display text-lg mb-3" style={{ color: 'var(--kdm-bleu-logistique)' }}>
+        <h2 className="font-display text-lg mb-3" style={{ color: '#F7F2E9' }}>
           {i18n.t('fav_alerts.prefs_title')}
         </h2>
         {products.length === 0 && !loading ? (
@@ -123,7 +123,7 @@ export default function FavoriteAlertsPage() {
         )}
 
         {/* Historique des alertes */}
-        <h2 className="font-display text-lg mb-3" style={{ color: 'var(--kdm-bleu-logistique)' }}>
+        <h2 className="font-display text-lg mb-3" style={{ color: '#F7F2E9' }}>
           {i18n.t('fav_alerts.history_title')}
         </h2>
         {alerts.length === 0 ? (

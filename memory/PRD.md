@@ -1029,3 +1029,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - archive_email_logs_to_ged(db, month, force) : CSV mensuel poussé vers la GED ESS (create_document, scope KDMARCHE, family CONFORMITE, csv_base64 en business_metadata), idempotent par mois (email_archive_runs). Endpoint manuel POST /archive-ged (admin, 400 mois invalide) + bouton UI "Archiver GED".
 - Scheduler : chaque 1er du mois, archive automatique du mois précédent (retente tant que non SUCCESS).
 - ⚠️ BLOQUANT EXTERNE : GED_ESS_API_URL=http://localhost:8001 (placeholder → 404 "Not Found", 0 sync GED historique). L'archivage fonctionnera dès que l'URL + token réels de la GEDESS seront fournis (fait partie des 2 applications restantes à connecter).
+
+## 2026-07-18 — Titres blancs, sélecteurs lisibles, Rapport de conformité PDF
+- Titres inline color var(--kdm-bleu-logistique) → #F7F2E9 (sed global, 9 pages : Pont GED, Pont Finance, Connecteurs, Stripe Réconciliation, etc.). Validé screenshot Pont GED ESS.
+- CSS global : select/option/optgroup en violet #2B1548 texte ivoire (les dropdowns natifs sont désormais lisibles).
+- routes_compliance_report.py : GET /api/admin/compliance-report/{YYYY-MM}.pdf (admin, 400 mois invalide, 403 non-admin — validés). PDF reportlab violet/or 3 sections : emails (total + par tag), garanties vendeur (contrats, actifs, total retenu), adhésions/registre (nouvelles, orgs, suspendus, radiés).
+- Bouton "Rapport conformité (PDF)" en haut du DashboardTab superadmin (download blob + toast). Validé E2E.

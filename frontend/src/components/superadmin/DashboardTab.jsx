@@ -1,13 +1,45 @@
 import i18n from '@/i18n';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
   Users, Package, ShoppingCart, Wallet, FileSignature, TrendingUp,
-  AlertTriangle, CheckCircle2, Clock, Building2, ChevronRight, Leaf,
+  AlertTriangle, CheckCircle2, Clock, Building2, ChevronRight, Leaf, FileDown,
 } from 'lucide-react';
 import { StatCard, AlertCard, ActivityItem, KPISection, formatCurrency } from './widgets';
+import { API, getAuthHeaders } from '../../services/http';
+
+const downloadComplianceReport = async () => {
+  const month = new Date().toISOString().slice(0, 7);
+  try {
+    const r = await fetch(`${API}/admin/compliance-report/${month}.pdf`, { headers: getAuthHeaders(), credentials: 'include' });
+    if (!r.ok) throw new Error('Génération impossible');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rapport-conformite-${month}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Rapport de conformité téléchargé');
+  } catch (e) {
+    toast.error(e.message);
+  }
+};
 
 export const DashboardTab = ({ kpis, alerts, activities, period, setActiveTab }) => (
   <>
+    <div className="flex justify-end mb-4">
+      <button
+        type="button"
+        onClick={downloadComplianceReport}
+        data-testid="compliance-report-btn"
+        className="inline-flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors hover:brightness-110"
+        style={{ background: 'rgba(217,179,90,0.16)', border: '1px solid rgba(217,179,90,0.45)', color: '#E9CF8E' }}
+      >
+        <FileDown className="w-4 h-4" />
+        Rapport conformité (PDF)
+      </button>
+    </div>
     {/* Top Stats Row */}
     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
       <StatCard

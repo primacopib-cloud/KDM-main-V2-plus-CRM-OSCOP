@@ -456,3 +456,15 @@ img[src*="kdmarche-pro"], img[src*="oscop"] {
 .text-blue-600 { color: #93c5fd !important; }
 /* Bordures beiges héritées */
 .border-\[\#E7D9BD\], .border-\[\#EADFC8\], .border-\[\#E5D5B5\] { border-color: rgba(212,175,55,0.30) !important; }
+
+/* Sélecteurs natifs lisibles sur le thème violet */
+select {
+  background-color: #2B1548 !important;
+  color: #F3EDE4 !important;
+  border-color: rgba(212,175,55,0.40) !important;
+}
+select option, select optgroup {
+  background-color: #2B1548;
+  color: #F3EDE4;
+}
+select:disabled { color: rgba(243,237,228,0.4) !important; }

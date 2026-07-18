@@ -64,7 +64,7 @@ export const IaboisProjectsPanel = () => {
   return (
     <div className="glass-panel rounded-2xl p-5 mb-8" data-testid="iabois-panel">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-display text-lg flex items-center gap-2" style={{ color: 'var(--kdm-bleu-logistique)' }}>
+        <h2 className="font-display text-lg flex items-center gap-2" style={{ color: '#F7F2E9' }}>
           <TreePine size={18} style={{ color: '#6FA82E' }} />
           {i18n.t('adm.iabois_title')}
         </h2>

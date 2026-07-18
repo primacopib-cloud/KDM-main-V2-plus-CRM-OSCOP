@@ -169,7 +169,7 @@ export default function StripeReconciliationPage() {
             >
               <ArrowLeft size={14} /> Admin
             </button>
-            <h1 className="font-display text-3xl sm:text-4xl" style={{ color: "var(--kdm-bleu-logistique)" }}>
+            <h1 className="font-display text-3xl sm:text-4xl" style={{ color: "#F7F2E9" }}>
               Réconciliation Stripe
             </h1>
             <p className="text-sm opacity-70 mt-2">
@@ -275,7 +275,7 @@ export default function StripeReconciliationPage() {
 
             {/* Daily chart */}
             <div className="glass-panel rounded-2xl p-5 mb-6" data-testid="reco-daily-chart">
-              <h2 className="font-display text-xl mb-4" style={{ color: "var(--kdm-bleu-logistique)" }}>
+              <h2 className="font-display text-xl mb-4" style={{ color: "#F7F2E9" }}>
                 Encaissements quotidiens (net après remboursement)
               </h2>
               <div style={{ width: "100%", height: 320 }}>
@@ -317,7 +317,7 @@ export default function StripeReconciliationPage() {
             {/* Transactions list */}
             <div className="glass-panel rounded-2xl p-5" data-testid="reco-transactions">
               <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
-                <h2 className="font-display text-xl" style={{ color: "var(--kdm-bleu-logistique)" }}>
+                <h2 className="font-display text-xl" style={{ color: "#F7F2E9" }}>
                   Détail des transactions
                 </h2>
                 <div className="flex flex-wrap items-end gap-3">

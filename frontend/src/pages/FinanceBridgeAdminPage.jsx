@@ -136,7 +136,7 @@ export default function FinanceBridgeAdminPage() {
               className="inline-flex items-center gap-2 text-sm mb-3 opacity-70 hover:opacity-100">
               <ArrowLeft size={14} /> Admin
             </button>
-            <h1 className="font-display text-3xl sm:text-4xl" style={{ color: "var(--kdm-bleu-logistique)" }}>
+            <h1 className="font-display text-3xl sm:text-4xl" style={{ color: "#F7F2E9" }}>
               Pont Finance API
             </h1>
             <p className="text-sm opacity-70 mt-2">
@@ -168,7 +168,7 @@ export default function FinanceBridgeAdminPage() {
 
         {/* Quick actions */}
         <div className="glass-panel rounded-2xl p-5 mb-6">
-          <h2 className="font-display text-lg mb-4" style={{ color: "var(--kdm-bleu-logistique)" }}>Actions rapides</h2>
+          <h2 className="font-display text-lg mb-4" style={{ color: "#F7F2E9" }}>Actions rapides</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-xl p-4 border" style={{ borderColor: "rgba(212,175,55,0.30)" }}>
               <div className="text-xs uppercase tracking-wide opacity-60 mb-1 inline-flex items-center gap-1.5">

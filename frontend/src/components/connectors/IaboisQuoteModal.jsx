@@ -17,7 +17,7 @@ export const IaboisQuoteModal = ({ quote, onClose }) => {
         style={{ background: '#FFFFFF', boxShadow: '0 24px 64px rgba(76,42,110,0.25)' }}
       >
         <div className="flex items-start justify-between mb-1">
-          <h3 className="font-display text-xl flex items-center gap-2" style={{ color: 'var(--kdm-bleu-logistique)' }}>
+          <h3 className="font-display text-xl flex items-center gap-2" style={{ color: '#F7F2E9' }}>
             <FileText size={18} style={{ color: '#D9B35A' }} />
             {i18n.t('adm.quote_title')}
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ color: '#B8860B', background: '#D9B35A22' }}>

@@ -16,7 +16,7 @@ export const ConnectorCard = ({ connector, health, checking, onCheck }) => {
     <div className="glass-panel rounded-2xl p-5" data-testid={`connector-card-${connector.name}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-display text-lg" style={{ color: 'var(--kdm-bleu-logistique)' }}>
+          <h3 className="font-display text-lg" style={{ color: '#F7F2E9' }}>
             {connector.label}
           </h3>
           <p className="text-xs opacity-60 mt-1 break-all">{connector.base_url || '—'}</p>

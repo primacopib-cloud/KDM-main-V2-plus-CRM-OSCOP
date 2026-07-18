@@ -121,7 +121,7 @@ export default function ConnectorsAdminPage() {
             >
               <ArrowLeft size={14} /> Admin
             </button>
-            <h1 className="font-display text-3xl sm:text-4xl" style={{ color: 'var(--kdm-bleu-logistique)' }}>
+            <h1 className="font-display text-3xl sm:text-4xl" style={{ color: '#F7F2E9' }}>
               {i18n.t('adm.conn_title')}
             </h1>
             <p className="text-sm opacity-70 mt-2">{i18n.t('adm.conn_subtitle')}</p>
@@ -153,7 +153,7 @@ export default function ConnectorsAdminPage() {
 
         {/* Push manuel */}
         <div className="glass-panel rounded-2xl p-5 mb-8" data-testid="connectors-manual-push">
-          <h2 className="font-display text-lg mb-3" style={{ color: 'var(--kdm-bleu-logistique)' }}>
+          <h2 className="font-display text-lg mb-3" style={{ color: '#F7F2E9' }}>
             {i18n.t('adm.conn_manual_push')}
           </h2>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -188,7 +188,7 @@ export default function ConnectorsAdminPage() {
 
         {/* Filtres + compteurs */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          <h2 className="font-display text-lg mr-auto" style={{ color: 'var(--kdm-bleu-logistique)' }}>
+          <h2 className="font-display text-lg mr-auto" style={{ color: '#F7F2E9' }}>
             {i18n.t('adm.conn_sync_queue')}
           </h2>
           <span className="text-xs opacity-60" data-testid="connectors-counts">
