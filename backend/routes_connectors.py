@@ -147,6 +147,57 @@ async def get_iabois_quote(quote_id: str, _: dict = Depends(_admin)):
     return quote
 
 
+@connectors_router.post("/broadcast-spots")
+async def broadcast_spots(_: dict = Depends(_admin)):
+    """Diffuse les spots vidéo IA vers les applications connectées de l'écosystème OSCOP."""
+    import os
+
+    base_url = os.environ.get("FRONTEND_URL", "")
+    jobs = await db.ai_video_jobs.find(
+        {"status": "DONE", "video_url": {"$ne": None}}, {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    spots, seen = [], set()
+    for job in jobs:
+        if job["product_id"] in seen:
+            continue
+        seen.add(job["product_id"])
+        product = await db.vendor_products.find_one(
+            {"id": job["product_id"]}, {"_id": 0, "name": 1, "video_urls": 1, "video_views": 1}) or {}
+        vendor = await db.vendors.find_one(
+            {"id": job["vendor_id"]}, {"_id": 0, "company_name": 1}) or {}
+        urls = product.get("video_urls") or {"fr": job["video_url"]}
+        spots.append({
+            "product_id": job["product_id"],
+            "product_name": product.get("name", "Produit"),
+            "vendor_name": vendor.get("company_name", ""),
+            "views": int(product.get("video_views") or 0),
+            "videos": {lang: (u if u.startswith("http") else f"{base_url}{u}") for lang, u in urls.items()},
+            "source": "kdmarche",
+        })
+    if not spots:
+        return {"status": "EMPTY", "spots": 0, "results": []}
+
+    payload = {"spots": spots, "count": len(spots)}
+    results = []
+    for definition in generic_app.GENERIC_APPS:
+        cfg = generic_app.app_config(definition)
+        name = definition["name"]
+        if not cfg["enabled"]:
+            results.append({"connector": name, "status": "SKIPPED", "detail": "Non configuré"})
+            continue
+        event_id = await connectors_base.record_event(
+            connector=name, action="broadcast_spots", source="ai_video_jobs",
+            source_id=f"batch-{len(spots)}", detail=f"Diffusion de {len(spots)} spot(s) vidéo")
+        try:
+            resp = await generic_app.request(name, "POST", "/api/kdmarche/spots", json_payload=payload)
+            await connectors_base.mark_event(event_id, "SUCCESS", response_excerpt=str(resp)[:300])
+            results.append({"connector": name, "status": "SUCCESS"})
+        except Exception as exc:
+            await connectors_base.mark_event(event_id, "ERROR", error=str(exc)[:300], increment_attempt=True)
+            results.append({"connector": name, "status": "ERROR", "detail": str(exc)[:200]})
+    return {"status": "DONE", "spots": len(spots), "results": results}
+
+
 @connectors_router.get("/health-status")
 async def connectors_health_status(_: dict = Depends(_admin)):
     """Derniers statuts relevés par la surveillance automatique (health watch)."""

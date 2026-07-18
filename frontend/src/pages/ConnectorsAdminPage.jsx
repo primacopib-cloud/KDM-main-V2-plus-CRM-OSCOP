@@ -2,7 +2,7 @@ import i18n from '@/i18n';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, RefreshCw, Send } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, Clapperboard } from 'lucide-react';
 import NavBar from '../components/NavBar';
 import { ConnectorCard } from '../components/connectors/ConnectorCard';
 import { ConnectorSyncTable } from '../components/connectors/ConnectorSyncTable';
@@ -22,6 +22,7 @@ export default function ConnectorsAdminPage() {
   const [retryingId, setRetryingId] = useState(null);
   const [pushOrderId, setPushOrderId] = useState('');
   const [pushing, setPushing] = useState(false);
+  const [broadcasting, setBroadcasting] = useState(false);
 
   const fetchConnectors = useCallback(async () => {
     const r = await fetch(`${API}/connectors`, { credentials: 'include' });
@@ -86,6 +87,23 @@ export default function ConnectorsAdminPage() {
       await fetchEvents();
     } finally {
       setPushing(false);
+    }
+  };
+
+  const broadcastSpots = async () => {
+    setBroadcasting(true);
+    try {
+      const r = await fetch(`${API}/connectors/broadcast-spots`, { method: 'POST', credentials: 'include' });
+      const data = await r.json();
+      if (data.status === 'EMPTY') { toast.info('Aucun spot vidéo à diffuser'); return; }
+      const ok = (data.results || []).filter((x) => x.status === 'SUCCESS').length;
+      const err = (data.results || []).filter((x) => x.status === 'ERROR').length;
+      toast[err === 0 ? 'success' : 'warning'](
+        `${data.spots} spot(s) diffusé(s) — ${ok} app(s) OK · ${err} en erreur`
+      );
+      await fetchEvents();
+    } finally {
+      setBroadcasting(false);
     }
   };
 
@@ -154,6 +172,16 @@ export default function ConnectorsAdminPage() {
               className="btn-primary h-10 px-5 rounded-lg inline-flex items-center gap-2 text-sm"
             >
               <Send size={14} /> {i18n.t('adm.conn_push_order')}
+            </button>
+            <button
+              type="button"
+              onClick={broadcastSpots}
+              disabled={broadcasting}
+              data-testid="connectors-broadcast-spots-btn"
+              className="btn-ghost h-10 px-5 rounded-lg inline-flex items-center gap-2 text-sm"
+              style={{ border: '1px solid rgba(217,179,90,0.4)', color: '#B8860B' }}
+            >
+              <Clapperboard size={14} /> {broadcasting ? 'Diffusion…' : 'Diffuser les spots vidéo'}
             </button>
           </div>
         </div>

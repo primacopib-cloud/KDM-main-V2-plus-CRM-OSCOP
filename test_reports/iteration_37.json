@@ -1,0 +1,29 @@
+{
+  "summary": "Iteration 37 — full end-to-end validation of 4 new KDMARCHÉ features: plan visibility toggle/scheduling, credits grant-by-profile, connectors broadcast-spots, vendor monthly report email. ALL PASS.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/test_reports/iteration_37.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PlanFormModal uses <input type='date'> for visible_from/visible_until (YYYY-MM-DD, not datetime-local). Backend accepts and computes window correctly. Consistent, no bug.",
+    "PricingPage / PlansTab correctly filter using /api/public/plans (server-side visibility windowing). Baseline 3 plans, filtered plans reflect visibility changes instantly.",
+    "Sync queue in /admin/connecteurs displays broadcast_spots events with concise error messages including HTTP status + endpoint. Good observability."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (3/3 curl endpoints)", "frontend": "100% (4/4 UI flows)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025!",
+  "seed_data_creation": "None. State restored: ess-impact-pro visible=true (toggled off→on), ess-acces-pro visible_from cleared after scheduling test. Public /tarifs verified to show 3 cards at end. Only side-effect: +5 credits granted once to 1 COOPER account (per instructions, small amount) and 1 vendor monthly report email sent via Brevo (as requested with force=true).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login response uses `access_token` field (not `token`). Login form is in ENGLISH ('Sign in' button). Admin plans page = /admin/plans (routes /admin/connecteurs for connectors). Testids: toggle-visible-plan-{slug}, plan-visibility-badge-{slug}, edit-plan-{slug}, plan-visible-switch, plan-visible-from-input (type=date, YYYY-MM-DD), plan-visible-until-input, plan-modal-save, tab-credits, profile-grant-{select,amount,btn}, connectors-broadcast-spots-btn. Sync queue events show broadcast_spots status=ERROR with 404 details for the 4 external apps (crm-ess, coppam, oscop-ge, oscop-ia-bois) — this is EXPECTED (receiver endpoint /api/kdmarche/spots not yet implemented on those apps).",
+  "verified_features": [
+    "UI: click toggle-visible-plan-ess-impact-pro → badge 'Masqué' appears, public /tarifs (unauth) drops to 2 cards (ess-acces-pro + ess-volume-pro). Re-click restores 3 cards.",
+    "UI: edit-plan-ess-acces-pro modal exposes plan-visible-switch + plan-visible-from-input + plan-visible-until-input. Setting visible_from=2099-01-01 + save → badge 'Programmé dès le 2099-01-01', /tarifs shows only 2 cards. Clearing and saving → /tarifs shows 3 cards again.",
+    "UI: tab-credits > profile-grant-select=COOPER, amount=5, click profile-grant-btn → toast '5 crédits attribués à 1 compte(s) du profil COOPER'.",
+    "UI: /admin/connecteurs > connectors-broadcast-spots-btn click → 4 new broadcast_spots ERROR events in sync queue (crm-ess/coppam/oscop-ge/oscop-ia-bois all POST /api/kdmarche/spots -> 404). Toast body contains '2 spot(s) vidéo'.",
+    "curl: GET /api/public/plans → 3 plans (ess-acces-pro, ess-volume-pro, ess-impact-pro).",
+    "curl: POST /api/admin/plans/credits/grant-by-profile {profile:'xyz', amount:5} + Bearer admin → HTTP 404 {detail:'Aucun utilisateur avec le profil xyz'}.",
+    "curl: POST /api/admin/vendor-reports/send?force=true + Bearer admin → HTTP 200 {status:'DONE', sent:1} (real Brevo email sent)."
+  ],
+  "notes": "Non-blocking: WebSocket connection error in browser console (no impact on functionality). Stripe LIVE — no payment attempted. No AI generation triggered. Final DB state: all 3 plans visible=true, no scheduling window set."
+}

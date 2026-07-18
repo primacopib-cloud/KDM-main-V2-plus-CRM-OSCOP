@@ -385,6 +385,10 @@ from routes_favorites_alerts_center import favorites_alerts_center_router, set_f
 set_favorites_alerts_center_database(db)
 app.include_router(favorites_alerts_center_router, prefix="/api")
 
+from vendor_monthly_report import vendor_reports_router, set_vendor_reports_database
+set_vendor_reports_database(db)
+app.include_router(vendor_reports_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)

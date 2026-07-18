@@ -2,9 +2,11 @@ import i18n from '@/i18n';
 import { Search, Coins } from 'lucide-react';
 import { Input } from '../../ui/input';
 import { Button } from '../../ui/button';
+import { ProfileGrantBar } from './ProfileGrantBar';
 
 export const CreditsTab = ({ users, creditSearch, setCreditSearch, onSearch, onAdjust }) => (
   <div data-testid="credits-tab">
+    <ProfileGrantBar onDone={onSearch} />
     <div className="flex gap-2 mb-4">
       <div className="relative flex-1 max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />

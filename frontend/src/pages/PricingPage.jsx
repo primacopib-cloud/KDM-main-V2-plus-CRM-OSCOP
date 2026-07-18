@@ -78,6 +78,17 @@ const TIERS = [
 ];
 
 const PricingPage = () => {
+  const [visibleSlugs, setVisibleSlugs] = React.useState(null);
+
+  React.useEffect(() => {
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/plans`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && Array.isArray(d.plans)) setVisibleSlugs(d.plans.map((p) => p.slug)); })
+      .catch(() => {});
+  }, []);
+
+  const tiers = visibleSlugs === null ? TIERS : TIERS.filter((t) => visibleSlugs.includes(t.id));
+
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FBF6EE 0%, #F5EBD8 45%, #FBF6EE 100%)' }} data-testid="pricing-page">
       <Seo titleKey="seo.pricing_title" descKey="seo.pricing_desc" />
@@ -114,9 +125,14 @@ const PricingPage = () => {
       {/* Tiers grid */}
       <section className="pb-16 px-4">
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6 lg:gap-7">
-          {TIERS.map((tier) => (
+          {tiers.map((tier) => (
             <PricingCard key={tier.id} tier={tier} />
           ))}
+          {tiers.length === 0 && (
+            <div className="col-span-full text-center text-slate-500 py-10" data-testid="pricing-no-plans">
+              Les offres seront bientôt disponibles. Contactez-nous pour en savoir plus.
+            </div>
+          )}
         </div>
       </section>
 

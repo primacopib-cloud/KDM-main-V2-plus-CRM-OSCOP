@@ -38,6 +38,9 @@ class SubscriptionPlanCreate(BaseModel):
     max_zones: int = 1
     max_users: int = 1
     color: Optional[str] = "#D9B35A"
+    visible: bool = True
+    visible_from: Optional[str] = None
+    visible_until: Optional[str] = None
 
 
 class SubscriptionPlanUpdate(BaseModel):
@@ -54,6 +57,9 @@ class SubscriptionPlanUpdate(BaseModel):
     max_zones: Optional[int] = None
     max_users: Optional[int] = None
     color: Optional[str] = None
+    visible: Optional[bool] = None
+    visible_from: Optional[str] = None
+    visible_until: Optional[str] = None
 
 
 class SubscriptionPlanResponse(BaseModel):
@@ -72,6 +78,9 @@ class SubscriptionPlanResponse(BaseModel):
     max_zones: int
     max_users: int
     color: str
+    visible: bool = True
+    visible_from: Optional[str] = None
+    visible_until: Optional[str] = None
     subscribers_count: int = 0
     created_at: str
     updated_at: str

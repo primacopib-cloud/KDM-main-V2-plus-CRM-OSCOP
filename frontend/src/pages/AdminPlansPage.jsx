@@ -110,6 +110,15 @@ const AdminPlansPage = () => {
       toast.error(e.message || 'Erreur');
     }
   };
+  const handleToggleVisible = async (plan) => {
+    try {
+      await adminPlansAPI.updatePlan(plan.id, { visible: plan.visible === false });
+      toast.success(plan.visible === false ? 'Plan affiché sur la page publique' : 'Plan masqué de la page publique');
+      await loadAll();
+    } catch (e) {
+      toast.error(e.message || 'Erreur');
+    }
+  };
 
   // --- Option handlers ---
   const handleCreateOption = () => {
@@ -255,6 +264,7 @@ const AdminPlansPage = () => {
             onCreate={handleCreatePlan}
             onEdit={handleEditPlan}
             onDelete={handleDeletePlan}
+            onToggleVisible={handleToggleVisible}
           />
         )}
 

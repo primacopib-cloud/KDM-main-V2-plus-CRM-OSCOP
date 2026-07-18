@@ -82,6 +82,12 @@ async def _scheduler_loop():
             await run_auto_renew_batch(_db)
         except Exception as exc:
             logger.exception("Scheduler auto-renew iteration crashed: %s", exc)
+        try:
+            if datetime.utcnow().day == 1:
+                from vendor_monthly_report import send_vendor_monthly_reports
+                await send_vendor_monthly_reports()
+        except Exception as exc:
+            logger.exception("Scheduler monthly report iteration crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

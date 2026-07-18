@@ -21,6 +21,9 @@ export const EMPTY_PLAN = {
   max_zones: 1,
   max_users: 1,
   color: '#D9B35A',
+  visible: true,
+  visible_from: null,
+  visible_until: null,
 };
 
 export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) => {
@@ -224,6 +227,43 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
               />
               <Label className="text-white/80">{i18n.t('adm.actif')}</Label>
             </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                data-testid="plan-visible-switch"
+                checked={data.visible !== false}
+                onCheckedChange={(v) => setData({ ...data, visible: v })}
+              />
+              <Label className="text-white/80">Visible (page publique)</Label>
+            </div>
+          </div>
+
+          <div className="rounded-xl p-4" style={{ background: 'rgba(217,179,90,0.06)', border: '1px solid rgba(217,179,90,0.2)' }}>
+            <Label className="text-white/80 text-sm font-semibold">Programmation de l&apos;affichage (optionnel)</Label>
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              <div>
+                <Label className="text-white/60 text-xs">Afficher à partir du</Label>
+                <Input
+                  type="date"
+                  data-testid="plan-visible-from-input"
+                  value={(data.visible_from || '').slice(0, 10)}
+                  onChange={(e) => setData({ ...data, visible_from: e.target.value ? `${e.target.value}T00:00:00+00:00` : null })}
+                  className="bg-white/5 border-white/10 text-white"
+                />
+              </div>
+              <div>
+                <Label className="text-white/60 text-xs">Masquer après le</Label>
+                <Input
+                  type="date"
+                  data-testid="plan-visible-until-input"
+                  value={(data.visible_until || '').slice(0, 10)}
+                  onChange={(e) => setData({ ...data, visible_until: e.target.value ? `${e.target.value}T23:59:59+00:00` : null })}
+                  className="bg-white/5 border-white/10 text-white"
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-white/45 mt-2">
+              Laissez vide pour un affichage permanent. Le plan n&apos;apparaît sur la page /tarifs que dans cette fenêtre.
+            </p>
           </div>
         </div>
 

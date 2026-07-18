@@ -393,6 +393,11 @@ export const adminPlansAPI = {
     return apiCall(`/admin/plans/credits/users?${q.toString()}`);
   },
   getUserCredits: (userId) => apiCall(`/admin/plans/credits/users/${userId}`),
+  grantByProfile: (data) =>
+    apiCall('/admin/plans/credits/grant-by-profile', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   adjustUserCredits: (userId, data) =>
     apiCall(`/admin/plans/credits/users/${userId}/adjust`, {
       method: 'POST',

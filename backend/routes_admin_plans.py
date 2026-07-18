@@ -72,6 +72,9 @@ async def list_subscription_plans(
             max_zones=plan.get("max_zones", 1),
             max_users=plan.get("max_users", 1),
             color=plan.get("color", "#D9B35A"),
+            visible=plan.get("visible", True),
+            visible_from=plan.get("visible_from"),
+            visible_until=plan.get("visible_until"),
             subscribers_count=count,
             created_at=plan.get("created_at", ""),
             updated_at=plan.get("updated_at", "")
@@ -116,6 +119,9 @@ async def create_subscription_plan(data: SubscriptionPlanCreate, request: Reques
         "max_zones": data.max_zones,
         "max_users": data.max_users,
         "color": data.color or "#D9B35A",
+        "visible": data.visible,
+        "visible_from": data.visible_from,
+        "visible_until": data.visible_until,
         "created_at": now,
         "updated_at": now,
         "created_by": admin.get("id")
@@ -138,6 +144,9 @@ async def create_subscription_plan(data: SubscriptionPlanCreate, request: Reques
         max_zones=data.max_zones,
         max_users=data.max_users,
         color=data.color or "#D9B35A",
+        visible=data.visible,
+        visible_from=data.visible_from,
+        visible_until=data.visible_until,
         subscribers_count=0,
         created_at=now,
         updated_at=now
@@ -175,6 +184,9 @@ async def get_subscription_plan(plan_id: str, request: Request):
         max_zones=plan.get("max_zones", 1),
         max_users=plan.get("max_users", 1),
         color=plan.get("color", "#D9B35A"),
+        visible=plan.get("visible", True),
+        visible_from=plan.get("visible_from"),
+        visible_until=plan.get("visible_until"),
         subscribers_count=count,
         created_at=plan.get("created_at", ""),
         updated_at=plan.get("updated_at", "")
@@ -224,6 +236,9 @@ async def update_subscription_plan(plan_id: str, data: SubscriptionPlanUpdate, r
         max_zones=updated.get("max_zones", 1),
         max_users=updated.get("max_users", 1),
         color=updated.get("color", "#D9B35A"),
+        visible=updated.get("visible", True),
+        visible_from=updated.get("visible_from"),
+        visible_until=updated.get("visible_until"),
         subscribers_count=count,
         created_at=updated.get("created_at", ""),
         updated_at=updated.get("updated_at", "")

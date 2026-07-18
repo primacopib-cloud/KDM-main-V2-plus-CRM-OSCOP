@@ -12,6 +12,27 @@ def set_public_stats_database(database) -> None:
     db = database
 
 
+@public_stats_router.get("/plans")
+async def public_plans():
+    """Plans d'abonnement publics : actifs, visibles et dans leur fenêtre de programmation."""
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc).isoformat()
+    plans = await db.subscription_plans.find(
+        {"active": True}, {"_id": 0, "created_by": 0}
+    ).sort("sort_order", 1).to_list(50)
+    result = []
+    for p in plans:
+        if not p.get("visible", True):
+            continue
+        if p.get("visible_from") and now < p["visible_from"]:
+            continue
+        if p.get("visible_until") and now > p["visible_until"]:
+            continue
+        result.append(p)
+    return {"plans": result, "total": len(result)}
+
+
 @public_stats_router.get("/kdmarche-videos")
 async def kdmarche_videos(limit: int = 6):
     """Galerie publique des spots vidéo IA générés par les vendeurs (jobs DONE uniquement)."""

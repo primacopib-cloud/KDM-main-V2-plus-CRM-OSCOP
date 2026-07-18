@@ -149,7 +149,7 @@ async def adjust_user_credits(user_id: str, data: CreditAdjustment, request: Req
         {"user_id": user_id},
         {
             "$set": {"balance_credits": new_balance, "updated_at": now},
-            "$setOnInsert": {"created_at": now}
+            "$setOnInsert": {"created_at": now, "org_id": f"user-{user_id}"}
         },
         upsert=True
     )
@@ -179,6 +179,58 @@ async def adjust_user_credits(user_id: str, data: CreditAdjustment, request: Req
         "new_balance": new_balance,
         "reason": data.reason
     }
+
+
+@admin_plans_credits_router.post("/credits/grant-by-profile")
+async def grant_credits_by_profile(data: dict, request: Request):
+    """
+    POST /api/admin/plans/credits/grant-by-profile
+    Attribue des crédits à tous les comptes d'un profil.
+    Body: { "profile": "vendor|buyer|COOPER|...", "amount": 50, "reason": "..." }
+    """
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    profile = (data.get("profile") or "").strip()
+    amount = int(data.get("amount") or 0)
+    reason = data.get("reason") or f"Attribution par profil ({profile})"
+    if not profile or amount == 0:
+        raise HTTPException(status_code=400, detail="profile et amount (≠ 0) requis")
+
+    now = datetime.now(timezone.utc).isoformat()
+    granted = 0
+    if profile == "vendor":
+        vendors = await db.vendors.find({}, {"_id": 0, "id": 1, "credits": 1}).to_list(500)
+        for v in vendors:
+            await db.vendors.update_one({"id": v["id"]}, {"$inc": {"credits": amount}})
+            await db.credit_transactions.insert_one({
+                "id": str(uuid.uuid4()), "vendor_id": v["id"], "action": "admin_profile_grant",
+                "cost": -amount, "detail": f"{reason} — par {admin.get('email')}",
+                "balance_after": int(v.get("credits") or 0) + amount, "at": now,
+            })
+            granted += 1
+    else:
+        users = await db.users.find({"role": profile}, {"_id": 0, "id": 1}).to_list(1000)
+        if not users:
+            raise HTTPException(status_code=404, detail=f"Aucun utilisateur avec le profil '{profile}'")
+        for u in users:
+            wallet = await db.wallets.find_one({"user_id": u["id"]})
+            new_balance = (wallet.get("balance_credits", 0) if wallet else 0) + amount
+            await db.wallets.update_one(
+                {"user_id": u["id"]},
+                {"$set": {"balance_credits": new_balance, "updated_at": now},
+                 "$setOnInsert": {"created_at": now, "org_id": f"user-{u['id']}"}},
+                upsert=True,
+            )
+            await db.credit_history.insert_one({
+                "id": str(uuid.uuid4()), "user_id": u["id"], "amount": amount,
+                "balance_after": new_balance, "reason": reason,
+                "admin_id": admin.get("id"), "admin_email": admin.get("email"),
+                "profile_grant": profile, "created_at": now,
+            })
+            granted += 1
+    return {"message": f"{amount} crédits attribués à {granted} compte(s) du profil {profile}",
+            "profile": profile, "amount": amount, "accounts": granted}
 
 
 @admin_plans_credits_router.post("/credits/bulk-adjust")

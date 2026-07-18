@@ -1,10 +1,18 @@
 import i18n from '@/i18n';
 import { tData } from '@/i18n/tData';
-import { Plus, Pencil, Trash2, CheckCircle2, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, CheckCircle2, Star, Eye, EyeOff, CalendarClock } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { formatPrice } from './shared';
 
-export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
+const visibilityBadge = (p) => {
+  if (p.visible === false) return { label: 'Masqué', bg: 'rgba(255,135,135,0.15)', color: '#FF8787' };
+  const now = new Date().toISOString();
+  if (p.visible_from && now < p.visible_from) return { label: 'Programmé', bg: 'rgba(122,183,255,0.15)', color: '#7AB7FF' };
+  if (p.visible_until && now > p.visible_until) return { label: 'Expiré', bg: 'rgba(255,179,71,0.15)', color: '#FFB347' };
+  return null;
+};
+
+export const PlansTab = ({ plans, onCreate, onEdit, onDelete, onToggleVisible }) => (
   <div data-testid="plans-tab">
     <div className="flex justify-end mb-4">
       <Button
@@ -49,6 +57,17 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
               {p.active ? i18n.t('adm.actif') : i18n.t('adm.inactif')}
             </div>
           </div>
+          {visibilityBadge(p) && (
+            <span
+              className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded text-[11px]"
+              style={{ background: visibilityBadge(p).bg, color: visibilityBadge(p).color }}
+              data-testid={`plan-visibility-badge-${p.slug}`}
+            >
+              <CalendarClock className="w-3 h-3" /> {visibilityBadge(p).label}
+              {p.visible !== false && p.visible_from && ` dès le ${p.visible_from.slice(0, 10)}`}
+              {p.visible !== false && p.visible_until && ` → ${p.visible_until.slice(0, 10)}`}
+            </span>
+          )}
           {p.description && (
             <p className="text-white/80 text-sm mt-1">{tData(p.description)}</p>
           )}
@@ -79,6 +98,16 @@ export const PlansTab = ({ plans, onCreate, onEdit, onDelete }) => (
               {i18n.t('adm.abonnes_count', { count: p.subscribers_count })}
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={() => onToggleVisible(p)}
+                data-testid={`toggle-visible-plan-${p.slug}`}
+                className="p-2 rounded hover:bg-white/10"
+                title={p.visible === false ? 'Afficher sur la page publique' : 'Masquer de la page publique'}
+              >
+                {p.visible === false
+                  ? <EyeOff className="w-4 h-4 text-red-400" />
+                  : <Eye className="w-4 h-4 text-white/70" />}
+              </button>
               <button
                 onClick={() => onEdit(p)}
                 data-testid={`edit-plan-${p.slug}`}
