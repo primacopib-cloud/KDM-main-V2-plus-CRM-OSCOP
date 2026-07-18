@@ -1,6 +1,6 @@
 import i18n from '@/i18n';
-import { useState } from 'react';
-import { Package, Plus, RefreshCw, Clock, Flag, ShoppingCart, TrendingUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Package, Plus, RefreshCw, Clock, Flag, ShoppingCart, TrendingUp, Save } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -13,36 +13,45 @@ import {
 } from '../ui/select';
 import { toast } from 'sonner';
 import { CATEGORIES, UNIT_TYPES, FORMAT_TYPES, TVA_RATES, ZONES } from './vendorConstants';
+import { ProductPhotoUploader, uploadProductPhotos } from './ProductPhotoUploader';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// ===== PRODUCT FORM MODAL =====
-export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, countries }) => {
+const EMPTY_FORM = {
+  name: '', sku: '', description: '', category: 'alimentaire', price_ht: '', tva_rate: 8.5,
+  stock_quantity: '', min_order_quantity: 1, unit_type: 'unit', volume_per_unit: '',
+  weight_per_unit: '', format_type: 'standard', units_per_lot: '', lots_per_palette: '',
+  country_of_origin: 'FR', region_of_origin: '', dlc_days: '', ean13: '',
+  storage_conditions: '', brand: '', certifications: [], available_zones: ['GUADELOUPE'],
+};
+
+// ===== PRODUCT FORM MODAL (création + édition) =====
+export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, countries, editProduct = null }) => {
+  const isEdit = Boolean(editProduct);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    sku: '',
-    description: '',
-    category: 'alimentaire',
-    price_ht: '',
-    tva_rate: 8.5,
-    stock_quantity: '',
-    min_order_quantity: 1,
-    unit_type: 'unit',
-    volume_per_unit: '',
-    weight_per_unit: '',
-    format_type: 'standard',
-    units_per_lot: '',
-    lots_per_palette: '',
-    country_of_origin: 'FR',
-    region_of_origin: '',
-    dlc_days: '',
-    ean13: '',
-    storage_conditions: '',
-    brand: '',
-    certifications: [],
-    available_zones: ['GUADELOUPE'],
-  });
+  const [photos, setPhotos] = useState([]);
+  const [categories, setCategories] = useState(CATEGORIES);
+  const [tvaRates, setTvaRates] = useState(TVA_RATES);
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setPhotos([]);
+    setFormData(editProduct ? {
+      ...EMPTY_FORM,
+      ...Object.fromEntries(Object.entries(editProduct).filter(([k]) => k in EMPTY_FORM).map(([k, v]) => [k, v ?? EMPTY_FORM[k]])),
+    } : EMPTY_FORM);
+  }, [isOpen, editProduct]);
+
+  // Taxonomie dynamique gérée par le super admin (fallback constantes)
+  useEffect(() => {
+    fetch(`${API_URL}/api/taxonomy/categories`).then((r) => r.ok && r.json()).then((d) => {
+      if (d?.categories?.length) setCategories(d.categories.map((c) => ({ value: c.value, label: c.label })));
+    }).catch(() => {});
+    fetch(`${API_URL}/api/taxonomy/tva-rates`).then((r) => r.ok && r.json()).then((d) => {
+      if (d?.rates?.length) setTvaRates(d.rates.map((r) => ({ value: r.value, label: r.label })));
+    }).catch(() => {});
+  }, [isOpen]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -75,22 +84,46 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
         dlc_days: formData.dlc_days ? parseInt(formData.dlc_days) : null,
       };
 
-      const response = await fetch(`${API_URL}/api/vendor/products?vendor_id=${vendorId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Erreur lors de la soumission');
+      let productId;
+      if (isEdit) {
+        const editPayload = {
+          name: payload.name, description: payload.description, price_ht: payload.price_ht,
+          stock_quantity: payload.stock_quantity, min_order_quantity: payload.min_order_quantity,
+          available_zones: payload.available_zones, dlc_days: payload.dlc_days,
+        };
+        const response = await fetch(`${API_URL}/api/vendor/products/${vendorId}/${editProduct.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editPayload),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Erreur lors de la modification');
+        }
+        productId = editProduct.id;
+      } else {
+        const response = await fetch(`${API_URL}/api/vendor/products?vendor_id=${vendorId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Erreur lors de la soumission');
+        }
+        const result = await response.json();
+        productId = result.product_id || result.id || result.product?.id;
       }
 
-      const result = await response.json();
-      toast.success(i18n.t('adm.produit_soumis'), {
-        description: 'Votre produit est en attente de validation par l\'administrateur.'
+      if (photos.length > 0 && productId) {
+        const uploaded = await uploadProductPhotos(API_URL, vendorId, productId, photos);
+        if (uploaded < photos.length) toast.error(`${photos.length - uploaded} photo(s) non téléversée(s)`);
+      }
+
+      toast.success(isEdit ? 'Produit modifié' : i18n.t('adm.produit_soumis'), {
+        description: isEdit ? 'Vos modifications ont été enregistrées.' : 'Votre produit est en attente de validation par l\'administrateur.'
       });
-      onSuccess(result);
+      onSuccess();
       onClose();
     } catch (error) {
       toast.error(i18n.t('adm.erreur'), { description: error.message });
@@ -105,14 +138,19 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="w-5 h-5 text-purple-600" />
-            Soumettre un nouveau produit
+            {isEdit ? `Modifier : ${editProduct.name}` : 'Soumettre un nouveau produit'}
           </DialogTitle>
           <DialogDescription>
-            Remplissez les informations du produit. Il sera soumis pour validation par l&apos;administrateur.
+            {isEdit
+              ? 'Modifiez les informations puis enregistrez.'
+              : 'Remplissez les informations du produit. Il sera soumis pour validation par l\u2019administrateur.'}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Photos */}
+          <ProductPhotoUploader photos={photos} setPhotos={setPhotos} />
+
           {/* Basic Info */}
           <div className="space-y-4">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -214,7 +252,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TVA_RATES.map(t => (
+                    {tvaRates.map(t => (
                       <SelectItem key={t.value} value={String(t.value)}>{t.label}</SelectItem>
                     ))}
                   </SelectContent>
@@ -411,10 +449,12 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
             >
               {loading ? (
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : isEdit ? (
+                <Save className="w-4 h-4 mr-2" />
               ) : (
                 <Plus className="w-4 h-4 mr-2" />
               )}
-              Soumettre pour validation
+              {isEdit ? 'Enregistrer les modifications' : 'Soumettre pour validation'}
             </Button>
           </DialogFooter>
         </form>

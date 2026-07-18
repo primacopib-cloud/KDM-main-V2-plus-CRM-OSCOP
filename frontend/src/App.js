@@ -25,6 +25,8 @@ import SignatureDemoPage from "./pages/SignatureDemoPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import DynamicOrderPage from "./pages/DynamicOrderPage";
 import VendorSpacePage from "./pages/VendorSpacePage";
+import CooperSpacePage from "./pages/CooperSpacePage";
+import ExpertSpacePage from "./pages/ExpertSpacePage";
 import AdminProductsPage from "./pages/AdminProductsPage";
 import BuyerSpacePage from "./pages/BuyerSpacePage";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -113,6 +115,8 @@ function App() {
           <Route path="/dynamic-order" element={<DynamicOrderPage />} />
           {/* Vendor Space - Espace Vendeur */}
           <Route path="/espace-vendeur" element={<VendorSpacePage />} />
+          <Route path="/espace-cooper" element={<CooperSpacePage />} />
+          <Route path="/espace-expert" element={<ExpertSpacePage />} />
           <Route path="/vendor" element={<VendorSpacePage />} />
           {/* Admin Products Validation */}
           <Route path="/admin/produits" element={<AdminProductsPage />} />

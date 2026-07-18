@@ -17,6 +17,11 @@ export const getNavItems = (userRole, isAdmin) => {
     { href: '/catalogue', label: 'nav.catalog', icon: ShoppingCart },
   ];
 
+  // Espaces dédiés par rôle (COOPER / EXPERT)
+  const roleSpaces = [];
+  if (userRole === 'COOPER' || isAdmin) roleSpaces.push({ href: '/espace-cooper', label: 'Espace COOPER', icon: Users });
+  if (userRole === 'EXPERT' || isAdmin) roleSpaces.push({ href: '/espace-expert', label: 'Espace Expert', icon: BarChart3 });
+
   // Everything below is available via the user-avatar dropdown, not the top bar.
   return {
     topBar: baseItems.concat(userRole || isAdmin ? memberShortcuts : []),
@@ -29,9 +34,9 @@ export const getNavItems = (userRole, isAdmin) => {
         { href: '/listes-achats', label: 'nav.shopping_lists', icon: ShoppingCart },
         { href: '/alertes-favoris', label: 'nav.favorite_alerts', icon: Heart },
       ],
-      vendor: userRole === 'vendor' || isAdmin ? [
+      vendor: (userRole === 'vendor' || isAdmin ? [
         { href: '/espace-vendeur', label: 'nav.vendor_space', icon: Store },
-      ] : [],
+      ] : []).concat(roleSpaces),
       admin: isAdmin ? [
         { href: '/superadmin', label: 'nav.super_admin', icon: Shield },
         { href: '/admin/plans', label: 'nav.plans_credits', icon: CreditCard },

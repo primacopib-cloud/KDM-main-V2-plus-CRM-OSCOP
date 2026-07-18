@@ -345,6 +345,17 @@ set_health_watch_database(db)
 from routes_team_roles import team_router, set_team_roles_database
 set_team_roles_database(db)
 app.include_router(team_router)
+from routes_taxonomy import taxonomy_router, set_taxonomy_database, seed_taxonomy
+set_taxonomy_database(db)
+app.include_router(taxonomy_router)
+from routes_team_space import team_space_router, admin_buyers_router, set_team_space_database
+set_team_space_database(db)
+app.include_router(team_space_router)
+app.include_router(admin_buyers_router)
+from fastapi.staticfiles import StaticFiles
+_uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+os.makedirs(os.path.join(_uploads_dir, "products"), exist_ok=True)
+app.mount("/api/uploads", StaticFiles(directory=_uploads_dir), name="uploads")
 
 # Alertes favoris (restock/promo) + routes admin stock & prix
 from favorites_alerts import set_favorites_alerts_database
@@ -522,6 +533,10 @@ async def startup_db_client():
         start_scheduler()
     except Exception as e:
         logger.warning(f"Could not start scheduler: {e}")
+    try:
+        await seed_taxonomy()
+    except Exception as e:
+        logger.warning(f"Could not seed taxonomy: {e}")
 
     # Seed default subscription plans if missing
     try:

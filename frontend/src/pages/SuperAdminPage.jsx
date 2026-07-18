@@ -11,6 +11,8 @@ import { SuperAdminHeader } from '../components/superadmin/SuperAdminHeader';
 import { DashboardTab } from '../components/superadmin/DashboardTab';
 import { UsersTab, OrdersTab } from '../components/superadmin/UsersOrdersTabs';
 import { TeamRolesTab } from '../components/superadmin/TeamRolesTab';
+import { BuyersTab } from '../components/superadmin/BuyersTab';
+import { TaxonomyTab } from '../components/superadmin/TaxonomyTab';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -131,6 +133,14 @@ export default function SuperAdminPage() {
 
           <TabsContent value="roles">
             <TeamRolesTab />
+          </TabsContent>
+
+          <TabsContent value="buyers">
+            <BuyersTab />
+          </TabsContent>
+
+          <TabsContent value="taxonomy">
+            <TaxonomyTab />
           </TabsContent>
 
           <TabsContent value="orders">

@@ -1,0 +1,34 @@
+{
+  "summary": "Iter 31 — E2E validation of 5 new features (COOPER/EXPERT spaces, admin buyers tab, taxonomy CRUD, vendor view/edit/PDF + photo upload). Backend: 11/11 pytest pass (team overview 401/200/403, buyers list+credits+suspend with restore, taxonomy public GETs + auth-gated POST/DELETE for categories and TVA rates, vendor upload PNG×3 then 4th=400 then GIF=400, PDF Content-Type=application/pdf). Frontend: all critical selectors present and functional — /espace-cooper renders cooper-space-page with 4 KPIs (orders/products/pending/lowstock) + cooper-recent-orders; /espace-expert accessible as COOPER (staff); role-space-denied shows without auth. Superadmin buyers tab: buyer-credits-{id} editable, save toast success, restored to 250. Taxonomy tab: category 'Test QA' add→list→delete OK, TVA 13.5 add→delete OK (testids are taxonomy-new-rate-*, taxonomy-add-rate-btn, taxonomy-rates-delete-* — not -tva-*, but functionally correct). Vendor space: view-product-{id} opens product-view-modal with download-product-sheet-btn; edit-product-{id} on approved product opens prefilled form with 'Modifier :' title; new-product form has product-photos-section + product-photo-add-btn + file input accept='image/png,image/jpeg'; category select has 8 options, TVA select has 6 options (both hydrated from /api/taxonomy). Non-regression: superadmin-tab-dashboard/users/roles all present. DB state clean after run.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Vendor new product modal (VendorProductFormModal)", "issues": ["Radix DialogContent warning: 'Missing Description or aria-describedby={undefined}' — accessibility a11y minor. Add <DialogDescription> or aria-describedby to silence."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter31_role_spaces_taxonomy.py",
+    "/app/test_reports/pytest/iter31.xml"
+  ],
+  "action_items": [
+    "(Optional) Rename TVA testids from taxonomy-new-rate-* to taxonomy-new-tva-* to align with review-request spec (currently .../new-rate-value, .../new-rate-label, .../add-rate-btn, .../rates-delete-{id}). Functionality is correct; only naming diverges.",
+    "(Minor a11y) Add DialogDescription to VendorProductFormModal and VendorProductViewModal to silence Radix warning.",
+    "(WS noise) WebSocket /ws/notifications closes 1006 on superadmin dashboard — non-blocking but should investigate; likely proxy/upgrade path."
+  ],
+  "critical_code_review_comments": [
+    "routes_team_space.py require_staff (line 31): STAFF_ROLES set is case-sensitive; ok as-is since seed writes uppercase, but consider normalizing user.role via .upper() to defend against case drift.",
+    "routes_taxonomy.py add_category: 409 on duplicate is good; consider trimming to 60 chars and rejecting empty regex-slug (e.g., label made entirely of punctuation → value='' would still be inserted with empty value). Add `if not value: raise 400`.",
+    "TaxonomyTab uses testId prop 'taxonomy-rates' which yields taxonomy-rates-delete-{id}; review request expected 'taxonomy-tva-*'. Align naming.",
+    "BuyersTab save flow: no debounce/optimistic rollback on 4xx — a failing PATCH would leave the input showing an unsaved value. Add try/catch with revert.",
+    "VendorProductFormModal (edit mode): backend ProductUpdate only accepts name/description/price_ht/stock_quantity/min_order_quantity/available_zones/dlc_days — form still displays category/TVA/brand/EAN etc. as editable; consider disabling those fields in edit mode to avoid user confusion (they silently don't save)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (all data-testids present, all flows PASS)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; cooper-test@kdmarche.fr / NmgHyl4STePu ; acheteur-pro@kdmarche.fr / Demo2026! ; vendor space /espace-vendeur uses vendor-demo-pro (no login).",
+  "seed_data_creation": "Temporary during tests: category 'Test QA', TVA rate 13.5 'Test QA', vendor images ×3 on vp-damoiseau-rhum-blanc, buyer credits→999 then→suspend true. ALL cleaned/restored: extra_cats=0, extra_tvas=0, vp images=[], no leftover files under uploads/products/vp-damoiseau-*, buyer credits=250 suspended=false role=buyer.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "5 iter31 features are green. Login form button uses type=submit (label is 'Se connecter' FR / 'Sign in' EN). Superadmin route is /superadmin. Vendor space /espace-vendeur is unauth-friendly (uses vendor-demo-pro implicit). Category/TVA selects in vendor form are native <select> (not Radix) — 8 cats + 6 tvas hydrated from /api/taxonomy on modal open. TVA testids diverge from review-request naming: use taxonomy-new-rate-value / taxonomy-add-rate-btn / taxonomy-rates-delete-{id} instead of *-tva-*."
+}

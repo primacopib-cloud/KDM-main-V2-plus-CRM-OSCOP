@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Package, Plus, CheckCircle2, Building2, TrendingUp, ShoppingCart,
-  Eye, Edit, Search, RefreshCw, AlertCircle, ArrowLeft, Filter,
+  Eye, Edit, Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Download,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -18,6 +18,7 @@ import { BreadcrumbPill } from '../components/Breadcrumb';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 import { getStatusBadge } from '../components/vendor/vendorConstants';
 import { VendorProductFormModal as ProductFormModal } from '../components/vendor/VendorProductFormModal';
+import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -38,6 +39,8 @@ const VendorSpacePage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [viewProduct, setViewProduct] = useState(null);
+  const [editProduct, setEditProduct] = useState(null);
 
   // Fetch dashboard data
   const fetchDashboard = useCallback(async () => {
@@ -362,14 +365,29 @@ const VendorSpacePage = () => {
                         </div>
                         
                         <div className="flex flex-col gap-2">
-                          <Button variant="outline" size="sm" className="gap-1">
+                          <Button
+                            variant="outline" size="sm" className="gap-1"
+                            onClick={() => setViewProduct(product)}
+                            data-testid={`view-product-${product.id}`}
+                          >
                             <Eye className="w-3 h-3" /> Voir
                           </Button>
                           {product.status !== 'pending_approval' && (
-                            <Button variant="outline" size="sm" className="gap-1">
+                            <Button
+                              variant="outline" size="sm" className="gap-1"
+                              onClick={() => { setEditProduct(product); setIsFormOpen(true); }}
+                              data-testid={`edit-product-${product.id}`}
+                            >
                               <Edit className="w-3 h-3" /> Modifier
                             </Button>
                           )}
+                          <Button
+                            variant="outline" size="sm" className="gap-1 text-purple-600"
+                            onClick={() => window.open(`${API_URL}/api/vendor/products/${vendorId}/${product.id}/pdf`, '_blank')}
+                            data-testid={`download-sheet-${product.id}`}
+                          >
+                            <Download className="w-3 h-3" /> Fiche PDF
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -404,14 +422,20 @@ const VendorSpacePage = () => {
         </Tabs>
       </main>
 
-      {/* Product Form Modal */}
+      {/* Product Form Modal (création + édition) */}
       <ProductFormModal
         isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        onClose={() => { setIsFormOpen(false); setEditProduct(null); }}
         onSuccess={handleProductSuccess}
         vendorId={vendorId}
         countries={countries}
+        editProduct={editProduct}
       />
+
+      {/* Product View Modal */}
+      {viewProduct && (
+        <VendorProductViewModal product={viewProduct} vendorId={vendorId} onClose={() => setViewProduct(null)} />
+      )}
     </div>
   );
 };

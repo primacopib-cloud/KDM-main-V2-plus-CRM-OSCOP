@@ -337,6 +337,59 @@ async def update_product(vendor_id: str, product_id: str, data: ProductUpdate):
     return {"success": True, "message": "Produit mis à jour"}
 
 
+@vendor_router.post("/products/{vendor_id}/{product_id}/upload-image")
+async def upload_product_image(
+    vendor_id: str,
+    product_id: str,
+    file: UploadFile = File(...),
+    is_primary: bool = Form(False),
+):
+    """Téléverse une photo produit (PNG/JPEG, max 3 photos, 5 Mo max)."""
+    product = await db.vendor_products.find_one({"id": product_id, "vendor_id": vendor_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Produit non trouvé")
+    if len(product.get("images") or []) >= 3:
+        raise HTTPException(status_code=400, detail="Maximum 3 photos par produit")
+    if file.content_type not in ("image/png", "image/jpeg"):
+        raise HTTPException(status_code=400, detail="Format accepté : PNG ou JPEG uniquement")
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Photo trop lourde (max 5 Mo)")
+
+    ext = "png" if file.content_type == "image/png" else "jpg"
+    upload_dir = os.path.join(os.path.dirname(__file__), "uploads", "products")
+    os.makedirs(upload_dir, exist_ok=True)
+    filename = f"{product_id}-{uuid.uuid4().hex[:8]}.{ext}"
+    with open(os.path.join(upload_dir, filename), "wb") as f:
+        f.write(content)
+
+    image = {
+        "url": f"/api/uploads/products/{filename}",
+        "is_primary": is_primary or not (product.get("images") or []),
+        "added_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if image["is_primary"] and (product.get("images") or []):
+        await db.vendor_products.update_one({"id": product_id}, {"$set": {"images.$[].is_primary": False}})
+    await db.vendor_products.update_one({"id": product_id}, {"$push": {"images": image}})
+    return {"success": True, "image": image}
+
+
+@vendor_router.get("/products/{vendor_id}/{product_id}/pdf")
+async def download_product_sheet(vendor_id: str, product_id: str):
+    """Télécharge la fiche produit au format PDF."""
+    from fastapi.responses import Response
+    from pdf_product_sheet import generate_product_sheet_pdf
+
+    product = await db.vendor_products.find_one({"id": product_id, "vendor_id": vendor_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Produit non trouvé")
+    pdf = generate_product_sheet_pdf(product)
+    return Response(
+        content=pdf, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="fiche-{product.get("sku", product_id)}.pdf"'},
+    )
+
+
 @vendor_router.post("/products/{vendor_id}/{product_id}/images")
 async def add_product_image(vendor_id: str, product_id: str, image_url: str, is_primary: bool = False):
     """Add image URL to product"""

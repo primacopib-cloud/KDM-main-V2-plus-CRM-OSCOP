@@ -1,7 +1,7 @@
 import i18n from '@/i18n';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck,
+  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
@@ -24,6 +24,8 @@ const TABS = [
   { value: 'catalog', label: i18n.t('adm.catalogue'), icon: Package },
   { value: 'users', label: i18n.t('adm.utilisateurs'), icon: Users },
   { value: 'roles', label: i18n.t('adm.team_tab'), icon: ShieldCheck },
+  { value: 'buyers', label: 'Espace Acheteur', icon: ShoppingBag },
+  { value: 'taxonomy', label: 'Catégories & Taxes', icon: Layers },
   { value: 'orders', label: i18n.t('adm.commandes'), icon: ShoppingCart },
 ];
 
