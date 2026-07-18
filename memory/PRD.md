@@ -566,6 +566,11 @@ Exigences produit étendues :
 - ✅ Galerie `/kdmarche` dédupliquée (une carte par produit, spot le plus récent) + champ `language` et `views` exposés.
 - ℹ️ Solde vendeur démo re-crédité à 102 par admin_grant (2 générations réelles consommées dans la session).
 
+### 2026-07-18 — Widget "Mes spots" vendeur + Variante auto selon langue interface (VALIDÉS)
+- ✅ **Endpoint** `GET /api/vendor/ai/spots/{vendor_id}` (routes_vendor_ai) : total_spots, total_views, best (meilleur spot par vues), liste par produit avec langues disponibles.
+- ✅ **Widget "Mes spots vidéo"** (`components/vendor/MySpotsWidget.jsx`, monté dans l'onglet Dashboard de VendorSpacePage) : 3 mini-stats (Spots créés / Vues cumulées / Meilleur spot 🏆) + liste des spots avec drapeaux langues et vues. Screenshot validé (3 spots, 1 vue, best = Rhum blanc).
+- ✅ **Variante auto export** : `ProductVideoModal` (catalogue acheteur) sélectionne la variante correspondant à `i18n.language` (fallback FR → première dispo). Testé : interface `?lang=en` → vidéo EN chargée par défaut (chip EN active).
+
 ## 4. Backlog
 
 ### P1 — Internationalisation

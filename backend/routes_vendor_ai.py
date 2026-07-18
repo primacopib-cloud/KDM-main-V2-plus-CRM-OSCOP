@@ -205,6 +205,38 @@ async def _run_video_job(job_id: str, payload: GenerateVideoPayload) -> None:
         await _fail_video_job(job_id, str(exc))
 
 
+@vendor_ai_router.get("/spots/{vendor_id}")
+async def vendor_spots(vendor_id: str):
+    """Mini-dashboard 'Mes spots' : vues cumulées, meilleure vidéo, liste par produit."""
+    jobs = await db.ai_video_jobs.find(
+        {"vendor_id": vendor_id, "status": "DONE", "video_url": {"$ne": None}}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    by_product: dict = {}
+    for job in jobs:
+        entry = by_product.setdefault(job["product_id"], {
+            "product_id": job["product_id"], "languages": [], "video_url": job["video_url"],
+            "created_at": job["created_at"],
+        })
+        lang = job.get("language", "fr")
+        if lang not in entry["languages"]:
+            entry["languages"].append(lang)
+    spots = []
+    for pid, entry in by_product.items():
+        product = await db.vendor_products.find_one(
+            {"id": pid}, {"_id": 0, "name": 1, "video_views": 1}) or {}
+        entry["product_name"] = product.get("name", "Produit")
+        entry["views"] = int(product.get("video_views") or 0)
+        spots.append(entry)
+    spots.sort(key=lambda s: s["views"], reverse=True)
+    best = spots[0] if spots and spots[0]["views"] > 0 else None
+    return {
+        "total_spots": len(jobs),
+        "total_views": sum(s["views"] for s in spots),
+        "best": ({"product_name": best["product_name"], "views": best["views"]} if best else None),
+        "spots": spots,
+    }
+
+
 @vendor_ai_router.get("/video-jobs/{job_id}")
 async def get_video_job(job_id: str):
     job = await db.ai_video_jobs.find_one({"id": job_id}, {"_id": 0})

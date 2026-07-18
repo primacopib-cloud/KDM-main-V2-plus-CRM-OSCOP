@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { X, Clapperboard } from 'lucide-react';
+import i18n from '../../i18n';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const LANG_LABELS = { fr: '🇫🇷 FR', en: '🇬🇧 EN', es: '🇪🇸 ES' };
 
 export const ProductVideoModal = ({ product, onClose }) => {
   const variants = product?.video_urls && Object.keys(product.video_urls).length > 1 ? product.video_urls : null;
-  const [lang, setLang] = useState(variants ? (variants.fr ? 'fr' : Object.keys(variants)[0]) : null);
+  const uiLang = (i18n.language || 'fr').slice(0, 2);
+  const [lang, setLang] = useState(
+    variants ? (variants[uiLang] ? uiLang : (variants.fr ? 'fr' : Object.keys(variants)[0])) : null
+  );
   const [counted, setCounted] = useState(false);
 
   if (!product) return null;

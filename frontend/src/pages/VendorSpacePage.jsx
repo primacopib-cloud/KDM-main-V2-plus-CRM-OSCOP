@@ -21,6 +21,7 @@ import { VendorProductFormModal as ProductFormModal } from '../components/vendor
 import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
 import { AIStudioModal } from '../components/vendor/AIStudioModal';
 import { ProductActions } from '../components/vendor/ProductActions';
+import { MySpotsWidget } from '../components/vendor/MySpotsWidget';
 import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -290,6 +291,9 @@ const VendorSpacePage = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Mes spots vidéo */}
+            <MySpotsWidget vendorId={vendorId} />
 
             {/* Recent Orders */}
             <Card>
