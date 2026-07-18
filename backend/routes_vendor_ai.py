@@ -123,16 +123,21 @@ async def ai_generate_video(vendor_id: str, product_id: str, payload: GenerateVi
 
 
 async def _finalize_video_job(job_id: str, video_url: str) -> None:
-    """Marque le job DONE et lie la vidéo au produit vendeur (+ catalogue B2B si approuvé)."""
+    """Sauvegarde la vidéo en local, marque le job DONE et lie la vidéo au produit vendeur."""
     job = await db.ai_video_jobs.find_one({"id": job_id}, {"_id": 0, "product_id": 1})
+    local_url = video_url
+    try:
+        local_url = await ai_media_service.download_video_locally(video_url, job_id)
+    except Exception as exc:
+        logger.warning("Sauvegarde locale vidéo %s échouée (%s) — URL fal conservée", job_id, exc)
     await db.ai_video_jobs.update_one(
         {"id": job_id},
-        {"$set": {"status": "DONE", "video_url": video_url,
+        {"$set": {"status": "DONE", "video_url": local_url, "fal_video_url": video_url,
                   "finished_at": datetime.now(timezone.utc).isoformat()}},
     )
     if job:
-        await db.vendor_products.update_one({"id": job["product_id"]}, {"$set": {"video_url": video_url}})
-        await db.products.update_one({"id": job["product_id"]}, {"$set": {"video_url": video_url}})
+        await db.vendor_products.update_one({"id": job["product_id"]}, {"$set": {"video_url": local_url}})
+        await db.products.update_one({"id": job["product_id"]}, {"$set": {"video_url": local_url}})
 
 
 async def _fail_video_job(job_id: str, error: str) -> None:

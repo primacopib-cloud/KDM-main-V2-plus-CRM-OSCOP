@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Package, Plus, CheckCircle2, Building2, TrendingUp, ShoppingCart,
-  Eye, Edit, Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Download, Sparkles, Coins,
+  Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Coins,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -20,6 +20,7 @@ import { getStatusBadge } from '../components/vendor/vendorConstants';
 import { VendorProductFormModal as ProductFormModal } from '../components/vendor/VendorProductFormModal';
 import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
 import { AIStudioModal } from '../components/vendor/AIStudioModal';
+import { ProductActions } from '../components/vendor/ProductActions';
 import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -411,38 +412,12 @@ const VendorSpacePage = () => {
                           </div>
                         </div>
                         
-                        <div className="flex flex-col gap-2">
-                          <Button
-                            variant="outline" size="sm" className="gap-1"
-                            onClick={() => setViewProduct(product)}
-                            data-testid={`view-product-${product.id}`}
-                          >
-                            <Eye className="w-3 h-3" /> Voir
-                          </Button>
-                          {product.status !== 'pending_approval' && (
-                            <Button
-                              variant="outline" size="sm" className="gap-1"
-                              onClick={() => { setEditProduct(product); setIsFormOpen(true); }}
-                              data-testid={`edit-product-${product.id}`}
-                            >
-                              <Edit className="w-3 h-3" /> Modifier
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline" size="sm" className="gap-1 text-purple-600"
-                            onClick={() => window.open(`${API_URL}/api/vendor/products/${vendorId}/${product.id}/pdf`, '_blank')}
-                            data-testid={`download-sheet-${product.id}`}
-                          >
-                            <Download className="w-3 h-3" /> Fiche PDF
-                          </Button>
-                          <Button
-                            size="sm" className="gap-1 bg-purple-600 hover:bg-purple-700 text-white"
-                            onClick={() => setAiProduct(product)}
-                            data-testid={`ai-studio-${product.id}`}
-                          >
-                            <Sparkles className="w-3 h-3" /> Studio IA
-                          </Button>
-                        </div>
+                        <ProductActions
+                          product={product} vendorId={vendorId}
+                          onView={() => setViewProduct(product)}
+                          onEdit={() => { setEditProduct(product); setIsFormOpen(true); }}
+                          onAI={() => setAiProduct(product)}
+                        />
                       </div>
                     </CardContent>
                   </Card>

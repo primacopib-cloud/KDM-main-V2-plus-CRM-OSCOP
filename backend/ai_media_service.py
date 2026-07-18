@@ -100,6 +100,21 @@ async def check_video_status(model: str, request_id: str) -> str:
         type(status).__name__, "IN_PROGRESS")
 
 
+async def download_video_locally(video_url: str, name: str) -> str:
+    """Copie une vidéo fal.media dans uploads/videos pour la pérenniser. Retourne l'URL locale."""
+    import httpx
+
+    videos_dir = os.path.join(os.path.dirname(__file__), "uploads", "videos")
+    os.makedirs(videos_dir, exist_ok=True)
+    filename = f"{name}.mp4"
+    async with httpx.AsyncClient(timeout=120) as client:
+        resp = await client.get(video_url)
+        resp.raise_for_status()
+        with open(os.path.join(videos_dir, filename), "wb") as f:
+            f.write(resp.content)
+    return f"/api/uploads/videos/{filename}"
+
+
 async def get_video_result(model: str, request_id: str) -> dict:
     """Récupère le résultat d'une requête vidéo fal.ai terminée. Retourne {video_url}."""
     import fal_client

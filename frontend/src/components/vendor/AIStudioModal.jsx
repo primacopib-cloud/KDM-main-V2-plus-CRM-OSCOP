@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Sparkles, Wand2, Clapperboard, Loader2, Coins, X } from 'lucide-react';
+import { VideoShareButtons } from './VideoShareButtons';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -168,7 +169,11 @@ export const AIStudioModal = ({ product, vendorId, onClose, onMediaAdded }) => {
           <div className="mt-4 text-sm" data-testid="ai-video-job">
             {videoJob.status === 'RUNNING' && <p className="flex items-center gap-2 text-purple-700"><Loader2 size={14} className="animate-spin" /> Spot en cours de génération…</p>}
             {videoJob.status === 'DONE' && videoJob.video_url && (
-              <video src={videoJob.video_url} controls className="w-full rounded-xl" data-testid="ai-video-player" />
+              <>
+                <video src={videoJob.video_url.startsWith('http') ? videoJob.video_url : `${API_URL}${videoJob.video_url}`}
+                  controls className="w-full rounded-xl" data-testid="ai-video-player" />
+                <VideoShareButtons videoUrl={videoJob.video_url} productName={product.name} />
+              </>
             )}
             {videoJob.status === 'ERROR' && <p className="text-red-600">Échec : {videoJob.error} (crédits remboursés)</p>}
           </div>
