@@ -1014,3 +1014,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 ## 2026-07-18 — Journal des envois par modèle d'email
 - GET /api/admin/email-previews/{id}/logs (admin only, 403/404 validés) : 50 derniers envois réels du modèle (destinataire, objet, date, tri desc).
 - UI : section "Journal des envois" au-dessus de l'aperçu (EmailLogsList, scrollable max-h-40, message si vide). Validé E2E navigateur.
+
+## 2026-07-18 — Renvoi direct depuis le journal des emails
+- email_logs enrichi : id unique (eml_xxx) + html complet stocké à chaque envoi (permet renvoi fidèle ; pièces jointes non conservées).
+- POST /api/admin/email-previews/logs/{log_id}/resend : renvoie l'email d'origine à son destinataire (html du log, fallback template générique si log ancien sans html → 409). Codes validés : 403 non-admin, 404 log inconnu, 502 échec Brevo. Le renvoi est journalisé (tags d'origine → stats incrémentées).
+- UI : bouton or « Renvoyer » sur chaque ligne du journal + toast. Validé E2E navigateur (toast "Email renvoyé à acheteur-pro@kdmarche.fr", compteur passé à 2).

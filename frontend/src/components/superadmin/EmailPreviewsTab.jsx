@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Mail, Loader2, Send, History } from 'lucide-react';
+import { Mail, Loader2, Send, History, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
 const EmailLogsList = ({ templateId }) => {
   const [logs, setLogs] = useState(null);
+  const [resending, setResending] = useState(null);
 
   useEffect(() => {
     setLogs(null);
@@ -13,6 +14,22 @@ const EmailLogsList = ({ templateId }) => {
       .then((d) => setLogs(d.logs || []))
       .catch(() => setLogs([]));
   }, [templateId]);
+
+  const resend = async (log) => {
+    setResending(log.id);
+    try {
+      const r = await fetch(`${API}/admin/email-previews/logs/${log.id}/resend`, {
+        method: 'POST', headers: getAuthHeaders(), credentials: 'include',
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Renvoi impossible');
+      toast.success(`Email renvoyé à ${d.to}`);
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setResending(null);
+    }
+  };
 
   if (logs === null) {
     return <div className="flex justify-center py-3"><Loader2 className="w-4 h-4 animate-spin text-[#D9B35A]" /></div>;
@@ -23,10 +40,26 @@ const EmailLogsList = ({ templateId }) => {
   return (
     <div className="max-h-40 overflow-y-auto space-y-1" data-testid="email-logs-list">
       {logs.map((l, i) => (
-        <div key={i} className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg bg-white/[0.04] text-xs">
+        <div key={l.id || i} className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg bg-white/[0.04] text-xs">
           <span className="text-white/80 truncate">{l.to_email}</span>
-          <span className="text-white/45 flex-shrink-0">
-            {l.sent_at ? new Date(l.sent_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+          <span className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-white/45">
+              {l.sent_at ? new Date(l.sent_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+            </span>
+            {l.id && (
+              <button
+                type="button"
+                onClick={() => resend(l)}
+                disabled={resending === l.id}
+                title="Renvoyer cet email au destinataire"
+                data-testid={`resend-email-${l.id}`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold transition-colors hover:brightness-110 disabled:opacity-50"
+                style={{ background: 'rgba(217,179,90,0.16)', border: '1px solid rgba(217,179,90,0.45)', color: '#E9CF8E' }}
+              >
+                {resending === l.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                Renvoyer
+              </button>
+            )}
           </span>
         </div>
       ))}

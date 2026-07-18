@@ -131,9 +131,41 @@ async def get_template_logs(request: Request, template_id: str, limit: int = 50)
         raise HTTPException(status_code=404, detail="Modèle introuvable")
     limit = max(1, min(limit, 200))
     logs = await db.email_logs.find(
-        {"tags": {"$in": tags}}, {"_id": 0, "to_email": 1, "subject": 1, "sent_at": 1}
+        {"tags": {"$in": tags}}, {"_id": 0, "id": 1, "to_email": 1, "subject": 1, "sent_at": 1}
     ).sort("sent_at", -1).to_list(limit)
     return {"logs": logs}
+
+
+@email_previews_router.post("/logs/{log_id}/resend")
+async def resend_email_log(request: Request, log_id: str):
+    """Renvoie l'email d'origine à son destinataire (contenu conservé, sans pièces jointes)."""
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    log = await db.email_logs.find_one({"id": log_id}, {"_id": 0})
+    if not log:
+        raise HTTPException(status_code=404, detail="Envoi introuvable dans le journal")
+    from brevo_service import is_brevo_configured, send_email
+    if not is_brevo_configured():
+        raise HTTPException(status_code=503, detail="Brevo non configuré")
+    html = log.get("html")
+    if not html:
+        tpl = next(
+            (t for t in _TEMPLATES for tag in log.get("tags", []) if tag in _TAG_MAP.get(t["id"], [])),
+            None,
+        )
+        if not tpl:
+            raise HTTPException(status_code=409, detail="Contenu d'origine non conservé pour cet envoi")
+        html = _wrap_html(tpl["subject"], tpl["body"])
+    result = await send_email(
+        to_email=log["to_email"], to_name=None,
+        subject=log["subject"],
+        html_content=html,
+        tags=log.get("tags") or ["resend"],
+    )
+    if not result:
+        raise HTTPException(status_code=502, detail="Échec de l'envoi Brevo")
+    return {"sent": True, "to": log["to_email"], "message_id": result.get("messageId")}
 
 
 @email_previews_router.post("/{template_id}/send-test")
