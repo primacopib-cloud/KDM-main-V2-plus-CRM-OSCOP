@@ -371,6 +371,9 @@ async def upload_product_image(
     if image["is_primary"] and (product.get("images") or []):
         await db.vendor_products.update_one({"id": product_id}, {"$set": {"images.$[].is_primary": False}})
     await db.vendor_products.update_one({"id": product_id}, {"$push": {"images": image}})
+    # Sync la photo principale vers le catalogue B2B si le produit est déjà approuvé
+    if image["is_primary"] and product.get("status") == ProductStatus.APPROVED.value:
+        await db.products.update_one({"id": product_id}, {"$set": {"image_url": image["url"]}})
     return {"success": True, "image": image}
 
 

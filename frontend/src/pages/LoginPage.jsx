@@ -34,7 +34,12 @@ const LoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await authAPI.login(formData.email, formData.password);
+      const data = await authAPI.login(formData.email, formData.password);
+      if (data?.user?.must_change_password) {
+        toast.info(t('auth.login_success'));
+        navigate('/changer-mot-de-passe');
+        return;
+      }
       toast.success(t('auth.login_success'));
       navigate('/dashboard');
     } catch (error) {

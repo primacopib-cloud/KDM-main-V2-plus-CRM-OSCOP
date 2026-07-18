@@ -8,6 +8,7 @@ from models import (
     UserCreate, UserLogin, UserResponse, UserInDB, Token,
     PasswordResetRequest, PasswordResetConfirm, PasswordResetToken,
 )
+from pydantic import BaseModel
 from auth import get_password_hash, verify_password, create_access_token, set_auth_cookie, clear_auth_cookie
 from subscriptions import get_plan_default_credits
 from email_service import send_password_reset_email
@@ -102,6 +103,7 @@ async def login(credentials: UserLogin, response: Response):
             subscription=user["subscription"],
             credits=user["credits"],
             is_admin=user.get("is_admin", False),
+            must_change_password=user.get("must_change_password", False),
             created_at=user["created_at"]
         )
     )
@@ -127,8 +129,34 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         subscription=current_user["subscription"],
         credits=current_user["credits"],
         is_admin=current_user.get("is_admin", False),
+        must_change_password=current_user.get("must_change_password", False),
         created_at=current_user["created_at"]
     )
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@auth_core_router.post("/auth/change-password", response_model=dict)
+async def change_password(payload: PasswordChange, current_user: dict = Depends(get_current_user)):
+    """Change password (used for mandatory first-login change of temporary password)."""
+    db = get_database()
+    if not verify_password(payload.current_password, current_user["password_hash"]):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mot de passe actuel incorrect")
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le nouveau mot de passe doit contenir au moins 8 caractères")
+    if payload.new_password == payload.current_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le nouveau mot de passe doit être différent de l'actuel")
+
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"password_hash": get_password_hash(payload.new_password), "updated_at": datetime.utcnow()},
+         "$unset": {"must_change_password": ""}},
+    )
+    logger.info(f"Password changed for user: {current_user['email']}")
+    return {"message": "Mot de passe modifié avec succès"}
 
 
 # ============== PASSWORD RESET ROUTES ==============

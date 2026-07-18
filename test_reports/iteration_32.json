@@ -1,0 +1,24 @@
+{
+  "summary": "Iter 32 — Validated 2 new features: (1) mandatory password change on first login, (2) catalog v2 product photo publication after admin approval. Backend: 4/4 pytest PASS (create member with temp_pwd → login must_change_password=true → change-password errors 400/401/400 → success 200 → re-login must_change_password=false; /api/v2/catalog/products contains vp-damoiseau-rhum-blanc with image_url=/api/uploads/products/vp-damoiseau-rhum-blanc-photo.png + price_ht_cents=1659 + category_name='Boissons' + price_visible=true; image PNG served 200 image/png; re-approve is idempotent — no duplicate in catalog). Frontend: 3/3 flows PASS — created member 'pwd-ui-qa@kdmarche.fr' via API, logged in with temp password, was AUTO-REDIRECTED to /changer-mot-de-passe (change-password-page rendered), mismatch validation triggers toast 'Les deux mots de passe ne correspondent pas', valid submit navigates to /dashboard with success toast. Catalogue: buyer login → /catalogue shows 9 products including Rhum blanc with <img src='/api/uploads/products/vp-damoiseau-rhum-blanc-photo.png'> and price '16,59 €'; add-to-cart button (+) present. Non-regression: admin@kdmarche-oscop.fr login → /dashboard (NOT /changer-mot-de-passe). DB cleanup executed: pwd-ui-qa + pwd-test-qa deleted.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter32_password_change_and_catalog.py",
+    "/app/test_reports/pytest/iter32.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_core_auth.py change_password (line 150): rejects new_password == current_password with 400 — good UX. However there is no maximum-length check (e.g., bcrypt truncates at 72 bytes silently). Consider max_length=64 in Pydantic model to fail fast.",
+    "ChangePasswordPage.jsx: after successful change, hard-codes navigate('/dashboard'). Consider honoring a ?redirect= query param for future flexibility.",
+    "LoginPage.jsx (line 38-42): redirect to /changer-mot-de-passe only checks data.user.must_change_password. Good. But if a user manually navigates to /dashboard while must_change_password=true, no guard forces them back. Add a route-level guard (in App.js or a wrapper) that re-reads user from localStorage and redirects if must_change_password is truthy.",
+    "routes_team_roles.py create_member returns temp_password in the API response body — OK for admin UI, but ensure this endpoint is never logged with body payloads (verify no request-body logger middleware writes it to logs).",
+    "ChangePasswordPage.jsx duplicates localStorage user-update logic; consider centralizing in authAPI (single source of truth)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter32_password_change_and_catalog.py"],
+  "success_rate": {"backend": "100% (4/4)", "frontend": "100% (3/3 flows)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; acheteur-pro@kdmarche.fr / Demo2026! ; cooper-test@kdmarche.fr / CooperNew2026! (already changed).",
+  "seed_data_creation": "TEMPORARY during tests: pwd-test-qa@kdmarche.fr (backend) and pwd-ui-qa@kdmarche.fr (frontend) — BOTH DELETED from db.users at end of run. vp-damoiseau-rhum-blanc image + zone_prices PRESERVED as required.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Both iter-32 features are production-ready. The route guard for must_change_password ONLY fires at login (LoginPage.jsx line 38); there is no global guard preventing manual navigation to /dashboard while flag is true (minor). Catalog v2 endpoint returns a top-level LIST (not {products: [...]}). Login response contains access_token AND sets httpOnly cookie ; Bearer + credentials:include both work. Brevo emails DO fire on /admin/team/create (email_sent:true) — used only 2 fictional @kdmarche.fr addresses as advised."
+}
