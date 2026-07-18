@@ -904,3 +904,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Réouverture : POST /api/support/my-tickets/{id}/reopen (ticket CLOSED du user uniquement, message optionnel poussé dans replies avec from_client=true, email Brevo à l'équipe support). UI : textarea + bouton "Relancer le ticket" sur les tickets fermés dans MySupportTickets.jsx.
 - Fil de conversation différencié client/support dans les deux UIs (client : "Vous" fond blanc / admin tab : "(client)" fond bleu).
 - Validé E2E par curl (reply→unread=1→mark-read=0→close→reopen→OPEN+reply client) + screenshots (pastille "1" navbar, thread complet sur /contact).
+
+## 2026-07-18 — FAQ, Stats support, Restyle dashboard, Adhésion + Registres membres
+- FAQ accordéon (6 questions) sur /contact au-dessus du formulaire (SupportContactPage, ui/accordion).
+- Stats onglet Support admin : GET /api/support/admin/stats (délai moyen 1ère réponse, volume par catégorie/statut) affiché en 3 cartes (SupportStats dans SupportTicketsTab).
+- Restyle Super Admin dashboard en thème clair contrasté (DashboardTab.jsx + widgets.jsx) : cartes blanches ombrées or, chiffres violet #4C2A6E, textes bruns lisibles — plus de text-white sur fond crème.
+- Adhésion B2B (/onboarding Step 1) : sélecteur "Acheteur pro / Vendeur pro" (formData.memberType), envoyé via api.v2.js → OrgCreate.member_type persisté sur l'org (routes_v2.py).
+- Registres membres : à l'approbation d'une adhésion (routes_v2_applications.py), upsert automatique dans db.member_registry (member_type, legal_name, siret, territory, contact nom/email/téléphone, registered_at, ACTIVE). Onglet "Registres" Super Admin (MemberRegistryTab.jsx) avec filtres Acheteurs/Vendeurs pro + GET /api/v2/admin/member-registry (admin only).
+- Testing : iteration_41.json — 100% backend (6/6 pytest, flux BUYER_PRO complet E2E) + 100% frontend. Comptes test: test-registre-vendeur@kdmarche.fr / Test2026!.

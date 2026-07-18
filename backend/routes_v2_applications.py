@@ -269,7 +269,7 @@ async def decide_application(
         owner_ms = await db.org_memberships.find_one({"org_id": org_id, "role": CustomerRole.CUSTOMER_ORG_OWNER.value})
         owner_user = None
         if owner_ms:
-            owner_user = await db.users.find_one({"id": owner_ms["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1})
+            owner_user = await db.users.find_one({"id": owner_ms["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
         member_type = (org or {}).get("member_type") or "BUYER_PRO"
         await db.member_registry.update_one(
             {"org_id": org_id},
@@ -280,6 +280,7 @@ async def decide_application(
                 "territory": (org or {}).get("territory"),
                 "contact_name": (owner_user or {}).get("contact_name"),
                 "contact_email": (owner_user or {}).get("email"),
+                "contact_phone": (owner_user or {}).get("phone"),
                 "application_id": app_id,
                 "registered_at": now,
                 "status": "ACTIVE",
