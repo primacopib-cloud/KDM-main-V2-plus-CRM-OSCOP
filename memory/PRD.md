@@ -786,3 +786,12 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Crédits vendeurs (vendor_credits.py) : barème credit_pricing seedé (fiche 5, photo 1, image IA 10, amélioration 8, vidéo 50), consume/refund + transactions, consommation branchée sur submit_product/upload-image/IA. Admin : onglet "Crédits & IA" /superadmin (barème éditable + attribution soldes). Solde affiché dans l'espace vendeur. vendor-demo-pro seedé à ~152 crédits.
 - Validation iteration_33.json : backend 9/9, frontend 4/4 PASS. Génération/amélioration IA réelles validées par main agent (images attachées au produit rhum, crédits décomptés, remboursement sur échec).
 - EN ATTENTE UTILISATEUR : clé FAL_KEY (fal.ai/dashboard/keys) pour activer la vidéo ; test Stripe Live 1€ en production.
+
+## 2026-07-18 — Packs Stripe + Promotions + Analytics + Historiques + FAL_KEY
+- FAL_KEY configurée dans backend/.env (video:true). ⚠️ Compte fal.ai SANS SOLDE — jobs vidéo → ERROR "Exhausted balance" + remboursement auto. L'utilisateur doit recharger sur fal.ai/dashboard/billing.
+- Packs de crédits Stripe (routes_credit_packs.py) : starter 50/9,90€, pro 200/29,90€, studio 500/59,90€ (collection credit_packs). Achat via _create_checkout_session (compte RECHARGE), crédit idempotent au polling /api/credit-packs/status/{sid} avec bonus promo. UI : badge crédits cliquable → CreditPacksModal (packs + historique), polling ?credit_session= au retour Stripe.
+- Promotions (credit_promotions.py) : bonus_purchase / discount_action en %, scopes profil/territoire/catégorie/action, CRUD + archivage admin (/api/admin/credit-promotions). Discount appliqué dans consume_credits (arrondi ceil). UI : CreditPromotionsPanel dans l'onglet Crédits & IA.
+- Analytics (/api/admin/credit-analytics) : totaux achetés/consommés/remboursés/revenus € + ventilation service/vendeur/territoire/catégorie (transactions enrichies category/territory/owner_type). UI : CreditAnalyticsPanel.
+- Historiques : vendeur (50 dernières transactions dans le modal), acheteur pro (GET /api/team/my-credits + section repliable BuyerCreditHistory sur /dashboard, ajustements admin loggés).
+- Validation iteration_34.json : backend 7/7, frontend 3/3 PASS. Stripe LIVE : session créée jamais payée.
+- EN ATTENTE : solde fal.ai (vidéos), test Stripe Live 1€ prod, 2 dernières apps écosystème.
