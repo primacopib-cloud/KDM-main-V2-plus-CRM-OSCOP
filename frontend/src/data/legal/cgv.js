@@ -76,7 +76,7 @@ Il n'existe **aucune subvention croisée** entre KDMARCHE et O'SCOP, ni aucun m�
 export const cgOscopContent = {
   id: "cg-oscop",
   title: "CG O'SCOP",
-  subtitle: "Accès – Abonnements – Wallet Crédits (B2B)",
+  subtitle: "Accès – Abonnements – CREDI'SCOP (B2B)",
   version: "{{VERSION}}",
   dateEffet: "{{DATE_EFFET}}",
   reference: "{{REF_CG_OSCOP}}",
@@ -159,7 +159,7 @@ export const cgOscopContent = {
     },
     {
       number: "8",
-      title: "Wallet Crédits – Définition juridique et règles d'usage (clause sensible)",
+      title: "CREDI'SCOP – Définition juridique et règles d'usage (clause sensible)",
       content: `**8.1.** Les crédits constituent une unité de service interne permettant de financer l'usage des fonctionnalités O'SCOP.
 
 **8.2.** Les crédits :

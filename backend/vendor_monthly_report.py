@@ -84,6 +84,15 @@ async def send_vendor_monthly_reports(force: bool = False) -> int:
                 tags=["monthly-report"],
             )
             await db.vendors.update_one({"id": vendor["id"]}, {"$set": {"monthly_report_sent": month_key}})
+            await db.vendor_report_log.insert_one({
+                "id": f"{vendor['id']}-{datetime.now(timezone.utc).isoformat()}",
+                "vendor_id": vendor["id"],
+                "vendor_name": vendor.get("company_name", ""),
+                "email": vendor["email"],
+                "month": month_key,
+                "stats": stats,
+                "sent_at": datetime.now(timezone.utc).isoformat(),
+            })
             sent += 1
         except Exception as exc:
             logger.warning("Rapport mensuel échoué pour %s: %s", vendor.get("email"), exc)
@@ -101,3 +110,56 @@ async def trigger_monthly_reports(force: bool = False, _: dict = Depends(_admin)
     """Déclenche manuellement l'envoi des rapports mensuels vendeurs."""
     sent = await send_vendor_monthly_reports(force=force)
     return {"status": "DONE", "sent": sent}
+
+
+@vendor_reports_router.get("/history")
+async def reports_history(limit: int = 50, _: dict = Depends(_admin)):
+    """Journal des rapports mensuels envoyés."""
+    logs = await db.vendor_report_log.find({}, {"_id": 0}).sort("sent_at", -1).to_list(min(limit, 200))
+    return {"reports": logs, "total": len(logs)}
+
+
+@vendor_reports_router.post("/resend/{vendor_id}")
+async def resend_report(vendor_id: str, _: dict = Depends(_admin)):
+    """Renvoie immédiatement le rapport mensuel à un vendeur donné."""
+    import os
+    from brevo_service import is_brevo_configured, send_email, _wrap_html
+
+    if not is_brevo_configured():
+        return {"status": "SKIPPED", "detail": "Brevo non configuré"}
+    vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
+    if not vendor or not vendor.get("email"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Vendeur introuvable ou sans email")
+    month_key = datetime.now(timezone.utc).strftime("%Y-%m")
+    stats = await _vendor_month_stats(vendor_id)
+    base = os.environ.get("FRONTEND_URL", "")
+    best_html = (
+        f"<li>🏆 Meilleur spot : <strong>{stats['best']['name']}</strong> ({stats['best']['views']} vues)</li>"
+        if stats["best"] else ""
+    )
+    body = (
+        f"<p>Bonjour {vendor.get('contact_name', '')},</p>"
+        f"<p>Voici votre récapitulatif KDMARCHÉ :</p>"
+        "<ul>"
+        f"<li>🎬 Spots vidéo publiés : <strong>{stats['spots']}</strong></li>"
+        f"<li>👁 Vues cumulées de vos spots : <strong>{stats['total_views']}</strong></li>"
+        f"{best_html}"
+        f"<li>🛒 Commandes reçues : <strong>{stats['orders']}</strong></li>"
+        f"<li>💶 Chiffre d'affaires HT : <strong>{stats['revenue']:.2f} €</strong></li>"
+        "</ul>"
+        f"<p>Retrouvez le détail dans votre <a href='{base}/espace-vendeur'>Espace Vendeur</a>.</p>"
+    )
+    await send_email(
+        to_email=vendor["email"], to_name=vendor.get("contact_name"),
+        subject=f"📊 Votre rapport mensuel KDMARCHÉ — {month_key}",
+        html_content=_wrap_html("Votre rapport mensuel", body),
+        tags=["monthly-report"],
+    )
+    await db.vendor_report_log.insert_one({
+        "id": f"{vendor_id}-{datetime.now(timezone.utc).isoformat()}",
+        "vendor_id": vendor_id, "vendor_name": vendor.get("company_name", ""),
+        "email": vendor["email"], "month": month_key, "stats": stats,
+        "sent_at": datetime.now(timezone.utc).isoformat(), "resent": True,
+    })
+    return {"status": "SENT", "vendor_id": vendor_id, "email": vendor["email"]}

@@ -582,6 +582,11 @@ Exigences produit étendues :
 - ✅ **Rapport mensuel vendeur** : `vendor_monthly_report.py` — email Brevo (spots, vues cumulées, meilleur spot, commandes, CA HT), idempotent par mois (`monthly_report_sent`), envoyé le 1er du mois par le scheduler + déclenchement manuel `POST /api/admin/vendor-reports/send?force=true` (testé réel : 1 email Brevo).
 - Testing_agent iteration_37 : 3/3 backend + 4/4 UI flows PASS, état des plans restauré.
 
+### 2026-07-18 — CREDI'SCOP + Historique rapports + Promos programmées (VALIDÉS self-test)
+- ✅ **Renommage Wallet → CREDI'SCOP** (KDMARCHÉ uniquement — les autres apps de l'écosystème sont externes) : toutes les valeurs i18n FR/EN/ES (15 fichiers locales), textes en dur (Breadcrumb, QuickNav, CatalogHeader, DashboardPage, DocumentsPage, cgv.js, mock.js, useNavigationHistory). Page /wallet : titre "Mon CREDI'SCOP", signature "Mes droits coopératifs mobilisables", définition institutionnelle (capital d'usage coopératif) et **mention juridique** en pied de page (droits d'usage internes, ni parts sociales ni monnaie électronique). Screenshot validé.
+- ✅ **Historique rapports mensuels** : collection `vendor_report_log` alimentée à chaque envoi. Endpoints `GET /api/admin/vendor-reports/history` + `POST /api/admin/vendor-reports/resend/{vendor_id}`. UI : panneau "Rapports mensuels vendeurs" (`VendorReportsPanel.jsx`) dans SuperAdmin > Crédits & IA avec boutons "Envoyer à tous" et "Renvoyer" par ligne (badge renvoyé). Testé réel : resend Brevo SENT.
+- ✅ **Promotions programmées (offres flash)** : champs `starts_at`/`ends_at` sur les promotions crédits + filtre fenêtre dans `_matches` (credit_promotions.py). UI : champs dates "Du/Au" dans le formulaire + badge ⏱ fenêtre sur les lignes. Testé : promo future → 0%, fenêtre active → 50%, expirée → 0%.
+
 ## 4. Backlog
 
 ### P1 — Internationalisation

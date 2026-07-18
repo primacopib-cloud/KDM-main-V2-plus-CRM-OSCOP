@@ -14,7 +14,7 @@ const routeConfig = {
   '/espace-acheteur': { label: 'breadcrumb.espace_acheteur', parent: '/' },
   '/catalogue': { label: 'nav.catalog', parent: '/espace-acheteur' },
   '/commandes': { label: 'buyer.commandes', parent: '/espace-acheteur' },
-  '/wallet': { label: 'Wallet', parent: '/espace-acheteur' },
+  '/wallet': { label: "Mon CREDI'SCOP", parent: '/espace-acheteur' },
   '/documents': { label: 'nav.documents', parent: '/espace-acheteur' },
   '/checkout': { label: 'breadcrumb.paiement', parent: '/catalogue' },
   '/espace-vendeur': { label: 'nav.vendor_space', parent: '/' },

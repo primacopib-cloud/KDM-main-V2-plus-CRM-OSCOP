@@ -33,11 +33,18 @@ class PromotionPayload(BaseModel):
     scope_territory: str = "ALL"    # ALL | GUADELOUPE | MARTINIQUE | ...
     scope_category: str = "all"     # all | slug catégorie produit
     scope_action: str = "all"       # all | action du barème
+    starts_at: str | None = None    # ISO — début de l'offre flash
+    ends_at: str | None = None      # ISO — fin de l'offre flash
     active: bool = True
 
 
 def _matches(promo: dict, profile: str, territory: str | None, category: str | None, action: str | None) -> bool:
     if promo.get("archived") or not promo.get("active"):
+        return False
+    now = datetime.now(timezone.utc).isoformat()
+    if promo.get("starts_at") and now < promo["starts_at"]:
+        return False
+    if promo.get("ends_at") and now > promo["ends_at"]:
         return False
     if promo.get("scope_profile", "all") not in ("all", profile):
         return False

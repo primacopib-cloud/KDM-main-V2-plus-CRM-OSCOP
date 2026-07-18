@@ -142,7 +142,7 @@
       "Organizador de la mutualización",
       "Operador del acceso a la plataforma",
       "Gestor de las suscripciones",
-      "Gestor del wallet de créditos",
+      "Gestor del CREDI'SCOP de créditos",
       "Garante del marco ESS y cooperativo"
     ],
     "oscop_restrictions": [
@@ -201,8 +201,8 @@
     "choisir_cette_offre": "Elegir esta oferta",
     "acces_kdmarche_b2b": "Acceso a KDMARCHE B2B",
     "choisissez_la_formule": "Elija el plan adecuado para acceder a los precios estructurales mutualizados",
-    "wallet_credits": "Wallet de Créditos",
-    "wallet_credits_oscop": "Wallet de Créditos O'SCOP",
+    "wallet_credits": "CREDI'SCOP de Créditos",
+    "wallet_credits_oscop": "CREDI'SCOP de Créditos O'SCOP",
     "systeme_de_credits_o": "Sistema de créditos O'SCOP",
     "complementaire_a_votre_abonnement": "Complementario a su suscripción",
     "les_credits_financent": "Los créditos financian:",
@@ -226,13 +226,13 @@
       "Acceso a la Communityplace KDMARCHE B2B",
       "1 zona geográfica incluida",
       "Acceso a los precios estructurales mutualizados",
-      "Wallet de créditos básico",
+      "CREDI'SCOP de créditos básico",
       "Acceso a promos flash de la zona"
     ],
     "features_ess_volume_pro": [
       "Acceso prioritario a los volúmenes",
       "Acceso ampliado a las gamas KDMARCHE",
-      "Wallet de créditos reforzado",
+      "CREDI'SCOP de créditos reforzado",
       "Acceso multicategoría",
       "Informes de uso"
     ],
@@ -251,10 +251,10 @@
     "acces_a_la_centrale": "Acceso a la Communityplace KDMARCHE B2B",
     "1_zone_geographique_incluse": "1 zona geográfica incluida",
     "acces_aux_prix_structurels": "Acceso a los precios estructurales mutualizados",
-    "wallet_credits_de_base": "Wallet de créditos básico",
+    "wallet_credits_de_base": "CREDI'SCOP de créditos básico",
     "acces_prioritaire_aux_volumes": "Acceso prioritario a los volúmenes",
     "acces_elargi_aux_gammes": "Acceso ampliado a las gamas KDMARCHE",
-    "wallet_credits_renforce": "Wallet de créditos reforzado",
+    "wallet_credits_renforce": "CREDI'SCOP de créditos reforzado",
     "acces_multi_categories": "Acceso multicategoría",
     "reporting_d_usage": "Informes de uso",
     "acces_promos_flash_de": "Acceso a promos flash de la zona",

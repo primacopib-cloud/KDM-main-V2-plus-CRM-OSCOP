@@ -80,7 +80,7 @@ export default function DocumentsPage() {
             },
             {
               doc_type: 'cg-oscop',
-              title: 'CG O\'SCOP — Accès, Abonnements, Wallet Crédits',
+              title: 'CG O\'SCOP — Accès, Abonnements, CREDI\'SCOP',
               description: 'Conditions générales applicables aux services O\'SCOP (hors marchandises)',
               ref: 'CG-OSCOP-2026-001',
               version: '1.0.0',

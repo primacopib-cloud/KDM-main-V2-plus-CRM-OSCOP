@@ -181,7 +181,7 @@ const DashboardPage = () => {
                 {addingCredits ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-xs text-white/60 mb-1">Wallet Crédits</p>
+            <p className="text-xs text-white/60 mb-1">CREDI&rsquo;SCOP</p>
             <p className="text-xl font-bold">{user.credits} <span className="text-sm font-normal text-white/50">crédits</span></p>
           </div>
 

@@ -10,7 +10,7 @@ const quickNavItems = [
   { href: '/espace-acheteur', label: 'Mon Espace', icon: LayoutDashboard },
   { href: '/catalogue', label: 'Catalogue', icon: ShoppingCart },
   { href: '/commandes', label: 'Commandes', icon: Package },
-  { href: '/wallet', label: 'Wallet', icon: Wallet },
+  { href: '/wallet', label: "CREDI'SCOP", icon: Wallet },
   { href: '/espace-vendeur', label: 'Vendeur', icon: Store },
   { href: '/superadmin', label: 'Admin', icon: Shield },
 ];

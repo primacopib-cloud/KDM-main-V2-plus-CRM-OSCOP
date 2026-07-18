@@ -54,7 +54,7 @@ export const subscriptionPlans = [
       "Accès à la Communityplace KDMARCHE B2B",
       "1 zone géographique incluse",
       "Accès aux prix structurels mutualisés",
-      "Wallet crédits de base",
+      "CREDI'SCOP crédits de base",
       "Accès promos flash de la zone"
     ]
   },
@@ -68,7 +68,7 @@ export const subscriptionPlans = [
     features: [
       "Accès prioritaire aux volumes",
       "Accès élargi aux gammes KDMARCHE",
-      "Wallet crédits renforcé",
+      "CREDI'SCOP crédits renforcé",
       "Accès multi-catégories",
       "Reporting d'usage"
     ]

@@ -5,7 +5,7 @@ import { Percent, Plus, Archive, Trash2, BarChart3 } from 'lucide-react';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inputCls = 'h-9 px-2 rounded-lg bg-white/60 border border-black/10 text-sm text-[#1F2A3A]';
 
-const EMPTY = { name: '', promo_type: 'bonus_purchase', value_percent: '', scope_profile: 'all', scope_territory: 'ALL', scope_category: 'all', scope_action: 'all' };
+const EMPTY = { name: '', promo_type: 'bonus_purchase', value_percent: '', scope_profile: 'all', scope_territory: 'ALL', scope_category: 'all', scope_action: 'all', starts_at: '', ends_at: '' };
 const TERRITORIES = ['ALL', 'GUADELOUPE', 'MARTINIQUE', 'GUYANE', 'REUNION', 'MAYOTTE', 'SAINT-MARTIN'];
 
 export const CreditPromotionsPanel = () => {
@@ -27,7 +27,13 @@ export const CreditPromotionsPanel = () => {
     const r = await fetch(`${API}/admin/credit-promotions`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, value_percent: parseFloat(form.value_percent), active: true }),
+      body: JSON.stringify({
+        ...form,
+        value_percent: parseFloat(form.value_percent),
+        starts_at: form.starts_at ? `${form.starts_at}T00:00:00+00:00` : null,
+        ends_at: form.ends_at ? `${form.ends_at}T23:59:59+00:00` : null,
+        active: true,
+      }),
     });
     const d = await r.json();
     if (r.ok) { toast.success('Promotion créée'); setForm(EMPTY); refresh(); }
@@ -67,6 +73,16 @@ export const CreditPromotionsPanel = () => {
           <option value="all">Toutes catégories</option>
           {categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] opacity-50 shrink-0">Du</span>
+          <input type="date" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })}
+            data-testid="promo-starts-at" className={`${inputCls} flex-1 min-w-0`} title="Début de l'offre flash (optionnel)" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] opacity-50 shrink-0">Au</span>
+          <input type="date" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })}
+            data-testid="promo-ends-at" className={`${inputCls} flex-1 min-w-0`} title="Fin de l'offre flash (optionnel)" />
+        </div>
       </div>
       <button type="button" onClick={create} disabled={!form.name || !form.value_percent}
         data-testid="promo-create-btn"
@@ -84,6 +100,11 @@ export const CreditPromotionsPanel = () => {
               </p>
               <p className="text-[11px] opacity-50">
                 {p.promo_type === 'bonus_purchase' ? 'Bonus achat' : 'Réduction conso'} · {p.scope_profile} · {p.scope_territory} · {p.scope_category}
+                {(p.starts_at || p.ends_at) && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 text-[10px]" data-testid={`promo-window-${p.id}`}>
+                    ⏱ {p.starts_at ? p.starts_at.slice(0, 10) : '…'} → {p.ends_at ? p.ends_at.slice(0, 10) : '…'}
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex gap-1 shrink-0">

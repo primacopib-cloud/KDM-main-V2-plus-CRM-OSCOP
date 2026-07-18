@@ -342,8 +342,14 @@ export default function WalletPage() {
 
       <div className="max-w-[1160px] mx-auto px-5 py-4">
         <div className="mb-4">
-          <h1 className="text-2xl font-bold mb-1">{i18n.t('wallet.wallet_credits')}</h1>
-          <p className="text-white/60 text-sm">{i18n.t('wallet.gerez_vos_credits_et')}</p>
+          <h1 className="text-2xl font-bold mb-1" data-testid="crediscop-title">Mon CREDI&rsquo;SCOP</h1>
+          <p className="text-[#D9B35A] text-xs uppercase tracking-[0.15em] font-semibold mb-1" data-testid="crediscop-tagline">
+            Mes droits coopératifs mobilisables
+          </p>
+          <p className="text-white/60 text-sm">
+            Capital d&rsquo;usage coopératif : consultez, recevez et mobilisez vos droits d&rsquo;usage,
+            crédits coopératifs, contributions valorisées et avantages mutualisés au sein de l&rsquo;écosystème O&rsquo;SCOP.
+          </p>
         </div>
 
         {/* User Credits Card (always visible) */}
@@ -456,6 +462,14 @@ export default function WalletPage() {
         sepaLoading={sepaLoading}
         onSepaSetup={handleSepaSetup}
       />
+      <div className="max-w-[1160px] mx-auto px-5 pb-8">
+        <p className="text-[11px] text-white/40 leading-relaxed border-t border-white/10 pt-4" data-testid="crediscop-legal">
+          Les unités inscrites dans CREDI&rsquo;SCOP constituent des droits d&rsquo;usage internes.
+          Elles ne représentent ni des parts sociales, ni un dépôt bancaire, ni un crédit financier,
+          ni de la monnaie électronique, sauf lorsqu&rsquo;un service réglementé est expressément
+          fourni par un prestataire agréé.
+        </p>
+      </div>
     </div>
   );
 }

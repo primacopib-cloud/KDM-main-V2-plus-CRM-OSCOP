@@ -51,7 +51,7 @@ export const CatalogHeader = ({
               Commandes
             </Link>
             <Link to="/wallet" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              Wallet
+              CREDI&rsquo;SCOP
             </Link>
             <Link to="/espace-vendeur" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
               Vendeur
