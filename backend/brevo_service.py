@@ -141,16 +141,16 @@ async def send_sms(
 def _wrap_html(title: str, body_html: str) -> str:
     return f"""<!DOCTYPE html>
 <html><head><meta charset=\"utf-8\"><title>{title}</title></head>
-<body style=\"margin:0;padding:0;background:#070A10;font-family:Helvetica,Arial,sans-serif;color:#fff;\">
+<body style=\"margin:0;padding:0;background:#1E0C34;font-family:Helvetica,Arial,sans-serif;color:#F3EDE4;\">
   <div style=\"max-width:600px;margin:0 auto;padding:32px 24px;\">
-    <div style=\"text-align:center;margin-bottom:24px;\">
-      <h1 style=\"color:#D9B35A;font-size:22px;margin:0;letter-spacing:1px;\">KDMARCHÉ × O'SCOP</h1>
-      <p style=\"color:rgba(255,255,255,0.55);margin:6px 0 0;font-size:12px;\">LOLODRIVE — Plateforme coopérative ESS</p>
+    <div style=\"text-align:center;margin-bottom:24px;background:linear-gradient(135deg,#2A1045 0%,#451F6B 100%);border:1px solid rgba(212,175,55,0.45);border-radius:18px;padding:22px 16px;\">
+      <h1 style=\"color:#D4AF37;font-size:22px;margin:0;letter-spacing:1px;font-family:Georgia,'Times New Roman',serif;\">KDMARCHÉ × O'SCOP</h1>
+      <p style=\"color:rgba(243,237,228,0.65);margin:6px 0 0;font-size:12px;letter-spacing:2px;text-transform:uppercase;\">Communityplace — Coopérative ESS</p>
     </div>
-    <div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:28px;\">
+    <div style=\"background:linear-gradient(180deg,#33154F 0%,#2A1045 100%);border:1px solid rgba(212,175,55,0.35);border-radius:18px;padding:28px;\">
       {body_html}
     </div>
-    <p style=\"color:rgba(255,255,255,0.4);font-size:11px;text-align:center;margin-top:24px;\">
+    <p style=\"color:rgba(243,237,228,0.45);font-size:11px;text-align:center;margin-top:24px;\">
       Email transactionnel automatique — Ne pas répondre.<br/>
       © {datetime.utcnow().year} KDMARCHÉ × O'SCOP — Communityplace coopérative ESS
     </p>

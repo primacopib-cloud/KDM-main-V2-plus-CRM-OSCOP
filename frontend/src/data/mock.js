@@ -4,7 +4,7 @@ export const partners = {
   kdmarche: {
     name: "KDMARCHE",
     role: "Opérateur commercial et logistique B2B",
-    logo: "/logos/kdmarche-pro.webp",
+    logo: "/logos/kdmarche-pro-gold.png",
     responsibilities: [
       "Opérateur de vente B2B",
       "Gestionnaire des catalogues produits",

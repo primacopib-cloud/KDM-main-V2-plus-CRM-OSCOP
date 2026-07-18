@@ -8,6 +8,7 @@
 .glass-panel {
   background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 100%);
   border: 1px solid rgba(212,175,55,0.38);
+  transition: border-color 220ms ease, box-shadow 220ms ease;
   box-shadow:
     0 18px 60px rgba(76,42,110,0.10),
     0 2px 6px rgba(31,42,58,0.05),
@@ -18,6 +19,7 @@
 .glass-panel-soft {
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(212,175,55,0.30);
+  transition: border-color 220ms ease, box-shadow 220ms ease;
   box-shadow: 0 8px 28px rgba(76,42,110,0.06);
   color: #F3EDE4;
 }
@@ -327,4 +329,10 @@
   inset: -40%;
   background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.45), transparent 52%);
   transform: rotate(12deg);
+}
+
+/* ===== Institutionnel violet/or — micro-interactions ===== */
+.glass-panel:hover, .glass-panel-soft:hover {
+  border-color: rgba(212,175,55,0.60);
+  box-shadow: 0 8px 32px rgba(212,175,55,0.10), 0 2px 12px rgba(0,0,0,0.25);
 }

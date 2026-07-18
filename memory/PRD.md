@@ -981,3 +981,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - App.css : glass-panel/glass-panel-soft/badge-status/panneaux → violets translucides bordure or.
 - sed global JSX : gradient crème #FBF6EE→#F5EBD8 remplacé par violet #2A1045→#451F6B (22 fichiers), headers rgba(255,253,247,x) → rgba(30,12,52,x) (19 fichiers), Footer/LolodriveLayout, LoginPage/AdminLoginPage (panneau droit #2B1548, textes slate→white/x, liens violets→or), MySpotsWidget corrigé via overrides.
 - Testing agent iteration_43 : 12 pages auditées, 95% (1 widget pastel corrigé ensuite via overrides). Aucune illisibilité bloquante, login/panier/navigation fonctionnels.
+
+## 2026-07-18 — Charte institutionnelle raffinée + Logo & Emails violet/or
+- Titres h1-h3 en serif Playfair Display ivoire #F7F2E9 (accents or via spans), fond body plus profond (#1E0C34→#3D1B61→#22103C + radials or), hover glow or sur glass-panels.
+- Harmonisation des hex hérités de l'ancien thème clair via overrides CSS (fin index.css) : fonds ivoire arbitraires → violets translucides ; textes sombres (#1F2A3A, #4C2A6E, #8A785F, bruns, or foncés) → variantes claires lisibles. Dashboard superadmin (widgets.jsx/DashboardTab) validé lisible.
+- LOGO : déclinaison violet/or générée (Gemini image, détourage flood-fill PIL) → /logos/kdmarche-pro-gold.png(+webp), branchée via partners.kdmarche.logo (mock.js). Pastille ivoire auto derrière tous les logos (img[src*=kdmarche-pro/oscop]) pour lisibilité.
+- EMAILS BREVO : template _wrap_html violet/or (header dégradé #2A1045→#451F6B bordure or, panneau violet, typographie serif) — testé envoi réel (messageId Brevo OK).

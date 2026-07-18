@@ -48,10 +48,11 @@ body {
   margin: 0;
   font-family: var(--font-body);
   background:
-    radial-gradient(1200px 600px at 8% -5%, rgba(212,175,55,0.14), transparent 60%),
-    radial-gradient(1100px 540px at 95% 0%, rgba(212,175,55,0.10), transparent 60%),
-    radial-gradient(900px 540px at 50% 110%, rgba(108,76,142,0.20), transparent 65%),
-    linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%);
+    radial-gradient(1200px 600px at 8% -5%, rgba(212,175,55,0.16), transparent 60%),
+    radial-gradient(1100px 540px at 95% 0%, rgba(212,175,55,0.12), transparent 60%),
+    radial-gradient(1400px 800px at 50% 45%, rgba(120,70,180,0.22), transparent 70%),
+    radial-gradient(900px 540px at 50% 110%, rgba(108,76,142,0.25), transparent 65%),
+    linear-gradient(180deg, #1E0C34 0%, #3D1B61 50%, #22103C 100%);
   background-attachment: fixed;
   color: var(--text);
   line-height: 1.5;
@@ -64,9 +65,12 @@ body {
 h1, h2, h3, .font-display {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: -0.01em;
-  color: #E9CF8E; /* or clair premium */
+  letter-spacing: -0.005em;
+  color: #F7F2E9; /* ivoire institutionnel — accents or via spans */
+  font-family: 'Playfair Display', Georgia, serif;
 }
+h1 em, h2 em, h1 .gold, h2 .gold { color: #D4AF37; font-style: italic; }
+h4, h5, h6 { color: #F3EDE4; }
 
 h4, h5, h6 {
   font-family: var(--font-body);
@@ -426,3 +430,29 @@ input:focus, select:focus, textarea:focus {
 .bg-white { background-color: rgba(255,255,255,0.06) !important; }
 .text-gray-500, .text-slate-500, .text-gray-400, .text-slate-400 { color: rgba(243,237,228,0.60) !important; }
 .hover\:bg-gray-50:hover, .hover\:bg-slate-50:hover, .hover\:bg-gray-100:hover { background-color: rgba(255,255,255,0.10) !important; }
+
+/* Pastille ivoire derrière les logos pour lisibilité sur violet */
+img[src*="kdmarche-pro"], img[src*="oscop"] {
+  background: #FBF6EE;
+  border-radius: 12px;
+  padding: 4px 8px;
+  border: 1px solid rgba(212,175,55,0.35);
+}
+
+/* ===== Harmonisation institutionnelle : hex hérités de l'ancien thème clair ===== */
+/* Fonds ivoire/crème arbitraires → panneaux violets translucides */
+.bg-\[\#F8F1E1\], .bg-\[\#F3E9D2\], .bg-\[\#FBF6EC\], .bg-\[\#FBF6EE\], .bg-\[\#FDF9F0\] {
+  background-color: rgba(255,255,255,0.07) !important;
+}
+/* Textes sombres hérités → variantes claires lisibles sur violet */
+.text-\[\#1F2A3A\] { color: #F3EDE4 !important; }
+.text-\[\#8A785F\], .text-\[\#7A6850\], .text-\[\#A8977C\], .text-\[\#5C4B36\], .text-\[\#3D2E1E\] { color: #C9BBA4 !important; }
+.text-\[\#4C2A6E\], .text-\[\#4a1776\], .text-\[\#2A1045\], .text-\[\#3B1A5C\] { color: #CDB4F0 !important; }
+.text-\[\#B8860B\], .text-\[\#b07a1a\] { color: #E9CF8E !important; }
+.text-\[\#4d7a1c\] { color: #A8E063 !important; }
+.text-green-700 { color: #86efac !important; }
+.text-red-600, .text-red-700 { color: #fca5a5 !important; }
+.text-amber-600 { color: #fcd34d !important; }
+.text-blue-600 { color: #93c5fd !important; }
+/* Bordures beiges héritées */
+.border-\[\#E7D9BD\], .border-\[\#EADFC8\], .border-\[\#E5D5B5\] { border-color: rgba(212,175,55,0.30) !important; }
