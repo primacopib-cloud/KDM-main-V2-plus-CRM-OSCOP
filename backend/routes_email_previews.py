@@ -1,4 +1,6 @@
 """Galerie d'aperçu des modèles d'emails de la plateforme (Super Admin)."""
+import re
+
 from fastapi import APIRouter, HTTPException, Request
 
 from admin_plans_common import get_current_admin_from_request
@@ -122,7 +124,7 @@ async def list_email_previews(request: Request):
 
 
 @email_previews_router.get("/{template_id}/logs")
-async def get_template_logs(request: Request, template_id: str, limit: int = 50):
+async def get_template_logs(request: Request, template_id: str, limit: int = 50, q: str = ""):
     admin = await get_current_admin_from_request(request)
     if not admin:
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
@@ -130,8 +132,11 @@ async def get_template_logs(request: Request, template_id: str, limit: int = 50)
     if not tags:
         raise HTTPException(status_code=404, detail="Modèle introuvable")
     limit = max(1, min(limit, 200))
+    query = {"tags": {"$in": tags}}
+    if q.strip():
+        query["to_email"] = {"$regex": re.escape(q.strip()), "$options": "i"}
     logs = await db.email_logs.find(
-        {"tags": {"$in": tags}}, {"_id": 0, "id": 1, "to_email": 1, "subject": 1, "sent_at": 1}
+        query, {"_id": 0, "id": 1, "to_email": 1, "subject": 1, "sent_at": 1}
     ).sort("sent_at", -1).to_list(limit)
     return {"logs": logs}
 

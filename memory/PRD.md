@@ -1019,3 +1019,7 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - email_logs enrichi : id unique (eml_xxx) + html complet stocké à chaque envoi (permet renvoi fidèle ; pièces jointes non conservées).
 - POST /api/admin/email-previews/logs/{log_id}/resend : renvoie l'email d'origine à son destinataire (html du log, fallback template générique si log ancien sans html → 409). Codes validés : 403 non-admin, 404 log inconnu, 502 échec Brevo. Le renvoi est journalisé (tags d'origine → stats incrémentées).
 - UI : bouton or « Renvoyer » sur chaque ligne du journal + toast. Validé E2E navigateur (toast "Email renvoyé à acheteur-pro@kdmarche.fr", compteur passé à 2).
+
+## 2026-07-18 — Recherche par destinataire dans le journal des emails
+- GET /{template_id}/logs?q= : filtre regex insensible à la casse sur to_email (échappé). Testé curl (3 résultats / 0 résultat).
+- UI : champ de recherche avec icône au-dessus du journal, debounce 300ms + AbortController, message "Aucun envoi trouvé pour « x »". Fix : import Search (lucide) manquant avait causé un runtime error, corrigé et validé E2E.

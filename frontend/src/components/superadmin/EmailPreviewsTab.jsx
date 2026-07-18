@@ -1,19 +1,26 @@
 import { useEffect, useState } from 'react';
-import { Mail, Loader2, Send, History, RotateCcw } from 'lucide-react';
+import { Mail, Loader2, Send, History, RotateCcw, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
 const EmailLogsList = ({ templateId }) => {
   const [logs, setLogs] = useState(null);
   const [resending, setResending] = useState(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     setLogs(null);
-    fetch(`${API}/admin/email-previews/${templateId}/logs`, { headers: getAuthHeaders(), credentials: 'include' })
-      .then((r) => r.json())
-      .then((d) => setLogs(d.logs || []))
-      .catch(() => setLogs([]));
-  }, [templateId]);
+    const ctl = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(`${API}/admin/email-previews/${templateId}/logs?q=${encodeURIComponent(search)}`, {
+        headers: getAuthHeaders(), credentials: 'include', signal: ctl.signal,
+      })
+        .then((r) => r.json())
+        .then((d) => setLogs(d.logs || []))
+        .catch(() => {});
+    }, search ? 300 : 0);
+    return () => { clearTimeout(timer); ctl.abort(); };
+  }, [templateId, search]);
 
   const resend = async (log) => {
     setResending(log.id);
@@ -31,14 +38,27 @@ const EmailLogsList = ({ templateId }) => {
     }
   };
 
-  if (logs === null) {
-    return <div className="flex justify-center py-3"><Loader2 className="w-4 h-4 animate-spin text-[#D9B35A]" /></div>;
-  }
-  if (logs.length === 0) {
-    return <p className="text-xs text-white/40 py-2">Aucun envoi réel journalisé pour ce modèle.</p>;
-  }
   return (
-    <div className="max-h-40 overflow-y-auto space-y-1" data-testid="email-logs-list">
+    <div>
+      <div className="relative mb-2">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher un destinataire…"
+          data-testid="email-logs-search"
+          className="h-8 w-full pl-8 pr-3 rounded-lg bg-white/[0.06] border border-white/15 text-xs text-white placeholder:text-white/40 focus:border-[#D9B35A] outline-none"
+        />
+      </div>
+      {logs === null ? (
+        <div className="flex justify-center py-3"><Loader2 className="w-4 h-4 animate-spin text-[#D9B35A]" /></div>
+      ) : logs.length === 0 ? (
+        <p className="text-xs text-white/40 py-2" data-testid="email-logs-empty">
+          {search ? `Aucun envoi trouvé pour « ${search} ».` : 'Aucun envoi réel journalisé pour ce modèle.'}
+        </p>
+      ) : (
+      <div className="max-h-40 overflow-y-auto space-y-1" data-testid="email-logs-list">
       {logs.map((l, i) => (
         <div key={l.id || i} className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-lg bg-white/[0.04] text-xs">
           <span className="text-white/80 truncate">{l.to_email}</span>
@@ -63,6 +83,8 @@ const EmailLogsList = ({ templateId }) => {
           </span>
         </div>
       ))}
+      </div>
+      )}
     </div>
   );
 };
