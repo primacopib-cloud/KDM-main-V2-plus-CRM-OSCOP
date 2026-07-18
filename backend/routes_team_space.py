@@ -91,14 +91,35 @@ class SuspendPayload(BaseModel):
 async def update_buyer_credits(user_id: str, payload: CreditsPayload, admin: dict = Depends(_admin)):
     if payload.credits < 0:
         raise HTTPException(status_code=400, detail="Crédits invalides")
-    result = await db.users.update_one(
-        {"id": user_id, "role": {"$in": BUYER_ROLES}},
+    target = await db.users.find_one({"id": user_id, "role": {"$in": BUYER_ROLES}}, {"_id": 0, "credits": 1})
+    if not target:
+        raise HTTPException(status_code=404, detail="Acheteur introuvable")
+    old = int(target.get("credits") or 0)
+    await db.users.update_one(
+        {"id": user_id},
         {"$set": {"credits": payload.credits, "credits_updated_by": admin["email"],
                   "updated_at": datetime.now(timezone.utc).isoformat()}},
     )
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Acheteur introuvable")
+    import uuid as _uuid
+    await db.credit_transactions.insert_one({
+        "id": str(_uuid.uuid4()), "user_id": user_id, "owner_type": "buyer",
+        "action": "admin_adjustment", "cost": old - payload.credits,
+        "detail": f"Ajustement par {admin['email']} ({old} → {payload.credits})",
+        "balance_after": payload.credits,
+        "at": datetime.now(timezone.utc).isoformat(),
+    })
     return {"status": "SUCCESS", "credits": payload.credits}
+
+
+@team_space_router.get("/my-credits")
+async def my_credits(user_id: str = Depends(get_current_user_id)):
+    """Solde + historique des crédits de l'utilisateur connecté (acheteur pro)."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "credits": 1})
+    if not user:
+        raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    tx = await db.credit_transactions.find({"user_id": user_id, "owner_type": "buyer"}, {"_id": 0}) \
+        .sort("at", -1).limit(50).to_list(50)
+    return {"credits": int(user.get("credits") or 0), "transactions": tx}
 
 
 @admin_buyers_router.patch("/{user_id}/suspend")

@@ -58,6 +58,12 @@ async def _attach_image(product: dict, url: str) -> bool:
     return True
 
 
+async def _consume_ai(vendor_id: str, action: str, detail: str, product: dict) -> None:
+    zones = product.get("available_zones") or product.get("zones") or []
+    await consume_credits(vendor_id, action, detail,
+                          category=product.get("category"), territory=(zones[0] if zones else None))
+
+
 @vendor_ai_router.get("/status")
 async def ai_studio_status():
     return {"images": True, "video": ai_media_service.is_video_configured()}
@@ -66,7 +72,7 @@ async def ai_studio_status():
 @vendor_ai_router.post("/{vendor_id}/{product_id}/generate-image")
 async def ai_generate_image(vendor_id: str, product_id: str, payload: GenerateImagePayload):
     product = await _get_product(vendor_id, product_id)
-    await consume_credits(vendor_id, "ai_image_generation", f"Image IA pour {product['name']}")
+    await _consume_ai(vendor_id, "ai_image_generation", f"Image IA pour {product['name']}", product)
     try:
         url = await ai_media_service.generate_product_image(payload.prompt, product_id)
     except Exception as exc:
@@ -86,7 +92,7 @@ async def ai_enhance_image(vendor_id: str, product_id: str, payload: EnhanceImag
     path = os.path.join(os.path.dirname(__file__), "uploads", "products", filename)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Fichier image introuvable")
-    await consume_credits(vendor_id, "ai_image_enhance", f"Amélioration photo pour {product['name']}")
+    await _consume_ai(vendor_id, "ai_image_enhance", f"Amélioration photo pour {product['name']}", product)
     try:
         url = await ai_media_service.enhance_product_image(path, product_id, payload.instructions)
     except Exception as exc:
@@ -105,7 +111,7 @@ async def ai_generate_video(vendor_id: str, product_id: str, payload: GenerateVi
             status_code=503,
             detail="Génération vidéo non configurée : une clé fal.ai (FAL_KEY) est requise. Obtenez-la sur fal.ai/dashboard/keys.",
         )
-    await consume_credits(vendor_id, "ai_video_generation", f"Spot vidéo pour {product['name']}")
+    await _consume_ai(vendor_id, "ai_video_generation", f"Spot vidéo pour {product['name']}", product)
     job = {
         "id": str(uuid.uuid4()), "vendor_id": vendor_id, "product_id": product_id,
         "prompt": payload.prompt, "status": "RUNNING", "video_url": None,

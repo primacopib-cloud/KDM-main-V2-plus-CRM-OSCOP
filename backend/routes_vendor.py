@@ -176,7 +176,9 @@ async def submit_product(vendor_id: str, data: ProductSubmission):
         raise HTTPException(status_code=400, detail="Ce SKU existe déjà pour votre compte")
 
     from vendor_credits import consume_credits
-    await consume_credits(vendor_id, "product_submission", f"Fiche produit {data.name}")
+    await consume_credits(vendor_id, "product_submission", f"Fiche produit {data.name}",
+                          category=data.category,
+                          territory=(data.available_zones[0] if data.available_zones else None))
 
     now = datetime.now(timezone.utc)
     product_id = generate_product_id()
@@ -360,7 +362,9 @@ async def upload_product_image(
         raise HTTPException(status_code=400, detail="Photo trop lourde (max 5 Mo)")
 
     from vendor_credits import consume_credits
-    await consume_credits(vendor_id, "photo_upload", f"Photo produit {product.get('name', product_id)}")
+    _zones = product.get("available_zones") or product.get("zones") or []
+    await consume_credits(vendor_id, "photo_upload", f"Photo produit {product.get('name', product_id)}",
+                          category=product.get("category"), territory=(_zones[0] if _zones else None))
 
     ext = "png" if file.content_type == "image/png" else "jpg"
     upload_dir = os.path.join(os.path.dirname(__file__), "uploads", "products")

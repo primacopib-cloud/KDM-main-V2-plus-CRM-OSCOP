@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, creditsAPI, downloadOffer } from '../services/api';
+import { BuyerCreditHistory } from '../components/BuyerCreditHistory';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -204,6 +205,8 @@ const DashboardPage = () => {
             <p className="text-xl font-bold">1 <span className="text-sm font-normal text-white/50">zone</span></p>
           </div>
         </div>
+
+        <BuyerCreditHistory />
 
         <div className="grid md:grid-cols-3 gap-6">
           {/* Main Content */}

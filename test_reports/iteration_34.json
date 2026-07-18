@@ -1,0 +1,28 @@
+{
+  "summary": "Iter 34 — Full validation of 4 new KDMARCHÉ credits features (packs Stripe / promotions / analytics / buyer history). BACKEND 7/7 pytest PASS (test_iter34_credit_packs_promos_analytics.py): (1) GET /api/credit-packs returns 3 packs (starter/pro/studio) + bonus_percent numeric; (2) POST /api/admin/credit-promotions requires auth (401), created bonus_purchase 15% vendor promo → bonus_percent on packs bumped to ≥15, PUT to 25% → bumped to ≥25, archive → dropped back <25, DELETE → 200; (3) POST /api/credit-packs/purchase with pack_id=starter/vendor-demo-pro returned Stripe checkout.stripe.com URL + session_id, GET /api/credit-packs/status/{sid} returned payment_status='unpaid'/'open' + applied:false (Stripe LIVE — never paid); (4) GET /api/admin/credit-analytics 401 without auth, returns totals {purchased, consumed=109>0, refunded=50, revenue_eur=0} + by_service/by_vendor/by_territory/by_category arrays; (5) GET /api/team/my-credits (acheteur-pro@kdmarche.fr) returns credits=250 + transactions; admin PATCH /api/admin/buyers/{buyer_id}/credits +1 creates admin_adjustment tx (owner_type=buyer) visible in my-credits, restored to 250. FRONTEND 3/3 flows PASS: (a) /espace-vendeur badge vendor-credits-balance='152' cliquable → modal credit-packs-modal ouvert, credit-modal-balance='152', 3 boutons buy-pack-starter/pro/studio visibles (non cliqués — Stripe LIVE), credit-history-list avec 9 entrées; (b) /superadmin après login connexion → onglet 'Crédits & IA' → credit-analytics-panel visible avec les 4 totaux (Achetés 0, Consommés 109, Remboursés 50, Revenus 0€) + ventilations par service/vendeur/territoire/catégorie; credit-promotions-panel visible → création promo 'QA Iter34 Test' bonus_purchase 12% via promo-name/promo-type/promo-value/promo-create-btn → apparaît dans la liste avec promo-archive-{id} → archivée (badge 'archivée' visible) → supprimée via promo-delete-{id} (confirm accepté) — cleanup 100% OK; (c) /dashboard (acheteur) → buyer-credit-history section visible, buyer-credit-history-toggle déplie 2 transactions admin_adjustment (résidus du test backend restoration +1/-1, balance finale 250 intacte). Budget préservé : aucun appel generate-image / enhance-image / generate-video. Stripe LIVE session créée mais NON payée.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter34_credit_packs_promos_analytics.py",
+    "/app/test_reports/pytest/iter34.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_credit_packs.py credit_pack_status: idempotent claim via update_one({applied:{$ne:true}},{$set:{applied:true}}) with modified_count==1 gate — solid pattern for one-shot credit granting on Stripe polling.",
+    "credit_promotions.py _matches: 'best' bonus/discount aggregation caps at 100% — good. NOTE: get_purchase_bonus_percent ignores territory when called from routes_credit_packs.list_credit_packs (passes only profile='vendor'). Any territory-scoped bonus_purchase promo would silently be filtered out at list time since promo.scope_territory != 'ALL' + territory=None short-circuits false at line 46. If territory-scoped bonus promos are supposed to be visible on the public /api/credit-packs endpoint, the current implementation intentionally hides them — main agent should confirm this is the desired product behavior (probably yes: public listing shows global bonus only, actual bonus applied at status/purchase time also passes territory=None so same behavior — consistent).",
+    "routes_credit_packs credit_pack_status: bonus_pct computed from get_purchase_bonus_percent('vendor') at CLAIM time, not at PURCHASE time. If a promo is created between purchase and payment, buyer gets the newer bonus. Minor UX consideration — flag if the product owner wants price-at-purchase semantics.",
+    "credit_promotions.update_promotion: full model_dump overwrite (no partial patch) — sending PUT without 'active' would reset to True default. Documented behavior since it's a full-replace PUT, but a PATCH endpoint could be nice DX.",
+    "routes_team_space.update_buyer_credits: cost = old - payload.credits records DELTA (negative when credits are added). Consistent with vendor credit_transactions convention (+cost=consumed, -cost=granted). Well done."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter34_credit_packs_promos_analytics.py"],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% (3/3 flows)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! ; acheteur-pro@kdmarche.fr / Demo2026! ; /connexion (NOT /login)",
+  "seed_data_creation": "No persistent seed data. Test promo 'QA Bonus Iter34' + 'QA Iter34 Test' created and DELETED. Buyer credits +1 then restored to 250. Stripe checkout session created but LIVE-mode unpaid (Stripe will auto-expire it — no charge). Vendor vendor-demo-pro balance untouched at 152. Product vp-damoiseau-rhum-blanc preserved.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 4 new credit features (packs Stripe / promotions CRUD / analytics / buyer history) are production-ready. Backend 7/7 + frontend 3/3 PASS. Login route is /connexion (not /login). Buyer route for credit history is /dashboard with buyer-credit-history + buyer-credit-history-toggle testids. Superadmin credits tab is labeled 'Crédits & IA' inside /superadmin. Stripe is LIVE — never trigger a real checkout completion. Video generation via fal.ai returns ERROR with automatic refund (already validated in previous iterations — not re-tested per user instruction)."
+}

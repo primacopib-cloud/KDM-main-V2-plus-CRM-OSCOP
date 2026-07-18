@@ -20,6 +20,7 @@ import { getStatusBadge } from '../components/vendor/vendorConstants';
 import { VendorProductFormModal as ProductFormModal } from '../components/vendor/VendorProductFormModal';
 import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
 import { AIStudioModal } from '../components/vendor/AIStudioModal';
+import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -44,6 +45,7 @@ const VendorSpacePage = () => {
   const [editProduct, setEditProduct] = useState(null);
   const [aiProduct, setAiProduct] = useState(null);
   const [credits, setCredits] = useState(null);
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
 
   // Fetch dashboard data
   const fetchDashboard = useCallback(async () => {
@@ -103,6 +105,27 @@ const VendorSpacePage = () => {
     };
     loadData();
   }, [fetchDashboard, fetchProducts, fetchCountries]);
+
+  useEffect(() => {
+    // Retour Stripe après achat de pack de crédits
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('credit_session');
+    if (!sessionId) return;
+    window.history.replaceState({}, '', '/espace-vendeur');
+    const poll = async (attempt = 0) => {
+      const r = await fetch(`${API_URL}/api/credit-packs/status/${sessionId}`, { credentials: 'include' });
+      if (r.ok) {
+        const d = await r.json();
+        if (d.payment_status === 'paid') {
+          if (d.credited > 0) toast.success(`Paiement confirmé : +${d.credited} crédits ajoutés !`);
+          fetchCredits();
+          return;
+        }
+      }
+      if (attempt < 6) setTimeout(() => poll(attempt + 1), 2500);
+    };
+    poll();
+  }, [fetchCredits]);
 
   const handleProductSuccess = () => {
     fetchDashboard();
@@ -167,14 +190,17 @@ const VendorSpacePage = () => {
               <NavigationHistoryDropdown variant="light" />
 
               {credits !== null && (
-                <span
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-semibold"
+                <button
+                  type="button"
+                  onClick={() => setCreditsModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-semibold hover:brightness-95 transition-all"
                   style={{ color: '#B8860B', background: '#D9B35A1c', border: '1px solid #D9B35A55' }}
                   data-testid="vendor-credits-balance"
-                  title="Crédits disponibles (fiches produits, photos, Studio IA)"
+                  title="Crédits : cliquez pour recharger et voir l'historique"
                 >
                   <Coins className="w-4 h-4" /> {credits}
-                </span>
+                  <Plus className="w-3 h-3 opacity-60" />
+                </button>
               )}
 
               <Button 
@@ -472,6 +498,11 @@ const VendorSpacePage = () => {
           onClose={() => { setAiProduct(null); fetchCredits(); }}
           onMediaAdded={() => { fetchProducts(); fetchCredits(); }}
         />
+      )}
+
+      {/* Credit Packs & History Modal */}
+      {creditsModalOpen && (
+        <CreditPacksModal vendorId={vendorId} onClose={() => { setCreditsModalOpen(false); fetchCredits(); }} />
       )}
     </div>
   );

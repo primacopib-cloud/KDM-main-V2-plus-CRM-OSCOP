@@ -43,9 +43,16 @@ async def get_action_cost(action: str) -> int:
     return dict((a, c) for a, c, _ in DEFAULT_PRICING).get(action, 0)
 
 
-async def consume_credits(vendor_id: str, action: str, detail: str = "") -> int:
-    """Décrémente les crédits du vendeur ; HTTPException 402 si solde insuffisant."""
+async def consume_credits(vendor_id: str, action: str, detail: str = "",
+                          category: str | None = None, territory: str | None = None) -> int:
+    """Décrémente les crédits du vendeur (réductions promo appliquées) ; 402 si solde insuffisant."""
+    from credit_promotions import get_discount_percent, apply_discount
+
     cost = await get_action_cost(action)
+    if cost <= 0:
+        return 0
+    discount = await get_discount_percent(action, "vendor", territory, category)
+    cost = apply_discount(cost, discount)
     if cost <= 0:
         return 0
     vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "credits": 1})
@@ -57,8 +64,11 @@ async def consume_credits(vendor_id: str, action: str, detail: str = "") -> int:
         )
     await db.vendors.update_one({"id": vendor_id}, {"$inc": {"credits": -cost}})
     await db.credit_transactions.insert_one({
-        "id": str(uuid.uuid4()), "vendor_id": vendor_id, "action": action,
-        "cost": cost, "detail": detail, "balance_after": balance - cost,
+        "id": str(uuid.uuid4()), "vendor_id": vendor_id, "owner_type": "vendor",
+        "action": action, "cost": cost, "detail": detail,
+        "category": category, "territory": territory,
+        "discount_percent": discount or 0,
+        "balance_after": balance - cost,
         "at": datetime.now(timezone.utc).isoformat(),
     })
     return cost
@@ -90,7 +100,7 @@ async def get_vendor_credits(vendor_id: str):
         raise HTTPException(status_code=404, detail="Vendeur introuvable")
     pricing = await db.credit_pricing.find({}, {"_id": 0}).to_list(20)
     tx = await db.credit_transactions.find({"vendor_id": vendor_id}, {"_id": 0}) \
-        .sort("at", -1).limit(10).to_list(10)
+        .sort("at", -1).limit(50).to_list(50)
     return {"credits": int(vendor.get("credits") or 0), "pricing": pricing, "transactions": tx}
 
 
