@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText, Download, Printer } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { partners } from '../data/mock';
+import { BrandLogos } from '../components/BrandLogos';
 import OrderFormPreview from '../components/OrderFormPreview';
 
 // Demo page to preview Order Form with Stamp
@@ -107,9 +108,7 @@ export default function OrderPreviewPage() {
               <span className="text-sm">Retour aux commandes</span>
             </Link>
             <div className="flex items-center gap-2">
-              <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-8 w-auto object-contain" />
-              <span className="text-white/30 text-xs">×</span>
-              <img src={partners.oscop.logo} alt="O'SCOP" className="h-5 w-auto object-contain" />
+              <BrandLogos size="sm" />
             </div>
           </div>
           

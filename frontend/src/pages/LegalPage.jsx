@@ -4,6 +4,7 @@ import { ArrowLeft, FileText, Scale, Building2, CreditCard, Truck, Shield, Hands
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { partners } from '../data/mock';
+import { BrandLogos } from '../components/BrandLogos';
 import { BreadcrumbPill } from '../components/Breadcrumb';
 import { 
   cgvKdmarcheContent, 
@@ -82,9 +83,7 @@ export default function LegalPage() {
               <span className="text-sm">Retour</span>
             </Link>
             <div className="flex items-center gap-2">
-              <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-8 w-auto object-contain" />
-              <span className="text-white/30 text-xs">×</span>
-              <img src={partners.oscop.logo} alt="O'SCOP" className="h-5 w-auto object-contain" />
+              <BrandLogos size="sm" />
             </div>
           </div>
           

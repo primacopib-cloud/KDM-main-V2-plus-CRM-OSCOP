@@ -264,6 +264,14 @@ async def handle_stripe_webhook(request: Request):
         except Exception as exc:
             logger.exception("Webhook CPC : %s", exc)
 
+        # Abonnements CPC (crédit mensuel inclus, idempotent par facture)
+        try:
+            from routes_cpc_subscriptions import handle_cpc_subscription_event
+            if await handle_cpc_subscription_event(event):
+                return {"received": True}
+        except Exception as exc:
+            logger.exception("Webhook abonnement CPC : %s", exc)
+
         # Abonnements vendeurs (renouvellement mensuel / échec de prélèvement)
         if event["type"] in ("invoice.paid", "invoice.payment_failed"):
             from routes_vendor_onboarding import handle_vendor_invoice_event

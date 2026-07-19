@@ -2,6 +2,7 @@ import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { partners } from '../data/mock';
+import { BrandLogos } from '../components/BrandLogos';
 import { 
   ArrowLeft, 
   TrendingUp, 
@@ -75,16 +76,7 @@ const StatsPage = () => {
             </Link>
           </div>
           <div className="flex items-center gap-3">
-            <img 
-              src={partners.kdmarche.logo} 
-              alt="KDMARCHE" 
-              className="h-10 w-auto object-contain"
-            />
-            <img 
-              src={partners.oscop.logo} 
-              alt="O'SCOP" 
-              className="h-8 w-auto object-contain"
-            />
+            <BrandLogos />
           </div>
         </div>
       </header>

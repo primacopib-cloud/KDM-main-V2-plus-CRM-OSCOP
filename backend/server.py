@@ -451,6 +451,18 @@ set_bids_database(db)
 set_award_database(db)
 app.include_router(bids_router)
 app.include_router(award_router)
+from routes_consultation_templates import templates_router, set_templates_database
+from routes_cpc_subscriptions import cpc_subs_router, cpc_plans_admin_router, set_cpc_subs_database
+from routes_cpc_recharge import recharge_router, set_recharge_database
+from consultation_notify import set_notify_database
+set_templates_database(db)
+set_cpc_subs_database(db)
+set_recharge_database(db)
+set_notify_database(db)
+app.include_router(templates_router)
+app.include_router(cpc_subs_router)
+app.include_router(cpc_plans_admin_router)
+app.include_router(recharge_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { partners } from '../data/mock';
+import { BrandLogos } from '../components/BrandLogos';
 import {
   LogIn, Mail, Lock, Loader2, Eye, EyeOff, Shield, ArrowLeft, AlertTriangle,
   Terminal, KeyRound, ScrollText,
@@ -82,13 +83,7 @@ const AdminLoginPage = () => {
             {i18n.t('adm.retour_connexion_membres')}
           </Link>
           <div className="flex items-center gap-3">
-            <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
-              <img src={partners.kdmarche.logo} alt="KDMARCHE Pro" className="h-12 w-auto object-contain" />
-            </div>
-            <span className="text-white/30 text-lg">×</span>
-            <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
-              <img src={partners.oscop.logo} alt="Objectif SCOP Outremer" className="h-12 w-auto object-contain" />
-            </div>
+            <BrandLogos size="lg" />
           </div>
         </div>
 

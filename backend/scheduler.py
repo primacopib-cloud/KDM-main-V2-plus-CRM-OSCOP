@@ -131,6 +131,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler CPC expiry crashed: %s", exc)
         try:
+            from consultation_notify import close_due_consultations
+            await close_due_consultations(_db)
+        except Exception as exc:
+            logger.exception("Scheduler due closures crashed: %s", exc)
+        try:
             from routes_bids import send_closure_reminders
             await send_closure_reminders(_db)
         except Exception as exc:

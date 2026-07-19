@@ -4,6 +4,8 @@ import { Ticket, Download, RefreshCw, ShoppingCart, Lock, FileText } from 'lucid
 import { toast } from 'sonner';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
+import { CpcSubscriptionPanel } from './CpcSubscriptionPanel';
+import { CpcRechargePanel } from './CpcRechargePanel';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const eur = (c) => `${((c || 0) / 100).toFixed(2).replace('.', ',')} €`;
@@ -12,6 +14,7 @@ const TYPE_LABELS = {
   CONSULTATION_ENTRY: 'Inscription consultation', REPORT_PURCHASE: "Rapport d'analyse",
   REFUND_CANCELLATION: 'Recrédit (annulation)', REFUND_INCIDENT: 'Recrédit (incident)',
   EXPIRY: 'Expiration', ADMIN_CORRECTION: 'Correction administrative', STRIPE_REVERSAL: 'Annulation Stripe',
+  SUBSCRIPTION_GRANT: 'CPC inclus (abonnement)',
 };
 
 export const VendorCpcTab = () => {
@@ -124,6 +127,10 @@ export const VendorCpcTab = () => {
         className="inline-flex items-center gap-1.5 text-xs text-purple-600 hover:underline font-semibold" data-testid="cpc-reglement-link">
         <FileText className="w-3.5 h-3.5" /> Règlement autonome des Consultations Compétitives et des CPC (V1.0 — PDF)
       </a>
+
+      <CpcSubscriptionPanel onChanged={load} />
+
+      <CpcRechargePanel packs={packs} />
 
       <Card>
         <CardContent className="p-5">

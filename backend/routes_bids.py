@@ -44,6 +44,9 @@ async def _auto_close(c: dict) -> dict:
         if c["procedure"] == "SCELLEE":
             await open_sealed_bids(c["id"])
         c["status"] = "CLOTUREE"
+        import asyncio
+        from consultation_notify import notify_report_available
+        asyncio.create_task(notify_report_available(c["id"]))
     return c
 
 

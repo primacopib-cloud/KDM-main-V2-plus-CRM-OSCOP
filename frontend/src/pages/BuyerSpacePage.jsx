@@ -22,6 +22,7 @@ import { BuyerInvoicesTab } from '../components/buyer/BuyerInvoicesTab';
 import { BuyerWalletTab } from '../components/buyer/BuyerWalletTab';
 import { BuyerModals } from '../components/buyer/BuyerModals';
 import { BuyerConsultationsTab } from '../components/buyer/BuyerConsultationsTab';
+import { BrandLogos } from '../components/BrandLogos';
 import { Gavel } from 'lucide-react';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
@@ -299,6 +300,7 @@ export default function BuyerSpacePage() {
               <span className="text-sm hidden sm:inline">{i18n.t('buyer.accueil')}</span>
             </Link>
             <div className="flex items-center gap-3">
+              <BrandLogos />
               <div className="w-10 h-10 rounded-xl bg-[#D9B35A]/20 flex items-center justify-center">
                 <ShoppingBag className="w-5 h-5 text-[#D9B35A]" />
               </div>

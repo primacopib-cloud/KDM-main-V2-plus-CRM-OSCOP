@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { partners } from '../../data/mock';
+import { BrandLogos } from '../BrandLogos';
 import { STEPS } from './checkoutUtils';
 
 export const CheckoutProgress = ({ currentStep, goToStep, navigate }) => (
@@ -32,9 +33,7 @@ export const CheckoutProgress = ({ currentStep, goToStep, navigate }) => (
               {i18n.t('orders.retour')}
             </Button>
             <div className="flex items-center gap-3">
-              <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-10 w-auto object-contain" />
-              <span className="text-white/40">×</span>
-              <img src={partners.oscop.logo} alt="O'SCOP" className="h-6 w-auto object-contain" />
+              <BrandLogos />
             </div>
           </div>
           

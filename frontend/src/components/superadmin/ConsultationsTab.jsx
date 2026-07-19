@@ -3,6 +3,7 @@ import { Gavel, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { LegalMatrixPanel } from './LegalMatrixPanel';
+import { ConsultationTemplatesPanel } from './ConsultationTemplatesPanel';
 import { EvaluationModal } from './EvaluationModal';
 
 const opts = () => ({ headers: getAuthHeaders(), credentials: 'include' });
@@ -146,6 +147,8 @@ export const ConsultationsTab = () => {
       </div>
 
       <LegalMatrixPanel onChanged={load} />
+
+      <ConsultationTemplatesPanel onCreated={load} />
 
       <div className="space-y-2">
         {!items.length && <p className="text-xs text-white/45">Aucune consultation.</p>}

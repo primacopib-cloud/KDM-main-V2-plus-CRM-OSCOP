@@ -3,6 +3,7 @@ import { partners } from '../data/mock';
 const SIZES = {
   sm: { box: 'h-8 w-8', img: 'h-6 w-6' },
   md: { box: 'h-10 w-10', img: 'h-8 w-8' },
+  lg: { box: 'h-14 w-14', img: 'h-11 w-11' },
 };
 
 export const BrandLogos = ({ size = 'md', className = '' }) => {

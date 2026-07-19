@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Progress } from '../components/ui/progress';
 import { partners, subscriptionPlans } from '../data/mock';
+import { BrandLogos } from '../components/BrandLogos';
 import { 
   LogOut, 
   User, 
@@ -97,18 +98,7 @@ const DashboardPage = () => {
         <div className="max-w-[1160px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-3">
-              <img 
-                src={partners.kdmarche.logo} 
-                alt="KDMARCHE" 
-                className="h-36 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 2px 6px rgba(217,179,90,0.35))' }}
-              />
-              <img 
-                src={partners.oscop.logo} 
-                alt="O'SCOP" 
-                className="h-20 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 2px 6px rgba(212,175,55,0.35))' }}
-              />
+              <BrandLogos />
             </Link>
             <span className="badge-status text-xs">
               <span className="dot"></span>

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { partners } from '../data/mock';
+import { BrandLogos } from '../components/BrandLogos';
 import { ArrowLeft, Mail, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { passwordAPI } from '../services/api';
@@ -50,13 +51,7 @@ const ForgotPasswordPage = () => {
         <div className="glass-panel rounded-[26px] p-8">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
-                <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-14 w-auto object-contain" />
-              </div>
-              <span className="text-white/40 text-2xl font-light">×</span>
-              <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
-                <img src={partners.oscop.logo} alt="O'SCOP" className="h-14 w-auto object-contain" />
-              </div>
+              <BrandLogos size="lg" />
             </div>
             <h1 className="text-2xl font-bold">{t('auth.forgot_password_title')}</h1>
             <p className="text-white/60 text-sm mt-1">

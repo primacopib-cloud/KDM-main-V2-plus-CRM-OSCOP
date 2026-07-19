@@ -6,6 +6,7 @@ import { ArrowLeft, AlertCircle, Loader2, RefreshCw, ShoppingCart, FileDown } fr
 
 import { Button } from '../components/ui/button';
 import { partners } from '../data/mock';
+import { BrandLogos } from '../components/BrandLogos';
 import { authAPI, walletAPIV2, zonesAPIV2, paymentAPI } from '../services/api';
 import { API, getAuthHeaders } from '../services/http';
 import { formatCredits } from '../components/wallet/walletUtils';
@@ -248,9 +249,7 @@ export default function WalletPage() {
               <ArrowLeft className="w-3.5 h-3.5" />
             </Link>
             <div className="flex items-center gap-1">
-              <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-5 w-auto object-contain" />
-              <span className="text-white/30 text-[10px]">×</span>
-              <img src={partners.oscop.logo} alt="O'SCOP" className="h-4 w-auto object-contain" />
+              <BrandLogos size="sm" />
             </div>
           </div>
 

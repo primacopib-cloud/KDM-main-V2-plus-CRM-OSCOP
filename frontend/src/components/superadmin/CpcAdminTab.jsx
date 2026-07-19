@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Ticket, Gift, Wrench, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
+import { CpcPlansAdminPanel } from './CpcPlansAdminPanel';
 
 const opts = () => ({ headers: getAuthHeaders(), credentials: 'include' });
 const jsonOpts = (method, body) => ({ method, headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, credentials: 'include', body: JSON.stringify(body) });
-const eur = (c) => `${((c || 0) / 100).toFixed(2).replace('.', ',')} €`;
 const inp = 'h-9 rounded-lg px-2.5 text-xs text-white bg-white/[0.05] border border-white/15';
 
 export const CpcAdminTab = () => {
@@ -96,6 +96,8 @@ export const CpcAdminTab = () => {
           })}
         </div>
       </div>
+
+      <CpcPlansAdminPanel />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="glass-panel-soft rounded-[14px] p-4 space-y-2">

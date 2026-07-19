@@ -22,6 +22,7 @@ import {
 } from '../components/ui/collapsible';
 
 import { partners } from '../data/mock';
+import { BrandLogos } from '../components/BrandLogos';
 import { authAPI, ordersAPIV2 } from '../services/api';
 
 // Order status configuration
@@ -159,9 +160,7 @@ export default function OrdersPage() {
               <span className="text-sm hidden sm:inline">{i18n.t('orders.retour')}</span>
             </Link>
             <div className="flex items-center gap-3">
-              <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-12 w-auto object-contain" />
-              <span className="text-white/40">×</span>
-              <img src={partners.oscop.logo} alt="O'SCOP" className="h-8 w-auto object-contain" />
+              <BrandLogos />
             </div>
           </div>
           

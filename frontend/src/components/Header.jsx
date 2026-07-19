@@ -2,6 +2,7 @@ import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { partners } from '../data/mock';
+import { BrandLogos } from './BrandLogos';
 import { Menu, X, User, LogIn, Download } from 'lucide-react';
 import CommunityplaceBadge from './CommunityplaceBadge';
 
@@ -38,21 +39,7 @@ const Header = () => {
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-white shrink-0 overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(217,179,90,0.3)' }}>
-                <img
-                  src={partners.kdmarche.logo}
-                  alt="KDMARCHE"
-                  className="h-8 w-8 object-contain"
-                />
-              </span>
-              <span className="text-white/30 text-sm leading-none">×</span>
-              <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white shrink-0 overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(212,175,55,0.3)' }}>
-                <img
-                  src={partners.oscop.logo}
-                  alt="O'SCOP"
-                  className="h-8 w-8 object-contain"
-                />
-              </span>
+              <BrandLogos size="sm" />
             </div>
             <div className="hidden xl:block">
               <h1 className="text-xs tracking-wider uppercase text-white/85 font-semibold m-0">

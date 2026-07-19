@@ -115,10 +115,14 @@ async def cpc_checkout(body: CheckoutBody, user_id: str = Depends(get_current_us
     pack = await db.cpc_packs.find_one({"id": body.pack_id, "active": True}, {"_id": 0})
     if not pack:
         raise HTTPException(status_code=404, detail="Pack introuvable")
+    return await create_pack_checkout(user, pack, body.origin_url)
+
+
+async def create_pack_checkout(user: dict, pack: dict, origin_url: str) -> dict:
     country = await _user_country(user)
     vat = compute_vat(pack["price_ht_cents"], country)
     pid = str(uuid.uuid4())
-    origin = body.origin_url.rstrip("/")
+    origin = origin_url.rstrip("/")
     stripe.api_base = "https://api.stripe.com"
     session = stripe.checkout.Session.create(
         api_key=_stripe_key(), mode="payment", payment_method_types=["card"],
@@ -130,11 +134,11 @@ async def cpc_checkout(body: CheckoutBody, user_id: str = Depends(get_current_us
         customer_email=user.get("email"),
         success_url=f"{origin}/vendor?tab=cpc&cpc_session={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{origin}/vendor?tab=cpc&cpc_cancelled=1",
-        metadata={"kind": "CPC_PACK", "user_id": user_id, "pack_id": pack["id"],
+        metadata={"kind": "CPC_PACK", "user_id": user["id"], "pack_id": pack["id"],
                   "credits": str(pack["credits"]), "territory": country, "internal_ref": pid})
     now = datetime.now(timezone.utc)
     await db.cpc_purchases.insert_one({
-        "id": pid, "user_id": user_id, "email": user.get("email"),
+        "id": pid, "user_id": user["id"], "email": user.get("email"),
         "pack_id": pack["id"], "pack_label": pack["label"], "credits": pack["credits"],
         "price_ht_cents": pack["price_ht_cents"], "vat_rate": vat["rate"],
         "vat_cents": vat["vat_cents"], "ttc_cents": vat["ttc_cents"], "country": country,

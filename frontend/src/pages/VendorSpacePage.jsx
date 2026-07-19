@@ -32,6 +32,7 @@ import { VendorSuspendedNotice } from '../components/vendor/VendorSuspendedNotic
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
 import { useCreditSessionPoll } from '../components/vendor/useCreditSessionPoll';
+import { BrandLogos } from '../components/BrandLogos';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -180,6 +181,7 @@ const VendorSpacePage = () => {
               <Link to="/" className="text-gray-400 hover:text-gray-600 transition-colors">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
+              <BrandLogos />
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-white" />
               </div>

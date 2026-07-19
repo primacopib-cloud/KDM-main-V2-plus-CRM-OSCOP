@@ -15,6 +15,7 @@ db = None
 MOVEMENT_TYPES = [
     "PACK_PURCHASE", "PROMO_GRANT", "CONSULTATION_ENTRY", "REPORT_PURCHASE",
     "REFUND_CANCELLATION", "REFUND_INCIDENT", "EXPIRY", "ADMIN_CORRECTION", "STRIPE_REVERSAL",
+    "SUBSCRIPTION_GRANT",
 ]
 
 
@@ -78,6 +79,11 @@ async def add_cpc_movement(user_id: str, mtype: str, qty: int, idempotency_key: 
     logger.info("CPC %s %+d pour %s (solde %d) [%s]", mtype, qty, user_id, balance_after, reason[:60])
     if qty < 0:
         await _maybe_alert_low_balance(user_id, entry["balance_before"], balance_after)
+    try:
+        from routes_cpc_recharge import maybe_send_recharge_link
+        await maybe_send_recharge_link(user_id, balance_after)
+    except Exception as exc:
+        logger.warning("Recharge auto CPC %s : %s", user_id, exc)
     return entry
 
 

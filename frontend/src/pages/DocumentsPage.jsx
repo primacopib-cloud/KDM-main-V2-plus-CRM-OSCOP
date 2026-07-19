@@ -19,6 +19,7 @@ import {
 } from '../components/ui/tabs';
 
 import { partners } from '../data/mock';
+import { BrandLogos } from '../components/BrandLogos';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -210,9 +211,7 @@ export default function DocumentsPage() {
               <span className="text-sm hidden sm:inline">Accueil</span>
             </Link>
             <div className="flex items-center gap-3">
-              <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-12 w-auto object-contain" />
-              <span className="text-white/40">×</span>
-              <img src={partners.oscop.logo} alt="O'SCOP" className="h-8 w-auto object-contain" />
+              <BrandLogos />
             </div>
           </div>
         </div>
