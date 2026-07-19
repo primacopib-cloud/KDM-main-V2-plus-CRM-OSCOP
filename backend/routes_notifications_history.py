@@ -159,7 +159,11 @@ async def get_notification_history(
         raise HTTPException(status_code=401, detail="Non authentifié")
     
     user_id = user.get("id")
-    is_admin = user.get("role") == "admin" or "admin" in user.get("email", "")
+    is_admin = (
+        bool(user.get("is_admin"))
+        or str(user.get("role", "")).lower() in ("admin", "super_admin")
+        or "admin" in user.get("email", "")
+    )
     
     # Build query
     query = {}
@@ -167,7 +171,7 @@ async def get_notification_history(
     if is_admin:
         # Admins see role-targeted or all-admin notifications
         query["$or"] = [
-            {"target_roles": {"$in": ["admin"]}},
+            {"target_roles": {"$in": ["admin", "oscop_super_admin", "oscop_compliance_admin", str(user.get("role", ""))]}},
             {"target_user_id": user_id}
         ]
     else:
@@ -217,6 +221,7 @@ async def get_notification_history(
     # Format notifications
     notifications = []
     for n in notifications_raw:
+        created = n.get("created_at") or datetime.now(timezone.utc)
         notifications.append(NotificationItem(
             id=n.get("id", str(n.get("_id", ""))),
             type=n.get("type", "system_alert"),
@@ -224,7 +229,7 @@ async def get_notification_history(
             message=n.get("message"),
             data=n.get("data"),
             is_read=user_id in n.get("read_by", []),
-            created_at=n.get("created_at", datetime.now(timezone.utc).isoformat()),
+            created_at=created.isoformat() if isinstance(created, datetime) else str(created),
             action_url=n.get("action_url")
         ))
     
