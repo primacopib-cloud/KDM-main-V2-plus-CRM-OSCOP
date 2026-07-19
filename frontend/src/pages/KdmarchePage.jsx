@@ -57,7 +57,7 @@ export default function KdmarchePage() {
             d&apos;<strong className="text-white/90">agrégation collective des volumes</strong> et des services associés.
           </p>
           <div className="flex flex-wrap justify-center gap-3 mt-6">
-            <Link to="/inscription" className="btn-gold h-11 px-6 rounded-lg inline-flex items-center gap-2 text-sm font-semibold" data-testid="kdm-cta-register">
+            <Link to="/tarifs" className="btn-gold h-11 px-6 rounded-lg inline-flex items-center gap-2 text-sm font-semibold" data-testid="kdm-cta-register">
               Rejoindre la coopérative <ArrowRight size={15} />
             </Link>
             <Link to="/catalogue" className="btn-ghost h-11 px-6 rounded-lg inline-flex items-center text-sm" data-testid="kdm-cta-catalog">

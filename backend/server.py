@@ -411,6 +411,9 @@ set_demandes_admin_database(db)
 from routes_vendor_onboarding import vendor_onboarding_router, set_vendor_onboarding_database
 app.include_router(vendor_onboarding_router)
 set_vendor_onboarding_database(db)
+from vendor_suspension import vendor_suspension_router, set_vendor_suspension_database
+app.include_router(vendor_suspension_router)
+set_vendor_suspension_database(db)
 set_crediscop_database(db)
 app.include_router(crediscop_router)
 

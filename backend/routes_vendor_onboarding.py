@@ -42,6 +42,7 @@ class StartBody(BaseModel):
     plan_slug: str
     origin_url: str
     member_type: str = "vendor"
+    locale: str = "fr"
 
 
 class ConventionFieldsBody(BaseModel):
@@ -99,6 +100,7 @@ async def start_onboarding(body: StartBody):
         "email": body.email.lower(), "phone": body.phone,
         "siret": "".join(c for c in body.siret if c.isdigit()),
         "member_type": body.member_type if body.member_type in ("vendor", "buyer") else "vendor",
+        "locale": body.locale if body.locale in ("fr", "en", "es") else "fr",
         "plan_slug": body.plan_slug, "plan_name": plan["name"],
         "amount_cents": plan["price_cents"], "stripe_session_id": session.id,
         "status": "PAYMENT_PENDING", "created_at": now, "updated_at": now,
@@ -273,7 +275,8 @@ async def activate_account(body: ActivateBody, response: Response):
         now_iso = datetime.now(timezone.utc).isoformat()
         await db.vendors.insert_one({
             "id": ob["user_id"], "company_name": ob["company"], "contact_name": ob["contact_name"],
-            "email": ob["email"], "phone": ob.get("phone") or "", "country": "GP",
+            "email": ob["email"], "phone": ob.get("phone") or "", "siret": ob.get("siret") or f"onb-{ob['id'][:12]}",
+            "country": "GP",
             "status": "APPROVED", "approved_at": now_iso, "created_at": now_iso,
             "description": "", "source": "vendor_onboarding", "onboarding_id": ob["id"],
         })
@@ -302,12 +305,18 @@ async def handle_vendor_invoice_event(event_type: str, invoice: dict):
             "$set": {"subscription_status": "active", "last_renewal_at": now},
             "$push": {"renewals": {"at": now, "amount_cents": invoice.get("amount_paid"), "invoice_id": invoice.get("id")}},
         })
+        if ob.get("access_suspended") or ob.get("first_payment_failure_at") or ob.get("suspension_warning_sent_at"):
+            from vendor_suspension import reactivate_vendor_access
+            await reactivate_vendor_access(ob)
         logger.info("Abonnement vendeur %s renouvelé (%s)", ob["company"], sub_id)
     elif event_type == "invoice.payment_failed":
-        await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
+        failure_update = {
             "subscription_status": "past_due", "last_payment_failure_at": now,
             "hosted_invoice_url": invoice.get("hosted_invoice_url"),
-        }})
+        }
+        if not ob.get("first_payment_failure_at"):
+            failure_update["first_payment_failure_at"] = now
+        await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": failure_update})
         await _send_dunning_email(ob, invoice.get("hosted_invoice_url"))
         try:
             from core_deps import create_notification
@@ -464,3 +473,4 @@ async def product_assistant(body: AssistantBody, user_id: str = Depends(get_curr
         {"id": str(uuid.uuid4()), "session_id": session_id, "user_id": user_id, "role": "assistant", "content": answer or "", "created_at": now},
     ])
     return {"answer": answer, "session_id": session_id}
+

@@ -25,6 +25,7 @@ import { ProductActions } from '../components/vendor/ProductActions';
 import { MySpotsWidget } from '../components/vendor/MySpotsWidget';
 import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
 import { VendorContractsTab } from '../components/vendor/VendorContractsTab';
+import { VendorSuspendedNotice } from '../components/vendor/VendorSuspendedNotice';
 import { useCreditSessionPoll } from '../components/vendor/useCreditSessionPoll';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -38,12 +39,17 @@ const DEMO_VENDOR_ID = 'vendor-demo-pro';
 const VendorSpacePage = () => {
   const navigate = useNavigate();
   const [vendorId, setVendorId] = useState(null);
+  const [suspension, setSuspension] = useState(null);
 
   useEffect(() => {
     fetch(`${API_URL}/api/vendor-onboarding/my-vendor`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : {}))
       .then((d) => setVendorId(d.vendor_id || DEMO_VENDOR_ID))
       .catch(() => setVendorId(DEMO_VENDOR_ID));
+    fetch(`${API_URL}/api/vendor-onboarding/my-subscription`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setSuspension)
+      .catch(() => {});
   }, []);
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState(null);
@@ -142,6 +148,10 @@ const VendorSpacePage = () => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'EUR' }).format(amount || 0);
   };
+
+  if (suspension?.suspended) {
+    return <VendorSuspendedNotice info={suspension} />;
+  }
 
   if (loading) {
     return (
