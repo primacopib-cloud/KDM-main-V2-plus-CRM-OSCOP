@@ -22,6 +22,7 @@ import PartnersSection from '../components/PartnersSection';
 import LogisticsSection from '../components/LogisticsSection';
 import ContactForm from '../components/ContactForm';
 import NavBar from '../components/NavBar';
+import { FlashPromoBanner } from '../components/FlashPromoBanner';
 import Footer from '../components/Footer';
 import LoloPointsMap from '../components/LoloPointsMap';
 import TerritorySelector from '../components/TerritorySelector';
@@ -32,6 +33,7 @@ const LandingPage = () => {
     <div className="min-h-screen">
       <Seo titleKey="seo.landing_title" descKey="seo.landing_desc" />
       <NavBar />
+      <div className="pt-20 -mb-16"><FlashPromoBanner placement="landing" /></div>
       
       {/* Hero Section */}
       <section className="pt-20 pb-8 px-5">

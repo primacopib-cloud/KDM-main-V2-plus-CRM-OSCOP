@@ -435,6 +435,9 @@
     "country": "Country *",
     "includesAll": "Includes everything in {{plan}}",
     "vatTotal": "Monthly total: €{{ht}} excl. VAT + {{rate}}% VAT = €{{ttc}} incl. VAT",
-    "vatTotalExempt": "Monthly total: €{{ht}} excl. VAT — VAT exempt / reverse charge based on your country"
+    "vatTotalExempt": "Monthly total: €{{ht}} excl. VAT — VAT exempt / reverse charge based on your country",
+    "legalForm": "Legal status *",
+    "firstName": "Contact first name *",
+    "lastName": "Contact last name *"
   }
 }

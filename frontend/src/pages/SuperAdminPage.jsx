@@ -20,6 +20,9 @@ import { CoopersConventionsTab } from '../components/superadmin/CoopersConventio
 import { VendorAdhesionsPanel } from '../components/superadmin/VendorAdhesionsPanel';
 import { AccountingTab } from '../components/superadmin/AccountingTab';
 import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
+import { AnnouncementsTab } from '../components/superadmin/AnnouncementsTab';
+import { FlashPromosTab } from '../components/superadmin/FlashPromosTab';
+import { PartnerConventionsTab } from '../components/superadmin/PartnerConventionsTab';
 import { AdminContractsTab } from '../components/superadmin/AdminContractsTab';
 import { EmailPreviewsTab } from '../components/superadmin/EmailPreviewsTab';
 import { EcosystemHealthTab } from '../components/superadmin/EcosystemHealthTab';
@@ -174,6 +177,18 @@ export default function SuperAdminPage() {
 
           <TabsContent value="accounting">
             <AccountingTab />
+          </TabsContent>
+
+          <TabsContent value="partnerships">
+            <PartnerConventionsTab />
+          </TabsContent>
+
+          <TabsContent value="announcements">
+            <AnnouncementsTab />
+          </TabsContent>
+
+          <TabsContent value="promos">
+            <FlashPromosTab />
           </TabsContent>
 
           <TabsContent value="profiles">

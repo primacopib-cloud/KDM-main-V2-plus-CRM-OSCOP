@@ -21,6 +21,7 @@ import { BuyerOrdersTab } from '../components/buyer/BuyerOrdersTab';
 import { BuyerInvoicesTab } from '../components/buyer/BuyerInvoicesTab';
 import { BuyerWalletTab } from '../components/buyer/BuyerWalletTab';
 import { BuyerModals } from '../components/buyer/BuyerModals';
+import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -278,6 +279,7 @@ export default function BuyerSpacePage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }} data-testid="buyer-space-page">
+      <MemberSpaceBanners space="buyer" />
       {/* Header */}
       <header 
         className="sticky top-0 z-50"

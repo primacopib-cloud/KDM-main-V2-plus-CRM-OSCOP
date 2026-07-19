@@ -43,6 +43,9 @@ class StartBody(BaseModel):
     member_type: str = "vendor"
     locale: str = "fr"
     country: str = "GP"
+    legal_form: str = ""
+    first_name: str = ""
+    last_name: str = ""
 
 
 class ConventionFieldsBody(BaseModel):
@@ -105,6 +108,8 @@ async def start_onboarding(body: StartBody):
         "member_type": body.member_type if body.member_type else "vendor",
         "locale": body.locale if body.locale in ("fr", "en", "es") else "fr",
         "country": (body.country or "GP").upper(),
+        "legal_form": body.legal_form.strip(),
+        "first_name": body.first_name.strip(), "last_name": body.last_name.strip(),
         "amount_ht_cents": vat["ht_cents"], "vat_rate": vat["rate"], "vat_cents": vat["vat_cents"],
         "plan_slug": body.plan_slug, "plan_name": plan["name"],
         "amount_cents": vat["ttc_cents"], "stripe_session_id": session.id,
@@ -148,10 +153,13 @@ async def onboarding_status(oid: str):
                         "subscription_status": "active",
                     }})
                 ob["status"] = "PAID"
+                from vendor_invoice_pdf import issue_adhesion_invoice
+                await issue_adhesion_invoice(db, ob, "adhesion", ext_ref=ob.get("stripe_session_id") or "")
         except Exception as exc:
             logger.warning("Vérification Stripe onboarding %s : %s", oid, exc)
     return {"id": ob["id"], "status": ob["status"], "company": ob["company"],
             "plan_name": ob.get("plan_name"), "email": ob["email"], "member_type": ob.get("member_type", "vendor"),
+            "legal_form": ob.get("legal_form"), "first_name": ob.get("first_name"), "last_name": ob.get("last_name"),
             "convention": ob.get("convention"), "amount_cents": ob.get("amount_cents")}
 
 
@@ -306,6 +314,9 @@ async def handle_vendor_invoice_event(event_type: str, invoice: dict):
         if ob.get("access_suspended") or ob.get("first_payment_failure_at") or ob.get("suspension_warning_sent_at"):
             from vendor_suspension import reactivate_vendor_access
             await reactivate_vendor_access(ob)
+        from vendor_invoice_pdf import issue_adhesion_invoice
+        await issue_adhesion_invoice(db, ob, "renouvellement", ttc_cents=invoice.get("amount_paid"),
+                                     ext_ref=invoice.get("id") or "")
         logger.info("Abonnement vendeur %s renouvelé (%s)", ob["company"], sub_id)
     elif event_type == "invoice.payment_failed":
         failure_update = {
@@ -363,52 +374,6 @@ async def admin_list_onboardings(admin: dict = Depends(require_admin)):
     return {"items": items, "total": len(items)}
 
 
-@vendor_onboarding_router.get("/admin/funnel")
-async def admin_funnel(days: int = 0, admin: dict = Depends(require_admin)):
-    """Entonnoir de conversion : adhésions initiées → payées → signées → activées (période optionnelle)."""
-    match = {}
-    if days > 0:
-        from datetime import timedelta
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-        match = {"created_at": {"$gte": cutoff}}
-    counts = {}
-    async for d in db.vendor_onboarding.aggregate([{"$match": match}, {"$group": {"_id": "$status", "n": {"$sum": 1}}}]):
-        counts[d["_id"]] = d["n"]
-    started = sum(counts.values())
-    paid = sum(v for k, v in counts.items() if k in ("PAID", "INFO_COMPLETED", "SIGNED", "ACTIVATED"))
-    signed = counts.get("SIGNED", 0) + counts.get("ACTIVATED", 0)
-    activated = counts.get("ACTIVATED", 0)
-    return {"started": started, "paid": paid, "signed": signed, "activated": activated, "by_status": counts, "days": days}
-
-
-@vendor_onboarding_router.get("/admin/export.csv")
-async def admin_export_csv(admin: dict = Depends(require_admin)):
-    """Export comptable des adhésions : statuts, montants, TVA et historique des relances."""
-    import csv
-    import io
-    labels = {"activation": "Activation", "dunning": "Relance impayé", "warning": "Avertissement J+7",
-              "suspended": "Suspension", "reactivated": "Réactivation", "sign_reminder": "Rappel signature",
-              "resume": "Relance abandon", "resume2": "Rappel final abandon"}
-    buf = io.StringIO()
-    w = csv.writer(buf, delimiter=";")
-    w.writerow(["entreprise", "contact", "email", "telephone", "pays", "profil", "formule", "statut",
-                "abonnement", "suspendu", "HT (EUR)", "TVA (EUR)", "TTC (EUR)", "taux TVA",
-                "cree le", "paye le", "active le", "code convention", "relances"])
-    async for ob in db.vendor_onboarding.find({}, {"_id": 0, "activation_token": 0, "signed_pdf_path": 0}).sort("created_at", -1):
-        ttc = ob.get("amount_cents") or 0
-        vatc = ob.get("vat_cents") or 0
-        ht = ob.get("amount_ht_cents") or (ttc - vatc)
-        rems = " | ".join(f"{labels.get(r['type'], r['type'])} {str(r.get('at'))[:10]}" for r in ob.get("reminders") or [])
-        w.writerow([ob.get("company"), ob.get("contact_name"), ob.get("email"), ob.get("phone"),
-                    ob.get("country") or "", ob.get("member_type"), ob.get("plan_name"), ob.get("status"),
-                    ob.get("subscription_status") or "", "oui" if ob.get("access_suspended") else "",
-                    f"{ht / 100:.2f}".replace(".", ","), f"{vatc / 100:.2f}".replace(".", ","),
-                    f"{ttc / 100:.2f}".replace(".", ","), f"{ob.get('vat_rate') or 0}%",
-                    str(ob.get("created_at"))[:10], str(ob.get("paid_at") or "")[:10],
-                    str(ob.get("activated_at") or "")[:10],
-                    (ob.get("signature") or {}).get("verification_code", ""), rems])
-    return Response(content=buf.getvalue().encode("utf-8-sig"), media_type="text/csv",
-                    headers={"Content-Disposition": 'attachment; filename="adhesions.csv"'})
 
 
 @vendor_onboarding_router.post("/admin/{oid}/remind")

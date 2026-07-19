@@ -120,6 +120,11 @@ async def _scheduler_loop():
             await send_weekly_unpaid_report(_db)
         except Exception as exc:
             logger.exception("Scheduler weekly unpaid report crashed: %s", exc)
+        try:
+            from routes_accounting import snapshot_fiscal_register
+            await snapshot_fiscal_register(_db)
+        except Exception as exc:
+            logger.exception("Scheduler fiscal register snapshot crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

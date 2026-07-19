@@ -435,6 +435,9 @@
     "country": "País *",
     "includesAll": "Incluye todo {{plan}}",
     "vatTotal": "Total mensual: {{ht}} € sin IVA + IVA {{rate}} % = {{ttc}} € con IVA",
-    "vatTotalExempt": "Total mensual: {{ht}} € sin IVA — exento de IVA / autoliquidación según su país"
+    "vatTotalExempt": "Total mensual: {{ht}} € sin IVA — exento de IVA / autoliquidación según su país",
+    "legalForm": "Estatuto jurídico *",
+    "firstName": "Nombre del contacto *",
+    "lastName": "Apellido del contacto *"
   }
 }

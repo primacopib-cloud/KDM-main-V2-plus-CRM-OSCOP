@@ -102,6 +102,74 @@ async def accounting_journal(date_from: Optional[str] = None, date_to: Optional[
             "kind_labels": KIND_LABELS, **agg}
 
 
+SOURCE_LABELS = {
+    "adhesion": "Cotisations d'adhésion", "renouvellement": "Cotisations — renouvellements",
+    "ORDER": "Ventes (commandes)", "PASS": "Contributions PASS Vie Chère",
+    "RECHARGE": "Recharges de crédits", "CREDIT_PACK": "Packs crédits vendeurs",
+    "remboursement": "Remboursements", "RCR": "Retenue contributive remboursable (RCR)",
+}
+
+
+@accounting_router.get("/fiscal-register")
+async def fiscal_register(date_from: Optional[str] = None, date_to: Optional[str] = None,
+                          admin: dict = Depends(require_admin)):
+    """Registre fiscal : récapitulatif par source (taxes, cotisations, ventes, remboursements, RCR…)."""
+    entries = await _collect_entries(date_from or "", date_to or "")
+    by_source, vat_by_country = {}, {}
+    for e in entries:
+        s = by_source.setdefault(e["type"], {"ht_cents": 0, "vat_cents": 0, "ttc_cents": 0, "count": 0})
+        s["ht_cents"] += e["ht_cents"]; s["vat_cents"] += e["vat_cents"]; s["ttc_cents"] += e["ttc_cents"]; s["count"] += 1
+        if e["vat_cents"]:
+            c = vat_by_country.setdefault(e["country"] or "??", {"vat_cents": 0, "count": 0})
+            c["vat_cents"] += e["vat_cents"]; c["count"] += 1
+    if "RCR" not in by_source:
+        by_source["RCR"] = {"ht_cents": 0, "vat_cents": 0, "ttc_cents": 0, "count": 0}
+    snapshots = await db.fiscal_register.find({}, {"_id": 0}).sort("month", -1).limit(12).to_list(12)
+    return {"sources": by_source, "labels": SOURCE_LABELS, "vat_by_country": vat_by_country,
+            "snapshots": snapshots, **_totals(entries)}
+
+
+async def snapshot_fiscal_register(database):
+    """Cron mensuel : fige le récapitulatif fiscal du mois précédent dans le registre."""
+    global db
+    if db is None:
+        db = database
+    now = datetime.now(timezone.utc)
+    prev_last = now.replace(day=1) - timedelta(days=1)
+    month = prev_last.strftime("%Y-%m")
+    if await db.fiscal_register.find_one({"month": month}):
+        return
+    entries = [e for e in await _collect_entries(f"{month}-01", f"{month}-31") if e["date"][:7] == month]
+    by_source = {}
+    for e in entries:
+        s = by_source.setdefault(e["type"], {"ht_cents": 0, "vat_cents": 0, "ttc_cents": 0, "count": 0})
+        s["ht_cents"] += e["ht_cents"]; s["vat_cents"] += e["vat_cents"]; s["ttc_cents"] += e["ttc_cents"]; s["count"] += 1
+    agg = _totals(entries)
+    await db.fiscal_register.insert_one({
+        "month": month, "sources": by_source, "totals": agg["totals"],
+        "created_at": now.isoformat()})
+    logger.info("Registre fiscal : snapshot %s enregistré (%d opérations)", month, agg["totals"]["count"])
+
+
+@accounting_router.get("/fiscal-register/export.csv")
+async def fiscal_register_export(date_from: Optional[str] = None, date_to: Optional[str] = None,
+                                 admin: dict = Depends(require_admin)):
+    entries = await _collect_entries(date_from or "", date_to or "")
+    by_source = {}
+    for e in entries:
+        s = by_source.setdefault(e["type"], {"ht": 0, "vat": 0, "ttc": 0, "count": 0})
+        s["ht"] += e["ht_cents"]; s["vat"] += e["vat_cents"]; s["ttc"] += e["ttc_cents"]; s["count"] += 1
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["source", "operations", "HT (EUR)", "TVA (EUR)", "TTC (EUR)"])
+    for k, v in by_source.items():
+        w.writerow([SOURCE_LABELS.get(k, k), v["count"],
+                    f"{v['ht'] / 100:.2f}".replace(".", ","), f"{v['vat'] / 100:.2f}".replace(".", ","),
+                    f"{v['ttc'] / 100:.2f}".replace(".", ",")])
+    return Response(content=buf.getvalue().encode("utf-8-sig"), media_type="text/csv",
+                    headers={"Content-Disposition": 'attachment; filename="registre-fiscal.csv"'})
+
+
 @accounting_router.get("/export.csv")
 async def accounting_export(date_from: Optional[str] = None, date_to: Optional[str] = None,
                             admin: dict = Depends(require_admin)):

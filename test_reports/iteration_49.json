@@ -1,0 +1,39 @@
+{
+  "summary": "Iteration 49 — Validated new features (Messages, Announcements, Flash Promos, Fiscal Register, Vendor Invoices PDF, Partner Conventions, Vendor Onboarding new fields). Backend: 17/17 API tests PASSED, 1 SKIPPED (vendor_invoices collection empty in DB, PDF download not testable). Frontend: form fields visible on /adhesion-vendeur; SuperAdmin tabs Partenariats/Annonces/Promos flash confirmed in code (label 'Partenariats' — request mentioned 'Conventions partenaires'); /messages page renders Messagerie/Inbox/Envoyé/Nouveau message texts. Stripe checkout session URL is returned correctly for vendor onboarding (mode LIVE — no real payment attempted).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/admin/vendor-invoices", "issue": "Aucune facture n'existe encore en base (collection vendor_invoices vide) — impossible de tester le téléchargement PDF sans créer une facture. Suggérer un seed ou test end-to-end via un onboarding complet."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Admin login UI (/admin/connexion)", "issue": "Bouton 'Se connecter' introuvable via get_by_role dans le test playwright (timeout). Peut être un problème de label i18n ou de disabled state. Le login backend fonctionne bien via curl avec portal='admin'.", "affected_selectors": ["button[type=submit]"]}
+    ],
+    "design_issues": [
+      {"screen": "/adhesion-vendeur", "issues": ["Label 'Dénomination de l'entreprise' au lieu de 'Raison sociale' demandé — sémantiquement équivalent, à harmoniser si strict."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iter49_new_features.py", "/app/test_reports/pytest/iter49.xml"],
+  "action_items": [
+    "Créer un seed de facture vendor_invoices (ou faire un onboarding complet en dev) pour tester le PDF download de bout en bout.",
+    "Ajouter data-testid sur le bouton submit de /admin/connexion pour faciliter les tests E2E.",
+    "Harmoniser le label du champ société : 'Raison sociale' (demandé) vs 'Dénomination de l'entreprise' (actuel)."
+  ],
+  "critical_code_review_comments": [
+    "routes_partner_conventions.py:126 — envoi email fait via brevo_service.send_email sans try/except : si Brevo down, l'endpoint /send renverra 500 alors que le token a bien été sauvegardé.",
+    "vendor_invoice_pdf.py:130 — endpoint /api/admin/vendor-invoices sans pagination, uniquement limit=100 param. OK pour l'instant mais prévoir pagination réelle si volume augmente.",
+    "routes_announcements.py:38 — filtrage audiences fait en Python après fetch depuis Mongo (au lieu d'utiliser $in dans la query). Perf ok pour <100 items, à surveiller."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter49_new_features.py (créé)"
+  ],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "N/A — smoke tests OK, admin login UI submit non testé"},
+  "test_credentials": "admin@kdmarche-oscop.fr/AdminKDM2025! (portal='admin' REQUIS), vendor-pro@kdmarche.fr/Demo2026!",
+  "seed_data_creation": "Créé/supprimé pendant les tests : 1 annonce TEST_iter49, 1 promo flash TEST_iter49, 1 convention partenaire TEST_iter49 (SENT puis supprimée), 1 onboarding vendeur TEST_iter49 (session Stripe créée non payée). Aucun paiement Stripe effectué.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend endpoints validés : /api/messages/* (directory, POST, inbox, sent, unread-count, {mid}/read), /api/announcements + /api/admin/announcements CRUD + /view, /api/public/flash-promos + /api/admin/flash-promos CRUD (validation ends_at>starts_at OK), /api/admin/accounting/fiscal-register (200 OK), /api/admin/vendor-invoices + /{number}/pdf (PDF non testé — 0 facture en base), /api/admin/partner-conventions CRUD + /send + PDF + /partner-conventions/by-token/{token} (404 sur bad token OK), /api/vendor-onboarding/start avec new fields legal_form/first_name/last_name (200 OK, checkout Stripe créé). Slugs plans valides : ess-acces-pro, ess-volume-pro, ess-impact-pro (pas 'vendor_pro_monthly').",
+  "rca of the issue": "N/A — pas de bug bloquant identifié."
+}

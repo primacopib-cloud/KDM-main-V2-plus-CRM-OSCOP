@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Store, ShoppingBag, Users, Globe2, Package, TrendingUp, HeartHandshake, ArrowRight } from 'lucide-react';
 import Header from '../components/Header';
+import { FlashPromoBanner } from '../components/FlashPromoBanner';
 import Footer from '../components/Footer';
 import CommunityplaceBadge from '../components/CommunityplaceBadge';
 import { VideoShowcase } from '../components/kdmarche/VideoShowcase';
@@ -45,6 +46,7 @@ export default function KdmarchePage() {
     <div className="min-h-screen" data-testid="kdmarche-page">
       <Header />
       <main className="pt-24 pb-16">
+        <FlashPromoBanner placement="kdmarche" />
         {/* Hero */}
         <section className="max-w-[1160px] mx-auto px-5 text-center mb-12">
           <CommunityplaceBadge className="mb-4" />

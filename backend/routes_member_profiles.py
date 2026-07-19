@@ -69,6 +69,7 @@ class ProfileBody(BaseModel):
     descriptions: dict = {}
     space_route: str = "/espace-acheteur"
     convention_template: str = "v2_0_buyer"
+    default_plan_slug: str = ""
     creates_vendor_record: bool = False
     active: bool = True
     sort_order: int = 10
@@ -79,6 +80,7 @@ class ProfileUpdateBody(BaseModel):
     descriptions: Optional[dict] = None
     space_route: Optional[str] = None
     convention_template: Optional[str] = None
+    default_plan_slug: Optional[str] = None
     creates_vendor_record: Optional[bool] = None
     active: Optional[bool] = None
     sort_order: Optional[int] = None

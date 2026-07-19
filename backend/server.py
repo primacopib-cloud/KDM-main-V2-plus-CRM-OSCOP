@@ -422,6 +422,21 @@ set_member_profiles_database(db)
 from routes_accounting import accounting_router, set_accounting_database
 app.include_router(accounting_router)
 set_accounting_database(db)
+from vendor_invoice_pdf import vendor_invoices_router, set_vendor_invoices_database
+app.include_router(vendor_invoices_router)
+set_vendor_invoices_database(db)
+from routes_messages import messages_router, set_messages_database
+app.include_router(messages_router)
+set_messages_database(db)
+from routes_announcements import announcements_router, set_announcements_database
+app.include_router(announcements_router)
+set_announcements_database(db)
+from routes_partner_conventions import partner_conventions_router, set_partner_conventions_database
+app.include_router(partner_conventions_router)
+set_partner_conventions_database(db)
+from routes_vendor_admin_tools import vendor_admin_tools_router, set_vendor_admin_tools_database
+app.include_router(vendor_admin_tools_router)
+set_vendor_admin_tools_database(db)
 set_crediscop_database(db)
 app.include_router(crediscop_router)
 

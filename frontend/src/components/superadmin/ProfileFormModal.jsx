@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
@@ -8,7 +8,7 @@ const labelCls = 'block text-[10.5px] text-white/55 mb-1';
 
 const EMPTY = {
   slug: '', titles: { fr: '', en: '', es: '' }, descriptions: { fr: '', en: '', es: '' },
-  space_route: '/espace-acheteur', convention_template: 'v2_0_buyer',
+  space_route: '/espace-acheteur', convention_template: 'v2_0_buyer', default_plan_slug: '',
   creates_vendor_record: false, active: true, sort_order: 10,
 };
 
@@ -16,6 +16,11 @@ export const ProfileFormModal = ({ initial, templates, onClose, onSaved }) => {
   const isEdit = Boolean(initial);
   const [data, setData] = useState(initial ? { ...EMPTY, ...initial } : EMPTY);
   const [busy, setBusy] = useState(false);
+  const [plans, setPlans] = useState([]);
+
+  useEffect(() => {
+    fetch(`${API}/public/plans`).then((r) => r.json()).then((d) => setPlans(d.plans || [])).catch(() => {});
+  }, []);
 
   const save = async () => {
     if (!data.titles.fr) return toast.error('Le titre FR est requis');
@@ -23,7 +28,7 @@ export const ProfileFormModal = ({ initial, templates, onClose, onSaved }) => {
     try {
       const url = isEdit ? `${API}/admin/member-profiles/${initial.slug}` : `${API}/admin/member-profiles`;
       const body = isEdit
-        ? { titles: data.titles, descriptions: data.descriptions, space_route: data.space_route, convention_template: data.convention_template, creates_vendor_record: data.creates_vendor_record, active: data.active, sort_order: data.sort_order }
+        ? { titles: data.titles, descriptions: data.descriptions, space_route: data.space_route, convention_template: data.convention_template, default_plan_slug: data.default_plan_slug || '', creates_vendor_record: data.creates_vendor_record, active: data.active, sort_order: data.sort_order }
         : data;
       const r = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
@@ -58,6 +63,12 @@ export const ProfileFormModal = ({ initial, templates, onClose, onSaved }) => {
           <div><label className={labelCls}>Espace de destination</label>
             <input className={inputCls} data-testid="profile-space-route" value={data.space_route}
               onChange={(e) => setData({ ...data, space_route: e.target.value })} placeholder="/espace-acheteur" /></div>
+          <div><label className={labelCls}>Formule pré-sélectionnée</label>
+            <select className={inputCls} data-testid="profile-default-plan-select" value={data.default_plan_slug || ''} style={{ colorScheme: 'dark' }}
+              onChange={(e) => setData({ ...data, default_plan_slug: e.target.value })}>
+              <option value="" style={{ background: '#2A1045' }}>— Aucune —</option>
+              {plans.map((p) => <option key={p.slug} value={p.slug} style={{ background: '#2A1045' }}>{p.name}</option>)}
+            </select></div>
           <div><label className={labelCls}>Convention associée</label>
             <select className={inputCls} data-testid="profile-convention-select" value={data.convention_template} style={{ colorScheme: 'dark' }}
               onChange={(e) => setData({ ...data, convention_template: e.target.value })}>

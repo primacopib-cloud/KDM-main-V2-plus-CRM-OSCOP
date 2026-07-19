@@ -16,6 +16,7 @@ import { useFavorites } from './FavoriteButton';
 import LanguageSwitcher from './LanguageSwitcher';
 import CommunityplaceBadge from './CommunityplaceBadge';
 import { CrediscopBadge } from './CrediscopBadge';
+import { MessagesNavLink } from './MessagesNavLink';
 import { SupportRepliesBadge } from './SupportRepliesBadge';
 import { useTranslation } from 'react-i18next';
 
@@ -174,6 +175,9 @@ const NavBar = ({ variant = 'default' }) => {
                     <ConnectionStatus isConnected={isConnected} />
                   </div>
                 )}
+
+                {/* Messagerie interne */}
+                <MessagesNavLink />
 
                 {/* Notifications */}
                 {isAdmin && (

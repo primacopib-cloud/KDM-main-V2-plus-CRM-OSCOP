@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Calculator, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
+import { RevenueChart, FiscalRegisterSection } from './FiscalRegisterSection';
 
 const eur = (cents) => `${(cents / 100).toFixed(2).replace('.', ',')} €`;
 
@@ -85,6 +86,9 @@ export const AccountingTab = () => {
               </div>
             ))}
           </div>
+
+          <RevenueChart byMonth={data.by_month} />
+          <FiscalRegisterSection />
 
           <div className="grid lg:grid-cols-2 gap-4">
             <div className="glass-panel-soft rounded-[14px] p-3">

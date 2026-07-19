@@ -37,7 +37,7 @@ export default function VendorOnboardingPage() {
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [, setOb] = useState(null);
-  const [start, setStart] = useState({ company: '', contact_name: '', email: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro', member_type: 'vendor', country: 'GP' });
+  const [start, setStart] = useState({ company: '', legal_form: '', first_name: '', last_name: '', email: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro', member_type: 'vendor', country: 'GP' });
   const [dial, setDial] = useState('+590|GP');
   const [phoneNum, setPhoneNum] = useState('');
   const [profiles, setProfiles] = useState([]);
@@ -60,6 +60,7 @@ export default function VendorOnboardingPage() {
         .then((r) => r.json())
         .then((d) => {
           setOb(d);
+          setConv((c) => ({ ...c, forme_sociale: c.forme_sociale || d.legal_form || '', rep_prenom: c.rep_prenom || d.first_name || '', rep_nom: c.rep_nom || d.last_name || '' }));
           if (d.status === 'PAID' || d.status === 'INFO_COMPLETED') { setStep(1); toast.success(t('vendorOnboarding.paidToast')); }
           else if (d.status === 'SIGNED' || d.status === 'ACTIVATED') setStep(3);
           else toast.info(t('vendorOnboarding.pendingToast'));
@@ -75,7 +76,7 @@ export default function VendorOnboardingPage() {
     try {
       const r = await fetch(`${API}/vendor-onboarding/start`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...start, phone: `${dial.split('|')[0]} ${phoneNum}`.trim(), origin_url: window.location.origin, locale: (i18n.language || 'fr').slice(0, 2) }),
+        body: JSON.stringify({ ...start, contact_name: `${start.first_name} ${start.last_name}`.trim(), phone: `${dial.split('|')[0]} ${phoneNum}`.trim(), origin_url: window.location.origin, locale: (i18n.language || 'fr').slice(0, 2) }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Erreur');
@@ -134,7 +135,7 @@ export default function VendorOnboardingPage() {
                   const lang = (i18n.language || 'fr').slice(0, 2);
                   return (
                     <button type="button" key={tp.slug} data-testid={`member-type-${tp.slug}`}
-                      onClick={() => setStart({ ...start, member_type: tp.slug })}
+                      onClick={() => setStart({ ...start, member_type: tp.slug, plan_slug: tp.default_plan_slug || start.plan_slug })}
                       className={`text-left p-4 rounded-xl border transition-colors ${
                         start.member_type === tp.slug
                           ? 'border-[#D9B35A] bg-[#D9B35A]/12'
@@ -150,8 +151,18 @@ export default function VendorOnboardingPage() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div><label className={labelCls}>{t('vendorOnboarding.company')}</label>
                 <input required className={inputCls} data-testid="vendor-company-input" value={start.company} onChange={(e) => setStart({ ...start, company: e.target.value })} placeholder={t('vendorOnboarding.companyPh')} /></div>
-              <div><label className={labelCls}>{t('vendorOnboarding.contact')}</label>
-                <input required className={inputCls} data-testid="vendor-contact-input" value={start.contact_name} onChange={(e) => setStart({ ...start, contact_name: e.target.value })} placeholder={t('vendorOnboarding.contactPh')} /></div>
+              <div><label className={labelCls}>{t('vendorOnboarding.legalForm')}</label>
+                <select required className={inputCls} data-testid="vendor-legal-form-select" value={start.legal_form} style={{ colorScheme: 'dark' }}
+                  onChange={(e) => setStart({ ...start, legal_form: e.target.value })}>
+                  <option value="" style={{ background: '#2A1045' }}>—</option>
+                  {['SARL', 'EURL', 'SAS', 'SASU', 'SA', 'SCOP', 'SCIC', 'Association', 'Entreprise individuelle', 'Micro-entreprise', 'Autre'].map((lf) => (
+                    <option key={lf} value={lf} style={{ background: '#2A1045' }}>{lf}</option>
+                  ))}
+                </select></div>
+              <div><label className={labelCls}>{t('vendorOnboarding.firstName')}</label>
+                <input required className={inputCls} data-testid="vendor-firstname-input" value={start.first_name} onChange={(e) => setStart({ ...start, first_name: e.target.value })} /></div>
+              <div><label className={labelCls}>{t('vendorOnboarding.lastName')}</label>
+                <input required className={inputCls} data-testid="vendor-lastname-input" value={start.last_name} onChange={(e) => setStart({ ...start, last_name: e.target.value })} /></div>
               <div><label className={labelCls}>{t('vendorOnboarding.email')}</label>
                 <input required type="email" className={inputCls} data-testid="vendor-email-input" value={start.email} onChange={(e) => setStart({ ...start, email: e.target.value })} placeholder={t('vendorOnboarding.emailPh')} /></div>
               <div><label className={labelCls}>{t('vendorOnboarding.phone')}</label>

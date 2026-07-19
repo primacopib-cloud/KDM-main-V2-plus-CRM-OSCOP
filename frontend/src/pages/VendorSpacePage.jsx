@@ -26,6 +26,7 @@ import { MySpotsWidget } from '../components/vendor/MySpotsWidget';
 import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
 import { VendorContractsTab } from '../components/vendor/VendorContractsTab';
 import { VendorSuspendedNotice } from '../components/vendor/VendorSuspendedNotice';
+import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { useCreditSessionPoll } from '../components/vendor/useCreditSessionPoll';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -163,6 +164,7 @@ const VendorSpacePage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100" data-testid="vendor-space">
+      <MemberSpaceBanners space="vendor" />
       <VendorProductAssistant />
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
