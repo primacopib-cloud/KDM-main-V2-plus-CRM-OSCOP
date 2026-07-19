@@ -1,9 +1,31 @@
 import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, X, Check, CheckCheck, FileText, User, Building2, Wallet, AlertTriangle } from 'lucide-react';
 import { notificationsAPI } from '../services/api';
 
 const POLL_INTERVAL = 30000; // 30 seconds
+
+const linkForNotification = (n) => {
+  if (n.data?.link) return n.data.link;
+  switch (n.type) {
+    case 'org_submitted':
+    case 'org_approved':
+    case 'org_rejected':
+      return '/admin-v2';
+    case 'new_quote':
+      return '/admin';
+    case 'new_user':
+      return '/superadmin';
+    case 'subscription_activated':
+    case 'subscription_past_due':
+      return '/admin/plans';
+    case 'product_submitted':
+      return '/admin/produits';
+    default:
+      return '/notifications';
+  }
+};
 
 const NotificationIcon = ({ type }) => {
   switch (type) {
@@ -35,6 +57,7 @@ const NotificationBadge = ({ count }) => {
 };
 
 const NotificationsDropdown = ({ isAdmin = false }) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -182,7 +205,12 @@ const NotificationsDropdown = ({ isAdmin = false }) => {
                     className={`p-4 border-b border-white/[0.04] hover:bg-white/[0.04] transition-colors cursor-pointer ${
                       !notification.is_read ? 'bg-white/[0.02]' : ''
                     }`}
-                    onClick={() => !notification.is_read && handleMarkAsRead(notification.id)}
+                    data-testid={`notification-item-${notification.id}`}
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate(linkForNotification(notification));
+                    }}
+                    title="Ouvrir l'élément concerné"
                   >
                     <div className="flex gap-3">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
@@ -196,7 +224,19 @@ const NotificationsDropdown = ({ isAdmin = false }) => {
                             {notification.title}
                           </p>
                           {!notification.is_read && (
-                            <span className="w-2 h-2 rounded-full bg-[#D9B35A] flex-shrink-0 mt-1.5" />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMarkAsRead(notification.id);
+                              }}
+                              title="Marquer comme lu"
+                              data-testid={`notification-mark-read-${notification.id}`}
+                              className="flex items-center gap-1 flex-shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-semibold text-[#E9CF8E] hover:brightness-110 transition-colors"
+                              style={{ background: 'rgba(217,179,90,0.16)', border: '1px solid rgba(217,179,90,0.45)' }}
+                            >
+                              <Check className="w-3 h-3" /> Lu
+                            </button>
                           )}
                         </div>
                         <p className="text-xs text-white/50 mt-0.5 truncate">
@@ -215,7 +255,15 @@ const NotificationsDropdown = ({ isAdmin = false }) => {
             {/* Footer */}
             {notifications.length > 0 && (
               <div className="p-3 border-t border-white/[0.08]">
-                <button className="w-full py-2 text-center text-sm text-[#D9B35A] hover:text-[#F2D07A] font-medium">
+                <button
+                  type="button"
+                  data-testid="notifications-view-all-btn"
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate('/notifications');
+                  }}
+                  className="w-full py-2 text-center text-sm text-[#D9B35A] hover:text-[#F2D07A] font-medium"
+                >
                   Voir toutes les notifications
                 </button>
               </div>

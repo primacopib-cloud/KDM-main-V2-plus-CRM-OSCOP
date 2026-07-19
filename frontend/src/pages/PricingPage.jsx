@@ -116,7 +116,7 @@ const PricingPage = () => {
           >
             {i18n.t('landing.acces_pro')} <span className="text-[#D9B35A]">{i18n.t('pricing.mutualise')}</span>
           </h1>
-          <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
+          <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto">
             {i18n.t('pricing.choisissez_votre_acces_a')}
           </p>
         </div>
@@ -129,7 +129,7 @@ const PricingPage = () => {
             <PricingCard key={tier.id} tier={tier} />
           ))}
           {tiers.length === 0 && (
-            <div className="col-span-full text-center text-slate-500 py-10" data-testid="pricing-no-plans">
+            <div className="col-span-full text-center text-white/60 py-10" data-testid="pricing-no-plans">
               Les offres seront bientôt disponibles. Contactez-nous pour en savoir plus.
             </div>
           )}
@@ -149,14 +149,15 @@ const PricingPage = () => {
             return (
               <div
                 key={f.title}
-                className="on-light p-5 rounded-2xl bg-white/70 border border-[#D9B35A]/25 backdrop-blur-sm flex items-start gap-3"
+                className="on-dark p-5 rounded-2xl border border-[#D9B35A]/25 flex items-start gap-3"
+                style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03))', backdropFilter: 'blur(12px)' }}
               >
-                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#4a1776]/10 flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-[#4a1776]" />
+                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#D9B35A]/15 flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-[#D9B35A]" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#2A1045]">{f.title}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{f.desc}</p>
+                  <p className="text-sm font-semibold text-white">{f.title}</p>
+                  <p className="text-xs text-white/55 mt-0.5">{f.desc}</p>
                 </div>
               </div>
             );
@@ -166,26 +167,29 @@ const PricingPage = () => {
 
       {/* FAQ short */}
       <section className="pb-24 px-4">
-        <div className="on-light max-w-3xl mx-auto p-8 rounded-2xl bg-white/80 border border-[#D9B35A]/25 backdrop-blur-sm">
-          <h3 className="text-xl font-serif font-semibold text-[#2A1045] mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>
+        <div
+          className="on-dark max-w-3xl mx-auto p-8 rounded-2xl border border-[#D9B35A]/25"
+          style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03))', backdropFilter: 'blur(12px)' }}
+        >
+          <h3 className="text-xl font-serif font-semibold text-white mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>
             {i18n.t('pricing.questions_frequentes')}
           </h3>
           <div className="space-y-4 text-sm">
             <div>
-              <p className="font-semibold text-[#2A1045]">{i18n.t('pricing.puis_je_changer_de')}</p>
-              <p className="text-slate-600 mt-1">
+              <p className="font-semibold text-[#E9CF8E]">{i18n.t('pricing.puis_je_changer_de')}</p>
+              <p className="text-white/70 mt-1">
                 {i18n.t('pricing.oui_changement_de_formule')}
               </p>
             </div>
             <div>
-              <p className="font-semibold text-[#2A1045]">{i18n.t('pricing.qui_peut_adherer')}</p>
-              <p className="text-slate-600 mt-1">
+              <p className="font-semibold text-[#E9CF8E]">{i18n.t('pricing.qui_peut_adherer')}</p>
+              <p className="text-white/70 mt-1">
                 {i18n.t('pricing.qui_peut_adherer_answer')}
               </p>
             </div>
             <div>
-              <p className="font-semibold text-[#2A1045]">{i18n.t('pricing.comment_se_calculent_les')}</p>
-              <p className="text-slate-600 mt-1">
+              <p className="font-semibold text-[#E9CF8E]">{i18n.t('pricing.comment_se_calculent_les')}</p>
+              <p className="text-white/70 mt-1">
                 {i18n.t('pricing.comment_answer')}
               </p>
             </div>
@@ -193,18 +197,11 @@ const PricingPage = () => {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               to="/adhesion"
-              className="force-white inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-              style={{ background: 'linear-gradient(135deg, #5B2E8C 0%, #451F6B 100%)' }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold"
+              style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}
               data-testid="cta-adhesion"
             >
               {i18n.t('landing.adherer_a_la_centrale')}
-            </Link>
-            <Link
-              to="/#contact"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#4a1776] border border-[#4a1776]/25 hover:bg-[#4a1776]/5"
-              data-testid="cta-contact"
-            >
-              {i18n.t('pricing.parler_a_un_conseiller')}
             </Link>
           </div>
         </div>
@@ -217,56 +214,57 @@ const PricingCard = ({ tier }) => {
   const isRecommended = tier.recommended;
   return (
     <div
-      className={`on-light relative rounded-3xl p-6 lg:p-7 bg-white/90 backdrop-blur-sm transition-transform hover:-translate-y-1 ${
+      className={`on-dark relative rounded-3xl p-6 lg:p-7 transition-transform hover:-translate-y-1 ${
         isRecommended ? 'shadow-2xl ring-2 ring-[#D9B35A]' : 'shadow-lg'
       }`}
-      style={{ border: `1px solid ${tier.accentBorder}` }}
+      style={{
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
+        border: '1px solid rgba(217,179,90,0.28)',
+        backdropFilter: 'blur(12px)',
+      }}
       data-testid={`pricing-card-${tier.id}`}
     >
       {isRecommended && (
         <span
-          className="force-white absolute -top-3 right-6 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.15em] font-bold text-white shadow-md"
-          style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)' }}
+          className="absolute -top-3 right-6 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.15em] font-bold shadow-md"
+          style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}
           data-testid="pricing-recommended-badge"
         >
           {i18n.t('offers.recommande')}
         </span>
       )}
       <div>
-        <p
-          className="text-[11px] uppercase tracking-[0.18em] font-bold mb-1"
-          style={{ color: tier.accent }}
-        >
+        <p className="text-[11px] uppercase tracking-[0.18em] font-bold mb-1 text-[#D9B35A]">
           {tier.name}
         </p>
-        <p className="text-xs text-slate-500 mb-5">{tier.tagline}</p>
+        <p className="text-xs text-white/55 mb-5">{tier.tagline}</p>
 
         <div
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-semibold mb-3"
-          style={{ background: tier.accentSoft, color: tier.accent }}
+          style={{ background: 'rgba(217,179,90,0.14)', color: '#E9CF8E' }}
         >
           {i18n.t('lists.mensuel')}
         </div>
 
         <div className="flex items-baseline gap-1 mb-6">
-          <span className="text-5xl font-bold text-[#2A1045]">{tier.price}</span>
-          <span className="text-2xl font-bold text-[#2A1045]/70">€</span>
-          <span className="text-xs text-slate-500 ml-2">{tier.period}</span>
+          <span className="text-5xl font-bold text-white">{tier.price}</span>
+          <span className="text-2xl font-bold text-white/70">€</span>
+          <span className="text-xs text-white/50 ml-2">{tier.period}</span>
         </div>
 
         <ul className="space-y-3 mb-8">
           {tier.features.map((f) => {
             const Icon = f.icon;
             return (
-              <li key={f.label} className="flex items-start gap-2.5 text-sm text-slate-700">
+              <li key={f.label} className="flex items-start gap-2.5 text-sm text-white/85">
                 <div
                   className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
-                  style={{ background: tier.accentSoft }}
+                  style={{ background: 'rgba(217,179,90,0.16)' }}
                 >
-                  <Check className="w-3 h-3" style={{ color: tier.accent }} />
+                  <Check className="w-3 h-3 text-[#D9B35A]" />
                 </div>
                 <span className="leading-snug">{f.label}</span>
-                <Icon className="w-3.5 h-3.5 text-slate-300 ml-auto mt-1 flex-shrink-0" />
+                <Icon className="w-3.5 h-3.5 text-white/25 ml-auto mt-1 flex-shrink-0" />
               </li>
             );
           })}
@@ -275,15 +273,11 @@ const PricingCard = ({ tier }) => {
         <Link
           to={tier.ctaLink}
           data-testid={`pricing-cta-${tier.id}`}
-          className={`w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
-            isRecommended
-              ? 'force-white text-white shadow-lg hover:shadow-xl'
-              : 'text-[#2A1045] hover:opacity-90'
-          }`}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all hover:brightness-110"
           style={
             isRecommended
-              ? { background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)' }
-              : { background: tier.accentSoft, border: `1px solid ${tier.accentBorder}` }
+              ? { background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }
+              : { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(217,179,90,0.4)', color: '#E9CF8E' }
           }
         >
           {tier.cta} <span aria-hidden>→</span>

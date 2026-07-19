@@ -86,6 +86,10 @@ async def create_application(
     
     app = ApplicationInDB(org_id=org_id, submitted_by_user_id=current_user["id"])
     await db.b2b_applications.insert_one(app.dict())
+
+    if org.get("registration_id"):
+        from company_extract import schedule_extract
+        schedule_extract(db, org["registration_id"], org_id=org_id, legal_name=org.get("legal_name"))
     
     await write_audit_log(
         action="APPLICATION_CREATED",
@@ -289,6 +293,10 @@ async def decide_application(
             upsert=True,
         )
         logger.info("Member registry: %s enregistré comme %s", (org or {}).get("legal_name"), member_type)
+
+        if (org or {}).get("registration_id"):
+            from company_extract import schedule_extract
+            schedule_extract(db, org["registration_id"], org_id=org_id, legal_name=org.get("legal_name"))
         
         # Emit approval event
         await emit_outbox_event(

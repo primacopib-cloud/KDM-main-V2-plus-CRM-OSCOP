@@ -95,21 +95,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler guarantees report iteration crashed: %s", exc)
         try:
-            if datetime.utcnow().day == 1:
-                from routes_email_previews import archive_email_logs_to_ged
-                prev_month = (datetime.utcnow().replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
-                result = await archive_email_logs_to_ged(_db, prev_month)
-                logger.info("Scheduler email GED archive (%s): %s", prev_month, result.get("status"))
+            prev_month = (datetime.utcnow().replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+            from ged_archive_watch import run_monthly_archives_with_alerts
+            await run_monthly_archives_with_alerts(_db, prev_month)
         except Exception as exc:
-            logger.exception("Scheduler email GED archive crashed: %s", exc)
-        try:
-            if datetime.utcnow().day == 1:
-                from routes_compliance_report import archive_compliance_report_to_ged
-                prev_month = (datetime.utcnow().replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
-                result = await archive_compliance_report_to_ged(_db, prev_month)
-                logger.info("Scheduler compliance GED archive (%s): %s", prev_month, result.get("status"))
-        except Exception as exc:
-            logger.exception("Scheduler compliance GED archive crashed: %s", exc)
+            logger.exception("Scheduler GED archives crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

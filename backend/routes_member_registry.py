@@ -72,6 +72,20 @@ async def update_member_status(
     return {"ok": True, "status": update.status}
 
 
+@registry_router.get("/member-registry/extract/{siret}")
+async def get_member_extract(siret: str, user_id: str = Depends(get_current_user_id)):
+    """Extrait d'immatriculation PDF du membre (généré à la demande si absent)."""
+    await require_admin(user_id)
+    from company_extract import get_or_generate_extract
+    pdf_bytes, filename, meta = await get_or_generate_extract(db, siret)
+    if pdf_bytes is None:
+        detail = "Entreprise introuvable dans la base officielle (SIRET inconnu)" \
+            if meta.get("status") == "NOT_FOUND" else (meta.get("error") or "Extrait indisponible")
+        raise HTTPException(status_code=404, detail=detail)
+    return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf",
+                             headers={"Content-Disposition": f'inline; filename="{filename}"'})
+
+
 @registry_router.get("/member-registry/export")
 async def export_member_registry(
     member_type: str = "BUYER_PRO",

@@ -219,7 +219,13 @@ export const EmailPreviewsTab = () => {
             Archiver GED
           </button>
         </div>
-        <EmailArchiveHistory refreshKey={archiveRefresh} />
+        <EmailArchiveHistory refreshKey={archiveRefresh} title="Journal des emails archivé (GEDESS)" />
+        <EmailArchiveHistory
+          refreshKey={archiveRefresh}
+          endpoint="/admin/compliance-report/archive-ged/runs"
+          title="Rapports de conformité archivés (GEDESS)"
+          testId="compliance-archive-history"
+        />
         {categories.map((cat) => (
           <div key={cat} className="mb-3">
             <p className="text-[11px] uppercase tracking-wider text-white/50 mb-1.5">{cat}</p>

@@ -54,6 +54,23 @@ export const MemberRegistryTab = () => {
     }
   };
 
+  const viewExtract = async (m) => {
+    try {
+      toast.info('Récupération de l\'extrait d\'immatriculation…');
+      const r = await fetch(`${BACKEND_URL}/api/v2/admin/member-registry/extract/${m.siret}`, { credentials: 'include' });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d.detail || 'Extrait indisponible');
+      }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
   const exportRegistry = async (format) => {
     try {
       const r = await fetch(`${BACKEND_URL}/api/v2/admin/member-registry/export?member_type=${type}&format=${format}`, { credentials: 'include' });
@@ -139,6 +156,13 @@ export const MemberRegistryTab = () => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1.5 flex-wrap">
+                      {m.siret && (
+                        <button onClick={() => viewExtract(m)} title="Extrait d'immatriculation (PDF)"
+                          className="p-1.5 rounded-lg text-[#B8860B] bg-[#D9B35A]/10 border border-[#D9B35A]/40 hover:bg-[#D9B35A]/20"
+                          data-testid={`registry-extract-${m.org_id}`}>
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {m.status !== 'SUSPENDED' && m.status !== 'RADIE' && (
                         <button onClick={() => changeStatus(m, 'SUSPENDED', 'suspension')} title="Suspendre"
                           className="p-1.5 rounded-lg text-amber-700 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20"

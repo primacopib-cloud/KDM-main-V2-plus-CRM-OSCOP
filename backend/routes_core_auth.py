@@ -77,6 +77,10 @@ async def register(user_data: UserCreate):
         user_doc["vendor_id"] = vendor_id
     await db.users.insert_one(user_doc)
 
+    if user_data.siret:
+        from company_extract import schedule_extract
+        schedule_extract(db, user_data.siret, legal_name=user_data.company_name)
+
     logger.info(f"New user registered: {user_data.email}")
 
     return {

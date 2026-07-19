@@ -1,0 +1,33 @@
+{
+  "summary": "Iter10 sprint (6 features): 6/6 backend tests PASSED (portal gating admin, compliance-report/archive-ged/runs, member-registry SIRET extract PDF, invalid SIRET 404, health). 11/11 frontend acceptance criteria PASSED end-to-end: /tarifs dark violet/gold cards + RECOMMENDED badge + Sign up buttons + NO cta-contact + 'Join the Hub' present; /superadmin Emails tab shows BOTH data-testids email-archive-history AND compliance-archive-history with 2026-07 Archivé; /superadmin Registres shows registry-extract-<org_id> button on the row with SIRET; notifications-bell renders 5 items with 1 unread mark-read button + 'Voir toutes les notifications' navigates to /notifications; landing page 'Access conditions' section has 3 positive check items. UI is currently rendered in English (i18n) but strings map 1:1 to French spec.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "/notifications history page", "issue": "Bell shows 5 notifications for Super Admin but /notifications page shows 0 (Aucune notification trouvée / 0 Total). Possible mismatch between GET /api/notifications used by bell vs endpoint used by /notifications page or user-scoping. Not in sprint scope but flagged.", "affected_selectors": ["/notifications"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter10_sprint.py",
+    "/app/test_reports/pytest/iter10.xml"
+  ],
+  "action_items": [
+    "Investigate /notifications page showing 0 items while notifications-bell dropdown shows 5 items for the same Super Admin session (data-source mismatch between /api/notifications used by bell vs standalone page endpoint)."
+  ],
+  "critical_code_review_comments": [
+    "Notification click behavior verified: clicking the notification body (not mark-read) navigates to the target route (adhésion → /admin-v2). Tested from /admin-v2 so URL unchanged but target matches. Recommend adding a test from a different page to explicitly verify navigation change.",
+    "/tarifs redesign well executed: dark violet cards, gold-accented headings, RECOMMENDED badge on middle card, three Sign up CTAs + Join the Hub at FAQ end, and NO 'Parler à un conseiller' cta-contact.",
+    "Company extract flow (SIRET → PDF → GEDESS) works end-to-end for EDF SIRET 55208131766522: api gouv 200, PDF generated (%PDF header), pushed to GEDESS (log confirms upload OK 47fa9e4e-...), Content-Type application/pdf.",
+    "Invalid SIRET returns 404 with 'introuvable' message.",
+    "Portal gating on POST /api/auth/login enforced: admin login without portal:admin returns 403 with 'Administration' block message; with portal:admin returns 200 + JWT."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter10_sprint.py (created)"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (11/11 criteria)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (with portal:'admin' or via /admin/connexion UI)",
+  "seed_data_creation": "None — used existing 2026-07 SUCCESS runs and existing buyer registry row (TEST BUYER PRO cff9af73 with SIRET in GUADELOUPE).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter10 sprint fully verified. Note UI locale currently English — strings map 1:1 to FR spec. Minor open item: /notifications standalone page shows 0 while bell shows 5 — investigate data-source consistency. Landing regression 'Conditions d'accès' (rendered EN 'Access conditions') displays 3 positive check items.",
+  "rca of the issue": "N/A — all sprint acceptance criteria PASS."
+}
