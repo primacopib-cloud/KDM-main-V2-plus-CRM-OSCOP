@@ -259,6 +259,9 @@ async def transition(cid: str, body: TransitionBody, admin: dict = Depends(requi
     if body.reason:
         upd["status_reason"] = body.reason.strip()
     await db.consultations.update_one({"id": cid}, {"$set": upd})
+    if body.to == "CLOTUREE" and c["procedure"] == "SCELLEE":
+        from routes_bids import open_sealed_bids
+        await open_sealed_bids(cid)
     event = {"ANNULEE": "CANCELLED", "SANS_SUITE": "NO_FOLLOW_UP", "CLOTUREE": "CLOSED"}.get(body.to, f"STATUS_{body.to}")
     await audit(event, admin.get("email"), cid, {"from": c["status"], "to": body.to, "reason": body.reason})
     refunded = 0

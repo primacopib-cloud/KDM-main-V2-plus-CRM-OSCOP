@@ -44,7 +44,8 @@ const LoginPage = () => {
       const next = new URLSearchParams(window.location.search).get('next');
       const u = data?.user;
       const isSuperAdmin = u?.is_admin || ['SUPER_ADMIN', 'ADMIN', 'admin'].includes(u?.role);
-      navigate(next && next.startsWith('/') ? next : (isSuperAdmin ? '/superadmin' : '/dashboard'));
+      const isVendor = (u?.role || '').toLowerCase() === 'vendor';
+      navigate(next && next.startsWith('/') ? next : (isSuperAdmin ? '/superadmin' : isVendor ? '/vendor' : '/dashboard'));
     } catch (error) {
       toast.error(error.message || t('auth.invalid_credentials'));
     } finally {
