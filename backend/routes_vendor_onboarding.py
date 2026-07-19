@@ -76,13 +76,14 @@ async def start_onboarding(body: StartBody):
     stripe.api_base = "https://api.stripe.com"
     session = stripe.checkout.Session.create(
         api_key=_stripe_key(),
-        mode="payment",
+        mode="subscription",
         payment_method_types=["card"],
         line_items=[{
             "price_data": {
                 "currency": "eur",
                 "unit_amount": plan["price_cents"],
-                "product_data": {"name": f"Adhésion Vendeur Pro — {plan['name']} (1er mois HT)"},
+                "recurring": {"interval": "month"},
+                "product_data": {"name": f"Adhésion Vendeur Pro — {plan['name']} (mensuel HT)"},
             },
             "quantity": 1,
         }],
@@ -124,7 +125,12 @@ async def onboarding_status(oid: str):
             session = stripe.checkout.Session.retrieve(ob["stripe_session_id"], api_key=_stripe_key())
             if session.payment_status == "paid":
                 await db.vendor_onboarding.update_one(
-                    {"id": oid}, {"$set": {"status": "PAID", "paid_at": datetime.now(timezone.utc).isoformat()}})
+                    {"id": oid}, {"$set": {
+                        "status": "PAID", "paid_at": datetime.now(timezone.utc).isoformat(),
+                        "stripe_subscription_id": session.get("subscription"),
+                        "stripe_customer_id": session.get("customer"),
+                        "subscription_status": "active",
+                    }})
                 ob["status"] = "PAID"
         except Exception as exc:
             logger.warning("Vérification Stripe onboarding %s : %s", oid, exc)
@@ -208,6 +214,25 @@ async def sign_convention(oid: str, body: SignBody):
     return {"status": "SIGNED", "verification_code": signature["verification_code"]}
 
 
+async def _send_activation_email(ob: dict, activation_token: str, pdf: bytes | None = None):
+    from brevo_service import send_email
+    frontend = os.environ.get("FRONTEND_PUBLIC_URL", "")
+    link = f"{frontend}/activation-vendeur?token={activation_token}"
+    code = (ob.get("signature") or {}).get("verification_code", "")
+    html = f"""
+    <h2 style="color:#451F6B;">Bienvenue dans la Communityplace, {ob['contact_name']} !</h2>
+    <p>Votre adhésion <strong>{ob.get('plan_name')}</strong> est payée et votre convention tripartite est signée
+    (code de vérification : <strong>{code}</strong>{' — copie jointe' if pdf else ''}).</p>
+    <p>Dernière étape : activez votre espace vendeur et choisissez votre mot de passe :</p>
+    <p style="margin:24px 0;"><a href="{link}" style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Activer mon espace vendeur</a></p>
+    <p style="color:#777;font-size:12px;">Vous pourrez ensuite soumettre vos produits, guidé pas à pas par notre assistant COOP'IA (gratuit).</p>
+    """
+    attachments = [{"content": base64.b64encode(pdf).decode(), "name": f"convention-signee-{ob['id'][:8]}.pdf"}] if pdf else None
+    await send_email(to_email=ob["email"], to_name=ob["contact_name"],
+                     subject="Activez votre espace vendeur — convention signée ✔",
+                     html_content=html, tags=["vendor-activation"], attachments=attachments)
+
+
 async def _post_sign_tasks(oid: str, ob: dict, signature: dict, pdf: bytes, activation_token: str):
     """GEDESS + email d'activation Brevo (avec convention signée en pièce jointe)."""
     try:
@@ -223,23 +248,7 @@ async def _post_sign_tasks(oid: str, ob: dict, signature: dict, pdf: bytes, acti
     except Exception as exc:
         logger.warning("Push GEDESS convention %s : %s", oid, exc)
     try:
-        from brevo_service import send_email
-        frontend = os.environ.get("FRONTEND_PUBLIC_URL", "")
-        link = f"{frontend}/activation-vendeur?token={activation_token}"
-        html = f"""
-        <h2 style="color:#451F6B;">Bienvenue dans la Communityplace, {ob['contact_name']} !</h2>
-        <p>Votre adhésion <strong>{ob.get('plan_name')}</strong> est payée et votre convention tripartite est signée
-        (code de vérification : <strong>{signature['verification_code']}</strong> — copie jointe).</p>
-        <p>Dernière étape : activez votre espace vendeur et choisissez votre mot de passe :</p>
-        <p style="margin:24px 0;"><a href="{link}" style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Activer mon espace vendeur</a></p>
-        <p style="color:#777;font-size:12px;">Vous pourrez ensuite soumettre vos produits, guidé pas à pas par notre assistant COOP'IA (gratuit).</p>
-        """
-        await send_email(
-            to_email=ob["email"], to_name=ob["contact_name"],
-            subject="Activez votre espace vendeur — convention signée ✔",
-            html_content=html, tags=["vendor-activation"],
-            attachments=[{"content": base64.b64encode(pdf).decode(), "name": f"convention-signee-{oid[:8]}.pdf"}],
-        )
+        await _send_activation_email({**ob, "id": oid, "signature": signature}, activation_token, pdf)
     except Exception as exc:
         logger.warning("Email activation vendeur %s : %s", oid, exc)
 
@@ -254,6 +263,15 @@ async def activate_account(body: ActivateBody, response: Response):
     await db.users.update_one({"id": ob["user_id"]}, {"$set": {
         "is_active": True, "password_hash": get_password_hash(body.password),
     }})
+    existing_vendor = await db.vendors.find_one({"id": ob["user_id"]})
+    if not existing_vendor:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        await db.vendors.insert_one({
+            "id": ob["user_id"], "company_name": ob["company"], "contact_name": ob["contact_name"],
+            "email": ob["email"], "phone": ob.get("phone") or "", "country": "GP",
+            "status": "APPROVED", "approved_at": now_iso, "created_at": now_iso,
+            "description": "", "source": "vendor_onboarding", "onboarding_id": ob["id"],
+        })
     await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
         "status": "ACTIVATED", "activated_at": datetime.now(timezone.utc).isoformat(),
     }})
@@ -263,7 +281,142 @@ async def activate_account(body: ActivateBody, response: Response):
             "user": {"id": ob["user_id"], "email": ob["email"], "role": "vendor", "company": ob["company"]}}
 
 
-# ============ Assistant produits gratuit (COOP'IA) ============
+# ============ Abonnement récurrent : webhooks & relances ============
+
+async def handle_vendor_invoice_event(event_type: str, invoice: dict):
+    """Appelé par le webhook Stripe pour invoice.paid / invoice.payment_failed."""
+    sub_id = invoice.get("subscription")
+    if not sub_id:
+        return
+    ob = await db.vendor_onboarding.find_one({"stripe_subscription_id": sub_id}, {"_id": 0})
+    if not ob:
+        return
+    now = datetime.now(timezone.utc).isoformat()
+    if event_type == "invoice.paid":
+        await db.vendor_onboarding.update_one({"id": ob["id"]}, {
+            "$set": {"subscription_status": "active", "last_renewal_at": now},
+            "$push": {"renewals": {"at": now, "amount_cents": invoice.get("amount_paid"), "invoice_id": invoice.get("id")}},
+        })
+        logger.info("Abonnement vendeur %s renouvelé (%s)", ob["company"], sub_id)
+    elif event_type == "invoice.payment_failed":
+        await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
+            "subscription_status": "past_due", "last_payment_failure_at": now,
+            "hosted_invoice_url": invoice.get("hosted_invoice_url"),
+        }})
+        await _send_dunning_email(ob, invoice.get("hosted_invoice_url"))
+        try:
+            from core_deps import create_notification
+            await create_notification(
+                "subscription_past_due", "Prélèvement vendeur échoué",
+                f"L'abonnement de {ob['company']} ({ob.get('plan_name')}) est en échec de prélèvement.",
+                {"onboarding_id": ob["id"]})
+        except Exception:
+            pass
+
+
+async def _send_dunning_email(ob: dict, invoice_url: str | None):
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if ob.get("dunning_sent_on") == today:
+        return
+    try:
+        from brevo_service import send_email
+        pay_link = invoice_url or ob.get("hosted_invoice_url") or ""
+        btn = f'<p style="margin:24px 0;"><a href="{pay_link}" style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Régulariser mon paiement</a></p>' if pay_link else ""
+        await send_email(
+            to_email=ob["email"], to_name=ob.get("contact_name"),
+            subject="⚠ Échec de prélèvement — régularisez votre adhésion Vendeur Pro",
+            html_content=f"""
+            <h2 style="color:#451F6B;">Prélèvement refusé</h2>
+            <p>Bonjour {ob.get('contact_name')},</p>
+            <p>Le prélèvement mensuel de votre adhésion <strong>{ob.get('plan_name')}</strong> a échoué.
+            Une nouvelle tentative automatique sera effectuée par notre prestataire de paiement,
+            et nous vous relancerons chaque jour jusqu'à régularisation.</p>
+            {btn}
+            <p style="color:#777;font-size:12px;">Sans régularisation, l'accès à votre espace vendeur pourra être suspendu.</p>
+            """,
+            tags=["vendor-dunning"])
+        await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {"dunning_sent_on": today}})
+        logger.info("Relance impayé envoyée à %s", ob["email"])
+    except Exception as exc:
+        logger.warning("Relance impayé %s : %s", ob["id"], exc)
+
+
+async def check_vendor_subscriptions(database):
+    """Poll quotidien Stripe : synchronise le statut des abonnements et relance les impayés (1 email/jour)."""
+    global db
+    if db is None:
+        db = database
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    cursor = db.vendor_onboarding.find(
+        {"stripe_subscription_id": {"$ne": None}, "status": {"$in": ["SIGNED", "ACTIVATED"]},
+         "$or": [{"sub_checked_on": {"$ne": today}}, {"sub_checked_on": {"$exists": False}}]},
+        {"_id": 0}).limit(50)
+    async for ob in cursor:
+        try:
+            stripe.api_base = "https://api.stripe.com"
+            sub = stripe.Subscription.retrieve(ob["stripe_subscription_id"], api_key=_stripe_key())
+            await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
+                "subscription_status": sub.status, "sub_checked_on": today}})
+            if sub.status in ("past_due", "unpaid"):
+                await _send_dunning_email({**ob, "subscription_status": sub.status}, ob.get("hosted_invoice_url"))
+        except Exception as exc:
+            logger.warning("Check abonnement %s : %s", ob["id"], exc)
+
+
+# ============ Admin : suivi des adhésions vendeurs ============
+
+from lolodrive_helpers import require_admin  # noqa: E402
+
+
+@vendor_onboarding_router.get("/admin/list")
+async def admin_list_onboardings(admin: dict = Depends(require_admin)):
+    items = await db.vendor_onboarding.find(
+        {}, {"_id": 0, "activation_token": 0, "signed_pdf_path": 0}
+    ).sort("created_at", -1).limit(100).to_list(100)
+    return {"items": items, "total": len(items)}
+
+
+@vendor_onboarding_router.post("/admin/{oid}/remind")
+async def admin_remind(oid: str, admin: dict = Depends(require_admin)):
+    ob = await db.vendor_onboarding.find_one({"id": oid}, {"_id": 0})
+    if not ob:
+        raise HTTPException(status_code=404, detail="Adhésion introuvable")
+    frontend = os.environ.get("FRONTEND_PUBLIC_URL", "")
+    from brevo_service import send_email
+    if ob["status"] == "SIGNED":
+        await _send_activation_email(ob, ob.get("activation_token") or "", None)
+        kind = "activation"
+    elif ob["status"] in ("PAID", "INFO_COMPLETED"):
+        link = f"{frontend}/adhesion-vendeur?step=paid&onboarding_id={oid}"
+        await send_email(to_email=ob["email"], to_name=ob.get("contact_name"),
+                         subject="Finalisez votre adhésion Vendeur Pro — signature de votre convention",
+                         html_content=f"<p>Bonjour {ob.get('contact_name')},</p><p>Votre paiement est bien enregistré. Il ne reste qu'à compléter et signer votre convention :</p><p style=\"margin:24px 0;\"><a href=\"{link}\" style=\"background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;\">Signer ma convention</a></p>",
+                         tags=["vendor-remind"])
+        kind = "signature"
+    elif ob["status"] == "PAYMENT_PENDING":
+        link = f"{frontend}/adhesion-vendeur?plan={ob.get('plan_slug')}"
+        await send_email(to_email=ob["email"], to_name=ob.get("contact_name"),
+                         subject="Votre adhésion Vendeur Pro vous attend",
+                         html_content=f"<p>Bonjour {ob.get('contact_name')},</p><p>Votre adhésion <strong>{ob.get('plan_name')}</strong> n'a pas été finalisée. Reprenez votre inscription :</p><p style=\"margin:24px 0;\"><a href=\"{link}\" style=\"background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;\">Reprendre mon adhésion</a></p>",
+                         tags=["vendor-remind"])
+        kind = "paiement"
+    else:
+        raise HTTPException(status_code=400, detail="Cette adhésion est déjà active")
+    await db.vendor_onboarding.update_one({"id": oid}, {"$set": {
+        "last_remind_at": datetime.now(timezone.utc).isoformat(), "last_remind_by": admin.get("email")}})
+    return {"reminded": True, "kind": kind}
+
+
+@vendor_onboarding_router.get("/my-vendor")
+async def my_vendor(user_id: str = Depends(get_current_user_id)):
+    """Résout l'identifiant vendeur du compte connecté (espace vendeur)."""
+    vendor = await db.vendors.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not vendor:
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1})
+        if user:
+            vendor = await db.vendors.find_one({"email": user["email"]}, {"_id": 0, "id": 1})
+    return {"vendor_id": (vendor or {}).get("id")}
+
 
 class AssistantBody(BaseModel):
     question: str

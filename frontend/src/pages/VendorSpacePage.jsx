@@ -25,6 +25,7 @@ import { ProductActions } from '../components/vendor/ProductActions';
 import { MySpotsWidget } from '../components/vendor/MySpotsWidget';
 import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
 import { VendorContractsTab } from '../components/vendor/VendorContractsTab';
+import { useCreditSessionPoll } from '../components/vendor/useCreditSessionPoll';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -36,7 +37,14 @@ const DEMO_VENDOR_ID = 'vendor-demo-pro';
 // ===== MAIN VENDOR SPACE PAGE =====
 const VendorSpacePage = () => {
   const navigate = useNavigate();
-  const [vendorId] = useState(DEMO_VENDOR_ID);
+  const [vendorId, setVendorId] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/vendor-onboarding/my-vendor`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((d) => setVendorId(d.vendor_id || DEMO_VENDOR_ID))
+      .catch(() => setVendorId(DEMO_VENDOR_ID));
+  }, []);
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState(null);
   const [products, setProducts] = useState([]);
@@ -108,34 +116,17 @@ const VendorSpacePage = () => {
   }, [vendorId]);
 
   useEffect(() => {
+    if (!vendorId) return;
     const loadData = async () => {
       setLoading(true);
       await Promise.all([fetchDashboard(), fetchProducts(), fetchCountries(), fetchCredits()]);
       setLoading(false);
     };
     loadData();
-  }, [fetchDashboard, fetchProducts, fetchCountries]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorId, statusFilter]);
 
-  useEffect(() => {
-    // Retour Stripe après achat de pack de crédits
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('credit_session');
-    if (!sessionId) return;
-    window.history.replaceState({}, '', '/espace-vendeur');
-    const poll = async (attempt = 0) => {
-      const r = await fetch(`${API_URL}/api/credit-packs/status/${sessionId}`, { credentials: 'include' });
-      if (r.ok) {
-        const d = await r.json();
-        if (d.payment_status === 'paid') {
-          if (d.credited > 0) toast.success(`Paiement confirmé : +${d.credited} crédits ajoutés !`);
-          fetchCredits();
-          return;
-        }
-      }
-      if (attempt < 6) setTimeout(() => poll(attempt + 1), 2500);
-    };
-    poll();
-  }, [fetchCredits]);
+  useCreditSessionPoll(fetchCredits);
 
   const handleProductSuccess = () => {
     fetchDashboard();

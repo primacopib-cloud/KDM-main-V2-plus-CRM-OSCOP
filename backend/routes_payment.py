@@ -255,6 +255,12 @@ async def handle_stripe_webhook(request: Request):
         session = event["data"]["object"]
         session_id = session.get("id")
         logger.info(f"Webhook received: {event['type']} for session {session_id}")
+
+        # Abonnements vendeurs (renouvellement mensuel / échec de prélèvement)
+        if event["type"] in ("invoice.paid", "invoice.payment_failed"):
+            from routes_vendor_onboarding import handle_vendor_invoice_event
+            await handle_vendor_invoice_event(event["type"], session)
+            return {"received": True}
         
         # Handle payment success
         if event["type"] == "checkout.session.completed":

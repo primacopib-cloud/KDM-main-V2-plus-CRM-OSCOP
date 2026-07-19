@@ -100,6 +100,11 @@ async def _scheduler_loop():
             await run_monthly_archives_with_alerts(_db, prev_month)
         except Exception as exc:
             logger.exception("Scheduler GED archives crashed: %s", exc)
+        try:
+            from routes_vendor_onboarding import check_vendor_subscriptions
+            await check_vendor_subscriptions(_db)
+        except Exception as exc:
+            logger.exception("Scheduler vendor subscriptions crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 
