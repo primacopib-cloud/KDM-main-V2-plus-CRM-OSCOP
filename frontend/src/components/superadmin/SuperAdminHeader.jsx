@@ -141,7 +141,7 @@ export const SuperAdminHeader = ({
     {/* Tabs Navigation */}
     <div className="max-w-[1400px] mx-auto px-5 pb-3">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-white/[0.04] border border-white/[0.08] p-1 rounded-xl">
+        <TabsList className="bg-white/[0.04] border border-white/[0.08] p-1 rounded-xl h-auto flex-wrap justify-start gap-y-1">
           {TABS.map((t) => (
             <TabsTrigger
               key={t.value}
@@ -149,7 +149,7 @@ export const SuperAdminHeader = ({
               data-testid={`superadmin-tab-${t.value}`}
               className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg"
             >
-              <t.icon className="w-4 h-4 mr-2" />
+              <t.icon className="w-4 h-4 mr-1.5" />
               {t.label}
               {t.value === 'support' && openTickets > 0 && (
                 <span
