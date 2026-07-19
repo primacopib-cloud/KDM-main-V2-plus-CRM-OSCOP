@@ -49,9 +49,9 @@
     "est_reserve_aux_membres": " is restricted to members holding an ",
     "adhesion_o_scop_active": "active, up-to-date O'SCOP membership",
     "exclusions_list": [
-      "No access to pooled prices",
-      "No access to the B2B hub",
-      "No access to zones"
+      "Access to pooled prices",
+      "Access to the B2B hub",
+      "Access to zones"
     ],
     "conformite_juridique_administrative": "Legal & Administrative Compliance",
     "le_partenariat_garantit_une": "The partnership guarantees full transparency",

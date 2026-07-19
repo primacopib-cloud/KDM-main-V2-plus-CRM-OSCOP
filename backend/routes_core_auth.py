@@ -103,6 +103,18 @@ async def login(credentials: UserLogin, response: Response):
             detail="Email ou mot de passe incorrect"
         )
 
+    is_admin_account = bool(user.get("is_admin")) or str(user.get("role", "")).upper() in ("ADMIN", "SUPER_ADMIN")
+    if is_admin_account and credentials.portal != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Compte administrateur : veuillez vous connecter via le bloc Administration."
+        )
+    if credentials.portal == "admin" and not is_admin_account:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès réservé à l'équipe d'administration de la centrale."
+        )
+
     access_token = create_access_token(data={"sub": user["id"]})
     set_auth_cookie(response, access_token)
 

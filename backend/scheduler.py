@@ -102,6 +102,14 @@ async def _scheduler_loop():
                 logger.info("Scheduler email GED archive (%s): %s", prev_month, result.get("status"))
         except Exception as exc:
             logger.exception("Scheduler email GED archive crashed: %s", exc)
+        try:
+            if datetime.utcnow().day == 1:
+                from routes_compliance_report import archive_compliance_report_to_ged
+                prev_month = (datetime.utcnow().replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+                result = await archive_compliance_report_to_ged(_db, prev_month)
+                logger.info("Scheduler compliance GED archive (%s): %s", prev_month, result.get("status"))
+        except Exception as exc:
+            logger.exception("Scheduler compliance GED archive crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

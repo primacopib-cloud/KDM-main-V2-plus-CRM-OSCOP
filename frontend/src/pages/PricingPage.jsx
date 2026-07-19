@@ -110,7 +110,7 @@ const PricingPage = () => {
             {i18n.t('offers.abonnements_o_scop')}
           </span>
           <h1
-            className="text-4xl sm:text-5xl lg:text-6xl font-serif font-semibold text-[#2A1045] leading-[1.05] mb-4"
+            className="text-4xl sm:text-5xl lg:text-6xl font-serif font-semibold text-white leading-[1.05] mb-4"
             style={{ fontFamily: '"Playfair Display", serif' }}
             data-testid="pricing-title"
           >
@@ -149,7 +149,7 @@ const PricingPage = () => {
             return (
               <div
                 key={f.title}
-                className="p-5 rounded-2xl bg-white/70 border border-[#D9B35A]/25 backdrop-blur-sm flex items-start gap-3"
+                className="on-light p-5 rounded-2xl bg-white/70 border border-[#D9B35A]/25 backdrop-blur-sm flex items-start gap-3"
               >
                 <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#4a1776]/10 flex items-center justify-center">
                   <Icon className="w-5 h-5 text-[#4a1776]" />
@@ -166,7 +166,7 @@ const PricingPage = () => {
 
       {/* FAQ short */}
       <section className="pb-24 px-4">
-        <div className="max-w-3xl mx-auto p-8 rounded-2xl bg-white/80 border border-[#D9B35A]/25 backdrop-blur-sm">
+        <div className="on-light max-w-3xl mx-auto p-8 rounded-2xl bg-white/80 border border-[#D9B35A]/25 backdrop-blur-sm">
           <h3 className="text-xl font-serif font-semibold text-[#2A1045] mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>
             {i18n.t('pricing.questions_frequentes')}
           </h3>
@@ -217,7 +217,7 @@ const PricingCard = ({ tier }) => {
   const isRecommended = tier.recommended;
   return (
     <div
-      className={`relative rounded-3xl p-6 lg:p-7 bg-white/90 backdrop-blur-sm transition-transform hover:-translate-y-1 ${
+      className={`on-light relative rounded-3xl p-6 lg:p-7 bg-white/90 backdrop-blur-sm transition-transform hover:-translate-y-1 ${
         isRecommended ? 'shadow-2xl ring-2 ring-[#D9B35A]' : 'shadow-lg'
       }`}
       style={{ border: `1px solid ${tier.accentBorder}` }}

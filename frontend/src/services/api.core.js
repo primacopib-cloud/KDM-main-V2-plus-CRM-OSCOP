@@ -19,10 +19,10 @@ export const authAPI = {
     });
   },
 
-  login: async (email, password) => {
+  login: async (email, password, portal = 'member') => {
     const data = await apiCall('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, portal }),
     });
 
     // JWT is stored in an httpOnly cookie by the backend (not accessible to JS)

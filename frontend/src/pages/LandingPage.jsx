@@ -147,8 +147,8 @@ const LandingPage = () => {
             
             <div className="inline-flex flex-wrap gap-4 justify-center p-4 rounded-2xl bg-black/20">
               {(i18n.t('landing.exclusions_list', { returnObjects: true }) || []).map((item) => (
-                <div key={`no-pass-${item.slice(0, 32)}`} className="flex items-center gap-2 text-[#FF6B6B] text-sm">
-                  <div className="cross-icon"></div>
+                <div key={`access-${item.slice(0, 32)}`} className="flex items-center gap-2 text-[#A9D96C] text-sm">
+                  <div className="check-icon"></div>
                   <span>{item}</span>
                 </div>
               ))}

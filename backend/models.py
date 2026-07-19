@@ -35,6 +35,7 @@ class UserCreate(UserBase):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    portal: str = "member"
 
 
 class UserResponse(UserBase):

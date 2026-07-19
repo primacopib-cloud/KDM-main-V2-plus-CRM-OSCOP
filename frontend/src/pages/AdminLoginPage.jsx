@@ -33,7 +33,7 @@ const AdminLoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const result = await authAPI.login(formData.email, formData.password);
+      const result = await authAPI.login(formData.email, formData.password, 'admin');
       // authAPI.login returns { access_token, user } and stores them; make sure the account is admin.
       const user = result?.user || JSON.parse(localStorage.getItem('user') || 'null');
       if (!user?.is_admin) {

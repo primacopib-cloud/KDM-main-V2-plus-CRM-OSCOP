@@ -109,6 +109,51 @@ async def build_compliance_report_pdf(month: str) -> bytes:
     return buf.getvalue()
 
 
+async def archive_compliance_report_to_ged(database, month: str, force: bool = False) -> dict:
+    """Archive le rapport de conformité PDF du mois dans la GEDESS (idempotent par mois)."""
+    global db
+    if db is None:
+        db = database
+    existing = await db.compliance_archive_runs.find_one({"month": month, "status": "SUCCESS"})
+    if existing and not force:
+        return {"status": "ALREADY_ARCHIVED", "month": month}
+    from gedess_client import is_gedess_configured, gedess_upload_file
+    if not is_gedess_configured():
+        return {"status": "GED_DISABLED", "month": month}
+    pdf = await build_compliance_report_pdf(month)
+    run = {"month": month, "archived_at": datetime.now(timezone.utc).isoformat()}
+    try:
+        doc = await gedess_upload_file(
+            filename=f"rapport-conformite-{month}.pdf",
+            content=pdf,
+            categorie="rapport",
+            description=f"Rapport mensuel de conformité Communityplace (emails, garanties, adhésions) — période {month}.",
+            tags="communityplace,conformite,rapport-mensuel,archive-automatique",
+            mime_type="application/pdf",
+        )
+        run.update({"status": "SUCCESS", "ged_document_id": doc.get("id"), "ged_filename": doc.get("original_filename")})
+    except Exception as exc:
+        run.update({"status": "ERROR", "error": str(exc)})
+    await db.compliance_archive_runs.update_one({"month": month}, {"$set": run}, upsert=True)
+    return run
+
+
+@compliance_router.post("/archive-ged")
+async def archive_compliance_to_ged(request: Request):
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    month = (body.get("month") or datetime.now(timezone.utc).strftime("%Y-%m")).strip()
+    if not re.fullmatch(r"\d{4}-\d{2}", month):
+        raise HTTPException(status_code=400, detail="Format de mois invalide (attendu YYYY-MM)")
+    return await archive_compliance_report_to_ged(db, month, force=bool(body.get("force")))
+
+
 @compliance_router.get("/{month}.pdf")
 async def download_compliance_report(request: Request, month: str):
     admin = await get_current_admin_from_request(request)

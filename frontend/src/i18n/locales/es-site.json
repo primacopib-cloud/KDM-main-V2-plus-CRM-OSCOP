@@ -49,9 +49,9 @@
     "est_reserve_aux_membres": " está reservado a los miembros con una ",
     "adhesion_o_scop_active": "adhesión O'SCOP activa y al día",
     "exclusions_list": [
-      "Sin acceso a los precios mutualizados",
-      "Sin acceso a la central B2B",
-      "Sin acceso a las zonas"
+      "Acceso a los precios mutualizados",
+      "Acceso a la central B2B",
+      "Acceso a las zonas"
     ],
     "conformite_juridique_administrative": "Conformidad Jurídica y Administrativa",
     "le_partenariat_garantit_une": "La alianza garantiza una transparencia total",

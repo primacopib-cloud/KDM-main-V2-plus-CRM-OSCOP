@@ -448,6 +448,18 @@ img[src*="kdmarche-pro"], img[src*="oscop"] {
 .text-\[\#1F2A3A\] { color: #F3EDE4 !important; }
 .text-\[\#8A785F\], .text-\[\#7A6850\], .text-\[\#A8977C\], .text-\[\#5C4B36\], .text-\[\#3D2E1E\] { color: #C9BBA4 !important; }
 .text-\[\#4C2A6E\], .text-\[\#4a1776\], .text-\[\#2A1045\], .text-\[\#3B1A5C\] { color: #CDB4F0 !important; }
+
+/* === ON-LIGHT PANELS (cartes blanches) — restaure le texte sombre ===== */
+.on-light .text-slate-400, .on-light .text-gray-400 { color: #94a3b8 !important; }
+.on-light .text-slate-500, .on-light .text-gray-500 { color: #64748b !important; }
+.on-light .text-slate-600, .on-light .text-gray-600 { color: #475569 !important; }
+.on-light .text-slate-700, .on-light .text-gray-700 { color: #334155 !important; }
+.on-light .text-slate-800, .on-light .text-gray-800 { color: #1e293b !important; }
+.on-light .text-slate-900, .on-light .text-gray-900 { color: #0f172a !important; }
+.on-light .text-\[\#2A1045\] { color: #2A1045 !important; }
+.on-light .text-\[\#4a1776\] { color: #4a1776 !important; }
+.on-light .text-\[\#4C2A6E\] { color: #4C2A6E !important; }
+.on-light .text-\[\#3B1A5C\] { color: #3B1A5C !important; }
 .text-\[\#B8860B\], .text-\[\#b07a1a\] { color: #E9CF8E !important; }
 .text-\[\#4d7a1c\] { color: #A8E063 !important; }
 .text-green-700 { color: #86efac !important; }
