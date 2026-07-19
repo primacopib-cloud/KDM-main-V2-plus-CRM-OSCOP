@@ -54,6 +54,14 @@ export const EvaluationModal = ({ consultation: c, onClose, onChanged }) => {
     URL.revokeObjectURL(url);
   };
 
+  const sendAttestation = async () => {
+    if (!window.confirm('Envoyer le projet d\'Attestation nominative (PDF) par email au fournisseur retenu ?')) return;
+    const r = await fetch(`${API}/admin/consultations/${c.id}/attestation/send`, { method: 'POST', ...opts() });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Erreur');
+    toast.success(`Attestation envoyée à ${d.sent_to}`);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(15,5,25,0.8)' }} data-testid="evaluation-modal">
       <div className="w-full max-w-3xl rounded-[18px] p-5 max-h-[92vh] overflow-y-auto" style={{ background: '#2A1045', border: '1px solid rgba(217,179,90,0.3)' }}>
@@ -115,6 +123,16 @@ export const EvaluationModal = ({ consultation: c, onClose, onChanged }) => {
             <button type="button" onClick={() => dl('pv.pdf', `PV-${c.ref}.pdf`)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }} data-testid="eval-pv-btn">
               <FileText className="w-3.5 h-3.5" /> Procès-verbal PDF
             </button>
+          )}
+          {['ATTRIBUEE', 'ARCHIVEE'].includes(c.status) && (
+            <>
+              <button type="button" onClick={() => dl('attestation.pdf', `Attestation-${c.ref}.pdf`)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold" style={{ background: '#7BC94E', color: '#1F0A33' }} data-testid="eval-attestation-btn">
+                <FileText className="w-3.5 h-3.5" /> Attestation nominative PDF
+              </button>
+              <button type="button" onClick={sendAttestation} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold bg-white/10 text-white/80" data-testid="eval-attestation-send-btn">
+                Envoyer au fournisseur retenu
+              </button>
+            </>
           )}
           <button type="button" onClick={() => dl('export.csv', `${c.ref}-audit.csv`)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold bg-white/10 text-white/70" data-testid="eval-csv-btn">
             <Download className="w-3.5 h-3.5" /> Journal CSV

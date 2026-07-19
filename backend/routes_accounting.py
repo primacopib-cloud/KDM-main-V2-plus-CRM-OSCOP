@@ -66,6 +66,17 @@ async def _collect_entries(date_from: str, date_to: str) -> list:
                                   f"Remboursement {KIND_LABELS.get(kind, kind)}",
                                   -r_amt, 0, -r_amt, tx.get("country"), tx.get("user_email") or tx.get("email"),
                                   (tx.get("session_id") or "")[:18]))
+    # 3) Packs CPC (services numériques O'SCOP — TVA réelle)
+    async for p in db.cpc_purchases.find({"status": {"$in": ["SETTLED", "REVERSED"]}}, {"_id": 0}):
+        date = str(p.get("settled_at") or p.get("created_at") or "")
+        entries.append(_entry(date, "CPC_PACK", f"Pack CPC {p.get('pack_label')} ({p.get('credits')} CPC)",
+                              p.get("price_ht_cents") or 0, p.get("vat_cents") or 0, p.get("ttc_cents") or 0,
+                              p.get("country"), p.get("email"), (p.get("invoice_number") or p.get("id", ""))[:18]))
+        if p.get("status") == "REVERSED":
+            entries.append(_entry(str(p.get("reversed_at") or date), "remboursement",
+                                  f"Remboursement pack CPC {p.get('pack_label')}",
+                                  -(p.get("price_ht_cents") or 0), -(p.get("vat_cents") or 0),
+                                  -(p.get("ttc_cents") or 0), p.get("country"), p.get("email"), (p.get("id", ""))[:18]))
     # Filtre période + tri
     def keep(e):
         d = e["date"][:10]
@@ -106,6 +117,7 @@ SOURCE_LABELS = {
     "adhesion": "Cotisations d'adhésion", "renouvellement": "Cotisations — renouvellements",
     "ORDER": "Ventes (commandes)", "PASS": "Contributions PASS Vie Chère",
     "RECHARGE": "Recharges de crédits", "CREDIT_PACK": "Packs crédits vendeurs",
+    "CPC_PACK": "Packs CPC (consultations)",
     "remboursement": "Remboursements", "RCR": "Retenue contributive remboursable (RCR)",
 }
 

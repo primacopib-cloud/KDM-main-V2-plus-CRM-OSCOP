@@ -169,6 +169,56 @@ async def pv_pdf(cid: str, admin: dict = Depends(require_admin)):
                              "X-PV-SHA256": sha})
 
 
+@award_router.get("/{cid}/attestation.pdf")
+async def attestation_pdf(cid: str, admin: dict = Depends(require_admin)):
+    att, c, contact = await _attestation_ctx(cid)
+    from consultation_pv_pdf import build_attestation_pdf
+    pdf = build_attestation_pdf(att, c, contact)
+    await audit("EXPORTED", admin.get("email"), cid, {"kind": "attestation_pdf"})
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="Attestation-{c["ref"]}.pdf"'})
+
+
+@award_router.post("/{cid}/attestation/send")
+async def attestation_send(cid: str, admin: dict = Depends(require_admin)):
+    """Envoie le projet d'Attestation nominative par email au fournisseur retenu (PDF joint)."""
+    att, c, contact = await _attestation_ctx(cid)
+    if not contact.get("email"):
+        raise HTTPException(status_code=404, detail="Email du fournisseur retenu introuvable")
+    import base64
+    from consultation_pv_pdf import build_attestation_pdf
+    from brevo_service import send_email
+    pdf = build_attestation_pdf(att, c, contact)
+    try:
+        await send_email(
+            to_email=contact["email"], to_name=att["supplier"],
+            subject=f"Projet d'Attestation nominative — consultation {c['ref']}",
+            html_content=f"""<h2 style="color:#451F6B;">Consultation {c['ref']} — vous êtes le candidat retenu</h2>
+            <p>Bonjour,</p>
+            <p>Votre offre a été retenue pour <strong>{c['title']}</strong>. Vous trouverez ci-joint le
+            <strong>projet d'Attestation nominative</strong>.</p>
+            <p style="color:#777;font-size:12px;">Ce projet ne vaut ni paiement, ni facture, ni RCR, ni bon de commande
+            définitif. Les documents contractuels vous seront transmis pour régularisation.</p>""",
+            tags=["attestation-nominative"],
+            attachments=[{"content": base64.b64encode(pdf).decode(), "name": f"Attestation-{c['ref']}.pdf"}])
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Envoi email impossible : {exc}")
+    await db.nominative_attestations.update_one({"id": att["id"]}, {"$set": {
+        "sent_to": contact["email"], "sent_at": datetime.now(timezone.utc).isoformat(), "sent_by": admin.get("email")}})
+    await audit("ATTESTATION_SENT", admin.get("email"), cid, {"to": contact["email"], "attestation_id": att["id"]})
+    return {"ok": True, "sent_to": contact["email"]}
+
+
+async def _attestation_ctx(cid: str):
+    c = await _get(cid)
+    att = await db.nominative_attestations.find_one({"consultation_id": cid}, {"_id": 0}, sort=[("created_at", -1)])
+    if not att:
+        raise HTTPException(status_code=404, detail="Aucune attestation — attribuez d'abord la consultation")
+    entry = await db.consultation_entries.find_one({"id": att["supplier_entry_id"]}, {"_id": 0})
+    contact = await db.users.find_one({"id": (entry or {}).get("vendor_user_id")}, {"_id": 0, "email": 1, "full_name": 1}) or {}
+    return att, c, contact
+
+
 @award_router.get("/{cid}/export.json")
 async def export_json(cid: str, admin: dict = Depends(require_admin)):
     c = await _get(cid)

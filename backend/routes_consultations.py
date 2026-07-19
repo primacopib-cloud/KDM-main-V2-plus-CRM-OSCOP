@@ -275,13 +275,23 @@ async def transition(cid: str, body: TransitionBody, admin: dict = Depends(requi
 
 
 async def _notify_vendors_opening(c: dict):
-    """Email aux vendeurs actifs quand les inscriptions d'une consultation ouvrent."""
+    """Email ciblé : vendeurs dont les produits correspondent à la catégorie du lot (repli : tous les vendeurs actifs)."""
     try:
         from brevo_service import send_email
         base = os.environ.get("FRONTEND_PUBLIC_URL", "")
+        # Ciblage par catégorie de produits
+        vendor_ids = await db.vendor_products.distinct("vendor_id", {"category": c.get("category")})
+        emails = set()
+        if vendor_ids:
+            async for v in db.vendors.find({"id": {"$in": vendor_ids}}, {"_id": 0, "email": 1}):
+                if v.get("email"):
+                    emails.add(v["email"].lower())
+        targeted = bool(emails)
+        q = {"role": "vendor", "suspended": {"$ne": True}}
+        if targeted:
+            q["email"] = {"$in": list(emails)}
         sent = 0
-        async for u in db.users.find({"role": "vendor", "suspended": {"$ne": True}},
-                                     {"_id": 0, "email": 1, "full_name": 1, "name": 1}).limit(200):
+        async for u in db.users.find(q, {"_id": 0, "email": 1, "full_name": 1, "name": 1}).limit(200):
             if not u.get("email"):
                 continue
             try:
@@ -290,7 +300,7 @@ async def _notify_vendors_opening(c: dict):
                     subject=f"Nouvelle consultation ouverte : {c['title']} ({c['ref']})",
                     html_content=f"""<h2 style="color:#451F6B;">Consultation {c['ref']} — inscriptions ouvertes</h2>
                     <p>Bonjour,</p>
-                    <p><strong>{c['title']}</strong> — catégorie <strong>{c['category']}</strong> ·
+                    <p><strong>{c['title']}</strong> — catégorie <strong>{c['category']}</strong>{' (correspondant à vos produits)' if targeted else ''} ·
                     procédure {'offres scellées' if c['procedure'] == 'SCELLEE' else 'enchère inversée'} ·
                     accès {c['cpc_cost']} CPC ({c.get('max_rounds', 3)} tours inclus) ·
                     clôture le {str(c.get('closes_at', ''))[:16].replace('T', ' ')} (heure serveur).</p>
@@ -301,8 +311,9 @@ async def _notify_vendors_opening(c: dict):
                 sent += 1
             except Exception as exc:
                 logger.warning("Notif consultation %s → %s : %s", c["ref"], u["email"], exc)
-        await audit("NOTIFICATION_SENT", "system", c["id"], {"kind": "opening", "sent": sent})
-        logger.info("Consultation %s : %d vendeurs notifiés", c["ref"], sent)
+        await audit("NOTIFICATION_SENT", "system", c["id"],
+                    {"kind": "opening", "sent": sent, "targeted_by_category": targeted, "category": c.get("category")})
+        logger.info("Consultation %s : %d vendeurs notifiés (ciblage catégorie : %s)", c["ref"], sent, targeted)
     except Exception as exc:
         logger.warning("Notification ouverture %s : %s", c.get("ref"), exc)
 

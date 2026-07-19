@@ -1128,3 +1128,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Notification Consultation** : _notify_vendors_opening (routes_consultations, asyncio.create_task sur transition INSCRIPTIONS_OUVERTES) → email Brevo aux vendeurs actifs (tag consultation-opening) + audit NOTIFICATION_SENT. Testé : 4 vendeurs notifiés.
 - **Fix login** : UserResponse expose role → LoginPage redirige les vendeurs vers /vendor (vérifié curl role:vendor).
 - Données de test nettoyées. PHASE 2 TERMINÉE.
+
+## 2026-07-19 — Ciblage notifications + Attestation PDF + Compta CPC
+- **Ciblage** : _notify_vendors_opening cible les vendeurs dont vendor_products.category == catégorie du lot (repli tous vendeurs actifs si aucun match) ; audit enrichi targeted_by_category. Testé : catégorie 'boissons' → 1 seul vendeur notifié (vs 4).
+- **Attestation nominative PDF** : build_attestation_pdf (consultation_pv_pdf.py) — fournisseur, objet, produits/territoires, conditions HT, portée juridique (ni paiement/facture/RCR), réf FOGEDOM-RCR. Endpoints GET /{cid}/attestation.pdf (200 testé) + POST /{cid}/attestation/send (email Brevo avec PDF joint, testé sent_to OK, audit ATTESTATION_SENT). Boutons dans EvaluationModal (eval-attestation-btn / eval-attestation-send-btn) pour statuts ATTRIBUEE/ARCHIVEE.
+- **Compta CPC** : _collect_entries section 3 — cpc_purchases SETTLED → type CPC_PACK (TVA réelle) + contre-écriture remboursement si REVERSED ; label 'Packs CPC (consultations)'. Testé : achat simulé visible dans journal + registre fiscal (2500 HT / 213 TVA / 2713 TTC), graphique revenus alimenté automatiquement.
+- Données de test nettoyées, compteurs remis à 0.

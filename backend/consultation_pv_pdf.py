@@ -71,3 +71,45 @@ def build_pv_pdf(c: dict, entries: list, award: dict, events: list) -> bytes:
                            "L'intégrité du journal est garantie par chaînage SHA-256. Conservation : 5 ans (min. légal 1 an, art. L.442-8 C. com.).", small))
     doc.build(story)
     return buf.getvalue()
+
+
+def build_attestation_pdf(att: dict, c: dict, winner_contact: dict) -> bytes:
+    st = ParagraphStyle("b", fontName="Helvetica", fontSize=9.5, leading=14)
+    h1 = ParagraphStyle("h1", fontName="Helvetica-Bold", fontSize=15, textColor=VIOLET, spaceAfter=4)
+    h2 = ParagraphStyle("h2", fontName="Helvetica-Bold", fontSize=11, textColor=VIOLET, spaceBefore=10, spaceAfter=3)
+    small = ParagraphStyle("s", fontName="Helvetica", fontSize=7.5, textColor=colors.HexColor("#6b5a7a"))
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=18 * mm, leftMargin=18 * mm, rightMargin=18 * mm)
+    story = [
+        Paragraph("ATTESTATION NOMINATIVE — PROJET", h1),
+        Paragraph(f"Consultation {att['consultation_ref']} · Générée le {datetime.now(timezone.utc).isoformat()[:16].replace('T', ' ')} UTC", small),
+        Paragraph("1. Fournisseur retenu", h2),
+        Paragraph(f"<b>{att['supplier']}</b>" + (f" · {winner_contact.get('email')}" if winner_contact.get("email") else ""), st),
+        Paragraph("2. Objet", h2),
+        Paragraph(f"{c['title']} — catégorie <b>{c['category']}</b> · procédure "
+                  f"{'offres scellées' if c['procedure'] == 'SCELLEE' else 'enchère inversée'} · statut juridique {c['legal_status']}", st),
+        Paragraph("3. Produits et territoires", h2),
+    ]
+    rows = [["Produit", "Territoire(s)"]]
+    for p in (att.get("products") or [{"label": "—"}]):
+        rows.append([p.get("label", "—"), ", ".join(att.get("territories") or [])])
+    t = Table(rows, colWidths=[110 * mm, 60 * mm])
+    t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), VIOLET), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                           ("FONTSIZE", (0, 0), (-1, -1), 8.5), ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#cbb8e0")),
+                           ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
+    story += [
+        t,
+        Paragraph("4. Conditions économiques", h2),
+        Paragraph(f"Offre retenue : <b>{eur(att.get('amount_ht_cents'))} HT</b> (issue de la consultation {att['consultation_ref']}, "
+                  f"empreinte du règlement : {(c.get('published_snapshot_hash') or '—')[:24]}…)", st),
+        Paragraph("5. Portée juridique", h2),
+        Paragraph(att.get("note", ""), st),
+        Paragraph("La présente attestation constitue un projet. Elle ne vaut ni paiement, ni facture, ni constitution de RCR, "
+                  "ni mobilisation de FOGEDOM-SCIC, ni bon de commande définitif. La RCR ne devient applicable qu'après "
+                  "acceptation des documents contractuels requis, selon le workflow FOGEDOM-SCIC.", st),
+        Spacer(1, 10),
+        Paragraph(f"Référence interne : {att['id']} · Référence FOGEDOM-RCR : {att.get('fogedom_rcr_ref') or 'non applicable à ce stade'}", small),
+        Paragraph("O'SCOP Outremer × KDMARCHÉ PRO — Plateforme Communityplace", small),
+    ]
+    doc.build(story)
+    return buf.getvalue()
