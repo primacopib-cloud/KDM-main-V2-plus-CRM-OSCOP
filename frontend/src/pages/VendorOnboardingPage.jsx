@@ -31,7 +31,7 @@ export default function VendorOnboardingPage() {
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [ob, setOb] = useState(null);
-  const [start, setStart] = useState({ company: '', contact_name: '', email: '', phone: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro' });
+  const [start, setStart] = useState({ company: '', contact_name: '', email: '', phone: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro', member_type: 'vendor' });
   const [conv, setConv] = useState({ forme_sociale: '', capital: '', rcs_ville: '', adresse: '', rep_nom: '', rep_prenom: '', rep_qualite: '', territoires: [], lieu_signature: '' });
   const [sign, setSign] = useState({ nom: '', qualite: '', lu_approuve: false });
 
@@ -100,13 +100,33 @@ export default function VendorOnboardingPage() {
       <NavBar />
       <div className="max-w-3xl mx-auto px-4 pt-28 pb-16">
         <h1 className="text-3xl font-bold text-white text-center mb-2" style={{ fontFamily: '"Playfair Display", serif' }}>
-          Adhésion <span className="text-[#D9B35A]">Vendeur Pro</span>
+          Adhésion <span className="text-[#D9B35A]">Vendeur Pro ou Acheteur Pro</span>
         </h1>
         <p className="text-white/60 text-sm text-center mb-8">Paiement sécurisé · Convention tripartite signée en ligne · Activation immédiate</p>
         <Stepper current={step} />
 
         {step === 0 && (
           <form onSubmit={launchPayment} className="glass-panel rounded-[22px] p-6 space-y-4" data-testid="vendor-start-form">
+            <div>
+              <p className="text-xs text-white/60 mb-2">Je m'inscris en tant que : *</p>
+              <div className="grid sm:grid-cols-2 gap-3" data-testid="member-type-choice">
+                {[
+                  { value: 'vendor', title: 'Vendeur Pro', desc: 'Je propose mes produits à la centrale et développe mes ventes B2B.' },
+                  { value: 'buyer', title: 'Acheteur Pro', desc: "J'achète aux prix mutualisés et j'accède à la centrale B2B." },
+                ].map((t) => (
+                  <button type="button" key={t.value} data-testid={`member-type-${t.value}`}
+                    onClick={() => setStart({ ...start, member_type: t.value })}
+                    className={`text-left p-4 rounded-xl border transition-colors ${
+                      start.member_type === t.value
+                        ? 'border-[#D9B35A] bg-[#D9B35A]/12'
+                        : 'border-white/15 hover:border-white/35'
+                    }`}>
+                    <span className={`block text-sm font-bold ${start.member_type === t.value ? 'text-[#E9CF8E]' : 'text-white/85'}`}>{t.title}</span>
+                    <span className="block text-[11px] text-white/55 mt-1">{t.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div><label className={labelCls}>Dénomination de l'entreprise *</label>
                 <input required className={inputCls} data-testid="vendor-company-input" value={start.company} onChange={(e) => setStart({ ...start, company: e.target.value })} placeholder="SARL / SAS / SCOP…" /></div>

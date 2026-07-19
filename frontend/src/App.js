@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
 
 // Pages
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
+const RedirectInscription = () => <Navigate to={{ pathname: '/adhesion-vendeur', search: window.location.search }} replace />;
 import DashboardPage from "./pages/DashboardPage";
 import OffersPage from "./pages/OffersPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -80,7 +80,7 @@ function App() {
           <Route path="/offres" element={<OffersPage />} />
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/admin/connexion" element={<AdminLoginPage />} />
-          <Route path="/inscription" element={<RegisterPage />} />
+          <Route path="/inscription" element={<RedirectInscription />} />
           <Route path="/tarifs" element={<PricingPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />

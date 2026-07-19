@@ -72,6 +72,7 @@ def _fiche_pages(ob: dict, signature: dict | None) -> bytes:
             ["Email de notification", ob.get("email") or ""],
             ["Téléphone", ob.get("phone") or ""],
             ["Territoire(s)", ", ".join(conv.get("territoires") or []) or "À compléter"],
+            ["Qualité du membre", "Acheteur Pro (achats mutualisés)" if ob.get("member_type") == "buyer" else "Vendeur Pro (fournisseur référencé)"],
             ["Formule d'adhésion", ob.get("plan_name") or ob.get("plan_slug") or ""],
         ]),
         Paragraph("Champs réservés à O'SCOP", _H2),

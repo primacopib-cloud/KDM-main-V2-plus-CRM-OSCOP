@@ -23,8 +23,10 @@ export default function VendorActivationPage() {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Activation impossible');
-      toast.success('Espace vendeur activé — bienvenue !');
-      setTimeout(() => { window.location.href = '/espace-vendeur?bienvenue=1'; }, 800);
+      toast.success('Espace activé — bienvenue !');
+      setTimeout(() => {
+        window.location.href = d.user?.role === 'buyer' ? '/espace-acheteur?bienvenue=1' : '/espace-vendeur?bienvenue=1';
+      }, 800);
     } catch (err) { toast.error(err.message); setBusy(false); }
   };
 

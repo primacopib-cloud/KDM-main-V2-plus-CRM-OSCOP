@@ -41,6 +41,7 @@ class StartBody(BaseModel):
     siret: str
     plan_slug: str
     origin_url: str
+    member_type: str = "vendor"
 
 
 class ConventionFieldsBody(BaseModel):
@@ -97,6 +98,7 @@ async def start_onboarding(body: StartBody):
         "id": oid, "company": body.company, "contact_name": body.contact_name,
         "email": body.email.lower(), "phone": body.phone,
         "siret": "".join(c for c in body.siret if c.isdigit()),
+        "member_type": body.member_type if body.member_type in ("vendor", "buyer") else "vendor",
         "plan_slug": body.plan_slug, "plan_name": plan["name"],
         "amount_cents": plan["price_cents"], "stripe_session_id": session.id,
         "status": "PAYMENT_PENDING", "created_at": now, "updated_at": now,
@@ -135,7 +137,7 @@ async def onboarding_status(oid: str):
         except Exception as exc:
             logger.warning("Vérification Stripe onboarding %s : %s", oid, exc)
     return {"id": ob["id"], "status": ob["status"], "company": ob["company"],
-            "plan_name": ob.get("plan_name"), "email": ob["email"],
+            "plan_name": ob.get("plan_name"), "email": ob["email"], "member_type": ob.get("member_type", "vendor"),
             "convention": ob.get("convention"), "amount_cents": ob.get("amount_cents")}
 
 
@@ -194,10 +196,13 @@ async def sign_convention(oid: str, body: SignBody):
     user = await db.users.find_one({"email": ob["email"]})
     if not user:
         user_id = str(uuid.uuid4())
+        member_type = ob.get("member_type", "vendor")
         await db.users.insert_one({
             "id": user_id, "email": ob["email"], "full_name": ob["contact_name"],
-            "company_name": ob["company"], "siret": ob.get("siret"), "phone": ob.get("phone"),
-            "role": "vendor", "account_type": "vendor", "is_admin": False,
+            "contact_name": ob["contact_name"], "company_name": ob["company"],
+            "siret": ob.get("siret") or "", "phone": ob.get("phone") or "",
+            "role": member_type, "account_type": member_type, "is_admin": False,
+            "subscription": ob.get("plan_slug") or "ess-acces-pro", "credits": 0,
             "is_active": False, "password_hash": get_password_hash(secrets.token_urlsafe(24)),
             "plan": ob.get("plan_slug"), "created_at": now,
         })
@@ -264,7 +269,7 @@ async def activate_account(body: ActivateBody, response: Response):
         "is_active": True, "password_hash": get_password_hash(body.password),
     }})
     existing_vendor = await db.vendors.find_one({"id": ob["user_id"]})
-    if not existing_vendor:
+    if not existing_vendor and ob.get("member_type", "vendor") == "vendor":
         now_iso = datetime.now(timezone.utc).isoformat()
         await db.vendors.insert_one({
             "id": ob["user_id"], "company_name": ob["company"], "contact_name": ob["contact_name"],
@@ -278,7 +283,7 @@ async def activate_account(body: ActivateBody, response: Response):
     token = create_access_token(data={"sub": ob["user_id"]})
     set_auth_cookie(response, token)
     return {"access_token": token, "token_type": "bearer",
-            "user": {"id": ob["user_id"], "email": ob["email"], "role": "vendor", "company": ob["company"]}}
+            "user": {"id": ob["user_id"], "email": ob["email"], "role": ob.get("member_type", "vendor"), "company": ob["company"]}}
 
 
 # ============ Abonnement récurrent : webhooks & relances ============
