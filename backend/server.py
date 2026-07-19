@@ -402,6 +402,9 @@ set_vendor_reports_database(db)
 app.include_router(vendor_reports_router)
 
 from routes_crediscop import crediscop_router, set_crediscop_database
+from routes_ai_chat import ai_chat_router, set_ai_chat_database
+app.include_router(ai_chat_router)
+set_ai_chat_database(db)
 set_crediscop_database(db)
 app.include_router(crediscop_router)
 

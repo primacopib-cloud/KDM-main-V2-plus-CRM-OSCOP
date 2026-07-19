@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ShoppingCart, Package, FileText, 
   Wallet, Settings, Users, Shield, BarChart3,
   Store, Building2, ChevronDown, Bell, Search,
-  FileSignature, MapPin, CreditCard, Home, Heart, Truck, HeartHandshake, Server
+  FileSignature, MapPin, CreditCard, Home, Heart, Truck, HeartHandshake, Server, Sparkles
 } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { useNotificationWebSocket, ConnectionStatus } from './NotificationToast';
@@ -190,6 +190,16 @@ const NavBar = ({ variant = 'default' }) => {
                     )}
                   </Link>
                 )}
+
+                {/* Assistant IA */}
+                <Link
+                  to="/assistant-ia"
+                  className="relative p-2 rounded-lg hover:bg-white/[0.06] transition-colors"
+                  data-testid="ai-chat-nav-link"
+                  title="Assistant IA (COOP'IA)"
+                >
+                  <Sparkles className="w-4 h-4 text-[#D9B35A]" />
+                </Link>
 
                 {/* Favorites */}
                 <FavoritesNavButton />

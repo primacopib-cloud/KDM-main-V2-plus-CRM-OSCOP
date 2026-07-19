@@ -2,7 +2,7 @@ import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins, LifeBuoy, BookUser, Handshake, FileSignature, Mail, Network,
+  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins, LifeBuoy, BookUser, Handshake, FileSignature, Mail, Network, Sparkles,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
@@ -61,6 +61,7 @@ const TABS = [
   { value: 'contracts', label: 'Contrats', icon: FileSignature },
   { value: 'orders', label: i18n.t('adm.commandes'), icon: ShoppingCart },
   { value: 'emails', label: 'Emails', icon: Mail },
+  { value: 'ai-chat', label: 'Chat IA', icon: Sparkles },
   { value: 'ecosystem', label: 'Écosystème', icon: Network },
 ];
 

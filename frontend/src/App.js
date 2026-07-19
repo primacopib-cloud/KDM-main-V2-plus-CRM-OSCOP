@@ -36,6 +36,7 @@ import BuyerSpacePage from "./pages/BuyerSpacePage";
 import CheckoutPage from "./pages/CheckoutPage";
 import ProductCardDemoPage from "./pages/ProductCardDemoPage";
 import NotificationsHistoryPage from "./pages/NotificationsHistoryPage";
+import AiChatPage from "./pages/AiChatPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import ShoppingListsPage from "./pages/ShoppingListsPage";
 import ShoppingListDetailPage from "./pages/ShoppingListDetailPage";
@@ -142,6 +143,7 @@ function App() {
           <Route path="/product-card" element={<ProductCardDemoPage />} />
           {/* Notifications History */}
           <Route path="/notifications" element={<NotificationsHistoryPage />} />
+          <Route path="/assistant-ia" element={<AiChatPage />} />
           <Route path="/historique-notifications" element={<NotificationsHistoryPage />} />
           {/* Favorites */}
           <Route path="/favoris" element={<FavoritesPage />} />

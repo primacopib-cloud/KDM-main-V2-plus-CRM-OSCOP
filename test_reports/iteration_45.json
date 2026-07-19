@@ -1,0 +1,25 @@
+{
+  "summary": "COOP'IA AI Chat lot + Footer regression FULLY VALIDATED. Backend: 5 pytest passed / 1 skipped (402-insuffisant path unreachable via test acct — wallet balance == max_question cost). Frontend end-to-end verified as buyer + Super Admin: /assistant-ia page renders all testids (ai-chat-balance=80 UC, ai-chat-cost-preview reactive: 3 chars→4 UC, 120 chars→12 UC, sessions-list, input, send-btn); real short question 'Dis bonjour en un mot' → LLM response 'Bonjour !', balance 80→76 UC (−4), sessions 2→3, conversation reload from sidebar shows historique complet incl. previous multi-tour (−8 puis −4 UC); navbar ai-chat-nav-link (Sparkles gold) visible on Communityplace navbar (/, /assistant-ia) and navigates to /assistant-ia. Super Admin /superadmin onglet 'Chat IA' (superadmin-tab-ai-chat) OK: ai-chat-stats + form (block-size, credits-per-block, model-select GPT-5.4, enabled-switch checked) + ai-chat-example-cost live; credits_per_block 4→5 save toast 'Paramètres du chat IA enregistrés' + exemple mis à jour 5 UC → RESTAURÉ à 4, enabled=true. Footer / page publique: 'contact@objectifscopoutremer.com' présent, AUCUN téléphone détecté (regex phones=[]). Régression /tarifs OK (3 cartes violettes/or, RECOMMENDED, Sign up).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter45_ai_chat.py",
+    "/app/test_reports/pytest/iter45.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "AI chat backend (routes_ai_chat.py): cost computation correct (ceil(chars/50)*4 with min_cost_uc floor); debit-first / refund on LLM error pattern is solid. compute_cost tested: 59 chars => 8 UC (2 blocs).",
+    "Public /api/ai-chat/settings requires auth (returns 401 for anonymous). By design (returns user balance). OK.",
+    "402 'Crédits insuffisants' path: verified by main agent via curl; not reachable in automated pytest for acheteur-pro (balance 80 == max reachable cost from 1000 char cap) — test marked skipped with rationale.",
+    "AiChatAdminTab: save toast, live example recompute, persisted after reload — all correct.",
+    "Nav: ai-chat-nav-link only rendered by the shared Communityplace <NavBar> — NOT visible on the KDMARCHE-Pro-branded /dashboard header (uses a different chrome). Not a bug per spec (nav-link works on / and /assistant-ia as required), but consider adding it to the Pro dashboard header for parity.",
+    "Footer: email now contact@objectifscopoutremer.com (single occurrence), phone block removed. Confirmed via DOM text scan."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter45_ai_chat.py (created)"],
+  "success_rate": {"backend": "100% (5/5 executed, 1 skipped by design)", "frontend": "100% (all acceptance criteria PASS)"},
+  "test_credentials": "acheteur-pro@kdmarche.fr / Demo2026! (via /connexion) ; admin@kdmarche-oscop.fr / AdminKDM2025! (via /admin/connexion, portal=admin)",
+  "seed_data_creation": "1 nouvelle conversation IA créée (question 'Dis bonjour en un mot' → 'Bonjour !', débit 4 UC). Solde acheteur-pro passé de 80 → 76 UC.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Après ce run le solde de acheteur-pro@kdmarche.fr est ~76 UC (au lieu de 80). credits_per_block a été remis à 4 et enabled=true (état d'origine). 1 seule question LLM réelle a été consommée."
+}

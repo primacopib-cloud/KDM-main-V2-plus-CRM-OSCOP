@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { partners } from '../data/mock';
-import { Mail, Phone, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf, Store } from 'lucide-react';
+import { Mail, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf, Store } from 'lucide-react';
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -165,11 +165,7 @@ const Footer = () => {
             <ul className="space-y-4">
               <li className="flex items-center gap-3 text-white/60 text-sm">
                 <Mail className="w-4 h-4 text-[#D4AF37]" />
-                <span>contact@centrale-ess.fr</span>
-              </li>
-              <li className="flex items-center gap-3 text-white/60 text-sm">
-                <Phone className="w-4 h-4 text-[#D4AF37]" />
-                <span>+33 1 23 45 67 89</span>
+                <span>contact@objectifscopoutremer.com</span>
               </li>
               <li className="flex items-start gap-3 text-white/60 text-sm">
                 <MapPin className="w-4 h-4 text-[#D4AF37] flex-shrink-0 mt-0.5" />
