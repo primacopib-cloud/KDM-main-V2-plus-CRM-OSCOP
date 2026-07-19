@@ -202,7 +202,7 @@ async def _build_logs_csv(month: str | None = None) -> tuple[str, int]:
 
 
 async def archive_email_logs_to_ged(database, month: str, force: bool = False) -> dict:
-    """Archive le journal du mois dans la GED ESS (idempotent par mois)."""
+    """Archive le journal du mois dans la GEDESS (idempotent par mois)."""
     global db
     if db is None:
         db = database
@@ -212,28 +212,19 @@ async def archive_email_logs_to_ged(database, month: str, force: bool = False) -
     csv_content, rows = await _build_logs_csv(month)
     if rows == 0:
         return {"status": "EMPTY", "month": month, "rows": 0}
-    from ged_external_client import GedExternalClient, build_ged_business_metadata
-    client = GedExternalClient()
-    if not client.config.enabled:
+    from gedess_client import is_gedess_configured, gedess_upload_file
+    if not is_gedess_configured():
         return {"status": "GED_DISABLED", "month": month, "rows": rows}
-    payload = {
-        "title": f"Journal des emails transactionnels — {month}",
-        "source": "kdmarche",
-        "entity_id": f"EMAIL-JOURNAL-{month}",
-        "scope_id": "KDMARCHE",
-        "family": "CONFORMITE",
-        "confidentiality": "INTERNE",
-        "tags": "emails,journal,conformite,archive-mensuelle",
-        "description": f"Archive mensuelle automatisée du journal des emails ({rows} envois) — Communityplace.",
-        "business_metadata": build_ged_business_metadata(
-            source="kdmarche", source_id=f"EMAIL-JOURNAL-{month}",
-            payload={"month": month, "rows": rows, "csv_base64": base64.b64encode(csv_content.encode("utf-8-sig")).decode()},
-        ),
-    }
     run = {"month": month, "rows": rows, "archived_at": datetime.now(timezone.utc).isoformat()}
     try:
-        response = await client.create_document(payload)
-        run.update({"status": "SUCCESS", "ged_response": {k: response.get(k) for k in ("id", "reference", "status") if k in response}})
+        doc = await gedess_upload_file(
+            filename=f"journal-emails-{month}.csv",
+            content=csv_content.encode("utf-8-sig"),
+            categorie="rapport",
+            description=f"Archive mensuelle automatisée du journal des emails Communityplace ({rows} envois) — période {month}.",
+            tags="communityplace,emails,journal,conformite,archive-mensuelle",
+        )
+        run.update({"status": "SUCCESS", "ged_document_id": doc.get("id"), "ged_filename": doc.get("original_filename")})
     except Exception as exc:
         run.update({"status": "ERROR", "error": str(exc)})
     await db.email_archive_runs.update_one({"month": month}, {"$set": run}, upsert=True)
