@@ -19,6 +19,7 @@ import { MemberRegistryTab } from '../components/superadmin/MemberRegistryTab';
 import { CoopersConventionsTab } from '../components/superadmin/CoopersConventionsTab';
 import { AdminContractsTab } from '../components/superadmin/AdminContractsTab';
 import { EmailPreviewsTab } from '../components/superadmin/EmailPreviewsTab';
+import { EcosystemHealthTab } from '../components/superadmin/EcosystemHealthTab';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -175,6 +176,10 @@ export default function SuperAdminPage() {
 
           <TabsContent value="emails">
             <EmailPreviewsTab />
+          </TabsContent>
+
+          <TabsContent value="ecosystem">
+            <EcosystemHealthTab />
           </TabsContent>
         </Tabs>
       </main>

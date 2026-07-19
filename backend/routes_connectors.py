@@ -198,6 +198,16 @@ async def broadcast_spots(_: dict = Depends(_admin)):
     return {"status": "DONE", "spots": len(spots), "results": results}
 
 
+@connectors_router.post("/health-check-now")
+async def run_health_check_now(_: dict = Depends(_admin)):
+    """Force une passe de surveillance immédiate (met à jour statuts + événements)."""
+    from connectors.health_watch import check_and_alert
+
+    result = await check_and_alert()
+    docs = await db.connector_health_status.find({}, {"_id": 0}).to_list(50)
+    return {**result, "statuses": docs}
+
+
 @connectors_router.get("/health-status")
 async def connectors_health_status(_: dict = Depends(_admin)):
     """Derniers statuts relevés par la surveillance automatique (health watch)."""

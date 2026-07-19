@@ -245,6 +245,15 @@ async def export_logs_csv(request: Request, month: str = ""):
     )
 
 
+@email_previews_router.get("/archive-ged/runs")
+async def list_archive_runs(request: Request):
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    runs = await db.email_archive_runs.find({}, {"_id": 0}).sort("month", -1).to_list(36)
+    return {"runs": runs, "total": len(runs)}
+
+
 @email_previews_router.post("/archive-ged")
 async def archive_to_ged(request: Request):
     admin = await get_current_admin_from_request(request)

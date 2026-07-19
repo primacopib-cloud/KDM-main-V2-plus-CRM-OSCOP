@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Mail, Loader2, Send, History, RotateCcw, Search, Download, Archive } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
+import { EmailArchiveHistory } from './EmailArchiveHistory';
 
 const EmailLogsList = ({ templateId }) => {
   const [logs, setLogs] = useState(null);
@@ -98,6 +99,7 @@ export const EmailPreviewsTab = () => {
   const [totalSent, setTotalSent] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [archiveRefresh, setArchiveRefresh] = useState(0);
 
   const exportCsv = async () => {
     setExporting(true);
@@ -137,6 +139,7 @@ export const EmailPreviewsTab = () => {
         ERROR: `Erreur GED : ${d.error || ''}`,
       }[d.status] || d.status;
       (d.status === 'SUCCESS' ? toast.success : toast.warning)(msg);
+      setArchiveRefresh((n) => n + 1);
     } catch (e) {
       toast.error(e.message);
     } finally {
@@ -216,6 +219,7 @@ export const EmailPreviewsTab = () => {
             Archiver GED
           </button>
         </div>
+        <EmailArchiveHistory refreshKey={archiveRefresh} />
         {categories.map((cat) => (
           <div key={cat} className="mb-3">
             <p className="text-[11px] uppercase tracking-wider text-white/50 mb-1.5">{cat}</p>
