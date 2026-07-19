@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, EmailStr
 
-from auth import get_password_hash, create_access_token, get_current_user_id
+from auth import get_password_hash, create_access_token, get_current_user_id, set_auth_cookie
 
 logger = logging.getLogger(__name__)
 
@@ -245,7 +245,7 @@ async def _post_sign_tasks(oid: str, ob: dict, signature: dict, pdf: bytes, acti
 
 
 @vendor_onboarding_router.post("/activate")
-async def activate_account(body: ActivateBody):
+async def activate_account(body: ActivateBody, response: Response):
     ob = await db.vendor_onboarding.find_one({"activation_token": body.token}, {"_id": 0})
     if not ob:
         raise HTTPException(status_code=404, detail="Lien d'activation invalide ou expiré")
@@ -258,6 +258,7 @@ async def activate_account(body: ActivateBody):
         "status": "ACTIVATED", "activated_at": datetime.now(timezone.utc).isoformat(),
     }})
     token = create_access_token(data={"sub": ob["user_id"]})
+    set_auth_cookie(response, token)
     return {"access_token": token, "token_type": "bearer",
             "user": {"id": ob["user_id"], "email": ob["email"], "role": "vendor", "company": ob["company"]}}
 

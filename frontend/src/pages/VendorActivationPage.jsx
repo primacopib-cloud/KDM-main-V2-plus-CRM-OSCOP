@@ -18,13 +18,11 @@ export default function VendorActivationPage() {
     setBusy(true);
     try {
       const r = await fetch(`${API}/vendor-onboarding/activate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: params.get('token'), password }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Activation impossible');
-      localStorage.setItem('token', d.access_token);
-      localStorage.setItem('user', JSON.stringify(d.user));
       toast.success('Espace vendeur activé — bienvenue !');
       setTimeout(() => { window.location.href = '/espace-vendeur?bienvenue=1'; }, 800);
     } catch (err) { toast.error(err.message); setBusy(false); }
