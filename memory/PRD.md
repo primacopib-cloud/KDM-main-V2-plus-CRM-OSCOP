@@ -37,6 +37,8 @@ Exigences produit étendues :
 
 - **MISE À JOUR (juin 2026 — Badge panne header Super Admin)** : Pastille rouge animée (pulse) sur l'onglet « Écosystème » du header Super Admin dès qu'au moins une application du Hub est en panne — hook `useDownConnectorsCount` (poll `/api/connectors/health-status` toutes les 60 s, compte les statuts ERROR), badge `data-testid="ecosystem-down-count-badge"`. Vérifié par screenshot (valeur « 1 » affichée, IA Bois en timeout).
 
+- **MISE À JOUR (juin 2026 — Alignement logos header public)** : `Header.jsx` — les deux logos (KDMARCHÉ + O'SCOP) sont désormais dans des conteneurs blancs de taille identique (h-9 w-9, tuile arrondie / cercle), centrés verticalement avec le « × », corrigeant le déséquilibre visuel (36px vs 24px auparavant). Vérifié par screenshot sur /kdmarche.
+
 ## 2. Architecture
 
 ### Frontend — React + TailwindCSS + Shadcn UI

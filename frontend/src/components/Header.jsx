@@ -38,19 +38,21 @@ const Header = () => {
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <img 
-                src={partners.kdmarche.logo} 
-                alt="KDMARCHE" 
-                className="h-9 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 1px 4px rgba(217,179,90,0.3))' }}
-              />
-              <span className="text-white/30 text-sm">×</span>
-              <img 
-                src={partners.oscop.logo} 
-                alt="O'SCOP" 
-                className="h-6 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 1px 4px rgba(212,175,55,0.3))' }}
-              />
+              <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-white shrink-0 overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(217,179,90,0.3)' }}>
+                <img
+                  src={partners.kdmarche.logo}
+                  alt="KDMARCHE"
+                  className="h-8 w-8 object-contain"
+                />
+              </span>
+              <span className="text-white/30 text-sm leading-none">×</span>
+              <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white shrink-0 overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(212,175,55,0.3)' }}>
+                <img
+                  src={partners.oscop.logo}
+                  alt="O'SCOP"
+                  className="h-8 w-8 object-contain"
+                />
+              </span>
             </div>
             <div className="hidden xl:block">
               <h1 className="text-xs tracking-wider uppercase text-white/85 font-semibold m-0">
