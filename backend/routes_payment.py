@@ -256,6 +256,14 @@ async def handle_stripe_webhook(request: Request):
         session_id = session.get("id")
         logger.info(f"Webhook received: {event['type']} for session {session_id}")
 
+        # Packs CPC (crédit exclusivement via webhook, idempotent)
+        try:
+            from routes_cpc import handle_cpc_stripe_event
+            if await handle_cpc_stripe_event(event):
+                return {"received": True}
+        except Exception as exc:
+            logger.exception("Webhook CPC : %s", exc)
+
         # Abonnements vendeurs (renouvellement mensuel / échec de prélèvement)
         if event["type"] in ("invoice.paid", "invoice.payment_failed"):
             from routes_vendor_onboarding import handle_vendor_invoice_event

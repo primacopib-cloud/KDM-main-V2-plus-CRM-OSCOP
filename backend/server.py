@@ -426,6 +426,15 @@ from vendor_invoice_pdf import vendor_invoices_router, my_invoices_router, set_v
 app.include_router(vendor_invoices_router)
 app.include_router(my_invoices_router)
 set_vendor_invoices_database(db)
+
+from cpc_ledger import set_cpc_ledger_database, ensure_cpc_indexes
+from routes_cpc import cpc_router, set_cpc_database
+from routes_cpc_admin import cpc_admin_router, set_cpc_admin_database
+set_cpc_ledger_database(db)
+set_cpc_database(db)
+set_cpc_admin_database(db)
+app.include_router(cpc_router)
+app.include_router(cpc_admin_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)
@@ -652,6 +661,7 @@ async def startup_db_client():
     except Exception as e:
         logger.warning(f"Could not seed default subscription plans: {e}")
 
+    await ensure_cpc_indexes()
     logger.info("Database indexes created (v1 + v2 + catalog + preparation + vendor + OPA + admin_plans)")
 
 

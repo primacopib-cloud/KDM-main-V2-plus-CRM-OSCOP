@@ -125,6 +125,11 @@ async def _scheduler_loop():
             await snapshot_fiscal_register(_db)
         except Exception as exc:
             logger.exception("Scheduler fiscal register snapshot crashed: %s", exc)
+        try:
+            from cpc_ledger import expire_cpc_purchases
+            await expire_cpc_purchases(_db)
+        except Exception as exc:
+            logger.exception("Scheduler CPC expiry crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

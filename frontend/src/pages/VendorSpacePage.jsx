@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   Package, Plus, CheckCircle2, Building2, TrendingUp, ShoppingCart,
-  Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Coins, FileSignature, FileText,
+  Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Coins, FileSignature, FileText, Ticket,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -24,6 +24,7 @@ import { AIStudioModal } from '../components/vendor/AIStudioModal';
 import { ProductActions } from '../components/vendor/ProductActions';
 import { VendorDashboardTab } from '../components/vendor/VendorDashboardTab';
 import { VendorInvoicesTab } from '../components/vendor/VendorInvoicesTab';
+import { VendorCpcTab } from '../components/vendor/VendorCpcTab';
 import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
 import { VendorContractsTab } from '../components/vendor/VendorContractsTab';
 import { VendorSuspendedNotice } from '../components/vendor/VendorSuspendedNotice';
@@ -71,6 +72,8 @@ const VendorSpacePage = () => {
 
   useEffect(() => {
     if (rechargeParams.get('recharge') === '1') setCreditsModalOpen(true);
+    const t = rechargeParams.get('tab');
+    if (t) setActiveTab(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -258,6 +261,9 @@ const VendorSpacePage = () => {
             <TabsTrigger value="invoices" className="gap-2" data-testid="vendor-tab-invoices">
               <FileText className="w-4 h-4" /> Mes factures
             </TabsTrigger>
+            <TabsTrigger value="cpc" className="gap-2" data-testid="vendor-tab-cpc">
+              <Ticket className="w-4 h-4" /> CPC
+            </TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
@@ -397,6 +403,11 @@ const VendorSpacePage = () => {
           {/* Invoices Tab */}
           <TabsContent value="invoices">
             <VendorInvoicesTab />
+          </TabsContent>
+
+          {/* CPC Tab */}
+          <TabsContent value="cpc">
+            <VendorCpcTab />
           </TabsContent>
         </Tabs>
       </main>
