@@ -10,6 +10,7 @@ import { partners } from '../../data/mock';
 import { ConnectionStatus } from '../NotificationToast';
 import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
 import { apiCall } from '../../services/http';
+import { BrandLogos } from '../BrandLogos';
 
 const useOpenTicketsCount = () => {
   const [count, setCount] = useState(0);
@@ -90,9 +91,7 @@ export const SuperAdminHeader = ({
     <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between">
       <div className="flex items-center gap-4">
         <Link to="/" className="flex items-center gap-2">
-          <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-8 w-auto object-contain" />
-          <span className="text-white/30 text-xs">×</span>
-          <img src={partners.oscop.logo} alt="O'SCOP" className="h-5 w-auto object-contain" />
+          <BrandLogos size="sm" />
         </Link>
         <div className="h-6 w-px bg-white/10" />
         <div className="flex items-center gap-2">

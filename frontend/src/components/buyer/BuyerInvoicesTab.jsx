@@ -11,12 +11,18 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '../ui/select';
 import { formatCurrency, formatDate } from './buyerUtils';
+import { BuyerOscopInvoices } from './BuyerOscopInvoices';
 
 export const BuyerInvoicesTab = ({
   invoices, filteredInvoices, invoiceStats, searchTerm, setSearchTerm,
   invoiceStatusFilter, setInvoiceStatusFilter, viewInvoiceDetails, downloadInvoicePDF,
 }) => (
           <TabsContent value="invoices" className="space-y-6">
+            <BuyerOscopInvoices />
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white">Factures de marchandises</h3>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/40">ÉMETTEUR : KDMARCHÉ PRO</span>
+            </div>
             {/* Invoice Stats */}
             {invoiceStats && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

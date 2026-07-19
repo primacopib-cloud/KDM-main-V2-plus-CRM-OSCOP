@@ -137,6 +137,7 @@ async def login(credentials: UserLogin, response: Response):
             subscription=user["subscription"],
             credits=user["credits"],
             is_admin=user.get("is_admin", False),
+            role=user.get("role"),
             must_change_password=user.get("must_change_password", False),
             created_at=user["created_at"]
         )

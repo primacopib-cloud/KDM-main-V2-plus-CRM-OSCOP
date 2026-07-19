@@ -37,6 +37,7 @@ import { ApplicationsTab } from '../components/adminv2/ApplicationsTab';
 import { OrganizationsTab } from '../components/adminv2/OrganizationsTab';
 import { ExportTab } from '../components/adminv2/ExportTab';
 import { DecisionDialog } from '../components/adminv2/DecisionDialog';
+import { BrandLogos } from '../components/BrandLogos';
 
 // Application status configuration
 export default function AdminV2Page() {
@@ -246,8 +247,7 @@ export default function AdminV2Page() {
           
           <div className="flex items-center gap-3">
             <NotificationsDropdown isAdmin={true} />
-            <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-10 w-auto object-contain" />
-            <img src={partners.oscop.logo} alt="O'SCOP" className="h-8 w-auto object-contain" />
+            <BrandLogos />
           </div>
         </div>
       </header>

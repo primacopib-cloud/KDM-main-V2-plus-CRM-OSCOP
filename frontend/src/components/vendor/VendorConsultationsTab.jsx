@@ -119,7 +119,10 @@ export const VendorConsultationsTab = () => {
       {items.map((c) => <ConsultationCard key={c.id} c={c} onChanged={load} />)}
       <p className="text-[11px] text-gray-400">
         Les offres sont exprimées exclusivement en euros HT. Le nombre de CPC détenus n'intervient jamais dans le classement.
-        L'identité des concurrents reste masquée pendant la procédure.
+        L'identité des concurrents reste masquée pendant la procédure. {' '}
+        <a href={`${API}/api/cpc/reglement.pdf`} target="_blank" rel="noreferrer" className="text-purple-600 hover:underline font-semibold" data-testid="consultations-reglement-link">
+          Règlement des consultations et des CPC (PDF)
+        </a>
       </p>
     </div>
   );

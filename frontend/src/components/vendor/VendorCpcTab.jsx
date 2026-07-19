@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Ticket, Download, RefreshCw, ShoppingCart, Lock } from 'lucide-react';
+import { Ticket, Download, RefreshCw, ShoppingCart, Lock, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -119,6 +119,11 @@ export const VendorCpcTab = () => {
           </Card>
         ))}
       </div>
+
+      <a href={`${API}/api/cpc/reglement.pdf`} target="_blank" rel="noreferrer"
+        className="inline-flex items-center gap-1.5 text-xs text-purple-600 hover:underline font-semibold" data-testid="cpc-reglement-link">
+        <FileText className="w-3.5 h-3.5" /> Règlement autonome des Consultations Compétitives et des CPC (V1.0 — PDF)
+      </a>
 
       <Card>
         <CardContent className="p-5">

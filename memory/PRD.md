@@ -1119,3 +1119,12 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **COOP'IA** : prompt système mis à jour → « Réponds en multilingue ».
 - Données de test nettoyées (consultations, bids, entries, matrix, ledger vendeur, compteur remis à 0).
 - **MODULE CONSULTATIONS COMPÉTITIVES COMPLET (Phase 1 terminée)**. Phase 2 restante : Réponse Rapide (popover messagerie) + Factures Acheteur (séparation émetteurs KDMARCHE/O'SCOP).
+
+## 2026-07-19 — Phase 2 + Règlement CPC + harmonisation logos
+- **Logos harmonisés** : composant partagé BrandLogos.jsx (boîtes blanches arrondies h-10, ombre or, séparateur ×) appliqué à NavBar, CatalogHeader, SuperAdminHeader, AdminV2Page (Header.jsx avait déjà ce style). Validé screenshot.
+- **Règlement autonome CPC V1.0** (document client 21 pages) : stocké /app/backend/assets/reglement_cpc_v1.pdf, servi public GET /api/cpc/reglement.pdf (200 application/pdf), liens dans VendorCpcTab (cpc-reglement-link) et VendorConsultationsTab.
+- **Réponse Rapide** : MessagesNavLink transformé en popover (messages-popover) — 5 derniers messages reçus, lu/non lu (marquage au clic + refresh badge), horodatage, réponse inline (POST /api/messages Re:), lien "Ouvrir la messagerie". Validé screenshot sur /admin/connecteurs.
+- **Factures Acheteur** : section BuyerOscopInvoices (émetteur O'SCOP — adhésions + packs CPC, fusion /api/vendor/my-invoices + /api/cpc/me/invoices, téléchargement PDF) au-dessus des factures marchandises avec badge "ÉMETTEUR : KDMARCHÉ PRO". Jamais fusionnées. Validé screenshot espace acheteur.
+- **Notification Consultation** : _notify_vendors_opening (routes_consultations, asyncio.create_task sur transition INSCRIPTIONS_OUVERTES) → email Brevo aux vendeurs actifs (tag consultation-opening) + audit NOTIFICATION_SENT. Testé : 4 vendeurs notifiés.
+- **Fix login** : UserResponse expose role → LoginPage redirige les vendeurs vers /vendor (vérifié curl role:vendor).
+- Données de test nettoyées. PHASE 2 TERMINÉE.

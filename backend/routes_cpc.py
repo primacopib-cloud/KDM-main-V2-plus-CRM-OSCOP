@@ -81,6 +81,17 @@ async def list_packs():
     return {"items": items}
 
 
+@cpc_router.get("/reglement.pdf")
+async def reglement_pdf():
+    """Règlement autonome des Consultations Compétitives et des CPC — V1.0 (public)."""
+    path = os.path.join(os.path.dirname(__file__), "assets", "reglement_cpc_v1.pdf")
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Règlement indisponible")
+    with open(path, "rb") as f:
+        return Response(content=f.read(), media_type="application/pdf",
+                        headers={"Content-Disposition": 'inline; filename="Reglement_CPC_V1.0.pdf"'})
+
+
 @cpc_router.get("/me")
 async def my_cpc(user_id: str = Depends(get_current_user_id)):
     acc = await get_cpc_account(user_id)

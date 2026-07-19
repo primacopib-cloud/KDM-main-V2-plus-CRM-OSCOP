@@ -17,6 +17,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import CommunityplaceBadge from './CommunityplaceBadge';
 import { CrediscopBadge } from './CrediscopBadge';
 import { MessagesNavLink } from './MessagesNavLink';
+import { BrandLogos } from './BrandLogos';
 import { SupportRepliesBadge } from './SupportRepliesBadge';
 import { useTranslation } from 'react-i18next';
 
@@ -110,19 +111,7 @@ const NavBar = ({ variant = 'default' }) => {
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-            <div className="flex items-center gap-2.5 h-16">
-              <img 
-                src={partners.kdmarche.logo} 
-                alt="KDMARCHE Pro" 
-                className="h-10 w-auto object-contain self-center"
-              />
-              <span className="text-white/30 text-sm hidden sm:inline self-center">×</span>
-              <img 
-                src={partners.oscop.logo} 
-                alt="Objectif SCOP Outremer" 
-                className="h-10 w-auto object-contain hidden sm:block self-center"
-              />
-            </div>
+            <BrandLogos className="[&>span:last-of-type]:hidden sm:[&>span:last-of-type]:inline-flex" />
             <CommunityplaceBadge size="sm" className="hidden md:inline-flex" />
           </Link>
 

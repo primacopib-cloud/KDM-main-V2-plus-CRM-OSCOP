@@ -43,6 +43,7 @@ class UserResponse(UserBase):
     subscription: str
     credits: int
     is_admin: bool = False
+    role: Optional[str] = None
     must_change_password: bool = False
     created_at: datetime
 

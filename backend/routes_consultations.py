@@ -4,6 +4,7 @@ BROUILLON → EN_VALIDATION → VALIDEE → PUBLIEE → INSCRIPTIONS_OUVERTES �
 import hashlib
 import json
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -267,7 +268,43 @@ async def transition(cid: str, body: TransitionBody, admin: dict = Depends(requi
     refunded = 0
     if body.to == "ANNULEE":
         refunded = await _refund_entries(c)
+    if body.to == "INSCRIPTIONS_OUVERTES":
+        import asyncio
+        asyncio.create_task(_notify_vendors_opening({**c, "status": body.to}))
     return {"ok": True, "status": body.to, "cpc_refunded_entries": refunded}
+
+
+async def _notify_vendors_opening(c: dict):
+    """Email aux vendeurs actifs quand les inscriptions d'une consultation ouvrent."""
+    try:
+        from brevo_service import send_email
+        base = os.environ.get("FRONTEND_PUBLIC_URL", "")
+        sent = 0
+        async for u in db.users.find({"role": "vendor", "suspended": {"$ne": True}},
+                                     {"_id": 0, "email": 1, "full_name": 1, "name": 1}).limit(200):
+            if not u.get("email"):
+                continue
+            try:
+                await send_email(
+                    to_email=u["email"], to_name=u.get("full_name") or u.get("name"),
+                    subject=f"Nouvelle consultation ouverte : {c['title']} ({c['ref']})",
+                    html_content=f"""<h2 style="color:#451F6B;">Consultation {c['ref']} — inscriptions ouvertes</h2>
+                    <p>Bonjour,</p>
+                    <p><strong>{c['title']}</strong> — catégorie <strong>{c['category']}</strong> ·
+                    procédure {'offres scellées' if c['procedure'] == 'SCELLEE' else 'enchère inversée'} ·
+                    accès {c['cpc_cost']} CPC ({c.get('max_rounds', 3)} tours inclus) ·
+                    clôture le {str(c.get('closes_at', ''))[:16].replace('T', ' ')} (heure serveur).</p>
+                    <p style="margin:24px 0;"><a href="{base}/vendor?tab=consultations"
+                    style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Voir la consultation</a></p>
+                    <p style="color:#777;font-size:12px;">Les offres sont exprimées en euros HT. Les CPC n'interviennent jamais dans le classement.</p>""",
+                    tags=["consultation-opening"])
+                sent += 1
+            except Exception as exc:
+                logger.warning("Notif consultation %s → %s : %s", c["ref"], u["email"], exc)
+        await audit("NOTIFICATION_SENT", "system", c["id"], {"kind": "opening", "sent": sent})
+        logger.info("Consultation %s : %d vendeurs notifiés", c["ref"], sent)
+    except Exception as exc:
+        logger.warning("Notification ouverture %s : %s", c.get("ref"), exc)
 
 
 async def _refund_entries(c: dict) -> int:

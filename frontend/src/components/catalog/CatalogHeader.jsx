@@ -14,6 +14,7 @@ import { CrediscopBadge } from '../CrediscopBadge';
 import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
 import { formatPrice } from './catalogUtils';
 import { CartSuggestions } from './CartSuggestions';
+import { BrandLogos } from '../BrandLogos';
 
 export const CatalogHeader = ({
   zones, selectedZone, setSelectedZone, cart, cartOpen, setCartOpen,
@@ -35,9 +36,7 @@ export const CatalogHeader = ({
               <span className="text-sm hidden sm:inline">Mon Espace</span>
             </Link>
             <div className="flex items-center gap-3">
-              <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-10 w-auto object-contain" />
-              <span className="text-white/40 text-xs">×</span>
-              <img src={partners.oscop.logo} alt="O'SCOP" className="h-6 w-auto object-contain" />
+              <BrandLogos />
             </div>
           </div>
           
