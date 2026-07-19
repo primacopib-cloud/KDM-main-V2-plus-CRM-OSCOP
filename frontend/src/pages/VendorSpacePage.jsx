@@ -15,6 +15,7 @@ import {
 } from '../components/ui/select';
 import { toast } from 'sonner';
 import { BreadcrumbPill } from '../components/Breadcrumb';
+import { VendorProductAssistant } from '../components/VendorProductAssistant';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 import { getStatusBadge } from '../components/vendor/vendorConstants';
 import { VendorProductFormModal as ProductFormModal } from '../components/vendor/VendorProductFormModal';
@@ -161,6 +162,7 @@ const VendorSpacePage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100" data-testid="vendor-space">
+      <VendorProductAssistant />
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

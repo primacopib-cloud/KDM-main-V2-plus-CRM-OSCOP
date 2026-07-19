@@ -37,6 +37,8 @@ import CheckoutPage from "./pages/CheckoutPage";
 import ProductCardDemoPage from "./pages/ProductCardDemoPage";
 import NotificationsHistoryPage from "./pages/NotificationsHistoryPage";
 import AiChatPage from "./pages/AiChatPage";
+import VendorOnboardingPage from "./pages/VendorOnboardingPage";
+import VendorActivationPage from "./pages/VendorActivationPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import ShoppingListsPage from "./pages/ShoppingListsPage";
 import ShoppingListDetailPage from "./pages/ShoppingListDetailPage";
@@ -144,6 +146,8 @@ function App() {
           {/* Notifications History */}
           <Route path="/notifications" element={<NotificationsHistoryPage />} />
           <Route path="/assistant-ia" element={<AiChatPage />} />
+          <Route path="/adhesion-vendeur" element={<VendorOnboardingPage />} />
+          <Route path="/activation-vendeur" element={<VendorActivationPage />} />
           <Route path="/historique-notifications" element={<NotificationsHistoryPage />} />
           {/* Favorites */}
           <Route path="/favoris" element={<FavoritesPage />} />

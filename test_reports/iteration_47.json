@@ -1,0 +1,44 @@
+{
+  "summary": "Iter 47 — Communityplace Vendeur Pro onboarding E2E. Backend 10/10 pytest PASS (test_iter47_vendor_onboarding.py) : /start → checkout.stripe.com LIVE session, PAID→INFO_COMPLETED→SIGNED→ACTIVATED transitions, PDF de 34 pages avant ET après signature, /activate token invalide=404, token valide=access_token+role=vendor, /assistant sans auth=401 attendu, login acheteur-pro régression OK. Frontend E2E : /tarifs → les 3 pricing-cta pointent vers /adhesion-vendeur?plan={slug} ✔ ; /adhesion-vendeur?plan=ess-acces-pro → vendor-start-form rendu avec plan pré-sélectionné (aucun clic 'Payer' effectué — Stripe LIVE) ✔ ; parcours PAID→SIGNED complet dans le navigateur (convention: 8 champs + territoire Guadeloupe → soumis → aperçu PDF iframe → nom/qualité/checkbox 'Lu et approuvé' → 'Signer' → toast 'Convention signée — code CONV-A3CEB0FF' → étape 4 avec bouton téléchargement) ✔ ; activation via /activation-vendeur?token=... avec mot de passe TestQA2026! → redirect /espace-vendeur?bienvenue=1 (user is_active=true en DB) ✔ ; FAB doré 'Assistant produits GRATUIT' visible + panneau ouvert + question suggérée envoyée ✖ BUG. GEDESS OK (ged_document_id=a4958ef8-…). Email Brevo envoyé (@example.com, log Brevo async).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/vendor-onboarding/activate", "issue": "Retourne access_token JSON mais NE POSE PAS le cookie httpOnly 'access_token'. Or l'app est passée à l'auth cookie-only (voir services/http.js commentaire 'Auth lives in an httpOnly cookie; no token is ever read from localStorage'). Résultat : après activation, l'utilisateur est visiblement 'connecté' côté UI (localStorage token stocké, redirect vers /espace-vendeur) mais toute requête protégée renvoie 401. Cassé sur /api/vendor-onboarding/assistant (voir integration_issues)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Assistant COOP'IA depuis /espace-vendeur (juste après activation)", "issue": "POST /api/vendor-onboarding/assistant → 401 'Identifiants invalides'. Bulle assistante affiche '⚠ Identifiants invalides'. Cause : /activate ne set pas le cookie httpOnly access_token, et getAuthHeaders() renvoie seulement 'Bearer cookie-session' (placeholder). L'utilisateur doit se reconnecter manuellement pour que le cookie soit posé.", "affected_selectors": ["product-assistant-fab", "product-assistant-panel"]}
+    ],
+    "design_issues": [
+      {"screen": "/espace-vendeur (nouveau vendeur activé)", "issues": ["Dashboard affiche 'Active products: 2 / Pending: 1' + les spots vidéo du vendor-demo-pro alors que le nouveau compte QA n'a AUCUN produit. Fuite de données du vendeur démo car le nouveau user n'a pas de vendor_id lié → le dashboard tombe probablement sur un fallback (première fiche vendeur). À isoler par user_id/vendor_id."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter47_vendor_onboarding.py",
+    "/app/test_reports/pytest/iter47.xml"
+  ],
+  "action_items": [
+    "CRITIQUE : dans routes_vendor_onboarding.activate_account, injecter `response: Response` et appeler `set_auth_cookie(response, token)` (comme routes_auth.login) pour que l'utilisateur soit réellement authentifié après activation. Sans ça, l'assistant produits GRATUIT est cassé au premier usage post-onboarding.",
+    "Alternative front : VendorActivationPage pourrait appeler /api/auth/login avec le mot de passe fraîchement choisi si le backend ne peut pas être modifié.",
+    "MOYEN : /espace-vendeur affiche des données du vendor-demo-pro pour un nouveau vendeur sans produits. Vérifier la requête de dashboard : filtrer explicitement par vendor_id (ou renvoyer un état vide/onboarding si aucun produit ne matche l'utilisateur connecté)."
+  ],
+  "critical_code_review_comments": [
+    "routes_vendor_onboarding.activate_account : oubli de set_auth_cookie — incohérent avec les autres flux d'auth (/auth/login, /google-auth, /emergent-auth qui tous appellent response.set_cookie). Root cause du bug assistant.",
+    "VendorActivationPage.jsx écrit encore `localStorage.setItem('token', d.access_token)` alors que le commentaire de services/http.js déclare explicitement 'no token is ever read from localStorage'. Code mort qui donne une fausse impression de session valide.",
+    "routes_vendor_onboarding.sign_convention : asyncio.create_task(_post_sign_tasks) est fire-and-forget — si l'app redémarre entre sign et Brevo/GEDESS, on perd l'email d'activation. Convention réellement signée en DB mais utilisateur bloqué. Envisager une file (Redis/Celery) ou un retry idempotent au status check.",
+    "vendor_onboarding.status GET fait un round-trip Stripe live à chaque appel si PAYMENT_PENDING — OK mais latence sur retour de checkout. Pas de webhook Stripe → si l'utilisateur ferme l'onglet avant retour à l'app, statut reste PAYMENT_PENDING indéfiniment côté DB (mais Stripe l'a bien encaissé). Recommandé : ajouter un endpoint webhook /stripe/vendor-webhook.",
+    "convention_pdf endpoint : pas d'auth check → n'importe qui connaissant l'oid (UUID v4) peut télécharger la convention signée (inclut RCS, capital, nom du représentant). Faible risque (UUID imprévisible) mais devrait exiger un token éphémère ou l'auth du user_id lié."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter47_vendor_onboarding.py (created)"
+  ],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "83% (5/6 étapes UI OK, assistant cassé à cause de l'auth cookie manquante)"},
+  "test_credentials": "acheteur-pro@kdmarche.fr / Demo2026! (buyer) ; QA vendor créé et supprimé après tests. Un vendor QA UI (qa-vendeur-ui@example.com, oid 3fcf8628-40d7-4ed5-bda3-27af39e0287d, code CONV-A3CEB0FF) EST TOUJOURS EN BASE avec status=ACTIVATED (à nettoyer si nécessaire) — GEDESS doc a4958ef8-… poussé, 1 email Brevo envoyé vers @example.com (safe).",
+  "seed_data_creation": "1 vendor_onboarding QA UI + 1 user vendor + 1 GEDESS doc (convention signée) créés pour la démo. Le test pytest lui nettoie sa propre donnée QA (qa-vendeur@example.com). La donnée UI (qa-vendeur-ui@example.com) reste — à supprimer via `db.vendor_onboarding.delete_many({email: 'qa-vendeur-ui@example.com'})` + users.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Le bug d'auth cookie post-activation est reproductible : /activate retourne access_token mais ne set pas Set-Cookie. Toute requête protégée qui suit renvoie 401. Après fix (set_auth_cookie dans activate_account), retester UNIQUEMENT le flux assistant : ouvrir le FAB dans /espace-vendeur juste après activation → question suggérée → une vraie réponse LLM (gpt-5.4-mini) doit apparaître en 3-8s. NE PAS retester la signature (email Brevo + GEDESS déjà pushés une fois).",
+  "rca of the issue": "Assistant COOP'IA renvoie 401 après activation vendeur car routes_vendor_onboarding.py::activate_account ne pose pas le cookie httpOnly 'access_token' (uniquement JSON dans le body). L'auth de l'app est passée en cookie-only (services/http.js ligne 7 : 'no token is ever read from localStorage'), donc le Bearer 'cookie-session' envoyé par getAuthHeaders() est ignoré. Reproduction : /adhesion-vendeur → sign → /activation-vendeur?token=... → mot de passe → redirect /espace-vendeur → cliquer FAB → question suggérée → bulle '⚠ Identifiants invalides' (voir logs backend : 401). Mitigation : ajouter `response: Response` dep + `set_auth_cookie(response, token)` avant return dans activate_account (5 lignes)."
+}

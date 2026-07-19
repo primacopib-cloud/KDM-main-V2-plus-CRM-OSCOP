@@ -408,6 +408,9 @@ set_ai_chat_database(db)
 from routes_demandes_admin import demandes_admin_router, set_demandes_admin_database
 app.include_router(demandes_admin_router)
 set_demandes_admin_database(db)
+from routes_vendor_onboarding import vendor_onboarding_router, set_vendor_onboarding_database
+app.include_router(vendor_onboarding_router)
+set_vendor_onboarding_database(db)
 set_crediscop_database(db)
 app.include_router(crediscop_router)
 

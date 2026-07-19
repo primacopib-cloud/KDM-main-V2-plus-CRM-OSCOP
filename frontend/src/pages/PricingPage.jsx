@@ -30,7 +30,7 @@ const TIERS = [
       { icon: Wallet, label: i18n.t('pricing.wallet_credits_de_base') },
     ],
     cta: i18n.t('pricing.s_inscrire'),
-    ctaLink: '/adhesion?plan=ess-acces-pro',
+    ctaLink: '/adhesion-vendeur?plan=ess-acces-pro',
     recommended: false,
   },
   {
@@ -51,7 +51,7 @@ const TIERS = [
       { icon: MapPin, label: i18n.t('pricing.acces_promos_flash_de') },
     ],
     cta: i18n.t('offers.s_inscrire_maintenant'),
-    ctaLink: '/adhesion?plan=ess-volume-pro',
+    ctaLink: '/adhesion-vendeur?plan=ess-volume-pro',
     recommended: true,
   },
   {
@@ -72,7 +72,7 @@ const TIERS = [
       { icon: Handshake, label: i18n.t('pricing.contact_dedie_referent_reseau') },
     ],
     cta: i18n.t('pricing.s_inscrire'),
-    ctaLink: '/adhesion?plan=ess-impact-pro',
+    ctaLink: '/adhesion-vendeur?plan=ess-impact-pro',
     recommended: false,
   },
 ];
