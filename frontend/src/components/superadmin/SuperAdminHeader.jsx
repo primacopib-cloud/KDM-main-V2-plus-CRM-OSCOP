@@ -22,6 +22,19 @@ const useOpenTicketsCount = () => {
   return count;
 };
 
+const useDownConnectorsCount = () => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const load = () => apiCall('/connectors/health-status')
+      .then((d) => setCount((d.statuses || []).filter((s) => s.status === 'ERROR').length))
+      .catch(() => {});
+    load();
+    const interval = setInterval(load, 60000);
+    return () => clearInterval(interval);
+  }, []);
+  return count;
+};
+
 const NAV_LINKS = [
   { to: '/', label: i18n.t('adm.accueil') },
   { to: '/espace-acheteur', label: i18n.t('adm.espace_acheteur') },
@@ -55,6 +68,7 @@ export const SuperAdminHeader = ({
   activeTab, setActiveTab, period, setPeriod, onRefresh, isConnected,
 }) => {
   const openTickets = useOpenTicketsCount();
+  const downConnectors = useDownConnectorsCount();
   return (
   <header
     className="sticky top-0 z-50"
@@ -139,6 +153,15 @@ export const SuperAdminHeader = ({
                   data-testid="support-open-count-badge"
                 >
                   {openTickets > 9 ? '9+' : openTickets}
+                </span>
+              )}
+              {t.value === 'ecosystem' && downConnectors > 0 && (
+                <span
+                  className="ml-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold inline-flex items-center justify-center animate-pulse"
+                  title={`${downConnectors} application(s) du Hub en panne`}
+                  data-testid="ecosystem-down-count-badge"
+                >
+                  {downConnectors > 9 ? '9+' : downConnectors}
                 </span>
               )}
             </TabsTrigger>
