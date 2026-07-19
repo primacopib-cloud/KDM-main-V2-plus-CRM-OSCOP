@@ -64,6 +64,41 @@ async def open_sealed_bids(cid: str):
     return opened
 
 
+async def send_closure_reminders(database):
+    """Cron : rappel email aux inscrits sans offre valide, 24h avant la clôture (une seule fois)."""
+    global db
+    if db is None:
+        db = database
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    horizon = (now + timedelta(hours=24)).isoformat()
+    async for c in db.consultations.find({"status": "EN_COURS", "closes_at": {"$gt": now.isoformat(), "$lte": horizon}}, {"_id": 0}):
+        async for e in db.consultation_entries.find({"consultation_id": c["id"], "status": "INSCRIT",
+                                                     "closure_reminder_sent": {"$ne": True}}, {"_id": 0}):
+            has_bid = await db.bids.find_one({"consultation_id": c["id"], "entry_id": e["id"], "status": "VALIDE"}, {"_id": 0, "id": 1})
+            if has_bid:
+                continue
+            u = await db.users.find_one({"id": e["vendor_user_id"]}, {"_id": 0, "email": 1, "full_name": 1, "name": 1})
+            if u and u.get("email"):
+                try:
+                    from brevo_service import send_email
+                    base = os.environ.get("FRONTEND_PUBLIC_URL", "")
+                    await send_email(
+                        to_email=u["email"], to_name=u.get("full_name") or u.get("name"),
+                        subject=f"Dernières heures — consultation {c['ref']} : vous n'avez pas encore déposé d'offre",
+                        html_content=f"""<h2 style="color:#451F6B;">Clôture imminente — {c['ref']}</h2>
+                        <p>Bonjour,</p>
+                        <p>Vous êtes inscrit à <strong>{c['title']}</strong> mais aucune offre n'a encore été déposée.
+                        La clôture est fixée au <strong>{str(c['closes_at'])[:16].replace('T', ' ')}</strong> (heure serveur, ferme et sans prolongation).</p>
+                        <p style="margin:24px 0;"><a href="{base}/vendor?tab=consultations"
+                        style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Déposer mon offre</a></p>""",
+                        tags=["consultation-closure-reminder"])
+                    await audit("REMINDER_SENT", "system", c["id"], {"entry_id": e["id"]})
+                except Exception as exc:
+                    logger.warning("Relance clôture %s → %s : %s", c["ref"], u["email"], exc)
+            await db.consultation_entries.update_one({"id": e["id"]}, {"$set": {"closure_reminder_sent": True}})
+
+
 async def _vendor_user(user_id: str) -> dict:
     from routes_cpc import _require_vendor
     return await _require_vendor(user_id)
@@ -95,6 +130,29 @@ async def open_consultations(user_id: str = Depends(get_current_user_id)):
         out.append({k: c.get(k) for k in ("id", "ref", "title", "type", "procedure", "legal_status", "products",
                                           "territories", "specs", "cpc_cost", "max_rounds", "criteria",
                                           "opens_at", "closes_at", "status")} | {"registered": bool(entry)})
+    return {"items": out}
+
+
+@bids_router.get("/tracking")
+async def organizer_tracking(user_id: str = Depends(get_current_user_id)):
+    """Suivi organisateur (espace acheteur) : statuts + participation, sans montants avant clôture."""
+    out = []
+    async for c in db.consultations.find({}, {"_id": 0, "published_snapshot": 0}).sort("created_at", -1).limit(50):
+        c = await _auto_close(c)
+        entries = await db.consultation_entries.count_documents({"consultation_id": c["id"], "status": "INSCRIT"})
+        bids_n = len(await _latest_valid_bids(c["id"]))
+        closed = c["status"] in ("CLOTUREE", "EN_EVALUATION", "ATTRIBUEE", "SANS_SUITE", "ARCHIVEE")
+        best = None
+        if closed:
+            priced = [b["amount_ht_cents"] for b in await _latest_valid_bids(c["id"]) if b.get("amount_ht_cents")]
+            best = min(priced) if priced else None
+        award = await db.consultation_awards.find_one({"consultation_id": c["id"], "awarded_entry_id": {"$ne": None}}, {"_id": 0, "ranking": 1, "awarded_entry_id": 1})
+        winner = None
+        if award:
+            winner = next((r["company"] for r in award["ranking"] if r["entry_id"] == award["awarded_entry_id"]), None)
+        out.append({k: c.get(k) for k in ("id", "ref", "title", "type", "procedure", "legal_status", "category",
+                                          "cpc_cost", "opens_at", "closes_at", "status")} |
+                   {"participants": entries, "valid_bids": bids_n, "best_offer_ht_cents": best, "winner": winner})
     return {"items": out}
 
 
@@ -208,6 +266,45 @@ async def my_status(cid: str, user_id: str = Depends(get_current_user_id)):
                                  {"_id": 0, "sealed_payload": 0}).sort("round", 1).to_list(10)
     return {"registered": True, "status": c["status"], "procedure": c["procedure"],
             "max_rounds": c.get("max_rounds", 3), "my_bids": my_bids, **await _rank_info(c, entry)}
+
+
+@bids_router.post("/{cid}/report")
+async def buy_report(cid: str, user_id: str = Depends(get_current_user_id)):
+    """Rapport d'analyse détaillé (service facultatif, coût report_cost CPC — débit unique idempotent)."""
+    c = await db.consultations.find_one({"id": cid}, {"_id": 0})
+    if not c or c["status"] not in ("CLOTUREE", "EN_EVALUATION", "ATTRIBUEE", "SANS_SUITE", "ARCHIVEE"):
+        raise HTTPException(status_code=409, detail="Rapport disponible après la clôture")
+    entry = await _my_entry(cid, user_id)
+    if not entry:
+        raise HTTPException(status_code=403, detail="Réservé aux participants")
+    key = f"report:{cid}:{user_id}"
+    already = await db.cpc_ledger.find_one({"idempotency_key": key}, {"_id": 0, "id": 1})
+    if not already:
+        from routes_cpc_admin import get_cpc_settings
+        from cpc_ledger import add_cpc_movement
+        cost = (await get_cpc_settings())["report_cost"]
+        await add_cpc_movement(user_id, "REPORT_PURCHASE", -cost, idempotency_key=key,
+                               reason=f"Rapport d'analyse — consultation {c['ref']}", consultation_id=cid)
+        await audit("REPORT_PURCHASED", user_id, cid, {"entry_id": entry["id"], "cost": cost})
+    # Contenu du rapport
+    latest = await _latest_valid_bids(cid)
+    priced = sorted([b["amount_ht_cents"] for b in latest if b.get("amount_ht_cents")])
+    my_bids = await db.bids.find({"consultation_id": cid, "entry_id": entry["id"]},
+                                 {"_id": 0, "sealed_payload": 0}).sort("round", 1).to_list(10)
+    my_last = next((b["amount_ht_cents"] for b in reversed(my_bids) if b.get("amount_ht_cents")), None)
+    award = await db.consultation_awards.find_one({"consultation_id": cid}, {"_id": 0})
+    my_rank = my_score = None
+    if award and award.get("ranking"):
+        for i, r in enumerate(award["ranking"]):
+            if r["entry_id"] == entry["id"]:
+                my_rank, my_score = i + 1, r["total"]
+    median = priced[len(priced) // 2] if priced else None
+    return {"ref": c["ref"], "title": c["title"], "participants": len(latest),
+            "best_offer_ht_cents": priced[0] if priced else None, "median_offer_ht_cents": median,
+            "my_last_offer_ht_cents": my_last,
+            "my_gap_to_best_cents": (my_last - priced[0]) if (my_last and priced) else None,
+            "my_final_rank": my_rank, "my_score": my_score, "my_bids": my_bids,
+            "criteria_weights": {cr["key"]: cr["weight"] for cr in c.get("criteria", [])}}
 
 
 @bids_router.post("/{cid}/winner-identity")

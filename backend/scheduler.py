@@ -130,6 +130,11 @@ async def _scheduler_loop():
             await expire_cpc_purchases(_db)
         except Exception as exc:
             logger.exception("Scheduler CPC expiry crashed: %s", exc)
+        try:
+            from routes_bids import send_closure_reminders
+            await send_closure_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler closure reminders crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

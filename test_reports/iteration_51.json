@@ -1,0 +1,42 @@
+{
+  "summary": "Iter 51 — Validation E2E des 3 NOUVELLES fonctionnalités Consultations : (1) GET /api/consultations/tracking, (2) POST /api/consultations/{cid}/report avec débit idempotent 10 CPC, (3) send_closure_reminders() 24h. Backend pytest : 20/20 PASSED (100%). Frontend : buyer-tab-consultations + buyer-consultations-tab affichent la consultation avec ref/titre/statut/participants/offres valides/meilleure offre (85,00 € HT après clôture). Vendor : onglet Consultations → bouton 'Rapport d'analyse (10 CPC)' [cons-report-{id}] → confirm dialog → data-testid cons-report-data-{id} affiche 'Participants: 1 · Meilleure offre: 85,00 € · Médiane: 85,00 € · Ma dernière offre: 85,00 € · Écart: 0,00 €' + pondérations 35/20/15/15/10/5. Régression : inscription vendeur (débit -20 CPC) et dépôt d'offre OK. Test 22 (403 non-participant) OK, test 20 (409 avant clôture) OK, test 23 (débit -10 CPC 1er appel) OK, test 24 (2e appel idempotent = pas de nouveau débit, rapport renvoyé) OK. Test 31 : appel direct send_closure_reminders(db) avec consultation EN_COURS closes_at=+12h + vendeur inscrit sans offre → flag closure_reminder_sent=True posé sur consultation_entries, 2e appel idempotent (flag reste True). Cleanup : consultations + entries + bids + audit + ledger + legal_matrix TEST_iter51 supprimés.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/connexion", "issues": ["Locale anglaise par défaut sur formulaire login (label 'Sign in' au lieu de 'Se connecter' spécifié dans test_credentials.md). Pas bloquant mais incohérent avec la doc — utilise le sélecteur EN par défaut malgré l'UI FR ailleurs."]},
+      {"screen": "/vendor et /espace-acheteur", "issues": ["Nomenclature 'CREDI'SCOP' dans le badge solde vs 'CPC' dans les tabs/textes — incohérence signalée depuis iter50, toujours présente."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter51_consultations_new_features.py",
+    "/app/backend/tests/seed_iter51_ui.py",
+    "/app/test_reports/pytest/iter51.xml"
+  ],
+  "action_items": [
+    "OPTIONNEL : harmoniser CPC vs CREDI'SCOP dans l'UI (déjà signalé iter50).",
+    "OPTIONNEL : formulaire /connexion en français par défaut (bouton 'Se connecter')."
+  ],
+  "critical_code_review_comments": [
+    "routes_bids.send_closure_reminders : le flag closure_reminder_sent est posé APRÈS la tentative Brevo (ligne 99), en dehors du try/except — bon : même si Brevo échoue, le flag est bien marqué → idempotent. En revanche, l'audit REMINDER_SENT est journalisé DANS le try : si Brevo échoue, pas d'audit alors que le flag est posé. Suggestion : logger un audit REMINDER_FAILED en cas d'exception pour traçabilité.",
+    "routes_bids.buy_report : la vérification 'entry INSCRIT' via _my_entry — si un vendeur est retiré/exclu (status != INSCRIT), il ne peut plus acheter le rapport même s'il avait participé. OK par design, mais pas documenté.",
+    "routes_bids.buy_report : median calculé comme priced[len//2] — pour n=2 renvoie l'index 1 (max), pas la vraie médiane arithmétique. Documenter comme 'valeur médiane haute' ou passer à statistics.median().",
+    "routes_bids.buy_report : le contenu du rapport est TOUJOURS retourné (même lors du 2e appel idempotent) — c'est bien mais aucune indication que c'est un rapport 're-servi' vs. 'nouvellement débité'. Optionnel : ajouter un flag `already_purchased: True` pour l'UI.",
+    "GET /tracking : aucune restriction par rôle — TOUT utilisateur authentifié (buyer, vendor, admin) voit TOUTES les consultations. Confirmé volontaire (registre organisateur B2B2C) mais mérite un contrôle role='buyer' si la donnée devient sensible."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter51_consultations_new_features.py (nouveau, 20 tests, 100% pass)",
+    "/app/backend/tests/seed_iter51_ui.py (helper pour seed UI, nettoyé après)"
+  ],
+  "success_rate": {"backend": "100% (20/20)", "frontend": "100% (buyer tab + vendor report button + report data visibles)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal='admin'), vendor-pro@kdmarche.fr / Demo2026!, acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "Créées puis SUPPRIMÉES : 2 consultations TEST_iter51 + 1 TEST_UI_iter51, entries/bids/audit/ledger associés, 2 entrées legal_matrix (test-iter51-* + ui-iter51-*). Le vendeur a été crédité de +50 puis +30 CPC via ADMIN_CORRECTION (mouvements conservés au ledger, solde final 17 CPC après tests). Compteur consultation_2026 incrémenté de +3.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Les 3 nouvelles features (tracking / report 10 CPC / relance 24h) sont TOUTES fonctionnelles et validées E2E backend + frontend. Aucun bug bloquant. Le fichier /app/backend/tests/test_iter51_consultations_new_features.py peut être ré-exécuté en régression — les IDs de catégorie sont uuid-suffixés donc pas de collision. Solde vendeur au moment du finish : 17 CPC (vérifié dans le badge UI).",
+  "rca of the issue": "Aucun bug rencontré. Le fix iter50 sur routes_consultations.transition() (open_sealed_bids appelé quand to=CLOTUREE et procedure=SCELLEE) est bien présent lignes 263-265 et validé implicitement via test_25 (best_offer visible dans tracking après CLOTUREE)."
+}

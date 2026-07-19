@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Gavel, Lock, TrendingDown, CheckCircle2 } from 'lucide-react';
+import { Gavel, Lock, TrendingDown, CheckCircle2, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -55,6 +55,15 @@ const ConsultationCard = ({ c, onChanged }) => {
     toast.info(`Candidat retenu : ${d.winner}`);
   };
 
+  const [report, setReport] = useState(null);
+  const buyReport = async () => {
+    if (!report && !window.confirm('Rapport d\'analyse détaillé : 10 CPC (débit unique — gratuit si déjà acheté). Continuer ?')) return;
+    const r = await fetch(`${API}/api/consultations/${c.id}/report`, { method: 'POST', credentials: 'include' });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Erreur');
+    setReport(d);
+  };
+
   const roundsUsed = status?.my_bids?.filter((b) => b.status === 'VALIDE' || sealed).length || 0;
   return (
     <Card data-testid={`vendor-cons-${c.id}`}>
@@ -94,6 +103,20 @@ const ConsultationCard = ({ c, onChanged }) => {
           <Button variant="outline" size="sm" onClick={askWinner} data-testid={`cons-winner-${c.id}`}>
             <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Identité du candidat retenu
           </Button>
+        )}
+        {c.registered && ['CLOTUREE', 'EN_EVALUATION', 'ATTRIBUEE', 'ARCHIVEE'].includes(c.status) && (
+          <Button variant="outline" size="sm" onClick={buyReport} data-testid={`cons-report-${c.id}`}>
+            <BarChart3 className="w-3.5 h-3.5 mr-1" /> {report ? 'Actualiser le rapport' : "Rapport d'analyse (10 CPC)"}
+          </Button>
+        )}
+        {report && (
+          <div className="mt-2 p-3 rounded-lg bg-purple-50 border border-purple-100 text-xs space-y-1" data-testid={`cons-report-data-${c.id}`}>
+            <p className="font-bold text-purple-700">Rapport d'analyse — {report.ref}</p>
+            <p>Participants : <b>{report.participants}</b> · Meilleure offre : <b>{eur(report.best_offer_ht_cents)}</b> · Médiane : <b>{eur(report.median_offer_ht_cents)}</b></p>
+            <p>Ma dernière offre : <b>{eur(report.my_last_offer_ht_cents)}</b>{report.my_gap_to_best_cents != null && <> · Écart à la meilleure : <b>{eur(report.my_gap_to_best_cents)}</b></>}</p>
+            {report.my_final_rank && <p>Mon classement final : <b>#{report.my_final_rank}</b> (score {report.my_score})</p>}
+            <p className="text-gray-400">Pondérations : {Object.entries(report.criteria_weights || {}).map(([k, w]) => `${k} ${w}%`).join(' · ')}</p>
+          </div>
         )}
       </CardContent>
     </Card>

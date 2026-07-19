@@ -21,6 +21,8 @@ import { BuyerOrdersTab } from '../components/buyer/BuyerOrdersTab';
 import { BuyerInvoicesTab } from '../components/buyer/BuyerInvoicesTab';
 import { BuyerWalletTab } from '../components/buyer/BuyerWalletTab';
 import { BuyerModals } from '../components/buyer/BuyerModals';
+import { BuyerConsultationsTab } from '../components/buyer/BuyerConsultationsTab';
+import { Gavel } from 'lucide-react';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
 
@@ -445,6 +447,9 @@ export default function BuyerSpacePage() {
               <Wallet className="w-4 h-4 mr-2" />
               {i18n.t('buyer.wallet')}
             </TabsTrigger>
+            <TabsTrigger value="consultations" className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg" data-testid="buyer-tab-consultations">
+              <Gavel className="w-4 h-4 mr-2" />Consultations
+            </TabsTrigger>
           </TabsList>
 
           <BuyerDashboardTab stats={stats} orders={orders} setActiveTab={setActiveTab} />
@@ -472,6 +477,7 @@ export default function BuyerSpacePage() {
           />
 
           <BuyerWalletTab wallet={wallet} transactions={transactions} />
+          <BuyerConsultationsTab />
         </Tabs>
       </div>
 
