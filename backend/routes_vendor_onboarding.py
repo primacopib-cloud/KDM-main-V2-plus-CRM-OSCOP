@@ -346,6 +346,19 @@ async def admin_list_onboardings(admin: dict = Depends(require_admin)):
     return {"items": items, "total": len(items)}
 
 
+@vendor_onboarding_router.get("/admin/funnel")
+async def admin_funnel(admin: dict = Depends(require_admin)):
+    """Entonnoir de conversion : adhésions initiées → payées → signées → activées."""
+    counts = {}
+    async for d in db.vendor_onboarding.aggregate([{"$group": {"_id": "$status", "n": {"$sum": 1}}}]):
+        counts[d["_id"]] = d["n"]
+    started = sum(counts.values())
+    paid = sum(v for k, v in counts.items() if k in ("PAID", "INFO_COMPLETED", "SIGNED", "ACTIVATED"))
+    signed = counts.get("SIGNED", 0) + counts.get("ACTIVATED", 0)
+    activated = counts.get("ACTIVATED", 0)
+    return {"started": started, "paid": paid, "signed": signed, "activated": activated, "by_status": counts}
+
+
 @vendor_onboarding_router.post("/admin/{oid}/remind")
 async def admin_remind(oid: str, admin: dict = Depends(require_admin)):
     ob = await db.vendor_onboarding.find_one({"id": oid}, {"_id": 0})

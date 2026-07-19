@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { FileSignature, Loader2, Download, BellRing, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
+import { AdhesionFunnel } from './AdhesionFunnel';
+import { AdhesionReminders } from './AdhesionReminders';
 
 const STATUS = {
   PAYMENT_PENDING: { color: '#9CA3AF', label: 'Paiement en attente' },
@@ -45,7 +47,9 @@ export const VendorAdhesionsPanel = () => {
   if (items === null) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#D9B35A]" /></div>;
 
   return (
-    <div className="glass-panel-soft rounded-[18px] p-4 mb-5" data-testid="vendor-adhesions-panel">
+    <>
+      <AdhesionFunnel />
+      <div className="glass-panel-soft rounded-[18px] p-4 mb-5" data-testid="vendor-adhesions-panel">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-[#D9B35A] flex items-center gap-2">
           <FileSignature className="w-4 h-4" /> Adhésions Vendeurs Pro — conventions & abonnements
@@ -94,11 +98,13 @@ export const VendorAdhesionsPanel = () => {
                     </button>
                   )}
                 </div>
+                <AdhesionReminders ob={ob} />
               </div>
             );
           })}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };

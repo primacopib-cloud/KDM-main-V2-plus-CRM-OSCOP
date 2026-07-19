@@ -6,6 +6,24 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
+_db = None
+
+
+def set_vendor_emails_database(database):
+    global _db
+    _db = database
+
+
+async def _log_reminder(ob: dict, kind: str):
+    """Trace chaque relance envoyée dans vendor_onboarding.reminders (suivi Super Admin)."""
+    if _db is None or not ob.get("id"):
+        return
+    try:
+        await _db.vendor_onboarding.update_one({"id": ob["id"]}, {"$push": {
+            "reminders": {"type": kind, "at": datetime.now(timezone.utc).isoformat()}}})
+    except Exception:
+        pass
+
 
 def _locale(ob: dict) -> str:
     return ob.get("locale") if ob.get("locale") in ("en", "es") else "fr"
@@ -225,6 +243,44 @@ seller space is active again. Thank you!</p>""",
 <p style="color:#777;font-size:12px;">Pago seguro, convenio firmado en línea, activación inmediata.</p>""",
         },
     },
+    "resume2": {
+        "fr": {
+            "subject": "Dernier rappel — votre place dans la coopérative vous attend",
+            "btn": "Finaliser mon adhésion",
+            "html": """<p>Bonjour {name},</p>
+<p>Il y a quelques jours, vous avez commencé votre adhésion <strong>{plan}</strong> sans la finaliser.</p>
+<p>Pour rappel, en rejoignant la centrale vous bénéficiez immédiatement :</p>
+<ul><li>des <strong>prix structurels mutualisés</strong> négociés pour tous les membres,</li>
+<li>d'un <strong>réseau B2B ESS</strong> actif dans tous les territoires d'Outre-mer,</li>
+<li>d'une <strong>activation immédiate</strong> après signature en ligne de votre convention.</li></ul>
+{btn}
+<p style="color:#777;font-size:12px;">Ceci est notre dernier rappel — votre dossier sera ensuite archivé.</p>""",
+        },
+        "en": {
+            "subject": "Final reminder — your place in the cooperative is waiting",
+            "btn": "Finalize my membership",
+            "html": """<p>Hello {name},</p>
+<p>A few days ago, you started your <strong>{plan}</strong> membership without finalizing it.</p>
+<p>As a reminder, by joining the purchasing hub you immediately benefit from:</p>
+<ul><li><strong>pooled structural prices</strong> negotiated for all members,</li>
+<li>an active <strong>SSE B2B network</strong> across all overseas territories,</li>
+<li><strong>immediate activation</strong> after signing your agreement online.</li></ul>
+{btn}
+<p style="color:#777;font-size:12px;">This is our final reminder — your file will then be archived.</p>""",
+        },
+        "es": {
+            "subject": "Último aviso — su lugar en la cooperativa le espera",
+            "btn": "Finalizar mi adhesión",
+            "html": """<p>Hola {name}:</p>
+<p>Hace unos días comenzó su adhesión <strong>{plan}</strong> sin finalizarla.</p>
+<p>Le recordamos que al unirse a la central se beneficia inmediatamente de:</p>
+<ul><li>los <strong>precios estructurales mutualizados</strong> negociados para todos los miembros,</li>
+<li>una <strong>red B2B ESS</strong> activa en todos los territorios de ultramar,</li>
+<li>una <strong>activación inmediata</strong> tras la firma en línea de su convenio.</li></ul>
+{btn}
+<p style="color:#777;font-size:12px;">Este es nuestro último aviso — su expediente será archivado después.</p>""",
+        },
+    },
 }
 
 
@@ -242,6 +298,7 @@ async def send_activation_email(ob: dict, activation_token: str, pdf: bytes | No
     attachments = [{"content": base64.b64encode(pdf).decode(), "name": f"convention-signee-{ob['id'][:8]}.pdf"}] if pdf else None
     await send_email(to_email=ob["email"], to_name=ob["contact_name"], subject=t["subject"],
                      html_content=html, tags=["vendor-activation"], attachments=attachments)
+    await _log_reminder(ob, "activation")
 
 
 async def send_dunning_email(db, ob: dict, invoice_url: str | None = None):
@@ -257,6 +314,7 @@ async def send_dunning_email(db, ob: dict, invoice_url: str | None = None):
         await send_email(to_email=ob["email"], to_name=ob.get("contact_name"), subject=t["subject"],
                          html_content=html, tags=["vendor-dunning"])
         await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {"dunning_sent_on": today}})
+        await _log_reminder(ob, "dunning")
         logger.info("Relance impayé envoyée à %s", ob["email"])
     except Exception as exc:
         logger.warning("Relance impayé %s : %s", ob.get("id"), exc)
@@ -271,6 +329,7 @@ async def _send_simple(ob: dict, kind: str, **params):
                                 btn=_btn(link, t.get("btn", "")), **params)
         await send_email(to_email=ob["email"], to_name=ob.get("contact_name"), subject=t["subject"],
                          html_content=html, tags=[f"vendor-{kind.replace('_', '-')}"])
+        await _log_reminder(ob, kind)
     except Exception as exc:
         logger.warning("Email %s %s : %s", kind, ob.get("id"), exc)
 
@@ -291,16 +350,17 @@ async def send_sign_reminder_email(ob: dict, link: str):
     await _send_simple(ob, "sign_reminder", link=link)
 
 
-async def send_resume_email(ob: dict, link: str | None = None):
+async def send_resume_email(ob: dict, link: str | None = None, final: bool = False):
     link = link or f"{_frontend()}/adhesion-vendeur?plan={ob.get('plan_slug') or ''}&lang={_locale(ob)}"
-    await _send_simple(ob, "resume", link=link)
+    await _send_simple(ob, "resume2" if final else "resume", link=link)
 
 
 async def check_abandoned_onboardings(db):
-    """Cron : 1 email de reprise pour les adhésions abandonnées avant paiement (entre 1h et 7 jours)."""
+    """Cron : relance à H+1 puis rappel final argumenté à J+3 pour les adhésions abandonnées avant paiement."""
     now = datetime.now(timezone.utc)
     cursor = db.vendor_onboarding.find(
-        {"status": "PAYMENT_PENDING", "abandon_reminder_sent_at": {"$exists": False}},
+        {"status": "PAYMENT_PENDING", "abandon_reminder2_sent_at": {"$exists": False},
+         "abandon_reminder_sent_at": {"$ne": "expired"}},
         {"_id": 0}).limit(50)
     async for ob in cursor:
         try:
@@ -309,10 +369,16 @@ async def check_abandoned_onboardings(db):
             if age_h < 1:
                 continue
             if age_h > 24 * 7:
-                await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {"abandon_reminder_sent_at": "expired"}})
+                await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
+                    "abandon_reminder2_sent_at": "expired", "abandon_reminder_sent_at": ob.get("abandon_reminder_sent_at") or "expired"}})
                 continue
-            await send_resume_email(ob)
-            await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {"abandon_reminder_sent_at": now.isoformat()}})
-            logger.info("Relance adhésion abandonnée envoyée à %s", ob["email"])
+            if not ob.get("abandon_reminder_sent_at"):
+                await send_resume_email(ob)
+                await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {"abandon_reminder_sent_at": now.isoformat()}})
+                logger.info("Relance adhésion abandonnée envoyée à %s", ob["email"])
+            elif age_h >= 72:
+                await send_resume_email(ob, final=True)
+                await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {"abandon_reminder2_sent_at": now.isoformat()}})
+                logger.info("Rappel final adhésion abandonnée envoyé à %s", ob["email"])
         except Exception as exc:
             logger.warning("Relance abandon %s : %s", ob.get("id"), exc)

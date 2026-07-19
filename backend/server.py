@@ -414,6 +414,8 @@ set_vendor_onboarding_database(db)
 from vendor_suspension import vendor_suspension_router, set_vendor_suspension_database
 app.include_router(vendor_suspension_router)
 set_vendor_suspension_database(db)
+from vendor_emails import set_vendor_emails_database
+set_vendor_emails_database(db)
 set_crediscop_database(db)
 app.include_router(crediscop_router)
 
