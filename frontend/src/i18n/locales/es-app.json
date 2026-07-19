@@ -431,6 +431,10 @@
     "suspTitle": "Espacio vendedor suspendido",
     "suspMsg": "Su suscripción lleva más de 15 días impagada. Regularice su pago para reactivar inmediatamente su espacio vendedor.",
     "suspPayBtn": "Regularizar mi pago",
-    "suspContact": "¿Alguna pregunta? Escríbanos a contact@objectifscopoutremer.com"
+    "suspContact": "¿Alguna pregunta? Escríbanos a contact@objectifscopoutremer.com",
+    "country": "País *",
+    "includesAll": "Incluye todo {{plan}}",
+    "vatTotal": "Total mensual: {{ht}} € sin IVA + IVA {{rate}} % = {{ttc}} € con IVA",
+    "vatTotalExempt": "Total mensual: {{ht}} € sin IVA — exento de IVA / autoliquidación según su país"
   }
 }

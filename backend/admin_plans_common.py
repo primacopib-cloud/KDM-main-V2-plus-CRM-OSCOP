@@ -41,6 +41,7 @@ class SubscriptionPlanCreate(BaseModel):
     visible: bool = True
     visible_from: Optional[str] = None
     visible_until: Optional[str] = None
+    target_profiles: List[str] = ["all"]
 
 
 class SubscriptionPlanUpdate(BaseModel):
@@ -60,6 +61,7 @@ class SubscriptionPlanUpdate(BaseModel):
     visible: Optional[bool] = None
     visible_from: Optional[str] = None
     visible_until: Optional[str] = None
+    target_profiles: Optional[List[str]] = None
 
 
 class SubscriptionPlanResponse(BaseModel):
@@ -81,6 +83,7 @@ class SubscriptionPlanResponse(BaseModel):
     visible: bool = True
     visible_from: Optional[str] = None
     visible_until: Optional[str] = None
+    target_profiles: List[str] = ["all"]
     subscribers_count: int = 0
     created_at: str
     updated_at: str

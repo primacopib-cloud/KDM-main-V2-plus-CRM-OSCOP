@@ -431,6 +431,10 @@
     "suspTitle": "Espace vendeur suspendu",
     "suspMsg": "Votre abonnement présente un impayé de plus de 15 jours. Régularisez votre paiement pour réactiver immédiatement votre espace vendeur.",
     "suspPayBtn": "Régulariser mon paiement",
-    "suspContact": "Une question ? Écrivez-nous à contact@objectifscopoutremer.com"
+    "suspContact": "Une question ? Écrivez-nous à contact@objectifscopoutremer.com",
+    "country": "Pays *",
+    "includesAll": "Inclut tout {{plan}}",
+    "vatTotal": "Total mensuel : {{ht}} € HT + TVA {{rate}} % = {{ttc}} € TTC",
+    "vatTotalExempt": "Total mensuel : {{ht}} € HT — exonéré de TVA / autoliquidation selon votre pays"
   }
 }

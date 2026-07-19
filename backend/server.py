@@ -416,6 +416,12 @@ app.include_router(vendor_suspension_router)
 set_vendor_suspension_database(db)
 from vendor_emails import set_vendor_emails_database
 set_vendor_emails_database(db)
+from routes_member_profiles import member_profiles_router, set_member_profiles_database
+app.include_router(member_profiles_router)
+set_member_profiles_database(db)
+from routes_accounting import accounting_router, set_accounting_database
+app.include_router(accounting_router)
+set_accounting_database(db)
 set_crediscop_database(db)
 app.include_router(crediscop_router)
 
@@ -623,6 +629,8 @@ async def startup_db_client():
     # Seed default subscription plans if missing
     try:
         seeded = await seed_subscription_plans(db)
+        from routes_member_profiles import seed_member_profiles
+        await seed_member_profiles(db)
         if seeded:
             logger.info(f"Seeded {seeded} default subscription plan(s)")
     except Exception as e:

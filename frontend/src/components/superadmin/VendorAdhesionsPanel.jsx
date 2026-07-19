@@ -52,11 +52,28 @@ export const VendorAdhesionsPanel = () => {
       <div className="glass-panel-soft rounded-[18px] p-4 mb-5" data-testid="vendor-adhesions-panel">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-[#D9B35A] flex items-center gap-2">
-          <FileSignature className="w-4 h-4" /> Adhésions Vendeurs Pro — conventions & abonnements
+          <FileSignature className="w-4 h-4" /> Adhésions — conventions & abonnements
         </h3>
-        <button type="button" onClick={load} className="p-1.5 rounded-lg border border-white/15 text-white/60 hover:text-white" title="Rafraîchir">
-          <RefreshCw className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button type="button" data-testid="adhesions-export-csv"
+            onClick={async () => {
+              try {
+                const r = await fetch(`${API}/vendor-onboarding/admin/export.csv`, opts);
+                const blob = await r.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'adhesions.csv'; a.click();
+                URL.revokeObjectURL(url);
+              } catch { toast.error("Échec de l'export"); }
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10.5px] font-bold"
+            style={{ background: 'rgba(217,179,90,0.15)', color: '#E9CF8E', border: '1px solid rgba(217,179,90,0.4)' }}>
+            <Download className="w-3 h-3" /> Export CSV
+          </button>
+          <button type="button" onClick={load} className="p-1.5 rounded-lg border border-white/15 text-white/60 hover:text-white" title="Rafraîchir">
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
       {items.length === 0 ? (
         <p className="text-xs text-white/40">Aucune adhésion vendeur pour le moment.</p>

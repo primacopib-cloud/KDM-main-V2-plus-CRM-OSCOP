@@ -75,6 +75,7 @@ async def list_subscription_plans(
             visible=plan.get("visible", True),
             visible_from=plan.get("visible_from"),
             visible_until=plan.get("visible_until"),
+            target_profiles=plan.get("target_profiles") or ["all"],
             subscribers_count=count,
             created_at=plan.get("created_at", ""),
             updated_at=plan.get("updated_at", "")
@@ -122,6 +123,7 @@ async def create_subscription_plan(data: SubscriptionPlanCreate, request: Reques
         "visible": data.visible,
         "visible_from": data.visible_from,
         "visible_until": data.visible_until,
+        "target_profiles": data.target_profiles or ["all"],
         "created_at": now,
         "updated_at": now,
         "created_by": admin.get("id")
@@ -147,6 +149,7 @@ async def create_subscription_plan(data: SubscriptionPlanCreate, request: Reques
         visible=data.visible,
         visible_from=data.visible_from,
         visible_until=data.visible_until,
+        target_profiles=data.target_profiles or ["all"],
         subscribers_count=0,
         created_at=now,
         updated_at=now
@@ -187,6 +190,7 @@ async def get_subscription_plan(plan_id: str, request: Request):
         visible=plan.get("visible", True),
         visible_from=plan.get("visible_from"),
         visible_until=plan.get("visible_until"),
+        target_profiles=plan.get("target_profiles") or ["all"],
         subscribers_count=count,
         created_at=plan.get("created_at", ""),
         updated_at=plan.get("updated_at", "")
@@ -239,6 +243,7 @@ async def update_subscription_plan(plan_id: str, data: SubscriptionPlanUpdate, r
         visible=updated.get("visible", True),
         visible_from=updated.get("visible_from"),
         visible_until=updated.get("visible_until"),
+        target_profiles=updated.get("target_profiles") or ["all"],
         subscribers_count=count,
         created_at=updated.get("created_at", ""),
         updated_at=updated.get("updated_at", "")

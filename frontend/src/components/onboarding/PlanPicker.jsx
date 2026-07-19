@@ -1,26 +1,36 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Star } from 'lucide-react';
+import { Check, Star, ArrowUpCircle } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 
-export const PlanPicker = ({ value, onChange }) => {
+export const PlanPicker = ({ value, onChange, memberType, onPlansLoaded }) => {
   const { t } = useTranslation();
   const [plans, setPlans] = useState([]);
 
   useEffect(() => {
     fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/plans`)
       .then((r) => r.json())
-      .then((d) => setPlans(Array.isArray(d.plans) ? d.plans : []))
+      .then((d) => {
+        const list = Array.isArray(d.plans) ? d.plans : [];
+        setPlans(list);
+        if (onPlansLoaded) onPlansLoaded(list);
+      })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!plans.length) return null;
+  const visible = plans.filter((p) => {
+    const targets = p.target_profiles || ['all'];
+    return targets.includes('all') || !memberType || targets.includes(memberType);
+  });
+  if (!visible.length) return null;
   return (
     <div>
       <p className="text-xs text-white/60 mb-2">{t('vendorOnboarding.plan')}</p>
       <div className="grid sm:grid-cols-3 gap-3" data-testid="plan-picker">
-        {plans.map((p) => {
+        {visible.map((p, idx) => {
           const active = value === p.slug;
+          const prev = idx > 0 ? visible[idx - 1] : null;
           return (
             <button type="button" key={p.slug} data-testid={`plan-card-${p.slug}`} onClick={() => onChange(p.slug)}
               className={`relative text-left p-4 pt-5 rounded-2xl border transition-all ${
@@ -41,6 +51,12 @@ export const PlanPicker = ({ value, onChange }) => {
                 </span>
                 <span className="text-[11px] text-white/55"> {t('vendorOnboarding.perMonth')}</span>
               </span>
+              {prev && (
+                <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-[#E9CF8E]"
+                  data-testid={`plan-includes-${p.slug}`}>
+                  <ArrowUpCircle className="w-3 h-3" /> {t('vendorOnboarding.includesAll', { plan: prev.name })}
+                </span>
+              )}
               <ul className="mt-2.5 space-y-1">
                 {(p.features || []).slice(0, 3).map((f) => (
                   <li key={f} className="flex items-start gap-1.5 text-[10.5px] text-white/60 leading-snug">

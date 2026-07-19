@@ -276,7 +276,9 @@
     "qui_peut_adherer_answer": "Toute structure professionnelle (SIRET obligatoire) : coopératives, associations ESS, PME, artisans, restaurateurs, épiceries, collectivités.",
     "comment_se_calculent_les": "Comment se calculent les prix mutualisés ?",
     "comment_answer": "Les prix résultent de la force collective des membres : volumes agrégés, contributions et services mutualisés du réseau. Il ne s'agit ni de remises, ni de promotions, mais de conditions économiques structurelles.",
-    "parler_a_un_conseiller": "Parler à un conseiller"
+    "parler_a_un_conseiller": "Parler à un conseiller",
+    "inclut_volume": "Inclut tout ESS ACCÈS PRO",
+    "inclut_impact": "Inclut tout ESS VOLUME PRO"
   },
   "logiscop": {
     "badge": "Logistique coopérative",

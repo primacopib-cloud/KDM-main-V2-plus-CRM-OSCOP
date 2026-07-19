@@ -115,6 +115,11 @@ async def _scheduler_loop():
             await check_abandoned_onboardings(_db)
         except Exception as exc:
             logger.exception("Scheduler abandoned onboardings crashed: %s", exc)
+        try:
+            from vendor_weekly_report import send_weekly_unpaid_report
+            await send_weekly_unpaid_report(_db)
+        except Exception as exc:
+            logger.exception("Scheduler weekly unpaid report crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

@@ -18,6 +18,8 @@ import { SupportTicketsTab } from '../components/superadmin/SupportTicketsTab';
 import { MemberRegistryTab } from '../components/superadmin/MemberRegistryTab';
 import { CoopersConventionsTab } from '../components/superadmin/CoopersConventionsTab';
 import { VendorAdhesionsPanel } from '../components/superadmin/VendorAdhesionsPanel';
+import { AccountingTab } from '../components/superadmin/AccountingTab';
+import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
 import { AdminContractsTab } from '../components/superadmin/AdminContractsTab';
 import { EmailPreviewsTab } from '../components/superadmin/EmailPreviewsTab';
 import { EcosystemHealthTab } from '../components/superadmin/EcosystemHealthTab';
@@ -168,6 +170,14 @@ export default function SuperAdminPage() {
           <TabsContent value="conventions">
             <VendorAdhesionsPanel />
             <CoopersConventionsTab />
+          </TabsContent>
+
+          <TabsContent value="accounting">
+            <AccountingTab />
+          </TabsContent>
+
+          <TabsContent value="profiles">
+            <ProfilesSpacesTab />
           </TabsContent>
 
           <TabsContent value="contracts">

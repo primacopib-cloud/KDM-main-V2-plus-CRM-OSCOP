@@ -431,6 +431,10 @@
     "suspTitle": "Seller space suspended",
     "suspMsg": "Your subscription has been unpaid for more than 15 days. Settle your payment to immediately reactivate your seller space.",
     "suspPayBtn": "Settle my payment",
-    "suspContact": "Any question? Write to us at contact@objectifscopoutremer.com"
+    "suspContact": "Any question? Write to us at contact@objectifscopoutremer.com",
+    "country": "Country *",
+    "includesAll": "Includes everything in {{plan}}",
+    "vatTotal": "Monthly total: €{{ht}} excl. VAT + {{rate}}% VAT = €{{ttc}} incl. VAT",
+    "vatTotalExempt": "Monthly total: €{{ht}} excl. VAT — VAT exempt / reverse charge based on your country"
   }
 }

@@ -11,6 +11,8 @@ from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 TEMPLATE_PATH = "/app/backend/assets/convention_cadre_v1_5.pdf"
+TEMPLATE_V2_PATH = "/app/backend/assets/convention_cadre_v2_0.pdf"
+ATTESTATION_V2_PATH = "/app/backend/assets/attestation_nominative_v2_0.pdf"
 
 VIOLET = colors.HexColor("#451F6B")
 VIOLET_DARK = colors.HexColor("#2A1045")
@@ -24,7 +26,9 @@ _BODY = ParagraphStyle("b", fontName="Helvetica", fontSize=9, textColor=colors.H
 CONV_I18N = {
     "fr": {
         "title": "CONVENTION-CADRE D'ADHÉSION TRIPARTITE D'AGRÉGATION DE VOLUMES<br/>ET DE RETENUE CONTRIBUTIVE REMBOURSABLE — V1.5",
-        "ref_line": "Référence : {ref} · Fiche d'identification et de signature complétée dynamiquement — générée le {date} UTC · Le texte intégral de la Convention-cadre (33 pages) est joint ci-après et fait partie intégrante du présent exemplaire.",
+        "title_buyer": "CONVENTION-CADRE D'ADHÉSION TRIPARTITE D'ACHAT DE VOLUMES DE PRODUITS PRÉDÉFINIS<br/>ET DE RATTACHEMENT À LA RCR FOGEDOM-SCIC — V2.0",
+        "ref_line": "Référence : {ref} · Fiche d'identification et de signature complétée dynamiquement — générée le {date} UTC · Le texte intégral de la Convention-cadre{attest} est joint ci-après et fait partie intégrante du présent exemplaire.",
+        "attest": " et le modèle d'Attestation nominative FOGEDOM-SCIC",
         "supplier": "3. LE FOURNISSEUR", "denomination": "Dénomination", "contact": "Contact",
         "forme": "Forme sociale", "capital": "Capital social", "siret": "SIRET / SIREN", "rcs": "RCS",
         "siege": "Siège social", "rep": "Représentant", "email": "Email de notification",
@@ -43,7 +47,9 @@ CONV_I18N = {
     },
     "en": {
         "title": "TRIPARTITE MEMBERSHIP FRAMEWORK AGREEMENT ON VOLUME AGGREGATION<br/>AND REFUNDABLE CONTRIBUTORY RETENTION — V1.5",
-        "ref_line": "Reference: {ref} · Identification and signature sheet completed dynamically — generated on {date} UTC · The full French text of the Framework Agreement (33 pages) is attached hereafter and forms an integral part of this copy. In case of discrepancy, the French version prevails.",
+        "title_buyer": "TRIPARTITE MEMBERSHIP FRAMEWORK AGREEMENT FOR THE PURCHASE OF PREDEFINED PRODUCT VOLUMES<br/>AND ATTACHMENT TO THE RCR FOGEDOM-SCIC — V2.0",
+        "ref_line": "Reference: {ref} · Identification and signature sheet completed dynamically — generated on {date} UTC · The full French text of the Framework Agreement{attest} is attached hereafter and forms an integral part of this copy. In case of discrepancy, the French version prevails.",
+        "attest": " and the FOGEDOM-SCIC nominative Certificate template",
         "supplier": "3. THE SUPPLIER", "denomination": "Company name", "contact": "Contact",
         "forme": "Legal form", "capital": "Share capital", "siret": "SIRET / SIREN", "rcs": "Trade register (RCS)",
         "siege": "Registered office", "rep": "Representative", "email": "Notification email",
@@ -62,7 +68,9 @@ CONV_I18N = {
     },
     "es": {
         "title": "CONVENIO-MARCO DE ADHESIÓN TRIPARTITO DE AGREGACIÓN DE VOLÚMENES<br/>Y DE RETENCIÓN CONTRIBUTIVA REEMBOLSABLE — V1.5",
-        "ref_line": "Referencia: {ref} · Ficha de identificación y firma completada dinámicamente — generada el {date} UTC · El texto íntegro en francés del Convenio-marco (33 páginas) se adjunta a continuación y forma parte integrante del presente ejemplar. En caso de discrepancia, prevalece la versión francesa.",
+        "title_buyer": "CONVENIO-MARCO DE ADHESIÓN TRIPARTITO DE COMPRA DE VOLÚMENES DE PRODUCTOS PREDEFINIDOS<br/>Y DE VINCULACIÓN A LA RCR FOGEDOM-SCIC — V2.0",
+        "ref_line": "Referencia: {ref} · Ficha de identificación y firma completada dinámicamente — generada el {date} UTC · El texto íntegro en francés del Convenio-marco{attest} se adjunta a continuación y forma parte integrante del presente ejemplar. En caso de discrepancia, prevalece la versión francesa.",
+        "attest": " y el modelo de Certificado nominativo FOGEDOM-SCIC",
         "supplier": "3. EL PROVEEDOR", "denomination": "Denominación", "contact": "Contacto",
         "forme": "Forma jurídica", "capital": "Capital social", "siret": "SIRET / SIREN", "rcs": "Registro mercantil (RCS)",
         "siege": "Sede social", "rep": "Representante", "email": "Email de notificación",
@@ -101,13 +109,16 @@ def _fiche_pages(ob: dict, signature: dict | None) -> bytes:
     """Pages 'Fiche d'identification et de signature' remplies dynamiquement (FR/EN/ES selon ob['locale'])."""
     tr = CONV_I18N.get(ob.get("locale") or "fr", CONV_I18N["fr"])
     conv = ob.get("convention") or {}
-    ref = f"OSC/KDM/FOUR/CADRE-AGR-RCR-FOGEDOM/{ob['id'][:8].upper()}"
+    is_buyer = _is_buyer_template(ob)
+    ref_prefix = "OSC/KDM/ACH" if is_buyer else "OSC/KDM/FOUR"
+    ref = f"{ref_prefix}/CADRE-AGR-RCR-FOGEDOM/{ob['id'][:8].upper()}"
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=15 * mm, bottomMargin=13 * mm,
                             leftMargin=17 * mm, rightMargin=17 * mm)
     el = [
-        Paragraph(tr["title"], _TITLE),
-        Paragraph(tr["ref_line"].format(ref=ref, date=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")), _SUB),
+        Paragraph(tr["title_buyer"] if is_buyer else tr["title"], _TITLE),
+        Paragraph(tr["ref_line"].format(ref=ref, date=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M"),
+                                        attest=tr["attest"] if is_buyer else ""), _SUB),
         Paragraph("1. O'SCOP", _H2),
         _table([
             [tr["denomination"], "SCIC SAS OBJECTIF SCOP OUTREMER (O'SCOP)"],
@@ -155,14 +166,25 @@ def _fiche_pages(ob: dict, signature: dict | None) -> bytes:
     return buf.getvalue()
 
 
+def _is_buyer_template(ob: dict) -> bool:
+    if ob.get("convention_template"):
+        return ob["convention_template"] == "v2_0_buyer"
+    return ob.get("member_type") == "buyer"
+
+
 def build_convention_pdf(ob: dict, signature: dict | None = None) -> bytes:
-    """Fiche remplie + texte intégral original fusionnés."""
+    """Fiche remplie + texte intégral du contrat adapté au profil (V1.5 vendeur / V2.0 acheteur + attestation)."""
     writer = PdfWriter()
     for page in PdfReader(io.BytesIO(_fiche_pages(ob, signature))).pages:
         writer.add_page(page)
-    if os.path.exists(TEMPLATE_PATH):
-        for page in PdfReader(TEMPLATE_PATH).pages:
-            writer.add_page(page)
+    if _is_buyer_template(ob):
+        templates = [TEMPLATE_V2_PATH, ATTESTATION_V2_PATH]
+    else:
+        templates = [TEMPLATE_PATH]
+    for path in templates:
+        if os.path.exists(path):
+            for page in PdfReader(path).pages:
+                writer.add_page(page)
     out = io.BytesIO()
     writer.write(out)
     return out.getvalue()

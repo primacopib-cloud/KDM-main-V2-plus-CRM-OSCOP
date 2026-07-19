@@ -37,6 +37,7 @@ const TIERS = [
     id: 'ess-volume-pro',
     name: 'ESS VOLUME PRO',
     tagline: i18n.t('pricing.le_choix_des_membres'),
+    includes: i18n.t('pricing.inclut_volume'),
     price: 349,
     period: i18n.t('offers.ht_mois'),
     accent: '#D9B35A',
@@ -58,6 +59,7 @@ const TIERS = [
     id: 'ess-impact-pro',
     name: 'ESS IMPACT PRO',
     tagline: i18n.t('pricing.cooperative_en_projet'),
+    includes: i18n.t('pricing.inclut_impact'),
     price: 749,
     period: i18n.t('offers.ht_mois'),
     accent: '#4a1776',
@@ -237,7 +239,12 @@ const PricingCard = ({ tier }) => {
         <p className="text-[11px] uppercase tracking-[0.18em] font-bold mb-1 text-[#D9B35A]">
           {tier.name}
         </p>
-        <p className="text-xs text-white/55 mb-5">{tier.tagline}</p>
+        <p className="text-xs text-white/55 mb-2">{tier.tagline}</p>
+        {tier.includes && (
+          <p className="text-[11px] font-bold text-[#E9CF8E] mb-3" data-testid={`pricing-includes-${tier.id}`}>
+            ↑ {tier.includes}
+          </p>
+        )}
 
         <div
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-semibold mb-3"

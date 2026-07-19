@@ -5,6 +5,8 @@ import { CreditCard, FileSignature, CheckCircle2, Loader2, Mail, ArrowRight } fr
 import { toast } from 'sonner';
 import NavBar from '../components/NavBar';
 import { PlanPicker } from '../components/onboarding/PlanPicker';
+import { CountrySelect, PhoneInput } from '../components/onboarding/CountryPhoneFields';
+import { vatRateFor } from '../components/onboarding/countries';
 import { API } from '../services/http';
 
 const TERRITOIRES = ['Guadeloupe', 'Martinique', 'Guyane', 'La Réunion', 'Mayotte', 'Saint-Martin'];
@@ -35,9 +37,20 @@ export default function VendorOnboardingPage() {
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [, setOb] = useState(null);
-  const [start, setStart] = useState({ company: '', contact_name: '', email: '', phone: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro', member_type: 'vendor' });
+  const [start, setStart] = useState({ company: '', contact_name: '', email: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro', member_type: 'vendor', country: 'GP' });
+  const [dial, setDial] = useState('+590|GP');
+  const [phoneNum, setPhoneNum] = useState('');
+  const [profiles, setProfiles] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [conv, setConv] = useState({ forme_sociale: '', capital: '', rcs_ville: '', adresse: '', rep_nom: '', rep_prenom: '', rep_qualite: '', territoires: [], lieu_signature: '' });
   const [sign, setSign] = useState({ nom: '', qualite: '', lu_approuve: false });
+
+  useEffect(() => {
+    fetch(`${API}/public/member-profiles`)
+      .then((r) => r.json())
+      .then((d) => setProfiles(Array.isArray(d.profiles) ? d.profiles : []))
+      .catch(() => {});
+  }, []);
 
   const oid = params.get('onboarding_id');
 
@@ -62,7 +75,7 @@ export default function VendorOnboardingPage() {
     try {
       const r = await fetch(`${API}/vendor-onboarding/start`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...start, origin_url: window.location.origin, locale: (i18n.language || 'fr').slice(0, 2) }),
+        body: JSON.stringify({ ...start, phone: `${dial.split('|')[0]} ${phoneNum}`.trim(), origin_url: window.location.origin, locale: (i18n.language || 'fr').slice(0, 2) }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Erreur');
@@ -114,21 +127,24 @@ export default function VendorOnboardingPage() {
             <div>
               <p className="text-xs text-white/60 mb-2">{t('vendorOnboarding.memberTypeLabel')}</p>
               <div className="grid sm:grid-cols-2 gap-3" data-testid="member-type-choice">
-                {[
-                  { value: 'vendor', title: t('vendorOnboarding.vendorTitle'), desc: t('vendorOnboarding.vendorDesc') },
-                  { value: 'buyer', title: t('vendorOnboarding.buyerTitle'), desc: t('vendorOnboarding.buyerDesc') },
-                ].map((tp) => (
-                  <button type="button" key={tp.value} data-testid={`member-type-${tp.value}`}
-                    onClick={() => setStart({ ...start, member_type: tp.value })}
-                    className={`text-left p-4 rounded-xl border transition-colors ${
-                      start.member_type === tp.value
-                        ? 'border-[#D9B35A] bg-[#D9B35A]/12'
-                        : 'border-white/15 hover:border-white/35'
-                    }`}>
-                    <span className={`block text-sm font-bold ${start.member_type === tp.value ? 'text-[#E9CF8E]' : 'text-white/85'}`}>{tp.title}</span>
-                    <span className="block text-[11px] text-white/55 mt-1">{tp.desc}</span>
-                  </button>
-                ))}
+                {(profiles.length ? profiles : [
+                  { slug: 'vendor', titles: { fr: t('vendorOnboarding.vendorTitle') }, descriptions: { fr: t('vendorOnboarding.vendorDesc') } },
+                  { slug: 'buyer', titles: { fr: t('vendorOnboarding.buyerTitle') }, descriptions: { fr: t('vendorOnboarding.buyerDesc') } },
+                ]).map((tp) => {
+                  const lang = (i18n.language || 'fr').slice(0, 2);
+                  return (
+                    <button type="button" key={tp.slug} data-testid={`member-type-${tp.slug}`}
+                      onClick={() => setStart({ ...start, member_type: tp.slug })}
+                      className={`text-left p-4 rounded-xl border transition-colors ${
+                        start.member_type === tp.slug
+                          ? 'border-[#D9B35A] bg-[#D9B35A]/12'
+                          : 'border-white/15 hover:border-white/35'
+                      }`}>
+                      <span className={`block text-sm font-bold ${start.member_type === tp.slug ? 'text-[#E9CF8E]' : 'text-white/85'}`}>{tp.titles?.[lang] || tp.titles?.fr}</span>
+                      <span className="block text-[11px] text-white/55 mt-1">{tp.descriptions?.[lang] || tp.descriptions?.fr}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -139,11 +155,30 @@ export default function VendorOnboardingPage() {
               <div><label className={labelCls}>{t('vendorOnboarding.email')}</label>
                 <input required type="email" className={inputCls} data-testid="vendor-email-input" value={start.email} onChange={(e) => setStart({ ...start, email: e.target.value })} placeholder={t('vendorOnboarding.emailPh')} /></div>
               <div><label className={labelCls}>{t('vendorOnboarding.phone')}</label>
-                <input required className={inputCls} value={start.phone} onChange={(e) => setStart({ ...start, phone: e.target.value })} placeholder="06 00 00 00 00" /></div>
+                <PhoneInput dial={dial} number={phoneNum} onDialChange={setDial} onNumberChange={setPhoneNum} testId="vendor-phone-input" /></div>
+              <div><label className={labelCls}>{t('vendorOnboarding.country')}</label>
+                <CountrySelect value={start.country} testId="vendor-country-select"
+                  onChange={(code) => setStart({ ...start, country: code })} /></div>
               <div className="sm:col-span-2"><label className={labelCls}>{t('vendorOnboarding.siret')}</label>
                 <input required minLength={9} className={inputCls} data-testid="vendor-siret-input" value={start.siret} onChange={(e) => setStart({ ...start, siret: e.target.value })} placeholder={t('vendorOnboarding.siretPh')} /></div>
             </div>
-            <PlanPicker value={start.plan_slug} onChange={(slug) => setStart({ ...start, plan_slug: slug })} />
+            <PlanPicker value={start.plan_slug} memberType={start.member_type} onPlansLoaded={setPlans}
+              onChange={(slug) => setStart({ ...start, plan_slug: slug })} />
+            {(() => {
+              const plan = plans.find((p) => p.slug === start.plan_slug);
+              if (!plan) return null;
+              const rate = vatRateFor(start.country);
+              const ht = (plan.price_cents || 0) / 100;
+              const ttc = ht * (1 + rate / 100);
+              const fmt = (v) => v.toFixed(2).replace('.', ',');
+              return (
+                <p className="text-xs text-center font-semibold text-[#E9CF8E]" data-testid="vat-total-line">
+                  {rate > 0
+                    ? t('vendorOnboarding.vatTotal', { ht: fmt(ht), rate: String(rate).replace('.', ','), ttc: fmt(ttc) })
+                    : t('vendorOnboarding.vatTotalExempt', { ht: fmt(ht) })}
+                </p>
+              );
+            })()}
             <button type="submit" disabled={busy} data-testid="vendor-pay-btn"
               className="w-full h-13 py-3.5 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}>

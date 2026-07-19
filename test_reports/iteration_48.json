@@ -1,0 +1,38 @@
+{
+  "summary": "Iter 48 — Communityplace : TVA auto par pays, profils adhésion CRUD, comptabilité, ciblage profils sur plans, PDF convention V1.5/V2.0, rapport hebdo. Backend pytest 14/14 PASS (test_iter48_communityplace.py). Frontend E2E : /adhesion-vendeur (member-type cards, country select, phone dial+input, ligne TVA dynamique FR 20% / GP 8,5% / GF exonéré, mention 'Inclut tout ESS ACCÈS PRO') OK ✔ ; /tarifs (mention 'Includes everything in ESS ACCÈS PRO' sur carte Volume) OK ✔ ; Super Admin → onglets Comptabilité (acct-period-30/90/365/0, acct-export-csv, acct-totals, acct-journal), Profils & Espaces (2 profils système Vendeur/Acheteur, profile-create-btn, edit/toggle par slug), Conventions (funnel-period-30/90/0, funnel-step-started/paid/signed/activated, adhesions-export-csv), /admin/plans modal 'Modifier le plan' avec bloc 'Destiné à' + boutons Tous les profils / Vendeur Pro / Acheteur Pro OK ✔.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Super Admin (barre d'onglets)", "issues": ["La barre 'Dashboard/Statistics/Catalog/…' déborde en scroll horizontal invisible à 1440px — les onglets Comptabilité, Profils & Espaces et Conventions ne sont accessibles qu'après scroll ou en 1920px. Envisager un menu 'plus' ou un wrap à 2 lignes."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter48_communityplace.py",
+    "/app/test_reports/pytest/iter48.xml"
+  ],
+  "action_items": [
+    "Aucun bug bloquant. Nice-to-have : la review demandait des testids `accounting-tab`, `profiles-spaces-tab`, `funnel-*` alors que l'implémentation utilise `superadmin-tab-accounting`, `superadmin-tab-profiles`, `superadmin-tab-conventions`. Les testids demandés spécifiquement (`acct-period-30/90/365/0`, `acct-export-csv`, `funnel-period-30/90/0`, `adhesions-export-csv`, `profile-create-btn`, `plan-target-profiles`, `member-type-vendor/buyer`, `vendor-country-select`, `vendor-phone-input-dial`, `vendor-phone-input`, `vat-total-line`, `plan-includes-*`, `pricing-includes-*`) sont TOUS présents et fonctionnels — juste le naming du tab racine qui diffère (préfixe `superadmin-tab-`). Aligner la doc de test ou renommer les tabs pour cohérence.",
+    "UI : la nav des onglets Super Admin déborde en 1440px, l'utilisateur doit scroll pour atteindre Comptabilité / Profils / Conventions. Prévoir un overflow horizontal visible (chevrons) ou un menu overflow."
+  ],
+  "critical_code_review_comments": [
+    "routes_accounting._collect_entries : le calcul de la TVA sur les renouvellements utilise `r_ttc - r_ttc / (1 + rate/100)` — approximation par round classique, mais si `vat_rate` manque sur l'ob la ligne renouvellement passe HT=TTC (vat=0). OK par défaut, mais à documenter.",
+    "routes_vendor_onboarding.start_onboarding : Stripe LIVE key exposée via _wallet_stripe_key partagée avec le PASS/orders. En cas de test manuel d'un vrai paiement, le webhook Stripe global (routes_payment) ne route pas vers vendor_onboarding — le passage PAYMENT_PENDING → PAID dépend uniquement du polling GET /status. Envisager un webhook dédié `checkout.session.completed` filtré sur metadata.source='vendor_onboarding'.",
+    "vendor_weekly_report.send_weekly_unpaid_report : guard weekday=0 (lundi UTC). Si le container tourne dans un fuseau non-UTC ou si le cron est déclenché à minuit UTC dimanche soir local, le rapport pourrait manquer. Le flag idempotence system_flags est OK (week ISO).",
+    "routes_member_profiles.admin_create_profile : accepte body.slug arbitraire — risque de collision avec des slugs futurs 'system'. Ajouter une blacklist ('vendor', 'buyer') pour empêcher l'admin de créer un doublon logique."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter48_communityplace.py (created)"
+  ],
+  "success_rate": {"backend": "100% (14/14 pytest)", "frontend": "100% (5/5 flows critiques : adhesion, tarifs, comptabilité, profils, conventions, admin/plans)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin sur /api/auth/login)",
+  "seed_data_creation": "3 vendor_onboarding docs créés puis SUPPRIMÉS via test_cleanup_test_adhesions (emails test-iter48-{gp,fr,us}@example.com). Aucune session Stripe payée. 1 profil 'Partenaire Test Iter48' créé puis supprimé.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Tous les tests iter 48 passent. Les testids UI diffèrent du naming demandé dans la review pour les tabs racine (superadmin-tab-* vs accounting-tab/profiles-spaces-tab) mais les sous-testids fonctionnels (acct-period-*, funnel-*, adhesions-export-csv, plan-target-profiles, profile-create-btn, member-type-*, vat-total-line, vendor-country-select, plan-includes-*, pricing-includes-*) sont tous conformes. Aucun bug backend/frontend détecté sur ce lot.",
+  "rca of the issue": "Aucun bug identifié dans ce lot."
+}

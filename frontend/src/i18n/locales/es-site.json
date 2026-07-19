@@ -276,7 +276,9 @@
     "qui_peut_adherer_answer": "Cualquier estructura profesional (registro obligatorio): cooperativas, asociaciones ESS, pymes, artesanos, restauradores, tiendas, colectividades.",
     "comment_se_calculent_les": "¿Cómo se calculan los precios mutualizados?",
     "comment_answer": "Los precios resultan de la fuerza colectiva de los miembros: volúmenes agregados, contribuciones y servicios mutualizados de la red. No se trata de descuentos ni promociones, sino de condiciones económicas estructurales.",
-    "parler_a_un_conseiller": "Hablar con un asesor"
+    "parler_a_un_conseiller": "Hablar con un asesor",
+    "inclut_volume": "Incluye todo ESS ACCÈS PRO",
+    "inclut_impact": "Incluye todo ESS VOLUME PRO"
   },
   "logiscop": {
     "badge": "Logística cooperativa",

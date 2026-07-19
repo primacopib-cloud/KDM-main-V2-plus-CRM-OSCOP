@@ -276,7 +276,9 @@
     "qui_peut_adherer_answer": "Any professional structure (business registration required): cooperatives, SSE associations, SMEs, artisans, restaurateurs, grocers, local authorities.",
     "comment_se_calculent_les": "How are pooled prices calculated?",
     "comment_answer": "Prices result from the members' collective strength: aggregated volumes, contributions and pooled network services. These are neither discounts nor promotions, but structural economic conditions.",
-    "parler_a_un_conseiller": "Talk to an advisor"
+    "parler_a_un_conseiller": "Talk to an advisor",
+    "inclut_volume": "Includes everything in ESS ACCÈS PRO",
+    "inclut_impact": "Includes everything in ESS VOLUME PRO"
   },
   "logiscop": {
     "badge": "Cooperative logistics",

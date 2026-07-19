@@ -26,7 +26,7 @@ export default function VendorActivationPage() {
       if (!r.ok) throw new Error(d.detail || 'Activation impossible');
       toast.success(t('vendorOnboarding.actSuccess'));
       setTimeout(() => {
-        window.location.href = d.user?.role === 'buyer' ? '/espace-acheteur?bienvenue=1' : '/espace-vendeur?bienvenue=1';
+        window.location.href = (d.user?.space_route || (d.user?.role === 'buyer' ? '/espace-acheteur' : '/espace-vendeur')) + '?bienvenue=1';
       }, 800);
     } catch (err) { toast.error(err.message); setBusy(false); }
   };

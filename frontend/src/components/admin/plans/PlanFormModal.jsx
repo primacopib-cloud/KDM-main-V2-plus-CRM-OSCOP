@@ -24,10 +24,27 @@ export const EMPTY_PLAN = {
   visible: true,
   visible_from: null,
   visible_until: null,
+  target_profiles: ['all'],
 };
 
 export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) => {
   const [data, setData] = useState(initialData || EMPTY_PLAN);
+  const [profileChoices, setProfileChoices] = useState([]);
+
+  useEffect(() => {
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/member-profiles`)
+      .then((r) => r.json())
+      .then((d) => setProfileChoices((d.profiles || []).map((p) => ({ slug: p.slug, label: p.titles?.fr || p.slug }))))
+      .catch(() => setProfileChoices([{ slug: 'vendor', label: 'Vendeur Pro' }, { slug: 'buyer', label: 'Acheteur Pro' }]));
+  }, []);
+
+  const toggleTarget = (slug) => {
+    const current = data.target_profiles || ['all'];
+    if (slug === 'all') return setData({ ...data, target_profiles: ['all'] });
+    let next = current.filter((s) => s !== 'all');
+    next = next.includes(slug) ? next.filter((s) => s !== slug) : [...next, slug];
+    setData({ ...data, target_profiles: next.length ? next : ['all'] });
+  };
   const [featuresText, setFeaturesText] = useState(
     (initialData?.features || []).join('\n')
   );
@@ -234,6 +251,24 @@ export const PlanFormModal = ({ open, onClose, onSave, initialData, isEdit }) =>
                 onCheckedChange={(v) => setData({ ...data, visible: v })}
               />
               <Label className="text-white/80">Visible (page publique)</Label>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-white/80">Destiné à (profils d'adhésion)</Label>
+            <div className="flex flex-wrap gap-2 mt-1.5" data-testid="plan-target-profiles">
+              {[{ slug: 'all', label: 'Tous les profils' }, ...profileChoices].map((c) => {
+                const selected = (data.target_profiles || ['all']).includes(c.slug);
+                return (
+                  <button type="button" key={c.slug} onClick={() => toggleTarget(c.slug)}
+                    data-testid={`plan-target-${c.slug}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                      selected ? 'bg-[#D9B35A]/20 border-[#D9B35A] text-[#E9CF8E]' : 'border-white/20 text-white/60 hover:border-white/40'
+                    }`}>
+                    {c.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
