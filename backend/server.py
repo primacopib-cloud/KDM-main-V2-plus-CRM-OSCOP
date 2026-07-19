@@ -444,6 +444,13 @@ set_legal_matrix_database(db)
 set_consultations_database(db)
 app.include_router(legal_matrix_router)
 app.include_router(consultations_router)
+
+from routes_bids import bids_router, set_bids_database
+from routes_consultation_award import award_router, set_award_database
+set_bids_database(db)
+set_award_database(db)
+app.include_router(bids_router)
+app.include_router(award_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)

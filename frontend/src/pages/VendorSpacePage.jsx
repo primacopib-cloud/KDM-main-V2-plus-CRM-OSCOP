@@ -25,6 +25,7 @@ import { ProductActions } from '../components/vendor/ProductActions';
 import { VendorDashboardTab } from '../components/vendor/VendorDashboardTab';
 import { VendorInvoicesTab } from '../components/vendor/VendorInvoicesTab';
 import { VendorCpcTab } from '../components/vendor/VendorCpcTab';
+import { VendorConsultationsTab } from '../components/vendor/VendorConsultationsTab';
 import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
 import { VendorContractsTab } from '../components/vendor/VendorContractsTab';
 import { VendorSuspendedNotice } from '../components/vendor/VendorSuspendedNotice';
@@ -264,6 +265,9 @@ const VendorSpacePage = () => {
             <TabsTrigger value="cpc" className="gap-2" data-testid="vendor-tab-cpc">
               <Ticket className="w-4 h-4" /> CPC
             </TabsTrigger>
+            <TabsTrigger value="consultations" className="gap-2" data-testid="vendor-tab-consultations">
+              <TrendingUp className="w-4 h-4" /> Consultations
+            </TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
@@ -408,6 +412,11 @@ const VendorSpacePage = () => {
           {/* CPC Tab */}
           <TabsContent value="cpc">
             <VendorCpcTab />
+          </TabsContent>
+
+          {/* Consultations Tab */}
+          <TabsContent value="consultations">
+            <VendorConsultationsTab />
           </TabsContent>
         </Tabs>
       </main>

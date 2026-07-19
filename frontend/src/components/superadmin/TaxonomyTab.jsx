@@ -17,7 +17,7 @@ const Panel = ({ icon: Icon, title, items, renderLabel, onAdd, onDelete, addForm
         <div key={it.id} className="flex items-center justify-between gap-2 py-2" data-testid={`${testId}-item-${it.id}`}>
           <span className="text-sm text-[#1F2A3A]">{renderLabel(it)}</span>
           <div className="flex items-center gap-2">
-            {it.builtin && <span className="text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded-full bg-black/5 opacity-50">standard</span>}
+            {it.builtin && <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#451F6B]/10 text-[#451F6B] border border-[#451F6B]/25">standard</span>}
             <button
               type="button"
               onClick={() => onDelete(it)}

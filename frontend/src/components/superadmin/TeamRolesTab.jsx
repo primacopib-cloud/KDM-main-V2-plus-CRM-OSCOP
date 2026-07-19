@@ -72,8 +72,8 @@ export const TeamRolesTab = () => {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase"
-                    style={{ color, background: `${color}18` }}
+                    className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide"
+                    style={{ color, background: `${color}22`, border: `1px solid ${color}66` }}
                     data-testid={`team-role-badge-${m.id}`}
                   >
                     {m.role || 'ADMIN'}

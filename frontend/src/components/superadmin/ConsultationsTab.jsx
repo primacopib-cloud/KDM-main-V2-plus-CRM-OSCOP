@@ -3,6 +3,7 @@ import { Gavel, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { LegalMatrixPanel } from './LegalMatrixPanel';
+import { EvaluationModal } from './EvaluationModal';
 
 const opts = () => ({ headers: getAuthHeaders(), credentials: 'include' });
 const jsonOpts = (method, body) => ({ method, headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, credentials: 'include', body: JSON.stringify(body) });
@@ -77,6 +78,7 @@ const CreateModal = ({ onClose, onSaved }) => {
 export const ConsultationsTab = () => {
   const [items, setItems] = useState([]);
   const [modal, setModal] = useState(false);
+  const [evalC, setEvalC] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${API}/admin/consultations`, opts()).then((r) => r.json()).then((d) => setItems(d.items || [])).catch(() => {});
@@ -123,6 +125,9 @@ export const ConsultationsTab = () => {
     if (c.status === 'INSCRIPTIONS_OUVERTES') out.push(<B key="r" onClick={() => act(`/admin/consultations/${c.id}/transition`, { to: 'EN_COURS' }, 'Consultation en cours')} label="Démarrer" gold />);
     if (c.status === 'EN_COURS') out.push(<B key="c" onClick={() => act(`/admin/consultations/${c.id}/transition`, { to: 'CLOTUREE' }, 'Clôturée')} label="Clôturer" />);
     if (c.status === 'CLOTUREE') out.push(<B key="e" onClick={() => act(`/admin/consultations/${c.id}/transition`, { to: 'EN_EVALUATION' }, 'En évaluation')} label="Évaluer" />);
+    if (['CLOTUREE', 'EN_EVALUATION', 'ATTRIBUEE', 'SANS_SUITE', 'ARCHIVEE', 'ANNULEE'].includes(c.status)) {
+      out.push(<B key="ev" onClick={() => setEvalC(c)} label={c.status === 'EN_EVALUATION' ? 'Scores & attribution' : 'Offres · PV · Exports'} testid={`cons-eval-${c.id}`} gold={c.status === 'EN_EVALUATION'} />);
+    }
     if (['PUBLIEE', 'INSCRIPTIONS_OUVERTES', 'EN_COURS'].includes(c.status)) out.push(<B key="x" onClick={() => cancel(c)} label="Annuler" testid={`cons-cancel-${c.id}`} />);
     return out;
   };
@@ -164,6 +169,7 @@ export const ConsultationsTab = () => {
         ))}
       </div>
       {modal && <CreateModal onClose={() => setModal(false)} onSaved={() => { setModal(false); load(); }} />}
+      {evalC && <EvaluationModal consultation={evalC} onClose={() => setEvalC(null)} onChanged={load} />}
     </div>
   );
 };

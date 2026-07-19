@@ -74,8 +74,8 @@ export const EcosystemPanel = () => {
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-medium text-[#1F2A3A] leading-tight">{app.label.split('—')[0].trim()}</p>
                   <span
-                    className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-                    style={{ color: st.color, background: `${st.color}18` }}
+                    className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full shrink-0"
+                    style={{ color: st.color, background: `${st.color}22`, border: `1px solid ${st.color}66` }}
                     data-testid={`eco-status-${app.name}`}
                   >
                     <Icon size={10} /> {st.label}

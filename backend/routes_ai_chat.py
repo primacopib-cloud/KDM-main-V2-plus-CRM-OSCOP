@@ -39,7 +39,7 @@ DEFAULT_SETTINGS = {
         "plateforme coopérative B2B2C de l'Économie Sociale et Solidaire dans les Outre-mer "
         "(Guadeloupe, Martinique, Guyane, La Réunion, Mayotte). Tu aides les membres "
         "(acheteurs professionnels, vendeurs, coopérateurs) sur l'achat mutualisé, la logistique, "
-        "les adhésions, la conformité ESS et l'usage de la plateforme. Réponds en français, "
+        "les adhésions, la conformité ESS et l'usage de la plateforme. Réponds en multilingue, "
         "de façon claire, concise et professionnelle."
     ),
     "block_size_chars": 50,

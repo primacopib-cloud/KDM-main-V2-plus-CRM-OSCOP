@@ -1,0 +1,44 @@
+{
+  "summary": "Iter 50 — Validation E2E complète Consultations Compétitives (lots 1.1→1.6). Backend pytest 36/37 PASSED, 1 FAILED = BUG confirmé (exactement celui anticipé dans la review) : après clôture MANUELLE via /transition {to:CLOTUREE}, les offres SCELLEES ne sont pas déchiffrées automatiquement — amount_ht_cents reste null dans GET /admin/consultations/{cid}/bids. La fonction open_sealed_bids() n'est appelée que depuis _auto_close() (route bids GET/POST) et pas depuis routes_consultations.py::transition(). Reste du scénario 100% conforme : CPC (packs 50/2500·150/6000·500/15000 HT, checkout.stripe.com renvoyé sans paiement réel), matrice VERT/ROUGE, workflow BROUILLON→ATTRIBUEE, débit CPC idempotent (20/entry), 3 tours d'enchère décroissante, garde 4e offre 409, offre supérieure 400, my-status rang=1 gap=0, ROUGE force SCELLEE, admin bids 403 avant clôture (journalisé), remplacement scellé fingerprint changé, scoring pondéré 35/20/15/15/10/5 → total=80.00 exact (35+16+10.5+9+5+4.5), award + attestation_id (nominative_attestations status PROJET), winner-identity retourne le nom (Distillerie Damoiseau), PV PDF 200 (%PDF signature valide), export.csv/json 200, /audit/verify {valid:true}, garde catégorie NON_CLASSE bloque publication 409, verrouillage critères après publication 409, annulation → recrédit CPC automatique idempotent. Frontend : vendor login → /vendor (redirige d'abord vers /dashboard mais /vendor accessible directement, tabs CPC + Consultations avec data-testid corrects, 3 packs visibles, solde 17 CREDI'SCOP affiché, badges VERT visibles). Admin login /admin/connexion → /superadmin, onglet Consultations affiche 'MATRICE JURIDIQUE PRODUIT (L.442-8 — VERSIONNÉE)' + form de classification + statuts ORANGE/VERT/ROUGE. Cleanup : 9 consultations TEST_iter50 + 4 legal_matrix + 6 cpc_ledger entries supprimés via script Mongo direct.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/admin/consultations/{cid}/transition {to:CLOTUREE} (procédure SCELLEE)", "issue": "Clôture manuelle ne déchiffre PAS les offres scellées : amount_ht_cents reste null après passage à CLOTUREE via /transition. open_sealed_bids() n'est invoqué que dans routes_bids._auto_close (basé sur closes_at). Fix requis : appeler open_sealed_bids(cid) dans routes_consultations.transition() quand c.procedure==SCELLEE et body.to==CLOTUREE. Sans ce fix, /admin/bids retourne des bids avec amount_ht_cents=None après clôture manuelle → scoring impossible.", "priority": "CRITICAL"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Login vendeur /connexion", "issue": "Après login vendor-pro, redirection vers /dashboard au lieu de /vendor (le lien 'Vendor Space' est présent dans la nav). Fonctionnel mais l'UX n'amène pas directement au dashboard vendeur.", "affected_selectors": ["POST /api/auth/login redirect"]}
+    ],
+    "design_issues": [
+      {"screen": "/vendor tabs", "issues": ["Nomenclature incohérente : backend appelle 'CPC' (Crédits de Participation aux Consultations), le badge en haut affiche 'CREDI'SCOP' — clarifier l'un ou l'autre pour éviter la confusion utilisateur."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter50_consultations_e2e.py",
+    "/app/test_reports/pytest/iter50.xml"
+  ],
+  "action_items": [
+    "CRITICAL — routes_consultations.py::transition() : quand body.to=='CLOTUREE' et c['procedure']=='SCELLEE', appeler `from routes_bids import open_sealed_bids; await open_sealed_bids(cid)` après update DB. Sinon les consultations scellées clôturées manuellement (au lieu d'auto-fermées par date) ne peuvent pas être évaluées.",
+    "Nice-to-have : redirection post-login vendeur → /vendor directement (au lieu de /dashboard).",
+    "Nice-to-have : harmoniser 'CPC' vs 'CREDI'SCOP' dans l'UI vendeur."
+  ],
+  "critical_code_review_comments": [
+    "routes_consultations.transition() n'a aucune awareness de la procédure — le fix pour le bug scellée doit être ajouté (voir action_items). Suggestion : centraliser la logique de clôture dans une seule fonction `close_consultation(c)` utilisée à la fois par _auto_close et par transition.",
+    "routes_bids.submit_bid : la vérification 'offre inférieure à la précédente' compare uniquement à my_bids[-1] mais après sort by round asc, [-1] est bien la plus récente. OK. Cependant si round est manipulé (concurrence), un lock optimiste par version serait plus sûr.",
+    "routes_bids._auto_close : n'utilise pas de verrou — deux appels concurrents peuvent double-appeler open_sealed_bids. La fonction elle-même est idempotente (filtre amount_ht_cents=None) donc OK.",
+    "routes_cpc.py::_stripe_key raise 503 non-catch si Stripe non configuré : dans /checkout on créera 503 si oscop key absente. OK pour prod avec key configurée.",
+    "routes_consultation_award.compute_scores : `weights[cr['key']] = cr['weight']` — si un scoring body n'envoie pas tous les critères, sc[k]=0 pour ces critères = pénalisation silencieuse. Ajouter warning ou 400 si critères manquants côté admin."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter50_consultations_e2e.py (créé, 37 tests)"
+  ],
+  "success_rate": {"backend": "97% (36/37)", "frontend": "100% (smoke tests : vendor tabs CPC/Consultations OK, admin Consultations panel OK)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal='admin' requis), vendor-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "Créées puis SUPPRIMÉES : 9 consultations TEST_iter50 (green, red, unclass, cancel + précédents runs), 4 entrées legal_matrix (test-emballages-*, test-riz-*), 6 mouvements cpc_ledger liés aux consultations test. Les grants PROMO_GRANT du vendeur restent dans le ledger (pas de consultation_id). Compteur counters._id='consultation_2026' incrémenté de +9 (non remis à valeur d'origine — remise manuelle possible si nécessaire).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Le seul bug bloquant est routes_consultations.transition() qui ne déchiffre pas les offres scellées à la clôture manuelle. Après fix, relancer TestSealedRed::test_07_close_manual_and_bids_visible pour valider. Tous les autres flows sont validés E2E. Solde vendeur au moment du finish : 17 CPC (initial ~7 + 2×50 grants − 4×20 registrations + 1 refund 20 = 17). Le fichier /app/backend/tests/test_iter50_consultations_e2e.py peut être ré-exécuté tel quel — les catégories sont uuid-suffixées donc pas de collision.",
+  "rca of the issue": "BUG : ouverture des offres scellées à la clôture manuelle.\n- Repro : créer consultation avec procedure ROUGE/SCELLEE → workflow jusqu'à EN_COURS → vendeur poste une offre (sealed_payload chiffré Fernet, amount_ht_cents=None) → admin POST /transition {to:CLOTUREE} → admin GET /bids retourne bid avec amount_ht_cents=None.\n- Cause : routes_consultations.transition() (ligne 248-267) fait un simple $set status=CLOTUREE. Seule routes_bids._auto_close() (ligne 39-47) appelle open_sealed_bids(cid) après passage à CLOTUREE, mais _auto_close se déclenche uniquement quand closes_at ≤ now sur GET /consultations, GET /my-status, POST /register, POST /bid — donc jamais après une clôture manuelle par admin.\n- Fix suggéré : dans routes_consultations.py::transition, juste après le db.consultations.update_one, ajouter :\n  if body.to == 'CLOTUREE' and c['procedure'] == 'SCELLEE':\n      from routes_bids import open_sealed_bids\n      await open_sealed_bids(cid)\n- Impact : sans ce fix, toute consultation SCELLEE clôturée manuellement (avant la date d'expiration) est bloquée en évaluation."
+}

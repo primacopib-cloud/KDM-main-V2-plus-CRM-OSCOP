@@ -88,7 +88,7 @@ export const BuyersTab = () => {
                 <td className="py-2.5 text-right whitespace-nowrap">
                   <button type="button" onClick={() => saveCredits(b)} data-testid={`buyer-save-credits-${b.id}`}
                     title="Enregistrer les crédits"
-                    className="p-1.5 rounded-lg opacity-50 hover:opacity-100 hover:bg-[#D9B35A]/15 text-[#B8860B] transition-all">
+                    className="p-1.5 rounded-lg bg-[#D9B35A]/15 border border-[#D9B35A]/35 text-[#B8860B] hover:bg-[#D9B35A]/30 transition-colors">
                     <Save size={14} />
                   </button>
                   <button type="button" onClick={() => toggleSuspend(b)} data-testid={`buyer-suspend-${b.id}`}

@@ -72,7 +72,7 @@ export const VendorCreditsTab = () => {
                     onChange={(e) => setEdits({ ...edits, [p.action]: e.target.value })}
                     data-testid={`pricing-input-${p.action}`} className={`${inputCls} w-20`} />
                   <button type="button" onClick={() => savePrice(p)} data-testid={`pricing-save-${p.action}`}
-                    className="p-1.5 rounded-lg opacity-50 hover:opacity-100 hover:bg-[#D9B35A]/15 text-[#B8860B]">
+                    className="p-1.5 rounded-lg bg-[#D9B35A]/15 border border-[#D9B35A]/35 text-[#B8860B] hover:bg-[#D9B35A]/30 transition-colors">
                     <Save size={14} />
                   </button>
                 </div>
@@ -96,7 +96,7 @@ export const VendorCreditsTab = () => {
                     onChange={(e) => setGrants({ ...grants, [v.id]: e.target.value })}
                     data-testid={`vendor-grant-input-${v.id}`} className={`${inputCls} w-20`} />
                   <button type="button" onClick={() => grant(v)} data-testid={`vendor-grant-btn-${v.id}`}
-                    className="p-1.5 rounded-lg opacity-50 hover:opacity-100 hover:bg-emerald-500/10 text-emerald-600">
+                    className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/20 transition-colors">
                     <Plus size={14} />
                   </button>
                 </div>
