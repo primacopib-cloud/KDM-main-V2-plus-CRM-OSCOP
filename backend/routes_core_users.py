@@ -60,6 +60,10 @@ async def create_quote_request(quote_data: QuoteRequestCreate):
     }
     await db.notifications.insert_one(notification)
 
+    import asyncio
+    from oscop_demandes_client import push_quote_to_oscop
+    asyncio.create_task(push_quote_to_oscop(db, quote_in_db.id))
+
     return {
         "id": quote_in_db.id,
         "company": quote_in_db.company,

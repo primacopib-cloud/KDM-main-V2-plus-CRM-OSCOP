@@ -405,6 +405,9 @@ from routes_crediscop import crediscop_router, set_crediscop_database
 from routes_ai_chat import ai_chat_router, set_ai_chat_database
 app.include_router(ai_chat_router)
 set_ai_chat_database(db)
+from routes_demandes_admin import demandes_admin_router, set_demandes_admin_database
+app.include_router(demandes_admin_router)
+set_demandes_admin_database(db)
 set_crediscop_database(db)
 app.include_router(crediscop_router)
 

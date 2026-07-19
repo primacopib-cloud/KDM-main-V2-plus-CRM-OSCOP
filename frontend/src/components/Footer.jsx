@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { partners } from '../data/mock';
-import { Mail, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf, Store } from 'lucide-react';
+import { Mail, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf, Store, ChevronDown, FileSpreadsheet } from 'lucide-react';
+import ContactForm from './ContactForm';
 
 const Footer = () => {
   const { t } = useTranslation();
+  const [quoteOpen, setQuoteOpen] = useState(false);
   return (
     <footer style={{
       background: 'linear-gradient(180deg, #221038 0%, #1A092D 100%)',
@@ -176,6 +178,33 @@ const Footer = () => {
         </div>
 
         <hr className="border-white/10 my-10" />
+
+        {/* Demande de devis — onglet dépliable */}
+        <div className="rounded-2xl border border-[#D9B35A]/30 overflow-hidden mb-10" data-testid="footer-quote-accordion">
+          <button
+            type="button"
+            onClick={() => setQuoteOpen((v) => !v)}
+            data-testid="footer-quote-toggle"
+            className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.04]"
+            style={{ background: 'rgba(217,179,90,0.08)' }}
+            aria-expanded={quoteOpen}
+          >
+            <span className="flex items-center gap-2.5 text-sm font-bold text-[#E9CF8E] uppercase tracking-wider">
+              <FileSpreadsheet className="w-4 h-4 text-[#D4AF37]" /> Demande de devis
+            </span>
+            <ChevronDown className={`w-4 h-4 text-[#D4AF37] transition-transform duration-300 ${quoteOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {quoteOpen && (
+            <div className="px-4 sm:px-6 py-6 border-t border-[#D9B35A]/20" data-testid="footer-quote-form">
+              <p className="text-white/60 text-xs mb-4">
+                Contactez-nous pour rejoindre la Communityplace ESS — votre demande est transmise à notre équipe commerciale.
+              </p>
+              <div className="max-w-3xl mx-auto">
+                <ContactForm />
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-white/50 text-xs">

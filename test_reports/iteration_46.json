@@ -1,0 +1,28 @@
+{
+  "summary": "Iter 46 — Communityplace 'Demande de devis' footer + O'SCOP push + Super Admin 'Demandes' tab FULLY VALIDATED. Backend 3/3 pytest PASS: (1) GET /api/admin/demandes/remote-tarifs returns tarif_achat.prix_ttc=25.02 with 6 tarifs_generaux; (2) POST /api/quotes (public) accepted with snake_case fields; (3) push_quote_to_oscop async task completes ~4s later — GET /api/admin/demandes/pushes shows TEST QA Footer with oscop_status='PUSHED' and non-null oscop_demande_id (74a184f8-…). Frontend E2E: footer-quote-toggle opens/closes accordion; contact@objectifscopoutremer.com present, NO phone regex match; Super Admin /superadmin → onglet 'Demandes' rendu (demandes-admin-tab, demandes-tarif-achat with '25.02 €', demandes-tarifs-list = 6 rows incl. default-1..default-5 + 1 UUID, demandes-pushes-log lists 'Marie Test qa.footer@example.com' twice with 'Transmise'). Tarif update E2E: default-1 (INACTIVE) prix modifié 30→31 → toast 'Tarif mis à jour sur la plateforme O'SCOP' → persisté après reload → RESTAURÉ à 30 via 2 étapes (car un premier essai avec reload=full page avait déjà commité +1). /assistant-ia (acheteur-pro) toujours accessible avec ai-chat-balance visible (76 UC). Aucun tarif actif touché, aucun tarif créé/supprimé.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter46_demandes.py",
+    "/app/test_reports/pytest/iter46.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ContactForm.jsx transforms camelCase (contactName) → snake_case (contact_name) at the api.core.js layer — OK, be aware if a new caller bypasses quoteAPI it must send contact_name.",
+    "push_quote_to_oscop is fire-and-forget via asyncio.create_task — success rate observed 100% (2/2 lines in logs: 'Devis … poussé vers Communityplace Demandes'), but no retry/backoff. The retry endpoint /api/admin/demandes/pushes/{id}/retry exists but relies on manual admin action. Consider a simple in-process retry (1-2 attempts) for transient network errors before marking ERROR.",
+    "routes_demandes_admin.list_pushes correctly excludes _id and coerces created_at to ISO — good.",
+    "DemandesAdminTab.jsx: page.reload() after saveTarif is not needed (load() is called after successful PUT), but not a bug. TarifRow renders switch without a title tooltip that says 'Actif' — visually only a small switch, could be confusing if used to bulk-toggle production tarifs. Since the review request explicitly warned NOT to activate/deactivate active tarifs, consider adding a confirmation modal for is_active toggle.",
+    "No visible 'Aucune demande' state issue: 6 pushes correctly listed with Transmise vs En attente icons/status colors.",
+    "PUSH_STATUS map only handles PUSHED and ERROR — items where oscop_status is null (never attempted) fall through to the default 'En attente' label. Acceptable but hard-code 'PENDING' as a real state for clarity."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter46_demandes.py (created)"
+  ],
+  "success_rate": {"backend": "100% (3/3)", "frontend": "100% (all acceptance criteria PASS)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin) ; acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "1 nouvelle demande de devis publique créée via POST /api/quotes (TEST QA Footer / Marie Test / qa.footer@example.com) → poussée sur objectifscopoutremer.com (oscop_demande_id=74a184f8-9aa9-4b69-8649-33a169879db3). default-1 tarif remis à prix_base=30 après manipulation temporaire (état identique à avant iter46).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Le journal des pushes contient désormais 2 lignes 'TEST QA Footer / qa.footer@example.com' (celle du main agent E1 précédent + celle de ce run). Le tarif inactif default-1 est bien à Prix HT 30 / Crédits 5 (état d'origine restauré). Les tarifs actifs (default-2..5) NON TOUCHÉS.",
+  "rca of the issue": "N/A — all acceptance criteria met."
+}

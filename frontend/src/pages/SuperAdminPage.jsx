@@ -21,6 +21,7 @@ import { AdminContractsTab } from '../components/superadmin/AdminContractsTab';
 import { EmailPreviewsTab } from '../components/superadmin/EmailPreviewsTab';
 import { EcosystemHealthTab } from '../components/superadmin/EcosystemHealthTab';
 import { AiChatAdminTab } from '../components/superadmin/AiChatAdminTab';
+import { DemandesAdminTab } from '../components/superadmin/DemandesAdminTab';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -181,6 +182,10 @@ export default function SuperAdminPage() {
 
           <TabsContent value="ai-chat">
             <AiChatAdminTab />
+          </TabsContent>
+
+          <TabsContent value="demandes">
+            <DemandesAdminTab />
           </TabsContent>
 
           <TabsContent value="ecosystem">
