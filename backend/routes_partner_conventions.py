@@ -122,15 +122,19 @@ async def send_convention(cid: str, admin: dict = Depends(require_admin)):
         "status": "SENT", "sign_token": token, "sent_at": datetime.now(timezone.utc).isoformat()}})
     link = f"{os.environ.get('FRONTEND_PUBLIC_URL', '')}/signature-partenariat?token={token}"
     from brevo_service import send_email
-    await send_email(
-        to_email=conv["partner_email"], to_name=conv["partner_name"],
-        subject=f"Convention de partenariat à signer — {conv['title']}",
-        html_content=f"""<h2 style="color:#451F6B;">Convention de partenariat</h2>
-        <p>Bonjour {conv['partner_name']},</p>
-        <p>O'SCOP Outremer vous invite à relire et signer électroniquement la convention
-        <strong>{conv['title']}</strong>.</p>
-        <p style="margin:24px 0;"><a href="{link}" style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Relire et signer la convention</a></p>""",
-        tags=["partner-convention"])
+    try:
+        await send_email(
+            to_email=conv["partner_email"], to_name=conv["partner_name"],
+            subject=f"Convention de partenariat à signer — {conv['title']}",
+            html_content=f"""<h2 style="color:#451F6B;">Convention de partenariat</h2>
+            <p>Bonjour {conv['partner_name']},</p>
+            <p>O'SCOP Outremer vous invite à relire et signer électroniquement la convention
+            <strong>{conv['title']}</strong>.</p>
+            <p style="margin:24px 0;"><a href="{link}" style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Relire et signer la convention</a></p>""",
+            tags=["partner-convention"])
+    except Exception as exc:
+        logger.warning("Envoi email convention %s : %s — lien de signature : %s", cid, exc, link)
+        return {"sent": False, "email_error": True, "sign_link": link}
     return {"sent": True}
 
 

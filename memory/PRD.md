@@ -1076,3 +1076,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - CSS global : select/option/optgroup en violet #2B1548 texte ivoire (les dropdowns natifs sont désormais lisibles).
 - routes_compliance_report.py : GET /api/admin/compliance-report/{YYYY-MM}.pdf (admin, 400 mois invalide, 403 non-admin — validés). PDF reportlab violet/or 3 sections : emails (total + par tag), garanties vendeur (contrats, actifs, total retenu), adhésions/registre (nouvelles, orgs, suspendus, radiés).
 - Bouton "Rapport conformité (PDF)" en haut du DashboardTab superadmin (download blob + toast). Validé E2E.
+
+## 2026-07-19 — Validation lot Messagerie / Annonces / Promos flash / Factures PDF / Conventions (iteration 49)
+- testing_agent : 17/17 tests backend PASS — /api/messages/* (directory, POST, inbox, sent, unread-count, read), /api/admin/announcements CRUD + /view public, /api/admin/flash-promos CRUD (validation dates 400 OK) + /api/public/flash-promos, /api/admin/accounting/fiscal-register, /api/admin/partner-conventions CRUD + /send + by-token, onboarding vendeur avec legal_form/first_name/last_name (session Stripe LIVE créée, non payée).
+- Facture PDF validée E2E : build_invoice_pdf (reportlab) + GET /api/admin/vendor-invoices/{number}/pdf → 200 application/pdf. Facture de test supprimée + compteur vendor_invoice_2026 remis à 0 (numérotation fiscale séquentielle intacte).
+- Correctifs post-test : label "Raison sociale *" (fr-site.json + fr-app.json, remplace "Dénomination de l'entreprise"), try/except Brevo sur POST /admin/partner-conventions/{cid}/send (retourne sign_link si email KO, token déjà sauvegardé).
+- UI validée screenshot : /adhesion-vendeur affiche Raison sociale / Statut juridique / Prénom / Nom du contact sans casser le layout. Bouton /admin/connexion a déjà data-testid="admin-login-submit-btn".
+- Règle d'Or vérifiée : tous les nouveaux fichiers < 500 lignes (routes_messages 97, routes_accounting 187, vendor_invoice_pdf 139, vat 38, routes_vendor_onboarding 455, VendorSpacePage 500).
+- Rapport : /app/test_reports/iteration_49.json
