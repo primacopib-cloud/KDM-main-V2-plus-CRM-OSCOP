@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 
 from auth import get_current_user_id
+from vendor_emails import send_warning_email, send_suspended_email, send_reactivated_email
 
 logger = logging.getLogger(__name__)
 
@@ -44,39 +45,13 @@ async def my_subscription(user_id: str = Depends(get_current_user_id)):
             "first_payment_failure_at": ob.get("first_payment_failure_at")}
 
 
-async def _send_mail(ob: dict, subject: str, html: str, tag: str):
-    try:
-        from brevo_service import send_email
-        await send_email(to_email=ob["email"], to_name=ob.get("contact_name"),
-                         subject=subject, html_content=html, tags=[tag])
-    except Exception as exc:
-        logger.warning("Email suspension %s : %s", ob.get("id"), exc)
-
-
-def _pay_btn(ob: dict) -> str:
-    link = ob.get("hosted_invoice_url") or ""
-    if not link:
-        return ""
-    return (f'<p style="margin:24px 0;"><a href="{link}" style="background:#D4AF37;color:#1F0A33;'
-            'padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">'
-            'Régulariser mon paiement</a></p>')
-
-
 async def suspend_vendor_access(ob: dict):
     now = datetime.now(timezone.utc).isoformat()
     await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
         "access_suspended": True, "suspended_at": now}})
     if ob.get("user_id"):
         await db.vendors.update_one({"id": ob["user_id"]}, {"$set": {"status": "SUSPENDED", "suspended_at": now}})
-    await _send_mail(
-        ob, "🔒 Espace vendeur suspendu — impayé de plus de 15 jours",
-        f"""<h2 style="color:#451F6B;">Votre espace vendeur est suspendu</h2>
-        <p>Bonjour {ob.get('contact_name')},</p>
-        <p>Malgré nos relances, le prélèvement de votre adhésion <strong>{ob.get('plan_name')}</strong>
-        est impayé depuis plus de {SUSPEND_DAYS} jours. L'accès à votre espace vendeur est suspendu.</p>
-        {_pay_btn(ob)}
-        <p style="color:#777;font-size:12px;">Votre espace sera réactivé automatiquement dès réception du paiement.</p>""",
-        "vendor-suspended")
+    await send_suspended_email(ob)
     try:
         from core_deps import create_notification
         await create_notification(
@@ -96,28 +71,8 @@ async def reactivate_vendor_access(ob: dict):
     if ob.get("user_id"):
         await db.vendors.update_one({"id": ob["user_id"], "status": "SUSPENDED"}, {"$set": {"status": "APPROVED"}})
     if ob.get("access_suspended"):
-        await _send_mail(
-            ob, "✅ Espace vendeur réactivé — merci pour votre paiement",
-            f"""<h2 style="color:#451F6B;">Votre espace vendeur est réactivé</h2>
-            <p>Bonjour {ob.get('contact_name')},</p>
-            <p>Votre paiement a bien été reçu : l'accès à votre espace vendeur
-            <strong>{ob.get('plan_name')}</strong> est de nouveau actif. Merci !</p>""",
-            "vendor-reactivated")
+        await send_reactivated_email(ob)
         logger.info("Espace vendeur %s réactivé après paiement", ob["company"])
-
-
-async def _send_warning(ob: dict, days: int):
-    await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
-        "suspension_warning_sent_at": datetime.now(timezone.utc).isoformat()}})
-    await _send_mail(
-        ob, "⚠ Dernier rappel — suspension de votre espace vendeur imminente",
-        f"""<h2 style="color:#451F6B;">Impayé depuis {days} jours</h2>
-        <p>Bonjour {ob.get('contact_name')},</p>
-        <p>Le prélèvement de votre adhésion <strong>{ob.get('plan_name')}</strong> est impayé depuis {days} jours.
-        Sans régularisation sous {max(SUSPEND_DAYS - days, 1)} jour(s), l'accès à votre espace vendeur
-        sera automatiquement suspendu.</p>
-        {_pay_btn(ob)}""",
-        "vendor-suspension-warning")
 
 
 async def check_vendor_suspensions(database):
@@ -138,6 +93,8 @@ async def check_vendor_suspensions(database):
             if days >= SUSPEND_DAYS and not ob.get("access_suspended"):
                 await suspend_vendor_access(ob)
             elif days >= WARNING_DAYS and not ob.get("suspension_warning_sent_at") and not ob.get("access_suspended"):
-                await _send_warning(ob, int(days))
+                await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
+                    "suspension_warning_sent_at": datetime.now(timezone.utc).isoformat()}})
+                await send_warning_email(ob, int(days), max(SUSPEND_DAYS - int(days), 1))
         except Exception as exc:
             logger.warning("Suspension check %s : %s", ob.get("id"), exc)

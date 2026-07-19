@@ -110,6 +110,11 @@ async def _scheduler_loop():
             await check_vendor_suspensions(_db)
         except Exception as exc:
             logger.exception("Scheduler vendor suspensions crashed: %s", exc)
+        try:
+            from vendor_emails import check_abandoned_onboardings
+            await check_abandoned_onboardings(_db)
+        except Exception as exc:
+            logger.exception("Scheduler abandoned onboardings crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

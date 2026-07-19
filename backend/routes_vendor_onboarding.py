@@ -1,6 +1,5 @@
 """Parcours d'adhésion Vendeur Pro : paiement CB (Stripe LIVE) → convention dynamique signée → activation → assistant produits gratuit."""
 import asyncio
-import base64
 import logging
 import os
 import secrets
@@ -221,27 +220,8 @@ async def sign_convention(oid: str, body: SignBody):
     return {"status": "SIGNED", "verification_code": signature["verification_code"]}
 
 
-async def _send_activation_email(ob: dict, activation_token: str, pdf: bytes | None = None):
-    from brevo_service import send_email
-    frontend = os.environ.get("FRONTEND_PUBLIC_URL", "")
-    link = f"{frontend}/activation-vendeur?token={activation_token}"
-    code = (ob.get("signature") or {}).get("verification_code", "")
-    html = f"""
-    <h2 style="color:#451F6B;">Bienvenue dans la Communityplace, {ob['contact_name']} !</h2>
-    <p>Votre adhésion <strong>{ob.get('plan_name')}</strong> est payée et votre convention tripartite est signée
-    (code de vérification : <strong>{code}</strong>{' — copie jointe' if pdf else ''}).</p>
-    <p>Dernière étape : activez votre espace vendeur et choisissez votre mot de passe :</p>
-    <p style="margin:24px 0;"><a href="{link}" style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Activer mon espace vendeur</a></p>
-    <p style="color:#777;font-size:12px;">Vous pourrez ensuite soumettre vos produits, guidé pas à pas par notre assistant COOP'IA (gratuit).</p>
-    """
-    attachments = [{"content": base64.b64encode(pdf).decode(), "name": f"convention-signee-{ob['id'][:8]}.pdf"}] if pdf else None
-    await send_email(to_email=ob["email"], to_name=ob["contact_name"],
-                     subject="Activez votre espace vendeur — convention signée ✔",
-                     html_content=html, tags=["vendor-activation"], attachments=attachments)
-
-
 async def _post_sign_tasks(oid: str, ob: dict, signature: dict, pdf: bytes, activation_token: str):
-    """GEDESS + email d'activation Brevo (avec convention signée en pièce jointe)."""
+    """GEDESS + email d'activation Brevo multilingue (avec convention signée en pièce jointe)."""
     try:
         from gedess_client import is_gedess_configured, gedess_upload_file
         if is_gedess_configured():
@@ -255,7 +235,8 @@ async def _post_sign_tasks(oid: str, ob: dict, signature: dict, pdf: bytes, acti
     except Exception as exc:
         logger.warning("Push GEDESS convention %s : %s", oid, exc)
     try:
-        await _send_activation_email({**ob, "id": oid, "signature": signature}, activation_token, pdf)
+        from vendor_emails import send_activation_email
+        await send_activation_email({**ob, "id": oid, "signature": signature}, activation_token, pdf)
     except Exception as exc:
         logger.warning("Email activation vendeur %s : %s", oid, exc)
 
@@ -317,7 +298,8 @@ async def handle_vendor_invoice_event(event_type: str, invoice: dict):
         if not ob.get("first_payment_failure_at"):
             failure_update["first_payment_failure_at"] = now
         await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": failure_update})
-        await _send_dunning_email(ob, invoice.get("hosted_invoice_url"))
+        from vendor_emails import send_dunning_email
+        await send_dunning_email(db, ob, invoice.get("hosted_invoice_url"))
         try:
             from core_deps import create_notification
             await create_notification(
@@ -328,38 +310,12 @@ async def handle_vendor_invoice_event(event_type: str, invoice: dict):
             pass
 
 
-async def _send_dunning_email(ob: dict, invoice_url: str | None):
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    if ob.get("dunning_sent_on") == today:
-        return
-    try:
-        from brevo_service import send_email
-        pay_link = invoice_url or ob.get("hosted_invoice_url") or ""
-        btn = f'<p style="margin:24px 0;"><a href="{pay_link}" style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Régulariser mon paiement</a></p>' if pay_link else ""
-        await send_email(
-            to_email=ob["email"], to_name=ob.get("contact_name"),
-            subject="⚠ Échec de prélèvement — régularisez votre adhésion Vendeur Pro",
-            html_content=f"""
-            <h2 style="color:#451F6B;">Prélèvement refusé</h2>
-            <p>Bonjour {ob.get('contact_name')},</p>
-            <p>Le prélèvement mensuel de votre adhésion <strong>{ob.get('plan_name')}</strong> a échoué.
-            Une nouvelle tentative automatique sera effectuée par notre prestataire de paiement,
-            et nous vous relancerons chaque jour jusqu'à régularisation.</p>
-            {btn}
-            <p style="color:#777;font-size:12px;">Sans régularisation, l'accès à votre espace vendeur pourra être suspendu.</p>
-            """,
-            tags=["vendor-dunning"])
-        await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {"dunning_sent_on": today}})
-        logger.info("Relance impayé envoyée à %s", ob["email"])
-    except Exception as exc:
-        logger.warning("Relance impayé %s : %s", ob["id"], exc)
-
-
 async def check_vendor_subscriptions(database):
     """Poll quotidien Stripe : synchronise le statut des abonnements et relance les impayés (1 email/jour)."""
     global db
     if db is None:
         db = database
+    from vendor_emails import send_dunning_email
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     cursor = db.vendor_onboarding.find(
         {"stripe_subscription_id": {"$ne": None}, "status": {"$in": ["SIGNED", "ACTIVATED"]},
@@ -372,7 +328,7 @@ async def check_vendor_subscriptions(database):
             await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
                 "subscription_status": sub.status, "sub_checked_on": today}})
             if sub.status in ("past_due", "unpaid"):
-                await _send_dunning_email({**ob, "subscription_status": sub.status}, ob.get("hosted_invoice_url"))
+                await send_dunning_email(db, {**ob, "subscription_status": sub.status}, ob.get("hosted_invoice_url"))
         except Exception as exc:
             logger.warning("Check abonnement %s : %s", ob["id"], exc)
 
@@ -396,23 +352,16 @@ async def admin_remind(oid: str, admin: dict = Depends(require_admin)):
     if not ob:
         raise HTTPException(status_code=404, detail="Adhésion introuvable")
     frontend = os.environ.get("FRONTEND_PUBLIC_URL", "")
-    from brevo_service import send_email
+    from vendor_emails import send_activation_email, send_sign_reminder_email, send_resume_email
+    lang = ob.get("locale") or "fr"
     if ob["status"] == "SIGNED":
-        await _send_activation_email(ob, ob.get("activation_token") or "", None)
+        await send_activation_email(ob, ob.get("activation_token") or "", None)
         kind = "activation"
     elif ob["status"] in ("PAID", "INFO_COMPLETED"):
-        link = f"{frontend}/adhesion-vendeur?step=paid&onboarding_id={oid}"
-        await send_email(to_email=ob["email"], to_name=ob.get("contact_name"),
-                         subject="Finalisez votre adhésion Vendeur Pro — signature de votre convention",
-                         html_content=f"<p>Bonjour {ob.get('contact_name')},</p><p>Votre paiement est bien enregistré. Il ne reste qu'à compléter et signer votre convention :</p><p style=\"margin:24px 0;\"><a href=\"{link}\" style=\"background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;\">Signer ma convention</a></p>",
-                         tags=["vendor-remind"])
+        await send_sign_reminder_email(ob, f"{frontend}/adhesion-vendeur?step=paid&onboarding_id={oid}&lang={lang}")
         kind = "signature"
     elif ob["status"] == "PAYMENT_PENDING":
-        link = f"{frontend}/adhesion-vendeur?plan={ob.get('plan_slug')}"
-        await send_email(to_email=ob["email"], to_name=ob.get("contact_name"),
-                         subject="Votre adhésion Vendeur Pro vous attend",
-                         html_content=f"<p>Bonjour {ob.get('contact_name')},</p><p>Votre adhésion <strong>{ob.get('plan_name')}</strong> n'a pas été finalisée. Reprenez votre inscription :</p><p style=\"margin:24px 0;\"><a href=\"{link}\" style=\"background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;\">Reprendre mon adhésion</a></p>",
-                         tags=["vendor-remind"])
+        await send_resume_email(ob)
         kind = "paiement"
     else:
         raise HTTPException(status_code=400, detail="Cette adhésion est déjà active")

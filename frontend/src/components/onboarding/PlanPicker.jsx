@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Star } from 'lucide-react';
+import { tData } from '@/i18n/tData';
 
 export const PlanPicker = ({ value, onChange }) => {
   const { t } = useTranslation();
@@ -43,7 +44,7 @@ export const PlanPicker = ({ value, onChange }) => {
               <ul className="mt-2.5 space-y-1">
                 {(p.features || []).slice(0, 3).map((f) => (
                   <li key={f} className="flex items-start gap-1.5 text-[10.5px] text-white/60 leading-snug">
-                    <Check className="w-3 h-3 mt-px shrink-0 text-[#7BC94E]" /> {f}
+                    <Check className="w-3 h-3 mt-px shrink-0 text-[#7BC94E]" /> {tData(f)}
                   </li>
                 ))}
               </ul>
