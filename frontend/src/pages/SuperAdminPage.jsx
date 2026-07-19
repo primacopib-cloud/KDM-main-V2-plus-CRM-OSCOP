@@ -23,6 +23,7 @@ import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
 import { AnnouncementsTab } from '../components/superadmin/AnnouncementsTab';
 import { FlashPromosTab } from '../components/superadmin/FlashPromosTab';
 import { CpcAdminTab } from '../components/superadmin/CpcAdminTab';
+import { ConsultationsTab } from '../components/superadmin/ConsultationsTab';
 import { PartnerConventionsTab } from '../components/superadmin/PartnerConventionsTab';
 import { AdminContractsTab } from '../components/superadmin/AdminContractsTab';
 import { EmailPreviewsTab } from '../components/superadmin/EmailPreviewsTab';
@@ -194,6 +195,10 @@ export default function SuperAdminPage() {
 
           <TabsContent value="cpc">
             <CpcAdminTab />
+          </TabsContent>
+
+          <TabsContent value="consultations">
+            <ConsultationsTab />
           </TabsContent>
 
           <TabsContent value="profiles">

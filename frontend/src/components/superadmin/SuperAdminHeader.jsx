@@ -2,7 +2,7 @@ import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins, LifeBuoy, BookUser, Handshake, FileSignature, Mail, Network, Sparkles, Send, Calculator, UsersRound, Megaphone, Zap, Ticket,
+  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins, LifeBuoy, BookUser, Handshake, FileSignature, Mail, Network, Sparkles, Send, Calculator, UsersRound, Megaphone, Zap, Ticket, Scale,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
@@ -62,6 +62,7 @@ const TABS = [
   { value: 'announcements', label: 'Annonces', icon: Megaphone },
   { value: 'promos', label: 'Promos flash', icon: Zap },
   { value: 'cpc', label: 'CPC', icon: Ticket },
+  { value: 'consultations', label: 'Consultations', icon: Scale },
   { value: 'accounting', label: 'Comptabilité', icon: Calculator },
   { value: 'profiles', label: 'Profils & Espaces', icon: UsersRound },
   { value: 'contracts', label: 'Contrats', icon: FileSignature },

@@ -435,6 +435,15 @@ set_cpc_database(db)
 set_cpc_admin_database(db)
 app.include_router(cpc_router)
 app.include_router(cpc_admin_router)
+
+from consultation_audit import set_audit_database
+from routes_legal_matrix import legal_matrix_router, set_legal_matrix_database
+from routes_consultations import consultations_router, set_consultations_database
+set_audit_database(db)
+set_legal_matrix_database(db)
+set_consultations_database(db)
+app.include_router(legal_matrix_router)
+app.include_router(consultations_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)

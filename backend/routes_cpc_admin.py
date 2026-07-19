@@ -29,6 +29,36 @@ async def _user_by_email(email: str) -> dict:
     return u
 
 
+DEFAULT_SETTINGS = {"standard_cost": 20, "interterritorial_cost": 40, "report_cost": 10, "low_balance_alert": True}
+
+
+async def get_cpc_settings() -> dict:
+    s = await db.cpc_settings.find_one({"_id": "settings"})
+    return {**DEFAULT_SETTINGS, **{k: v for k, v in (s or {}).items() if k != "_id"}}
+
+
+class SettingsBody(BaseModel):
+    standard_cost: int
+    interterritorial_cost: int
+    report_cost: int
+    low_balance_alert: bool = True
+
+
+@cpc_admin_router.get("/settings")
+async def read_settings(admin: dict = Depends(require_admin)):
+    return await get_cpc_settings()
+
+
+@cpc_admin_router.put("/settings")
+async def update_settings(body: SettingsBody, admin: dict = Depends(require_admin)):
+    if min(body.standard_cost, body.interterritorial_cost, body.report_cost) <= 0:
+        raise HTTPException(status_code=400, detail="Coûts invalides")
+    await db.cpc_settings.update_one({"_id": "settings"}, {"$set": {
+        **body.dict(), "updated_by": admin.get("email"),
+        "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+    return {"ok": True}
+
+
 class PackBody(BaseModel):
     label: str
     credits: int
@@ -146,3 +176,16 @@ async def admin_ledger(user_email: Optional[str] = None, admin: dict = Depends(r
 async def admin_purchases(admin: dict = Depends(require_admin)):
     items = await db.cpc_purchases.find({}, {"_id": 0}).sort("created_at", -1).limit(100).to_list(100)
     return {"items": items}
+
+
+@cpc_admin_router.get("/audit")
+async def audit_journal(consultation_id: Optional[str] = None, admin: dict = Depends(require_admin)):
+    q = {"consultation_id": consultation_id} if consultation_id else {}
+    items = await db.audit_journal.find(q, {"_id": 0}).sort("seq", -1).limit(200).to_list(200)
+    return {"items": items}
+
+
+@cpc_admin_router.get("/audit/verify")
+async def audit_verify(admin: dict = Depends(require_admin)):
+    from consultation_audit import verify_chain
+    return await verify_chain()

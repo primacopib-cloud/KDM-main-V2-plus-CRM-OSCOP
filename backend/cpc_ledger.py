@@ -1,5 +1,6 @@
 """Registre CPC append-only — solde = somme des écritures, aucune modification/suppression."""
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 
@@ -75,7 +76,39 @@ async def add_cpc_movement(user_id: str, mtype: str, qty: int, idempotency_key: 
         logger.info("CPC idempotence (course) : clé %s — écriture compensée", idempotency_key)
         return None
     logger.info("CPC %s %+d pour %s (solde %d) [%s]", mtype, qty, user_id, balance_after, reason[:60])
+    if qty < 0:
+        await _maybe_alert_low_balance(user_id, entry["balance_before"], balance_after)
     return entry
+
+
+async def _maybe_alert_low_balance(user_id: str, before: int, after: int):
+    """Email au vendeur quand son solde passe sous le coût d'une consultation standard (une fois par franchissement)."""
+    try:
+        s = await db.cpc_settings.find_one({"_id": "settings"}) or {}
+        if not s.get("low_balance_alert", True):
+            return
+        threshold = s.get("standard_cost", 20)
+        if not (before >= threshold > after):
+            return
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "full_name": 1, "name": 1})
+        if not user or not user.get("email"):
+            return
+        from brevo_service import send_email
+        await send_email(
+            to_email=user["email"], to_name=user.get("full_name") or user.get("name"),
+            subject="Solde CPC insuffisant pour une consultation standard",
+            html_content=f"""<h2 style="color:#451F6B;">Votre solde CPC est bas</h2>
+            <p>Bonjour,</p>
+            <p>Votre solde est de <strong>{after} CPC</strong>, en dessous du coût d'accès à une consultation
+            standard (<strong>{threshold} CPC</strong>).</p>
+            <p>Pour continuer à participer aux consultations de la centrale, rechargez votre compte depuis
+            votre Espace Vendeur, onglet CPC.</p>
+            <p style="margin:24px 0;"><a href="{os.environ.get('FRONTEND_PUBLIC_URL', '')}/vendor?tab=cpc"
+            style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Recharger mes CPC</a></p>""",
+            tags=["cpc-low-balance"])
+        logger.info("Alerte solde CPC bas envoyée à %s (%d CPC)", user["email"], after)
+    except Exception as exc:
+        logger.warning("Alerte solde CPC bas %s : %s", user_id, exc)
 
 
 async def freeze_cpc_account(user_id: str, reason: str):
