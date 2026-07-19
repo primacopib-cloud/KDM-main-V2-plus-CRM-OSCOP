@@ -114,20 +114,14 @@ const RegisterPage = () => {
         
         <div className="glass-panel rounded-[26px] p-8">
           <div className="text-center mb-6">
-            <div className="flex items-center justify-center gap-5 mb-4">
-              <img 
-                src={partners.kdmarche.logo} 
-                alt="KDMARCHE" 
-                className="h-44 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 3px 10px rgba(217,179,90,0.45))' }}
-              />
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
+                <img src={partners.kdmarche.logo} alt="KDMARCHE" className="h-16 w-auto object-contain" />
+              </div>
               <span className="text-white/40 text-2xl font-light">×</span>
-              <img 
-                src={partners.oscop.logo} 
-                alt="O'SCOP" 
-                className="h-28 w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 3px 10px rgba(212,175,55,0.45))' }}
-              />
+              <div className="bg-white rounded-2xl px-3 py-2 shadow-lg">
+                <img src={partners.oscop.logo} alt="O'SCOP" className="h-16 w-auto object-contain" />
+              </div>
             </div>
             <h1 className="text-2xl font-bold">{t('auth.create_account')}</h1>
             <p className="text-white/60 text-sm mt-1">{t('auth.register_subtitle')}</p>
