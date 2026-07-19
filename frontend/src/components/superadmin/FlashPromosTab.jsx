@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Zap, Plus, Trash2, Pencil, X } from 'lucide-react';
+import { Zap, Plus, Trash2, Pencil, X, Repeat } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
@@ -17,7 +17,7 @@ const toLocal = (iso) => (iso ? new Date(iso).toISOString().slice(0, 16) : '');
 const Modal = ({ initial, onClose, onSaved }) => {
   const [f, setF] = useState(initial
     ? { ...initial, starts_at: toLocal(initial.starts_at), ends_at: toLocal(initial.ends_at) }
-    : { title: '', description: '', discount_pct: 10, starts_at: toLocal(new Date().toISOString()), ends_at: '', placements: ['landing', 'kdmarche', 'member_spaces'], cta_url: '', active: true });
+    : { title: '', description: '', discount_pct: 10, starts_at: toLocal(new Date().toISOString()), ends_at: '', placements: ['landing', 'kdmarche', 'member_spaces'], cta_url: '', active: true, recurrence: null });
   const save = async () => {
     if (!f.title || !f.ends_at) return toast.error('Titre et date de fin requis');
     const body = { ...f, discount_pct: parseInt(f.discount_pct || 0, 10),
@@ -63,6 +63,16 @@ const Modal = ({ initial, onClose, onSaved }) => {
                 }`}>{p.label}</button>
             ))}
           </div>
+          <button type="button" onClick={() => setF({ ...f, recurrence: f.recurrence === 'weekly' ? null : 'weekly' })}
+            data-testid="promo-recurrence-toggle"
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-semibold border transition-colors ${
+              f.recurrence === 'weekly' ? 'bg-[#D9B35A]/15 border-[#D9B35A] text-[#E9CF8E]' : 'border-white/20 text-white/55 hover:text-white/80'
+            }`}>
+            <Repeat className="w-3.5 h-3.5" />
+            {f.recurrence === 'weekly'
+              ? 'Récurrence hebdomadaire activée — la promo se relance chaque semaine automatiquement'
+              : 'Activer la récurrence hebdomadaire (relance automatique chaque semaine)'}
+          </button>
           <button type="button" onClick={save} data-testid="promo-save-btn"
             className="w-full py-2.5 rounded-xl text-xs font-bold"
             style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}>
@@ -116,6 +126,11 @@ export const FlashPromosTab = () => {
               <div className="flex-1 min-w-[200px]">
                 <p className="text-sm font-bold text-white flex items-center gap-2">
                   {p.title} {p.discount_pct ? <span className="text-[#E9CF8E]">-{p.discount_pct} %</span> : null}
+                  {p.recurrence === 'weekly' && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#D9B35A]/15 text-[#E9CF8E]" data-testid={`promo-hebdo-badge-${p.id}`}>
+                      <Repeat className="w-2.5 h-2.5" /> HEBDO
+                    </span>
+                  )}
                   <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                     running ? 'bg-[#7BC94E]/15 text-[#7BC94E]' : ended ? 'bg-white/10 text-white/40' : p.active ? 'bg-[#60A5FA]/15 text-[#60A5FA]' : 'bg-red-500/15 text-red-400'
                   }`}>{running ? 'EN COURS' : ended ? 'TERMINÉE' : p.active ? 'PROGRAMMÉE' : 'MASQUÉE'}</span>

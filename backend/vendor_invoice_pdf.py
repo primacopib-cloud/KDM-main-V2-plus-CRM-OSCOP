@@ -11,12 +11,14 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from auth import get_current_user_id
 from lolodrive_helpers import require_admin
 from vat import vat_label
 
 logger = logging.getLogger(__name__)
 
 vendor_invoices_router = APIRouter(prefix="/api/admin/vendor-invoices", tags=["vendor-invoices"])
+my_invoices_router = APIRouter(prefix="/api/vendor/my-invoices", tags=["vendor-invoices"])
 
 db = None
 VIOLET = colors.HexColor("#451F6B")
@@ -136,3 +138,28 @@ async def invoice_pdf(number: str, admin: dict = Depends(require_admin)):
         raise HTTPException(status_code=404, detail="Facture introuvable")
     return Response(content=build_invoice_pdf(inv), media_type="application/pdf",
                     headers={"Content-Disposition": f'inline; filename="{number}.pdf"'})
+
+
+async def _user_email(user_id: str) -> str:
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1})
+    if not u or not u.get("email"):
+        raise HTTPException(status_code=404, detail="Compte introuvable")
+    return u["email"]
+
+
+@my_invoices_router.get("")
+async def my_invoices(user_id: str = Depends(get_current_user_id)):
+    """Factures du membre connecté (rattachées par email d'adhésion)."""
+    email = await _user_email(user_id)
+    items = await db.vendor_invoices.find({"email": email}, {"_id": 0}).sort("date", -1).limit(100).to_list(100)
+    return {"items": items}
+
+
+@my_invoices_router.get("/{number}/pdf")
+async def my_invoice_pdf(number: str, user_id: str = Depends(get_current_user_id)):
+    email = await _user_email(user_id)
+    inv = await db.vendor_invoices.find_one({"number": number, "email": email}, {"_id": 0})
+    if not inv:
+        raise HTTPException(status_code=404, detail="Facture introuvable")
+    return Response(content=build_invoice_pdf(inv), media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{number}.pdf"'})

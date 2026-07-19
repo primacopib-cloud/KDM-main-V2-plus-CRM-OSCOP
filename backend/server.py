@@ -422,8 +422,9 @@ set_member_profiles_database(db)
 from routes_accounting import accounting_router, set_accounting_database
 app.include_router(accounting_router)
 set_accounting_database(db)
-from vendor_invoice_pdf import vendor_invoices_router, set_vendor_invoices_database
+from vendor_invoice_pdf import vendor_invoices_router, my_invoices_router, set_vendor_invoices_database
 app.include_router(vendor_invoices_router)
+app.include_router(my_invoices_router)
 set_vendor_invoices_database(db)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)

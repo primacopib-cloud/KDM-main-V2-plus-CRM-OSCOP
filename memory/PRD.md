@@ -1084,3 +1084,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - UI validée screenshot : /adhesion-vendeur affiche Raison sociale / Statut juridique / Prénom / Nom du contact sans casser le layout. Bouton /admin/connexion a déjà data-testid="admin-login-submit-btn".
 - Règle d'Or vérifiée : tous les nouveaux fichiers < 500 lignes (routes_messages 97, routes_accounting 187, vendor_invoice_pdf 139, vat 38, routes_vendor_onboarding 455, VendorSpacePage 500).
 - Rapport : /app/test_reports/iteration_49.json
+
+## 2026-07-19 — Promos hebdo récurrentes + Factures espace vendeur + Pastille messages
+- Promo flash récurrente : champ `recurrence: "weekly"` (FlashPromoBody + PUT), `_roll_recurring_promos()` dans routes_announcements.py décale starts_at/ends_at de +7j (lazy roll appelé sur GET public + admin). Validé E2E : promo terminée J-3 automatiquement reprogrammée J+2→J+4. UI : toggle "Récurrence hebdomadaire" dans le modal + badge HEBDO (data-testid promo-recurrence-toggle / promo-hebdo-badge-{id}).
+- Factures vendeur : nouveau routeur `my_invoices_router` (/api/vendor/my-invoices + /{number}/pdf) dans vendor_invoice_pdf.py, rattachement par email du compte connecté, 401 non connecté / 404 facture d'autrui. UI : onglet "Mes factures" dans VendorSpacePage (composant VendorInvoicesTab.jsx, téléchargement blob PDF). Validé E2E curl (200 application/pdf) + screenshot.
+- Pastille messages non lus : MessagesNavLink accepte variant light/dark, ajouté au header VendorSpacePage (light) et BuyerSpacePage (dark). Déjà présent dans NavBar.
+- Règle d'Or : VendorSpacePage réduit de 501 → 432 lignes (extraction VendorDashboardTab.jsx).

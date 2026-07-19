@@ -22,6 +22,7 @@ import { BuyerInvoicesTab } from '../components/buyer/BuyerInvoicesTab';
 import { BuyerWalletTab } from '../components/buyer/BuyerWalletTab';
 import { BuyerModals } from '../components/buyer/BuyerModals';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
+import { MessagesNavLink } from '../components/MessagesNavLink';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -331,6 +332,9 @@ export default function BuyerSpacePage() {
           </nav>
           
           <div className="flex items-center gap-3">
+            {/* Messagerie interne */}
+            <MessagesNavLink />
+
             {/* Solde CREDI'SCOP */}
             <CrediscopBadge />
 

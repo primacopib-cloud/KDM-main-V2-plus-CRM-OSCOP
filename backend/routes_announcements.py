@@ -88,10 +88,32 @@ class FlashPromoBody(BaseModel):
     placements: List[str] = ["landing", "kdmarche", "member_spaces"]
     cta_url: Optional[str] = None
     active: bool = True
+    recurrence: Optional[str] = None  # None | weekly
+
+
+async def _roll_recurring_promos():
+    """Décale d'une semaine les promos hebdomadaires terminées (récurrence sans recréation manuelle)."""
+    from datetime import timedelta
+    now_dt = datetime.now(timezone.utc)
+    cursor = db.flash_promos.find(
+        {"recurrence": "weekly", "active": True, "ends_at": {"$lt": now_dt.isoformat()}}, {"_id": 0})
+    async for p in cursor:
+        try:
+            starts = datetime.fromisoformat(p["starts_at"].replace("Z", "+00:00"))
+            ends = datetime.fromisoformat(p["ends_at"].replace("Z", "+00:00"))
+            while ends < now_dt:
+                starts += timedelta(days=7)
+                ends += timedelta(days=7)
+            await db.flash_promos.update_one({"id": p["id"]}, {"$set": {
+                "starts_at": starts.isoformat(), "ends_at": ends.isoformat()}})
+            logger.info("Promo hebdo %s reprogrammée : %s → %s", p["id"], starts.isoformat(), ends.isoformat())
+        except Exception as exc:
+            logger.warning("Roll promo %s : %s", p.get("id"), exc)
 
 
 @announcements_router.get("/public/flash-promos")
 async def public_flash_promos(placement: str = "landing"):
+    await _roll_recurring_promos()
     now = datetime.now(timezone.utc).isoformat()
     items = await db.flash_promos.find(
         {"active": True, "starts_at": {"$lte": now}, "ends_at": {"$gte": now}},
@@ -101,6 +123,7 @@ async def public_flash_promos(placement: str = "landing"):
 
 @announcements_router.get("/admin/flash-promos")
 async def admin_flash_promos(admin: dict = Depends(require_admin)):
+    await _roll_recurring_promos()
     items = await db.flash_promos.find({}, {"_id": 0}).sort("ends_at", -1).limit(100).to_list(100)
     return {"items": items, "placements": PLACEMENTS}
 
@@ -117,7 +140,7 @@ async def create_flash_promo(body: FlashPromoBody, admin: dict = Depends(require
 @announcements_router.put("/admin/flash-promos/{pid}")
 async def update_flash_promo(pid: str, body: dict, admin: dict = Depends(require_admin)):
     allowed = {k: v for k, v in body.items()
-               if k in ("title", "description", "discount_pct", "starts_at", "ends_at", "placements", "cta_url", "active")}
+               if k in ("title", "description", "discount_pct", "starts_at", "ends_at", "placements", "cta_url", "active", "recurrence")}
     r = await db.flash_promos.update_one({"id": pid}, {"$set": allowed})
     if not r.matched_count:
         raise HTTPException(status_code=404, detail="Promo introuvable")

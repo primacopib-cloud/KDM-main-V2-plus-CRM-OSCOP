@@ -3,12 +3,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   Package, Plus, CheckCircle2, Building2, TrendingUp, ShoppingCart,
-  Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Coins, FileSignature,
+  Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Coins, FileSignature, FileText,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
@@ -22,11 +22,13 @@ import { VendorProductFormModal as ProductFormModal } from '../components/vendor
 import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
 import { AIStudioModal } from '../components/vendor/AIStudioModal';
 import { ProductActions } from '../components/vendor/ProductActions';
-import { MySpotsWidget } from '../components/vendor/MySpotsWidget';
+import { VendorDashboardTab } from '../components/vendor/VendorDashboardTab';
+import { VendorInvoicesTab } from '../components/vendor/VendorInvoicesTab';
 import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
 import { VendorContractsTab } from '../components/vendor/VendorContractsTab';
 import { VendorSuspendedNotice } from '../components/vendor/VendorSuspendedNotice';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
+import { MessagesNavLink } from '../components/MessagesNavLink';
 import { useCreditSessionPoll } from '../components/vendor/useCreditSessionPoll';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -200,6 +202,9 @@ const VendorSpacePage = () => {
             </nav>
             
             <div className="flex items-center gap-3">
+              {/* Messagerie interne */}
+              <MessagesNavLink variant="light" />
+
               {/* Navigation History */}
               <NavigationHistoryDropdown variant="light" />
 
@@ -250,92 +255,14 @@ const VendorSpacePage = () => {
             <TabsTrigger value="contracts" className="gap-2" data-testid="vendor-tab-contracts">
               <FileSignature className="w-4 h-4" /> Contrats
             </TabsTrigger>
+            <TabsTrigger value="invoices" className="gap-2" data-testid="vendor-tab-invoices">
+              <FileText className="w-4 h-4" /> Mes factures
+            </TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
-          <TabsContent value="dashboard" className="space-y-6">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>{i18n.t('adm.produits_actifs')}</CardDescription>
-                  <CardTitle className="text-3xl text-purple-600">
-                    {dashboard?.products?.approved || 0}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500">
-                    {i18n.t('adm.sur_soumis', { count: dashboard?.products?.total || 0 })}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>{i18n.t('adm.en_attente')}</CardDescription>
-                  <CardTitle className="text-3xl text-amber-600">
-                    {dashboard?.products?.pending || 0}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500">{i18n.t('adm.produits_a_valider')}</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>{i18n.t('adm.chiffre_d_affaires')}</CardDescription>
-                  <CardTitle className="text-3xl text-emerald-600">
-                    {formatCurrency(dashboard?.sales?.total_revenue || 0)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500">{i18n.t('adm.total_ht')}</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription>{i18n.t('adm.commandes')}</CardDescription>
-                  <CardTitle className="text-3xl text-blue-600">
-                    {dashboard?.sales?.order_count || 0}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500">{i18n.t('adm.total')}</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Mes spots vidéo */}
-            <MySpotsWidget vendorId={vendorId} />
-
-            {/* Recent Orders */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{i18n.t('adm.commandes_recentes')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {dashboard?.recent_orders?.length > 0 ? (
-                  <div className="space-y-2">
-                    {dashboard.recent_orders.map((order, idx) => (
-                      <div key={order.id || order.order_id || `vendor-order-${idx}`} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{order.id}</p>
-                          <p className="text-sm text-gray-500">{order.created_at?.split('T')[0]}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold">{formatCurrency(order.total_ht)}</p>
-                          {getStatusBadge(order.status)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-8">{i18n.t('adm.aucune_commande_recente')}</p>
-                )}
-              </CardContent>
-            </Card>
+          <TabsContent value="dashboard">
+            <VendorDashboardTab dashboard={dashboard} vendorId={vendorId} formatCurrency={formatCurrency} />
           </TabsContent>
 
           {/* Products Tab */}
@@ -465,6 +392,11 @@ const VendorSpacePage = () => {
           {/* Contracts Tab */}
           <TabsContent value="contracts">
             <VendorContractsTab vendorId={vendorId} />
+          </TabsContent>
+
+          {/* Invoices Tab */}
+          <TabsContent value="invoices">
+            <VendorInvoicesTab />
           </TabsContent>
         </Tabs>
       </main>

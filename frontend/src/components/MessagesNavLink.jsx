@@ -4,8 +4,9 @@ import { Mail } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
-export const MessagesNavLink = () => {
+export const MessagesNavLink = ({ variant = 'dark' }) => {
   const [unread, setUnread] = useState(0);
+  const light = variant === 'light';
 
   useEffect(() => {
     const load = () =>
@@ -19,8 +20,10 @@ export const MessagesNavLink = () => {
   }, []);
 
   return (
-    <Link to="/messages" className="relative p-2 rounded-lg hover:bg-white/[0.06] transition-colors" data-testid="messages-nav-link">
-      <Mail className="w-4 h-4 text-white/70" />
+    <Link to="/messages" title="Messagerie interne"
+      className={`relative p-2 rounded-lg transition-colors ${light ? 'hover:bg-gray-100' : 'hover:bg-white/[0.06]'}`}
+      data-testid="messages-nav-link">
+      <Mail className={`w-4 h-4 ${light ? 'text-gray-500' : 'text-white/70'}`} />
       {unread > 0 && (
         <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#D9B35A] text-[#1F0A33] rounded-full text-[10px] font-bold flex items-center justify-center"
           data-testid="messages-unread-badge">
