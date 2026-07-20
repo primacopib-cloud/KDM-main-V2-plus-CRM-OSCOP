@@ -52,6 +52,13 @@ export default function VendorOnboardingPage() {
       .catch(() => {});
   }, []);
 
+  const sponsorCode = params.get('parrain') || localStorage.getItem('referral_code');
+  useEffect(() => {
+    const code = params.get('parrain');
+    if (code) localStorage.setItem('referral_code', code.trim().toUpperCase());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const oid = params.get('onboarding_id');
 
   useEffect(() => {
@@ -190,6 +197,13 @@ export default function VendorOnboardingPage() {
                 </p>
               );
             })()}
+            {sponsorCode && (
+              <p className="text-xs text-center font-semibold rounded-lg py-2 px-3"
+                style={{ background: 'rgba(217,179,90,0.12)', border: '1px solid rgba(217,179,90,0.35)', color: '#E9CF8E' }}
+                data-testid="sponsor-code-banner">
+                Code parrain {sponsorCode.toUpperCase()} détecté — il sera appliqué automatiquement à votre première connexion, aucune saisie nécessaire.
+              </p>
+            )}
             <button type="submit" disabled={busy} data-testid="vendor-pay-btn"
               className="w-full h-13 py-3.5 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}>

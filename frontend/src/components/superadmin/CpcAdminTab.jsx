@@ -3,6 +3,7 @@ import { Ticket, Gift, Wrench, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { CpcPlansAdminPanel } from './CpcPlansAdminPanel';
+import { ReferralAdminPanel } from './ReferralAdminPanel';
 
 const opts = () => ({ headers: getAuthHeaders(), credentials: 'include' });
 const jsonOpts = (method, body) => ({ method, headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, credentials: 'include', body: JSON.stringify(body) });
@@ -98,6 +99,8 @@ export const CpcAdminTab = () => {
       </div>
 
       <CpcPlansAdminPanel />
+
+      <ReferralAdminPanel />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="glass-panel-soft rounded-[14px] p-4 space-y-2">

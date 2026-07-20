@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Gift, Copy, CheckCircle2 } from 'lucide-react';
+import { Gift, Copy, CheckCircle2, MessageCircle, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -14,11 +14,28 @@ export const ReferralPanel = () => {
   }, []);
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    const stored = localStorage.getItem('referral_code');
+    if (!data || data.my_sponsor_code || !stored) return;
+    if (stored === data.code) { localStorage.removeItem('referral_code'); return; }
+    fetch(`${API}/api/referral/claim`, {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: stored }),
+    }).then(async (r) => {
+      const d = await r.json();
+      localStorage.removeItem('referral_code');
+      if (r.ok) { toast.success(`Code parrain ${stored} appliqué automatiquement`); load(); }
+      else toast.error(d.detail || 'Code parrain non applicable');
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
   if (!data) return null;
   const link = `${window.location.origin}/adhesion-vendeur?parrain=${data.code}`;
 
+  const shareText = `Rejoignez KDMARCHÉ × O'SCOP avec mon code parrain ${data.code} : ${link}`;
   const copy = () => {
-    navigator.clipboard.writeText(`Rejoignez KDMARCHÉ × O'SCOP avec mon code parrain ${data.code} : ${link}`);
+    navigator.clipboard.writeText(shareText);
     toast.success('Code et lien de parrainage copiés');
   };
 
@@ -46,6 +63,15 @@ export const ReferralPanel = () => {
           className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/10 text-white/70 hover:text-white inline-flex items-center gap-1 transition-colors">
           <Copy className="w-3.5 h-3.5" /> Copier le lien d'invitation
         </button>
+        <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer" data-testid="referral-whatsapp-btn"
+          className="px-3 py-1.5 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition-all hover:brightness-110"
+          style={{ background: '#25D366', color: '#0b3d22' }}>
+          <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+        </a>
+        <a href={`mailto:?subject=${encodeURIComponent("Rejoignez KDMARCHÉ × O'SCOP")}&body=${encodeURIComponent(shareText)}`} data-testid="referral-email-btn"
+          className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/10 text-white/70 hover:text-white inline-flex items-center gap-1 transition-colors">
+          <Mail className="w-3.5 h-3.5" /> Email
+        </a>
         {data.total_earned > 0 && (
           <span className="text-xs font-bold text-emerald-400" data-testid="referral-earned">+{data.total_earned} CREDI'SCOP gagnés</span>
         )}

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from auth import get_current_user_id
+from lolodrive_helpers import require_admin
 from consultation_audit import audit
 
 logger = logging.getLogger(__name__)
@@ -70,6 +71,36 @@ async def claim_code(body: ClaimBody, user_id: str = Depends(get_current_user_id
         "created_at": datetime.now(timezone.utc).isoformat()})
     await audit("REFERRAL_CLAIMED", user_id, None, {"code": code, "sponsor_id": sponsor["user_id"]})
     return {"ok": True, "message": "Code parrain enregistré — votre parrain recevra son bonus lors de votre première inscription à une consultation"}
+
+
+@referral_router.get("/admin/overview")
+async def referral_admin_overview(admin: dict = Depends(require_admin)):
+    """Tableau parrainage admin : liens, bonus versés, meilleurs ambassadeurs."""
+    links = await db.referral_links.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    sponsor_ids = list({l["sponsor_id"] for l in links})
+    sponsors = {}
+    if sponsor_ids:
+        async for u in db.users.find({"id": {"$in": sponsor_ids}}, {"_id": 0, "id": 1, "email": 1}):
+            sponsors[u["id"]] = u.get("email", u["id"])
+    by_sponsor = {}
+    for l in links:
+        s = by_sponsor.setdefault(l["sponsor_id"], {"sponsor": sponsors.get(l["sponsor_id"], l["sponsor_id"]),
+                                                    "referred": 0, "bonus_paid": 0, "credited": 0})
+        s["referred"] += 1
+        if l.get("bonus_paid"):
+            s["bonus_paid"] += 1
+            s["credited"] += l.get("bonus_amount", 0)
+    top = sorted(by_sponsor.values(), key=lambda s: (s["credited"], s["referred"]), reverse=True)[:10]
+    return {
+        "total_links": len(links),
+        "total_bonus_paid": sum(1 for l in links if l.get("bonus_paid")),
+        "total_credited": sum(l.get("bonus_amount", 0) for l in links if l.get("bonus_paid")),
+        "top_ambassadors": top,
+        "links": [{"sponsor": sponsors.get(l["sponsor_id"], l["sponsor_id"]),
+                   "filleul": l.get("filleul_email"), "bonus_paid": l.get("bonus_paid", False),
+                   "bonus_amount": l.get("bonus_amount"), "created_at": l.get("created_at"),
+                   "bonus_paid_at": l.get("bonus_paid_at")} for l in links[:100]],
+    }
 
 
 async def maybe_pay_referral_bonus(filleul_id: str):
