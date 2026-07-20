@@ -1219,3 +1219,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - SuperAdmin > Demandes : liste enrichie (statut juridique, tél+indicatif, langue, message) + bouton "Marquer traitée" (PUT /api/admin/quotes/{id}/status)
 - Modèles étendus : models.py QuoteRequest* (first_name, last_name, legal_status, phone_country, lang)
 - Note test : les pages authentifiées doivent être testées via l'URL preview externe (CORS bloque localhost:3000 + credentials)
+
+## 2026-07-20 — Lot Espace Dev, Domaines, Vitrine auto, Accusé réception (testé iter 66 : backend 16/16 PASS)
+- Espace Développeur Partenaire (/espace-developpeur) : clés API par email partenaire (admin voit tout), quota mensuel (défaut 10000, 429 si dépassé), barre d'usage, journal 30 derniers appels (api_call_logs) — routes_partner_dev.py, PartnerDevPage.jsx
+- Domaines personnalisés par licence : custom_domain + GET /api/licenses/by-domain/resolve?host= ; App.js détecte les hostnames non-plateforme et rend TenantPage sur / ; badge domaine dans LicensesPanel
+- Vitrine auto-alimentée : vendeurs approuvés opt-in (switch dans dashboard vendeur, POST protégé par auth: propriétaire ou admin) → carrousel accueil auto avec photo produit ; dédup avec entrées manuelles ; carrousel statique si < 3 items
+- Accusé de réception devis : email Brevo au prospect dans sa langue (fr/en/es) — quote_notify.send_quote_ack_email
+- Deployment check : PASS (fix .gitignore .env + N+1 catalog corrigés)
+- Backlog : index TTL sur api_call_logs (croissance), stats licence produits par territoire
