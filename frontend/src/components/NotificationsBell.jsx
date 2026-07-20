@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { apiCall } from '../services/http';
 
 export const NotificationsBell = ({ className = '' }) => {
@@ -13,7 +14,18 @@ export const NotificationsBell = ({ className = '' }) => {
   useEffect(() => {
     if (!isLoggedIn) return undefined;
     let active = true;
-    const load = () => apiCall('/notifications?limit=15').then((d) => active && setData(d)).catch(() => {});
+    const load = () => apiCall('/notifications?limit=15').then((d) => {
+      if (!active) return;
+      setData((prev) => {
+        if (prev) {
+          const known = new Set((prev.notifications || []).map((n) => n.id));
+          (d.notifications || []).filter((n) => !n.is_read && !known.has(n.id)).forEach((n) => {
+            toast(n.title, { description: n.message, duration: 8000 });
+          });
+        }
+        return d;
+      });
+    }).catch(() => {});
     load();
     const interval = setInterval(load, 60000);
     return () => { active = false; clearInterval(interval); };

@@ -37,6 +37,20 @@ export const CampaignsPanel = ({ consultations, onChanged }) => {
     load();
   };
 
+  const publishAll = async (camp) => {
+    const validated = (camp.lots || []).filter((l) => l.status === 'VALIDEE').length;
+    if (!validated) return toast.info('Aucun lot au statut VALIDÉE dans cette campagne');
+    if (!window.confirm(`Publier les ${validated} lot(s) validé(s) de « ${camp.name} » ?`)) return;
+    const r = await fetch(`${API}/admin/campaigns/${camp.id}/publish-all`, { method: 'POST', ...opts() });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Erreur');
+    const failed = (d.results || []).filter((x) => !x.ok);
+    if (failed.length) toast.warning(`${d.published} publié(s) — échecs : ${failed.map((f) => `${f.ref} (${f.detail})`).join(' · ')}`, { duration: 9000 });
+    else toast.success(`${d.published} lot(s) publié(s) en un clic`);
+    load();
+    onChanged?.();
+  };
+
   const remove = async (camp) => {
     if (!window.confirm(`Supprimer la campagne « ${camp.name} » ? Les lots seront détachés (sans suppression).`)) return;
     await fetch(`${API}/admin/campaigns/${camp.id}`, { method: 'DELETE', ...opts() });
@@ -74,6 +88,10 @@ export const CampaignsPanel = ({ consultations, onChanged }) => {
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="font-bold text-white/90 flex-1 min-w-[140px]">{camp.name}</span>
               <span className="text-white/45">{String(camp.opens_at).slice(0, 16).replace('T', ' ')} → {String(camp.closes_at).slice(0, 16).replace('T', ' ')}</span>
+              <button type="button" onClick={() => publishAll(camp)} data-testid={`campaign-publish-${camp.id}`}
+                className="px-2 py-1 rounded-lg text-[10px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>
+                Publier les lots validés
+              </button>
               <button type="button" onClick={() => act(`/${camp.id}/apply-calendar`, null, 'Calendrier ré-appliqué aux lots non publiés')}
                 className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white/10 text-white/60 hover:text-white" data-testid={`campaign-apply-${camp.id}`}>
                 Appliquer le calendrier

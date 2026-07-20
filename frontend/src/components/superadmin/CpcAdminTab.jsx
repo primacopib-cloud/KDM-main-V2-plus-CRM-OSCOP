@@ -17,9 +17,18 @@ export const CpcAdminTab = () => {
   const [corr, setCorr] = useState({ user_email: '', qty: 0, reason: '', reference: '' });
   const [edit, setEdit] = useState({});
   const [exportMonth, setExportMonth] = useState('');
+  const [exportTypes, setExportTypes] = useState(['PACK', 'ABONNEMENT', 'CONSOMMATION']);
+  const [exportEmail, setExportEmail] = useState('');
+
+  const toggleType = (t) => setExportTypes((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
 
   const downloadExport = async (fmt) => {
-    const q = exportMonth ? `?month=${exportMonth}` : '';
+    if (!exportTypes.length) return toast.error('Sélectionnez au moins un type');
+    const p = new URLSearchParams();
+    if (exportMonth) p.set('month', exportMonth);
+    if (exportTypes.length < 3) p.set('types', exportTypes.join(','));
+    if (exportEmail.trim()) p.set('email', exportEmail.trim());
+    const q = p.toString() ? `?${p.toString()}` : '';
     const r = await fetch(`${API}/admin/cpc/export.${fmt}${q}`, opts());
     if (!r.ok) return toast.error('Export impossible');
     const url = URL.createObjectURL(await r.blob());
@@ -86,6 +95,14 @@ export const CpcAdminTab = () => {
         <div className="flex flex-wrap items-center gap-2">
           <input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} style={{ colorScheme: 'dark' }}
             className="h-8 rounded-lg px-2 text-[11px] text-white bg-white/[0.05] border border-white/15" data-testid="cpc-export-month" />
+          {[['PACK', 'Packs'], ['ABONNEMENT', 'Abonnements'], ['CONSOMMATION', 'Consommations']].map(([t, label]) => (
+            <button key={t} type="button" onClick={() => toggleType(t)} data-testid={`cpc-export-type-${t}`}
+              className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors ${exportTypes.includes(t) ? 'bg-[#D9B35A]/25 text-[#E9CF8E] border border-[#D9B35A]/50' : 'bg-white/5 text-white/40 border border-white/10'}`}>
+              {label}
+            </button>
+          ))}
+          <input placeholder="Email vendeur (optionnel)" value={exportEmail} onChange={(e) => setExportEmail(e.target.value)}
+            className="h-8 w-48 rounded-lg px-2 text-[11px] text-white bg-white/[0.05] border border-white/15" data-testid="cpc-export-email" />
           <button type="button" onClick={() => downloadExport('csv')} data-testid="cpc-export-csv-btn"
             className="px-3 py-1.5 rounded-lg text-[10.5px] font-bold bg-white/10 text-white/70 hover:text-white">Export CSV</button>
           <button type="button" onClick={() => downloadExport('pdf')} data-testid="cpc-export-pdf-btn"

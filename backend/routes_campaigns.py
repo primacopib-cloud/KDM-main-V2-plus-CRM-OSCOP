@@ -111,6 +111,27 @@ async def apply_calendar(camp_id: str, admin: dict = Depends(require_admin)):
     return {"ok": True, "lots_updated": res.modified_count}
 
 
+@campaigns_router.post("/{camp_id}/publish-all")
+async def publish_all(camp_id: str, admin: dict = Depends(require_admin)):
+    """Publie en un clic tous les lots VALIDEE de la campagne (contrôles de publication conservés)."""
+    camp = await db.campaigns.find_one({"id": camp_id}, {"_id": 0, "id": 1, "name": 1})
+    if not camp:
+        raise HTTPException(status_code=404, detail="Campagne introuvable")
+    results = []
+    from routes_consultations import publish_consultation
+    async for c in db.consultations.find({"campaign_id": camp_id, "status": "VALIDEE"},
+                                         {"_id": 0, "id": 1, "ref": 1}):
+        try:
+            await publish_consultation(c["id"], admin)
+            results.append({"ref": c["ref"], "ok": True})
+        except HTTPException as exc:
+            results.append({"ref": c["ref"], "ok": False, "detail": exc.detail})
+    published = sum(1 for r in results if r["ok"])
+    await audit("CAMPAIGN_PUBLISH_ALL", admin.get("email"), None,
+                {"campaign_id": camp_id, "published": published, "results": results})
+    return {"ok": True, "published": published, "results": results}
+
+
 @campaigns_router.delete("/{camp_id}")
 async def delete_campaign(camp_id: str, admin: dict = Depends(require_admin)):
     await db.consultations.update_many({"campaign_id": camp_id}, {"$unset": {"campaign_id": ""}})
