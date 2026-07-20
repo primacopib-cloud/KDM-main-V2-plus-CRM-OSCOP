@@ -76,10 +76,14 @@ export const quoteAPI = {
       method: 'POST',
       body: JSON.stringify({
         company: quoteData.company,
-        contact_name: quoteData.contactName,
+        legal_status: quoteData.legalStatus,
+        first_name: quoteData.firstName,
+        last_name: quoteData.lastName,
+        contact_name: `${quoteData.firstName || ''} ${quoteData.lastName || ''}`.trim() || quoteData.contactName,
         email: quoteData.email,
         phone: quoteData.phone,
-        plan: quoteData.plan,
+        phone_country: quoteData.phoneCountry,
+        lang: quoteData.lang,
         message: quoteData.message,
       }),
     });

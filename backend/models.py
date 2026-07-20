@@ -75,9 +75,14 @@ class TokenData(BaseModel):
 # Quote Request Models
 class QuoteRequestCreate(BaseModel):
     company: str
-    contact_name: str
+    contact_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    legal_status: Optional[str] = None
     email: EmailStr
     phone: str
+    phone_country: Optional[str] = None
+    lang: Optional[str] = "fr"
     plan: Optional[str] = None
     message: Optional[str] = None
 
@@ -86,8 +91,13 @@ class QuoteRequestResponse(BaseModel):
     id: str
     company: str
     contact_name: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    legal_status: Optional[str] = None
     email: str
     phone: str
+    phone_country: Optional[str] = None
+    lang: Optional[str] = None
     plan: Optional[str] = None
     message: Optional[str] = None
     status: str = "pending"
@@ -101,8 +111,13 @@ class QuoteRequestInDB(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     company: str
     contact_name: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    legal_status: Optional[str] = None
     email: str
     phone: str
+    phone_country: Optional[str] = None
+    lang: Optional[str] = "fr"
     plan: Optional[str] = None
     message: Optional[str] = None
     status: str = "pending"

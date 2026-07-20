@@ -28,11 +28,17 @@ users_core_router = APIRouter(prefix="/api")
 async def create_quote_request(quote_data: QuoteRequestCreate):
     """Create a new quote request."""
     db = get_database()
+    contact_name = (quote_data.contact_name or f"{quote_data.first_name or ''} {quote_data.last_name or ''}".strip()) or quote_data.email
     quote_in_db = QuoteRequestInDB(
         company=quote_data.company,
-        contact_name=quote_data.contact_name,
+        contact_name=contact_name,
+        first_name=quote_data.first_name,
+        last_name=quote_data.last_name,
+        legal_status=quote_data.legal_status,
         email=quote_data.email,
         phone=quote_data.phone,
+        phone_country=quote_data.phone_country,
+        lang=quote_data.lang or "fr",
         plan=quote_data.plan,
         message=quote_data.message
     )
@@ -45,12 +51,12 @@ async def create_quote_request(quote_data: QuoteRequestCreate):
         "id": str(uuid.uuid4()),
         "type": "new_quote",
         "title": "Nouvelle demande de devis",
-        "message": f"{quote_data.company} - {quote_data.contact_name} demande un devis",
+        "message": f"{quote_data.company} - {contact_name} demande un devis",
         "data": {
             "quote_id": quote_in_db.id,
             "company": quote_data.company,
             "email": quote_data.email,
-            "plan": quote_data.plan
+            "legal_status": quote_data.legal_status
         },
         "target_roles": ["oscop_super_admin", "oscop_compliance_admin", "kdm_b2b_admin"],
         "target_user_id": None,
@@ -63,6 +69,9 @@ async def create_quote_request(quote_data: QuoteRequestCreate):
     import asyncio
     from oscop_demandes_client import push_quote_to_oscop
     asyncio.create_task(push_quote_to_oscop(db, quote_in_db.id))
+
+    from quote_notify import send_quote_notification_email
+    asyncio.create_task(send_quote_notification_email(quote_in_db.dict()))
 
     return {
         "id": quote_in_db.id,

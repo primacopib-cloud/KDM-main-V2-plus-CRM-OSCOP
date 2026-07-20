@@ -96,6 +96,15 @@ export const DemandesAdminTab = () => {
     load();
   };
 
+  const setQuoteStatus = async (id, status) => {
+    const r = await fetch(`${API}/admin/quotes/${id}/status?new_status=${status}`, {
+      method: 'PUT', ...opts, headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    });
+    if (!r.ok) return toast.error('Mise à jour impossible');
+    toast.success(status === 'processed' ? 'Demande marquée comme traitée' : 'Demande rouverte');
+    load();
+  };
+
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-[#D9B35A]" /></div>;
 
   const achat = data?.tarif_achat || {};
@@ -147,30 +156,48 @@ export const DemandesAdminTab = () => {
       </div>
 
       <div className="glass-panel-soft rounded-[18px] p-4" data-testid="demandes-pushes-log">
-        <h3 className="text-sm font-semibold text-[#D9B35A] mb-3">Demandes de devis transmises</h3>
+        <h3 className="text-sm font-semibold text-[#D9B35A] mb-3">Demandes de devis reçues</h3>
         {pushes.length === 0 ? (
           <p className="text-xs text-white/40">Aucune demande de devis reçue pour le moment.</p>
         ) : (
-          <div className="space-y-1.5 max-h-72 overflow-y-auto">
+          <div className="space-y-1.5 max-h-96 overflow-y-auto">
             {pushes.map((q) => {
               const st = PUSH_STATUS[q.oscop_status] || { color: '#9CA3AF', icon: Clock, label: 'En attente' };
               const Icon = st.icon;
+              const processed = q.status === 'processed';
               return (
-                <div key={q.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white/[0.04] text-xs">
-                  <span className="text-white/85 font-medium min-w-[140px]">{q.company}</span>
-                  <span className="text-white/50 truncate">{q.contact_name} · {q.email}</span>
-                  <span className="text-white/40">{q.plan || '—'}</span>
-                  <span className="inline-flex items-center gap-1 font-semibold px-1.5 py-0.5 rounded-full"
-                    style={{ color: st.color, background: `${st.color}1c` }} title={q.oscop_error || ''}>
-                    <Icon size={10} /> {st.label}
-                  </span>
-                  {q.oscop_status !== 'PUSHED' && (
-                    <button type="button" onClick={() => retry(q.id)} data-testid={`demandes-retry-${q.id}`}
+                <div key={q.id} className="px-3 py-2 rounded-lg bg-white/[0.04] text-xs" data-testid={`quote-row-${q.id}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-white/85 font-medium min-w-[140px]">
+                      {q.company}
+                      {q.legal_status && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-[#D9B35A]/15 text-[#E9CF8E] text-[10px]">{q.legal_status}</span>}
+                    </span>
+                    <span className="text-white/50 truncate">
+                      {(q.first_name || q.last_name) ? `${q.first_name || ''} ${q.last_name || ''}`.trim() : q.contact_name} · {q.email}
+                      {q.phone && ` · ${q.phone_country || ''} ${q.phone}`}
+                    </span>
+                    {q.lang && <span className="text-white/40 uppercase">{q.lang}</span>}
+                    <span className="inline-flex items-center gap-1 font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ color: st.color, background: `${st.color}1c` }} title={q.oscop_error || ''}>
+                      <Icon size={10} /> {st.label}
+                    </span>
+                    <button type="button" onClick={() => setQuoteStatus(q.id, processed ? 'pending' : 'processed')}
+                      data-testid={`quote-status-${q.id}`}
                       className="px-2 py-1 rounded-md text-[10px] font-bold"
-                      style={{ background: 'rgba(217,179,90,0.16)', color: '#E9CF8E', border: '1px solid rgba(217,179,90,0.45)' }}>
-                      Renvoyer
+                      style={processed
+                        ? { background: 'rgba(123,201,78,0.16)', color: '#7BC94E', border: '1px solid rgba(123,201,78,0.45)' }
+                        : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                      {processed ? 'Traitée ✓' : 'Marquer traitée'}
                     </button>
-                  )}
+                    {q.oscop_status !== 'PUSHED' && (
+                      <button type="button" onClick={() => retry(q.id)} data-testid={`demandes-retry-${q.id}`}
+                        className="px-2 py-1 rounded-md text-[10px] font-bold"
+                        style={{ background: 'rgba(217,179,90,0.16)', color: '#E9CF8E', border: '1px solid rgba(217,179,90,0.45)' }}>
+                        Renvoyer
+                      </button>
+                    )}
+                  </div>
+                  {q.message && <p className="text-white/40 mt-1 truncate">{q.message}</p>}
                 </div>
               );
             })}

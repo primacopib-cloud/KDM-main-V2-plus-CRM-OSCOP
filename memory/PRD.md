@@ -1210,3 +1210,12 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Marque Blanche légère : licences territoriales /api/admin/licenses (slug translittéré, couleurs, logo, territoire) + vitrine publique /t/{slug} (TenantPage.jsx), stats publiques
 - Fichiers backend : routes_showcase.py, routes_api_keys.py, routes_public_api.py, routes_licenses.py (tous < 200 lignes)
 - Backlog restant : P2 isolation de données par tenant (marque blanche "complète") si demandé
+
+## 2026-07-20 — Refonte formulaire Demande de Devis (testé E2E self-test)
+- Nouveaux champs : raison sociale + statut juridique (select SARL/SAS/SCOP...), prénom/nom séparés, téléphone avec sélecteur pays (drapeaux + indicatif, 16 pays dont DOM)
+- Multilingue FR/EN/ES avec switch drapeaux local au formulaire (contactFormData.js)
+- Champ "Offre intéressée" SUPPRIMÉ
+- Email de notification Brevo automatique à contact@objectifscopoutremer.com (quote_notify.py, override env QUOTE_NOTIFY_EMAIL)
+- SuperAdmin > Demandes : liste enrichie (statut juridique, tél+indicatif, langue, message) + bouton "Marquer traitée" (PUT /api/admin/quotes/{id}/status)
+- Modèles étendus : models.py QuoteRequest* (first_name, last_name, legal_status, phone_country, lang)
+- Note test : les pages authentifiées doivent être testées via l'URL preview externe (CORS bloque localhost:3000 + credentials)
