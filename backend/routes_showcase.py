@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from lolodrive_helpers import require_admin
+from core_deps import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -75,12 +76,17 @@ class OptInBody(BaseModel):
 
 
 @showcase_router.post("/vendor-opt-in/{vendor_id}")
-async def set_vendor_opt_in(vendor_id: str, body: OptInBody):
-    res = await db.vendors.update_one({"id": vendor_id}, {"$set": {"showcase_opt_in": body.opt_in}})
-    if res.matched_count == 0:
+async def set_vendor_opt_in(vendor_id: str, body: OptInBody, user: dict = Depends(get_current_user)):
+    is_admin = user.get("is_admin", False)
+    vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "email": 1})
+    if not vendor:
         raise HTTPException(status_code=404, detail="Vendeur introuvable")
+    owns = user.get("vendor_id") == vendor_id or (user.get("email") or "").lower() == (vendor.get("email") or "").lower()
+    if not (is_admin or owns):
+        raise HTTPException(status_code=403, detail="Vous ne pouvez modifier que votre propre vitrine")
+    await db.vendors.update_one({"id": vendor_id}, {"$set": {"showcase_opt_in": body.opt_in}})
     from consultation_audit import audit
-    await audit("SHOWCASE_VENDOR_OPT_IN", vendor_id, None, {"opt_in": body.opt_in})
+    await audit("SHOWCASE_VENDOR_OPT_IN", user.get("email") or vendor_id, None, {"vendor_id": vendor_id, "opt_in": body.opt_in})
     return {"ok": True, "opt_in": body.opt_in}
 
 

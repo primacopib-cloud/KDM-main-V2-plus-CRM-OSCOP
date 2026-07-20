@@ -126,6 +126,7 @@ export const LicensesPanel = () => {
               </p>
               <p className="text-[11px] text-white/40 truncate">
                 {l.territory_name} ({l.territory_code}) · <code>/t/{l.slug}</code>
+                {l.custom_domain && <code className="ml-2 px-1.5 py-0.5 rounded bg-emerald-400/10 text-emerald-300" data-testid={`license-domain-badge-${l.id}`}>{l.custom_domain}</code>}
                 <span className="inline-block w-2.5 h-2.5 rounded-full ml-2 align-middle" style={{ background: l.primary_color }} />
                 <span className="inline-block w-2.5 h-2.5 rounded-full ml-1 align-middle" style={{ background: l.accent_color }} />
               </p>

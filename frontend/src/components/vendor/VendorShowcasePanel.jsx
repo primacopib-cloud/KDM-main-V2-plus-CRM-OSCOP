@@ -21,7 +21,7 @@ export const VendorShowcasePanel = ({ vendorId }) => {
   const toggle = async (value) => {
     setOptIn(value);
     const r = await fetch(`${API}/api/showcase/vendor-opt-in/${vendorId}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ opt_in: value }),
     });
     if (!r.ok) { setOptIn(!value); return toast.error('Mise à jour impossible'); }

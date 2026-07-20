@@ -33,7 +33,8 @@ const PartnerCarousel = () => {
   }, []);
 
   if (!items.length) return null;
-  const loop = [...items, ...items];
+  const marquee = items.length >= 3;
+  const loop = marquee ? [...items, ...items] : items;
 
   return (
     <section className="py-10 px-5" data-testid="partner-carousel-section">
@@ -44,10 +45,10 @@ const PartnerCarousel = () => {
           </span>
           <p className="text-white/55 text-sm mt-3">Vendeurs et opérateurs partenaires de la Communityplace</p>
         </div>
-        <div className="relative overflow-hidden" style={{ maskImage: 'linear-gradient(90deg, transparent, black 8%, black 92%, transparent)', WebkitMaskImage: 'linear-gradient(90deg, transparent, black 8%, black 92%, transparent)' }}>
+        <div className="relative overflow-hidden" style={marquee ? { maskImage: 'linear-gradient(90deg, transparent, black 8%, black 92%, transparent)', WebkitMaskImage: 'linear-gradient(90deg, transparent, black 8%, black 92%, transparent)' } : {}}>
           <div
-            className="flex items-start"
-            style={{ width: 'max-content', animation: `partner-scroll ${Math.max(items.length * 5, 20)}s linear infinite` }}
+            className={`flex items-start ${marquee ? '' : 'justify-center flex-wrap gap-y-4'}`}
+            style={marquee ? { width: 'max-content', animation: `partner-scroll ${Math.max(items.length * 5, 20)}s linear infinite` } : {}}
           >
             {loop.map((p, i) => <LogoCard key={`${p.id}-${i}`} p={p} />)}
           </div>
