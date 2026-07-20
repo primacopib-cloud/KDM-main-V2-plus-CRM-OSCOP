@@ -33,7 +33,7 @@ export const AuditJournalPanel = () => {
     const r = await fetch(`${API}/admin/audit/verify`, { credentials: 'include' });
     const d = await r.json();
     setChain(d);
-    d.valid ? toast.success(`Chaîne d'audit intègre (${d.entries ?? items.length} entrées)`) : toast.error(`Chaîne corrompue au seq ${d.broken_at_seq}`);
+    d.valid ? toast.success(`Chaîne d'audit intègre (${d.entries_verified} entrées vérifiées)`) : toast.error(`Chaîne corrompue au seq ${d.broken_at_seq}`);
   };
 
   return (

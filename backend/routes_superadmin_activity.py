@@ -106,14 +106,14 @@ async def get_recent_activity(limit: int = 20):
         # Recent orders
         recent_orders = await db.orders.find(
             {},
-            {"_id": 0, "id": 1, "organization_id": 1, "total_ttc": 1, "status": 1, "created_at": 1}
+            {"_id": 0, "id": 1, "organization_id": 1, "total_ttc": 1, "total_ttc_cents": 1, "subtotal_ht_cents": 1, "status": 1, "created_at": 1}
         ).sort("created_at", -1).limit(5).to_list(5)
         
         for order in recent_orders:
             activities.append({
                 "type": "order",
                 "action": f"Commande {order.get('status', 'N/A')}",
-                "details": f"Montant: {order.get('total_ttc', 0):.2f}€",
+                "details": f"Montant: {(order.get('total_ttc') or (order.get('total_ttc_cents') or order.get('subtotal_ht_cents', 0)) / 100):.2f}€",
                 "ref": order.get("id"),
                 "timestamp": order.get("created_at")
             })
