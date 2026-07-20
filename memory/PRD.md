@@ -1243,3 +1243,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - PLAN_PRICE_CHANGED (plans d'abonnement) et OPTION_PRICE_CHANGED (options) tracés dans audit_journal à chaque PATCH modifiant price_cents — payload : plan/option id+nom, old/new price en cents et en euros, acteur admin (routes_admin_plans.py)
 - Consultable dans SuperAdmin > Journal d'Audit (filtre par type dynamique, déjà générique) + export CSV existant
 - Vérifié : 2 changements tracés (390→395→390), prix final restauré à 390€
+
+## 2026-07-20 — Alerte email changement de prix aux abonnés (testé E2E)
+- plan_price_alert.py : send_price_change_alerts() — collecte les abonnés (users.subscription = id/slug du plan + subscriptions ACTIVE → org_memberships → users, dédupliqué, cap 200) et envoie un email Brevo (ancien/nouveau tarif, mention prochaine échéance, tag plan-price-change)
+- Déclenché en tâche de fond depuis PATCH /api/admin/plans/subscriptions/{id} quand price_cents change (routes_admin_plans.py), en plus de l'audit PLAN_PRICE_CHANGED
+- Vérifié : changement 390→391€ → "envoyée à 13/13 abonnés" dans les logs, prix restauré

@@ -230,6 +230,9 @@ async def update_subscription_plan(plan_id: str, data: SubscriptionPlanUpdate, r
             "old_price_eur": round((plan.get("price_cents") or 0) / 100, 2),
             "new_price_eur": round(update_data["price_cents"] / 100, 2),
         })
+        import asyncio
+        from plan_price_alert import send_price_change_alerts
+        asyncio.create_task(send_price_change_alerts(db, plan, plan.get("price_cents"), update_data["price_cents"]))
     
     updated = await db.subscription_plans.find_one({"id": plan_id})
     count = await db.subscriptions.count_documents({"plan_id": plan_id})
