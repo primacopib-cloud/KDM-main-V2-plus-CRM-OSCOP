@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CalendarRange, Plus, Trash2, X } from 'lucide-react';
+import { BarChart3, CalendarRange, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
+import { CampaignDashboardModal } from './CampaignDashboardModal';
 
 const opts = () => ({ headers: getAuthHeaders(), credentials: 'include' });
 const jsonOpts = (method, body) => ({ method, headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, credentials: 'include', body: JSON.stringify(body) });
@@ -11,6 +12,7 @@ const toIso = (v) => (v ? new Date(v).toISOString() : '');
 export const CampaignsPanel = ({ consultations, onChanged }) => {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
   const attachable = (consultations || []).filter((c) => ['BROUILLON', 'EN_VALIDATION', 'VALIDEE'].includes(c.status));
 
   const load = useCallback(() => {
@@ -88,6 +90,10 @@ export const CampaignsPanel = ({ consultations, onChanged }) => {
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="font-bold text-white/90 flex-1 min-w-[140px]">{camp.name}</span>
               <span className="text-white/45">{String(camp.opens_at).slice(0, 16).replace('T', ' ')} → {String(camp.closes_at).slice(0, 16).replace('T', ' ')}</span>
+              <button type="button" onClick={() => setDashboard(camp)} data-testid={`campaign-dashboard-${camp.id}`}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-white/10 text-white/60 hover:text-white">
+                <BarChart3 className="w-3 h-3" /> Tableau de bord
+              </button>
               <button type="button" onClick={() => publishAll(camp)} data-testid={`campaign-publish-${camp.id}`}
                 className="px-2 py-1 rounded-lg text-[10px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>
                 Publier les lots validés
@@ -122,6 +128,7 @@ export const CampaignsPanel = ({ consultations, onChanged }) => {
           </div>
         ))}
       </div>
+      {dashboard && <CampaignDashboardModal campaign={dashboard} onClose={() => setDashboard(null)} />}
     </div>
   );
 };

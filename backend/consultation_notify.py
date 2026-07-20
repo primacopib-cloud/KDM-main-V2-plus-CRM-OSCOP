@@ -30,33 +30,34 @@ async def notify_report_available(cid: str) -> int:
     base = os.environ.get("FRONTEND_PUBLIC_URL", "")
     sent = 0
     async for e in db.consultation_entries.find({"consultation_id": cid, "status": "INSCRIT"}, {"_id": 0}):
+        from routes_prefs import channel_allowed
         u = await db.users.find_one({"id": e["vendor_user_id"]}, {"_id": 0, "email": 1, "full_name": 1, "name": 1})
-        if not u or not u.get("email"):
-            continue
-        try:
-            await send_email(
-                to_email=u["email"], to_name=u.get("full_name") or u.get("name"),
-                subject=f"Consultation {c['ref']} clôturée — votre rapport d'analyse est disponible",
-                html_content=f"""<h2 style="color:#451F6B;">Consultation {c['ref']} — clôturée</h2>
-                <p>Bonjour,</p>
-                <p><strong>{c['title']}</strong> est désormais clôturée. En tant que participant, vous pouvez
-                débloquer votre <strong>rapport d'analyse détaillé</strong> ({cost} CPC — débit unique) :
-                meilleure offre, médiane du marché, votre écart, votre classement final et les pondérations.</p>
-                <p style="margin:24px 0;"><a href="{base}/vendor?tab=consultations"
-                style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Débloquer mon rapport ({cost} CPC)</a></p>
-                <p style="color:#777;font-size:12px;">Service facultatif O'SCOP — les CPC n'interviennent jamais dans le classement des offres.</p>""",
-                tags=["consultation-report-available"])
-            sent += 1
-        except Exception as exc:
-            logger.warning("Alerte rapport %s → %s : %s", c["ref"], u["email"], exc)
-        try:
-            from core_deps import create_notification
-            await create_notification("report_available", f"Rapport d'analyse disponible — {c['ref']}",
-                                      f"{c['title']} est clôturée : débloquez votre rapport détaillé ({cost} CREDI'SCOP).",
-                                      target_roles=["direct"], target_user_id=e["vendor_user_id"],
-                                      data={"link": "/vendor?tab=consultations"})
-        except Exception as exc:
-            logger.warning("Notif rapport %s : %s", e["vendor_user_id"], exc)
+        if u and u.get("email") and await channel_allowed(e["vendor_user_id"], "report_available", "email"):
+            try:
+                await send_email(
+                    to_email=u["email"], to_name=u.get("full_name") or u.get("name"),
+                    subject=f"Consultation {c['ref']} clôturée — votre rapport d'analyse est disponible",
+                    html_content=f"""<h2 style="color:#451F6B;">Consultation {c['ref']} — clôturée</h2>
+                    <p>Bonjour,</p>
+                    <p><strong>{c['title']}</strong> est désormais clôturée. En tant que participant, vous pouvez
+                    débloquer votre <strong>rapport d'analyse détaillé</strong> ({cost} CPC — débit unique) :
+                    meilleure offre, médiane du marché, votre écart, votre classement final et les pondérations.</p>
+                    <p style="margin:24px 0;"><a href="{base}/vendor?tab=consultations"
+                    style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Débloquer mon rapport ({cost} CPC)</a></p>
+                    <p style="color:#777;font-size:12px;">Service facultatif O'SCOP — les CPC n'interviennent jamais dans le classement des offres.</p>""",
+                    tags=["consultation-report-available"])
+                sent += 1
+            except Exception as exc:
+                logger.warning("Alerte rapport %s → %s : %s", c["ref"], u["email"], exc)
+        if await channel_allowed(e["vendor_user_id"], "report_available", "inapp"):
+            try:
+                from core_deps import create_notification
+                await create_notification("report_available", f"Rapport d'analyse disponible — {c['ref']}",
+                                          f"{c['title']} est clôturée : débloquez votre rapport détaillé ({cost} CREDI'SCOP).",
+                                          target_roles=["direct"], target_user_id=e["vendor_user_id"],
+                                          data={"link": "/vendor?tab=consultations"})
+            except Exception as exc:
+                logger.warning("Notif rapport %s : %s", e["vendor_user_id"], exc)
     await audit("REPORT_ALERT_SENT", "system", cid, {"sent": sent, "report_cost": cost})
     logger.info("Consultation %s : alerte rapport envoyée à %d participants", c["ref"], sent)
     return sent

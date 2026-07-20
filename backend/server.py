@@ -478,6 +478,9 @@ set_campaigns_database(db)
 set_cpc_export_database(db)
 app.include_router(campaigns_router)
 app.include_router(cpc_export_router)
+from routes_prefs import prefs_router, set_prefs_database
+set_prefs_database(db)
+app.include_router(prefs_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)

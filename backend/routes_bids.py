@@ -82,7 +82,8 @@ async def send_closure_reminders(database):
             if has_bid:
                 continue
             u = await db.users.find_one({"id": e["vendor_user_id"]}, {"_id": 0, "email": 1, "full_name": 1, "name": 1})
-            if u and u.get("email"):
+            from routes_prefs import channel_allowed
+            if u and u.get("email") and await channel_allowed(e["vendor_user_id"], "closure_reminder", "email"):
                 try:
                     from brevo_service import send_email
                     base = os.environ.get("FRONTEND_PUBLIC_URL", "")
@@ -100,8 +101,9 @@ async def send_closure_reminders(database):
                 except Exception as exc:
                     logger.warning("Relance clôture %s → %s : %s", c["ref"], u["email"], exc)
             try:
-                from core_deps import create_notification
-                await create_notification("closure_reminder", f"Clôture imminente — {c['ref']}",
+                if await channel_allowed(e["vendor_user_id"], "closure_reminder", "inapp"):
+                    from core_deps import create_notification
+                    await create_notification("closure_reminder", f"Clôture imminente — {c['ref']}",
                                           f"{c['title']} se clôture le {str(c['closes_at'])[:16].replace('T', ' ')} et vous n'avez pas encore déposé d'offre.",
                                           target_roles=["direct"], target_user_id=e["vendor_user_id"],
                                           data={"link": "/vendor?tab=consultations"})

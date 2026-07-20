@@ -108,6 +108,11 @@ export const ConsultationsTab = () => {
     act(`/admin/consultations/${c.id}/transition`, { to: 'ANNULEE', reason }, 'Consultation annulée — CREDI\'SCOP recrédités');
   };
 
+  const duplicate = (c) => {
+    if (!window.confirm(`Dupliquer ${c.ref} — « ${c.title} » ?\nUne copie en BROUILLON sera créée (statut juridique re-résolu, dates recalées).`)) return;
+    act(`/admin/consultations/${c.id}/duplicate`, null, `Consultation dupliquée depuis ${c.ref} (brouillon)`);
+  };
+
   const liquidity = async (c) => {
     const r = await fetch(`${API}/admin/consultations/${c.id}/liquidity`, opts());
     const d = await r.json();
@@ -141,6 +146,7 @@ export const ConsultationsTab = () => {
     if (c.status === 'CLOTUREE') out.push(<B key="e" onClick={() => act(`/admin/consultations/${c.id}/transition`, { to: 'EN_EVALUATION' }, 'En évaluation')} label="Évaluer" />);
     if (['CLOTUREE', 'EN_EVALUATION', 'ATTRIBUEE', 'SANS_SUITE', 'ARCHIVEE', 'ANNULEE'].includes(c.status)) {
       out.push(<B key="ev" onClick={() => setEvalC(c)} label={c.status === 'EN_EVALUATION' ? 'Scores & attribution' : 'Offres · PV · Exports'} testid={`cons-eval-${c.id}`} gold={c.status === 'EN_EVALUATION'} />);
+      out.push(<B key="dup" onClick={() => duplicate(c)} label="Dupliquer" testid={`cons-duplicate-${c.id}`} />);
     }
     if (['PUBLIEE', 'INSCRIPTIONS_OUVERTES', 'EN_COURS'].includes(c.status)) out.push(<B key="x" onClick={() => cancel(c)} label="Annuler" testid={`cons-cancel-${c.id}`} />);
     return out;

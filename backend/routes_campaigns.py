@@ -111,6 +111,29 @@ async def apply_calendar(camp_id: str, admin: dict = Depends(require_admin)):
     return {"ok": True, "lots_updated": res.modified_count}
 
 
+@campaigns_router.get("/{camp_id}/dashboard")
+async def campaign_dashboard(camp_id: str, admin: dict = Depends(require_admin)):
+    """Avancement d'une campagne : inscriptions, offres valides et attributions par lot."""
+    camp = await db.campaigns.find_one({"id": camp_id}, {"_id": 0})
+    if not camp:
+        raise HTTPException(status_code=404, detail="Campagne introuvable")
+    from routes_bids import _latest_valid_bids
+    lots, tot_entries, tot_bids, tot_awarded = [], 0, 0, 0
+    async for c in db.consultations.find({"campaign_id": camp_id},
+                                         {"_id": 0, "id": 1, "ref": 1, "title": 1, "status": 1, "closes_at": 1}):
+        entries = await db.consultation_entries.count_documents(
+            {"consultation_id": c["id"], "status": "INSCRIT"})
+        valid_bids = len(await _latest_valid_bids(c["id"]))
+        awarded = c["status"] == "ATTRIBUEE"
+        lots.append({**c, "entries": entries, "valid_bids": valid_bids, "awarded": awarded})
+        tot_entries += entries
+        tot_bids += valid_bids
+        tot_awarded += 1 if awarded else 0
+    return {"campaign": camp, "lots": lots,
+            "totals": {"lots": len(lots), "inscriptions": tot_entries,
+                       "offres_valides": tot_bids, "attribues": tot_awarded}}
+
+
 @campaigns_router.post("/{camp_id}/publish-all")
 async def publish_all(camp_id: str, admin: dict = Depends(require_admin)):
     """Publie en un clic tous les lots VALIDEE de la campagne (contrôles de publication conservés)."""

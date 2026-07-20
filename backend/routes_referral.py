@@ -119,6 +119,7 @@ async def maybe_pay_referral_bonus(filleul_id: str):
     if entry is None:
         return
     welcome = settings.get("referral_welcome_bonus", 5)
+    from routes_prefs import channel_allowed
     if welcome > 0:
         w_entry = await add_cpc_movement(
             filleul_id, "PROMO_GRANT", welcome,
@@ -126,16 +127,18 @@ async def maybe_pay_referral_bonus(filleul_id: str):
             reason="Bonus de bienvenue parrainage — première inscription à une consultation")
         if w_entry:
             try:
-                from core_deps import create_notification
-                await create_notification("referral_welcome", f"Bienvenue : +{welcome} CREDI'SCOP offerts",
+                if await channel_allowed(filleul_id, "referral_welcome", "inapp"):
+                    from core_deps import create_notification
+                    await create_notification("referral_welcome", f"Bienvenue : +{welcome} CREDI'SCOP offerts",
                                           f"Votre bonus de bienvenue parrainage a été crédité (solde : {w_entry['balance_after']}).",
                                           target_roles=["direct"], target_user_id=filleul_id,
                                           data={"link": "/vendor?tab=cpc"})
             except Exception as exc:
                 logger.warning("Notif bienvenue filleul %s : %s", filleul_id, exc)
     try:
-        from core_deps import create_notification
-        await create_notification("referral_bonus", f"Parrainage réussi : +{bonus} CREDI'SCOP",
+        if await channel_allowed(link["sponsor_id"], "referral_bonus", "inapp"):
+            from core_deps import create_notification
+            await create_notification("referral_bonus", f"Parrainage réussi : +{bonus} CREDI'SCOP",
                                   f"Votre filleul {link.get('filleul_email')} s'est inscrit à sa première consultation (solde : {entry['balance_after']}).",
                                   target_roles=["direct"], target_user_id=link["sponsor_id"],
                                   data={"link": "/vendor?tab=cpc"})
@@ -147,7 +150,7 @@ async def maybe_pay_referral_bonus(filleul_id: str):
     await audit("REFERRAL_BONUS_PAID", "system", None,
                 {"sponsor_id": link["sponsor_id"], "filleul_id": filleul_id, "bonus": bonus})
     sponsor = await db.users.find_one({"id": link["sponsor_id"]}, {"_id": 0, "email": 1, "full_name": 1, "name": 1})
-    if sponsor and sponsor.get("email"):
+    if sponsor and sponsor.get("email") and await channel_allowed(link["sponsor_id"], "referral_bonus", "email"):
         try:
             from brevo_service import send_email
             await send_email(

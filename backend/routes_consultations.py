@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -176,6 +176,42 @@ async def liquidity_score(cid: str, admin: dict = Depends(require_admin)):
         reco, msg = "ENCHERE_POSSIBLE", f"{eligible} fournisseurs éligibles — enchère envisageable"
     return {"eligible_vendors": eligible, "historical_participants": hist,
             "recommendation": reco, "message": msg}
+
+
+@consultations_router.post("/{cid}/duplicate")
+async def duplicate_consultation(cid: str, admin: dict = Depends(require_admin)):
+    """Relance la même consultation en deux clics : copie en BROUILLON, statut juridique re-résolu, dates recalées."""
+    c = await _get(cid)
+    from routes_legal_matrix import resolve_legal_status
+    from routes_cpc_admin import get_cpc_settings
+    settings = await get_cpc_settings()
+    legal = await resolve_legal_status(c["category"], c.get("sku_ean"))
+    procedure = "SCELLEE" if legal["status"] == "ROUGE" else c["procedure"]
+    now = datetime.now(timezone.utc)
+    try:
+        duration = datetime.fromisoformat(c["closes_at"]) - datetime.fromisoformat(c["opens_at"])
+    except (ValueError, TypeError, KeyError):
+        duration = timedelta(days=7)
+    doc = {
+        "id": str(uuid.uuid4()), "ref": await _next_ref(), "version": 1,
+        "title": c["title"], "type": c["type"], "procedure": procedure,
+        "category": c["category"], "sku_ean": c.get("sku_ean"),
+        "legal_status": legal["status"], "legal_matrix_id": legal.get("id"),
+        "legal_matrix_version": legal.get("version"), "orange_validation": None,
+        "products": c.get("products") or [], "territories": c.get("territories") or [],
+        "specs": c.get("specs", ""),
+        "cpc_cost": settings["interterritorial_cost"] if c["type"] == "INTERTERRITORIALE" else settings["standard_cost"],
+        "max_rounds": c.get("max_rounds", 3), "criteria": c.get("criteria") or DEFAULT_CRITERIA,
+        "tie_break_order": c.get("tie_break_order") or ["qualite", "logistique", "disponibilite", "tracabilite", "first_timestamp"],
+        "opens_at": now.isoformat(), "closes_at": (now + duration).isoformat(),
+        "status": "BROUILLON", "validations": {}, "published_snapshot_hash": None,
+        "duplicated_from": cid, "created_by": admin.get("email"),
+        "created_at": now.isoformat(), "updated_at": now.isoformat(),
+    }
+    await db.consultations.insert_one({**doc})
+    await audit("LOT_CREATED", admin.get("email"), doc["id"],
+                {"ref": doc["ref"], "duplicated_from": c["ref"], "legal_status": legal["status"], "procedure": procedure})
+    return doc
 
 
 class OrangeValidationBody(BaseModel):
