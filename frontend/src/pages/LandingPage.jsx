@@ -27,6 +27,7 @@ import Footer from '../components/Footer';
 import LoloPointsMap from '../components/LoloPointsMap';
 import TerritorySelector from '../components/TerritorySelector';
 import WhyCommunityplaceSection from '../components/WhyCommunityplaceSection';
+import PartnerCarousel from '../components/PartnerCarousel';
 
 const LandingPage = () => {
   return (
@@ -128,6 +129,7 @@ const LandingPage = () => {
 
       {/* Partners Section */}
       <PartnersSection />
+      <PartnerCarousel />
 
       {/* Access Condition */}
       <section className="py-8 px-5">

@@ -490,6 +490,24 @@ from routes_admin_territories import territories_router, set_territories_databas
 set_territories_database(db)
 app.include_router(territories_router)
 
+from routes_showcase import showcase_router, showcase_admin_router, set_showcase_database
+set_showcase_database(db)
+app.include_router(showcase_router)
+app.include_router(showcase_admin_router)
+
+from routes_api_keys import api_keys_router, set_api_keys_database
+set_api_keys_database(db)
+app.include_router(api_keys_router)
+
+from routes_public_api import public_api_router, set_public_api_database
+set_public_api_database(db)
+app.include_router(public_api_router)
+
+from routes_licenses import licenses_admin_router, licenses_public_router, set_licenses_database
+set_licenses_database(db)
+app.include_router(licenses_admin_router)
+app.include_router(licenses_public_router)
+
 from routes_logicoop import logicoop_router, set_logicoop_database
 set_logicoop_database(db)
 app.include_router(logicoop_router)

@@ -33,6 +33,9 @@ import { EmailPreviewsTab } from '../components/superadmin/EmailPreviewsTab';
 import { EcosystemHealthTab } from '../components/superadmin/EcosystemHealthTab';
 import { AiChatAdminTab } from '../components/superadmin/AiChatAdminTab';
 import { DemandesAdminTab } from '../components/superadmin/DemandesAdminTab';
+import { ShowcasePartnersPanel } from '../components/superadmin/ShowcasePartnersPanel';
+import { LicensesPanel } from '../components/superadmin/LicensesPanel';
+import { ApiKeysPanel } from '../components/superadmin/ApiKeysPanel';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -196,6 +199,15 @@ export default function SuperAdminPage() {
 
           <TabsContent value="announcements">
             <AnnouncementsTab />
+          </TabsContent>
+
+          <TabsContent value="showcase" className="space-y-6">
+            <ShowcasePartnersPanel />
+            <LicensesPanel />
+          </TabsContent>
+
+          <TabsContent value="api-erp">
+            <ApiKeysPanel />
           </TabsContent>
 
           <TabsContent value="promos">

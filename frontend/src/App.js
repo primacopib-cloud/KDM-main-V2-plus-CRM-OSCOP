@@ -24,6 +24,8 @@ import LegalPage from "./pages/LegalPage";
 import OrderPreviewPage from "./pages/OrderPreviewPage";
 import SignatureDemoPage from "./pages/SignatureDemoPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
+import TenantPage from "./pages/TenantPage";
+import ApiDocsPage from "./pages/ApiDocsPage";
 import DynamicOrderPage from "./pages/DynamicOrderPage";
 import VendorSpacePage from "./pages/VendorSpacePage";
 import CooperSpacePage from "./pages/CooperSpacePage";
@@ -125,6 +127,8 @@ function App() {
           {/* Super Admin Dashboard */}
           <Route path="/super-admin" element={<SuperAdminPage />} />
           <Route path="/superadmin" element={<SuperAdminPage />} />
+          <Route path="/t/:slug" element={<TenantPage />} />
+          <Route path="/api-docs" element={<ApiDocsPage />} />
           {/* Dynamic Order Form with Zone Preparation Options */}
           <Route path="/bon-de-commande-dynamique" element={<DynamicOrderPage />} />
           <Route path="/dynamic-order" element={<DynamicOrderPage />} />

@@ -1,0 +1,39 @@
+{
+  "summary": "Iter 65 (Lot Vitrine + API publique + Marque Blanche) : backend 13/13 pytest PASS, frontend flows PASS sauf 1 BUG CRITIQUE de routing sur /api-docs. Backend testé : CRUD /api/admin/showcase/partners + public GET (masque inactifs, tri sort_order), move up ; /api/admin/api-keys create renvoie kdm_live_... (starts with 'kdm_live_', pas de key_hash), list masque key_hash, toggle → 403 sur public, delete révoque ; /api/public/v1 ping (401 sans header, 401 invalide, 403 désactivée, 403 scope manquant), products (pagination limit/offset), get product (404 inconnu), PATCH stock avec scope stock:write (external_stock_qty=42), orders list, territories (contient GUADELOUPE/MARTINIQUE) ; /api/admin/licenses create (slug 'test-lic-cafe-martinique' translittéré depuis 'Café Martinique'), slug dupliqué → 409, territoire inconnu → 404, PATCH deactivate → public 404, DELETE. Frontend testé : Landing / affiche partner-carousel-section (OK avec 1 partenaire seedé, pas d'img car logo_url vide), /t/kdmarch-guadeloupe → tenant-page + tenant-name='KDMARCHÉ Guadeloupe', /t/nonexistent → tenant-not-found. SuperAdmin (/admin/connexion → /superadmin) : onglet 'Vitrine & Licences' → showcase-partners-panel + licenses-panel visibles, ajout partenaire OK, création licence 'TEST_UI Café Test' → slug auto 'test-ui-cafe-test' (accents supprimés), delete OK avec toast. Onglet 'API & ERP' → api-keys-panel + api-docs-link visibles, création clé sans toucher scopes (default catalog:read) → new-api-key-value affiché commençant par kdm_live_. RCA du bug /api-docs ci-dessous.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Route /api-docs", "issue": "La route front /api-docs matche le préfixe ingress /api* et est routée vers le backend qui répond 404 (JSON 'Not Found'). La page ApiDocsPage n'est jamais servie. Le lien api-docs-link dans SuperAdmin > API & ERP mène donc vers un écran 404 JSON.", "selector": "[data-testid=\"api-docs-page\"]", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Landing PartnerCarousel", "issues": ["Le partenaire seedé 'Distillerie Damoiseau' n'a pas de logo_url — le carrousel affiche uniquement le nom sans image. Prévoir un placeholder visuel ou seed avec un vrai logo pour éviter un rendu vide."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter65_showcase_apikeys_licenses.py",
+    "/app/test_reports/pytest/iter65_results.xml"
+  ],
+  "action_items": [
+    "CRITIQUE — /api-docs 404: renommer la route frontend en '/developer-docs' (ou '/docs-api') ET mettre à jour le Link dans /app/frontend/src/components/superadmin/ApiKeysPanel.jsx (api-docs-link) et /app/frontend/src/App.js. Toute route dont le path commence par '/api' est capturée par l'ingress et envoyée au backend port 8001 — c'est une contrainte structurelle du cluster, pas contournable côté front.",
+    "Ajouter un placeholder d'image dans PartnerCarousel.jsx lorsque logo_url est vide (ex : initiales du nom sur fond coloré) — actuellement rendu partiel.",
+    "Envisager d'ajouter un test 'stock_qty négatif → 400' explicite dans une future itération (le code le gère déjà, non couvert par les tests actuels)."
+  ],
+  "critical_code_review_comments": [
+    "BUG: /api-docs collide avec le préfixe /api de l'ingress → la page React n'est jamais servie. À renommer.",
+    "routes_public_api.py update_stock : pas de vérification que product existe AVANT l'update (matched_count==0 après OK), mais correct. En revanche external_stock_qty n'est PAS additionné au stock officiel — s'assurer que le catalogue frontend utilise bien un champ dédié 'external_stock_qty' et pas 'stock_qty' pour éviter des désynchros ERP vs stock plateforme.",
+    "routes_licenses.public_license : count_documents products ne filtre pas par territoire → chaque licence affiche le MÊME 'products' total. Devrait filtrer par vendor_id / territory_code sur les products territorialisés pour donner des stats réellement par territoire.",
+    "routes_api_keys.py toggle_key : pas de body — accepte n'importe quel PATCH et flip l'état. OK pour simple toggle mais peu explicite (préférer POST /toggle ou body {is_active: bool}) pour éviter les toggle involontaires par une double soumission de formulaire.",
+    "routes_showcase.move_partner : boucle O(n) d'updates séquentiels — pour beaucoup de partenaires (>50), utiliser bulk_write. OK pour le use case actuel (<20 logos)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter65_showcase_apikeys_licenses.py (créé)"
+  ],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "~85% (tous flows testés sauf /api-docs cassé par routing ingress)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin)",
+  "seed_data_creation": "Aucune donnée seed persistante. Toutes les entités TEST_ (partenaire, clé API, licence) ont été supprimées après tests. Le state pré-existant (Distillerie Damoiseau, ERP Test key, KDMARCHÉ Guadeloupe) est intact.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Testids utilisés : partner-carousel-section, api-docs-page, tenant-page, tenant-not-found, tenant-name, superadmin-tab-showcase, superadmin-tab-api-erp, showcase-partners-panel, showcase-name-input, showcase-add-btn, showcase-row-{id}, showcase-toggle-{id}, showcase-delete-{id}, licenses-panel, license-name-input, license-territory-select, license-create-btn, license-preview-{id}, license-delete-{id}, api-keys-panel, api-key-name-input, api-key-create-btn, scope-{catalog-read|orders-read|territories-read|stock-write}, new-api-key-value, api-key-row-{id}, api-key-toggle-{id}, api-key-revoke-{id}, api-docs-link. Le form ApiKeysPanel démarre avec scopes=['catalog:read'] — pour tester la création, NE PAS cliquer sur scope-catalog-read car ça le désélectionne. Bug /api-docs à re-vérifier après le fix (renommage de route).",
+  "rca of the issue": "BUG /api-docs → 404 backend. RCA : la configuration Kubernetes ingress redirige TOUTE requête dont le path commence par '/api' vers le backend port 8001 (règle : 'All backend API routes are automatically redirected to port 8001 when prefixed with /api'). La route frontend React '/api-docs' matche cette règle (le préfixe /api est présent), donc le HTML de l'index React n'est jamais servi ; à la place, FastAPI reçoit GET /api-docs et retourne son 404 par défaut 'Not Found'. Reproduction : curl -s https://coop-dashboard-8.preview.emergentagent.com/api-docs → {\"detail\":\"Not Found\"}. Mitigation : renommer la route frontend en '/developer/docs' ou '/docs-api' (tout path ne commençant PAS par '/api'), puis mettre à jour le Link dans ApiKeysPanel.jsx ligne 74 (data-testid api-docs-link) et la <Route> dans App.js ligne 131. Après fix, /developer-docs devra servir ApiDocsPage.jsx et le testid api-docs-page devra être présent."
+}
