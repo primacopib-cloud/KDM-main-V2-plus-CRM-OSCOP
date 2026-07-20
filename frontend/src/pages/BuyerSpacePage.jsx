@@ -3,13 +3,12 @@ import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  ShoppingBag, Package, FileText, Wallet, TrendingUp,
+  ShoppingBag, Package,
   CheckCircle2, ChevronRight, ArrowLeft, RefreshCw,
   AlertTriangle, AlertCircle,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Tabs } from '../components/ui/tabs';
 import { toast } from 'sonner';
 import { BreadcrumbPill } from '../components/Breadcrumb';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
@@ -23,8 +22,8 @@ import { BuyerWalletTab } from '../components/buyer/BuyerWalletTab';
 import { BuyerModals } from '../components/buyer/BuyerModals';
 import { BuyerConsultationsTab } from '../components/buyer/BuyerConsultationsTab';
 import { BuyerToolsTab } from '../components/buyer/BuyerToolsTab';
+import { BuyerTabsNav } from '../components/buyer/BuyerTabsNav';
 import { BrandLogos } from '../components/BrandLogos';
-import { Gavel, BrainCircuit } from 'lucide-react';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
 
@@ -418,45 +417,7 @@ export default function BuyerSpacePage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white/[0.04] border border-white/[0.08] p-1 rounded-xl">
-            <TabsTrigger 
-              value="dashboard" 
-              className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg"
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              {i18n.t('buyer.tableau_de_bord')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="orders"
-              className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg"
-            >
-              <Package className="w-4 h-4 mr-2" />
-              {i18n.t('buyer.commandes')}
-              {stats.pendingOrders > 0 && (
-                <Badge className="ml-2 bg-amber-500/20 text-amber-400 border-0">{stats.pendingOrders}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="invoices"
-              className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              {i18n.t('buyer.factures')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="wallet"
-              className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg"
-            >
-              <Wallet className="w-4 h-4 mr-2" />
-              {i18n.t('buyer.wallet')}
-            </TabsTrigger>
-            <TabsTrigger value="consultations" className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg" data-testid="buyer-tab-consultations">
-              <Gavel className="w-4 h-4 mr-2" />Consultations
-            </TabsTrigger>
-            <TabsTrigger value="tools" className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg" data-testid="buyer-tab-tools">
-              <BrainCircuit className="w-4 h-4 mr-2" />Outils d'achat
-            </TabsTrigger>
-          </TabsList>
+          <BuyerTabsNav pendingOrders={stats.pendingOrders} />
 
           <BuyerDashboardTab stats={stats} orders={orders} setActiveTab={setActiveTab} />
 
