@@ -1174,3 +1174,10 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Alerte Seuil Liquidité** : _alert_threshold dans routes_liquidity — email ADMIN_ALERT_EMAIL au croisement prev<3 → current>=3 (baseline = snapshot du jour ou précédent, pas de re-spam).
 - **Partage WhatsApp/Email** : boutons wa.me et mailto dans ReferralPanel (referral-whatsapp-btn, referral-email-btn).
 - **Tests (iteration 55)** : 6/6 backend PASS, frontend 100 % (bannière+localStorage, auto-claim, partage, panneau admin, régressions /mon-crediscop et onglets). Tests : /app/backend/tests/test_iter55_lot_features.py.
+
+## 2026-07-20 — Campagnes multi-lots + Bonus filleul + Export compta + Notifications in-app (iteration 56)
+- **Campagnes Multi-Lots** : routes_campaigns.py (CRUD, attach/detach de lots non publiés avec application du calendrier commun, apply-calendar, delete avec détachement en cascade, audits CAMPAIGN_*). UI : CampaignsPanel dans l'onglet Consultations superadmin.
+- **Bonus Filleul Bienvenue** : referral_welcome_bonus=5 (settings) — le filleul reçoit +5 CREDI'SCOP (clé referral-welcome:{id}) en même temps que le parrain (+10), notifications in-app pour les deux, idempotent.
+- **Export Compta CREDI'SCOP** : routes_cpc_export.py — GET /api/admin/cpc/export.csv|.pdf (?month=YYYY-MM) : PACKS (€ HT/TVA/TTC), ABONNEMENTS (€), CONSOMMATIONS (unités). UI : panneau cpc-export-panel dans l'onglet CREDI'SCOP superadmin.
+- **Notifications In-App** : NotificationsBell.jsx (poll 60 s, dropdown, read-all auto) dans NavBar (non-admins), header /vendor et CatalogHeader. Émissions : bonus parrain/filleul (routes_referral), relance clôture 24h (routes_bids), rapport disponible (consultation_notify) — via create_notification (core_deps, target_roles=['direct'] + target_user_id).
+- **Tests (iteration 56)** : 8/8 backend PASS, frontend validé (cloche, campagnes, export, régressions) + correctif cloche /catalogue vérifié par screenshot. Solde vendor-pro à 60. Tests : /app/backend/tests/test_iter56_lot_features.py.
