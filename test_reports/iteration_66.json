@@ -1,0 +1,40 @@
+{
+  "summary": "Iter 66 (Vitrine auto-vendeur + Espace Dev + Domaines personnalisés + Accusé devis) : backend 16/16 pytest PASS, frontend flows OK sauf 1 issue mineure UI (badge domaine manquant sur la ligne de licence). Backend testé : (1) GET/POST /api/showcase/vendor-opt-in/{id} — 404 sur vendeur inconnu, opt-in vendor-demo-pro apparaît dans public /api/showcase/partners avec auto:true et logo_url=product primary image, opt-out le retire, dédup si entrée manuelle du même nom (auto ignoré, manuel conservé). (2) POST /api/admin/api-keys avec monthly_quota=3 renvoie {api_key, monthly_quota:3}, /api/public/v1/ping renvoie monthly_quota+month_usage, appels successifs → 429 après quota, admin voit last_calls avec /api/public/v1/* dans /api/partner/dev/keys. (3) GET /api/partner/dev/keys sans auth → 401. (4) /api/licenses/by-domain/resolve : exact match OK, préfixe www. OK, host inconnu → 404, PATCH custom_domain puis résolution OK, seeded kdmarche-gp.fr → KDMARCHÉ Guadeloupe. (5) POST /api/quotes lang=en → 201 + backend logs confirment 2 emails Brevo envoyés (HTTP 201 vers Brevo × 2, quote-notify INFO 'Accusé de réception devis (en) envoyé' + 'Notification devis envoyée à contact@objectifscopoutremer.com'). Frontend : Landing partner-carousel-section affiche 'Distillerie Damoiseau' avec image produit /api/uploads/products/vp-damoi... (auto opt-in fonctionne). /espace-developpeur non connecté → dev-error avec lien /connexion. Admin connecté sur /espace-developpeur → 2 cards dev-key-card-* (ERP Test 2/10000 avec journal des 2 derniers appels /api/public/v1/products + /api/public/v1/ping horodatés, + une clé résiduelle TEST_QuotaKey nettoyée après). /vendor dashboard vendeur-pro → vendor-showcase-panel + vendor-showcase-switch présents et ON. /superadmin > Vitrine & Licences : license-domain-input présent ; > API & ERP : api-key-quota-input présent, ligne ERP Test affiche '2/10000 ce mois'. État vendor-demo-pro laissé showcase_opt_in=true comme demandé.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "LicensesPanel.jsx (SuperAdmin > Vitrine & Licences)", "issue": "Le champ custom_domain n'est PAS affiché comme badge sur la ligne de licence — la requête demandait explicitement le badge 'kdmarche-gp.fr' sur la ligne KDMARCHÉ Guadeloupe. Actuellement la ligne montre seulement territoire + slug + couleurs, aucun rendu de l.custom_domain (data confirmée en DB : 'kdmarche-gp.fr').", "selector": "[data-testid^=\"license-row-\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "PartnerCarousel /", "issues": ["Distillerie Damoiseau apparaît en double dans le carrousel (2 <img> détectés) — probablement le duplicata de scroll infini, à vérifier visuellement que le loop ne crée pas de sensation de répétition sur peu d'items (1 vendeur auto seul)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter66_showcase_devkeys_domain_quote.py",
+    "/app/test_reports/pytest/iter66_results.xml"
+  ],
+  "action_items": [
+    "Ajouter l'affichage du custom_domain comme badge/code sur la ligne de licence dans /app/frontend/src/components/superadmin/LicensesPanel.jsx (bloc <p className='text-[11px] text-white/40'>, aux côtés de /t/{slug}). Ex : `{l.custom_domain && <code className='ml-2 px-1.5 py-0.5 rounded bg-white/10'>{l.custom_domain}</code>}`.",
+    "(Optionnel) Envisager de dédupliquer les items du carrousel côté frontend si nb items < 3 pour éviter le rendu 'Damoiseau × 2' visuel."
+  ],
+  "critical_code_review_comments": [
+    "routes_showcase.public_partners : la merge vendors n'itère que sur showcase_opt_in=true — bien. Attention : `manual_names` compare en lowercase, la dédup est donc correcte quel que soit la casse. OK.",
+    "routes_public_api._resolve_key : le month_usage est incrémenté ($inc) après vérification (key.get('month_usage') >= quota). Le ping renvoie `(month_usage or 0) + 1` — cohérent avec l'incrément atomique. OK.",
+    "routes_public_api._resolve_key : log de chaque appel dans api_call_logs — pas de TTL/index. Prévoir un index TTL sur `ts` ou une purge (cron) pour éviter croissance illimitée. À signaler mais non bloquant.",
+    "routes_licenses.license_by_domain : le $in [host, 'www.'+host] fait un double match. Après `host.removeprefix('www.')`, `www.host` matchera aussi si le domaine stocké contient déjà le préfixe. OK.",
+    "quote_notify.send_quote_ack_email : lang fallback = 'fr'. Bon comportement observé (POST lang=en → 'Accusé de réception devis (en) envoyé'). Emails réels via Brevo → limitation à 1 test respectée.",
+    "routes_partner_dev.my_keys : regex ^email$ avec options 'i' — safe puisque `email` provient du user connecté. OK. Attention si un utilisateur non-admin sans email arrive → 403 explicite. OK.",
+    "LicensesPanel.jsx : le custom_domain est saisi dans le formulaire mais jamais réaffiché ailleurs → improve UX (voir action_items)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter66_showcase_devkeys_domain_quote.py (créé, 16 tests)"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "~92% (5/5 flows OK, badge domaine manquant sur licence row)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin) ; vendor-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "Aucune donnée persistante. Toutes les entités TEST_ (api key, license, partenaire, quote) créées puis supprimées. showcase_opt_in=true laissé sur vendor-demo-pro comme demandé. Nettoyage supplémentaire : 1 TEST_QuotaKey résiduelle d'un run partiel a été supprimée manuellement via mongo.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fichier de tests réutilisable : /app/backend/tests/test_iter66_showcase_devkeys_domain_quote.py — lancer avec `REACT_APP_BACKEND_URL=<url> pytest ...`. Le test quote envoie un email Brevo RÉEL (1 seul par run) — à limiter. Testids ajoutés/vérifiés : dev-key-card-{id}, dev-key-usage-{id}, dev-key-calls-{id}, dev-error, vendor-showcase-panel, vendor-showcase-switch, license-domain-input, api-key-quota-input, partner-carousel-section. Le POST /api/admin/api-keys renvoie `api_key` (PAS `key`) — bien noter pour futurs tests. La création de licence via /api/admin/licenses accepte custom_domain optionnel (lowercased à l'insertion). L'endpoint /api/showcase/vendor-opt-in/{id} n'est PAS protégé par auth (POST public) — potentiel problème de sécurité à signaler séparément.",
+  "rca of the issue": "MINOR — Badge custom_domain manquant sur license row. RCA : LicensesPanel.jsx ligne 127-131 rend uniquement territory_name/slug/colors dans le sous-titre de la ligne. Le champ l.custom_domain (bien présent dans la réponse GET /api/admin/licenses vu que le backend le stocke) n'est jamais lu par le composant. Fix : ajouter conditionnellement `{l.custom_domain && <code>...{l.custom_domain}</code>}` dans le <p> de sous-titre. Confirmé côté DB : `{'slug':'kdmarch-guadeloupe','name':'KDMARCHÉ Guadeloupe','custom_domain':'kdmarche-gp.fr'}`.\n\nSECURITY NOTE — POST /api/showcase/vendor-opt-in/{vendor_id} n'a AUCUN require_admin/require_vendor. N'importe quel client anonyme peut basculer l'opt-in de n'importe quel vendeur. Bien que non demandé dans cette itération, à protéger avant prod (ex : dépendance current vendor doit == vendor_id, ou admin)."
+}

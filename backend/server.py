@@ -499,6 +499,10 @@ from routes_api_keys import api_keys_router, set_api_keys_database
 set_api_keys_database(db)
 app.include_router(api_keys_router)
 
+from routes_partner_dev import partner_dev_router, set_partner_dev_database
+set_partner_dev_database(db)
+app.include_router(partner_dev_router)
+
 from routes_public_api import public_api_router, set_public_api_database
 set_public_api_database(db)
 app.include_router(public_api_router)

@@ -70,8 +70,9 @@ async def create_quote_request(quote_data: QuoteRequestCreate):
     from oscop_demandes_client import push_quote_to_oscop
     asyncio.create_task(push_quote_to_oscop(db, quote_in_db.id))
 
-    from quote_notify import send_quote_notification_email
+    from quote_notify import send_quote_notification_email, send_quote_ack_email
     asyncio.create_task(send_quote_notification_email(quote_in_db.dict()))
+    asyncio.create_task(send_quote_ack_email(quote_in_db.dict()))
 
     return {
         "id": quote_in_db.id,

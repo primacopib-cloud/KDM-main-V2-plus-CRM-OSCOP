@@ -41,9 +41,47 @@ class PartnerUpdate(BaseModel):
 
 @showcase_router.get("/partners")
 async def public_partners():
-    """Logos visibles sur la page d'accueil (actifs, triés)."""
+    """Logos visibles sur la page d'accueil : entrées manuelles + vendeurs approuvés ayant opté pour la vitrine."""
     items = await db.showcase_partners.find({"is_active": True}, {"_id": 0}).sort("sort_order", 1).to_list(100)
+    manual_names = {i["name"].lower() for i in items}
+    vendors = await db.vendors.find(
+        {"status": "approved", "showcase_opt_in": True},
+        {"_id": 0, "id": 1, "company_name": 1, "website": 1}
+    ).to_list(100)
+    for v in vendors:
+        if v["company_name"].lower() in manual_names:
+            continue
+        product = await db.vendor_products.find_one(
+            {"vendor_id": v["id"], "images.0": {"$exists": True}}, {"_id": 0, "images": 1})
+        logo = ""
+        if product:
+            primary = next((im for im in product["images"] if im.get("is_primary")), product["images"][0])
+            logo = primary.get("url", "")
+        items.append({"id": f"vendor-{v['id']}", "name": v["company_name"], "logo_url": logo,
+                      "link": v.get("website") or "", "category": "vendor", "auto": True})
     return {"items": items}
+
+
+@showcase_router.get("/vendor-opt-in/{vendor_id}")
+async def get_vendor_opt_in(vendor_id: str):
+    vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "showcase_opt_in": 1, "status": 1})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendeur introuvable")
+    return {"opt_in": bool(vendor.get("showcase_opt_in")), "approved": vendor.get("status") == "approved"}
+
+
+class OptInBody(BaseModel):
+    opt_in: bool
+
+
+@showcase_router.post("/vendor-opt-in/{vendor_id}")
+async def set_vendor_opt_in(vendor_id: str, body: OptInBody):
+    res = await db.vendors.update_one({"id": vendor_id}, {"$set": {"showcase_opt_in": body.opt_in}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Vendeur introuvable")
+    from consultation_audit import audit
+    await audit("SHOWCASE_VENDOR_OPT_IN", vendor_id, None, {"opt_in": body.opt_in})
+    return {"ok": True, "opt_in": body.opt_in}
 
 
 @showcase_admin_router.get("/partners")

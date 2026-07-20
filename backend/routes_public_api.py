@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ def set_public_api_database(database):
     db = database
 
 
-async def _resolve_key(x_api_key: Optional[str]) -> dict:
+async def _resolve_key(x_api_key: Optional[str], request: Optional[Request] = None) -> dict:
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Header X-API-Key manquant")
     key_hash = hashlib.sha256(x_api_key.encode()).hexdigest()
@@ -28,16 +28,28 @@ async def _resolve_key(x_api_key: Optional[str]) -> dict:
         raise HTTPException(status_code=401, detail="Clé API invalide")
     if not key.get("is_active", True):
         raise HTTPException(status_code=403, detail="Clé API désactivée")
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    if key.get("usage_month") != month:
+        await db.api_keys.update_one({"id": key["id"]}, {"$set": {"usage_month": month, "month_usage": 0}})
+        key["month_usage"] = 0
+    quota = key.get("monthly_quota") or 10000
+    if (key.get("month_usage") or 0) >= quota:
+        raise HTTPException(status_code=429, detail=f"Quota mensuel atteint ({quota} requêtes) — contactez l'administrateur")
     await db.api_keys.update_one({"id": key["id"]}, {
         "$set": {"last_used_at": datetime.now(timezone.utc).isoformat()},
-        "$inc": {"requests_count": 1},
+        "$inc": {"requests_count": 1, "month_usage": 1},
     })
+    if request is not None:
+        await db.api_call_logs.insert_one({
+            "key_id": key["id"], "method": request.method, "path": request.url.path,
+            "ts": datetime.now(timezone.utc).isoformat(),
+        })
     return key
 
 
 def require_scope(scope: str):
-    async def dep(x_api_key: Optional[str] = Header(None)):
-        key = await _resolve_key(x_api_key)
+    async def dep(request: Request, x_api_key: Optional[str] = Header(None)):
+        key = await _resolve_key(x_api_key, request)
         if scope not in (key.get("scopes") or []):
             raise HTTPException(status_code=403, detail=f"Scope requis : {scope}")
         return key
@@ -45,10 +57,11 @@ def require_scope(scope: str):
 
 
 @public_api_router.get("/ping")
-async def ping(x_api_key: Optional[str] = Header(None)):
+async def ping(request: Request, x_api_key: Optional[str] = Header(None)):
     """Vérifie la validité de la clé et renvoie ses scopes."""
-    key = await _resolve_key(x_api_key)
-    return {"ok": True, "name": key.get("name"), "scopes": key.get("scopes", [])}
+    key = await _resolve_key(x_api_key, request)
+    return {"ok": True, "name": key.get("name"), "scopes": key.get("scopes", []),
+            "monthly_quota": key.get("monthly_quota") or 10000, "month_usage": (key.get("month_usage") or 0) + 1}
 
 
 @public_api_router.get("/products")

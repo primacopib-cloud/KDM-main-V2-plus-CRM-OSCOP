@@ -40,6 +40,7 @@ class LicenseBody(BaseModel):
     primary_color: Optional[str] = "#5B2E8C"
     accent_color: Optional[str] = "#D9B35A"
     logo_url: Optional[str] = None
+    custom_domain: Optional[str] = None
 
 
 class LicenseUpdate(BaseModel):
@@ -50,6 +51,7 @@ class LicenseUpdate(BaseModel):
     primary_color: Optional[str] = None
     accent_color: Optional[str] = None
     logo_url: Optional[str] = None
+    custom_domain: Optional[str] = None
     is_active: Optional[bool] = None
 
 
@@ -76,6 +78,7 @@ async def create_license(body: LicenseBody, admin: dict = Depends(require_admin)
         "tagline": (body.tagline or "").strip(), "contact_email": (body.contact_email or "").strip(),
         "primary_color": body.primary_color or "#5B2E8C", "accent_color": body.accent_color or "#D9B35A",
         "logo_url": (body.logo_url or "").strip(), "is_active": True,
+        "custom_domain": (body.custom_domain or "").strip().lower(),
         "created_by": admin.get("email"), "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.licenses.insert_one({**doc})
@@ -137,17 +140,31 @@ async def delete_license(license_id: str, admin: dict = Depends(require_admin)):
     return {"ok": True}
 
 
+@licenses_public_router.get("/by-domain/resolve")
+async def license_by_domain(host: str):
+    """Résolution marque blanche par domaine personnalisé (ex : kdmarche-guadeloupe.fr)."""
+    host = host.strip().lower().removeprefix("www.")
+    lic = await db.licenses.find_one(
+        {"is_active": True, "custom_domain": {"$in": [host, f"www.{host}"]}}, {"_id": 0})
+    if not lic:
+        raise HTTPException(status_code=404, detail="Aucune licence pour ce domaine")
+    return await _license_with_stats(lic)
+
+
+async def _license_with_stats(lic: dict) -> dict:
+    code = lic.get("territory_code")
+    lic["stats"] = {
+        "products": await db.products.count_documents({"status": {"$in": ["ACTIVE", "active", "APPROVED"]}}),
+        "orders": await db.orders.count_documents({"zone_code": code}),
+        "vendors": len(await db.vendor_products.distinct("vendor_id")),
+    }
+    return lic
+
+
 @licenses_public_router.get("/{slug}")
 async def public_license(slug: str):
     """Page vitrine marque blanche : branding + statistiques publiques du territoire."""
     lic = await db.licenses.find_one({"slug": slug.lower(), "is_active": True}, {"_id": 0})
     if not lic:
         raise HTTPException(status_code=404, detail="Licence introuvable ou inactive")
-    code = lic.get("territory_code")
-    lic["stats"] = {
-        "products": await db.products.count_documents({"status": {"$in": ["ACTIVE", "active", "APPROVED"]}}),
-        "orders": await db.orders.count_documents({"zone_code": code}),
-        "vendors": await db.vendor_products.distinct("vendor_id"),
-    }
-    lic["stats"]["vendors"] = len(lic["stats"]["vendors"])
-    return lic
+    return await _license_with_stats(lic)

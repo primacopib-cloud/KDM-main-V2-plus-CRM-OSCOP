@@ -6,17 +6,20 @@ import Footer from '../components/Footer';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const resolveLogo = (url) => (url && url.startsWith('/api/') ? `${process.env.REACT_APP_BACKEND_URL}${url}` : url);
 
-export default function TenantPage() {
+export default function TenantPage({ domainMode = false }) {
   const { slug } = useParams();
   const [lic, setLic] = useState(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/licenses/${slug}`)
+    const url = domainMode
+      ? `${API}/licenses/by-domain/resolve?host=${window.location.hostname}`
+      : `${API}/licenses/${slug}`;
+    fetch(url)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(setLic)
       .catch(() => setError(true));
-  }, [slug]);
+  }, [slug, domainMode]);
 
   if (error) {
     return (

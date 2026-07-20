@@ -22,6 +22,9 @@ export default function ApiDocsPage() {
         <Link to="/" className="text-xs text-white/50 hover:text-white inline-flex items-center gap-1.5 mb-6">
           <ArrowLeft className="w-3.5 h-3.5" /> Retour à l'accueil
         </Link>
+        <Link to="/espace-developpeur" className="text-xs text-[#D9B35A] hover:underline inline-flex items-center gap-1.5 mb-6 ml-4" data-testid="docs-dev-space-link">
+          <KeyRound className="w-3.5 h-3.5" /> Mon espace développeur
+        </Link>
         <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3 mb-2">
           <BookOpen className="w-8 h-8 text-[#D9B35A]" /> API publique v1 — Connecteurs ERP
         </h1>

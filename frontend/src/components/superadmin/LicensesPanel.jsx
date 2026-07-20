@@ -6,7 +6,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inp = 'h-10 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35';
 const resolveLogo = (url) => (url && url.startsWith('/api/') ? `${process.env.REACT_APP_BACKEND_URL}${url}` : url);
 
-const EMPTY = { name: '', slug: '', territory_code: '', tagline: '', contact_email: '', primary_color: '#5B2E8C', accent_color: '#D9B35A', logo_url: '' };
+const EMPTY = { name: '', slug: '', territory_code: '', tagline: '', contact_email: '', primary_color: '#5B2E8C', accent_color: '#D9B35A', logo_url: '', custom_domain: '' };
 
 export const LicensesPanel = () => {
   const [items, setItems] = useState([]);
@@ -88,6 +88,8 @@ export const LicensesPanel = () => {
           placeholder="Slogan (optionnel)" className={inp} />
         <input value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
           placeholder="Email de contact" className={inp} />
+        <input value={form.custom_domain} onChange={(e) => setForm({ ...form, custom_domain: e.target.value })}
+          placeholder="Domaine personnalisé (ex : kdmarche-gp.fr)" data-testid="license-domain-input" className={inp} />
         <div className="flex items-center gap-3">
           <label className="text-xs text-white/50 flex items-center gap-1.5">Primaire
             <input type="color" value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
@@ -100,10 +102,14 @@ export const LicensesPanel = () => {
         </div>
       </div>
       <button onClick={create} data-testid="license-create-btn"
-        className="h-10 px-4 rounded-lg text-sm font-semibold text-[#1A092D] inline-flex items-center gap-1.5 mb-5"
+        className="h-10 px-4 rounded-lg text-sm font-semibold text-[#1A092D] inline-flex items-center gap-1.5 mb-2"
         style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
         <Plus size={14} /> Créer la licence
       </button>
+      <p className="text-[11px] text-white/40 mb-5">
+        Domaine personnalisé : faites pointer le domaine (CNAME) vers votre déploiement Emergent, puis rattachez-le
+        au déploiement via Deploy &gt; Custom Domain. La plateforme détecte automatiquement le domaine et affiche la vitrine de la licence.
+      </p>
 
       <div className="space-y-2">
         {items.map((l) => (

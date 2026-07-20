@@ -16,7 +16,7 @@ const SCOPE_LABELS = {
 export const ApiKeysPanel = () => {
   const [items, setItems] = useState([]);
   const [scopes, setScopes] = useState([]);
-  const [form, setForm] = useState({ name: '', partner_email: '', scopes: ['catalog:read'] });
+  const [form, setForm] = useState({ name: '', partner_email: '', scopes: ['catalog:read'], monthly_quota: 10000 });
   const [newKey, setNewKey] = useState(null);
 
   const load = useCallback(() => {
@@ -41,7 +41,7 @@ export const ApiKeysPanel = () => {
     const d = await r.json();
     if (!r.ok) return toast.error(d.detail || 'Erreur');
     setNewKey(d.api_key);
-    setForm({ name: '', partner_email: '', scopes: ['catalog:read'] });
+    setForm({ name: '', partner_email: '', scopes: ['catalog:read'], monthly_quota: 10000 });
     toast.success('Clé API générée — copiez-la maintenant, elle ne sera plus affichée');
     load();
   };
@@ -92,6 +92,9 @@ export const ApiKeysPanel = () => {
           placeholder="Nom (ex : ERP Vendeur Guadeloupe)" data-testid="api-key-name-input" className={`${inp} w-64`} />
         <input value={form.partner_email} onChange={(e) => setForm({ ...form, partner_email: e.target.value })}
           placeholder="Email partenaire (optionnel)" className={`${inp} w-56`} />
+        <input type="number" min="1" value={form.monthly_quota}
+          onChange={(e) => setForm({ ...form, monthly_quota: Number(e.target.value) })}
+          title="Quota mensuel de requêtes" data-testid="api-key-quota-input" className={`${inp} w-28`} />
         <button onClick={create} data-testid="api-key-create-btn"
           className="h-10 px-4 rounded-lg text-sm font-semibold text-[#1A092D] inline-flex items-center gap-1.5"
           style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
@@ -117,8 +120,9 @@ export const ApiKeysPanel = () => {
                 {!k.is_active && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">DÉSACTIVÉE</span>}
               </p>
               <p className="text-[11px] text-white/40 truncate">
-                <code>{k.prefix}</code> · {(k.scopes || []).map((s) => SCOPE_LABELS[s] || s).join(', ')} · {k.requests_count || 0} requête(s)
+                <code>{k.prefix}</code> · {(k.scopes || []).map((s) => SCOPE_LABELS[s] || s).join(', ')} · {k.month_usage || 0}/{k.monthly_quota || 10000} ce mois · {k.requests_count || 0} au total
                 {k.last_used_at ? ` · dernier appel ${new Date(k.last_used_at).toLocaleString('fr-FR')}` : ' · jamais utilisée'}
+                {k.partner_email && ` · ${k.partner_email}`}
               </p>
             </div>
             <button onClick={() => toggle(k)} title={k.is_active ? 'Désactiver' : 'Réactiver'} data-testid={`api-key-toggle-${k.id}`}

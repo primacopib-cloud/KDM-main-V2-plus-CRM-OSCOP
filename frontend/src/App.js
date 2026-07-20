@@ -26,6 +26,7 @@ import SignatureDemoPage from "./pages/SignatureDemoPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import TenantPage from "./pages/TenantPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
+import PartnerDevPage from "./pages/PartnerDevPage";
 import DynamicOrderPage from "./pages/DynamicOrderPage";
 import VendorSpacePage from "./pages/VendorSpacePage";
 import CooperSpacePage from "./pages/CooperSpacePage";
@@ -75,6 +76,11 @@ import LogiscopPage from "./pages/LogiscopPage";
 import LogicoopSpacePage from "./pages/LogicoopSpacePage";
 import OscopPage from "./pages/OscopPage";
 
+const PLATFORM_HOST_SUFFIXES = ['localhost', '127.0.0.1', 'emergent.host', 'emergentagent.com', 'objectifscopoutremer.com'];
+const isCustomDomain = !PLATFORM_HOST_SUFFIXES.some(
+  (h) => window.location.hostname === h || window.location.hostname.endsWith(`.${h}`) || window.location.hostname.endsWith(h)
+);
+
 function App() {
   return (
     <FavoritesProvider>
@@ -82,7 +88,7 @@ function App() {
       <BrowserRouter>
         <BackButton />
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={isCustomDomain ? <TenantPage domainMode /> : <LandingPage />} />
           <Route path="/offres" element={<OffersPage />} />
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/admin/connexion" element={<AdminLoginPage />} />
@@ -129,6 +135,7 @@ function App() {
           <Route path="/superadmin" element={<SuperAdminPage />} />
           <Route path="/t/:slug" element={<TenantPage />} />
           <Route path="/docs-api" element={<ApiDocsPage />} />
+          <Route path="/espace-developpeur" element={<PartnerDevPage />} />
           {/* Dynamic Order Form with Zone Preparation Options */}
           <Route path="/bon-de-commande-dynamique" element={<DynamicOrderPage />} />
           <Route path="/dynamic-order" element={<DynamicOrderPage />} />

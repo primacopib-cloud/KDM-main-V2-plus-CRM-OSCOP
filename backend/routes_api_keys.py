@@ -29,6 +29,7 @@ class KeyBody(BaseModel):
     name: str
     scopes: List[str]
     partner_email: Optional[str] = None
+    monthly_quota: Optional[int] = 10000
 
 
 @api_keys_router.get("")
@@ -51,6 +52,8 @@ async def create_key(body: KeyBody, admin: dict = Depends(require_admin)):
         "prefix": raw_key[:16] + "…",
         "key_hash": hashlib.sha256(raw_key.encode()).hexdigest(),
         "scopes": scopes, "partner_email": (body.partner_email or "").strip(),
+        "monthly_quota": max(body.monthly_quota or 10000, 1), "month_usage": 0,
+        "usage_month": datetime.now(timezone.utc).strftime("%Y-%m"),
         "is_active": True, "requests_count": 0, "last_used_at": None,
         "created_by": admin.get("email"),
         "created_at": datetime.now(timezone.utc).isoformat(),
