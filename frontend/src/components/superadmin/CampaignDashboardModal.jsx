@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, X } from 'lucide-react';
+import { BarChart3, Megaphone, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
@@ -21,6 +21,7 @@ const Kpi = ({ label, value, testid }) => (
 
 export const CampaignDashboardModal = ({ campaign, onClose }) => {
   const [data, setData] = useState(null);
+  const [reminding, setReminding] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/admin/campaigns/${campaign.id}/dashboard`, { headers: getAuthHeaders(), credentials: 'include' })
@@ -28,6 +29,24 @@ export const CampaignDashboardModal = ({ campaign, onClose }) => {
       .then((d) => (d.detail ? toast.error(d.detail) : setData(d)))
       .catch(() => toast.error('Chargement impossible'));
   }, [campaign.id]);
+
+  const ACTIVE = ['PUBLIEE', 'INSCRIPTIONS_OUVERTES', 'EN_COURS'];
+  const lotsNoOffer = (data?.lots || []).filter((l) => ACTIVE.includes(l.status) && l.valid_bids === 0);
+
+  const remindVendors = async () => {
+    if (!window.confirm(`Relancer par email les vendeurs des catégories des ${lotsNoOffer.length} lot(s) sans offre ?`)) return;
+    setReminding(true);
+    try {
+      const r = await fetch(`${API}/admin/campaigns/${campaign.id}/remind-vendors`, {
+        method: 'POST', headers: getAuthHeaders(), credentials: 'include',
+      });
+      const d = await r.json();
+      if (!r.ok) return toast.error(d.detail || 'Erreur');
+      toast.success(`${d.sent} vendeur(s) relancé(s) — lots : ${(d.lots || []).join(', ')}${d.targeted_by_category ? ' (ciblage par catégorie)' : ''}`);
+    } finally {
+      setReminding(false);
+    }
+  };
 
   const t = data?.totals;
   return (
@@ -59,6 +78,18 @@ export const CampaignDashboardModal = ({ campaign, onClose }) => {
                 <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                   <div className="h-full rounded-full" style={{ width: `${(t.attribues / t.lots) * 100}%`, background: 'linear-gradient(90deg, #D9B35A, #b8933e)' }} />
                 </div>
+              </div>
+            )}
+            {lotsNoOffer.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-4 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20" data-testid="campaign-no-offer-warning">
+                <p className="flex-1 min-w-[200px] text-[11px] text-red-300 font-semibold">
+                  {lotsNoOffer.length} lot(s) actif(s) sans aucune offre : {lotsNoOffer.map((l) => l.ref).join(', ')}
+                </p>
+                <button type="button" onClick={remindVendors} disabled={reminding} data-testid="campaign-remind-vendors-btn"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10.5px] font-bold hover:brightness-110 transition-all disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg, #D9B35A, #b8933e)', color: '#1F0A33' }}>
+                  <Megaphone className="w-3.5 h-3.5" /> {reminding ? 'Envoi…' : 'Relancer les vendeurs'}
+                </button>
               </div>
             )}
             <div className="space-y-1.5">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { GitCompareArrows } from 'lucide-react';
+import { GitCompareArrows, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -45,6 +45,18 @@ export const LotComparator = () => {
   };
 
   const applyPair = (p) => { setA(p.a); setB(p.b); compare(p.a, p.b); };
+
+  const exportPdf = async () => {
+    const r = await fetch(`${API}/api/buyer-tools/compare/pdf?a=${a}&b=${b}`, { credentials: 'include' });
+    if (!r.ok) return toast.error('Export PDF impossible');
+    const url = URL.createObjectURL(await r.blob());
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `comparaison-${result?.a?.ref || 'A'}-${result?.b?.ref || 'B'}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const dl = result?.deltas || {};
 
   return (
@@ -95,6 +107,10 @@ export const LotComparator = () => {
             <span className="px-2 py-1 rounded-lg font-bold bg-white/10 text-white/70">Participation : {dl.participants_diff > 0 ? '+' : ''}{dl.participants_diff}</span>
             <span className="px-2 py-1 rounded-lg font-bold bg-white/10 text-white/70">Offres valides : {dl.valid_bids_diff > 0 ? '+' : ''}{dl.valid_bids_diff}</span>
             {result.linked_by_duplication && <span className="px-2 py-1 rounded-lg font-bold bg-[#D9B35A]/15 text-[#E9CF8E]">Liées par duplication</span>}
+            <button type="button" onClick={exportPdf} data-testid="compare-export-pdf-btn"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg font-bold bg-white/10 text-white/70 hover:text-white transition-colors">
+              <FileDown className="w-3 h-3" /> Exporter en PDF
+            </button>
           </div>
         </div>
       )}

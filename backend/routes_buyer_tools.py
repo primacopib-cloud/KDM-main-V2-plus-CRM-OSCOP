@@ -99,6 +99,18 @@ async def compare_lots(a: str, b: str, user_id: str = Depends(get_current_user_i
     return {"a": left, "b": right, "deltas": deltas, "linked_by_duplication": linked}
 
 
+@buyer_tools_router.get("/compare/pdf")
+async def compare_pdf(a: str, b: str, user_id: str = Depends(get_current_user_id)):
+    """Export PDF de la comparaison, à joindre au dossier d'achat."""
+    from fastapi import Response
+    data = await compare_lots(a, b, user_id)
+    from buyer_tools_pdf import generate_compare_pdf
+    pdf = generate_compare_pdf(data["a"], data["b"], data["deltas"], data["linked_by_duplication"])
+    filename = f"comparaison-{data['a']['ref']}-{data['b']['ref']}.pdf"
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
 # ---------- Simulation de fret ----------
 
 def _pair_key(o: str, d: str) -> str:
@@ -185,10 +197,7 @@ def _last_months(n: int) -> list:
     return list(reversed(out))
 
 
-@buyer_tools_router.get("/demand-forecast")
-async def demand_forecast(user_id: str = Depends(get_current_user_id)):
-    """Prévision simple : lots lancés par catégorie et par mois (6 derniers), tendance + projection mois prochain."""
-    months = _last_months(6)
+async def _category_month_series(months: list):
     since = f"{months[0]}-01"
     cats: dict = {}
     cons_ids = []
@@ -209,14 +218,27 @@ async def demand_forecast(user_id: str = Depends(get_current_user_id)):
         counts = {r["_id"]: r["n"] async for r in db.consultation_entries.aggregate(pipeline)}
         for cat, cid in cons_ids:
             part_by_cat.setdefault(cat, []).append(counts.get(cid, 0))
+    return cats, part_by_cat
+
+
+def _trend_forecast(series: list):
+    last3 = series[-3:]
+    avg3 = sum(last3) / 3
+    slope = (last3[-1] - last3[0]) / 2
+    forecast = max(0, round(avg3 + slope))
+    trend = "up" if slope > 0.3 else ("down" if slope < -0.3 else "stable")
+    return forecast, trend
+
+
+@buyer_tools_router.get("/demand-forecast")
+async def demand_forecast(user_id: str = Depends(get_current_user_id)):
+    """Prévision simple : lots lancés par catégorie et par mois (6 derniers), tendance + projection mois prochain."""
+    months = _last_months(6)
+    cats, part_by_cat = await _category_month_series(months)
     out = []
     for cat, series_map in sorted(cats.items()):
         series = [series_map[m] for m in months]
-        last3 = series[-3:]
-        avg3 = sum(last3) / 3
-        slope = (last3[-1] - last3[0]) / 2
-        forecast = max(0, round(avg3 + slope))
-        trend = "up" if slope > 0.3 else ("down" if slope < -0.3 else "stable")
+        forecast, trend = _trend_forecast(series)
         parts = part_by_cat.get(cat, [])
         out.append({
             "category": cat, "months": months, "series": series,
@@ -226,3 +248,48 @@ async def demand_forecast(user_id: str = Depends(get_current_user_id)):
     out.sort(key=lambda x: -x["total_6m"])
     return {"months": months, "categories": out,
             "method": "Moyenne mobile 3 mois + tendance — basée sur les consultations lancées."}
+
+
+# ---------- Risque d'approvisionnement ----------
+
+async def _eligible_vendors(category: str) -> int:
+    vendor_ids = await db.vendor_products.distinct("vendor_id", {"category": category})
+    emails = set()
+    if vendor_ids:
+        async for v in db.vendors.find({"id": {"$in": vendor_ids}}, {"_id": 0, "email": 1}):
+            if v.get("email"):
+                emails.add(v["email"].lower())
+    return len(emails)
+
+
+RISK_RECO = {
+    "ELEVE": "Sécurisez en amont : négociation directe, sourcing de nouveaux fournisseurs ou report du lot.",
+    "MODERE": "Anticipez : lancez la consultation tôt et prévoyez une relance ciblée des vendeurs.",
+    "FAIBLE": "Concurrence suffisante — enchère ou offres scellées possibles sans précaution particulière.",
+}
+
+
+@buyer_tools_router.get("/supply-risk")
+async def supply_risk(user_id: str = Depends(get_current_user_id)):
+    """Score de risque par catégorie : liquidité fournisseurs × tendance de demande."""
+    months = _last_months(6)
+    cats, _ = await _category_month_series(months)
+    categories = set(cats.keys()) | set(await db.vendor_products.distinct("category"))
+    out = []
+    for cat in sorted(c for c in categories if c):
+        eligible = await _eligible_vendors(cat)
+        series = [cats.get(cat, {}).get(m, 0) for m in months]
+        _, trend = _trend_forecast(series)
+        score = 90 if eligible == 0 else 70 if eligible == 1 else 50 if eligible == 2 else 30 if eligible <= 4 else 15
+        if trend == "up":
+            score += 15
+        elif trend == "down":
+            score -= 10
+        score = max(5, min(100, score))
+        level = "ELEVE" if score >= 70 else ("MODERE" if score >= 40 else "FAIBLE")
+        out.append({"category": cat, "eligible_vendors": eligible, "demand_trend": trend,
+                    "lots_6m": sum(series), "risk_score": score, "risk_level": level,
+                    "recommendation": RISK_RECO[level]})
+    out.sort(key=lambda x: -x["risk_score"])
+    return {"categories": out,
+            "method": "Score = rareté des fournisseurs éligibles, ajusté par la tendance de demande (6 mois)."}

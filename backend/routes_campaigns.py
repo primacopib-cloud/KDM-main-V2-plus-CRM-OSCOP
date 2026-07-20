@@ -1,5 +1,6 @@
 """Campagnes multi-lots : regroupement de consultations sous un calendrier commun."""
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -153,6 +154,74 @@ async def publish_all(camp_id: str, admin: dict = Depends(require_admin)):
     await audit("CAMPAIGN_PUBLISH_ALL", admin.get("email"), None,
                 {"campaign_id": camp_id, "published": published, "results": results})
     return {"ok": True, "published": published, "results": results}
+
+
+@campaigns_router.post("/{camp_id}/remind-vendors")
+async def remind_vendors(camp_id: str, admin: dict = Depends(require_admin)):
+    """Relance en un clic les vendeurs des catégories des lots actifs sans offre (garde 24h)."""
+    camp = await db.campaigns.find_one({"id": camp_id}, {"_id": 0})
+    if not camp:
+        raise HTTPException(status_code=404, detail="Campagne introuvable")
+    last = camp.get("vendor_reminder_at")
+    if last:
+        try:
+            since = datetime.now(timezone.utc) - datetime.fromisoformat(last)
+            if since.total_seconds() < 24 * 3600:
+                raise HTTPException(status_code=409, detail="Relance déjà envoyée il y a moins de 24h")
+        except ValueError:
+            pass
+    from routes_bids import _latest_valid_bids
+    lots = []
+    async for c in db.consultations.find(
+            {"campaign_id": camp_id, "status": {"$in": ["PUBLIEE", "INSCRIPTIONS_OUVERTES", "EN_COURS"]}},
+            {"_id": 0, "id": 1, "ref": 1, "title": 1, "category": 1, "closes_at": 1, "cpc_cost": 1}):
+        if not await _latest_valid_bids(c["id"]):
+            lots.append(c)
+    if not lots:
+        raise HTTPException(status_code=400, detail="Tous les lots actifs de cette campagne ont déjà reçu des offres")
+    categories = sorted({l["category"] for l in lots})
+    vendor_ids = await db.vendor_products.distinct("vendor_id", {"category": {"$in": categories}})
+    emails = set()
+    if vendor_ids:
+        async for v in db.vendors.find({"id": {"$in": vendor_ids}}, {"_id": 0, "email": 1}):
+            if v.get("email"):
+                emails.add(v["email"].lower())
+    targeted = bool(emails)
+    q = {"role": "vendor", "suspended": {"$ne": True}}
+    if targeted:
+        q["email"] = {"$in": list(emails)}
+    from brevo_service import send_email
+    base = os.environ.get("FRONTEND_PUBLIC_URL", "")
+    lots_html = "".join(
+        f"<li><strong>{l['ref']}</strong> — {l['title']} (catégorie {l['category']}, "
+        f"clôture {str(l.get('closes_at', ''))[:16].replace('T', ' ')}, accès {l.get('cpc_cost')} CREDI'SCOP)</li>"
+        for l in lots)
+    sent = 0
+    async for u in db.users.find(q, {"_id": 0, "email": 1, "full_name": 1, "name": 1}).limit(200):
+        if not u.get("email"):
+            continue
+        try:
+            await send_email(
+                to_email=u["email"], to_name=u.get("full_name") or u.get("name"),
+                subject=f"Derniers jours — {len(lots)} lot(s) encore sans offre ({camp['name']})",
+                html_content=f"""<h2 style="color:#451F6B;">Campagne {camp['name']} — clôture imminente</h2>
+                <p>Bonjour,</p>
+                <p>Les lots suivants{' (correspondant à vos produits)' if targeted else ''} n'ont encore reçu
+                <strong>aucune offre</strong> — c'est le moment idéal pour vous positionner :</p>
+                <ul>{lots_html}</ul>
+                <p style="margin:24px 0;"><a href="{base}/vendor?tab=consultations"
+                style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">Déposer mon offre</a></p>
+                <p style="color:#777;font-size:12px;">Les offres sont exprimées en euros HT. Les CREDI'SCOP n'interviennent jamais dans le classement.</p>""",
+                tags=["campaign-vendor-reminder"])
+            sent += 1
+        except Exception as exc:
+            logger.warning("Relance campagne %s → %s : %s", camp_id, u["email"], exc)
+    await db.campaigns.update_one({"id": camp_id}, {"$set": {
+        "vendor_reminder_at": datetime.now(timezone.utc).isoformat()}})
+    await audit("CAMPAIGN_VENDOR_REMINDER", admin.get("email"), None,
+                {"campaign_id": camp_id, "sent": sent, "lots": [l["ref"] for l in lots],
+                 "targeted_by_category": targeted, "categories": categories})
+    return {"ok": True, "sent": sent, "lots": [l["ref"] for l in lots], "targeted_by_category": targeted}
 
 
 @campaigns_router.delete("/{camp_id}")

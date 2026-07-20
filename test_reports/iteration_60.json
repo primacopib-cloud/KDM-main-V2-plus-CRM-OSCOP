@@ -1,0 +1,28 @@
+{
+  "summary": "Iter 60 Lot 4 features tested end-to-end (backend + frontend). Backend: 10/10 pytest pass covering supply-risk (alimentaire/boissons ELEVE 70), compare/pdf (200 + %PDF + refs + Écarts, plus 400/404 error paths), remind-vendors 24h guard (409 on 2nd call + 404 unknown + 401/403 buyer), demand-forecast regression (transport visible). Frontend: buyer /espace-acheteur → tab Outils d'achat: 4 panels rendered (lot-comparator, freight-simulator, supply-risk, demand-forecast); risk-cat-alimentaire/boissons both display ÉLEVÉ 70/100; compare-pair click loads compare-result and export-pdf-btn triggers download comparaison-CONS-2026-0083-CONS-2026-0084.pdf. Admin /superadmin → Consultations tab → campaign dashboard modal shows red no-offer warning listing CONS-2026-0085; clic remind-vendors → API 409 (24h guard). Nouvelle consultation modal → INTERTERRITORIALE → freight-inline panel appears; 300kg GP→MQ → '≈ 194,88 € HT · 2-3 j'; back to STANDARD → panel hidden.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "admin remind-vendors 409", "issue": "API returns 409 as expected but no toast text was detected in DOM via generic toast/role=alert selectors (toast may auto-dismiss <4s or use a container without those classes). Console showed the 409 network error; UX-only note.", "affected_selectors": ["[data-sonner-toast]", "[role='alert']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_iter60_lot4_features.py", "/app/test_reports/pytest/iter60_results.xml"],
+  "action_items": [
+    "(Optional UX) Confirm remind-vendors error toast has stable data-testid and adequate duration so users see the 24h-guard message."
+  ],
+  "critical_code_review_comments": [
+    "routes_campaigns.remind_vendors: garde 24h calcul via datetime.now(tz) - datetime.fromisoformat(last); OK but if stored ISO lacks tz, comparison raises → caught by ValueError but TypeError not caught (naive/aware mix). Current data has tz-aware string so fine.",
+    "routes_buyer_tools.compare_pdf: reuses compare_lots which already 400/404s correctly — good separation. Content-Disposition uses refs; ensure refs never contain characters requiring escaping (safe here).",
+    "supply_risk score formula clamped to [5,100]: current buckets are readable but consider extracting thresholds to constants for future tuning."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter60_lot4_features.py"],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "100% critical flows"},
+  "test_credentials": "acheteur-pro@kdmarche.fr / Demo2026!  ;  admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin)",
+  "seed_data_creation": "None. Preserved seed cons a9f6dc7b (0083), a88078ad (0084), 1cacf766 (0085), campaign 85a62d49 as instructed. Did NOT trigger a successful vendor reminder (avoided Brevo spam) — only validated the 409 guard.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Buyer login redirects to /dashboard (Espace Client) first — must click 'Espace Acheteur Pro' quick-action link OR navigate to /espace-acheteur after cookies are set. Admin login button text is 'Secure access' (English UI). Header has 9 <select> so use select:has(option[value='INTERTERRITORIALE']) to target the modal type dropdown. Compare PDF download works and filename is comparaison-{refA}-{refB}.pdf.",
+  "rca of the issue": "N/A — no bugs found."
+}

@@ -7,6 +7,7 @@ import { ConsultationTemplatesPanel } from './ConsultationTemplatesPanel';
 import { LiquidityHistoryPanel } from './LiquidityHistoryPanel';
 import { CampaignsPanel } from './CampaignsPanel';
 import { EvaluationModal } from './EvaluationModal';
+import { FreightEstimateInline } from './FreightEstimateInline';
 
 const opts = () => ({ headers: getAuthHeaders(), credentials: 'include' });
 const jsonOpts = (method, body) => ({ method, headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, credentials: 'include', body: JSON.stringify(body) });
@@ -61,6 +62,7 @@ const CreateModal = ({ onClose, onSaved }) => {
           <input className={inp} placeholder="Catégorie (doit être classée dans la matrice)" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} data-testid="cons-category-input" />
           <textarea className={`${inp} h-16 py-2`} placeholder="Produits (un par ligne)" value={f.products} onChange={(e) => setF({ ...f, products: e.target.value })} />
           <input className={inp} placeholder="Territoires (séparés par des virgules)" value={f.territories} onChange={(e) => setF({ ...f, territories: e.target.value })} />
+          {f.type === 'INTERTERRITORIALE' && <FreightEstimateInline territories={f.territories} />}
           <div className="grid grid-cols-2 gap-2">
             <div><p className="text-[10px] text-white/50 mb-1">Ouverture</p>
               <input type="datetime-local" className={inp} value={f.opens_at} onChange={(e) => setF({ ...f, opens_at: e.target.value })} style={{ colorScheme: 'dark' }} /></div>
