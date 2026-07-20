@@ -48,10 +48,10 @@ async def set_notification_prefs(body: NotifPrefsBody, user_id: str = Depends(ge
     for event, value in body.prefs.items():
         if event not in EVENT_TYPES or value not in CHANNEL_VALUES:
             raise HTTPException(status_code=400, detail=f"Préférence invalide : {event}={value}")
-        clean[event] = value
+        clean[f"prefs.{event}"] = value
     await db.notification_prefs.update_one(
         {"user_id": user_id},
-        {"$set": {"prefs": clean, "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+        {"$set": {**clean, "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
     return {"ok": True}
 
 
