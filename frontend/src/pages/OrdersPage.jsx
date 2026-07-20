@@ -339,6 +339,30 @@ export default function OrdersPage() {
                                 <span className="text-white/70">{i18n.t('orders.total_ht')}</span>
                                 <span className="text-xl font-bold text-[#D9B35A]">{formatPrice(order.total_ht_cents)}</span>
                               </div>
+                              {(order.tax_cents > 0 || order.total_ttc_cents > 0) && (
+                                <div className="mt-2 pt-2 border-t border-white/[0.08] space-y-1 text-sm" data-testid={`order-tax-${order.id}`}>
+                                  <div className="flex justify-between text-white/60"><span>TVA</span><span>{formatPrice(order.tax_cents || 0)}</span></div>
+                                  <div className="flex justify-between text-white/85 font-semibold"><span>Total TTC</span><span>{formatPrice(order.total_ttc_cents || order.total_ht_cents)}</span></div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Paiement */}
+                            <div className="mt-3 p-3 rounded-xl bg-white/[0.04]" data-testid={`order-payment-${order.id}`}>
+                              <h4 className="text-sm font-semibold text-white/70 mb-1.5">Paiement</h4>
+                              <div className="flex flex-wrap items-center gap-2 text-xs">
+                                <span className="px-2 py-0.5 rounded-lg font-bold bg-white/10 text-white/70">{order.incoterm || 'EXW'}</span>
+                                {order.is_installment ? (
+                                  <span className="px-2 py-0.5 rounded-lg font-bold bg-[#D9B35A]/20 text-[#E9CF8E]">
+                                    Paiement en {order.installment_plan?.installments_count || 3}× LOLODRIVE
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-lg font-bold bg-emerald-500/15 text-emerald-400">Comptant</span>
+                                )}
+                                {order.installment_plan?.status && (
+                                  <span className="text-white/50">Échéancier : {order.installment_plan.status}</span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>

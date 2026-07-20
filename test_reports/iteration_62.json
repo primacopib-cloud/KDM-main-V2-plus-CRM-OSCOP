@@ -1,0 +1,29 @@
+{
+  "summary": "Iter 62 (Lot 11 KDMARCHÉ×O'SCOP): backend 17/17 PASS (1 skipped audit endpoint — audit vérifié directement en Mongo dans audit_journal: TERRITORY_CREATED/DELETED présents). Frontend E2E validé sur tous les flux du lot : footer 'Devenir partenaire' déplie + submit → success + candidature apparaît côté admin ; admin /superadmin → onglet LOGICOOP → panneaux logicoop-panel (Translog Antilles + zones) et partner-apps-panel (Jean Test + TEST_E2E62 + 3× TEST_Jean) OK ; /logicoop vendor-pro affiche logicoop-dashboard avec EXW=GUADELOUPE et CIF=MARTINIQUE+GUYANE ; /logicoop buyer → logicoop-denied ; /espace-acheteur → onglet Outils d'achat → simulateur fret multi (6 chips, résultat Guyane 408,80€ HT), bouton risk-export-pdf-btn présent, COOP'IA alimentaire renvoie recommandation LLM (procédure scellée + rationale complet) ; /commandes acheteur-pro charge SANS erreur (régression iter61 CORRIGÉE) — 1 commande KDM-20260716-60C1CBA8 expandable avec order-payment-* (EXW/Comptant) + order-tax-* (TVA 5,44€ / TTC 69,44€). Alerts count=0 (attendu, pas de campagne en clôture avec lot sans offre). Aucun bug critique.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Header admin", "issues": ["Badge 'Disconnected' rouge affiché à droite en permanence (préexistant / hors périmètre — signalé dans le note main agent)"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter62_lot11.py",
+    "/app/test_reports/pytest/iter62_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PATCH /admin/logicoop/operators/{op_id} et POST/PATCH admin/partners/types renvoient des enveloppes variables ({ok:true} vs doc complet vs {items:[]}). Homogénéiser (soit toujours renvoyer la ressource mise à jour, soit toujours {items|item}) pour simplifier les consumers front.",
+    "GET /api/buyer-tools/freight/rates exige auth (401 sinon). Si utilisé publiquement dans la Landing/footer, envisager un endpoint public /freight/territories minimaliste (aujourd'hui non consommé publiquement — RAS).",
+    "audit_journal collectionne bien les événements territoire (TERRITORY_CREATED/UPDATED/DELETED avec payload code+freight_pairs_seeded/removed). Aucun endpoint admin d'exposition (pas de GET /admin/audit/territories) — envisager d'exposer un endpoint audit pour la conformité si requis."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter62_lot11.py"],
+  "success_rate": {"backend": "100% (17/17, 1 skipped)", "frontend": "100% flux critiques (partner form, logicoop admin+space+denied, buyer tools multi-fret+PDF+COOPIA, order detail payment/tax, regression /commandes fixed)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin) ; acheteur-pro@kdmarche.fr / Demo2026! ; vendor-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "Aucune persistante. Tests créent + suppriment TEST_LogiOp, TEST_FRET62, application TEST_Jean + TEST_E2E62 (E2E footer) restent visibles côté admin (nettoyage cosmétique optionnel), et TEST_TYPE62 est laissé désactivé (le PATCH toggle est idempotent).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend endpoints Lot 11 en place: /api/admin/logicoop/operators (list wrap {items:[]}), /api/logicoop/me (403 non-op / 200 op avec exw_zones_detail + cif_zones_detail), /api/partners/types public (wrap {items}), /api/partners/apply, /api/admin/partners/applications (wrap {items}), /api/admin/partners/types (POST retourne doc, PATCH sans body toggle active), /api/admin/territories (POST/DELETE auto-génère freight pairs symétriques via _pair_key origin|dest, audit dans audit_journal), /api/buyer-tools/freight/simulate-multi (grand_total_ht_cents=143360 pour 500kg GP→MQ+GF+RE), /api/buyer-tools/supply-risk/pdf, /api/buyer-tools/procedure-suggestion?category=alimentaire (LLM Emergent), /api/admin/campaigns/alerts/count. Frontend testids: footer-partner-toggle + footer-partner-form + partner-form-{type,name,company,email,phone,submit,success} ; logicoop-panel + partner-apps-panel + tab logicoop dans admin ; logicoop-dashboard + logicoop-exw-zones + logicoop-cif-zones + logicoop-denied ; freight-dest-{CODE} + freight-result + freight-result-{CODE} + freight-grand-total + risk-export-pdf-btn + coopia-btn-alimentaire + coopia-result-alimentaire ; order-payment-{id} + order-tax-{id}. Régression /commandes iter61 (skip=null&limit=0) est CORRIGÉE.",
+  "rca of the issue": "N/A — pas de bug bloquant identifié. Le fix ordersAPIV2.list de l'iter61 fonctionne : /commandes acheteur charge 1 commande sans toast d'erreur. Note d'observation : après clic multiple sur chips freight-dest, seul GUYANE est retenu (chip MARTINIQUE non highlighted) — comportement possible : un clic sur chip 'toggle', deuxième clic désélectionne ; à confirmer par main agent si multi-select attendu."
+}

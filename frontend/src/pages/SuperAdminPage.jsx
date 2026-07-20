@@ -14,6 +14,8 @@ import { TeamRolesTab } from '../components/superadmin/TeamRolesTab';
 import { BuyersTab } from '../components/superadmin/BuyersTab';
 import { TaxonomyTab } from '../components/superadmin/TaxonomyTab';
 import { VendorCreditsTab } from '../components/superadmin/VendorCreditsTab';
+import { LogicoopPanel } from '../components/superadmin/LogicoopPanel';
+import { PartnerApplicationsPanel } from '../components/superadmin/PartnerApplicationsPanel';
 import { SupportTicketsTab } from '../components/superadmin/SupportTicketsTab';
 import { MemberRegistryTab } from '../components/superadmin/MemberRegistryTab';
 import { CoopersConventionsTab } from '../components/superadmin/CoopersConventionsTab';
@@ -162,6 +164,11 @@ export default function SuperAdminPage() {
 
           <TabsContent value="credits">
             <VendorCreditsTab />
+          </TabsContent>
+
+          <TabsContent value="logicoop" className="space-y-6">
+            <LogicoopPanel />
+            <PartnerApplicationsPanel />
           </TabsContent>
 
           <TabsContent value="support">

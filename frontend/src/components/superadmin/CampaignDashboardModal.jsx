@@ -105,6 +105,21 @@ export const CampaignDashboardModal = ({ campaign, onClose }) => {
                 </div>
               ))}
             </div>
+            {(data.campaign?.vendor_reminders || []).length > 0 && (
+              <div className="mt-4" data-testid="campaign-reminders-history">
+                <p className="text-[10px] font-bold text-white/50 uppercase mb-1.5">Relevé des relances vendeurs</p>
+                <div className="space-y-1">
+                  {data.campaign.vendor_reminders.slice().reverse().map((r, i) => (
+                    <div key={i} className="flex flex-wrap items-center gap-2 text-[11px] p-2 rounded-lg bg-white/[0.03] border border-white/[0.06]" data-testid={`campaign-reminder-${i}`}>
+                      <span className="text-white/70">{String(r.at).slice(0, 16).replace('T', ' à ')}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#D9B35A]/20 text-[#E9CF8E]">{r.sent} vendeur(s) relancé(s)</span>
+                      <span className="text-white/45 flex-1">Lots : {(r.lots || []).join(', ')}</span>
+                      {r.by && <span className="text-white/35">par {r.by}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

@@ -1,0 +1,213 @@
+"""Espace LOGICOOP (opérateurs logistiques) + formulaire Devenir Partenaire.
+Admin : opérateurs (zones EXW / CIF), types de partenariat, candidatures. Public : types + candidature."""
+import logging
+import uuid
+from datetime import datetime, timezone
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, EmailStr
+
+from auth import get_current_user_id
+from lolodrive_helpers import require_admin
+
+logger = logging.getLogger(__name__)
+
+logicoop_router = APIRouter(prefix="/api", tags=["logicoop"])
+
+db = None
+
+DEFAULT_PARTNER_TYPES = [
+    {"code": "COOPERS", "label": "Devenir COOPER'S"},
+    {"code": "LOGICOOP", "label": "Devenir LOGICOOP (opérateur logistique)"},
+]
+
+
+def set_logicoop_database(database):
+    global db
+    db = database
+
+
+def _now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+# ---------- Opérateurs LOGICOOP (admin) ----------
+
+class OperatorBody(BaseModel):
+    name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    exw_zones: List[str] = []
+    cif_zones: List[str] = []
+
+
+class OperatorUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    exw_zones: Optional[List[str]] = None
+    cif_zones: Optional[List[str]] = None
+    active: Optional[bool] = None
+
+
+async def _valid_zones(codes: List[str]) -> List[str]:
+    known = {z["code"] async for z in db.zones_v2.find({}, {"_id": 0, "code": 1})}
+    bad = [c for c in codes if c.upper() not in known]
+    if bad:
+        raise HTTPException(status_code=400, detail=f"Zones inconnues : {', '.join(bad)}")
+    return [c.upper() for c in codes]
+
+
+@logicoop_router.get("/admin/logicoop/operators")
+async def list_operators(admin: dict = Depends(require_admin)):
+    items = await db.logicoop_operators.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return {"items": items}
+
+
+@logicoop_router.post("/admin/logicoop/operators")
+async def create_operator(body: OperatorBody, admin: dict = Depends(require_admin)):
+    email = body.email.lower()
+    if await db.logicoop_operators.find_one({"email": email}):
+        raise HTTPException(status_code=409, detail="Un opérateur existe déjà avec cet email")
+    doc = {"id": str(uuid.uuid4()), "name": body.name.strip(), "email": email,
+           "phone": body.phone, "exw_zones": await _valid_zones(body.exw_zones),
+           "cif_zones": await _valid_zones(body.cif_zones), "active": True,
+           "created_at": _now(), "created_by": admin.get("email")}
+    await db.logicoop_operators.insert_one({**doc})
+    logger.info("Opérateur LOGICOOP créé : %s par %s", email, admin.get("email"))
+    return doc
+
+
+@logicoop_router.patch("/admin/logicoop/operators/{op_id}")
+async def update_operator(op_id: str, body: OperatorUpdate, admin: dict = Depends(require_admin)):
+    upd = {k: v for k, v in body.dict().items() if v is not None}
+    if "exw_zones" in upd:
+        upd["exw_zones"] = await _valid_zones(upd["exw_zones"])
+    if "cif_zones" in upd:
+        upd["cif_zones"] = await _valid_zones(upd["cif_zones"])
+    if not upd:
+        raise HTTPException(status_code=400, detail="Rien à mettre à jour")
+    upd["updated_at"] = _now()
+    res = await db.logicoop_operators.update_one({"id": op_id}, {"$set": upd})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Opérateur introuvable")
+    return {"ok": True}
+
+
+@logicoop_router.delete("/admin/logicoop/operators/{op_id}")
+async def delete_operator(op_id: str, admin: dict = Depends(require_admin)):
+    res = await db.logicoop_operators.delete_one({"id": op_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Opérateur introuvable")
+    return {"ok": True}
+
+
+# ---------- Espace opérateur (utilisateur connecté) ----------
+
+@logicoop_router.get("/logicoop/me")
+async def my_operator_space(user_id: str = Depends(get_current_user_id)):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1})
+    if not user or not user.get("email"):
+        raise HTTPException(status_code=403, detail="Compte sans email")
+    op = await db.logicoop_operators.find_one(
+        {"email": user["email"].lower(), "active": True}, {"_id": 0})
+    if not op:
+        raise HTTPException(status_code=403, detail="Accès réservé aux opérateurs LOGICOOP")
+    zones = {z["code"]: z["name"] async for z in db.zones_v2.find({}, {"_id": 0, "code": 1, "name": 1})}
+    op["exw_zones_detail"] = [{"code": c, "name": zones.get(c, c)} for c in op.get("exw_zones", [])]
+    op["cif_zones_detail"] = [{"code": c, "name": zones.get(c, c)} for c in op.get("cif_zones", [])]
+    return op
+
+
+# ---------- Types de partenariat ----------
+
+async def _ensure_types():
+    if await db.partner_types.count_documents({}) == 0:
+        for t in DEFAULT_PARTNER_TYPES:
+            await db.partner_types.insert_one({"id": str(uuid.uuid4()), **t, "active": True, "created_at": _now()})
+
+
+@logicoop_router.get("/partners/types")
+async def public_partner_types():
+    await _ensure_types()
+    items = await db.partner_types.find({"active": True}, {"_id": 0}).to_list(50)
+    return {"items": items}
+
+
+class PartnerTypeBody(BaseModel):
+    code: str
+    label: str
+
+
+@logicoop_router.get("/admin/partners/types")
+async def admin_partner_types(admin: dict = Depends(require_admin)):
+    await _ensure_types()
+    return {"items": await db.partner_types.find({}, {"_id": 0}).to_list(50)}
+
+
+@logicoop_router.post("/admin/partners/types")
+async def add_partner_type(body: PartnerTypeBody, admin: dict = Depends(require_admin)):
+    code = body.code.strip().upper().replace(" ", "_")
+    if await db.partner_types.find_one({"code": code}):
+        raise HTTPException(status_code=409, detail="Ce type existe déjà")
+    doc = {"id": str(uuid.uuid4()), "code": code, "label": body.label.strip(), "active": True, "created_at": _now()}
+    await db.partner_types.insert_one({**doc})
+    return doc
+
+
+@logicoop_router.patch("/admin/partners/types/{type_id}")
+async def toggle_partner_type(type_id: str, admin: dict = Depends(require_admin)):
+    t = await db.partner_types.find_one({"id": type_id})
+    if not t:
+        raise HTTPException(status_code=404, detail="Type introuvable")
+    await db.partner_types.update_one({"id": type_id}, {"$set": {"active": not t.get("active", True)}})
+    return {"ok": True, "active": not t.get("active", True)}
+
+
+# ---------- Candidatures Devenir Partenaire ----------
+
+class ApplicationBody(BaseModel):
+    type: str
+    name: str
+    email: EmailStr
+    company: Optional[str] = None
+    phone: Optional[str] = None
+    message: Optional[str] = None
+
+
+@logicoop_router.post("/partners/apply")
+async def apply_partner(body: ApplicationBody):
+    await _ensure_types()
+    t = await db.partner_types.find_one({"code": body.type.upper(), "active": True})
+    if not t:
+        raise HTTPException(status_code=400, detail="Type de partenariat inconnu")
+    if not body.name.strip():
+        raise HTTPException(status_code=400, detail="Nom requis")
+    doc = {"id": str(uuid.uuid4()), "type": t["code"], "type_label": t["label"],
+           "name": body.name.strip(), "email": body.email.lower(), "company": body.company,
+           "phone": body.phone, "message": (body.message or "")[:2000],
+           "status": "NOUVELLE", "created_at": _now()}
+    await db.partner_applications.insert_one({**doc})
+    logger.info("Candidature partenaire %s : %s", t["code"], body.email)
+    return {"ok": True, "id": doc["id"]}
+
+
+class AppStatusBody(BaseModel):
+    status: str
+
+
+@logicoop_router.get("/admin/partners/applications")
+async def list_applications(admin: dict = Depends(require_admin)):
+    items = await db.partner_applications.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return {"items": items}
+
+
+@logicoop_router.patch("/admin/partners/applications/{app_id}")
+async def update_application(app_id: str, body: AppStatusBody, admin: dict = Depends(require_admin)):
+    if body.status not in ("NOUVELLE", "EN_COURS", "ACCEPTEE", "REFUSEE"):
+        raise HTTPException(status_code=400, detail="Statut invalide")
+    res = await db.partner_applications.update_one(
+        {"id": app_id}, {"$set": {"status": body.status, "updated_at": _now(), "updated_by": admin.get("email")}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Candidature introuvable")
+    return {"ok": True}

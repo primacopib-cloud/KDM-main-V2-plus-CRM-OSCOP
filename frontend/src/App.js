@@ -70,6 +70,7 @@ import FinanceBridgeAdminPage from "./pages/FinanceBridgeAdminPage";
 import ConnectorsAdminPage from "./pages/ConnectorsAdminPage";
 import FavoriteAlertsPage from "./pages/FavoriteAlertsPage";
 import LogiscopPage from "./pages/LogiscopPage";
+import LogicoopSpacePage from "./pages/LogicoopSpacePage";
 import OscopPage from "./pages/OscopPage";
 
 function App() {
@@ -95,6 +96,7 @@ function App() {
           <Route path="/admin/finance-bridge" element={<FinanceBridgeAdminPage />} />
           <Route path="/admin/connecteurs" element={<ConnectorsAdminPage />} />
           <Route path="/logiscop" element={<LogiscopPage />} />
+          <Route path="/logicoop" element={<LogicoopSpacePage />} />
           <Route path="/oscop" element={<OscopPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />

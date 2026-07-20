@@ -489,6 +489,10 @@ app.include_router(buyer_tools_router)
 from routes_admin_territories import territories_router, set_territories_database
 set_territories_database(db)
 app.include_router(territories_router)
+
+from routes_logicoop import logicoop_router, set_logicoop_database
+set_logicoop_database(db)
+app.include_router(logicoop_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)

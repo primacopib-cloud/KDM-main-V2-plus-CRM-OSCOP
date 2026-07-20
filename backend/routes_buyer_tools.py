@@ -113,6 +113,14 @@ async def compare_pdf(a: str, b: str, user_id: str = Depends(get_current_user_id
 
 # ---------- Simulation de fret ----------
 
+async def _territory_codes() -> list:
+    codes = [z["code"] async for z in db.zones_v2.find({"is_active": True}, {"_id": 0, "code": 1}).sort("code", 1)]
+    return codes or TERRITORIES
+
+
+GENERIC_RATE = {"base_cents": 20000, "per_kg_cents": 60, "per_m3_cents": 12000, "delay_days": "10-15"}
+
+
 def _pair_key(o: str, d: str) -> str:
     return "|".join(sorted([o, d]))
 
@@ -125,7 +133,7 @@ async def _get_rates() -> list:
 
 @buyer_tools_router.get("/freight/rates")
 async def freight_rates(user_id: str = Depends(get_current_user_id)):
-    return {"territories": TERRITORIES, "rates": await _get_rates(),
+    return {"territories": await _territory_codes(), "rates": await _get_rates(),
             "fuel_surcharge_pct": FUEL_SURCHARGE_PCT, "express_multiplier": EXPRESS_MULTIPLIER}
 
 
@@ -137,35 +145,63 @@ class FreightBody(BaseModel):
     express: bool = False
 
 
-@buyer_tools_router.post("/freight/simulate")
-async def freight_simulate(body: FreightBody, user_id: str = Depends(get_current_user_id)):
-    if body.origin not in TERRITORIES or body.destination not in TERRITORIES:
+async def _simulate_one(origin: str, destination: str, weight_kg: float, volume_m3: float, express: bool) -> dict:
+    codes = await _territory_codes()
+    if origin not in codes or destination not in codes:
         raise HTTPException(status_code=400, detail="Territoire inconnu")
-    if body.origin == body.destination:
+    if origin == destination:
         raise HTTPException(status_code=400, detail="Origine et destination identiques")
-    if body.weight_kg <= 0 and body.volume_m3 <= 0:
+    if weight_kg <= 0 and volume_m3 <= 0:
         raise HTTPException(status_code=400, detail="Indiquez un poids ou un volume")
     await _get_rates()
-    rate = await db.freight_rates.find_one({"pair": _pair_key(body.origin, body.destination)}, {"_id": 0})
+    rate = await db.freight_rates.find_one({"pair": _pair_key(origin, destination)}, {"_id": 0})
     if not rate:
-        raise HTTPException(status_code=404, detail="Aucun barème pour cette liaison")
-    weight_cost = int(body.weight_kg * rate["per_kg_cents"])
-    volume_cost = int(body.volume_m3 * rate["per_m3_cents"])
+        rate = {"pair": _pair_key(origin, destination), **GENERIC_RATE}
+        await db.freight_rates.insert_one({**rate, "auto_seeded": True})
+    weight_cost = int(weight_kg * rate["per_kg_cents"])
+    volume_cost = int(volume_m3 * rate["per_m3_cents"])
     variable = max(weight_cost, volume_cost)  # règle du payant (poids/volume)
     subtotal = rate["base_cents"] + variable
     fuel = int(subtotal * FUEL_SURCHARGE_PCT / 100)
     total = subtotal + fuel
-    if body.express:
+    if express:
         total = int(total * EXPRESS_MULTIPLIER)
     return {
-        "pair": rate["pair"], "delay_days": rate["delay_days"],
+        "pair": rate["pair"], "destination": destination, "delay_days": rate["delay_days"],
         "base_cents": rate["base_cents"],
         "weight_cost_cents": weight_cost, "volume_cost_cents": volume_cost,
         "billed_on": "poids" if weight_cost >= volume_cost else "volume",
         "fuel_surcharge_cents": fuel, "fuel_surcharge_pct": FUEL_SURCHARGE_PCT,
-        "express": body.express, "total_ht_cents": total,
+        "express": express, "total_ht_cents": total,
         "disclaimer": "Estimation indicative hors taxes, octroi de mer et frais de douane — à confirmer avec le transporteur.",
     }
+
+
+@buyer_tools_router.post("/freight/simulate")
+async def freight_simulate(body: FreightBody, user_id: str = Depends(get_current_user_id)):
+    return await _simulate_one(body.origin, body.destination, body.weight_kg, body.volume_m3, body.express)
+
+
+class FreightMultiBody(BaseModel):
+    origin: str
+    destinations: list
+    weight_kg: float = 0
+    volume_m3: float = 0
+    express: bool = False
+
+
+@buyer_tools_router.post("/freight/simulate-multi")
+async def freight_simulate_multi(body: FreightMultiBody, user_id: str = Depends(get_current_user_id)):
+    """Fret vers plusieurs territoires à la fois (lots interterritoriaux à 3+ zones)."""
+    dests = [d for d in dict.fromkeys(body.destinations) if d != body.origin]
+    if not dests:
+        raise HTTPException(status_code=400, detail="Indiquez au moins une destination différente de l'origine")
+    if len(dests) > 10:
+        raise HTTPException(status_code=400, detail="10 destinations maximum")
+    items = [await _simulate_one(body.origin, d, body.weight_kg, body.volume_m3, body.express) for d in dests]
+    return {"origin": body.origin, "items": items,
+            "grand_total_ht_cents": sum(i["total_ht_cents"] for i in items),
+            "disclaimer": items[0]["disclaimer"]}
 
 
 class RateBody(BaseModel):
@@ -293,3 +329,57 @@ async def supply_risk(user_id: str = Depends(get_current_user_id)):
     out.sort(key=lambda x: -x["risk_score"])
     return {"categories": out,
             "method": "Score = rareté des fournisseurs éligibles, ajusté par la tendance de demande (6 mois)."}
+
+
+@buyer_tools_router.get("/supply-risk/pdf")
+async def supply_risk_pdf(user_id: str = Depends(get_current_user_id)):
+    """Rapport PDF mensuel des risques d'approvisionnement (comités d'achat)."""
+    from fastapi import Response
+    data = await supply_risk(user_id)
+    from buyer_tools_pdf import generate_risk_pdf
+    pdf = generate_risk_pdf(data["categories"], data["method"])
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="risque-approvisionnement-{month}.pdf"'})
+
+
+# ---------- Suggestion COOP'IA (procédure conseillée) ----------
+
+def _rule_suggestion(eligible: int, trend: str, level: str) -> dict:
+    if eligible >= 3 and level == "FAIBLE":
+        return {"procedure": "ENCHERE_INVERSEE",
+                "rationale": "Concurrence suffisante et risque faible : l'enchère inversée maximise la pression concurrentielle et fait baisser les prix."}
+    if eligible >= 3 and level == "MODERE":
+        return {"procedure": "ENCHERE_INVERSEE",
+                "rationale": "Plusieurs fournisseurs éligibles malgré un risque modéré : l'enchère reste jouable, prévoyez une relance ciblée en cours de consultation."}
+    return {"procedure": "SCELLEE",
+            "rationale": "Fournisseurs rares ou risque élevé : les offres scellées évitent la désaffection des rares candidats et protègent la relation fournisseur."}
+
+
+@buyer_tools_router.get("/procedure-suggestion")
+async def procedure_suggestion(category: str, user_id: str = Depends(get_current_user_id)):
+    """COOP'IA : recommande scellée ou enchère selon risque + liquidité, avec argumentaire IA."""
+    data = await supply_risk(user_id)
+    cat = next((c for c in data["categories"] if c["category"] == category), None)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Catégorie sans données de risque")
+    base = _rule_suggestion(cat["eligible_vendors"], cat["demand_trend"], cat["risk_level"])
+    try:
+        import os as _os
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        chat = LlmChat(api_key=_os.environ.get("EMERGENT_LLM_KEY"),
+                       session_id=f"coopia-proc-{user_id}",
+                       system_message="Tu es COOP'IA, assistant achats de la coopérative KDMARCHÉ × O'SCOP. Réponds en français, 2 phrases maximum, ton professionnel.").with_model("openai", "gpt-5.4-mini")
+        msg = (f"Catégorie « {category} » : {cat['eligible_vendors']} fournisseur(s) éligible(s), "
+               f"tendance de demande {cat['demand_trend']}, score de risque {cat['risk_score']}/100 ({cat['risk_level']}), "
+               f"{cat['lots_6m']} lots sur 6 mois. Procédure recommandée par nos règles : {base['procedure']}. "
+               "Justifie cette recommandation en 2 phrases concrètes pour un comité d'achat.")
+        resp = await chat.send_message(UserMessage(text=msg))
+        if resp and len(str(resp).strip()) > 20:
+            base["rationale"] = str(resp).strip()
+            base["ai"] = True
+    except Exception as exc:
+        logger.warning("COOP'IA suggestion fallback (règles) : %s", exc)
+        base["ai"] = False
+    return {"category": category, "risk_score": cat["risk_score"], "risk_level": cat["risk_level"],
+            "eligible_vendors": cat["eligible_vendors"], "demand_trend": cat["demand_trend"], **base}

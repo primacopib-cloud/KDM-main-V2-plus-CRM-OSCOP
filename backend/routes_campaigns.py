@@ -2,7 +2,7 @@
 import logging
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -156,6 +156,28 @@ async def publish_all(camp_id: str, admin: dict = Depends(require_admin)):
     return {"ok": True, "published": published, "results": results}
 
 
+@campaigns_router.get("/alerts/count")
+async def campaign_alerts_count(admin: dict = Depends(require_admin)):
+    """Nombre de campagnes clôturant sous 48h avec au moins un lot actif sans offre (pastille header)."""
+    from routes_bids import _latest_valid_bids
+    now = datetime.now(timezone.utc)
+    count = 0
+    async for camp in db.campaigns.find({}, {"_id": 0, "id": 1, "closes_at": 1}):
+        try:
+            closes = datetime.fromisoformat(str(camp.get("closes_at")).replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            continue
+        if not (now < closes <= now + timedelta(hours=48)):
+            continue
+        async for c in db.consultations.find(
+                {"campaign_id": camp["id"], "status": {"$in": ["PUBLIEE", "INSCRIPTIONS_OUVERTES", "EN_COURS"]}},
+                {"_id": 0, "id": 1}):
+            if not await _latest_valid_bids(c["id"]):
+                count += 1
+                break
+    return {"count": count}
+
+
 @campaigns_router.post("/{camp_id}/remind-vendors")
 async def remind_vendors(camp_id: str, admin: dict = Depends(require_admin)):
     """Relance en un clic les vendeurs des catégories des lots actifs sans offre (garde 24h)."""
@@ -217,7 +239,11 @@ async def remind_vendors(camp_id: str, admin: dict = Depends(require_admin)):
         except Exception as exc:
             logger.warning("Relance campagne %s → %s : %s", camp_id, u["email"], exc)
     await db.campaigns.update_one({"id": camp_id}, {"$set": {
-        "vendor_reminder_at": datetime.now(timezone.utc).isoformat()}})
+        "vendor_reminder_at": datetime.now(timezone.utc).isoformat()},
+        "$push": {"vendor_reminders": {
+            "at": datetime.now(timezone.utc).isoformat(), "sent": sent,
+            "lots": [l["ref"] for l in lots], "by": admin.get("email"),
+            "targeted_by_category": targeted}}})
     await audit("CAMPAIGN_VENDOR_REMINDER", admin.get("email"), None,
                 {"campaign_id": camp_id, "sent": sent, "lots": [l["ref"] for l in lots],
                  "targeted_by_category": targeted, "categories": categories})

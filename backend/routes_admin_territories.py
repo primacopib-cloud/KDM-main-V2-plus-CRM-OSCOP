@@ -57,7 +57,19 @@ async def add_territory(body: TerritoryBody, admin: dict = Depends(require_admin
         await db.kdm_zones.insert_one({"id": str(uuid.uuid4()), "code": code, "name": name,
                                        "kind": "OM", "exw_only": True, "pickup_required": True,
                                        "is_active": True, "created_at": now})
-    logger.info("Territoire ajouté : %s (%s) par %s", code, name, admin.get("email"))
+    # Barème de fret par défaut vers toutes les autres zones (simulateur toujours complet)
+    existing = {r["pair"] async for r in db.freight_rates.find({}, {"_id": 0, "pair": 1})}
+    added_pairs = 0
+    async for z in db.zones_v2.find({"code": {"$ne": code}}, {"_id": 0, "code": 1}):
+        pair = "|".join(sorted([code, z["code"]]))
+        if pair not in existing:
+            await db.freight_rates.insert_one({"pair": pair, "base_cents": 20000, "per_kg_cents": 60,
+                                               "per_m3_cents": 12000, "delay_days": "10-15", "auto_seeded": True})
+            added_pairs += 1
+    from consultation_audit import audit
+    await audit("TERRITORY_CREATED", admin.get("email"), None,
+                {"code": code, "name": name, "freight_pairs_seeded": added_pairs})
+    logger.info("Territoire ajouté : %s (%s) par %s — %d barèmes fret seedés", code, name, admin.get("email"), added_pairs)
     return doc
 
 
@@ -72,6 +84,8 @@ async def update_territory(code: str, body: TerritoryUpdate, admin: dict = Depen
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Territoire introuvable")
     await db.kdm_zones.update_one({"code": code.upper()}, {"$set": upd})
+    from consultation_audit import audit
+    await audit("TERRITORY_UPDATED", admin.get("email"), None, {"code": code.upper(), "changes": upd})
     logger.info("Territoire %s mis à jour (%s) par %s", code, upd, admin.get("email"))
     return {"ok": True}
 
@@ -88,5 +102,9 @@ async def delete_territory(code: str, admin: dict = Depends(require_admin)):
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Territoire introuvable")
     await db.kdm_zones.delete_one({"code": code})
+    removed = await db.freight_rates.delete_many({"pair": {"$regex": f"(^|\\|){code}(\\||$)"}})
+    from consultation_audit import audit
+    await audit("TERRITORY_DELETED", admin.get("email"), None,
+                {"code": code, "freight_pairs_removed": removed.deleted_count})
     logger.info("Territoire %s supprimé par %s", code, admin.get("email"))
     return {"ok": True}

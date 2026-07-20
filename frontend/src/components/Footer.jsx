@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { partners } from '../data/mock';
 import { Mail, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf, Store, ChevronDown, FileSpreadsheet } from 'lucide-react';
 import ContactForm from './ContactForm';
+import { PartnerForm } from './PartnerForm';
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -43,6 +44,8 @@ const Footer = () => {
                 {t('footer.ess_certified')}
               </p>
             </div>
+
+            <PartnerForm />
           </div>
 
           {/* Navigation */}

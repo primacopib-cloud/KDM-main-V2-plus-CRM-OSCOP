@@ -2,7 +2,7 @@ import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins, LifeBuoy, BookUser, Handshake, FileSignature, Mail, Network, Sparkles, Send, Calculator, UsersRound, Megaphone, Zap, Ticket, Scale,
+  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins, LifeBuoy, BookUser, Handshake, FileSignature, Mail, Network, Sparkles, Send, Calculator, UsersRound, Megaphone, Zap, Ticket, Scale, Truck,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
@@ -36,6 +36,17 @@ const useDownConnectorsCount = () => {
   return count;
 };
 
+const useCampaignAlertsCount = () => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const load = () => apiCall('/admin/campaigns/alerts/count').then((d) => setCount(d.count || 0)).catch(() => {});
+    load();
+    const interval = setInterval(load, 120000);
+    return () => clearInterval(interval);
+  }, []);
+  return count;
+};
+
 const NAV_LINKS = [
   { to: '/', label: i18n.t('adm.accueil') },
   { to: '/espace-acheteur', label: i18n.t('adm.espace_acheteur') },
@@ -64,6 +75,7 @@ const TABS = [
   { value: 'promos', label: 'Promos flash', icon: Zap },
   { value: 'cpc', label: "CREDI'SCOP", icon: Ticket },
   { value: 'consultations', label: 'Consultations', icon: Scale },
+  { value: 'logicoop', label: 'LOGICOOP', icon: Truck },
   { value: 'accounting', label: 'Comptabilité', icon: Calculator },
   { value: 'profiles', label: 'Profils & Espaces', icon: UsersRound },
   { value: 'contracts', label: 'Contrats', icon: FileSignature },
@@ -79,6 +91,7 @@ export const SuperAdminHeader = ({
 }) => {
   const openTickets = useOpenTicketsCount();
   const downConnectors = useDownConnectorsCount();
+  const campaignAlerts = useCampaignAlertsCount();
   return (
   <header
     className="sticky top-0 z-50"
@@ -161,6 +174,15 @@ export const SuperAdminHeader = ({
                   data-testid="support-open-count-badge"
                 >
                   {openTickets > 9 ? '9+' : openTickets}
+                </span>
+              )}
+              {t.value === 'consultations' && campaignAlerts > 0 && (
+                <span
+                  className="ml-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold inline-flex items-center justify-center animate-pulse"
+                  title={`${campaignAlerts} campagne(s) proche(s) de la clôture avec des lots sans offre`}
+                  data-testid="campaign-alerts-badge"
+                >
+                  {campaignAlerts > 9 ? '9+' : campaignAlerts}
                 </span>
               )}
               {t.value === 'ecosystem' && downConnectors > 0 && (
