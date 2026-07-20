@@ -515,6 +515,10 @@ set_licenses_database(db)
 app.include_router(licenses_admin_router)
 app.include_router(licenses_public_router)
 
+from routes_price_schedule import price_schedule_router, set_price_schedule_database
+set_price_schedule_database(db)
+app.include_router(price_schedule_router)
+
 from routes_logicoop import logicoop_router, set_logicoop_database
 set_logicoop_database(db)
 app.include_router(logicoop_router)

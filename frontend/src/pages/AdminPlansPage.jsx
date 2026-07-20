@@ -14,6 +14,7 @@ import { OptionsTab } from '../components/admin/plans/OptionsTab';
 import { CreditsTab } from '../components/admin/plans/CreditsTab';
 import { WalletPacksTab } from '../components/admin/plans/WalletPacksTab';
 import { WalletPackFormModal } from '../components/admin/plans/WalletPackFormModal';
+import { PriceSchedulePanel } from '../components/admin/plans/PriceSchedulePanel';
 
 const AdminPlansPage = () => {
   const navigate = useNavigate();
@@ -304,13 +305,16 @@ const AdminPlansPage = () => {
         </div>
 
         {activeTab === 'plans' && (
-          <PlansTab
-            plans={plans}
-            onCreate={handleCreatePlan}
-            onEdit={handleEditPlan}
-            onDelete={handleDeletePlan}
-            onToggleVisible={handleToggleVisible}
-          />
+          <>
+            <PlansTab
+              plans={plans}
+              onCreate={handleCreatePlan}
+              onEdit={handleEditPlan}
+              onDelete={handleDeletePlan}
+              onToggleVisible={handleToggleVisible}
+            />
+            <PriceSchedulePanel plans={plans} />
+          </>
         )}
 
         {activeTab === 'options' && (

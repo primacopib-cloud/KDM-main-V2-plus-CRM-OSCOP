@@ -165,6 +165,11 @@ async def _scheduler_loop():
             await check_campaign_closure_alerts(_db)
         except Exception as exc:
             logger.exception("Scheduler campaign alerts crashed: %s", exc)
+        try:
+            from routes_price_schedule import process_scheduled_price_changes
+            await process_scheduled_price_changes(_db)
+        except Exception as exc:
+            logger.exception("Scheduler price schedule crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

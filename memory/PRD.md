@@ -1248,3 +1248,10 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - plan_price_alert.py : send_price_change_alerts() — collecte les abonnés (users.subscription = id/slug du plan + subscriptions ACTIVE → org_memberships → users, dédupliqué, cap 200) et envoie un email Brevo (ancien/nouveau tarif, mention prochaine échéance, tag plan-price-change)
 - Déclenché en tâche de fond depuis PATCH /api/admin/plans/subscriptions/{id} quand price_cents change (routes_admin_plans.py), en plus de l'audit PLAN_PRICE_CHANGED
 - Vérifié : changement 390→391€ → "envoyée à 13/13 abonnés" dans les logs, prix restauré
+
+## 2026-07-20 — Préavis Tarifaire (testé E2E complet)
+- routes_price_schedule.py : POST/GET/DELETE /api/admin/plans/price-schedule (collection scheduled_price_changes ; une programmation active par plan, l'ancienne est auto-annulée "replaced" ; validation date future & tarif différent)
+- process_scheduled_price_changes() branché dans scheduler.py (toutes les 6h) + exécuté immédiatement à la création : préavis email J-30 (plan_price_alert.send_price_notice_alerts, tag plan-price-notice) → statut notified ; à échéance : application du prix + audit PLAN_PRICE_CHANGED (actor scheduler:preavis) + alerte email → statut applied
+- Audits : PLAN_PRICE_SCHEDULED, PLAN_PRICE_NOTICE_SENT, PLAN_PRICE_SCHEDULE_CANCELLED
+- UI : PriceSchedulePanel.jsx sous l'onglet Plans de /admin/plans (formule, nouveau tarif €, date, liste avec badges statut, annulation)
+- Testé : J+60=scheduled, J+10=notified (13/13 emails), échéance simulée=applied+prix appliqué, date passée rejetée ; état de test purgé, prix restauré 390€

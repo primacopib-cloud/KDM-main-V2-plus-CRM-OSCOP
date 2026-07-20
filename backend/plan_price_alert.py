@@ -23,6 +23,51 @@ async def _collect_subscriber_emails(db, plan: dict) -> list:
     return sorted(emails)[:200]
 
 
+async def send_price_notice_alerts(db, plan: dict, old_cents: int, new_cents: int, effective_date: str) -> None:
+    """Préavis : informe les abonnés qu'un changement de tarif prendra effet à une date future."""
+    try:
+        emails = await _collect_subscriber_emails(db, plan)
+        if not emails:
+            logger.info("Préavis tarif %s : aucun abonné à prévenir", plan.get("name"))
+            return
+        from brevo_service import send_email
+        old_eur, new_eur = round((old_cents or 0) / 100, 2), round((new_cents or 0) / 100, 2)
+        try:
+            eff_fr = "/".join(reversed(effective_date.split("-")))
+        except Exception:
+            eff_fr = effective_date
+        html = f"""
+        <div style='font-family:Arial,sans-serif;max-width:560px'>
+          <h2 style='color:#5B2E8C'>Préavis : évolution du tarif de votre formule</h2>
+          <p style='font-size:14px;color:#333'>Bonjour,</p>
+          <p style='font-size:14px;color:#333'>
+            À compter du <strong>{eff_fr}</strong>, le tarif de votre formule
+            <strong>{plan.get('name')}</strong> passera de <strong>{old_eur:g} € HT/mois</strong>
+            à <strong style='color:#5B2E8C'>{new_eur:g} € HT/mois</strong>.
+          </p>
+          <p style='font-size:13px;color:#555'>
+            Conformément à nos engagements, nous vous en informons au moins 30 jours à l'avance.
+            Aucune action n'est requise de votre part. Pour toute question, contactez votre référent réseau.
+          </p>
+          <p style='color:#999;font-size:11px;margin-top:20px'>Communityplace B2B ESS — KDMARCHÉ × O'SCOP</p>
+        </div>"""
+        sent = 0
+        for email in emails:
+            try:
+                await send_email(
+                    to_email=email, to_name=None,
+                    subject=f"Préavis tarifaire — votre formule {plan.get('name')} évoluera le {eff_fr}",
+                    html_content=html, tags=["plan-price-notice"],
+                )
+                sent += 1
+            except Exception as exc:
+                logger.warning("Préavis tarif non envoyé à %s : %s", email, exc)
+        logger.info("Préavis tarif %s (effet %s) envoyé à %s/%s abonnés",
+                    plan.get("name"), effective_date, sent, len(emails))
+    except Exception as exc:
+        logger.error("Préavis tarifaires échoués : %s", exc)
+
+
 async def send_price_change_alerts(db, plan: dict, old_cents: int, new_cents: int) -> None:
     try:
         emails = await _collect_subscriber_emails(db, plan)
