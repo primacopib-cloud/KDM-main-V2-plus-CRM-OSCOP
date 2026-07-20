@@ -18,6 +18,7 @@ import { LogicoopPanel } from '../components/superadmin/LogicoopPanel';
 import { PartnerApplicationsPanel } from '../components/superadmin/PartnerApplicationsPanel';
 import { SupportTicketsTab } from '../components/superadmin/SupportTicketsTab';
 import { MemberRegistryTab } from '../components/superadmin/MemberRegistryTab';
+import { AuditJournalPanel } from '../components/superadmin/AuditJournalPanel';
 import { CoopersConventionsTab } from '../components/superadmin/CoopersConventionsTab';
 import { VendorAdhesionsPanel } from '../components/superadmin/VendorAdhesionsPanel';
 import { AccountingTab } from '../components/superadmin/AccountingTab';
@@ -175,8 +176,9 @@ export default function SuperAdminPage() {
             <SupportTicketsTab />
           </TabsContent>
 
-          <TabsContent value="registry">
+          <TabsContent value="registry" className="space-y-6">
             <MemberRegistryTab />
+            <AuditJournalPanel />
           </TabsContent>
 
           <TabsContent value="conventions">

@@ -285,7 +285,7 @@ export default function OrdersPage() {
                           {statusConfig.label}
                         </Badge>
                         <p className="font-bold text-[#D9B35A] hidden sm:block">
-                          {formatPrice(order.total_ht_cents)} HT
+                          {formatPrice(order.total_ht_cents ?? order.subtotal_ht_cents)} HT
                         </p>
                         {isExpanded ? (
                           <ChevronUp className="w-5 h-5 text-white/40" />
@@ -337,12 +337,12 @@ export default function OrdersPage() {
                             <div className="mt-4 p-3 rounded-xl bg-white/[0.04]">
                               <div className="flex justify-between items-center">
                                 <span className="text-white/70">{i18n.t('orders.total_ht')}</span>
-                                <span className="text-xl font-bold text-[#D9B35A]">{formatPrice(order.total_ht_cents)}</span>
+                                <span className="text-xl font-bold text-[#D9B35A]">{formatPrice(order.total_ht_cents ?? order.subtotal_ht_cents)}</span>
                               </div>
                               {(order.tax_cents > 0 || order.total_ttc_cents > 0) && (
                                 <div className="mt-2 pt-2 border-t border-white/[0.08] space-y-1 text-sm" data-testid={`order-tax-${order.id}`}>
                                   <div className="flex justify-between text-white/60"><span>TVA</span><span>{formatPrice(order.tax_cents || 0)}</span></div>
-                                  <div className="flex justify-between text-white/85 font-semibold"><span>Total TTC</span><span>{formatPrice(order.total_ttc_cents || order.total_ht_cents)}</span></div>
+                                  <div className="flex justify-between text-white/85 font-semibold"><span>Total TTC</span><span>{formatPrice(order.total_ttc_cents || order.total_ht_cents || order.subtotal_ht_cents)}</span></div>
                                 </div>
                               )}
                             </div>

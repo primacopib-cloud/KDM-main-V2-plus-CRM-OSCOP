@@ -119,6 +119,38 @@ async def my_operator_space(user_id: str = Depends(get_current_user_id)):
     return op
 
 
+@logicoop_router.get("/logicoop/missions")
+async def my_missions(user_id: str = Depends(get_current_user_id)):
+    """Commandes à enlever (EXW dans mes zones entrepôt) ou à livrer (CIF dans mes zones de livraison)."""
+    op = await my_operator_space(user_id)
+    exw, cif = set(op.get("exw_zones", [])), set(op.get("cif_zones", []))
+    zones = list(exw | cif)
+    if not zones:
+        return {"items": []}
+    pickups = {p["id"]: p.get("name") async for p in db.pickup_locations.find({}, {"_id": 0, "id": 1, "name": 1})}
+    items = []
+    async for o in db.orders.find(
+            {"zone_code": {"$in": zones}, "status": {"$nin": ["CANCELLED", "DELIVERED", "COMPLETED"]}},
+            {"_id": 0, "id": 1, "order_number": 1, "status": 1, "zone_code": 1, "incoterm": 1,
+             "subtotal_ht_cents": 1, "total_ttc_cents": 1, "pickup_location_id": 1, "created_at": 1, "items": 1}).sort("created_at", -1).limit(100):
+        incoterm = o.get("incoterm") or "EXW"
+        if incoterm == "CIF" and o["zone_code"] in cif:
+            mission = "LIVRAISON"
+        elif o["zone_code"] in exw:
+            mission = "ENLEVEMENT"
+        else:
+            continue
+        items.append({
+            "order_id": o["id"], "order_number": o.get("order_number"), "status": o.get("status"),
+            "zone_code": o["zone_code"], "incoterm": incoterm, "mission": mission,
+            "pickup_location": pickups.get(o.get("pickup_location_id")),
+            "total_ht_cents": o.get("subtotal_ht_cents", 0),
+            "items_count": len(o.get("items", [])),
+            "created_at": str(o.get("created_at", ""))[:16],
+        })
+    return {"items": items}
+
+
 # ---------- Types de partenariat ----------
 
 async def _ensure_types():
@@ -189,6 +221,46 @@ async def apply_partner(body: ApplicationBody):
            "status": "NOUVELLE", "created_at": _now()}
     await db.partner_applications.insert_one({**doc})
     logger.info("Candidature partenaire %s : %s", t["code"], body.email)
+    import os
+    try:
+        from brevo_service import send_email
+        await send_email(
+            to_email=doc["email"], to_name=doc["name"],
+            subject=f"Candidature reçue — {t['label']} | KDMARCHÉ × O'SCOP",
+            html_content=f"""<h2 style="color:#451F6B;">Merci pour votre candidature !</h2>
+            <p>Bonjour {doc['name']},</p>
+            <p>Nous avons bien reçu votre demande « <strong>{t['label']}</strong> »
+            {f"pour {doc['company']}" if doc.get('company') else ''}.
+            Notre équipe l'étudie et reviendra vers vous rapidement.</p>
+            <p style="color:#777;font-size:12px;">Référence : {doc['id'][:8].upper()} — La coopérative KDMARCHÉ × O'SCOP.</p>""",
+            tags=["partner-application-ack"])
+    except Exception as exc:
+        logger.warning("Accusé réception candidature %s : %s", doc["email"], exc)
+    try:
+        from brevo_service import send_email
+        from email_alerts import ADMIN_ALERT_EMAIL
+        await send_email(
+            to_email=os.environ.get("ADMIN_ALERT_EMAIL", ADMIN_ALERT_EMAIL), to_name="Admin KDMARCHÉ × O'SCOP",
+            subject=f"Nouvelle candidature partenaire : {t['label']} — {doc['name']}",
+            html_content=f"""<h2 style="color:#451F6B;">Nouvelle candidature « {t['label']} »</h2>
+            <ul><li><strong>Nom :</strong> {doc['name']}</li>
+            <li><strong>Société :</strong> {doc.get('company') or '—'}</li>
+            <li><strong>Email :</strong> {doc['email']}</li>
+            <li><strong>Téléphone :</strong> {doc.get('phone') or '—'}</li>
+            <li><strong>Message :</strong> {doc.get('message') or '—'}</li></ul>
+            <p>À traiter dans l'onglet LOGICOOP du Super Admin.</p>""",
+            tags=["partner-application-admin"])
+    except Exception as exc:
+        logger.warning("Alerte admin candidature : %s", exc)
+    try:
+        from core_deps import create_notification
+        await create_notification(
+            "partner_application", f"Candidature {t['code']} — {doc['name']}",
+            f"{doc['name']}{' (' + doc['company'] + ')' if doc.get('company') else ''} souhaite rejoindre l'espace {t['label']}.",
+            target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+            data={"link": "/superadmin", "application_id": doc["id"]})
+    except Exception as exc:
+        logger.warning("Notif candidature : %s", exc)
     return {"ok": True, "id": doc["id"]}
 
 

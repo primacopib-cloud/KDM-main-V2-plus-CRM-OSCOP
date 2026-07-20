@@ -1,0 +1,30 @@
+{
+  "summary": "Iter 63 (Lot 12 KDMARCHÉ×O'SCOP): backend 9/9 PASS, frontend all key flows PASS. LOGICOOP missions (vendor-pro Translog Antilles) → 1 mission ENLEVEMENT KDM-20260716-60C1CBA8 zone GUADELOUPE total_ht_cents=6400 pickup='Entrepôt Jarry'; buyer 403. Partner apply COOPERS TEST_iter63 → ok, application persisted, 2 Brevo emails triggered (ack+admin), notification partner_application créée (best-effort — endpoint /api/notifications OK). Audit list: 100 items desc, event_types contains TERRITORY_CREATED/CAMPAIGN_CREATED/LOT_CREATED; ?event_type=TERRITORY_CREATED → 3 entries; ?q=admin@ returns entries; /verify → valid:true entries_verified>=383 (chain intègre après réparation seq 239); buyer /audit → 403. COOP'IA admin (/api/buyer-tools/procedure-suggestion?category=alimentaire) → 200 OK avec recommandation. Frontend: /logicoop affiche panneau logicoop-missions + ligne 'À ENLEVER KDM-20260716-60C1CBA8 · GUADELOUPE · Entrepôt Jarry 64,00 € HT'. Journal d'audit UI: onglet Registres → audit-journal-panel avec 100 entrées, filtre TERRITORY_CREATED→3 entrées, verify → '✓ Chaîne intègre'. COOP'IA création: bloc coopia-hint dans le CreateModal, saisie 'alimentaire' → clic coopia-hint-btn → coopia-hint-result 'Offres scellées · risque 70/100 · rationale' → clic coopia-hint-apply → toast 'Procédure Offres scellées appliquée' (procedure select confirmé SCELLEE). /commandes acheteur-pro affiche KDM-20260716-60C1CBA8 64,00 € HT (fix subtotal_ht_cents OK, plus de 0,00 €). Aucun bug bloquant.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Header admin", "issues": ["Badge 'Disconnected' rouge affiché en permanence (préexistant iter62)"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter63_lot12.py",
+    "/app/test_reports/pytest/iter63_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_logicoop.apply_partner effectue 2 imports séparés de brevo_service.send_email dans deux try/except adjacents — refactor en un seul bloc réduit la duplication et facilite l'observabilité (log unique de succès/échec).",
+    "routes_audit.list_audit projection exclut sha256_prev mais garde sha256_current — vérifier si l'exposition du hash courant est intentionnelle (utile côté client pour audit externe, mais à documenter).",
+    "Le toast admin 'Chaîne intègre (100 entrées)' affiche le count paginé de la liste, PAS le nombre d'entrées effectivement vérifiées (383+). Envisager d'afficher entries_verified du /verify pour cohérence (mineur, cosmétique).",
+    "Dashboard admin 'Recent activity' affiche 'Commande PENDING · Montant: 0.00€' pour la commande KDM-20260716 alors que subtotal_ht_cents=6400 → même problème que /commandes iter62, à investiguer côté widget dashboard (utilise probablement total_ttc_cents=0 non recalculé)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter63_lot12.py"],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "100% flux critiques (LOGICOOP missions, audit journal + filter + verify, COOP'IA hint create modal, /commandes 64,00 €)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin) ; vendor-pro@kdmarche.fr / Demo2026! ; acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "1 candidature TEST_iter63_<ts> laissée en DB (non nettoyée — main agent à supprimer par script si besoin, comme indiqué dans le note). 2 emails Brevo réels envoyés (ack + alerte admin).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Lot 12 endpoints en place: GET /api/logicoop/missions (returns items with total_ht_cents=subtotal_ht_cents fallback, filter EXW/CIF vs zones op), POST /api/partners/apply (2 Brevo mails + notification partner_application ciblant oscop_super_admin/kdm_b2b_admin), GET /api/admin/audit (filter event_type + q + limit, sort seq desc, event_types distinct list), GET /api/admin/audit/verify (returns valid:true, entries_verified). Frontend testids: logicoop-missions + logicoop-mission-* ; audit-journal-panel + audit-entry-* + audit-type-filter (SELECT tag) + audit-search-input + audit-verify-btn + audit-chain-status ; coopia-hint + coopia-hint-btn + coopia-hint-result + coopia-hint-apply + cons-category-input dans le CreateModal ConsultationsTab. Chain audit repaired (AUDIT_CHAIN_REPAIRED seq 383).",
+  "rca of the issue": "N/A — pas de bug bloquant. Observation: le dashboard admin 'Recent activity' widget affiche 0.00€ pour la commande KDM-20260716 alors que /commandes et /logicoop l'affichent correctement à 64,00 € — probablement le widget lit total_ttc_cents (0) sans fallback sur subtotal_ht_cents. À corriger séparément."
+}

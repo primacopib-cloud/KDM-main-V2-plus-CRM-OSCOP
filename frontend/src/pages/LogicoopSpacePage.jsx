@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Truck, Warehouse, Ship, ArrowLeft } from 'lucide-react';
+import { Truck, Warehouse, Ship, ArrowLeft, PackageCheck } from 'lucide-react';
 import { BrandLogos } from '../components/BrandLogos';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const eur = (c) => `${((c || 0) / 100).toFixed(2).replace('.', ',')} €`;
 
 export default function LogicoopSpacePage() {
   const [op, setOp] = useState(null);
+  const [missions, setMissions] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -14,7 +16,11 @@ export default function LogicoopSpacePage() {
       .then(async (r) => {
         const d = await r.json();
         if (!r.ok) setError(d.detail || 'Accès refusé');
-        else setOp(d);
+        else {
+          setOp(d);
+          fetch(`${API}/logicoop/missions`, { credentials: 'include' })
+            .then((r2) => r2.json()).then((m) => setMissions(m.items || [])).catch(() => {});
+        }
       })
       .catch(() => setError('Connexion requise'));
   }, []);
@@ -45,6 +51,31 @@ export default function LogicoopSpacePage() {
           <div data-testid="logicoop-dashboard">
             <h1 className="text-2xl font-bold text-white mb-1">Bienvenue, {op.name}</h1>
             <p className="text-sm text-white/55 mb-8">Vos zones opérationnelles assignées par la coopérative.</p>
+
+            <div className="glass-panel-soft rounded-[18px] p-5 mb-4" data-testid="logicoop-missions">
+              <h2 className="font-display text-lg text-white flex items-center gap-2 mb-1">
+                <PackageCheck className="w-4 h-4 text-[#D9B35A]" /> Missions en cours ({missions.length})
+              </h2>
+              <p className="text-xs text-white/45 mb-3">Commandes à enlever (EXW dans vos zones entrepôt) ou à livrer (CIF dans vos zones de livraison).</p>
+              <div className="space-y-1.5">
+                {missions.map((m) => (
+                  <div key={m.order_id} className="flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs" data-testid={`logicoop-mission-${m.order_id}`}>
+                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold ${m.mission === 'ENLEVEMENT' ? 'bg-[#D9B35A]/20 text-[#E9CF8E]' : 'bg-[#60A5FA]/20 text-[#60A5FA]'}`}>
+                      {m.mission === 'ENLEVEMENT' ? 'À ENLEVER' : 'À LIVRER'}
+                    </span>
+                    <span className="font-bold text-white">{m.order_number}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/60">{m.status}</span>
+                    <span className="text-white/50 flex-1 min-w-[140px]">
+                      {m.zone_code} · {m.items_count} article(s){m.pickup_location ? ` · ${m.pickup_location}` : ''}
+                    </span>
+                    <span className="font-bold text-[#E9CF8E]">{eur(m.total_ht_cents)} HT</span>
+                    <span className="text-white/35">{String(m.created_at).replace('T', ' ')}</span>
+                  </div>
+                ))}
+                {!missions.length && <p className="text-sm text-white/45">Aucune mission en cours dans vos zones.</p>}
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-4">
               <div className="glass-panel-soft rounded-[18px] p-5" data-testid="logicoop-exw-zones">
                 <h2 className="font-display text-lg text-white flex items-center gap-2 mb-3">
