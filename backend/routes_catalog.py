@@ -245,9 +245,10 @@ async def list_products(
         products = await db.products.find(query).skip(skip).limit(limit).to_list(limit)
     
     # Build response with pricing
+    categories_cache = {c["id"]: c async for c in db.categories.find({})}
     result = []
     for p in products:
-        product_resp = await _build_product_response(p, zone_code, price_visible)
+        product_resp = await _build_product_response(p, zone_code, price_visible, categories_cache)
         result.append(product_resp)
     
     return result
@@ -271,10 +272,13 @@ async def get_product(
     return await _build_product_response(product, zone_code, price_visible)
 
 
-async def _build_product_response(product: dict, zone_code: str, price_visible: bool) -> ProductResponse:
+async def _build_product_response(product: dict, zone_code: str, price_visible: bool, categories_cache: dict = None) -> ProductResponse:
     """Build product response with optional pricing"""
     # Get category name
-    category = await db.categories.find_one({"id": product["category_id"]})
+    if categories_cache is not None:
+        category = categories_cache.get(product["category_id"])
+    else:
+        category = await db.categories.find_one({"id": product["category_id"]})
     category_name = category["name"] if category else None
     
     resp = ProductResponse(
