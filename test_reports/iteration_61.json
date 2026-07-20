@@ -1,0 +1,31 @@
+{
+  "summary": "Iter 61 tests (Lot 4 territoires + bug commandes + contraste badges). Backend 5/5 PASS (pytest). Frontend PARTIAL: Territoires UI OK (7 zones, add TEST_ZONE_UI/toggle/hide badge/delete OK, GUADELOUPE delete → toast 409 'masquez-le plutôt'), contraste badges lisibles sur Espace Acheteur (crédits dorés 100/550), Rights & Roles (SUPER_ADMIN pink/COOPER green sur fond sombre), Crédits & IA (barème + soldes vendeurs dorés). CRITICAL REGRESSION on /commandes buyer page: toast 'Erreur lors du chargement des commandes' still appears + backend returns 422.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "OrdersPage (/commandes) + BuyerSpacePage", "issue": "Toast d'erreur 'Erreur lors du chargement des commandes' persiste — 0 commande affichée alors que GET /api/v2/orders renvoie 1. Cause : signature ordersAPIV2.list(statusFilter, skip=0, limit=20) — 3 params — mais callers appellent list(filter, null, 0, 50) (4 args) → l'URL générée = ?skip=null&limit=0 → backend 422 (skip attendu int). Le 'fix' du main agent a introduit la régression au lieu de la corriger.", "selector": "[data-testid='orders-toast'] / toast rouge; requête XHR /api/v2/orders?skip=null&limit=0 → 422", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [
+      {"flow": "Buyer /commandes load", "issue": "422 Unprocessable Entity car skip=null&limit=0 envoyés", "affected_selectors": ["/api/v2/orders"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_iter61_territories_and_orders.py", "/app/test_reports/pytest/iter61_results.xml"],
+  "action_items": [
+    "URGENT: Corriger l'appel ordersAPIV2.list. Option A: modifier callers OrdersPage.jsx (lignes 82,102) et BuyerSpacePage.jsx (lignes 99,211) pour appeler list(filter, 0, 50) (3 args). Option B: étendre la signature dans /app/frontend/src/services/api.v2.js (ligne 198) pour ajouter le param intermédiaire (org_id ?) attendu et l'utiliser côté URL. Sans ce fix, /commandes reste cassé pour tous les acheteurs.",
+    "Après fix, retester: /commandes (acheteur-pro@kdmarche.fr) doit afficher 1 commande + aucun toast rouge; /espace-acheteur onglet Commandes idem; vendor-pro (sans org) doit voir data-testid='orders-no-org-notice' (actuellement non testable car toast d'erreur bloque le rendu du bandeau)."
+  ],
+  "critical_code_review_comments": [
+    "api.v2.js ordersAPIV2.list a une signature (statusFilter, skip, limit) alors que 4 sites d'appel passent (filter, null, 0, 50) → skip=null sérialisé en 'null' via URLSearchParams, limit=0 → 422. Cohérence des signatures API à valider (linter/TypeScript).",
+    "routes_admin_territories.delete: le message 409 utilise 'commande(s) rattachée(s)' — bien mais pourrait exposer aussi le count dans un champ JSON structuré (ex: {orders_count: N}) pour meilleur affichage UI.",
+    "routes_admin_territories.patch: pas de validation que le champ 'code' dans l'URL matche un pattern; petit risque d'injection mais require_admin + $set explicite limitent l'impact."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter61_territories_and_orders.py"],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "80% — territoires + contraste OK; /commandes buyer flow CASSÉ (bug critique)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin) ; acheteur-pro@kdmarche.fr / Demo2026! ; vendor-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "Aucune. Tests territoires créent et suppriment TEST_ZONE_IT61 (backend) et TEST_ZONE_UI (frontend). État final vérifié : 7 zones actives, GUADELOUPE présente + active + 1 commande.",
+  "retest_needed": true,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "Bouton login admin = 'Secure access' (EN), buyer/vendor login = 'Sign in'. Admin UI: onglet 'Catégories & Taxes' contient TerritoriesPanel en bas de page. Confirm() natif pour delete — utiliser page.on('dialog', accept). Après fix du bug commandes, re-vérifier aussi que /espace-acheteur onglet Commandes liste bien la commande.",
+  "rca of the issue": "Signature ordersAPIV2.list dans /app/frontend/src/services/api.v2.js ligne 198 = (statusFilter=null, skip=0, limit=20). Le fix mentionné dans le PRD ajoutait un 4e argument côté callers (list(filter, null, 0, 50)) mais la signature de l'API wrapper n'a jamais été mise à jour, donc: statusFilter=filter, skip=null (sérialisé 'null'), limit=0. Résultat: le backend reçoit ?skip=null&limit=0 → FastAPI/Pydantic renvoie 422 (skip doit être int) → le frontend catch l'exception → toast 'Erreur lors du chargement des commandes' → 0 commande affichée pour tous les acheteurs. Reproduction: connexion acheteur-pro@kdmarche.fr → /commandes → toast rouge visible immédiatement, console log 'Error loading orders' + '422'."
+}

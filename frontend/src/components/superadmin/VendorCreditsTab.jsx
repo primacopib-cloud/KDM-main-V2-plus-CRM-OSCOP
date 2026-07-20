@@ -6,7 +6,7 @@ import { VendorReportsPanel } from './VendorReportsPanel';
 import { DiffusionGridPanel } from './DiffusionGridPanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const inputCls = 'h-9 px-2 rounded-lg bg-white/60 border border-black/10 text-sm text-right text-[#1F2A3A]';
+const inputCls = 'h-9 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-right text-white placeholder:text-white/35';
 
 export const VendorCreditsTab = () => {
   const [pricing, setPricing] = useState([]);
@@ -52,27 +52,27 @@ export const VendorCreditsTab = () => {
   return (
     <div className="space-y-6" data-testid="vendor-credits-tab">
       <div>
-        <h2 className="text-xl font-bold text-[#1F2A3A] flex items-center gap-2">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2">
           <Coins className="w-5 h-5 text-[#D9B35A]" /> Crédits vendeurs & Studio IA
         </h2>
-        <p className="text-sm opacity-60 mt-1">Barème de consommation (fiches, photos, IA) et attribution de crédits aux vendeurs.</p>
+        <p className="text-sm text-white/55 mt-1">Barème de consommation (fiches, photos, IA) et attribution de crédits aux vendeurs.</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <div className="glass-panel-soft rounded-[18px] p-5" data-testid="credit-pricing-panel">
-          <h3 className="font-display text-lg mb-3 text-[#1F2A3A] flex items-center gap-2">
-            <Sparkles size={15} className="text-purple-600" /> Barème (crédits par action)
+          <h3 className="font-display text-lg mb-3 text-white flex items-center gap-2">
+            <Sparkles size={15} className="text-[#C9A8F0]" /> Barème (crédits par action)
           </h3>
-          <div className="divide-y divide-black/5">
+          <div className="divide-y divide-white/[0.06]">
             {pricing.map((p) => (
               <div key={p.action} className="flex items-center justify-between gap-2 py-2" data-testid={`pricing-row-${p.action}`}>
-                <span className="text-sm text-[#1F2A3A]">{p.label}</span>
+                <span className="text-sm text-white/85">{p.label}</span>
                 <div className="flex items-center gap-1.5">
                   <input type="number" min="0" value={edits[p.action] ?? p.cost}
                     onChange={(e) => setEdits({ ...edits, [p.action]: e.target.value })}
-                    data-testid={`pricing-input-${p.action}`} className={`${inputCls} w-20`} />
+                    data-testid={`pricing-input-${p.action}`} className={`${inputCls} w-20 font-bold`} />
                   <button type="button" onClick={() => savePrice(p)} data-testid={`pricing-save-${p.action}`}
-                    className="p-1.5 rounded-lg bg-[#D9B35A]/15 border border-[#D9B35A]/35 text-[#B8860B] hover:bg-[#D9B35A]/30 transition-colors">
+                    className="p-1.5 rounded-lg bg-[#D9B35A]/20 border border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/35 transition-colors">
                     <Save size={14} />
                   </button>
                 </div>
@@ -82,27 +82,27 @@ export const VendorCreditsTab = () => {
         </div>
 
         <div className="glass-panel-soft rounded-[18px] p-5" data-testid="vendors-credits-panel">
-          <h3 className="font-display text-lg mb-3 text-[#1F2A3A]">Soldes vendeurs</h3>
-          <div className="divide-y divide-black/5">
+          <h3 className="font-display text-lg mb-3 text-white">Soldes vendeurs</h3>
+          <div className="divide-y divide-white/[0.06]">
             {vendors.map((v) => (
               <div key={v.id} className="flex items-center justify-between gap-2 py-2" data-testid={`vendor-credits-row-${v.id}`}>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-[#1F2A3A] truncate">{v.company_name || v.id}</p>
-                  <p className="text-xs opacity-50">{v.email || '—'}</p>
+                  <p className="text-sm font-medium text-white truncate">{v.company_name || v.id}</p>
+                  <p className="text-xs text-white/45">{v.email || '—'}</p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-sm font-bold text-[#B8860B]" data-testid={`vendor-balance-${v.id}`}>{v.credits ?? 0}</span>
+                  <span className="px-2 py-0.5 rounded-lg text-sm font-bold bg-[#D9B35A]/20 text-[#E9CF8E] border border-[#D9B35A]/30" data-testid={`vendor-balance-${v.id}`}>{v.credits ?? 0}</span>
                   <input type="number" placeholder="+/-" value={grants[v.id] ?? ''}
                     onChange={(e) => setGrants({ ...grants, [v.id]: e.target.value })}
                     data-testid={`vendor-grant-input-${v.id}`} className={`${inputCls} w-20`} />
                   <button type="button" onClick={() => grant(v)} data-testid={`vendor-grant-btn-${v.id}`}
-                    className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/20 transition-colors">
+                    className="p-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 hover:bg-emerald-500/25 transition-colors">
                     <Plus size={14} />
                   </button>
                 </div>
               </div>
             ))}
-            {vendors.length === 0 && <p className="text-sm opacity-50 py-3">Aucun vendeur.</p>}
+            {vendors.length === 0 && <p className="text-sm text-white/45 py-3">Aucun vendeur.</p>}
           </div>
         </div>
       </div>

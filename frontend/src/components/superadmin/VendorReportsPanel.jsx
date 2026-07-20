@@ -43,7 +43,7 @@ export const VendorReportsPanel = () => {
   return (
     <div className="glass-panel-soft rounded-[18px] p-5" data-testid="vendor-reports-panel">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-display text-lg text-[#1F2A3A] flex items-center gap-2">
+        <h3 className="font-display text-lg text-white flex items-center gap-2">
           <Mail size={15} className="text-[#5B2E8C]" /> Rapports mensuels vendeurs
         </h3>
         <button type="button" onClick={sendAll} disabled={sendingAll}
@@ -55,11 +55,11 @@ export const VendorReportsPanel = () => {
       <p className="text-[11px] opacity-50 mb-3">
         Envoi automatique le 1er de chaque mois (vues des spots, meilleur spot, commandes, CA).
       </p>
-      <div className="divide-y divide-black/5 max-h-72 overflow-y-auto">
+      <div className="divide-y divide-white/[0.06] max-h-72 overflow-y-auto">
         {reports.map((r) => (
           <div key={r.id} className="flex items-center justify-between gap-2 py-2" data-testid={`report-row-${r.id}`}>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-[#1F2A3A] truncate">
+              <p className="text-sm font-medium text-white truncate">
                 {r.vendor_name || r.email} <span className="text-[10px] opacity-50">— {r.month}</span>
                 {r.resent && <span className="text-[9px] uppercase ml-1.5 px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600">renvoyé</span>}
               </p>
@@ -69,7 +69,7 @@ export const VendorReportsPanel = () => {
             </div>
             <button type="button" onClick={() => resend(r.vendor_id)} disabled={resending === r.vendor_id}
               data-testid={`report-resend-${r.vendor_id}`}
-              className="shrink-0 h-8 px-3 rounded-lg text-xs border border-black/10 hover:border-[#5B2E8C]/40 hover:text-[#5B2E8C] inline-flex items-center gap-1.5 disabled:opacity-40">
+              className="shrink-0 h-8 px-3 rounded-lg text-xs border border-white/15 hover:border-[#5B2E8C]/40 hover:text-[#5B2E8C] inline-flex items-center gap-1.5 disabled:opacity-40">
               {resending === r.vendor_id ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />} Renvoyer
             </button>
           </div>

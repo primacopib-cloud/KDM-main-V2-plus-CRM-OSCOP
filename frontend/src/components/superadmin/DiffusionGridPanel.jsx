@@ -50,12 +50,12 @@ export const DiffusionGridPanel = () => {
     refresh();
   };
 
-  const inputCls = 'h-9 px-2.5 rounded-lg text-xs border border-black/10 bg-white min-w-0';
+  const inputCls = 'h-9 px-2.5 rounded-lg text-xs border border-white/15 bg-white min-w-0';
 
   return (
     <div className="glass-panel-soft rounded-[18px] p-5" data-testid="diffusion-grid-panel">
-      <h3 className="font-display text-lg text-[#1F2A3A] flex items-center gap-2 mb-1">
-        <CalendarClock size={15} className="text-[#B8860B]" /> Grille de diffusion des spots
+      <h3 className="font-display text-lg text-white flex items-center gap-2 mb-1">
+        <CalendarClock size={15} className="text-[#E9CF8E]" /> Grille de diffusion des spots
       </h3>
       <p className="text-[11px] opacity-50 mb-3">
         Paramètres de diffusion en galerie : durée d&apos;affichage et prix en crédits coopératifs (cc),
@@ -77,23 +77,23 @@ export const DiffusionGridPanel = () => {
           <Plus size={12} /> Ajouter
         </button>
       </div>
-      <div className="divide-y divide-black/5">
+      <div className="divide-y divide-white/[0.06]">
         {options.map((o) => (
           <div key={o.id} className="flex items-center justify-between py-2" data-testid={`grid-option-${o.id}`}>
             <div>
-              <p className="text-sm font-medium text-[#1F2A3A]">
-                {o.label} — <span className="text-[#B8860B] font-bold">{o.price_credits} cc</span>
+              <p className="text-sm font-medium text-white">
+                {o.label} — <span className="text-[#E9CF8E] font-bold">{o.price_credits} cc</span>
               </p>
               <p className="text-[10px] uppercase tracking-wide opacity-45">{o.active ? 'Active' : 'Inactive'}</p>
             </div>
             <div className="flex gap-1.5">
               <button type="button" onClick={() => toggle(o)} data-testid={`grid-toggle-${o.id}`}
                 title={o.active ? 'Désactiver' : 'Activer'}
-                className={`p-2 rounded-lg border ${o.active ? 'border-emerald-300 text-emerald-600' : 'border-black/10 text-gray-400'}`}>
+                className={`p-2 rounded-lg border ${o.active ? 'border-emerald-300 text-emerald-600' : 'border-white/15 text-gray-400'}`}>
                 <Power size={13} />
               </button>
               <button type="button" onClick={() => remove(o)} data-testid={`grid-delete-${o.id}`}
-                className="p-2 rounded-lg border border-black/10 text-red-500 hover:border-red-300">
+                className="p-2 rounded-lg border border-white/15 text-red-500 hover:border-red-300">
                 <Trash2 size={13} />
               </button>
             </div>

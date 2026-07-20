@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Percent, Plus, Archive, Trash2, BarChart3 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const inputCls = 'h-9 px-2 rounded-lg bg-white/60 border border-black/10 text-sm text-[#1F2A3A]';
+const inputCls = 'h-9 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35';
 
 const EMPTY = { name: '', promo_type: 'bonus_purchase', value_percent: '', scope_profile: 'all', scope_territory: 'ALL', scope_category: 'all', scope_action: 'all', starts_at: '', ends_at: '' };
 const TERRITORIES = ['ALL', 'GUADELOUPE', 'MARTINIQUE', 'GUYANE', 'REUNION', 'MAYOTTE', 'SAINT-MARTIN'];
@@ -47,7 +47,7 @@ export const CreditPromotionsPanel = () => {
 
   return (
     <div className="glass-panel-soft rounded-[18px] p-5" data-testid="credit-promotions-panel">
-      <h3 className="font-display text-lg mb-3 text-[#1F2A3A] flex items-center gap-2">
+      <h3 className="font-display text-lg mb-3 text-white flex items-center gap-2">
         <Percent size={15} className="text-emerald-600" /> Bonus & Réductions de crédits
       </h3>
 
@@ -90,13 +90,13 @@ export const CreditPromotionsPanel = () => {
         <Plus size={13} /> Créer la promotion
       </button>
 
-      <div className="divide-y divide-black/5">
+      <div className="divide-y divide-white/[0.06]">
         {promos.map((p) => (
           <div key={p.id} className={`flex items-center justify-between gap-2 py-2 ${p.archived ? 'opacity-40' : ''}`} data-testid={`promo-row-${p.id}`}>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-[#1F2A3A] truncate">
+              <p className="text-sm font-medium text-white truncate">
                 {p.name} — <span className="text-emerald-600 font-bold">{p.value_percent}%</span>
-                {p.archived && <span className="text-[9px] uppercase ml-2 px-1.5 py-0.5 rounded bg-black/10">archivée</span>}
+                {p.archived && <span className="text-[9px] uppercase ml-2 px-1.5 py-0.5 rounded bg-white/10 text-white/60">archivée</span>}
               </p>
               <p className="text-[11px] opacity-50">
                 {p.promo_type === 'bonus_purchase' ? 'Bonus achat' : 'Réduction conso'} · {p.scope_profile} · {p.scope_territory} · {p.scope_category}
@@ -140,8 +140,8 @@ export const CreditAnalyticsPanel = () => {
       <p className="text-[11px] uppercase tracking-wider opacity-50 mb-1">{title}</p>
       {(rows || []).slice(0, 5).map((r) => (
         <div key={r.key} className="flex justify-between text-xs py-0.5">
-          <span className="truncate text-[#1F2A3A]">{r.key}</span>
-          <span className="font-semibold text-[#B8860B]">{r.credits} cr.</span>
+          <span className="truncate text-white">{r.key}</span>
+          <span className="font-semibold text-[#E9CF8E]">{r.credits} cr.</span>
         </div>
       ))}
       {(!rows || rows.length === 0) && <p className="text-xs opacity-40">—</p>}
@@ -151,17 +151,17 @@ export const CreditAnalyticsPanel = () => {
   if (!data) return null;
   return (
     <div className="glass-panel-soft rounded-[18px] p-5" data-testid="credit-analytics-panel">
-      <h3 className="font-display text-lg mb-3 text-[#1F2A3A] flex items-center gap-2">
+      <h3 className="font-display text-lg mb-3 text-white flex items-center gap-2">
         <BarChart3 size={15} className="text-[#5B9BD5]" /> Suivi des crédits
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4 text-center">
         {[
           ['Achetés', data.totals.purchased, '#6FA82E'],
-          ['Consommés', data.totals.consumed, '#B8860B'],
+          ['Consommés', data.totals.consumed, '#E9CF8E'],
           ['Remboursés', data.totals.refunded, '#5B9BD5'],
           ['Revenus', `${data.totals.revenue_eur} €`, '#5B2E8C'],
         ].map(([label, value, color]) => (
-          <div key={label} className="rounded-xl bg-white/50 border border-black/5 p-2.5">
+          <div key={label} className="rounded-xl bg-white/50 border border-white/10 p-2.5">
             <p className="text-lg font-bold" style={{ color }}>{value}</p>
             <p className="text-[10px] uppercase opacity-50">{label}</p>
           </div>

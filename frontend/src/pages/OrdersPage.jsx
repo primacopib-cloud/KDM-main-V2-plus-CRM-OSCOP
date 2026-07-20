@@ -60,6 +60,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [noOrg, setNoOrg] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState(null);
   
   // Cancel dialog
@@ -78,11 +79,13 @@ export default function OrdersPage() {
 
       try {
         const filter = statusFilter === 'all' ? null : statusFilter;
-        const data = await ordersAPIV2.list(filter, 0, 50);
+        const data = await ordersAPIV2.list(filter, null, 0, 50);
         setOrders(data);
+        setNoOrg(false);
       } catch (error) {
         console.error('Error loading orders:', error);
-        toast.error('Erreur lors du chargement des commandes');
+        if ((error.message || '').toLowerCase().includes('organisation')) setNoOrg(true);
+        else toast.error('Erreur lors du chargement des commandes');
       } finally {
         setLoading(false);
       }
@@ -96,7 +99,7 @@ export default function OrdersPage() {
     setLoading(true);
     try {
       const filter = statusFilter === 'all' ? null : statusFilter;
-      const data = await ordersAPIV2.list(filter, 0, 50);
+      const data = await ordersAPIV2.list(filter, null, 0, 50);
       setOrders(data);
       toast.success(i18n.t('orders.toast_actualisees'));
     } catch (error) {
@@ -190,6 +193,16 @@ export default function OrdersPage() {
             </Button>
           </Link>
         </div>
+
+        {noOrg && (
+          <div className="flex items-start gap-3 p-4 rounded-[14px] mb-6 border border-[#D9B35A]/35" style={{ background: 'rgba(217,179,90,0.08)' }} data-testid="orders-no-org-notice">
+            <Package className="w-5 h-5 text-[#D9B35A] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-[#E9CF8E]">Compte non rattaché à une organisation acheteuse</p>
+              <p className="text-xs text-white/60 mt-0.5">Les commandes B2B nécessitent une organisation approuvée avec un abonnement actif. Rapprochez-vous de l'administrateur ou finalisez votre adhésion Acheteur Pro.</p>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

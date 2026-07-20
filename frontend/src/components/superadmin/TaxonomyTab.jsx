@@ -1,28 +1,29 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Layers, Percent, Plus, Trash2, Loader2 } from 'lucide-react';
+import { TerritoriesPanel } from './TerritoriesPanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const inputCls = 'h-10 px-3 rounded-lg bg-white/60 border border-black/10 text-sm text-[#1F2A3A]';
+const inputCls = 'h-10 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35';
 
 const Panel = ({ icon: Icon, title, items, renderLabel, onAdd, onDelete, addForm, testId }) => (
   <div className="glass-panel-soft rounded-[18px] p-5" data-testid={testId}>
-    <h3 className="font-display text-lg mb-3 text-[#1F2A3A] flex items-center gap-2">
+    <h3 className="font-display text-lg mb-3 text-white flex items-center gap-2">
       <Icon size={16} style={{ color: '#D9B35A' }} /> {title}
-      <span className="text-sm font-normal opacity-50">({items.length})</span>
+      <span className="text-sm font-normal text-white/50">({items.length})</span>
     </h3>
     <div className="flex gap-2 mb-4">{addForm}</div>
-    <div className="divide-y divide-black/5">
+    <div className="divide-y divide-white/[0.06]">
       {items.map((it) => (
         <div key={it.id} className="flex items-center justify-between gap-2 py-2" data-testid={`${testId}-item-${it.id}`}>
-          <span className="text-sm text-[#1F2A3A]">{renderLabel(it)}</span>
+          <span className="text-sm text-white/85">{renderLabel(it)}</span>
           <div className="flex items-center gap-2">
-            {it.builtin && <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#451F6B]/10 text-[#451F6B] border border-[#451F6B]/25">standard</span>}
+            {it.builtin && <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#D9B35A]/15 text-[#E9CF8E] border border-[#D9B35A]/30">standard</span>}
             <button
               type="button"
               onClick={() => onDelete(it)}
               data-testid={`${testId}-delete-${it.id}`}
-              className="p-1.5 rounded-lg opacity-40 hover:opacity-100 hover:bg-red-500/10 text-red-500 transition-all"
+              className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/25 text-red-400 hover:bg-red-500/20 transition-colors"
             >
               <Trash2 size={13} />
             </button>
@@ -75,10 +76,10 @@ export const TaxonomyTab = () => {
   return (
     <div className="space-y-6" data-testid="taxonomy-tab">
       <div>
-        <h2 className="text-xl font-bold text-[#1F2A3A] flex items-center gap-2">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2">
           <Layers className="w-5 h-5 text-[#D9B35A]" /> Catégories & Taxes
         </h2>
-        <p className="text-sm opacity-60 mt-1">Ajoutez ou supprimez instantanément une catégorie produit ou un taux de TVA — appliqués immédiatement aux formulaires produits.</p>
+        <p className="text-sm text-white/55 mt-1">Ajoutez ou supprimez instantanément une catégorie produit, un taux de TVA ou un territoire — appliqués immédiatement.</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -126,6 +127,8 @@ export const TaxonomyTab = () => {
           )}
         />
       </div>
+
+      <TerritoriesPanel />
     </div>
   );
 };

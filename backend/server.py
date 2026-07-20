@@ -485,6 +485,10 @@ app.include_router(prefs_router)
 from routes_buyer_tools import buyer_tools_router, set_buyer_tools_database
 set_buyer_tools_database(db)
 app.include_router(buyer_tools_router)
+
+from routes_admin_territories import territories_router, set_territories_database
+set_territories_database(db)
+app.include_router(territories_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)
