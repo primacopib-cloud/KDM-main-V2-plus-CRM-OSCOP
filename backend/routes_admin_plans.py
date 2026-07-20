@@ -221,6 +221,15 @@ async def update_subscription_plan(plan_id: str, data: SubscriptionPlanUpdate, r
         {"id": plan_id},
         {"$set": update_data}
     )
+
+    if "price_cents" in update_data and update_data["price_cents"] != plan.get("price_cents"):
+        from consultation_audit import audit
+        await audit("PLAN_PRICE_CHANGED", admin.get("email"), None, {
+            "plan_id": plan_id, "plan_name": plan.get("name"),
+            "old_price_cents": plan.get("price_cents"), "new_price_cents": update_data["price_cents"],
+            "old_price_eur": round((plan.get("price_cents") or 0) / 100, 2),
+            "new_price_eur": round(update_data["price_cents"] / 100, 2),
+        })
     
     updated = await db.subscription_plans.find_one({"id": plan_id})
     count = await db.subscriptions.count_documents({"plan_id": plan_id})
@@ -383,6 +392,15 @@ async def update_plan_option(option_id: str, data: PlanOptionUpdate, request: Re
         {"id": option_id},
         {"$set": update_data}
     )
+
+    if "price_cents" in update_data and update_data["price_cents"] != option.get("price_cents"):
+        from consultation_audit import audit
+        await audit("OPTION_PRICE_CHANGED", admin.get("email"), None, {
+            "option_id": option_id, "option_name": option.get("name"),
+            "old_price_cents": option.get("price_cents"), "new_price_cents": update_data["price_cents"],
+            "old_price_eur": round((option.get("price_cents") or 0) / 100, 2),
+            "new_price_eur": round(update_data["price_cents"] / 100, 2),
+        })
     
     updated = await db.plan_options.find_one({"id": option_id})
     

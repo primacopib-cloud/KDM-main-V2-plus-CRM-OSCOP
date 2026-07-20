@@ -1238,3 +1238,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Cause : /tarifs (PricingPage TIERS), section Offres landing (PricingSection), /offres (OffersPage) et DashboardPage utilisaient les prix codés en dur de mock.js (149/349/749) alors que la DB subscription_plans (gérée par l'admin) contenait 390/690/990 — le checkout Stripe facturait déjà le prix DB (incohérence critique affichage/facturation)
 - Fix : hook partagé /app/frontend/src/hooks/usePublicPlans.js (fetch /api/public/plans, cache module, fallback mock) utilisé par PricingSection, OffersPage, DashboardPage ; PricingPage fusionne prix/nom/popular API dans ses TIERS (design conservé) et masque les cartes tant que l'API n'a pas répondu (pas de flash de mauvais prix)
 - Vérifié : /tarifs, /offres et landing affichent 390/690/990, plus aucun 149
+
+## 2026-07-20 — Historique des prix dans le journal d'audit (testé E2E)
+- PLAN_PRICE_CHANGED (plans d'abonnement) et OPTION_PRICE_CHANGED (options) tracés dans audit_journal à chaque PATCH modifiant price_cents — payload : plan/option id+nom, old/new price en cents et en euros, acteur admin (routes_admin_plans.py)
+- Consultable dans SuperAdmin > Journal d'Audit (filtre par type dynamique, déjà générique) + export CSV existant
+- Vérifié : 2 changements tracés (390→395→390), prix final restauré à 390€
