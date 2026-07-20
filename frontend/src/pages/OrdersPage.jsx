@@ -79,7 +79,7 @@ export default function OrdersPage() {
 
       try {
         const filter = statusFilter === 'all' ? null : statusFilter;
-        const data = await ordersAPIV2.list(filter, null, 0, 50);
+        const data = await ordersAPIV2.list(filter, 0, 50);
         setOrders(data);
         setNoOrg(false);
       } catch (error) {
@@ -99,7 +99,7 @@ export default function OrdersPage() {
     setLoading(true);
     try {
       const filter = statusFilter === 'all' ? null : statusFilter;
-      const data = await ordersAPIV2.list(filter, null, 0, 50);
+      const data = await ordersAPIV2.list(filter, 0, 50);
       setOrders(data);
       toast.success(i18n.t('orders.toast_actualisees'));
     } catch (error) {

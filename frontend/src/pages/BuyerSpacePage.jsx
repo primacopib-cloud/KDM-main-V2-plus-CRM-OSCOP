@@ -96,7 +96,7 @@ export default function BuyerSpacePage() {
 
         // Load all data in parallel
         const [ordersData, invoicesData, invoiceStatsData] = await Promise.all([
-          ordersAPIV2.list(null, null, 0, 100).catch(() => []),
+          ordersAPIV2.list(null, 0, 100).catch(() => []),
           invoicesAPI.list(null, null, 0, 100).catch(() => ({ invoices: [] })),
           invoicesAPI.getStats().catch(() => null),
         ]);
@@ -208,7 +208,7 @@ export default function BuyerSpacePage() {
     try {
       const orgId = user?.organization_id;
       const [ordersData, walletData, invoicesData, invoiceStatsData] = await Promise.all([
-        ordersAPIV2.list(null, null, 0, 100).catch(() => []),
+        ordersAPIV2.list(null, 0, 100).catch(() => []),
         orgId ? walletAPIV2.get(orgId).catch(() => null) : Promise.resolve(null),
         invoicesAPI.list(null, null, 0, 100).catch(() => ({ invoices: [] })),
         invoicesAPI.getStats().catch(() => null),
