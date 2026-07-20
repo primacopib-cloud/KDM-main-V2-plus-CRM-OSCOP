@@ -481,6 +481,10 @@ app.include_router(cpc_export_router)
 from routes_prefs import prefs_router, set_prefs_database
 set_prefs_database(db)
 app.include_router(prefs_router)
+
+from routes_buyer_tools import buyer_tools_router, set_buyer_tools_database
+set_buyer_tools_database(db)
+app.include_router(buyer_tools_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)

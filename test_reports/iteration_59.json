@@ -1,0 +1,31 @@
+{
+  "summary": "Iter59 Lot 4 — Buyer intelligence tools + campaign alerts: 15/15 backend pytest PASS + all UI flows PASS. Comparator (avec seed transport dupliqué), simulateur fret (257,60 € HT GP→MQ 500kg/2m3, express 412,16 €), prévision demande (transport rendu avec forecast). Alerte campagne no-offer testée par script direct : notif créée + flag posé + idempotence (2e run = 0 alerte). 1 email Brevo réel envoyé comme prévu. Auth guards OK (buyer bloqué sur PUT rates admin-only). Toutes les données de test nettoyées.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Espace Acheteur - onglets", "issues": ["Seuls buyer-tab-consultations et buyer-tab-tools ont des data-testid. Les onglets Dashboard/Orders/Invoices/CREDIT-SCOP visibles dans l'UI n'exposent pas de data-testid buyer-tab-* — gêne l'automatisation (non bloquant)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter59_buyer_tools.py",
+    "/app/test_reports/pytest/iter59.xml"
+  ],
+  "action_items": [
+    "OPTIONNEL: Ajouter data-testid buyer-tab-dashboard / buyer-tab-orders / buyer-tab-invoices / buyer-tab-credits pour faciliter les tests de régression E2E des autres onglets."
+  ],
+  "critical_code_review_comments": [
+    "routes_buyer_tools.py:196 — le filtre `{'created_at': {'$gte': since}}` compare une string ISO à une string 'YYYY-MM-01'. Fonctionne car ISO 8601 est lexicographiquement ordonné, mais fragile si `created_at` est stocké en datetime dans certains docs.",
+    "campaign_alerts.py:41-49 — la création de notif et l'envoi d'email ne sont pas transactionnels ; en cas d'échec de l'update final `no_offer_alert_sent`, il y aurait double envoi. Aujourd'hui l'update est en dernier, donc le pire cas est OK, mais un log warning explicite serait utile.",
+    "routes_buyer_tools.py `_lot_stats` charge `published_snapshot` via projection excluante — bien fait, évite payload volumineux."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter59_buyer_tools.py"],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "100% des flows critiques"},
+  "test_credentials": "acheteur-pro@kdmarche.fr / Demo2026!  ;  admin@kdmarche-oscop.fr / AdminKDM2025! (portal:'admin')",
+  "seed_data_creation": "pytest fixture crée 2 consultations transport + duplicate + force CLOTUREE via motor direct, cleanup à la fin. Idem UI test: seed manuel puis cleanup mongo — DB propre à la fin.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "L'API buyer-tools nécessite une authentification cookie (get_current_user_id). Pour tester le comparateur/forecast, il faut des consultations status CLOTUREE catégorie 'transport' (seule catégorie VERT dans la matrice légale). Comme les endpoints admin ne permettent pas de passer directement en CLOTUREE, on utilise `db.consultations.update_many` via motor. Alerte campagne: appeler check_campaign_closure_alerts(mdb) après avoir setup `db.set_database(mdb)` et `routes_bids.db = mdb`. ATTENTION: envoie un vrai email Brevo à chaque alerte non idempotente — limiter à 1 seule campagne par run.",
+  "rca_of_the_issue": "Aucun bug détecté."
+}

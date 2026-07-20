@@ -160,6 +160,11 @@ async def _scheduler_loop():
             await send_closure_reminders(_db)
         except Exception as exc:
             logger.exception("Scheduler closure reminders crashed: %s", exc)
+        try:
+            from campaign_alerts import check_campaign_closure_alerts
+            await check_campaign_closure_alerts(_db)
+        except Exception as exc:
+            logger.exception("Scheduler campaign alerts crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 
