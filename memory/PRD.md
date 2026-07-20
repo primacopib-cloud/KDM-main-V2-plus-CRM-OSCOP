@@ -1167,3 +1167,10 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Historique Liquidité** : routes_liquidity.py — snapshot quotidien idempotent (liquidity_snapshots, upsert category+day, cron) + GET /api/admin/liquidity/history (current, trend, series 30 j). UI : LiquidityHistoryPanel (mini-barres + recommandation) dans l'onglet Consultations superadmin.
 - **Programme Parrainage** : routes_referral.py — code unique KDM-XXXXXX par vendeur, claim unique (refusé si déjà participé à une consultation), bonus 10 CREDI'SCOP (settings referral_bonus) versé au parrain à la 1ère inscription du filleul (hook dans routes_bids.register, idempotent referral:{filleul_id}, audit + email Brevo). UI : ReferralPanel dans l'onglet CREDI'SCOP vendeur (code, lien à copier, filleuls, saisie code parrain).
 - **Tests (iteration 54)** : 16/16 backend PASS, frontend validé (relevé, parrainage, historique liquidité) + correctif badge header /vendor vérifié par screenshot. Solde vendor-pro remis à 60. Tests : /app/backend/tests/test_iter54_lot_features.py.
+
+## 2026-07-20 — Lien parrain auto + Tableau admin + Alerte seuil liquidité + Partage WhatsApp (iteration 55)
+- **Lien Parrain Automatique** : /adhesion-vendeur?parrain=CODE → bannière (sponsor-code-banner) + localStorage.referral_code ; ReferralPanel auto-claim au premier passage sur l'onglet CREDI'SCOP (propre code silencieusement ignoré, localStorage nettoyé).
+- **Tableau Parrainage Admin** : GET /api/referral/admin/overview (stats, top 10 ambassadeurs, 100 derniers liens, 403 non-admin) + ReferralAdminPanel dans l'onglet CREDI'SCOP superadmin.
+- **Alerte Seuil Liquidité** : _alert_threshold dans routes_liquidity — email ADMIN_ALERT_EMAIL au croisement prev<3 → current>=3 (baseline = snapshot du jour ou précédent, pas de re-spam).
+- **Partage WhatsApp/Email** : boutons wa.me et mailto dans ReferralPanel (referral-whatsapp-btn, referral-email-btn).
+- **Tests (iteration 55)** : 6/6 backend PASS, frontend 100 % (bannière+localStorage, auto-claim, partage, panneau admin, régressions /mon-crediscop et onglets). Tests : /app/backend/tests/test_iter55_lot_features.py.
