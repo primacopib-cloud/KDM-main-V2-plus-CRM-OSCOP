@@ -1181,3 +1181,10 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Export Compta CREDI'SCOP** : routes_cpc_export.py — GET /api/admin/cpc/export.csv|.pdf (?month=YYYY-MM) : PACKS (€ HT/TVA/TTC), ABONNEMENTS (€), CONSOMMATIONS (unités). UI : panneau cpc-export-panel dans l'onglet CREDI'SCOP superadmin.
 - **Notifications In-App** : NotificationsBell.jsx (poll 60 s, dropdown, read-all auto) dans NavBar (non-admins), header /vendor et CatalogHeader. Émissions : bonus parrain/filleul (routes_referral), relance clôture 24h (routes_bids), rapport disponible (consultation_notify) — via create_notification (core_deps, target_roles=['direct'] + target_user_id).
 - **Tests (iteration 56)** : 8/8 backend PASS, frontend validé (cloche, campagnes, export, régressions) + correctif cloche /catalogue vérifié par screenshot. Solde vendor-pro à 60. Tests : /app/backend/tests/test_iter56_lot_features.py.
+
+## 2026-07-20 — Publication groupée + Récap hebdo + Filtres export + Toasts live (iteration 57)
+- **Publication Groupée** : POST /api/admin/campaigns/{id}/publish-all — publie tous les lots VALIDEE (contrôles conservés, échecs rapportés par lot, audit CAMPAIGN_PUBLISH_ALL). Bouton campaign-publish-{id} dans CampaignsPanel.
+- **Récap Hebdo Vendeur** : vendor_weekly_recap.py (send_weekly_recaps, branché scheduler) — lundi uniquement, email par vendeur avec compte CREDI'SCOP : solde, notifications non lues, consultations ouvertes. Idempotent par semaine (weekly_recap_sent).
+- **Filtres Export Compta** : ?types=PACK,ABONNEMENT,CONSOMMATION + ?email= sur export.csv/.pdf. UI : boutons-filtres togglables + champ email dans cpc-export-panel.
+- **Toasts Live** : NotificationsBell — toast sonner à l'arrivée d'une nouvelle notification non lue au poll (pas au 1er chargement).
+- **Tests (iteration 57)** : 7/7 backend PASS, frontend 100 %. Solde vendor-pro à 60. Tests : /app/backend/tests/test_iter57_lot_features.py.
