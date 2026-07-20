@@ -1203,3 +1203,10 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 
 ## 2026-06 (fork) — Ajustement UI
 - Footer : logos KD MARCHÉ et O'SCOP alignés (conteneurs blancs 96x96 identiques, centrés) — Footer.jsx
+
+## 2026-07-20 — Lot Vitrine, API ERP & Marque Blanche (testé iter 65, 100% après fix /docs-api)
+- Carrousel Partenaires : /api/showcase/partners (public) + CRUD admin (upload logo, ordre, masquer, supprimer) — PartnerCarousel.jsx sur la landing, ShowcasePartnersPanel.jsx (onglet SuperAdmin "Vitrine & Licences")
+- API publique ERP v1 : /api/public/v1/* (ping, products, orders, territories, PATCH stock) auth X-API-Key + scopes ; clés gérées via /api/admin/api-keys (ApiKeysPanel.jsx, onglet "API & ERP") ; doc publique sur /docs-api (ApiDocsPage.jsx — NE PAS renommer en /api-docs : collision ingress /api*)
+- Marque Blanche légère : licences territoriales /api/admin/licenses (slug translittéré, couleurs, logo, territoire) + vitrine publique /t/{slug} (TenantPage.jsx), stats publiques
+- Fichiers backend : routes_showcase.py, routes_api_keys.py, routes_public_api.py, routes_licenses.py (tous < 200 lignes)
+- Backlog restant : P2 isolation de données par tenant (marque blanche "complète") si demandé

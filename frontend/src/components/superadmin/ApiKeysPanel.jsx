@@ -71,7 +71,7 @@ export const ApiKeysPanel = () => {
           <KeyRound size={16} style={{ color: '#D9B35A' }} /> Clés API — Connecteurs ERP
           <span className="text-sm font-normal text-white/50">({items.length})</span>
         </h3>
-        <Link to="/api-docs" target="_blank" className="text-xs text-[#D9B35A] hover:underline inline-flex items-center gap-1.5" data-testid="api-docs-link">
+        <Link to="/docs-api" target="_blank" className="text-xs text-[#D9B35A] hover:underline inline-flex items-center gap-1.5" data-testid="api-docs-link">
           <BookOpen size={13} /> Documentation API
         </Link>
       </div>

@@ -128,7 +128,7 @@ function App() {
           <Route path="/super-admin" element={<SuperAdminPage />} />
           <Route path="/superadmin" element={<SuperAdminPage />} />
           <Route path="/t/:slug" element={<TenantPage />} />
-          <Route path="/api-docs" element={<ApiDocsPage />} />
+          <Route path="/docs-api" element={<ApiDocsPage />} />
           {/* Dynamic Order Form with Zone Preparation Options */}
           <Route path="/bon-de-commande-dynamique" element={<DynamicOrderPage />} />
           <Route path="/dynamic-order" element={<DynamicOrderPage />} />
