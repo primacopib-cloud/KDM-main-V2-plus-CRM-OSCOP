@@ -80,16 +80,29 @@ const TIERS = [
 ];
 
 const PricingPage = () => {
-  const [visibleSlugs, setVisibleSlugs] = React.useState(null);
+  const [apiPlans, setApiPlans] = React.useState(null);
 
   React.useEffect(() => {
     fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/plans`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d && Array.isArray(d.plans)) setVisibleSlugs(d.plans.map((p) => p.slug)); })
+      .then((d) => { if (d && Array.isArray(d.plans)) setApiPlans(d.plans); })
       .catch(() => {});
   }, []);
 
-  const tiers = visibleSlugs === null ? TIERS : TIERS.filter((t) => visibleSlugs.includes(t.id));
+  const tiers = React.useMemo(() => {
+    if (apiPlans === null) return [];
+    const visible = new Set(apiPlans.map((p) => p.slug || p.id));
+    return TIERS.filter((t) => visible.has(t.id)).map((t) => {
+      const api = apiPlans.find((p) => (p.slug || p.id) === t.id);
+      if (!api) return t;
+      return {
+        ...t,
+        name: api.name || t.name,
+        price: api.price ?? Math.round((api.price_cents || 0) / 100),
+        recommended: api.popular ?? t.recommended,
+      };
+    });
+  }, [apiPlans]);
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }} data-testid="pricing-page">
@@ -130,7 +143,7 @@ const PricingPage = () => {
           {tiers.map((tier) => (
             <PricingCard key={tier.id} tier={tier} />
           ))}
-          {tiers.length === 0 && (
+          {apiPlans !== null && tiers.length === 0 && (
             <div className="col-span-full text-center text-white/60 py-10" data-testid="pricing-no-plans">
               Les offres seront bientôt disponibles. Contactez-nous pour en savoir plus.
             </div>

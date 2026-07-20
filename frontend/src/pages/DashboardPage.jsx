@@ -2,7 +2,8 @@ import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Progress } from '../components/ui/progress';
-import { partners, subscriptionPlans } from '../data/mock';
+import { partners } from '../data/mock';
+import { usePublicPlans } from '../hooks/usePublicPlans';
 import { BrandLogos } from '../components/BrandLogos';
 import { 
   LogOut, 
@@ -27,6 +28,7 @@ import { BuyerCreditHistory } from '../components/BuyerCreditHistory';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { plans: subscriptionPlans } = usePublicPlans();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [addingCredits, setAddingCredits] = useState(false);

@@ -16,7 +16,7 @@ import {
   Building2,
   MapPin
 } from 'lucide-react';
-import { partners, subscriptionPlans, logisticsSteps } from '../data/mock';
+import { partners, logisticsSteps } from '../data/mock';
 import PricingSection from '../components/PricingSection';
 import PartnersSection from '../components/PartnersSection';
 import LogisticsSection from '../components/LogisticsSection';

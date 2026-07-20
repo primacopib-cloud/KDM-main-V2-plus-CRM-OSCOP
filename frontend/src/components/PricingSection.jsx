@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { subscriptionPlans } from '../data/mock';
+import { usePublicPlans } from '../hooks/usePublicPlans';
 import { ArrowRight, Wallet } from 'lucide-react';
 import i18n from '@/i18n';
 
 const PricingSection = () => {
+  const { plans } = usePublicPlans();
   return (
     <section id="offres" className="py-8 px-5">
       <div className="max-w-[1160px] mx-auto">
@@ -19,7 +20,7 @@ const PricingSection = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-3.5">
-          {subscriptionPlans.map((plan) => {
+          {plans.map((plan) => {
             const features = i18n.t(`offers.features_${plan.id.replace(/-/g, '_')}`, { returnObjects: true });
             return (
             <div 

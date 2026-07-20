@@ -1233,3 +1233,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Admin : PUT /api/admin/api-keys/{id}/webhook + éditeur inline dans ApiKeysPanel (secret whsec_ auto-généré) ; PartnerDevPage affiche webhook, secret et 20 dernières livraisons ; doc webhooks dans /docs-api
 - Stats vitrine marque blanche par territoire réel : produits = zone_prices actifs de la zone, vendeurs = vendor_products approuvés de la zone (routes_licenses._license_with_stats) ; labels TenantPage mis à jour
 - LEÇON : ne PAS lancer plusieurs search_replace en parallèle sur le MÊME fichier (2 éditions perdues : import Webhook ApiKeysPanel, badge domaine LicensesPanel — re-appliquées)
+
+## 2026-07-20 — FIX : plans modifiés par le SuperAdmin non appliqués sur les pages publiques
+- Cause : /tarifs (PricingPage TIERS), section Offres landing (PricingSection), /offres (OffersPage) et DashboardPage utilisaient les prix codés en dur de mock.js (149/349/749) alors que la DB subscription_plans (gérée par l'admin) contenait 390/690/990 — le checkout Stripe facturait déjà le prix DB (incohérence critique affichage/facturation)
+- Fix : hook partagé /app/frontend/src/hooks/usePublicPlans.js (fetch /api/public/plans, cache module, fallback mock) utilisé par PricingSection, OffersPage, DashboardPage ; PricingPage fusionne prix/nom/popular API dans ses TIERS (design conservé) et masque les cartes tant que l'API n'a pas répondu (pas de flash de mauvais prix)
+- Vérifié : /tarifs, /offres et landing affichent 390/690/990, plus aucun 149

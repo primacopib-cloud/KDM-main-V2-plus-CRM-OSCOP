@@ -2,12 +2,13 @@ import Seo from '../components/Seo';
 import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { subscriptionPlans } from '../data/mock';
+import { usePublicPlans } from '../hooks/usePublicPlans';
 import { ArrowRight, ArrowLeft, Wallet, Info } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 const OffersPage = () => {
+  const { plans: subscriptionPlans } = usePublicPlans();
   return (
     <div className="min-h-screen">
       <Seo titleKey="seo.offers_title" descKey="seo.offers_desc" />
