@@ -30,6 +30,11 @@ class KeyBody(BaseModel):
     scopes: List[str]
     partner_email: Optional[str] = None
     monthly_quota: Optional[int] = 10000
+    webhook_url: Optional[str] = None
+
+
+class WebhookBody(BaseModel):
+    webhook_url: str
 
 
 @api_keys_router.get("")
@@ -54,6 +59,8 @@ async def create_key(body: KeyBody, admin: dict = Depends(require_admin)):
         "scopes": scopes, "partner_email": (body.partner_email or "").strip(),
         "monthly_quota": max(body.monthly_quota or 10000, 1), "month_usage": 0,
         "usage_month": datetime.now(timezone.utc).strftime("%Y-%m"),
+        "webhook_url": (body.webhook_url or "").strip(),
+        "webhook_secret": f"whsec_{secrets.token_hex(16)}",
         "is_active": True, "requests_count": 0, "last_used_at": None,
         "created_by": admin.get("email"),
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -64,6 +71,24 @@ async def create_key(body: KeyBody, admin: dict = Depends(require_admin)):
     logger.info("Clé API créée : %s (%s) par %s", name, doc["prefix"], admin.get("email"))
     doc.pop("key_hash")
     return {**doc, "api_key": raw_key}
+
+
+@api_keys_router.put("/{key_id}/webhook")
+async def set_webhook(key_id: str, body: WebhookBody, admin: dict = Depends(require_admin)):
+    """Définit ou retire (chaîne vide) l'URL de webhook ERP de la clé."""
+    url = body.webhook_url.strip()
+    if url and not url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="URL invalide (http/https requis)")
+    key = await db.api_keys.find_one({"id": key_id})
+    if not key:
+        raise HTTPException(status_code=404, detail="Clé introuvable")
+    upd = {"webhook_url": url}
+    if not key.get("webhook_secret"):
+        upd["webhook_secret"] = f"whsec_{secrets.token_hex(16)}"
+    await db.api_keys.update_one({"id": key_id}, {"$set": upd})
+    from consultation_audit import audit
+    await audit("API_KEY_WEBHOOK_SET", admin.get("email"), None, {"name": key.get("name"), "webhook_url": url})
+    return {"ok": True, "webhook_url": url}
 
 
 @api_keys_router.patch("/{key_id}")

@@ -503,6 +503,9 @@ from routes_partner_dev import partner_dev_router, set_partner_dev_database
 set_partner_dev_database(db)
 app.include_router(partner_dev_router)
 
+from erp_webhooks import set_webhooks_database
+set_webhooks_database(db)
+
 from routes_public_api import public_api_router, set_public_api_database
 set_public_api_database(db)
 app.include_router(public_api_router)

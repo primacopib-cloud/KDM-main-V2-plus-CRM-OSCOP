@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { KeyRound, Plus, Trash2, Power, Copy, BookOpen } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Power, Copy, BookOpen, Webhook, Save } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -11,6 +11,41 @@ const SCOPE_LABELS = {
   'orders:read': 'Commandes (lecture)',
   'territories:read': 'Territoires (lecture)',
   'stock:write': 'Stock (écriture)',
+};
+
+const WebhookEditor = ({ k, onSaved }) => {
+  const [url, setUrl] = useState(k.webhook_url || '');
+  const [saving, setSaving] = useState(false);
+  const dirty = url !== (k.webhook_url || '');
+  const save = async () => {
+    setSaving(true);
+    const r = await fetch(`${API}/admin/api-keys/${k.id}/webhook`, {
+      method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ webhook_url: url }),
+    });
+    const d = await r.json();
+    setSaving(false);
+    if (!r.ok) return toast.error(d.detail || 'Erreur');
+    toast.success(url ? 'Webhook ERP configuré' : 'Webhook retiré');
+    onSaved();
+  };
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <Webhook size={13} className="text-[#D9B35A] flex-shrink-0" />
+      <input value={url} onChange={(e) => setUrl(e.target.value)}
+        placeholder="URL webhook ERP (https://erp.partenaire.com/hooks/kdm)"
+        data-testid={`webhook-url-input-${k.id}`}
+        className="h-8 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-xs text-white placeholder:text-white/30 flex-1" />
+      {dirty && (
+        <button onClick={save} disabled={saving} data-testid={`webhook-save-${k.id}`}
+          className="h-8 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1"
+          style={{ background: '#D4AF37', color: '#1F0A33' }}>
+          <Save size={12} /> OK
+        </button>
+      )}
+      {k.webhook_secret && <code className="text-[10px] text-white/35 flex-shrink-0" title="Secret de signature HMAC">{k.webhook_secret.slice(0, 14)}…</code>}
+    </div>
+  );
 };
 
 export const ApiKeysPanel = () => {
@@ -114,7 +149,8 @@ export const ApiKeysPanel = () => {
 
       <div className="space-y-2">
         {items.map((k) => (
-          <div key={k.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.04] border border-white/10" data-testid={`api-key-row-${k.id}`}>
+          <div key={k.id} className="p-2.5 rounded-xl bg-white/[0.04] border border-white/10" data-testid={`api-key-row-${k.id}`}>
+            <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <p className="text-sm text-white font-medium truncate">{k.name}
                 {!k.is_active && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">DÉSACTIVÉE</span>}
@@ -131,6 +167,8 @@ export const ApiKeysPanel = () => {
             </button>
             <button onClick={() => revoke(k)} title="Révoquer" data-testid={`api-key-revoke-${k.id}`}
               className="p-2 rounded-lg hover:bg-red-500/15 text-red-400"><Trash2 size={14} /></button>
+            </div>
+            <WebhookEditor k={k} onSaved={load} />
           </div>
         ))}
         {!items.length && <p className="text-sm text-white/40 py-4 text-center">Aucune clé API — générez la première pour connecter un ERP.</p>}

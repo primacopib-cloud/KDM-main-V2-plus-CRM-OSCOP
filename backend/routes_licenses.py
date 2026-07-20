@@ -153,10 +153,12 @@ async def license_by_domain(host: str):
 
 async def _license_with_stats(lic: dict) -> dict:
     code = lic.get("territory_code")
+    products_in_zone = await db.zone_prices.distinct("product_id", {"zone_code": code, "is_active": True})
+    vendors_in_zone = await db.vendor_products.distinct("vendor_id", {"zones": code, "status": "approved"})
     lic["stats"] = {
-        "products": await db.products.count_documents({"status": {"$in": ["ACTIVE", "active", "APPROVED"]}}),
+        "products": len(products_in_zone),
         "orders": await db.orders.count_documents({"zone_code": code}),
-        "vendors": len(await db.vendor_products.distinct("vendor_id")),
+        "vendors": len(vendors_in_zone),
     }
     return lic
 

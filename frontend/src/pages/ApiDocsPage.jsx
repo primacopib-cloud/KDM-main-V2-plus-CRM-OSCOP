@@ -64,6 +64,23 @@ export default function ApiDocsPage() {
   -H "Content-Type: application/json" \\
   -d '{"stock_qty": 120}'`}</pre>
 
+        <div className="rounded-2xl border border-[#D9B35A]/30 p-5 mb-8" style={{ background: 'rgba(217,179,90,0.07)' }} data-testid="webhook-doc-section">
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-2"><KeyRound className="w-4 h-4 text-[#D9B35A]" /> Webhooks ERP</h2>
+          <p className="text-sm text-white/70 mb-3">
+            Configurez une URL de webhook sur votre clé (via l'administrateur) pour être notifié en temps réel
+            des changements de statut de commande, sans interroger l'API. Événements : <code className="text-[#D9B35A]">order.status_changed</code>,{' '}
+            <code className="text-[#D9B35A]">order.logistics_updated</code>.
+            Chaque livraison est signée : header <code className="text-[#D9B35A]">X-KDM-Signature</code> = <code>sha256=HMAC-SHA256(secret, body)</code>.
+          </p>
+          <pre className="bg-black/40 rounded-xl p-4 text-xs text-emerald-300 overflow-x-auto">{`POST https://votre-erp.com/hooks/kdm
+X-KDM-Event: order.status_changed
+X-KDM-Signature: sha256=3f7a...
+
+{"event": "order.status_changed", "ts": "...",
+ "order": {"id": "...", "order_number": "KDM-...", "status": "CONFIRMED", ...},
+ "data": {"previous_status": "PENDING", "new_status": "CONFIRMED"}}`}</pre>
+        </div>
+
         <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4 text-xs text-white/55">
           <p className="mb-1"><strong className="text-white/80">Codes d'erreur :</strong> 401 clé manquante/invalide · 403 clé désactivée ou scope insuffisant · 404 ressource introuvable.</p>
           <p>Toutes les écritures ERP sont tracées dans le journal d'audit inviolable de la plateforme.</p>

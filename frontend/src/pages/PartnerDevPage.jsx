@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { KeyRound, BookOpen, ArrowLeft, Activity, Gauge, Loader2 } from 'lucide-react';
+import { KeyRound, BookOpen, ArrowLeft, Activity, Gauge, Loader2, Webhook } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -53,6 +53,30 @@ const KeyCard = ({ k }) => {
       ) : (
         <p className="text-xs text-white/35">Aucun appel enregistré pour le moment.</p>
       )}
+
+      <div className="mt-4 pt-3 border-t border-white/10">
+        <p className="text-xs text-white/45 flex items-center gap-1.5 mb-2">
+          <Webhook className="w-3.5 h-3.5 text-[#D9B35A]" /> Webhook ERP
+          {k.webhook_url
+            ? <code className="text-white/60 truncate">{k.webhook_url}</code>
+            : <span className="text-white/30">non configuré — demandez à l'administrateur</span>}
+        </p>
+        {k.webhook_url && k.webhook_secret && (
+          <p className="text-[10px] text-white/35 mb-2">Secret de signature (header <code>X-KDM-Signature</code> = sha256 HMAC du body) : <code className="text-[#E9CF8E]">{k.webhook_secret}</code></p>
+        )}
+        {(k.last_deliveries || []).length > 0 && (
+          <div className="max-h-36 overflow-y-auto space-y-1" data-testid={`dev-key-deliveries-${k.id}`}>
+            {k.last_deliveries.map((d, i) => (
+              <div key={`${d.ts}-${i}`} className="flex items-center gap-2 text-[11px] px-2 py-1 rounded bg-black/25">
+                <span className="font-bold" style={{ color: d.ok ? '#10B981' : '#EF4444' }}>{d.ok ? '✓' : '✗'} {d.status_code || 'ERR'}</span>
+                <span className="text-white/60">{d.event}</span>
+                <code className="text-white/45 flex-1 truncate">{d.order_id}</code>
+                <span className="text-white/35">{new Date(d.ts).toLocaleString('fr-FR')}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

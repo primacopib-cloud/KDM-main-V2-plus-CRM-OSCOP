@@ -30,4 +30,7 @@ async def my_keys(user: dict = Depends(get_current_user)):
         k["last_calls"] = await db.api_call_logs.find(
             {"key_id": k["id"]}, {"_id": 0}
         ).sort("ts", -1).limit(30).to_list(30)
+        k["last_deliveries"] = await db.webhook_deliveries.find(
+            {"key_id": k["id"]}, {"_id": 0}
+        ).sort("ts", -1).limit(20).to_list(20)
     return {"items": keys, "email": email}

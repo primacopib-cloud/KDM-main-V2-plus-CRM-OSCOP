@@ -182,6 +182,10 @@ async def set_mission_status(order_id: str, body: MissionStatusBody, user_id: st
                                "updated_at": _now()}},
         "$push": {"logistics_history": entry}})
     logger.info("Mission %s → %s par %s", order.get("order_number"), body.status, op["name"])
+    import asyncio
+    from erp_webhooks import dispatch_order_event
+    asyncio.create_task(dispatch_order_event(order_id, "order.logistics_updated",
+                                             {"logistics_status": body.status, "operator": op["name"]}))
     return {"ok": True, "status": body.status}
 
 

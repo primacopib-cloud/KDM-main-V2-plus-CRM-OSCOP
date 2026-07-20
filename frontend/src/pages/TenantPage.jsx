@@ -87,9 +87,9 @@ export default function TenantPage({ domainMode = false }) {
       <section className="px-5 pb-16 max-w-[800px] mx-auto">
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Produits au catalogue', value: lic.stats?.products ?? 0, icon: Package },
+            { label: `Produits disponibles · ${lic.territory_name}`, value: lic.stats?.products ?? 0, icon: Package },
             { label: `Commandes · ${lic.territory_code}`, value: lic.stats?.orders ?? 0, icon: ShoppingCart },
-            { label: 'Vendeurs partenaires', value: lic.stats?.vendors ?? 0, icon: Store },
+            { label: `Vendeurs · ${lic.territory_name}`, value: lic.stats?.vendors ?? 0, icon: Store },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl p-5 text-center border border-white/10" style={{ background: 'rgba(255,255,255,0.05)' }}>
               <s.icon className="w-5 h-5 mx-auto mb-2" style={{ color: accent }} />

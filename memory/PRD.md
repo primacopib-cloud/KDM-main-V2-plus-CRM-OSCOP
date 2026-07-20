@@ -1227,3 +1227,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Accusé de réception devis : email Brevo au prospect dans sa langue (fr/en/es) — quote_notify.send_quote_ack_email
 - Deployment check : PASS (fix .gitignore .env + N+1 catalog corrigés)
 - Backlog : index TTL sur api_call_logs (croissance), stats licence produits par territoire
+
+## 2026-07-20 — Webhooks ERP + Stats territoriales (self-testé E2E : listener HTTP réel + signature HMAC vérifiée)
+- Webhooks ERP : erp_webhooks.py — dispatch_order_event() notifie les clés actives (scope orders:read + webhook_url) sur order.status_changed (routes_orders_v2 : statut admin + annulation) et order.logistics_updated (routes_logicoop). Signature X-KDM-Signature=sha256 HMAC(webhook_secret, body). Livraisons loggées dans webhook_deliveries
+- Admin : PUT /api/admin/api-keys/{id}/webhook + éditeur inline dans ApiKeysPanel (secret whsec_ auto-généré) ; PartnerDevPage affiche webhook, secret et 20 dernières livraisons ; doc webhooks dans /docs-api
+- Stats vitrine marque blanche par territoire réel : produits = zone_prices actifs de la zone, vendeurs = vendor_products approuvés de la zone (routes_licenses._license_with_stats) ; labels TenantPage mis à jour
+- LEÇON : ne PAS lancer plusieurs search_replace en parallèle sur le MÊME fichier (2 éditions perdues : import Webhook ApiKeysPanel, badge domaine LicensesPanel — re-appliquées)

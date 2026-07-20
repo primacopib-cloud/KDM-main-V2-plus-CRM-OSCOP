@@ -276,6 +276,10 @@ async def cancel_order(
     )
     
     updated = await db.orders.find_one({"id": order_id})
+    import asyncio
+    from erp_webhooks import dispatch_order_event
+    asyncio.create_task(dispatch_order_event(order_id, "order.status_changed",
+                                             {"previous_status": order["status"], "new_status": OrderStatus.CANCELED.value, "reason": reason}))
     pickup = await db.pickup_locations.find_one({"id": updated["pickup_location_id"]})
     return await _build_order_response(updated, pickup)
 
@@ -393,6 +397,11 @@ async def admin_update_order_status(
     await db.orders.update_one({"id": order_id}, {"$set": update_data})
     
     updated = await db.orders.find_one({"id": order_id})
+
+    import asyncio
+    from erp_webhooks import dispatch_order_event
+    asyncio.create_task(dispatch_order_event(order_id, "order.status_changed",
+                                             {"previous_status": order["status"], "new_status": new_status.value}))
 
     # Rétention de garantie 5% sur facture (contrats d'engagement de volume)
     if new_status in (OrderStatus.INVOICED, OrderStatus.PAID):
