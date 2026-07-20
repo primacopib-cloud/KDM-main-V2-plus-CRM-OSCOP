@@ -228,6 +228,12 @@ const VendorSpacePage = () => {
                   <Plus className="w-3 h-3 opacity-60" />
                 </button>
               )}
+              <Link to="/mon-crediscop" data-testid="crediscop-nav-badge"
+                title="Mon relevé CREDI'SCOP unifié (crédits IA + consultations)"
+                className="inline-flex items-center gap-1 h-9 px-3 rounded-full text-[10px] font-bold tracking-wide hover:brightness-95 transition-all"
+                style={{ color: '#B8860B', background: '#D9B35A1c', border: '1px solid #D9B35A55' }}>
+                <FileText className="w-3.5 h-3.5" /> RELEVÉ
+              </Link>
 
               <Button 
                 onClick={() => setIsFormOpen(true)}
