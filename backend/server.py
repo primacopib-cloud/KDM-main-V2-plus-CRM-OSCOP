@@ -463,6 +463,9 @@ app.include_router(templates_router)
 app.include_router(cpc_subs_router)
 app.include_router(cpc_plans_admin_router)
 app.include_router(recharge_router)
+from routes_benchmark import benchmark_router, set_benchmark_database
+set_benchmark_database(db)
+app.include_router(benchmark_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)

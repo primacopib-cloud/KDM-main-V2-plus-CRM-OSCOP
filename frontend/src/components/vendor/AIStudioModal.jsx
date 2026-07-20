@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Sparkles, Wand2, Clapperboard, Loader2, Coins, X } from 'lucide-react';
 import { VideoShareButtons } from './VideoShareButtons';
+import { Flag } from '../Flag';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -151,13 +152,13 @@ export const AIStudioModal = ({ product, vendorId, onClose, onMediaAdded }) => {
           <div className="mb-3" data-testid="ai-video-lang-selector">
             <p className="text-xs opacity-60 mb-1.5">Langue de la voix off (marchés export) :</p>
             <div className="flex gap-2">
-              {[['fr', '🇫🇷 Français'], ['en', '🇬🇧 English'], ['es', '🇪🇸 Español']].map(([code, label]) => (
+              {[['fr', 'Français'], ['en', 'English'], ['es', 'Español']].map(([code, label]) => (
                 <button key={code} type="button" onClick={() => setVideoLang(code)}
                   data-testid={`ai-video-lang-${code}`}
-                  className={`h-8 px-3 rounded-lg text-xs font-medium border transition-all ${
+                  className={`h-8 px-3 rounded-lg text-xs font-medium border transition-all inline-flex items-center gap-1.5 ${
                     videoLang === code ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
                   }`}>
-                  {label}
+                  <Flag code={code} className="w-3.5 h-auto rounded-[2px]" /> {label}
                 </button>
               ))}
             </div>

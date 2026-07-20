@@ -153,6 +153,31 @@ async def update_consultation(cid: str, body: dict, admin: dict = Depends(requir
     return await _get(cid)
 
 
+@consultations_router.get("/{cid}/liquidity")
+async def liquidity_score(cid: str, admin: dict = Depends(require_admin)):
+    """Score de liquidité avant publication : fournisseurs éligibles → procédure recommandée."""
+    c = await _get(cid)
+    vendor_ids = await db.vendor_products.distinct("vendor_id", {"category": c.get("category")})
+    emails = set()
+    if vendor_ids:
+        async for v in db.vendors.find({"id": {"$in": vendor_ids}}, {"_id": 0, "email": 1}):
+            if v.get("email"):
+                emails.add(v["email"].lower())
+    eligible = len(emails)
+    past_ids = [p["id"] async for p in db.consultations.find(
+        {"category": c["category"], "id": {"$ne": cid}}, {"_id": 0, "id": 1})]
+    hist = len(await db.consultation_entries.distinct(
+        "vendor_user_id", {"consultation_id": {"$in": past_ids}})) if past_ids else 0
+    if eligible <= 1:
+        reco, msg = "NEGOCIATION_DIRECTE", f"{eligible} fournisseur éligible — négociation directe recommandée"
+    elif eligible == 2:
+        reco, msg = "SCELLEE", "2 fournisseurs éligibles — offre scellée comparative recommandée"
+    else:
+        reco, msg = "ENCHERE_POSSIBLE", f"{eligible} fournisseurs éligibles — enchère envisageable"
+    return {"eligible_vendors": eligible, "historical_participants": hist,
+            "recommendation": reco, "message": msg}
+
+
 class OrangeValidationBody(BaseModel):
     reason: str
     allow_auction: bool = False

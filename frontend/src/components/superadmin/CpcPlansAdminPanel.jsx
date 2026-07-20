@@ -37,7 +37,7 @@ export const CpcPlansAdminPanel = () => {
   return (
     <div className="glass-panel-soft rounded-[14px] p-4" data-testid="cpc-plans-admin-panel">
       <h3 className="text-xs font-bold text-white/70 uppercase mb-3 flex items-center gap-1.5">
-        <Repeat className="w-3.5 h-3.5" /> Abonnements CPC (formules mensuelles — CPC inclus, validité 3 mois)
+        <Repeat className="w-3.5 h-3.5" /> Abonnements CREDI'SCOP (formules mensuelles — crédits inclus, validité 3 mois)
       </h3>
       <div className="space-y-2">
         {plans.map((p) => {
@@ -48,7 +48,7 @@ export const CpcPlansAdminPanel = () => {
               <input className={`${inp} w-24`} type="number" step="0.01" value={e.price ?? (p.price_ht_cents / 100)} onChange={(ev) => setEdit((s) => ({ ...s, [p.id]: { ...e, price: ev.target.value } }))} data-testid={`cpc-plan-price-${p.id}`} />
               <span className="text-[10px] text-white/40">€ HT/mois</span>
               <input className={`${inp} w-20`} type="number" value={e.cpc ?? p.monthly_cpc} onChange={(ev) => setEdit((s) => ({ ...s, [p.id]: { ...e, cpc: ev.target.value } }))} />
-              <span className="text-[10px] text-white/40">CPC/mois</span>
+              <span className="text-[10px] text-white/40">CREDI'SCOP/mois</span>
               <button type="button" onClick={() => setEdit((s) => ({ ...s, [p.id]: { ...e, active: !(e.active ?? p.active) } }))}
                 className={`px-2 py-1 rounded text-[10px] font-bold ${(e.active ?? p.active) ? 'bg-[#7BC94E]/15 text-[#7BC94E]' : 'bg-red-500/15 text-red-400'}`}>
                 {(e.active ?? p.active) ? 'ACTIF' : 'INACTIF'}
@@ -67,7 +67,7 @@ export const CpcPlansAdminPanel = () => {
           {subs.map((s) => (
             <div key={s.id} className="flex items-center gap-2 text-[11px] py-1 border-b border-white/5 last:border-0">
               <span className="flex-1 text-white/75">{s.email}</span>
-              <span className="text-[#E9CF8E] font-bold">{s.plan_label} · {s.monthly_cpc} CPC/mois</span>
+              <span className="text-[#E9CF8E] font-bold">{s.plan_label} · {s.monthly_cpc} CREDI'SCOP/mois</span>
               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${s.status === 'ACTIVE' ? 'bg-[#7BC94E]/15 text-[#7BC94E]' : 'bg-amber-500/15 text-amber-400'}`}>{s.status}</span>
             </div>
           ))}

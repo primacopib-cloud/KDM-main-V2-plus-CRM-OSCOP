@@ -265,7 +265,7 @@ const VendorSpacePage = () => {
               <FileText className="w-4 h-4" /> Mes factures
             </TabsTrigger>
             <TabsTrigger value="cpc" className="gap-2" data-testid="vendor-tab-cpc">
-              <Ticket className="w-4 h-4" /> CPC
+              <Ticket className="w-4 h-4" /> CREDI'SCOP
             </TabsTrigger>
             <TabsTrigger value="consultations" className="gap-2" data-testid="vendor-tab-consultations">
               <TrendingUp className="w-4 h-4" /> Consultations

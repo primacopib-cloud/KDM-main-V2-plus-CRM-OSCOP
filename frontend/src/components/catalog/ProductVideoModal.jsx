@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { X, Clapperboard } from 'lucide-react';
 import i18n from '../../i18n';
+import { Flag } from '../Flag';
 
 const API = process.env.REACT_APP_BACKEND_URL;
-const LANG_LABELS = { fr: '🇫🇷 FR', en: '🇬🇧 EN', es: '🇪🇸 ES' };
 
 export const ProductVideoModal = ({ product, onClose }) => {
   const variants = product?.video_urls && Object.keys(product.video_urls).length > 1 ? product.video_urls : null;
@@ -39,10 +39,10 @@ export const ProductVideoModal = ({ product, onClose }) => {
             {variants && Object.keys(variants).map((code) => (
               <button key={code} type="button" onClick={() => setLang(code)}
                 data-testid={`product-video-lang-${code}`}
-                className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+                className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors inline-flex items-center gap-1.5 ${
                   lang === code ? 'bg-[#D9B35A] text-black' : 'bg-white/10 text-white/70 hover:bg-white/20'
                 }`}>
-                {LANG_LABELS[code] || code.toUpperCase()}
+                <Flag code={code} className="w-3.5 h-auto rounded-[2px]" /> {code.toUpperCase()}
               </button>
             ))}
             <button type="button" onClick={onClose} data-testid="product-video-close"

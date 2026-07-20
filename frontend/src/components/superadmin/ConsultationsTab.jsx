@@ -48,8 +48,8 @@ const CreateModal = ({ onClose, onSaved }) => {
           <input className={inp} placeholder="Titre du lot" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} data-testid="cons-title-input" />
           <div className="grid grid-cols-2 gap-2">
             <select className={inp} value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}>
-              <option value="STANDARD">Standard (20 CPC)</option>
-              <option value="INTERTERRITORIALE">Interterritoriale (40 CPC)</option>
+              <option value="STANDARD">Standard (20 CREDI'SCOP)</option>
+              <option value="INTERTERRITORIALE">Interterritoriale (40 CREDI'SCOP)</option>
             </select>
             <select className={inp} value={f.procedure} onChange={(e) => setF({ ...f, procedure: e.target.value })} data-testid="cons-procedure-select">
               <option value="SCELLEE">Offres scellées</option>
@@ -101,9 +101,19 @@ export const ConsultationsTab = () => {
     act(`/admin/consultations/${c.id}/validate-orange`, { reason, allow_auction: allowAuction }, 'Lot ORANGE validé juridiquement');
   };
   const cancel = (c) => {
-    const reason = window.prompt(`Motif d'annulation de ${c.ref} (les CPC des inscrits seront recrédités) :`);
+    const reason = window.prompt(`Motif d'annulation de ${c.ref} (les CREDI'SCOP des inscrits seront recrédités) :`);
     if (!reason) return;
-    act(`/admin/consultations/${c.id}/transition`, { to: 'ANNULEE', reason }, 'Consultation annulée — CPC recrédités');
+    act(`/admin/consultations/${c.id}/transition`, { to: 'ANNULEE', reason }, 'Consultation annulée — CREDI\'SCOP recrédités');
+  };
+
+  const liquidity = async (c) => {
+    const r = await fetch(`${API}/admin/consultations/${c.id}/liquidity`, opts());
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Erreur');
+    toast.info(`Score de liquidité — ${c.ref}`, {
+      description: `${d.message}. Participants historiques de la catégorie : ${d.historical_participants}.`,
+      duration: 9000,
+    });
   };
 
   const buttons = (c) => {
@@ -113,6 +123,7 @@ export const ConsultationsTab = () => {
         style={gold ? { background: '#D9B35A', color: '#1F0A33' } : {}}>{label}</button>
     );
     const out = [];
+    if (['BROUILLON', 'EN_VALIDATION', 'VALIDEE'].includes(c.status)) out.push(<B key="lq" onClick={() => liquidity(c)} label="Score de liquidité" testid={`cons-liquidity-${c.id}`} />);
     if (c.status === 'BROUILLON') out.push(<B key="s" onClick={() => act(`/admin/consultations/${c.id}/transition`, { to: 'EN_VALIDATION' }, 'Soumise à validation')} label="Soumettre" testid={`cons-submit-${c.id}`} gold />);
     if (c.status === 'EN_VALIDATION') {
       if (!c.validations?.commercial) out.push(<B key="vc" onClick={() => act(`/admin/consultations/${c.id}/validate/commercial`, null, 'Validation commerciale OK')} label="Valider (KDMARCHE)" testid={`cons-val-com-${c.id}`} />);
@@ -162,7 +173,7 @@ export const ConsultationsTab = () => {
               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${S_STYLE[c.status]}`} data-testid={`cons-status-${c.id}`}>{c.status.replace(/_/g, ' ')}</span>
             </div>
             <p className="text-[10px] text-white/40 mt-1">
-              {c.type} · {c.cpc_cost} CPC · {(c.products || []).length} produit(s) · {(c.territories || []).join(', ')}
+              {c.type} · {c.cpc_cost} CREDI'SCOP · {(c.products || []).length} produit(s) · {(c.territories || []).join(', ')}
               {c.closes_at ? ` · clôture ${String(c.closes_at).slice(0, 16).replace('T', ' ')}` : ''}
               {c.orange_validation ? ` · ORANGE validé par ${c.orange_validation.author}` : ''}
               {c.published_snapshot_hash ? ` · hash ${c.published_snapshot_hash.slice(0, 12)}…` : ''}

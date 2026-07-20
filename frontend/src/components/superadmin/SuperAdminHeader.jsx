@@ -62,7 +62,7 @@ const TABS = [
   { value: 'partnerships', label: 'Partenariats', icon: FileSignature },
   { value: 'announcements', label: 'Annonces', icon: Megaphone },
   { value: 'promos', label: 'Promos flash', icon: Zap },
-  { value: 'cpc', label: 'CPC', icon: Ticket },
+  { value: 'cpc', label: "CREDI'SCOP", icon: Ticket },
   { value: 'consultations', label: 'Consultations', icon: Scale },
   { value: 'accounting', label: 'Comptabilité', icon: Calculator },
   { value: 'profiles', label: 'Profils & Espaces', icon: UsersRound },

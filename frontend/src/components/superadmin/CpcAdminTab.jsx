@@ -42,7 +42,7 @@ export const CpcAdminTab = () => {
     const r = await fetch(`${API}/admin/cpc/grant`, jsonOpts('POST', { ...grant, credits: parseInt(grant.credits, 10) }));
     const d = await r.json();
     if (!r.ok) return toast.error(d.detail || 'Erreur');
-    toast.success(`CPC attribués — nouveau solde : ${d.balance}`);
+    toast.success(`CREDI'SCOP attribués — nouveau solde : ${d.balance}`);
     setGrant({ user_email: '', credits: 10, kind: 'promo', reason: '' });
     load();
   };
@@ -66,7 +66,7 @@ export const CpcAdminTab = () => {
   return (
     <div className="space-y-6" data-testid="cpc-admin-tab">
       <h2 className="text-base font-semibold text-white flex items-center gap-2">
-        <Ticket className="w-4 h-4 text-[#D9B35A]" /> CPC — Crédits de Participation aux Consultations
+        <Ticket className="w-4 h-4 text-[#D9B35A]" /> CREDI'SCOP — Crédits de Participation aux Consultations
       </h2>
 
       <div className="glass-panel-soft rounded-[14px] p-4">
@@ -78,7 +78,7 @@ export const CpcAdminTab = () => {
               <div key={p.id} className="flex flex-wrap items-center gap-2" data-testid={`cpc-admin-pack-${p.id}`}>
                 <input className={`${inp} w-40`} value={e.label ?? p.label} onChange={(ev) => setEdit((s) => ({ ...s, [p.id]: { ...e, label: ev.target.value } }))} />
                 <input className={`${inp} w-20`} type="number" value={e.credits ?? p.credits} onChange={(ev) => setEdit((s) => ({ ...s, [p.id]: { ...e, credits: ev.target.value } }))} />
-                <span className="text-[10px] text-white/40">CPC</span>
+                <span className="text-[10px] text-white/40">CREDI'SCOP</span>
                 <input className={`${inp} w-24`} type="number" step="0.01" value={e.price ?? (p.price_ht_cents / 100)} onChange={(ev) => setEdit((s) => ({ ...s, [p.id]: { ...e, price: ev.target.value } }))} data-testid={`cpc-pack-price-${p.id}`} />
                 <span className="text-[10px] text-white/40">€ HT</span>
                 <input className={`${inp} w-16`} type="number" value={e.validity ?? p.validity_months} onChange={(ev) => setEdit((s) => ({ ...s, [p.id]: { ...e, validity: ev.target.value } }))} />
@@ -127,12 +127,12 @@ export const CpcAdminTab = () => {
       </div>
 
       <div className="glass-panel-soft rounded-[14px] p-4">
-        <h3 className="text-xs font-bold text-white/70 uppercase mb-2">Comptes CPC</h3>
-        {!accounts.length && <p className="text-xs text-white/40">Aucun compte CPC.</p>}
+        <h3 className="text-xs font-bold text-white/70 uppercase mb-2">Comptes CREDI'SCOP</h3>
+        {!accounts.length && <p className="text-xs text-white/40">Aucun compte CREDI'SCOP.</p>}
         {accounts.map((a) => (
           <div key={a.user_id} className="flex items-center gap-3 text-xs py-1.5 border-b border-white/5 last:border-0">
             <span className="flex-1 text-white/80">{a.email || a.user_id}</span>
-            <span className="font-bold text-[#E9CF8E]">{a.cpc_balance} CPC</span>
+            <span className="font-bold text-[#E9CF8E]">{a.cpc_balance} CREDI'SCOP</span>
             <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${a.status === 'GELE' ? 'bg-red-500/15 text-red-400' : 'bg-[#7BC94E]/15 text-[#7BC94E]'}`}>{a.status}</span>
             {a.status === 'GELE' && (
               <button type="button" onClick={() => unfreeze(a.email)} className="p-1 rounded bg-white/10 text-white/60 hover:text-white" title="Réactiver">

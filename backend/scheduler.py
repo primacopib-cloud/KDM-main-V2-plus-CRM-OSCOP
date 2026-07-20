@@ -136,6 +136,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler due closures crashed: %s", exc)
         try:
+            from routes_consultation_templates import run_recurring_templates
+            await run_recurring_templates(_db)
+        except Exception as exc:
+            logger.exception("Scheduler recurring templates crashed: %s", exc)
+        try:
             from routes_bids import send_closure_reminders
             await send_closure_reminders(_db)
         except Exception as exc:

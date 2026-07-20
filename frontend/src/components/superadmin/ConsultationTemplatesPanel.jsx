@@ -82,6 +82,16 @@ export const ConsultationTemplatesPanel = ({ onCreated }) => {
     load();
   };
 
+  const setRecurrence = async (t, interval) => {
+    const r = await fetch(`${API}/admin/consultation-templates/${t.id}/recurrence`, jsonOpts('POST', { interval }));
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Erreur');
+    toast.success(interval === 'none'
+      ? `« ${t.name} » : récurrence désactivée`
+      : `« ${t.name} » : un lot sera recréé automatiquement chaque ${interval === 'monthly' ? 'mois' : 'trimestre'}`);
+    load();
+  };
+
   return (
     <div className="glass-panel-soft rounded-[14px] p-4" data-testid="consultation-templates-panel">
       <div className="flex items-center justify-between mb-3">
@@ -104,6 +114,13 @@ export const ConsultationTemplatesPanel = ({ onCreated }) => {
               className="px-2.5 py-1 rounded-lg text-[10px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>
               Créer un lot
             </button>
+            <select value={t.recurrence?.interval || 'none'} data-testid={`tpl-recurrence-${t.id}`}
+              onChange={(e) => setRecurrence(t, e.target.value)} style={{ colorScheme: 'dark' }}
+              className="h-6 rounded-lg px-1.5 text-[10px] text-white/70 bg-white/[0.05] border border-white/15">
+              <option value="none" style={{ background: '#2A1045' }}>Ponctuel</option>
+              <option value="monthly" style={{ background: '#2A1045' }}>Récurrent · mensuel</option>
+              <option value="quarterly" style={{ background: '#2A1045' }}>Récurrent · trimestriel</option>
+            </select>
             <button type="button" onClick={() => remove(t)} className="p-1 rounded bg-white/5 text-white/40 hover:text-red-400" data-testid={`tpl-delete-${t.id}`}>
               <Trash2 className="w-3 h-3" />
             </button>

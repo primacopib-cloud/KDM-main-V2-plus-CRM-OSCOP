@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
+from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -111,6 +112,10 @@ async def instantiate_template(tid: str, admin: dict = Depends(require_admin)):
     t = await db.consultation_templates.find_one({"id": tid, "active": True}, {"_id": 0})
     if not t:
         raise HTTPException(status_code=404, detail="Modèle introuvable")
+    return await _instantiate(t, admin.get("email"))
+
+
+async def _instantiate(t: dict, author: str) -> dict:
     from routes_consultations import _next_ref, DEFAULT_CRITERIA
     from routes_cpc_admin import get_cpc_settings
     from routes_legal_matrix import resolve_legal_status
@@ -132,10 +137,55 @@ async def instantiate_template(tid: str, admin: dict = Depends(require_admin)):
         "opens_at": now.isoformat(),
         "closes_at": (now + timedelta(days=t.get("duration_days", 7))).isoformat(),
         "status": "BROUILLON", "validations": {}, "published_snapshot_hash": None,
-        "template_id": tid, "created_by": admin.get("email"),
+        "template_id": t["id"], "created_by": author,
         "created_at": now.isoformat(), "updated_at": now.isoformat(),
     }
     await db.consultations.insert_one({**doc})
-    await audit("LOT_CREATED", admin.get("email"), doc["id"],
-                {"ref": doc["ref"], "from_template": tid, "legal_status": legal["status"], "procedure": procedure})
+    await audit("LOT_CREATED", author, doc["id"],
+                {"ref": doc["ref"], "from_template": t["id"], "legal_status": legal["status"], "procedure": procedure})
     return doc
+
+
+INTERVALS = {"monthly": relativedelta(months=1), "quarterly": relativedelta(months=3)}
+
+
+class RecurrenceBody(BaseModel):
+    interval: str  # none | monthly | quarterly
+
+
+@templates_router.post("/{tid}/recurrence")
+async def set_recurrence(tid: str, body: RecurrenceBody, admin: dict = Depends(require_admin)):
+    if body.interval not in ("none", "monthly", "quarterly"):
+        raise HTTPException(status_code=400, detail="Intervalle invalide (none, monthly, quarterly)")
+    if body.interval == "none":
+        rec = None
+    else:
+        rec = {"interval": body.interval,
+               "next_run_at": (datetime.now(timezone.utc) + INTERVALS[body.interval]).isoformat()}
+    res = await db.consultation_templates.update_one(
+        {"id": tid, "active": True},
+        {"$set": {"recurrence": rec, "updated_by": admin.get("email")}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Modèle introuvable")
+    await audit("TEMPLATE_RECURRENCE_SET", admin.get("email"), None,
+                {"template_id": tid, "interval": body.interval})
+    return {"ok": True, "recurrence": rec}
+
+
+async def run_recurring_templates(database) -> int:
+    """Cron : recrée automatiquement un lot BROUILLON depuis les modèles récurrents arrivés à échéance."""
+    global db
+    if db is None:
+        db = database
+    now = datetime.now(timezone.utc)
+    created = 0
+    async for t in db.consultation_templates.find(
+            {"active": True, "recurrence.interval": {"$in": ["monthly", "quarterly"]},
+             "recurrence.next_run_at": {"$lte": now.isoformat()}}, {"_id": 0}):
+        doc = await _instantiate(t, "scheduler")
+        await db.consultation_templates.update_one({"id": t["id"]}, {"$set": {
+            "recurrence.next_run_at": (now + INTERVALS[t["recurrence"]["interval"]]).isoformat(),
+            "recurrence.last_run_at": now.isoformat()}})
+        logger.info("Modèle récurrent %s → lot %s créé", t["name"], doc["ref"])
+        created += 1
+    return created

@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Clapperboard, Eye, Trophy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { Flag } from '../Flag';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
-const LANG_LABELS = { fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸' };
 
 export const MySpotsWidget = ({ vendorId }) => {
   const [data, setData] = useState(null);
@@ -51,7 +51,7 @@ export const MySpotsWidget = ({ vendorId }) => {
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-sm font-medium truncate">{s.product_name}</span>
                 {s.languages.map((l) => (
-                  <Badge key={l} variant="secondary" className="text-[10px] px-1.5">{LANG_LABELS[l] || l.toUpperCase()}</Badge>
+                  <Badge key={l} variant="secondary" className="text-[10px] px-1.5 inline-flex items-center gap-1"><Flag code={l} className="w-3.5 h-auto rounded-[1px]" /> {l.toUpperCase()}</Badge>
                 ))}
               </div>
               <span className="text-xs text-gray-500 inline-flex items-center gap-1 shrink-0">

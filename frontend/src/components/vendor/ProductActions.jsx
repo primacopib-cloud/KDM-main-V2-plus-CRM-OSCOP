@@ -3,9 +3,9 @@ import { Eye, Edit, Download, Sparkles, Clapperboard, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { VideoShareButtons } from './VideoShareButtons';
 import { SpotDiffusionSection } from './SpotDiffusionSection';
+import { Flag } from '../Flag';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
-const LANG_LABELS = { fr: '🇫🇷 FR', en: '🇬🇧 EN', es: '🇪🇸 ES' };
 
 const VendorVideoModal = ({ product, onClose }) => {
   const variants = product.video_urls && Object.keys(product.video_urls).length > 1 ? product.video_urls : null;
@@ -27,10 +27,10 @@ const VendorVideoModal = ({ product, onClose }) => {
           {variants && Object.keys(variants).map((code) => (
             <button key={code} type="button" onClick={() => setLang(code)}
               data-testid={`vendor-video-lang-${code}`}
-              className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors ${
+              className={`h-7 px-2.5 rounded-full text-[11px] font-semibold transition-colors inline-flex items-center gap-1.5 ${
                 lang === code ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }`}>
-              {LANG_LABELS[code] || code.toUpperCase()}
+              <Flag code={code} className="w-3.5 h-auto rounded-[2px]" /> {code.toUpperCase()}
             </button>
           ))}
           <span className="ml-auto text-xs text-gray-500 inline-flex items-center gap-1" data-testid="vendor-video-views">
