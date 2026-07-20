@@ -472,6 +472,12 @@ set_referral_database(db)
 set_liquidity_database(db)
 app.include_router(referral_router)
 app.include_router(liquidity_router)
+from routes_campaigns import campaigns_router, set_campaigns_database
+from routes_cpc_export import cpc_export_router, set_cpc_export_database
+set_campaigns_database(db)
+set_cpc_export_database(db)
+app.include_router(campaigns_router)
+app.include_router(cpc_export_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)

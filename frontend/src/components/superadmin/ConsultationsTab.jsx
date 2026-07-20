@@ -5,6 +5,7 @@ import { API, getAuthHeaders } from '../../services/http';
 import { LegalMatrixPanel } from './LegalMatrixPanel';
 import { ConsultationTemplatesPanel } from './ConsultationTemplatesPanel';
 import { LiquidityHistoryPanel } from './LiquidityHistoryPanel';
+import { CampaignsPanel } from './CampaignsPanel';
 import { EvaluationModal } from './EvaluationModal';
 
 const opts = () => ({ headers: getAuthHeaders(), credentials: 'include' });
@@ -161,6 +162,8 @@ export const ConsultationsTab = () => {
       <LegalMatrixPanel onChanged={load} />
 
       <ConsultationTemplatesPanel onCreated={load} />
+
+      <CampaignsPanel consultations={items} onChanged={load} />
 
       <LiquidityHistoryPanel />
 

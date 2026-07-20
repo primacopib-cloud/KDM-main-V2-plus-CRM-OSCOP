@@ -16,6 +16,17 @@ export const CpcAdminTab = () => {
   const [grant, setGrant] = useState({ user_email: '', credits: 10, kind: 'promo', reason: '' });
   const [corr, setCorr] = useState({ user_email: '', qty: 0, reason: '', reference: '' });
   const [edit, setEdit] = useState({});
+  const [exportMonth, setExportMonth] = useState('');
+
+  const downloadExport = async (fmt) => {
+    const q = exportMonth ? `?month=${exportMonth}` : '';
+    const r = await fetch(`${API}/admin/cpc/export.${fmt}${q}`, opts());
+    if (!r.ok) return toast.error('Export impossible');
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = `crediscop-compta-${exportMonth || 'complet'}.${fmt}`; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const load = useCallback(() => {
     fetch(`${API}/admin/cpc/packs`, opts()).then((r) => r.json()).then((d) => setPacks(d.items || [])).catch(() => {});
@@ -69,6 +80,19 @@ export const CpcAdminTab = () => {
       <h2 className="text-base font-semibold text-white flex items-center gap-2">
         <Ticket className="w-4 h-4 text-[#D9B35A]" /> CREDI'SCOP — Crédits de Participation aux Consultations
       </h2>
+
+      <div className="glass-panel-soft rounded-[14px] p-4" data-testid="cpc-export-panel">
+        <h3 className="text-xs font-bold text-white/70 uppercase mb-2">Export comptable O'SCOP (packs, abonnements, consommations)</h3>
+        <div className="flex flex-wrap items-center gap-2">
+          <input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} style={{ colorScheme: 'dark' }}
+            className="h-8 rounded-lg px-2 text-[11px] text-white bg-white/[0.05] border border-white/15" data-testid="cpc-export-month" />
+          <button type="button" onClick={() => downloadExport('csv')} data-testid="cpc-export-csv-btn"
+            className="px-3 py-1.5 rounded-lg text-[10.5px] font-bold bg-white/10 text-white/70 hover:text-white">Export CSV</button>
+          <button type="button" onClick={() => downloadExport('pdf')} data-testid="cpc-export-pdf-btn"
+            className="px-3 py-1.5 rounded-lg text-[10.5px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>Export PDF</button>
+          <span className="text-[10px] text-white/40">Mois vide = export intégral</span>
+        </div>
+      </div>
 
       <div className="glass-panel-soft rounded-[14px] p-4">
         <h3 className="text-xs font-bold text-white/70 uppercase mb-3">Packs (tarifs HT — modifiables sans effet rétroactif)</h3>

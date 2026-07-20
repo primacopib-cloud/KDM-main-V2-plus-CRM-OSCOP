@@ -33,6 +33,7 @@ import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
 import { useCreditSessionPoll } from '../components/vendor/useCreditSessionPoll';
 import { BrandLogos } from '../components/BrandLogos';
+import { NotificationsBell } from '../components/NotificationsBell';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -234,6 +235,7 @@ const VendorSpacePage = () => {
                 style={{ color: '#B8860B', background: '#D9B35A1c', border: '1px solid #D9B35A55' }}>
                 <FileText className="w-3.5 h-3.5" /> RELEVÉ
               </Link>
+              <span className="[&_svg]:!text-gray-500 [&_button:hover]:!bg-gray-100"><NotificationsBell /></span>
 
               <Button 
                 onClick={() => setIsFormOpen(true)}

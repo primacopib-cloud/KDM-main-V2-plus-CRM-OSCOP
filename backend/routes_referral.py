@@ -110,13 +110,37 @@ async def maybe_pay_referral_bonus(filleul_id: str):
         return
     from routes_cpc_admin import get_cpc_settings
     from cpc_ledger import add_cpc_movement
-    bonus = (await get_cpc_settings()).get("referral_bonus", 10)
+    settings = await get_cpc_settings()
+    bonus = settings.get("referral_bonus", 10)
     entry = await add_cpc_movement(
         link["sponsor_id"], "PROMO_GRANT", bonus,
         idempotency_key=f"referral:{filleul_id}",
         reason=f"Bonus parrainage — première inscription de {link.get('filleul_email', 'votre filleul')}")
     if entry is None:
         return
+    welcome = settings.get("referral_welcome_bonus", 5)
+    if welcome > 0:
+        w_entry = await add_cpc_movement(
+            filleul_id, "PROMO_GRANT", welcome,
+            idempotency_key=f"referral-welcome:{filleul_id}",
+            reason="Bonus de bienvenue parrainage — première inscription à une consultation")
+        if w_entry:
+            try:
+                from core_deps import create_notification
+                await create_notification("referral_welcome", f"Bienvenue : +{welcome} CREDI'SCOP offerts",
+                                          f"Votre bonus de bienvenue parrainage a été crédité (solde : {w_entry['balance_after']}).",
+                                          target_roles=["direct"], target_user_id=filleul_id,
+                                          data={"link": "/vendor?tab=cpc"})
+            except Exception as exc:
+                logger.warning("Notif bienvenue filleul %s : %s", filleul_id, exc)
+    try:
+        from core_deps import create_notification
+        await create_notification("referral_bonus", f"Parrainage réussi : +{bonus} CREDI'SCOP",
+                                  f"Votre filleul {link.get('filleul_email')} s'est inscrit à sa première consultation (solde : {entry['balance_after']}).",
+                                  target_roles=["direct"], target_user_id=link["sponsor_id"],
+                                  data={"link": "/vendor?tab=cpc"})
+    except Exception as exc:
+        logger.warning("Notif bonus parrain %s : %s", link["sponsor_id"], exc)
     now = datetime.now(timezone.utc).isoformat()
     await db.referral_links.update_one({"filleul_id": filleul_id}, {"$set": {
         "bonus_paid": True, "bonus_amount": bonus, "bonus_paid_at": now}})

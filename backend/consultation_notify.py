@@ -49,6 +49,14 @@ async def notify_report_available(cid: str) -> int:
             sent += 1
         except Exception as exc:
             logger.warning("Alerte rapport %s → %s : %s", c["ref"], u["email"], exc)
+        try:
+            from core_deps import create_notification
+            await create_notification("report_available", f"Rapport d'analyse disponible — {c['ref']}",
+                                      f"{c['title']} est clôturée : débloquez votre rapport détaillé ({cost} CREDI'SCOP).",
+                                      target_roles=["direct"], target_user_id=e["vendor_user_id"],
+                                      data={"link": "/vendor?tab=consultations"})
+        except Exception as exc:
+            logger.warning("Notif rapport %s : %s", e["vendor_user_id"], exc)
     await audit("REPORT_ALERT_SENT", "system", cid, {"sent": sent, "report_cost": cost})
     logger.info("Consultation %s : alerte rapport envoyée à %d participants", c["ref"], sent)
     return sent

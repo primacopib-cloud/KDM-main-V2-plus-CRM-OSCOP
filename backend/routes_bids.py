@@ -99,6 +99,14 @@ async def send_closure_reminders(database):
                     await audit("REMINDER_SENT", "system", c["id"], {"entry_id": e["id"]})
                 except Exception as exc:
                     logger.warning("Relance clôture %s → %s : %s", c["ref"], u["email"], exc)
+            try:
+                from core_deps import create_notification
+                await create_notification("closure_reminder", f"Clôture imminente — {c['ref']}",
+                                          f"{c['title']} se clôture le {str(c['closes_at'])[:16].replace('T', ' ')} et vous n'avez pas encore déposé d'offre.",
+                                          target_roles=["direct"], target_user_id=e["vendor_user_id"],
+                                          data={"link": "/vendor?tab=consultations"})
+            except Exception as exc:
+                logger.warning("Notif relance %s : %s", e["vendor_user_id"], exc)
             await db.consultation_entries.update_one({"id": e["id"]}, {"$set": {"closure_reminder_sent": True}})
 
 

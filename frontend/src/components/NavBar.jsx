@@ -18,6 +18,7 @@ import CommunityplaceBadge from './CommunityplaceBadge';
 import { CrediscopBadge } from './CrediscopBadge';
 import { MessagesNavLink } from './MessagesNavLink';
 import { BrandLogos } from './BrandLogos';
+import { NotificationsBell } from './NotificationsBell';
 import { SupportRepliesBadge } from './SupportRepliesBadge';
 import { useTranslation } from 'react-i18next';
 
@@ -144,6 +145,9 @@ const NavBar = ({ variant = 'default' }) => {
               <>
                 {/* Solde CREDI'SCOP */}
                 <CrediscopBadge className="hidden sm:inline-flex" />
+
+                {/* Notifications in-app (tous rôles) */}
+                {!isAdmin && <NotificationsBell />}
 
                 {/* Réponses support non lues */}
                 <SupportRepliesBadge />
