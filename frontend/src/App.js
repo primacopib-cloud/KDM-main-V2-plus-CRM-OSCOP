@@ -19,6 +19,7 @@ import OrdersPage from "./pages/OrdersPage";
 import AdminV2Page from "./pages/AdminV2Page";
 import DocumentsPage from "./pages/DocumentsPage";
 import WalletPage from "./pages/WalletPage";
+import CrediscopStatementPage from "./pages/CrediscopStatementPage";
 import LegalPage from "./pages/LegalPage";
 import OrderPreviewPage from "./pages/OrderPreviewPage";
 import SignatureDemoPage from "./pages/SignatureDemoPage";
@@ -108,6 +109,7 @@ function App() {
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/documents-legaux" element={<DocumentsPage />} />
           <Route path="/wallet" element={<WalletPage />} />
+          <Route path="/mon-crediscop" element={<CrediscopStatementPage />} />
           <Route path="/zones" element={<WalletPage />} />
           {/* Legal Documents Routes */}
           <Route path="/legal" element={<LegalPage />} />

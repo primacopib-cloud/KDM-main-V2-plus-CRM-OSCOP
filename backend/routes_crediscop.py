@@ -26,8 +26,10 @@ async def my_crediscop(user_id: str = Depends(get_current_user_id)):
     if user.get("role") == "vendor" and user.get("vendor_id"):
         vendor = await db.vendors.find_one({"id": user["vendor_id"]}, {"_id": 0, "credits": 1})
         if vendor is not None:
+            acct = await db.cpc_accounts.find_one({"user_id": user_id}, {"_id": 0, "cpc_balance": 1})
             return {"balance": int(vendor.get("credits") or 0), "kind": "vendor",
-                    "href": "/espace-vendeur", "label": "CREDI'SCOP"}
+                    "cpc_balance": int((acct or {}).get("cpc_balance") or 0),
+                    "href": "/mon-crediscop", "label": "CREDI'SCOP"}
 
     membership = await db.org_memberships.find_one({"user_id": user_id}, {"_id": 0, "org_id": 1})
     if membership:
@@ -86,6 +88,16 @@ async def _collect_statement(user_id: str) -> dict:
                             "balance_after": h.get("balance_after")})
 
     entries.sort(key=lambda e: str(e.get("at") or ""), reverse=True)
+    acct = await db.cpc_accounts.find_one({"user_id": user_id}, {"_id": 0, "cpc_balance": 1})
+    if acct is not None:
+        balances.append({"kind": "consultations", "balance": int(acct.get("cpc_balance") or 0)})
+        cpc_entries = []
+        async for m in db.cpc_ledger.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).limit(60):
+            cpc_entries.append({"at": m.get("created_at"), "source": "consultations",
+                                "label": m.get("reason") or m.get("type", ""),
+                                "amount": int(m.get("qty") or 0),
+                                "balance_after": m.get("balance_after")})
+        entries = sorted(entries + cpc_entries, key=lambda e: str(e.get("at") or ""), reverse=True)
     return {
         "holder": user.get("contact_name") or user.get("email", ""),
         "generated_at": datetime.now(timezone.utc).isoformat(),

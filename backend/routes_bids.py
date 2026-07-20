@@ -188,6 +188,11 @@ async def register(cid: str, body: RegisterBody, user_id: str = Depends(get_curr
              "cpc_ledger_id": mv["id"], "status": "INSCRIT", "created_at": await _now()}
     await db.consultation_entries.insert_one({**entry})
     await audit("ENTRY_REGISTERED", user_id, cid, {"entry_id": entry["id"], "cpc": c["cpc_cost"]})
+    try:
+        from routes_referral import maybe_pay_referral_bonus
+        await maybe_pay_referral_bonus(user_id)
+    except Exception as exc:
+        logger.warning("Parrainage %s : %s", user_id, exc)
     return {"ok": True, "entry_id": entry["id"], "balance": mv["balance_after"]}
 
 

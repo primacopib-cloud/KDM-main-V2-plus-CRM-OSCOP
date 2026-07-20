@@ -466,6 +466,12 @@ app.include_router(recharge_router)
 from routes_benchmark import benchmark_router, set_benchmark_database
 set_benchmark_database(db)
 app.include_router(benchmark_router)
+from routes_referral import referral_router, set_referral_database
+from routes_liquidity import liquidity_router, set_liquidity_database
+set_referral_database(db)
+set_liquidity_database(db)
+app.include_router(referral_router)
+app.include_router(liquidity_router)
 from routes_messages import messages_router, set_messages_database
 app.include_router(messages_router)
 set_messages_database(db)

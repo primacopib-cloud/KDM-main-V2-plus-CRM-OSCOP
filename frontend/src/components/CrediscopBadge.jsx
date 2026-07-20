@@ -34,13 +34,13 @@ export const CrediscopBadge = ({ className = '' }) => {
 
   if (!data || data.balance === null || data.balance === undefined) return null;
 
-  const rechargeHref = data.kind === 'vendor' ? '/espace-vendeur?recharge=1' : '/wallet?topup=1';
+  const rechargeHref = '/mon-crediscop';
 
   return (
     <Link
       to={rechargeHref}
       data-testid="crediscop-nav-badge"
-      title="Mon CREDI'SCOP — cliquez pour recharger vos crédits"
+      title="Mon CREDI'SCOP — cliquez pour voir votre relevé unifié"
       className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full text-xs font-semibold transition-colors hover:brightness-110 ${className}`}
       style={{ background: 'rgba(217,179,90,0.14)', border: '1px solid rgba(217,179,90,0.45)', color: '#B8860B' }}
     >

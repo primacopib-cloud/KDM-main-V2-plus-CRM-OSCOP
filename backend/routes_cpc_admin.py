@@ -30,7 +30,7 @@ async def _user_by_email(email: str) -> dict:
 
 
 DEFAULT_SETTINGS = {"standard_cost": 20, "interterritorial_cost": 40, "report_cost": 10,
-                    "benchmark_cost": 15, "low_balance_alert": True}
+                    "benchmark_cost": 15, "referral_bonus": 10, "low_balance_alert": True}
 
 
 async def get_cpc_settings() -> dict:
@@ -43,6 +43,7 @@ class SettingsBody(BaseModel):
     interterritorial_cost: int
     report_cost: int
     benchmark_cost: int = 15
+    referral_bonus: int = 10
     low_balance_alert: bool = True
 
 
@@ -53,7 +54,7 @@ async def read_settings(admin: dict = Depends(require_admin)):
 
 @cpc_admin_router.put("/settings")
 async def update_settings(body: SettingsBody, admin: dict = Depends(require_admin)):
-    if min(body.standard_cost, body.interterritorial_cost, body.report_cost, body.benchmark_cost) <= 0:
+    if min(body.standard_cost, body.interterritorial_cost, body.report_cost, body.benchmark_cost) <= 0 or body.referral_bonus < 0:
         raise HTTPException(status_code=400, detail="Coûts invalides")
     await db.cpc_settings.update_one({"_id": "settings"}, {"$set": {
         **body.dict(), "updated_by": admin.get("email"),

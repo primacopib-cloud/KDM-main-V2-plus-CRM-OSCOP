@@ -4,6 +4,7 @@ import { Ticket, Download, RefreshCw, ShoppingCart, Lock, FileText } from 'lucid
 import { toast } from 'sonner';
 import { CpcSubscriptionPanel } from './CpcSubscriptionPanel';
 import { CpcRechargePanel } from './CpcRechargePanel';
+import { ReferralPanel } from './ReferralPanel';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const eur = (c) => `${((c || 0) / 100).toFixed(2).replace('.', ',')} €`;
@@ -129,6 +130,8 @@ export const VendorCpcTab = () => {
       <CpcSubscriptionPanel onChanged={load} />
 
       <CpcRechargePanel packs={packs} />
+
+      <ReferralPanel />
 
       <div className={`${panel} p-5`}>
         <h3 className="font-semibold text-white mb-3">Historique des mouvements</h3>

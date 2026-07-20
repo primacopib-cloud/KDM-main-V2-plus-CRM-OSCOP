@@ -141,6 +141,16 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler recurring templates crashed: %s", exc)
         try:
+            from routes_benchmark import send_monthly_benchmarks
+            await send_monthly_benchmarks(_db)
+        except Exception as exc:
+            logger.exception("Scheduler monthly benchmarks crashed: %s", exc)
+        try:
+            from routes_liquidity import snapshot_liquidity
+            await snapshot_liquidity(_db)
+        except Exception as exc:
+            logger.exception("Scheduler liquidity snapshot crashed: %s", exc)
+        try:
             from routes_bids import send_closure_reminders
             await send_closure_reminders(_db)
         except Exception as exc:

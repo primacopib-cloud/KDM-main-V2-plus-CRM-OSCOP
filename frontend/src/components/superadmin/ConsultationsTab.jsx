@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { LegalMatrixPanel } from './LegalMatrixPanel';
 import { ConsultationTemplatesPanel } from './ConsultationTemplatesPanel';
+import { LiquidityHistoryPanel } from './LiquidityHistoryPanel';
 import { EvaluationModal } from './EvaluationModal';
 
 const opts = () => ({ headers: getAuthHeaders(), credentials: 'include' });
@@ -160,6 +161,8 @@ export const ConsultationsTab = () => {
       <LegalMatrixPanel onChanged={load} />
 
       <ConsultationTemplatesPanel onCreated={load} />
+
+      <LiquidityHistoryPanel />
 
       <div className="space-y-2">
         {!items.length && <p className="text-xs text-white/45">Aucune consultation.</p>}
