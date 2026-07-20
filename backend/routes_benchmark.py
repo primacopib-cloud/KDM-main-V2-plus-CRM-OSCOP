@@ -34,14 +34,6 @@ async def buy_benchmark(category: str, user_id: str = Depends(get_current_user_i
         raise HTTPException(status_code=404, detail="Aucune consultation clôturée dans cette catégorie pour l'instant")
     month = datetime.now(timezone.utc).strftime("%Y-%m")
     key = f"bench:{category}:{user_id}:{month}"
-    already = await db.cpc_ledger.find_one({"idempotency_key": key}, {"_id": 0, "id": 1})
-    if not already:
-        from routes_cpc_admin import get_cpc_settings
-        from cpc_ledger import add_cpc_movement
-        cost = (await get_cpc_settings()).get("benchmark_cost", 15)
-        await add_cpc_movement(user_id, "REPORT_PURCHASE", -cost, idempotency_key=key,
-                               reason=f"Benchmark catégorie « {category} » ({month})")
-        await audit("BENCHMARK_PURCHASED", user_id, None, {"category": category, "month": month, "cost": cost})
     from routes_bids import _latest_valid_bids
     prices, participants = [], []
     for c in cons:
@@ -51,6 +43,14 @@ async def buy_benchmark(category: str, user_id: str = Depends(get_current_user_i
         participants.append(len(latest))
     prices.sort()
     n = len(prices)
+    already = await db.cpc_ledger.find_one({"idempotency_key": key}, {"_id": 0, "id": 1})
+    if not already:
+        from routes_cpc_admin import get_cpc_settings
+        from cpc_ledger import add_cpc_movement
+        cost = (await get_cpc_settings()).get("benchmark_cost", 15)
+        await add_cpc_movement(user_id, "REPORT_PURCHASE", -cost, idempotency_key=key,
+                               reason=f"Benchmark catégorie « {category} » ({month})")
+        await audit("BENCHMARK_PURCHASED", user_id, None, {"category": category, "month": month, "cost": cost})
     return {
         "category": category, "period": month,
         "consultations": len(cons), "offers": n,
