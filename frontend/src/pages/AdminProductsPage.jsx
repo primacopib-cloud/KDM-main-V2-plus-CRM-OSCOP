@@ -134,8 +134,8 @@ const AdminProductsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <RefreshCw className="w-8 h-8 animate-spin text-purple-600" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}>
+        <RefreshCw className="w-8 h-8 animate-spin text-[#D9B35A]" />
       </div>
     );
   }
@@ -143,23 +143,23 @@ const AdminProductsPage = () => {
   const pendingCount = vendors.reduce((sum, v) => sum + (v.products?.pending || 0), 0) || products.filter(p => p.status === 'pending_approval').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100" data-testid="admin-products">
+    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }} data-testid="admin-products">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header className="sticky top-0 z-50" style={{ background: '#1E0C34', borderBottom: '1px solid rgba(212,175,55,0.32)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                <Package className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
+                <Package className="w-6 h-6 text-[#1A092D]" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">{i18n.t('adm.validation_des_produits')}</h1>
-                <p className="text-sm text-gray-500">{i18n.t('adm.administration_kdmarche')}</p>
+                <h1 className="text-xl font-bold text-white">{i18n.t('adm.validation_des_produits')}</h1>
+                <p className="text-sm text-white/55">{i18n.t('adm.administration_kdmarche')}</p>
               </div>
             </div>
             
             {pendingCount > 0 && (
-              <Badge className="bg-amber-100 text-amber-700 text-lg px-4 py-2">
+              <Badge className="text-base px-4 py-2 border" style={{ background: 'rgba(217,179,90,0.14)', color: '#E9CF8E', borderColor: 'rgba(217,179,90,0.4)' }}>
                 <AlertTriangle className="w-5 h-5 mr-2" />
                 {i18n.t('adm.en_attente_count', { count: pendingCount })}
               </Badge>
@@ -171,65 +171,47 @@ const AdminProductsPage = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="cursor-pointer hover:shadow-md" onClick={() => setActiveTab('pending')}>
-            <CardHeader className="pb-2">
-              <CardDescription>{i18n.t('adm.en_attente')}</CardDescription>
-              <CardTitle className="text-3xl text-amber-600">
-                {stats.pending_approval || pendingCount || 0}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>{i18n.t('adm.approuves_total')}</CardDescription>
-              <CardTitle className="text-3xl text-emerald-600">
-                {vendors.reduce((sum, v) => sum + (v.products?.approved || 0), 0)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>{i18n.t('adm.vendeurs_actifs')}</CardDescription>
-              <CardTitle className="text-3xl text-blue-600">
-                {vendors.filter(v => v.status === 'approved').length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>{i18n.t('adm.total_vendeurs')}</CardDescription>
-              <CardTitle className="text-3xl text-purple-600">
-                {vendors.length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
+          {[
+            { label: i18n.t('adm.en_attente'), value: stats.pending_approval || pendingCount || 0, color: '#E9CF8E', onClick: () => setActiveTab('pending') },
+            { label: i18n.t('adm.approuves_total'), value: vendors.reduce((sum, v) => sum + (v.products?.approved || 0), 0), color: '#7BC94E' },
+            { label: i18n.t('adm.vendeurs_actifs'), value: vendors.filter(v => v.status === 'approved').length, color: '#7AB7FF' },
+            { label: i18n.t('adm.total_vendeurs'), value: vendors.length, color: '#D9B35A' },
+          ].map((s) => (
+            <div key={s.label} onClick={s.onClick}
+              className={`rounded-2xl p-5 border border-white/10 ${s.onClick ? 'cursor-pointer hover:border-[#D9B35A]/40 transition-colors' : ''}`}
+              style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03))' }}>
+              <p className="text-sm text-white/60 mb-1">{s.label}</p>
+              <p className="text-3xl font-black" style={{ color: s.color }}>{s.value}</p>
+            </div>
+          ))}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <TabsList className="bg-white border">
-              <TabsTrigger value="pending" className="gap-2">
+            <TabsList className="border border-white/12" style={{ background: 'rgba(255,255,255,0.05)' }}>
+              <TabsTrigger value="pending" className="gap-2 text-white/65 data-[state=active]:bg-[#D9B35A] data-[state=active]:text-[#1A092D] data-[state=active]:font-semibold">
                 <Clock className="w-4 h-4" /> {i18n.t('adm.en_attente')}
               </TabsTrigger>
-              <TabsTrigger value="approved" className="gap-2">
+              <TabsTrigger value="approved" className="gap-2 text-white/65 data-[state=active]:bg-[#D9B35A] data-[state=active]:text-[#1A092D] data-[state=active]:font-semibold">
                 <CheckCircle2 className="w-4 h-4" /> {i18n.t('adm.approuves')}
               </TabsTrigger>
-              <TabsTrigger value="rejected" className="gap-2">
+              <TabsTrigger value="rejected" className="gap-2 text-white/65 data-[state=active]:bg-[#D9B35A] data-[state=active]:text-[#1A092D] data-[state=active]:font-semibold">
                 <XCircle className="w-4 h-4" /> {i18n.t('adm.rejetes')}
               </TabsTrigger>
             </TabsList>
 
             <div className="flex gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/40" />
                 <Input
                   placeholder={i18n.t('adm.rechercher')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-64 bg-white/[0.05] border-white/15 text-white placeholder:text-white/35 focus-visible:ring-[#D9B35A]/30"
                 />
               </div>
-              <Button variant="outline" onClick={() => fetchProducts(activeTab === 'pending' ? 'pending_approval' : activeTab)}>
+              <Button variant="outline" className="border-white/15 bg-white/[0.05] text-white/70 hover:bg-white/10 hover:text-white"
+                onClick={() => fetchProducts(activeTab === 'pending' ? 'pending_approval' : activeTab)}>
                 <RefreshCw className="w-4 h-4" />
               </Button>
             </div>
@@ -240,48 +222,49 @@ const AdminProductsPage = () => {
             {filteredProducts.length > 0 ? (
               <div className="space-y-4">
                 {filteredProducts.map((product) => (
-                  <Card key={product.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
+                  <div key={product.id} className="rounded-2xl border border-white/10 hover:border-[#D9B35A]/35 transition-colors"
+                    style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03))' }}>
+                    <div className="p-4">
                       <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <div className="w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/[0.06] border border-white/10">
                           {product.images?.[0] ? (
                             <img src={product.images[0].url} alt={product.name} className="w-full h-full object-cover rounded-lg" />
                           ) : (
-                            <Package className="w-8 h-8 text-gray-400" />
+                            <Package className="w-8 h-8 text-white/30" />
                           )}
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                              <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                              <h3 className="font-semibold text-white">{product.name}</h3>
+                              <p className="text-sm text-white/50">SKU: {product.sku}</p>
                             </div>
                             {getStatusBadge(product.status)}
                           </div>
 
                           <div className="flex flex-wrap gap-4 mt-2 text-sm">
-                            <span className="font-bold text-purple-600">
+                            <span className="font-bold text-[#E9CF8E]">
                               {formatCurrency(product.price_ht)} HT
                             </span>
-                            <span className="text-gray-500">
+                            <span className="text-white/55">
                               {i18n.t('adm.tva')}: {product.tva_rate}%
                             </span>
-                            <span className="text-gray-500">
+                            <span className="text-white/55">
                               Stock: {product.stock_quantity}
                             </span>
-                            <span className="text-gray-500 flex items-center gap-1">
+                            <span className="text-white/55 flex items-center gap-1">
                               {product.country_flag} {product.country_name}
                             </span>
                           </div>
 
                           <div className="flex items-center gap-2 mt-2 text-sm">
-                            <Building2 className="w-3 h-3 text-gray-400" />
-                            <span className="text-gray-600">{product.vendor_name || 'N/A'}</span>
+                            <Building2 className="w-3 h-3 text-white/40" />
+                            <span className="text-white/70">{product.vendor_name || 'N/A'}</span>
                           </div>
 
                           {product.rejection_reason && (
-                            <div className="mt-2 p-2 bg-red-50 rounded text-sm text-red-700">
+                            <div className="mt-2 p-2 rounded text-sm border" style={{ background: 'rgba(255,87,87,0.12)', color: '#FF9D9D', borderColor: 'rgba(255,87,87,0.3)' }}>
                               <strong>{i18n.t('adm.motif')}</strong> {product.rejection_reason}
                             </div>
                           )}
@@ -291,6 +274,7 @@ const AdminProductsPage = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
+                            className="border-white/15 bg-white/[0.05] text-white/80 hover:bg-white/10 hover:text-white"
                             onClick={() => {
                               setSelectedProduct(product);
                               setIsDetailOpen(true);
@@ -303,7 +287,8 @@ const AdminProductsPage = () => {
                             <>
                               <Button 
                                 size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700"
+                                className="font-semibold hover:opacity-90"
+                                style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)', color: '#1A092D' }}
                                 onClick={() => handleApprove(product.id)}
                               >
                                 <CheckCircle2 className="w-4 h-4 mr-1" /> {i18n.t('adm.approuver')}
@@ -312,24 +297,23 @@ const AdminProductsPage = () => {
                           )}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Package className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {activeTab === 'pending' ? i18n.t('adm.aucun_produit_en_attente') :
-                     activeTab === 'approved' ? i18n.t('adm.aucun_produit_approuve') :
-                     i18n.t('adm.aucun_produit_rejete')}
-                  </h3>
-                  <p className="text-gray-500">
-                    {activeTab === 'pending' && i18n.t('adm.tous_les_produits_traites')}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="rounded-2xl border border-white/10 py-12 text-center"
+                style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))' }}>
+                <Package className="w-12 h-12 mx-auto text-white/20 mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">
+                  {activeTab === 'pending' ? i18n.t('adm.aucun_produit_en_attente') :
+                   activeTab === 'approved' ? i18n.t('adm.aucun_produit_approuve') :
+                   i18n.t('adm.aucun_produit_rejete')}
+                </h3>
+                <p className="text-white/50">
+                  {activeTab === 'pending' && i18n.t('adm.tous_les_produits_traites')}
+                </p>
+              </div>
             )}
           </TabsContent>
         </Tabs>

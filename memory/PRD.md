@@ -1255,3 +1255,7 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Audits : PLAN_PRICE_SCHEDULED, PLAN_PRICE_NOTICE_SENT, PLAN_PRICE_SCHEDULE_CANCELLED
 - UI : PriceSchedulePanel.jsx sous l'onglet Plans de /admin/plans (formule, nouveau tarif €, date, liste avec badges statut, annulation)
 - Testé : J+60=scheduled, J+10=notified (13/13 emails), échéance simulée=applied+prix appliqué, date passée rejetée ; état de test purgé, prix restauré 390€
+
+## 2026-07-20 — Refonte /admin/produits aux couleurs de la charte (vérifié screenshot + DOM)
+- AdminProductsPage.jsx : remplacé le thème clair (bg-gray-50, cartes blanches) par la charte du site — dégradé violet (#2A1045→#451F6B), header #1E0C34 bordure or, cartes stats verre avec accents (or/vert/bleu), onglets pills avec état actif doré, recherche dark, cartes produits verre avec prix or et bouton Approuver doré, badges lisibles
+- NOTE artefact : le header sticky s'affiche blanc UNIQUEMENT dans les captures headless (bug de rendu screenshot) ; le DOM/computed styles confirment bg rgb(30,12,52) + texte blanc — rendu réel correct en navigateur
