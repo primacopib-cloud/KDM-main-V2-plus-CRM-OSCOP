@@ -20,18 +20,22 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-4 mb-6">
-              <img 
-                src={partners.kdmarche.logo} 
-                alt="KDMARCHE Pro" 
-                className="h-24 w-auto object-contain"
-              />
+            <div className="flex items-center gap-4 mb-6" data-testid="footer-logos">
+              <div className="h-24 w-24 rounded-xl bg-white flex items-center justify-center p-1.5 flex-shrink-0">
+                <img 
+                  src={partners.kdmarche.logo} 
+                  alt="KDMARCHE Pro" 
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
               <span className="text-white/30 font-light">×</span>
-              <img 
-                src={partners.oscop.logo} 
-                alt="Objectif SCOP Outremer" 
-                className="h-20 w-auto object-contain"
-              />
+              <div className="h-24 w-24 rounded-xl bg-white flex items-center justify-center p-1.5 flex-shrink-0">
+                <img 
+                  src={partners.oscop.logo} 
+                  alt="Objectif SCOP Outremer" 
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
             </div>
             <p className="text-white/60 text-sm leading-relaxed">
               {t('footer.tagline')}

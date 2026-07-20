@@ -1200,3 +1200,6 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Filtres Export Compta** : ?types=PACK,ABONNEMENT,CONSOMMATION + ?email= sur export.csv/.pdf. UI : boutons-filtres togglables + champ email dans cpc-export-panel.
 - **Toasts Live** : NotificationsBell — toast sonner à l'arrivée d'une nouvelle notification non lue au poll (pas au 1er chargement).
 - **Tests (iteration 57)** : 7/7 backend PASS, frontend 100 %. Solde vendor-pro à 60. Tests : /app/backend/tests/test_iter57_lot_features.py.
+
+## 2026-06 (fork) — Ajustement UI
+- Footer : logos KD MARCHÉ et O'SCOP alignés (conteneurs blancs 96x96 identiques, centrés) — Footer.jsx
