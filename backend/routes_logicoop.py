@@ -132,7 +132,7 @@ async def my_missions(user_id: str = Depends(get_current_user_id)):
     async for o in db.orders.find(
             {"zone_code": {"$in": zones}, "status": {"$nin": ["CANCELLED", "DELIVERED", "COMPLETED"]}},
             {"_id": 0, "id": 1, "order_number": 1, "status": 1, "zone_code": 1, "incoterm": 1,
-             "subtotal_ht_cents": 1, "total_ttc_cents": 1, "pickup_location_id": 1, "created_at": 1, "items": 1}).sort("created_at", -1).limit(100):
+             "subtotal_ht_cents": 1, "total_ttc_cents": 1, "pickup_location_id": 1, "created_at": 1, "items": 1, "logistics": 1}).sort("created_at", -1).limit(100):
         incoterm = o.get("incoterm") or "EXW"
         if incoterm == "CIF" and o["zone_code"] in cif:
             mission = "LIVRAISON"
@@ -147,8 +147,42 @@ async def my_missions(user_id: str = Depends(get_current_user_id)):
             "total_ht_cents": o.get("subtotal_ht_cents", 0),
             "items_count": len(o.get("items", [])),
             "created_at": str(o.get("created_at", ""))[:16],
+            "logistics": o.get("logistics"),
         })
     return {"items": items}
+
+
+MISSION_STATUSES = ["PRISE_EN_CHARGE", "LIVREE"]
+
+
+class MissionStatusBody(BaseModel):
+    status: str
+
+
+@logicoop_router.post("/logicoop/missions/{order_id}/status")
+async def set_mission_status(order_id: str, body: MissionStatusBody, user_id: str = Depends(get_current_user_id)):
+    """L'opérateur marque la mission prise en charge puis livrée — visible par l'acheteur."""
+    if body.status not in MISSION_STATUSES:
+        raise HTTPException(status_code=400, detail="Statut invalide (PRISE_EN_CHARGE ou LIVREE)")
+    op = await my_operator_space(user_id)
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0, "id": 1, "zone_code": 1, "incoterm": 1, "logistics": 1, "order_number": 1})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande introuvable")
+    zones = set(op.get("exw_zones", [])) | set(op.get("cif_zones", []))
+    if order["zone_code"] not in zones:
+        raise HTTPException(status_code=403, detail="Cette commande n'est pas dans vos zones")
+    current = (order.get("logistics") or {}).get("status")
+    if current == "LIVREE":
+        raise HTTPException(status_code=409, detail="Mission déjà livrée")
+    if body.status == "LIVREE" and current != "PRISE_EN_CHARGE":
+        raise HTTPException(status_code=409, detail="Prenez d'abord la mission en charge")
+    entry = {"status": body.status, "at": _now(), "operator": op["name"]}
+    await db.orders.update_one({"id": order_id}, {
+        "$set": {"logistics": {"status": body.status, "operator_id": op["id"], "operator_name": op["name"],
+                               "updated_at": _now()}},
+        "$push": {"logistics_history": entry}})
+    logger.info("Mission %s → %s par %s", order.get("order_number"), body.status, op["name"])
+    return {"ok": True, "status": body.status}
 
 
 # ---------- Types de partenariat ----------
@@ -278,8 +312,33 @@ async def list_applications(admin: dict = Depends(require_admin)):
 async def update_application(app_id: str, body: AppStatusBody, admin: dict = Depends(require_admin)):
     if body.status not in ("NOUVELLE", "EN_COURS", "ACCEPTEE", "REFUSEE"):
         raise HTTPException(status_code=400, detail="Statut invalide")
-    res = await db.partner_applications.update_one(
-        {"id": app_id}, {"$set": {"status": body.status, "updated_at": _now(), "updated_by": admin.get("email")}})
-    if res.matched_count == 0:
+    app_doc = await db.partner_applications.find_one({"id": app_id}, {"_id": 0})
+    if not app_doc:
         raise HTTPException(status_code=404, detail="Candidature introuvable")
+    await db.partner_applications.update_one(
+        {"id": app_id}, {"$set": {"status": body.status, "updated_at": _now(), "updated_by": admin.get("email")}})
+    if body.status in ("ACCEPTEE", "REFUSEE"):
+        accepted = body.status == "ACCEPTEE"
+        try:
+            from brevo_service import send_email
+            await send_email(
+                to_email=app_doc["email"], to_name=app_doc["name"],
+                subject=(f"🎉 Candidature acceptée — {app_doc.get('type_label', app_doc['type'])}" if accepted
+                         else f"Votre candidature {app_doc.get('type_label', app_doc['type'])} — réponse"),
+                html_content=(
+                    f"""<h2 style="color:#451F6B;">Bienvenue dans la coopérative !</h2>
+                    <p>Bonjour {app_doc['name']},</p>
+                    <p>Bonne nouvelle : votre candidature « <strong>{app_doc.get('type_label', app_doc['type'])}</strong> »
+                    a été <strong style="color:#1E8449;">acceptée</strong>. Notre équipe vous contactera très vite pour
+                    finaliser votre intégration et vos accès.</p>
+                    <p style="color:#777;font-size:12px;">Référence : {app_doc['id'][:8].upper()} — KDMARCHÉ × O'SCOP.</p>""" if accepted else
+                    f"""<h2 style="color:#451F6B;">Réponse à votre candidature</h2>
+                    <p>Bonjour {app_doc['name']},</p>
+                    <p>Après étude, nous ne pouvons pas donner suite à votre candidature
+                    « <strong>{app_doc.get('type_label', app_doc['type'])}</strong> » pour le moment.
+                    Vous pourrez candidater à nouveau ultérieurement — merci de l'intérêt porté à la coopérative.</p>
+                    <p style="color:#777;font-size:12px;">Référence : {app_doc['id'][:8].upper()} — KDMARCHÉ × O'SCOP.</p>"""),
+                tags=["partner-application-decision"])
+        except Exception as exc:
+            logger.warning("Email décision candidature %s : %s", app_doc["email"], exc)
     return {"ok": True}

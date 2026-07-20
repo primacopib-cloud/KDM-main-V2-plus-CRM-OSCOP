@@ -364,6 +364,20 @@ export default function OrdersPage() {
                                 )}
                               </div>
                             </div>
+
+                            {/* Logistique */}
+                            {order.logistics?.status && (
+                              <div className="mt-3 p-3 rounded-xl bg-white/[0.04]" data-testid={`order-logistics-${order.id}`}>
+                                <h4 className="text-sm font-semibold text-white/70 mb-1.5">Logistique</h4>
+                                <div className="flex flex-wrap items-center gap-2 text-xs">
+                                  <span className={`px-2 py-0.5 rounded-lg font-bold ${order.logistics.status === 'LIVREE' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-[#D9B35A]/20 text-[#E9CF8E]'}`}>
+                                    {order.logistics.status === 'LIVREE' ? '✓ Livrée' : 'Prise en charge'}
+                                  </span>
+                                  <span className="text-white/50">par {order.logistics.operator_name} (LOGICOOP)</span>
+                                  <span className="text-white/35">{String(order.logistics.updated_at || '').slice(0, 16).replace('T', ' ')}</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 

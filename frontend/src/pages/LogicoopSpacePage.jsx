@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Truck, Warehouse, Ship, ArrowLeft, PackageCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { BrandLogos } from '../components/BrandLogos';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -24,6 +25,18 @@ export default function LogicoopSpacePage() {
       })
       .catch(() => setError('Connexion requise'));
   }, []);
+
+  const setStatus = async (m, status) => {
+    const r = await fetch(`${API}/logicoop/missions/${m.order_id}/status`, {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Erreur');
+    toast.success(status === 'PRISE_EN_CHARGE' ? 'Mission prise en charge' : 'Mission livrée — l\'acheteur est informé');
+    fetch(`${API}/logicoop/missions`, { credentials: 'include' })
+      .then((r2) => r2.json()).then((mm) => setMissions(mm.items || [])).catch(() => {});
+  };
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }} data-testid="logicoop-space-page">
@@ -70,6 +83,22 @@ export default function LogicoopSpacePage() {
                     </span>
                     <span className="font-bold text-[#E9CF8E]">{eur(m.total_ht_cents)} HT</span>
                     <span className="text-white/35">{String(m.created_at).replace('T', ' ')}</span>
+                    {m.logistics?.status === 'LIVREE' ? (
+                      <span className="px-2 py-0.5 rounded-lg text-[9px] font-bold bg-emerald-500/15 text-emerald-400" data-testid={`mission-status-${m.order_id}`}>✓ LIVRÉE</span>
+                    ) : m.logistics?.status === 'PRISE_EN_CHARGE' ? (
+                      <>
+                        <span className="px-2 py-0.5 rounded-lg text-[9px] font-bold bg-[#D9B35A]/20 text-[#E9CF8E]" data-testid={`mission-status-${m.order_id}`}>EN COURS</span>
+                        <button type="button" onClick={() => setStatus(m, 'LIVREE')} data-testid={`mission-deliver-${m.order_id}`}
+                          className="px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 hover:bg-emerald-500/25 transition-colors">
+                          Marquer livrée
+                        </button>
+                      </>
+                    ) : (
+                      <button type="button" onClick={() => setStatus(m, 'PRISE_EN_CHARGE')} data-testid={`mission-take-${m.order_id}`}
+                        className="px-2 py-1 rounded-lg text-[10px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>
+                        Prendre en charge
+                      </button>
+                    )}
                   </div>
                 ))}
                 {!missions.length && <p className="text-sm text-white/45">Aucune mission en cours dans vos zones.</p>}

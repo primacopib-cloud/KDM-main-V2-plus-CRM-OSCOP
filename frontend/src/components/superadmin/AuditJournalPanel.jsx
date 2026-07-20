@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollText, ShieldCheck, Search, RefreshCw } from 'lucide-react';
+import { ScrollText, ShieldCheck, Search, RefreshCw, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -36,6 +36,20 @@ export const AuditJournalPanel = () => {
     d.valid ? toast.success(`Chaîne d'audit intègre (${d.entries_verified} entrées vérifiées)`) : toast.error(`Chaîne corrompue au seq ${d.broken_at_seq}`);
   };
 
+  const exportCsv = async () => {
+    const params = new URLSearchParams();
+    if (filter) params.set('event_type', filter);
+    if (q) params.set('q', q);
+    const r = await fetch(`${API}/admin/audit/export.csv?${params}`, { credentials: 'include' });
+    if (!r.ok) return toast.error('Export impossible');
+    const url = URL.createObjectURL(await r.blob());
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `audit-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="glass-panel-soft rounded-[18px] p-5" data-testid="audit-journal-panel">
       <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -46,6 +60,10 @@ export const AuditJournalPanel = () => {
         <button type="button" onClick={verify} data-testid="audit-verify-btn"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] border border-white/15 text-white/70 hover:text-white transition-colors">
           <ShieldCheck size={13} /> Vérifier l'intégrité
+        </button>
+        <button type="button" onClick={exportCsv} data-testid="audit-export-csv-btn"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[#D9B35A]/15 border border-[#D9B35A]/35 text-[#E9CF8E] hover:bg-[#D9B35A]/25 transition-colors">
+          <FileDown size={13} /> Export CSV
         </button>
       </div>
       <p className="text-xs text-white/45 mb-3">Traçabilité inviolable (chaînage SHA-256) : territoires, campagnes, consultations, attributions.</p>

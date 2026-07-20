@@ -37,3 +37,34 @@ async def list_audit(event_type: Optional[str] = None, q: Optional[str] = None,
 async def verify_audit(admin: dict = Depends(require_admin)):
     from consultation_audit import verify_chain
     return await verify_chain()
+
+
+@audit_router.get("/export.csv")
+async def export_audit_csv(event_type: Optional[str] = None, q: Optional[str] = None,
+                           admin: dict = Depends(require_admin)):
+    """Export CSV du journal filtré (contrôles externes)."""
+    import csv
+    import io
+    import json as _json
+    from datetime import datetime, timezone
+    from fastapi import Response
+    query = {}
+    if event_type:
+        query["event_type"] = event_type
+    if q:
+        query["$or"] = [
+            {"actor": {"$regex": q, "$options": "i"}},
+            {"event_type": {"$regex": q, "$options": "i"}},
+            {"consultation_id": {"$regex": q, "$options": "i"}},
+        ]
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["seq", "horodatage_utc", "evenement", "acteur", "consultation_id", "details", "sha256"])
+    async for e in db.audit_journal.find(query, {"_id": 0}).sort("seq", 1):
+        w.writerow([e["seq"], e["ts"], e["event_type"], e.get("actor") or "",
+                    e.get("consultation_id") or "",
+                    _json.dumps(e.get("payload") or {}, ensure_ascii=False, default=str),
+                    e.get("sha256_self", "")])
+    filename = f"audit-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M')}.csv"
+    return Response(content="\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})

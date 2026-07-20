@@ -1,0 +1,35 @@
+{
+  "summary": "Iter 64 (Lot 13 KDMARCHÉ×O'SCOP): backend 17/17 PASS (mission lifecycle, audit CSV, email décision), frontend all key flows PASS après fix backend d'un bug de projection Mongo. BACKEND: /api/logicoop/missions/{id}/status → 409 avant prise en charge ('Prenez d'abord la mission en charge'), PRISE_EN_CHARGE ok, re-PRISE_EN_CHARGE toléré (200), LIVREE ok, re-LIVREE → 409 'Mission déjà livrée', status invalide → 400, buyer → 403. Après LIVREE, GET /api/v2/orders (acheteur-pro) → order avec logistics{status:'LIVREE', operator_name:'Translog Antilles'}. /api/admin/audit/export.csv admin → 200 text/csv, BOM UTF-8, header 'seq;horodatage_utc;evenement;acteur;consultation_id;details;sha256', filter event_type=TERRITORY_CREATED filtre correctement, buyer → 403. Marie Durand candidature acheteur-pro@kdmarche.fr trouvée (statut initial NOUVELLE), PATCH ACCEPTEE → ok:true (1 email Brevo décision envoyé), statut invalide → 400, id inconnu → 404, reset final EN_COURS pour éviter re-trigger. FRONTEND: /logicoop vendor-pro → clic mission-take-* → toast + badge 'EN COURS' + mission-deliver-* → clic → badge '✓ LIVRÉE'. /commandes acheteur-pro → clic sur commande KDM-20260716-60C1CBA8 → section order-logistics-* affichée '✓ Livrée par Translog Antilles (LOGICOOP) 2026-07-20 05:03'. /admin (super admin) → badge api-health-badge VERT texte 'Connected' (fond emerald), plus jamais rouge. Onglet Registres → panneau Journal d'audit → clic Export CSV → téléchargement 'audit-2026-07-20.csv'. Logistics RESET via Mongo à la fin (1 order unset).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter64_lot13.py",
+    "/app/test_reports/pytest/iter64_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "BUG TROUVÉ ET CORRIGÉ (backend): routes_logicoop.py my_missions() projection excluait le champ 'logistics' → GET /api/logicoop/missions renvoyait TOUJOURS logistics:None même après update. Sur le frontend LogicoopSpacePage, la ligne 22-23 refetchait bien après le POST /status mais recevait toujours logistics:None → la UI n'affichait jamais 'EN COURS' ni le bouton 'Marquer livrée'. Fix appliqué : ajout de 'logistics': 1 dans la projection ligne 135 de routes_logicoop.py. Après fix, cycle E2E complet PASS.",
+    "routes_logicoop.py update_application : 2 appels Brevo consécutifs (accusé + admin) devraient être factorisés en une seule tâche async / list comprehension pour éviter les doubles imports et faciliter la traçabilité (log unique succès/échec).",
+    "routes_audit.export_audit_csv sérialise e.get('payload') via json.dumps + repose sur ';' comme séparateur, mais si un champ payload contient ';' ou '\\n' non échappé le CSV pourrait être mal parsé. Le csv.writer gère les quotes correctement mais penser à valider avec un payload contenant des ';'.",
+    "Frontend LogicoopSpacePage : le refetch après setStatus utilise deux fetch séparés (line 22 + 37) — extraire dans une fn refetchMissions() partagée, DRY.",
+    "ConnectionStatus : le badge poll /api/health toutes les X sec via useEffect — vérifier qu'il ne fuit pas de setInterval au unmount (à confirmer côté code)."
+  ],
+  "updated_files": [
+    "/app/backend/routes_logicoop.py",
+    "/app/backend/tests/test_iter64_lot13.py"
+  ],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "100% (mission take/deliver, buyer logistics visible, health badge green, audit CSV download)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin) ; vendor-pro@kdmarche.fr / Demo2026! ; acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "1 email Brevo décision ACCEPTEE envoyé à acheteur-pro@kdmarche.fr (Marie Durand). Application remise à EN_COURS pour éviter re-trigger. Logistics reset (unset) sur la commande KDM-20260716-60C1CBA8 à la fin comme demandé.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Lot 13 endpoints: POST /api/logicoop/missions/{order_id}/status (body {status:'PRISE_EN_CHARGE'|'LIVREE'}) avec transitions strictes ; GET /api/logicoop/missions renvoie maintenant 'logistics' correctement (bug de projection corrigé cette iter) ; GET /api/admin/audit/export.csv (event_type + q filters, BOM UTF-8, separator ';') ; PATCH /api/admin/partners/applications/{id} avec status in [NOUVELLE, EN_COURS, ACCEPTEE, REFUSEE] déclenche 1 email Brevo si ACCEPTEE/REFUSEE. Frontend testids: mission-take-{oid}, mission-deliver-{oid}, mission-status-{oid}, order-logistics-{oid}, api-health-badge, audit-export-csv-btn.",
+  "rca of the issue": "Bug de projection Mongo dans routes_logicoop.my_missions() : la clause de projection listait explicitement les champs à inclure (id, order_number, status, zone_code, incoterm, subtotal_ht_cents, total_ttc_cents, pickup_location_id, created_at, items) mais omettait 'logistics'. Résultat : o.get('logistics') retournait toujours None dans l'iteration → la UI n'avait jamais l'info pour afficher 'EN COURS' ou '✓ LIVRÉE'. Reproduction : reset logistics, POST /status → 200, GET /missions → logistics:None malgré DB={status:'PRISE_EN_CHARGE'}. Mitigation : ajout de 'logistics': 1 dans la projection. Test E2E complet vérifié après fix."
+}

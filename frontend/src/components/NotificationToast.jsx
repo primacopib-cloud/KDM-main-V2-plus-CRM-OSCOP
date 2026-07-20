@@ -202,27 +202,30 @@ export function useNotificationWebSocket(userId, isAdmin = false) {
   };
 }
 
-// Connection status indicator component
-export function ConnectionStatus({ isConnected }) {
+// Connection status indicator: real API health (poll /api/health) instead of legacy WS state
+export function ConnectionStatus() {
+  const [healthy, setHealthy] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    const check = () => fetch(`${API_URL}/api/health`)
+      .then((r) => alive && setHealthy(r.ok))
+      .catch(() => alive && setHealthy(false));
+    check();
+    const interval = setInterval(check, 60000);
+    return () => { alive = false; clearInterval(interval); };
+  }, []);
+  if (healthy) {
+    return (
+      <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs bg-emerald-500/10 text-emerald-400" title="Plateforme opérationnelle" data-testid="api-health-badge">
+        <Wifi className="w-3 h-3" />
+        <span>{i18n.t('adm.connecte')}</span>
+      </div>
+    );
+  }
   return (
-    <div 
-      className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ${
-        isConnected 
-          ? 'bg-emerald-500/10 text-emerald-400' 
-          : 'bg-red-500/10 text-red-400'
-      }`}
-    >
-      {isConnected ? (
-        <>
-          <Wifi className="w-3 h-3" />
-          <span>{i18n.t('adm.connecte')}</span>
-        </>
-      ) : (
-        <>
-          <WifiOff className="w-3 h-3" />
-          <span>{i18n.t('adm.deconnecte')}</span>
-        </>
-      )}
+    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs bg-red-500/10 text-red-400 animate-pulse" title="API injoignable — reconnexion automatique" data-testid="api-health-badge">
+      <WifiOff className="w-3 h-3" />
+      <span>API hors ligne</span>
     </div>
   );
 }

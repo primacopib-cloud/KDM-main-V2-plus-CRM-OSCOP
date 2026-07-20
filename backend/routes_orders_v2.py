@@ -306,6 +306,7 @@ async def _build_order_response(order: dict, pickup: dict = None) -> OrderRespon
         zone_code=order["zone_code"],
         status=order["status"],
         incoterm=order["incoterm"],
+        logistics=order.get("logistics"),
         pickup_location_id=order["pickup_location_id"],
         pickup_location_name=pickup["name"] if pickup else None,
         items=items,
