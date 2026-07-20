@@ -168,7 +168,7 @@ async def remind_vendors(camp_id: str, admin: dict = Depends(require_admin)):
             since = datetime.now(timezone.utc) - datetime.fromisoformat(last)
             if since.total_seconds() < 24 * 3600:
                 raise HTTPException(status_code=409, detail="Relance déjà envoyée il y a moins de 24h")
-        except ValueError:
+        except (ValueError, TypeError):
             pass
     from routes_bids import _latest_valid_bids
     lots = []
