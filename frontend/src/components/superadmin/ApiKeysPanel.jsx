@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { KeyRound, Plus, Trash2, Power, Copy, BookOpen, Webhook, Save } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Power, Copy, BookOpen, Webhook, Save, FlaskConical } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ const SCOPE_LABELS = {
 const WebhookEditor = ({ k, onSaved }) => {
   const [url, setUrl] = useState(k.webhook_url || '');
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
   const dirty = url !== (k.webhook_url || '');
   const save = async () => {
     setSaving(true);
@@ -29,6 +30,15 @@ const WebhookEditor = ({ k, onSaved }) => {
     toast.success(url ? 'Webhook ERP configuré' : 'Webhook retiré');
     onSaved();
   };
+  const test = async () => {
+    setTesting(true);
+    const r = await fetch(`${API}/admin/api-keys/${k.id}/webhook/test`, { method: 'POST', credentials: 'include' });
+    const d = await r.json();
+    setTesting(false);
+    if (!r.ok) return toast.error(d.detail || 'Test impossible');
+    if (d.ok) toast.success(`Webhook OK — l'ERP a répondu ${d.status_code}`);
+    else toast.error(`Échec du webhook : ${d.error || `HTTP ${d.status_code}`}`);
+  };
   return (
     <div className="flex items-center gap-2 mt-2">
       <Webhook size={13} className="text-[#D9B35A] flex-shrink-0" />
@@ -41,6 +51,12 @@ const WebhookEditor = ({ k, onSaved }) => {
           className="h-8 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1"
           style={{ background: '#D4AF37', color: '#1F0A33' }}>
           <Save size={12} /> OK
+        </button>
+      )}
+      {!dirty && k.webhook_url && (
+        <button onClick={test} disabled={testing} data-testid={`webhook-test-${k.id}`}
+          className="h-8 px-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-1 border border-emerald-400/40 text-emerald-300 hover:bg-emerald-400/10 disabled:opacity-50">
+          <FlaskConical size={12} /> {testing ? 'Test…' : 'Tester'}
         </button>
       )}
       {k.webhook_secret && <code className="text-[10px] text-white/35 flex-shrink-0" title="Secret de signature HMAC">{k.webhook_secret.slice(0, 14)}…</code>}

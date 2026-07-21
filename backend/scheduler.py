@@ -170,6 +170,11 @@ async def _scheduler_loop():
             await process_scheduled_price_changes(_db)
         except Exception as exc:
             logger.exception("Scheduler price schedule crashed: %s", exc)
+        try:
+            from quote_notify import send_stale_quote_reminders
+            await send_stale_quote_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler stale quotes crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

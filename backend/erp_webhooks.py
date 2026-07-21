@@ -43,6 +43,35 @@ async def dispatch_order_event(order_id: str, event: str, extra: dict = None) ->
         logger.error("Webhook dispatch %s/%s échoué : %s", event, order_id, exc)
 
 
+async def send_test_event(key: dict) -> dict:
+    """Envoie un événement d'exemple au webhook du partenaire et renvoie le résultat."""
+    payload = {
+        "event": "webhook.test", "ts": datetime.now(timezone.utc).isoformat(),
+        "order": {"id": "test-order", "order_number": "KDM-TEST-0000", "zone_code": "GUADELOUPE",
+                  "status": "CONFIRMED", "total_ttc_cents": 12345},
+        "data": {"message": "Événement de test envoyé depuis KDMARCHÉ × O'SCOP — configuration OK"},
+    }
+    body = json.dumps(payload, default=str)
+    headers = {"Content-Type": "application/json", "X-KDM-Event": "webhook.test"}
+    if key.get("webhook_secret"):
+        sig = hmac.new(key["webhook_secret"].encode(), body.encode(), hashlib.sha256).hexdigest()
+        headers["X-KDM-Signature"] = f"sha256={sig}"
+    status_code, error = None, None
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(key["webhook_url"], content=body, headers=headers)
+            status_code = resp.status_code
+    except Exception as exc:
+        error = str(exc)[:200]
+    ok = bool(status_code and status_code < 300)
+    await db.webhook_deliveries.insert_one({
+        "key_id": key["id"], "key_name": key.get("name"), "event": "webhook.test", "order_id": "test-order",
+        "url": key["webhook_url"], "status_code": status_code, "ok": ok,
+        "error": error, "ts": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"ok": ok, "status_code": status_code, "error": error}
+
+
 async def _deliver(key: dict, event: str, order_id: str, body: str) -> None:
     headers = {"Content-Type": "application/json", "X-KDM-Event": event}
     if key.get("webhook_secret"):

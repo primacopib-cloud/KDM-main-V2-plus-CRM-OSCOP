@@ -6,6 +6,56 @@ logger = logging.getLogger(__name__)
 
 QUOTE_NOTIFY_EMAIL = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
 
+STALE_HOURS = 48
+
+
+async def send_stale_quote_reminders(db) -> None:
+    """Digest quotidien : demandes de devis en attente depuis plus de 48h."""
+    from datetime import date, datetime, timedelta, timezone
+    today = date.today().isoformat()
+    if await db.system_flags.find_one({"key": "quote_stale_reminder", "date": today}):
+        return
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=STALE_HOURS)
+    stale = await db.quote_requests.find(
+        {"status": "pending", "created_at": {"$lt": cutoff}}, {"_id": 0}
+    ).sort("created_at", 1).to_list(50)
+    if not stale:
+        await db.system_flags.insert_one({"key": "quote_stale_reminder", "date": today, "count": 0})
+        return
+    try:
+        from brevo_service import send_email
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        rows = ""
+        for q in stale:
+            created = q.get("created_at")
+            days = max((now - created).days, 0) if created else "?"
+            contact = f"{q.get('first_name') or ''} {q.get('last_name') or ''}".strip() or q.get("contact_name", "")
+            phone = f" · {(q.get('phone_country') or '')} {q.get('phone')}" if q.get("phone") else ""
+            rows += (f"<tr><td style='padding:6px 10px;font-size:13px'><strong>{q.get('company')}</strong>"
+                     f"{' · ' + q.get('legal_status') if q.get('legal_status') else ''}</td>"
+                     f"<td style='padding:6px 10px;font-size:13px'>{contact}<br/>{q.get('email')}{phone}</td>"
+                     f"<td style='padding:6px 10px;font-size:13px;color:#C0392B'><strong>{days} j</strong></td></tr>")
+        html = f"""
+        <div style='font-family:Arial,sans-serif;max-width:640px'>
+          <h2 style='color:#5B2E8C'>{len(stale)} demande(s) de devis en attente depuis plus de {STALE_HOURS}h</h2>
+          <table style='border-collapse:collapse;background:#f8f6fb;border-radius:8px;width:100%'>
+            <tr style='color:#666;font-size:12px'><th style='padding:6px 10px;text-align:left'>Entreprise</th>
+            <th style='padding:6px 10px;text-align:left'>Contact</th><th style='padding:6px 10px;text-align:left'>Attente</th></tr>
+            {rows}
+          </table>
+          <p style='color:#999;font-size:11px;margin-top:16px'>À traiter dans le Super Admin (onglet Demandes) — marquez-les « Traitée » pour arrêter les relances.</p>
+        </div>"""
+        await send_email(
+            to_email=QUOTE_NOTIFY_EMAIL, to_name="Équipe commerciale O'SCOP",
+            subject=f"Relance : {len(stale)} devis non traité(s) depuis +{STALE_HOURS}h — KDMARCHÉ × O'SCOP",
+            html_content=html, tags=["quote-stale-reminder"],
+        )
+        logger.info("Relance devis oubliés envoyée : %s demande(s) en attente", len(stale))
+    except Exception as exc:
+        logger.error("Relance devis oubliés échouée : %s", exc)
+        return
+    await db.system_flags.insert_one({"key": "quote_stale_reminder", "date": today, "count": len(stale)})
+
 
 ACK_T = {
     "fr": {"subject": "Votre demande de devis a bien été reçue — KDMARCHÉ × O'SCOP",

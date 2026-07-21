@@ -91,6 +91,23 @@ async def set_webhook(key_id: str, body: WebhookBody, admin: dict = Depends(requ
     return {"ok": True, "webhook_url": url}
 
 
+@api_keys_router.post("/{key_id}/webhook/test")
+async def test_webhook(key_id: str, admin: dict = Depends(require_admin)):
+    """Envoie un événement d'exemple au webhook ERP pour valider la configuration."""
+    key = await db.api_keys.find_one({"id": key_id})
+    if not key:
+        raise HTTPException(status_code=404, detail="Clé introuvable")
+    if not key.get("webhook_url"):
+        raise HTTPException(status_code=400, detail="Aucune URL de webhook configurée sur cette clé")
+    from erp_webhooks import send_test_event
+    result = await send_test_event(key)
+    from consultation_audit import audit
+    await audit("API_KEY_WEBHOOK_TESTED", admin.get("email"), None, {
+        "name": key.get("name"), "webhook_url": key.get("webhook_url"),
+        "ok": result["ok"], "status_code": result.get("status_code"), "error": result.get("error")})
+    return result
+
+
 @api_keys_router.patch("/{key_id}")
 async def toggle_key(key_id: str, admin: dict = Depends(require_admin)):
     key = await db.api_keys.find_one({"id": key_id})
