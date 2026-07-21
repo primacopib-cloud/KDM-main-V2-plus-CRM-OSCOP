@@ -36,6 +36,7 @@ import { DemandesAdminTab } from '../components/superadmin/DemandesAdminTab';
 import { ShowcasePartnersPanel } from '../components/superadmin/ShowcasePartnersPanel';
 import { LicensesPanel } from '../components/superadmin/LicensesPanel';
 import { ApiKeysPanel } from '../components/superadmin/ApiKeysPanel';
+import { AIAgentsPanel } from '../components/superadmin/AIAgentsPanel';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -208,6 +209,10 @@ export default function SuperAdminPage() {
 
           <TabsContent value="api-erp">
             <ApiKeysPanel />
+          </TabsContent>
+
+          <TabsContent value="ai-agents">
+            <AIAgentsPanel />
           </TabsContent>
 
           <TabsContent value="promos">

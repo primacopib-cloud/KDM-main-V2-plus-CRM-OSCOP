@@ -519,6 +519,18 @@ from routes_price_schedule import price_schedule_router, set_price_schedule_data
 set_price_schedule_database(db)
 app.include_router(price_schedule_router)
 
+from ai_agents_settings import ai_agents_router, set_ai_agents_database
+set_ai_agents_database(db)
+app.include_router(ai_agents_router)
+
+from routes_prospectia import prospectia_router, prospectia_public_router, set_prospectia_database
+set_prospectia_database(db)
+app.include_router(prospectia_router)
+app.include_router(prospectia_public_router)
+
+from encheria_service import set_encheria_database
+set_encheria_database(db)
+
 from routes_logicoop import logicoop_router, set_logicoop_database
 set_logicoop_database(db)
 app.include_router(logicoop_router)

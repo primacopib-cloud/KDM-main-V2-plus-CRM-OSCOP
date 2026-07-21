@@ -175,6 +175,16 @@ async def _scheduler_loop():
             await send_stale_quote_reminders(_db)
         except Exception as exc:
             logger.exception("Scheduler stale quotes crashed: %s", exc)
+        try:
+            from routes_prospectia import process_prospectia_campaigns
+            await process_prospectia_campaigns(_db)
+        except Exception as exc:
+            logger.exception("Scheduler prospectia crashed: %s", exc)
+        try:
+            from encheria_service import process_encheria
+            await process_encheria(_db)
+        except Exception as exc:
+            logger.exception("Scheduler encheria crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

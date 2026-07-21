@@ -328,6 +328,8 @@ async def transition(cid: str, body: TransitionBody, admin: dict = Depends(requi
         import asyncio
         from consultation_notify import notify_report_available
         asyncio.create_task(notify_report_available(cid))
+        from encheria_service import generate_adjudication_report
+        asyncio.create_task(generate_adjudication_report(cid))
     event = {"ANNULEE": "CANCELLED", "SANS_SUITE": "NO_FOLLOW_UP", "CLOTUREE": "CLOSED"}.get(body.to, f"STATUS_{body.to}")
     await audit(event, admin.get("email"), cid, {"from": c["status"], "to": body.to, "reason": body.reason})
     refunded = 0
