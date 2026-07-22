@@ -71,6 +71,26 @@ async def _activate_zone(db, org_id: str, zone: dict, payment_ref: str):
     logger.info("Zone add-on activée : org=%s zone=%s (%s)", org_id, zone["code"], payment_ref)
 
 
+@zone_addon_router.get("/admin/sales")
+async def zone_addon_sales(current_user: dict = Depends(get_current_user)):
+    """Suivi des ventes de zones additionnelles (Super Admin)."""
+    await check_admin(current_user)
+    db = get_database()
+    sales = await db.zone_addon_transactions.find(
+        {"status": "PAID"}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    credits_total = sum(s.get("credits_spent", 0) for s in sales)
+    eur_total_cents = sum(s.get("amount_cents", 0) for s in sales if s.get("method") == "card")
+    for s in sales:
+        c = s.get("created_at")
+        s["created_at"] = c.isoformat() if hasattr(c, "isoformat") else str(c or "")
+        u = s.pop("updated_at", None)
+        if u is not None:
+            s["updated_at"] = u.isoformat() if hasattr(u, "isoformat") else str(u)
+    return {"sales": sales,
+            "totals": {"count": len(sales), "credits_total": credits_total,
+                       "eur_total_cents": eur_total_cents}}
+
+
 @zone_addon_router.post("/purchase-credits")
 async def purchase_zone_with_credits(body: dict, current_user: dict = Depends(get_current_user)):
     """Achat d'une zone additionnelle en crédits CREDI'SCOP (débit immédiat)."""
@@ -89,10 +109,21 @@ async def purchase_zone_with_credits(body: dict, current_user: dict = Depends(ge
     if res.modified_count == 0:
         raise HTTPException(status_code=402, detail="Solde insuffisant")
     await _activate_zone(db, org_id, zone, f"credits:{current_user['id']}")
+    ref = f"zad_{uuid.uuid4().hex[:12]}"
     await db.credits_history.insert_one({
         "id": str(uuid.uuid4()), "user_id": current_user["id"], "type": "spent",
         "amount": cost, "description": f"Zone additionnelle — {zone['name']}",
         "created_at": datetime.utcnow()})
+    await db.zone_addon_transactions.insert_one({
+        "id": ref, "session_id": ref, "user_id": current_user["id"],
+        "user_email": current_user.get("email"),
+        "company_name": current_user.get("company_name"),
+        "org_id": org_id, "zone_id": zone["id"], "zone_code": zone["code"],
+        "zone_name": zone["name"], "method": "credits", "credits_spent": cost,
+        "amount_cents": 0, "currency": "EUR", "status": "PAID", "activated": True,
+        "created_at": datetime.now(timezone.utc)})
+    from zone_addon_receipt import send_zone_receipt_email
+    await send_zone_receipt_email(current_user, zone["name"], "credits", cost, 0, ref)
     new_balance = balance - cost
     return {"ok": True, "zone_code": zone["code"], "zone_name": zone["name"],
             "credits_spent": cost, "new_credits": new_balance}
@@ -136,7 +167,10 @@ async def zone_addon_checkout(body: dict, current_user: dict = Depends(get_curre
     await db.zone_addon_transactions.insert_one({
         "id": f"zad_{uuid.uuid4().hex[:12]}", "session_id": session.id,
         "user_id": current_user["id"], "org_id": org_id,
+        "user_email": current_user.get("email"),
+        "company_name": current_user.get("company_name"),
         "zone_id": zone["id"], "zone_code": zone["code"], "zone_name": zone["name"],
+        "method": "card",
         "amount_cents": pricing["price_eur_cents"], "currency": "EUR",
         "status": "INITIATED", "activated": False,
         "created_at": datetime.now(timezone.utc)})
@@ -168,6 +202,10 @@ async def zone_addon_status(session_id: str, current_user: dict = Depends(get_cu
             {"session_id": session_id},
             {"$set": {"status": "PAID", "activated": True,
                       "updated_at": datetime.now(timezone.utc)}})
+        from zone_addon_receipt import send_zone_receipt_email
+        await send_zone_receipt_email(
+            current_user, txn.get("zone_name") or txn["zone_code"], "card",
+            0, txn.get("amount_cents", 0) / 100, session_id)
     elif session.status == "expired":
         await db.zone_addon_transactions.update_one(
             {"session_id": session_id},
