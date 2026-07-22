@@ -1388,3 +1388,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Relance devis auto : quote_notify.send_quote_followups (demandes pending 3-30 jours sans followup_sent_at → email de relance client multilingue fr/en/es via Brevo tag quote-followup, flag followup_sent_at) branchée au scheduler — testé run direct : 3 relances envoyées ; mention « ↻ Relance automatique envoyée le … » dans l'onglet Demandes
 - Export CSV : GET /api/admin/quotes/export (CSV ; BOM UTF-8, colonnes date/société/contact/email/tel/langue/statut/note/relance/message) + bouton « Export CSV » (quotes-export-btn) — testé curl
 - Notes internes : PUT /api/admin/quotes/{id}/note (max 500 car., note_by/note_at) + édition inline par demande (quote-note-*, input + OK) — testé curl + rendu vérifié (9 zones de note)
+
+## 2026-07-22 — Lot 9 : Traduction auto catalogue + Alertes devis chauds + Historique statuts + Taux de conversion (self-testé curl + screenshot)
+- Traduction auto : POST /api/catalog/admin/translate-all (db.products sans translations, lots de 15, un appel LLM groupé EN+ES name/short_description) + bouton « Traduire catalogue (IA) » (translate-catalog-btn) dans l'en-tête Catalogue — testé : 7 produits traduits, catalogue 100% traduit
+- Alertes devis chauds : quote_notify.send_hot_quote_alerts (pending 5-45 jours AVEC relance envoyée, sans hot_alert_sent_at → email récap 🔥 aux admins + flag) branchée au scheduler — testé run direct : 3 devis alertés
+- Historique statuts : PUT /admin/quotes/{id}/status pousse status_history {from, to, by, at} ; affichage « Statut “X” par Y le … » sous chaque demande avec historique complet au survol (quote-history-*) — testé (contacted→converted par admin)
+- Taux de conversion : GET /api/admin/quotes/stats {total, pending, contacted, converted, lost, conversion_rate, close_rate} + QuoteConversionWidget sur le Dashboard superadmin (taux, compteurs, barre segmentée) — vérifié screenshot (11,1%, 1/9)

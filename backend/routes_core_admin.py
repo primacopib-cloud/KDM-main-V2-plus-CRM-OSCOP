@@ -116,6 +116,23 @@ async def get_all_quotes(
     return [QuoteRequestResponse(**q) for q in quotes]
 
 
+@admin_core_router.get("/admin/quotes/stats")
+async def quote_pipeline_stats(current_user: dict = Depends(get_current_user)):
+    """KPIs du pipeline devis (taux de conversion)."""
+    await check_admin(current_user)
+    db = get_database()
+    quotes = await db.quote_requests.find({}, {"_id": 0, "status": 1}).to_list(2000)
+    counts = {"pending": 0, "contacted": 0, "converted": 0, "lost": 0}
+    for q in quotes:
+        s = q.get("status")
+        counts["contacted" if s == "processed" else (s if s in counts else "pending")] += 1
+    total = len(quotes)
+    closed = counts["converted"] + counts["lost"]
+    return {"total": total, **counts,
+            "conversion_rate": round(counts["converted"] / total * 100, 1) if total else 0,
+            "close_rate": round(counts["converted"] / closed * 100, 1) if closed else 0}
+
+
 @admin_core_router.get("/admin/quotes/export")
 async def export_quotes_csv(current_user: dict = Depends(get_current_user)):
     """Export CSV du pipeline des demandes de devis."""
@@ -171,9 +188,16 @@ async def update_quote_status(
     await check_admin(current_user)
     db = get_database()
 
+    prev = await db.quote_requests.find_one({"id": quote_id}, {"_id": 0, "status": 1})
+    if not prev:
+        raise HTTPException(status_code=404, detail="Quote request not found")
     result = await db.quote_requests.update_one(
         {"id": quote_id},
-        {"$set": {"status": new_status}}
+        {"$set": {"status": new_status},
+         "$push": {"status_history": {
+             "from": prev.get("status"), "to": new_status,
+             "by": current_user.get("email"),
+             "at": datetime.now(timezone.utc).isoformat()}}}
     )
 
     if result.modified_count == 0:

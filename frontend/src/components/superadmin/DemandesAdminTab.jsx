@@ -277,6 +277,16 @@ export const DemandesAdminTab = () => {
                   {q.followup_sent_at && (
                     <p className="text-[10px] text-sky-300/70 mt-1">↻ Relance automatique envoyée le {new Date(q.followup_sent_at).toLocaleDateString('fr-FR')}</p>
                   )}
+                  {q.status_history?.length > 0 && (() => {
+                    const h = q.status_history[q.status_history.length - 1];
+                    return (
+                      <p className="text-[10px] text-white/35 mt-0.5" data-testid={`quote-history-${q.id}`}
+                        title={q.status_history.map((s) => `${PIPELINE[pipeKey(s.to)]?.label || s.to} par ${s.by} le ${new Date(s.at).toLocaleString('fr-FR')}`).join('\n')}>
+                        Statut « {PIPELINE[pipeKey(h.to)]?.label || h.to} » par {h.by} le {new Date(h.at).toLocaleString('fr-FR')}
+                        {q.status_history.length > 1 && ` · ${q.status_history.length} changements (survolez)`}
+                      </p>
+                    );
+                  })()}
                 </div>
               );
             })}

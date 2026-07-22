@@ -28,6 +28,52 @@ FOLLOWUP_T = {
 }
 
 
+async def send_hot_quote_alerts(db) -> None:
+    """Alerte admin : devis restés « Nouveau » plus de 5 jours malgré la relance client."""
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    hot = await db.quote_requests.find(
+        {"status": "pending", "created_at": {"$lt": now - timedelta(days=5), "$gt": now - timedelta(days=45)},
+         "followup_sent_at": {"$exists": True}, "hot_alert_sent_at": {"$exists": False}},
+        {"_id": 0}).sort("created_at", 1).to_list(20)
+    if not hot:
+        return
+    admins = await db.users.find(
+        {"$or": [{"is_admin": True}, {"role": {"$in": ["SUPER_ADMIN", "ADMIN", "admin"]}}]},
+        {"_id": 0, "email": 1}).to_list(5)
+    if not admins:
+        return
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    rows = "".join(
+        f"<tr><td style='padding:4px 8px'><b>{q.get('company','')}</b></td>"
+        f"<td style='padding:4px 8px'>{q.get('email','')}</td>"
+        f"<td style='padding:4px 8px'>{q['created_at'].strftime('%d/%m/%Y') if hasattr(q.get('created_at'), 'strftime') else ''}</td></tr>"
+        for q in hot)
+    html = (f"<div style='font-family:Arial,sans-serif;max-width:620px'>"
+            f"<h3 style='color:#B45309'>🔥 {len(hot)} devis « chauds » sans suite</h3>"
+            "<p>Ces demandes de devis sont restées <b>Nouveau</b> plus de 5 jours malgré la relance automatique au client :</p>"
+            f"<table style='border-collapse:collapse;font-size:13px'>{rows}</table>"
+            f"<p><a href='{base}/superadmin' style='background:#5B2E8C;color:#fff;padding:9px 16px;border-radius:8px;text-decoration:none'>Ouvrir le pipeline devis</a></p>"
+            "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP</p></div>")
+    from brevo_service import send_email
+    sent = 0
+    for a in admins:
+        if not a.get("email"):
+            continue
+        try:
+            await send_email(to_email=a["email"], to_name=None,
+                             subject=f"🔥 {len(hot)} devis en attente depuis plus de 5 jours",
+                             html_content=html, tags=["quote-hot-alert"])
+            sent += 1
+        except Exception as exc:
+            logger.warning("Alerte devis chauds %s échouée : %s", a.get("email"), exc)
+    if sent:
+        await db.quote_requests.update_many(
+            {"id": {"$in": [q["id"] for q in hot]}},
+            {"$set": {"hot_alert_sent_at": datetime.now(timezone.utc).isoformat()}})
+        logger.info("Alerte devis chauds envoyée (%s devis, %s admin(s))", len(hot), sent)
+
+
 async def send_quote_followups(db) -> None:
     """Relance automatique client : demandes restées « Nouveau » depuis plus de 3 jours."""
     from datetime import datetime, timedelta, timezone

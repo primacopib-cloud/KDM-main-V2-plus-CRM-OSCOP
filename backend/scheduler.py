@@ -173,8 +173,9 @@ async def _scheduler_loop():
         try:
             from quote_notify import send_stale_quote_reminders
             await send_stale_quote_reminders(_db)
-            from quote_notify import send_quote_followups
+            from quote_notify import send_quote_followups, send_hot_quote_alerts
             await send_quote_followups(_db)
+            await send_hot_quote_alerts(_db)
         except Exception as exc:
             logger.exception("Scheduler stale quotes crashed: %s", exc)
         try:

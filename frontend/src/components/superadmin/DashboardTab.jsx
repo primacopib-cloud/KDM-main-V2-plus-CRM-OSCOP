@@ -9,6 +9,7 @@ import { StatCard, AlertCard, ActivityItem, KPISection, formatCurrency } from '.
 import { API, getAuthHeaders } from '../../services/http';
 import { WeeklyReportWidget } from './WeeklyReportWidget';
 import { ReferralStatsWidget } from './ReferralStatsWidget';
+import { QuoteConversionWidget } from './QuoteConversionWidget';
 
 const downloadComplianceReport = async () => {
   const month = new Date().toISOString().slice(0, 7);
@@ -43,6 +44,7 @@ export const DashboardTab = ({ kpis, alerts, activities, period, setActiveTab })
       </button>
     </div>
     <WeeklyReportWidget />
+    <QuoteConversionWidget />
     <ReferralStatsWidget />
     {/* Top Stats Row */}
     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
