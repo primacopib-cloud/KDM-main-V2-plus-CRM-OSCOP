@@ -40,7 +40,7 @@ export const CodSignatureDialog = ({ open, onClose, order, onConfirm, loading })
   };
 
   const confirm = () => {
-    if (!hasInk) return;
+    if (!hasInk || !signerName.trim()) return;
     onConfirm({ signature: canvasRef.current.toDataURL('image/png'), signer_name: signerName.trim() });
   };
 
@@ -67,7 +67,7 @@ export const CodSignatureDialog = ({ open, onClose, order, onConfirm, loading })
           <Button variant="outline" size="sm" onClick={clear} className="border-white/20 text-white/70">
             <Eraser size={13} className="mr-1" /> Effacer
           </Button>
-          <Button size="sm" onClick={confirm} disabled={!hasInk || loading} data-testid="cod-signature-confirm-btn"
+          <Button size="sm" onClick={confirm} disabled={!hasInk || !signerName.trim() || loading} data-testid="cod-signature-confirm-btn"
             className="ml-auto text-[#1A092D] font-semibold"
             style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
             {loading ? 'Encaissement…' : 'Confirmer l\'encaissement signé'}

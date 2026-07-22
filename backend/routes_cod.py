@@ -76,7 +76,8 @@ async def list_cod_orders(admin: dict = Depends(require_admin)):
         {"payment_method": "cod"},
         {"_id": 0, "id": 1, "order_number": 1, "org_id": 1, "status": 1, "payment_status": 1,
          "total_ttc_cents": 1, "cod_amount_due_cents": 1, "confirmed_at": 1, "paid_at": 1,
-         "cod_reminder_sent": 1, "created_at": 1},
+         "cod_reminder_sent": 1, "created_at": 1, "cod_signer_name": 1, "cod_signature_url": 1,
+         "cod_receipt_number": 1},
     ).sort("created_at", -1).to_list(100)
     org_ids = list({o["org_id"] for o in items if o.get("org_id")})
     orgs = {o["id"]: o.get("legal_name") or o.get("name") for o in
