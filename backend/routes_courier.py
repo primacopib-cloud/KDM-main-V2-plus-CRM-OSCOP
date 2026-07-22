@@ -68,16 +68,21 @@ async def courier_orders(token: str = Query(...)):
     items = await db.orders.find(
         {"payment_method": "cod", "payment_status": "cod_pending"},
         {"_id": 0, "id": 1, "order_number": 1, "org_id": 1, "cod_amount_due_cents": 1,
-         "total_ttc_cents": 1, "confirmed_at": 1},
-    ).sort("confirmed_at", 1).to_list(50)
+         "total_ttc_cents": 1, "confirmed_at": 1, "zone_code": 1, "pickup_location_id": 1},
+    ).to_list(50)
     org_ids = list({o["org_id"] for o in items if o.get("org_id")})
     orgs = {o["id"]: o.get("legal_name") or o.get("name") for o in
             await db.organizations.find({"id": {"$in": org_ids}}, {"id": 1, "legal_name": 1, "name": 1}).to_list(100)}
+    pickup_ids = list({o.get("pickup_location_id") for o in items if o.get("pickup_location_id")})
+    pickups = {p["id"]: p.get("name") for p in
+               await db.pickup_locations.find({"id": {"$in": pickup_ids}}, {"id": 1, "name": 1}).to_list(100)}
     for o in items:
         o["org_name"] = orgs.get(o.get("org_id"), "")
+        o["pickup_name"] = pickups.get(o.pop("pickup_location_id", None), "")
         o.pop("org_id", None)
         if o.get("confirmed_at") and not isinstance(o["confirmed_at"], str):
             o["confirmed_at"] = o["confirmed_at"].isoformat()
+    items.sort(key=lambda o: (o.get("zone_code") or "ZZZ", o.get("pickup_name") or "", o.get("confirmed_at") or ""))
     return {"courier": t["name"], "items": items}
 
 

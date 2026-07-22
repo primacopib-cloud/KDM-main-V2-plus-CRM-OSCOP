@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Truck, PenLine, RefreshCw, CheckCircle2, KeyRound } from 'lucide-react';
+import { Truck, PenLine, RefreshCw, CheckCircle2, KeyRound, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { CodSignatureDialog } from '../components/superadmin/CodSignatureDialog';
 
@@ -78,18 +78,30 @@ export default function CourierPage() {
               </button>
             </div>
             <div className="space-y-3">
-              {items.map((o) => (
-                <div key={o.id} className="rounded-2xl p-4 bg-white/[0.05] border border-white/10" data-testid={`courier-order-${o.id}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold">{o.order_number}</p>
-                    <p className="text-lg font-bold text-[#E9CF8E]">{eur(o.cod_amount_due_cents || o.total_ttc_cents)}</p>
+              {items.map((o, idx) => (
+                <div key={o.id}>
+                  {(idx === 0 || (items[idx - 1].zone_code || '') !== (o.zone_code || '')) && (
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#E9CF8E] flex items-center gap-1.5 mb-2 mt-1" data-testid={`courier-zone-${o.zone_code || 'autre'}`}>
+                      <MapPin size={11} /> {o.zone_code || 'Zone non précisée'}
+                      <span className="text-white/40 font-normal normal-case">({items.filter((x) => (x.zone_code || '') === (o.zone_code || '')).length} arrêt(s))</span>
+                    </p>
+                  )}
+                  <div className="rounded-2xl p-4 bg-white/[0.05] border border-white/10" data-testid={`courier-order-${o.id}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-semibold">{o.order_number}</p>
+                      <p className="text-lg font-bold text-[#E9CF8E]">{eur(o.cod_amount_due_cents || o.total_ttc_cents)}</p>
+                    </div>
+                    {(o.org_name || o.pickup_name) && (
+                      <p className="text-xs text-white/55 mb-3">
+                        {o.org_name}{o.pickup_name ? ` · 📍 ${o.pickup_name}` : ''}
+                      </p>
+                    )}
+                    <button onClick={() => setSignOrder(o)} data-testid={`courier-collect-btn-${o.id}`}
+                      className="w-full h-11 rounded-xl text-sm font-semibold text-[#1A092D] inline-flex items-center justify-center gap-2"
+                      style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
+                      <PenLine size={15} /> Encaisser + faire signer
+                    </button>
                   </div>
-                  {o.org_name && <p className="text-xs text-white/55 mb-3">{o.org_name}</p>}
-                  <button onClick={() => setSignOrder(o)} data-testid={`courier-collect-btn-${o.id}`}
-                    className="w-full h-11 rounded-xl text-sm font-semibold text-[#1A092D] inline-flex items-center justify-center gap-2"
-                    style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
-                    <PenLine size={15} /> Encaisser + faire signer
-                  </button>
                 </div>
               ))}
               {!items.length && (

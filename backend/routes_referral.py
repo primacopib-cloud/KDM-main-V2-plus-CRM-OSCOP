@@ -27,10 +27,18 @@ def _code_for(user_id: str) -> str:
     return "KDM-" + hashlib.sha256(f"parrain:{user_id}".encode()).hexdigest()[:6].upper()
 
 
+async def _require_member(user_id: str) -> dict:
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "email": 1, "role": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Compte introuvable")
+    if (user.get("role") or "").lower() not in ("vendor", "buyer"):
+        raise HTTPException(status_code=403, detail="Réservé aux membres de la plateforme")
+    return user
+
+
 @referral_router.get("/me")
 async def my_referral(user_id: str = Depends(get_current_user_id)):
-    from routes_cpc import _require_vendor
-    await _require_vendor(user_id)
+    await _require_member(user_id)
     code = _code_for(user_id)
     await db.referral_codes.update_one(
         {"user_id": user_id},
@@ -53,8 +61,7 @@ class ClaimBody(BaseModel):
 
 @referral_router.post("/claim")
 async def claim_code(body: ClaimBody, user_id: str = Depends(get_current_user_id)):
-    from routes_cpc import _require_vendor
-    user = await _require_vendor(user_id)
+    user = await _require_member(user_id)
     code = body.code.strip().upper()
     if code == _code_for(user_id):
         raise HTTPException(status_code=400, detail="Vous ne pouvez pas utiliser votre propre code")

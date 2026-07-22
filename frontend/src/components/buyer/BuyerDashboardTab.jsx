@@ -8,6 +8,7 @@ import { Badge } from '../ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { TabsContent } from '../ui/tabs';
 import { formatCurrency, formatShortDate, ORDER_STATUS } from './buyerUtils';
+import { ReferralPanel } from '../vendor/ReferralPanel';
 
 export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
           <TabsContent value="dashboard" className="space-y-6">
@@ -158,5 +159,8 @@ export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
                 </Card>
               </Link>
             </div>
+
+            {/* Parrainage — partage du code en un clic */}
+            <ReferralPanel />
           </TabsContent>
 );
