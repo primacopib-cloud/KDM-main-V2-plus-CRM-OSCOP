@@ -310,6 +310,35 @@ async def list_programs(admin: dict = Depends(require_admin)):
     return {"items": items}
 
 
+@parrainia_router.post("/programs/{pid}/test-send")
+async def test_send_program(pid: str, body: dict, admin: dict = Depends(require_admin)):
+    """Envoie l'email d'un programme en test à l'admin connecté (variables factices)."""
+    prog = await db.parrainia_programs.find_one({"id": pid}, {"_id": 0})
+    if not prog:
+        raise HTTPException(status_code=404, detail="Programme introuvable")
+    kind = (body or {}).get("kind") or "kickoff"
+    if kind not in ("kickoff", "boost"):
+        raise HTTPException(status_code=400, detail="Type invalide (kickoff ou boost)")
+    subject, html = prog.get(f"{kind}_subject", ""), prog.get(f"{kind}_body", "")
+    if not subject or not html:
+        raise HTTPException(status_code=400, detail="Email du programme vide")
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    rewards = f"+{prog.get('reward_credits', 50)}" + (f" / +{prog.get('reward_2nd', 0)}" if prog.get("reward_2nd") else "") + " CREDI'SCOP"
+    repl = {"{prenom}": admin.get("email", "").split("@")[0], "{classement}": "#2",
+            "{filleuls}": "3", "{recompense}": rewards, "{lien}": f"{base}/vendor?tab=cpc"}
+    for k, v in repl.items():
+        subject, html = subject.replace(k, v), html.replace(k, v)
+    from brevo_service import send_email
+    try:
+        await send_email(to_email=admin["email"], to_name=None,
+                         subject=f"[TEST {prog['month']}] {subject}", html_content=html,
+                         tags=["parrainia-test"])
+    except Exception as exc:
+        logger.error("Test programme échoué : %s", exc)
+        raise HTTPException(status_code=502, detail="Envoi du test échoué")
+    return {"ok": True, "to": admin["email"], "kind": kind}
+
+
 @parrainia_router.put("/programs/{pid}")
 async def update_program(pid: str, body: dict, admin: dict = Depends(require_admin)):
     """Relecture/modification d'un programme planifié avant diffusion."""

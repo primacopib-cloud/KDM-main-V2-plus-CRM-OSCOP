@@ -12,6 +12,7 @@ from ai_usage import log_ai_usage
 
 logger = logging.getLogger(__name__)
 product_ai_router = APIRouter(prefix="/api/catalog/admin/products", tags=["product-ai"])
+pricing_settings_router = APIRouter(prefix="/api/catalog/admin", tags=["product-ai"])
 db = None
 
 CATEGORY_VALUES = ["alimentaire", "boissons", "materiaux", "equipements", "matieres_premieres",
@@ -216,7 +217,9 @@ async def ai_describe(body: dict, admin: dict = Depends(require_admin)):
         f"Rédige la fiche commerciale de ce produit : {ctx}.\n"
         'JSON attendu : {"short_description" (accroche vendeuse max 180 caractères, en français), '
         '"description" (3-5 phrases en français, ton professionnel et chaleureux, oriente vers l\'achat B2B), '
-        '"tags" (6 à 8 mots-clés français en minuscules pour la barre de recherche du catalogue)}.')
+        '"tags" (6 à 8 mots-clés français en minuscules pour la barre de recherche du catalogue), '
+        '"translations": {"en": {"short_description", "description"}, "es": {"short_description", "description"}} '
+        '(traductions naturelles anglaise et espagnole des deux textes)}.')
     try:
         raw = str(await chat.send_message(UserMessage(text=prompt))).strip()
         if raw.startswith("```"):
@@ -226,7 +229,7 @@ async def ai_describe(body: dict, admin: dict = Depends(require_admin)):
         logger.error("Description IA échouée : %s", exc)
         raise HTTPException(status_code=502, detail="Rédaction IA échouée — réessayez")
     await log_ai_usage(db, "product_scan", f"description {name}")
-    return {k: v for k, v in data.items() if k in ("short_description", "description", "tags") and v}
+    return {k: v for k, v in data.items() if k in ("short_description", "description", "tags", "translations") and v}
 
 
 @product_ai_router.post("/publish-bulk")
@@ -257,6 +260,8 @@ async def suggest_price(product_id: str, admin: dict = Depends(require_admin)):
     p = await db.catalog_products.find_one({"id": product_id}, {"_id": 0})
     if not p:
         raise HTTPException(status_code=404, detail="Produit introuvable")
+    margins_doc = await db.pricing_margins.find_one({"id": "default"}, {"_id": 0}) or {}
+    margin = margins_doc.get("margins", {}).get(p.get("category"), DEFAULT_MARGIN)
     from emergentintegrations.llm.chat import LlmChat, UserMessage
     chat = LlmChat(
         api_key=os.environ["EMERGENT_LLM_KEY"], session_id=f"ai-price-{uuid.uuid4()}",
@@ -268,8 +273,11 @@ async def suggest_price(product_id: str, admin: dict = Depends(require_admin)):
         "Suggère un prix de vente HT réaliste pour ce produit vendu en B2B via une centrale coopérative aux Outre-mer. "
         f"Produit : {p.get('name')} | Marque : {p.get('brand')} | Catégorie : {p.get('category')} | "
         f"Conditionnement : {p.get('unit_label') or 'unité'} | EAN : {p.get('ean') or 'n/a'}.\n"
-        'JSON attendu : {"price_ht_cents" (entier, prix HT en centimes d\'euro), '
-        '"reason" (1 phrase en français justifiant le prix pour le marché Outre-mer)}.')
+        f"CONTRAINTE : estime d'abord le coût d'approvisionnement rendu Outre-mer (achat + fret + octroi de mer), "
+        f"puis applique EXACTEMENT la marge cible de {margin}% fixée par l'admin pour cette catégorie.\n"
+        'JSON attendu : {"cost_estimate_cents" (coût estimé en centimes), '
+        '"price_ht_cents" (entier = coût × (1 + marge), arrondi commercialement), '
+        '"reason" (1 phrase en français : coût estimé + marge appliquée)}.')
     try:
         raw = str(await chat.send_message(UserMessage(text=prompt))).strip()
         if raw.startswith("```"):
@@ -282,4 +290,24 @@ async def suggest_price(product_id: str, admin: dict = Depends(require_admin)):
     await db.catalog_products.update_one(
         {"id": product_id}, {"$set": {"pricing.price_ht_cents": price}})
     await log_ai_usage(db, "product_scan", f"prix {p.get('name')}")
-    return {"price_ht_cents": price, "reason": data.get("reason", "")}
+    return {"price_ht_cents": price, "reason": data.get("reason", ""),
+            "cost_estimate_cents": data.get("cost_estimate_cents"), "margin_target": margin}
+
+
+DEFAULT_MARGIN = 25
+
+
+@pricing_settings_router.get("/pricing-margins")
+async def get_pricing_margins(admin: dict = Depends(require_admin)):
+    doc = await db.pricing_margins.find_one({"id": "default"}, {"_id": 0}) or {}
+    margins = {c: DEFAULT_MARGIN for c in CATEGORY_VALUES}
+    margins.update(doc.get("margins", {}))
+    return {"margins": margins, "default": DEFAULT_MARGIN}
+
+
+@pricing_settings_router.put("/pricing-margins")
+async def set_pricing_margins(body: dict, admin: dict = Depends(require_admin)):
+    margins = {k: max(0, min(int(v), 300)) for k, v in (body.get("margins") or {}).items()
+               if k in CATEGORY_VALUES and isinstance(v, (int, float))}
+    await db.pricing_margins.update_one({"id": "default"}, {"$set": {"margins": margins}}, upsert=True)
+    return await get_pricing_margins(admin)

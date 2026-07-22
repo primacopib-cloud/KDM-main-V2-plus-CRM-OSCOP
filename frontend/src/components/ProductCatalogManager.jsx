@@ -143,6 +143,7 @@ export default function ProductCatalogManager({ onProductSaved }) {
         manufacturer: formData.manufacturer || null,
         status: formData.status,
         image_url: formData.image_url || null,
+        translations: formData.translations || null,
         is_active: formData.is_active,
         is_new: formData.is_new,
         is_featured: formData.is_featured,
@@ -346,6 +347,7 @@ export default function ProductCatalogManager({ onProductSaved }) {
               <Rocket className="w-4 h-4 mr-2" /> Publier la sélection ({selected.length})
             </Button>
           )}
+          <MarginSettings />
           <BulkEanImport onDone={fetchProducts} />
           <Button onClick={openNewProduct} className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black">
             <Plus className="w-4 h-4 mr-2" />

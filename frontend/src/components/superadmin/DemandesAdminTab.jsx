@@ -9,6 +9,14 @@ const PUSH_STATUS = {
   ERROR: { color: '#F87171', icon: XCircle, label: 'Erreur' },
 };
 
+const PIPELINE = {
+  pending: { label: 'Nouveau', color: '#60A5FA' },
+  contacted: { label: 'Contacté', color: '#FBBF24' },
+  converted: { label: 'Converti', color: '#7BC94E' },
+  lost: { label: 'Perdu', color: '#F87171' },
+};
+const pipeKey = (s) => (s === 'processed' ? 'contacted' : (PIPELINE[s] ? s : 'pending'));
+
 const inputCls = 'w-24 rounded-lg px-2 py-1.5 text-sm text-white bg-white/[0.06] border border-[#D9B35A]/25 focus:outline-none focus:ring-1 focus:ring-[#D9B35A]/60';
 
 const TarifRow = ({ tarif, onSave, onToggle }) => {
@@ -50,6 +58,7 @@ export const DemandesAdminTab = () => {
   const [data, setData] = useState(null);
   const [pushes, setPushes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pipeFilter, setPipeFilter] = useState('all');
   const opts = { headers: getAuthHeaders(), credentials: 'include' };
 
   const load = () => {
@@ -101,7 +110,7 @@ export const DemandesAdminTab = () => {
       method: 'PUT', ...opts, headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
     });
     if (!r.ok) return toast.error('Mise à jour impossible');
-    toast.success(status === 'processed' ? 'Demande marquée comme traitée' : 'Demande rouverte');
+    toast.success(`Demande passée en « ${PIPELINE[status]?.label || status} »`);
     load();
   };
 
@@ -156,15 +165,33 @@ export const DemandesAdminTab = () => {
       </div>
 
       <div className="glass-panel-soft rounded-[18px] p-4" data-testid="demandes-pushes-log">
-        <h3 className="text-sm font-semibold text-[#D9B35A] mb-3">Demandes de devis reçues</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 className="text-sm font-semibold text-[#D9B35A]">Suivi des demandes de devis (pipeline)</h3>
+          <div className="flex gap-1.5 flex-wrap" data-testid="quotes-pipeline-chips">
+            <button onClick={() => setPipeFilter('all')}
+              className={`px-2 py-1 rounded-full text-[10px] font-bold border transition-colors ${pipeFilter === 'all' ? 'bg-white/15 border-white/30 text-white' : 'bg-white/[0.04] border-white/10 text-white/50'}`}>
+              Toutes ({pushes.length})
+            </button>
+            {Object.entries(PIPELINE).map(([k, v]) => {
+              const n = pushes.filter((x) => pipeKey(x.status) === k).length;
+              return (
+                <button key={k} onClick={() => setPipeFilter(k)} data-testid={`pipeline-chip-${k}`}
+                  className={`px-2 py-1 rounded-full text-[10px] font-bold border transition-colors ${pipeFilter === k ? 'border-white/40' : 'border-transparent opacity-75'}`}
+                  style={{ color: v.color, background: `${v.color}1a` }}>
+                  {n} {v.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         {pushes.length === 0 ? (
           <p className="text-xs text-white/40">Aucune demande de devis reçue pour le moment.</p>
         ) : (
           <div className="space-y-1.5 max-h-96 overflow-y-auto">
-            {pushes.map((q) => {
+            {pushes.filter((x) => pipeFilter === 'all' || pipeKey(x.status) === pipeFilter).map((q) => {
               const st = PUSH_STATUS[q.oscop_status] || { color: '#9CA3AF', icon: Clock, label: 'En attente' };
               const Icon = st.icon;
-              const processed = q.status === 'processed';
+              const pk = pipeKey(q.status);
               return (
                 <div key={q.id} className="px-3 py-2 rounded-lg bg-white/[0.04] text-xs" data-testid={`quote-row-${q.id}`}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -181,14 +208,12 @@ export const DemandesAdminTab = () => {
                       style={{ color: st.color, background: `${st.color}1c` }} title={q.oscop_error || ''}>
                       <Icon size={10} /> {st.label}
                     </span>
-                    <button type="button" onClick={() => setQuoteStatus(q.id, processed ? 'pending' : 'processed')}
+                    <select value={pk} onChange={(e) => setQuoteStatus(q.id, e.target.value)}
                       data-testid={`quote-status-${q.id}`}
-                      className="px-2 py-1 rounded-md text-[10px] font-bold"
-                      style={processed
-                        ? { background: 'rgba(123,201,78,0.16)', color: '#7BC94E', border: '1px solid rgba(123,201,78,0.45)' }
-                        : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                      {processed ? 'Traitée ✓' : 'Marquer traitée'}
-                    </button>
+                      className="px-2 py-1 rounded-md text-[10px] font-bold border cursor-pointer"
+                      style={{ color: PIPELINE[pk].color, background: `${PIPELINE[pk].color}1a`, borderColor: `${PIPELINE[pk].color}55` }}>
+                      {Object.entries(PIPELINE).map(([k, v]) => <option key={k} value={k} style={{ color: '#111' }}>{v.label}</option>)}
+                    </select>
                     {q.oscop_status !== 'PUSHED' && (
                       <button type="button" onClick={() => retry(q.id)} data-testid={`demandes-retry-${q.id}`}
                         className="px-2 py-1 rounded-md text-[10px] font-bold"

@@ -48,7 +48,7 @@ export const AiProductAssistant = ({ formData, onApply }) => {
       const d = await r.json();
       if (!r.ok) return toast.error(d.detail || 'Rédaction échouée');
       onApply(d);
-      toast.success('Descriptions et tags rédigés par l\'IA');
+      toast.success(d.translations ? 'Descriptions rédigées en FR + EN + ES par l\'IA' : 'Descriptions et tags rédigés par l\'IA');
     } catch { toast.error('Erreur de connexion'); } finally { setDescribing(false); }
   };
 
@@ -145,6 +145,17 @@ export const AiProductAssistant = ({ formData, onApply }) => {
             data-testid="ai-image-preview"
             className="w-16 h-16 rounded-lg object-cover border border-white/15 bg-white" />
           <p className="text-[11px] text-white/50">Visuel attaché à la fiche — il sera affiché dans le catalogue.</p>
+        </div>
+      )}
+      {formData.translations && (formData.translations.en || formData.translations.es) && (
+        <div className="flex flex-wrap gap-2" data-testid="ai-translations-preview">
+          {['en', 'es'].map((l) => formData.translations[l] && (
+            <span key={l} className="px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/25 text-emerald-300"
+              title={formData.translations[l].short_description}>
+              {l === 'en' ? '🇬🇧 EN' : '🇪🇸 ES'} traduit ✓
+            </span>
+          ))}
+          <span className="text-[10px] text-white/40 self-center">Traductions enregistrées avec la fiche.</span>
         </div>
       )}
       <p className="text-[10px] text-white/40">

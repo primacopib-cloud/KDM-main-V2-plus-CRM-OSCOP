@@ -12,6 +12,20 @@ export const ParrainiaPanel = () => {
   const [reading, setReading] = useState(null);
   const [editing, setEditing] = useState(null);
 
+  const [testSending, setTestSending] = useState('');
+
+  const testSend = async (kind) => {
+    setTestSending(kind);
+    const r = await fetch(`${API}/admin/parrainia/programs/${editing.id}/test-send`, {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind }),
+    });
+    const d = await r.json();
+    setTestSending('');
+    if (!r.ok) return toast.error(d.detail || 'Envoi du test échoué');
+    toast.success(`Email de test envoyé à ${d.to}`);
+  };
+
   const saveProgram = async () => {
     const r = await fetch(`${API}/admin/parrainia/programs/${editing.id}`, {
       method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
@@ -186,7 +200,13 @@ export const ParrainiaPanel = () => {
             </div>
             {[['kickoff', '🚀 Email de coup d\'envoi (début de mois)'], ['boost', '🔥 Email de relance (mi-mois)']].map(([kind, label]) => (
               <div key={kind} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.07] space-y-2">
-                <p className="text-[11px] font-bold text-white/60 uppercase">{label}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-bold text-white/60 uppercase">{label}</p>
+                  <button onClick={() => testSend(kind)} disabled={!!testSending} data-testid={`parrainia-test-send-${kind}`}
+                    className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white/[0.06] border border-white/15 text-white/70 hover:text-white inline-flex items-center gap-1 disabled:opacity-60 transition-colors">
+                    {testSending === kind ? <Loader2 size={10} className="animate-spin" /> : <Mail size={10} />} M'envoyer un test
+                  </button>
+                </div>
                 <input value={editing[`${kind}_subject`]} onChange={(e) => setEditing({ ...editing, [`${kind}_subject`]: e.target.value })}
                   data-testid={`parrainia-edit-${kind}-subject`} placeholder="Objet"
                   className="w-full h-9 px-2.5 rounded-lg text-xs text-white bg-white/[0.05] border border-white/15" />
