@@ -45,6 +45,8 @@ class UserResponse(UserBase):
     is_admin: bool = False
     role: Optional[str] = None
     must_change_password: bool = False
+    from_quote_id: Optional[str] = None
+    from_quote_date: Optional[str] = None
     created_at: datetime
 
     class Config:

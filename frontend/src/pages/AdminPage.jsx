@@ -304,6 +304,15 @@ const AdminPage = () => {
                         <td className="p-4">
                           <p className="font-medium text-white/90">{user.company_name}</p>
                           <p className="text-xs text-white/50">SIRET: {user.siret}</p>
+                          {user.from_quote_id && (
+                            <span
+                              className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#D4AF37]/15 text-[#E9CF8E] border border-[#D4AF37]/30"
+                              data-testid={`user-from-quote-${user.id}`}
+                              title={`Devis d'origine : ${user.from_quote_id}`}
+                            >
+                              📄 Issu d'un devis converti{user.from_quote_date ? ` · ${new Date(user.from_quote_date).toLocaleDateString('fr-FR')}` : ''}
+                            </span>
+                          )}
                         </td>
                         <td className="p-4 text-white/80">{user.contact_name}</td>
                         <td className="p-4 text-white/80">{user.email}</td>

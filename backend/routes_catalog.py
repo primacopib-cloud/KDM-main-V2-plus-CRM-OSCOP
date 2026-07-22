@@ -257,6 +257,31 @@ async def list_products(
     return result
 
 
+@catalog_router.get("/suggest")
+async def suggest_products(
+    q: str,
+    lang: str = "fr",
+    current_user: dict = Depends(get_current_user_catalog),
+):
+    """Suggestions de recherche multilingues (nom du produit dans la langue de l'utilisateur)."""
+    term = (q or "").strip()
+    if len(term) < 2:
+        return {"suggestions": []}
+    rx = {"$regex": term, "$options": "i"}
+    query = {"status": ProductStatus.ACTIVE.value, "$or": [
+        {"name": rx}, {"sku": rx}, {"description": rx},
+        {"translations.en.name": rx}, {"translations.en.description": rx},
+        {"translations.es.name": rx}, {"translations.es.description": rx},
+    ]}
+    prods = await db.products.find(query, {"_id": 0, "id": 1, "name": 1, "translations": 1}).limit(8).to_list(8)
+    lg = (lang or "fr")[:2].lower()
+    suggestions = []
+    for p in prods:
+        tr = (p.get("translations") or {}).get(lg) or {}
+        suggestions.append({"id": p["id"], "label": tr.get("name") or p.get("name", "")})
+    return {"suggestions": suggestions}
+
+
 @catalog_router.get("/products/{product_id}", response_model=ProductResponse)
 async def get_product(
     product_id: str,

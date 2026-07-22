@@ -78,17 +78,26 @@ async def get_all_users(
 
     users = await db.users.find(query).sort("created_at", -1).skip(skip).limit(per_page).to_list(per_page)
 
+    quote_ids = [u["from_quote_id"] for u in users if u.get("from_quote_id")]
+    quote_dates = {}
+    if quote_ids:
+        async for q in db.quote_requests.find({"id": {"$in": quote_ids}}, {"_id": 0, "id": 1, "created_at": 1}):
+            c = q.get("created_at")
+            quote_dates[q["id"]] = c.isoformat() if hasattr(c, "isoformat") else str(c or "")
+
     return UserListResponse(
         users=[UserResponse(
             id=u["id"],
             email=u["email"],
-            company_name=u["company_name"],
-            siret=u["siret"],
-            contact_name=u["contact_name"],
-            phone=u["phone"],
-            subscription=u["subscription"],
-            credits=u["credits"],
+            company_name=u.get("company_name") or "—",
+            siret=u.get("siret") or "",
+            contact_name=u.get("contact_name") or "",
+            phone=u.get("phone") or "",
+            subscription=u.get("subscription") or "—",
+            credits=u.get("credits") or 0,
             is_admin=u.get("is_admin", False),
+            from_quote_id=u.get("from_quote_id"),
+            from_quote_date=quote_dates.get(u.get("from_quote_id")),
             created_at=u["created_at"]
         ) for u in users],
         total=total,
@@ -113,7 +122,11 @@ async def get_all_quotes(
         query["status"] = status_filter
 
     quotes = await db.quote_requests.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-    return [QuoteRequestResponse(**q) for q in quotes]
+    return [QuoteRequestResponse(**{
+        **q,
+        "contact_name": q.get("contact_name") or f"{q.get('first_name') or ''} {q.get('last_name') or ''}".strip() or "—",
+        "phone": q.get("phone") or "",
+    }) for q in quotes]
 
 
 @admin_core_router.get("/admin/quotes/stats")

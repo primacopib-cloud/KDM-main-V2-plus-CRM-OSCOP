@@ -34,7 +34,34 @@ async def set_quote_monthly_target(body: dict, current_user: dict = Depends(get_
     return {"ok": True, "target": target}
 
 
-def _member_invite_html(name: str, email: str, password: str, role_label: str, login_url: str) -> str:
+def _member_invite_html(name: str, email: str, password: str, role: str, login_url: str) -> str:
+    role_label = "Vendeur Pro" if role == "vendor" else "Acheteur Pro"
+    base = login_url.rsplit("/", 1)[0]
+    if role == "vendor":
+        steps = [
+            ("Connectez-vous et personnalisez votre mot de passe",
+             "Utilisez vos identifiants ci-dessus puis Mon compte → Changer le mot de passe."),
+            ("Complétez votre profil et publiez vos premiers produits",
+             f"Rendez-vous dans votre <a href='{base}/espace-vendeur' style='color:#D4AF37'>espace vendeur</a> pour présenter votre offre."),
+            ("Répondez aux consultations d'achat",
+             "Positionnez-vous sur les appels d'offres mutualisés pour décrocher vos premiers marchés."),
+        ]
+    else:
+        steps = [
+            ("Connectez-vous et personnalisez votre mot de passe",
+             "Utilisez vos identifiants ci-dessus puis Mon compte → Changer le mot de passe."),
+            ("Choisissez votre territoire et explorez le catalogue",
+             f"Découvrez les <a href='{base}/catalogue' style='color:#D4AF37'>prix mutualisés du catalogue</a> de votre zone."),
+            ("Passez votre première commande coopérative",
+             "Paiement sécurisé en ligne ou à la livraison — l'équipe vous accompagne à chaque étape."),
+        ]
+    steps_html = "".join(
+        f"<tr><td style='vertical-align:top;padding:8px 10px 8px 0'>"
+        f"<span style='display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;"
+        f"background:#D4AF37;color:#1F0A33;border-radius:50%;font-weight:bold'>{i}</span></td>"
+        f"<td style='padding:8px 0'><b style='color:#fff'>{t}</b><br>"
+        f"<span style='color:#ccc;font-size:13px'>{d}</span></td></tr>"
+        for i, (t, d) in enumerate(steps, 1))
     return (
         "<div style='font-family:Arial,sans-serif;max-width:560px;margin:auto'>"
         "<div style='background:#2A1045;border-radius:14px;padding:28px;color:#fff'>"
@@ -46,8 +73,8 @@ def _member_invite_html(name: str, email: str, password: str, role_label: str, l
         f"<p style='margin:4px 0'>Identifiant : <b>{email}</b></p>"
         f"<p style='margin:4px 0'>Mot de passe temporaire : <b style='color:#E9CF8E'>{password}</b></p>"
         "</div>"
-        "<p style='font-size:13px;color:#ddd'>Par sécurité, modifiez ce mot de passe dès votre première connexion "
-        "(Mon compte → Changer le mot de passe).</p>"
+        "<h3 style='color:#E9CF8E;margin:22px 0 6px'>Vos 3 premières étapes</h3>"
+        f"<table style='border-collapse:collapse'>{steps_html}</table>"
         f"<p style='text-align:center;margin:24px 0'><a href='{login_url}' "
         "style='background:#D4AF37;color:#1F0A33;padding:12px 26px;border-radius:999px;"
         "text-decoration:none;font-weight:bold'>Me connecter</a></p>"
@@ -123,7 +150,7 @@ async def convert_quote_to_member(quote_id: str, body: dict, current_user: dict 
             await send_email(
                 to_email=email, to_name=contact,
                 subject="Bienvenue sur KDMARCHÉ × O'SCOP — votre compte membre est prêt",
-                html_content=_member_invite_html(contact, email, temp_password, role_label, f"{base}/connexion"),
+                html_content=_member_invite_html(contact, email, temp_password, role, f"{base}/connexion"),
                 tags=["quote-member-invite"])
             email_sent = True
         except Exception as e:

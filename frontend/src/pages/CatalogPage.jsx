@@ -1,5 +1,6 @@
 import i18n from '@/i18n';
 import { tData } from '@/i18n/tData';
+import { SearchSuggest } from '../components/catalog/SearchSuggest';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -342,6 +343,7 @@ export default function CatalogPage() {
                 onKeyDown={(e) => e.key === 'Enter' && loadProducts()}
                 className="pl-9 h-10 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40"
               />
+              <SearchSuggest term={searchTerm} onPick={setSearchTerm} />
             </div>
             <Button variant="outline" onClick={loadProducts} className="border-white/10">
               <Search className="w-4 h-4" />
