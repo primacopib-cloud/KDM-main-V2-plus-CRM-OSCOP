@@ -171,6 +171,31 @@ def _custom_remind_html(body_html: str, cta_label: str, base: str) -> str:
     )
 
 
+@quote_convert_router.post("/reminder-template/preview")
+async def preview_reminder_template(body: dict, current_user: dict = Depends(get_current_user)):
+    """Aperçu du modèle de relance avec variables d'exemple (contenu non sauvegardé accepté)."""
+    await check_admin(current_user)
+    lang = (body.get("lang") or "fr")[:2].lower()
+    t = REMIND_I18N.get(lang, REMIND_I18N["fr"])
+    sample_name = {"fr": "Jean Dupont", "en": "John Smith", "es": "Juan García"}.get(lang, "Jean Dupont")
+    sample_company = {"fr": "Ma Société SARL", "en": "My Company Ltd", "es": "Mi Empresa SL"}.get(lang, "Ma Société SARL")
+    base = (os.environ.get("FRONTEND_PUBLIC_URL") or os.environ.get("FRONTEND_URL") or "").rstrip("/")
+    subject = (body.get("subject") or "").strip() or t["subject"]
+    body_txt = (body.get("body") or "").strip()
+    if body_txt:
+        import html as _html
+        body_html = (_html.escape(body_txt)
+                     .replace("{name}", f"<b>{sample_name}</b>")
+                     .replace("{company}", f"<b>{sample_company}</b>")
+                     .replace("\n", "<br>"))
+        content = _custom_remind_html(body_html, t["cta"], base)
+        custom = True
+    else:
+        content = _remind_html(t, sample_name, sample_company, base)
+        custom = False
+    return {"subject": subject, "html": content, "custom": custom, "lang": lang}
+
+
 @quote_convert_router.post("/{quote_id}/remind")
 async def remind_quote_prospect(quote_id: str, current_user: dict = Depends(get_current_user)):
     """Relance manuelle du prospect par email (1 clic depuis le pipeline)."""

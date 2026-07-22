@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileEdit, ChevronDown, ChevronUp, Save, Loader2, RotateCcw } from 'lucide-react';
+import { FileEdit, ChevronDown, ChevronUp, Save, Loader2, RotateCcw, Eye, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
@@ -12,6 +12,22 @@ export const QuoteReminderTemplateEditor = () => {
   const [tpl, setTpl] = useState(EMPTY);
   const [defaults, setDefaults] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [previewing, setPreviewing] = useState(false);
+
+  const showPreview = async () => {
+    setPreviewing(true);
+    try {
+      const r = await fetch(`${API}/admin/quotes/reminder-template/preview`, {
+        method: 'POST', credentials: 'include',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lang, subject: cur.subject, body: cur.body }),
+      });
+      if (!r.ok) throw new Error();
+      setPreview(await r.json());
+    } catch { toast.error('Aperçu indisponible'); }
+    setPreviewing(false);
+  };
 
   useEffect(() => {
     fetch(`${API}/admin/quotes/reminder-template`, { credentials: 'include', headers: getAuthHeaders() })
@@ -75,6 +91,10 @@ export const QuoteReminderTemplateEditor = () => {
               Laissez vide pour utiliser le modèle par défaut.
             </p>
             <span className="flex gap-1.5">
+              <button type="button" onClick={showPreview} disabled={previewing} data-testid="template-preview-btn"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-[#93C5FD] border border-[#60A5FA]/40 bg-[#60A5FA]/10 hover:bg-[#60A5FA]/20 transition-colors disabled:opacity-50">
+                {previewing ? <Loader2 size={10} className="animate-spin" /> : <Eye size={10} />} Aperçu
+              </button>
               <button type="button" onClick={() => setCur({ subject: '', body: '' })} data-testid="template-reset-btn"
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-white/50 border border-white/15 hover:text-white transition-colors">
                 <RotateCcw size={10} /> Défaut
@@ -85,6 +105,33 @@ export const QuoteReminderTemplateEditor = () => {
                 {saving ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />} Enregistrer
               </button>
             </span>
+          </div>
+        </div>
+      )}
+      {preview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setPreview(null)} data-testid="template-preview-modal">
+          <div className="w-full max-w-[640px] rounded-2xl bg-[#2A1045] border border-[#D9B35A]/30 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-wide text-white/40">
+                  Aperçu de l'email de relance ({preview.lang?.toUpperCase()}) — {preview.custom ? 'modèle personnalisé' : 'modèle par défaut'}
+                </p>
+                <p className="text-sm font-semibold text-white truncate" data-testid="template-preview-subject">
+                  Objet : {preview.subject}
+                </p>
+              </div>
+              <button type="button" onClick={() => setPreview(null)} data-testid="template-preview-close"
+                className="p-1.5 rounded-lg text-white/50 hover:text-white border border-white/15 flex-shrink-0 ml-3">
+                <X size={14} />
+              </button>
+            </div>
+            <iframe title="Aperçu email" srcDoc={preview.html} sandbox=""
+              className="w-full h-[420px] bg-white" data-testid="template-preview-frame" />
+            <p className="px-4 py-2 text-[10px] text-white/40">
+              Variables remplacées par un exemple : Jean Dupont / Ma Société SARL.
+            </p>
           </div>
         </div>
       )}
