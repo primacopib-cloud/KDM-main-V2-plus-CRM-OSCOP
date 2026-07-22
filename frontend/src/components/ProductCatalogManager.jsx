@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Package, Search, Plus, Trash2, Edit,
+  Package, Search, Plus, Trash2, Edit, Rocket, Sparkles,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -274,6 +274,31 @@ export default function ProductCatalogManager({ onProductSaved }) {
     }
   };
 
+  const [pricingId, setPricingId] = useState('');
+
+  const publishProduct = async (product) => {
+    const res = await fetch(`${API_URL}/api/catalog/admin/products/${product.id}/publish`, {
+      method: 'POST', credentials: 'include',
+    });
+    const d = await res.json();
+    if (!res.ok) return toast.error(d.detail || 'Publication échouée');
+    toast.success(`« ${product.name} » publié au catalogue ✓`);
+    fetchProducts();
+  };
+
+  const suggestPrice = async (product) => {
+    setPricingId(product.id);
+    try {
+      const res = await fetch(`${API_URL}/api/catalog/admin/products/${product.id}/ai-price`, {
+        method: 'POST', credentials: 'include',
+      });
+      const d = await res.json();
+      if (!res.ok) return toast.error(d.detail || 'Suggestion échouée');
+      toast.success(`Prix suggéré : ${(d.price_ht_cents / 100).toFixed(2)} € HT — ${d.reason}`, { duration: 8000 });
+      fetchProducts();
+    } finally { setPricingId(''); }
+  };
+
   // Filter products
   const filteredProducts = products.filter(p => {
     const matchesSearch = !searchTerm || 
@@ -402,6 +427,20 @@ export default function ProductCatalogManager({ onProductSaved }) {
               
               {/* Actions */}
               <div className="flex gap-2">
+                {product.status === 'draft' && (
+                  <>
+                    <Button size="sm" onClick={() => suggestPrice(product)} disabled={pricingId === product.id}
+                      data-testid={`product-ai-price-${product.id}`} title="Prix suggéré par l'IA (marché Outre-mer)"
+                      className="bg-white/[0.06] border border-[#D9B35A]/30 text-[#E9CF8E] hover:bg-[#D9B35A]/15 h-8 px-2 text-xs">
+                      <Sparkles className={`w-3.5 h-3.5 mr-1 ${pricingId === product.id ? 'animate-spin' : ''}`} /> Prix IA
+                    </Button>
+                    <Button size="sm" onClick={() => publishProduct(product)}
+                      data-testid={`product-publish-${product.id}`} title="Publier cette fiche au catalogue"
+                      className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black h-8 px-2 text-xs font-bold">
+                      <Rocket className="w-3.5 h-3.5 mr-1" /> Publier
+                    </Button>
+                  </>
+                )}
                 <Button size="sm" variant="ghost" onClick={() => openEditProduct(product)} className="text-white/60 hover:text-white">
                   <Edit className="w-4 h-4" />
                 </Button>

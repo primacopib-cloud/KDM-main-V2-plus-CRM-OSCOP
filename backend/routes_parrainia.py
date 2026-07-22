@@ -236,21 +236,46 @@ async def report_now(admin: dict = Depends(require_admin)):
 
 @parrainia_router.post("/programs/generate")
 async def generate_program(body: dict, admin: dict = Depends(require_admin)):
-    """PARRAIN'IA crée un programme de parrainage complet, programmé pour diffusion."""
+    """PARRAIN'IA crée un ou plusieurs programmes de parrainage (jusqu'à 3 mois), programmés pour diffusion."""
     now = datetime.now(timezone.utc)
-    default_month = f"{now.year + 1}-01" if now.month == 12 else f"{now.year}-{now.month + 1:02d}"
-    month = ((body or {}).get("month") or default_month).strip()
-    if await db.parrainia_programs.find_one({"month": month}):
-        raise HTTPException(status_code=409, detail=f"Un programme est déjà planifié pour {month}")
+    months_count = max(1, min(int((body or {}).get("months", 1)), 3))
+    explicit_month = ((body or {}).get("month") or "").strip()
+    months = []
+    if explicit_month:
+        months = [explicit_month]
+    else:
+        y, m = now.year, now.month
+        while len(months) < months_count:
+            y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+            candidate = f"{y}-{m:02d}"
+            if not await db.parrainia_programs.find_one({"month": candidate}):
+                months.append(candidate)
+            if m == now.month and y == now.year + 1:
+                break
+    created = []
+    for month in months:
+        if await db.parrainia_programs.find_one({"month": month}):
+            if len(months) == 1:
+                raise HTTPException(status_code=409, detail=f"Un programme est déjà planifié pour {month}")
+            continue
+        created.append(await _generate_one_program(month, admin.get("email"),
+                                                   previous=[p["theme"] for p in created]))
+    if not created:
+        raise HTTPException(status_code=409, detail="Tous les mois visés ont déjà un programme planifié")
+    return created[0] if len(created) == 1 and months_count == 1 else {"items": created, "created": len(created)}
+
+
+async def _generate_one_program(month: str, admin_email: str, previous: list = None) -> dict:
     from emergentintegrations.llm.chat import LlmChat, UserMessage
     chat = LlmChat(
         api_key=os.environ["EMERGENT_LLM_KEY"], session_id=f"parrainia-prog-{uuid.uuid4()}",
         system_message=("Tu es PARRAIN'IA, concepteur de programmes de parrainage pour la Communityplace "
                         "coopérative KDMARCHÉ × O'SCOP (Outre-mer). Réponds UNIQUEMENT en JSON valide, sans markdown."),
     ).with_model("openai", "gpt-5.4")
+    avoid = f" Thèmes déjà utilisés à éviter : {', '.join(previous)}." if previous else ""
     prompt = (
         f"Conçois le programme de parrainage du mois {month} : un thème original et fédérateur (esprit coopératif, "
-        "culture Outre-mer, saisonnalité), des récompenses de podium équilibrées, et les 2 emails de la campagne. "
+        f"culture Outre-mer, saisonnalité), des récompenses de podium équilibrées, et les 2 emails de la campagne.{avoid} "
         "Utilise LITTÉRALEMENT les variables {prenom} {classement} {filleuls} {recompense} {lien} dans les corps d'emails. "
         'JSON attendu : {"theme" (nom du programme, 4-8 mots), "pitch" (1 phrase), '
         '"reward_credits" (1er, entre 30 et 100), "reward_2nd" (entre 10 et 50), "reward_3rd" (entre 5 et 25), '
@@ -272,11 +297,10 @@ async def generate_program(body: dict, admin: dict = Depends(require_admin)):
            "reward_3rd": max(0, min(int(data.get("reward_3rd", 10)), 1000)),
            "kickoff_subject": data.get("kickoff_subject", ""), "kickoff_body": data.get("kickoff_body", ""),
            "boost_subject": data.get("boost_subject", ""), "boost_body": data.get("boost_body", ""),
-           "created_by": admin.get("email"), "created_at": datetime.now(timezone.utc).isoformat()}
+           "created_by": admin_email, "created_at": datetime.now(timezone.utc).isoformat()}
     await db.parrainia_programs.insert_one({**doc})
     from consultation_audit import audit
-    await audit("PARRAINIA_PROGRAM_CREATED", admin.get("email"), None,
-                {"month": month, "theme": doc["theme"]})
+    await audit("PARRAINIA_PROGRAM_CREATED", admin_email, None, {"month": month, "theme": doc["theme"]})
     return doc
 
 

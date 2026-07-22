@@ -197,3 +197,47 @@ async def bulk_ai_import(body: dict, admin: dict = Depends(require_admin)):
             results.append({"ean": ean, "status": "erreur"})
     created = sum(1 for r in results if r["status"] == "cree")
     return {"results": results, "created": created, "total": len(eans)}
+
+
+@product_ai_router.post("/{product_id}/publish")
+async def publish_product(product_id: str, admin: dict = Depends(require_admin)):
+    """Publie une fiche brouillon (status draft → approved)."""
+    res = await db.catalog_products.update_one(
+        {"id": product_id}, {"$set": {"status": "approved", "is_active": True}})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    return {"ok": True, "status": "approved"}
+
+
+@product_ai_router.post("/{product_id}/ai-price")
+async def suggest_price(product_id: str, admin: dict = Depends(require_admin)):
+    """L'IA suggère un prix de vente HT adapté au marché Outre-mer et l'applique à la fiche."""
+    p = await db.catalog_products.find_one({"id": product_id}, {"_id": 0})
+    if not p:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    chat = LlmChat(
+        api_key=os.environ["EMERGENT_LLM_KEY"], session_id=f"ai-price-{uuid.uuid4()}",
+        system_message=("Tu es un expert pricing de la grande distribution dans les Outre-mer français "
+                        "(Guadeloupe, Martinique, Guyane, Réunion) : octroi de mer, fret, coût de la vie +15-40% vs métropole. "
+                        "Réponds UNIQUEMENT en JSON valide, sans markdown."),
+    ).with_model("openai", "gpt-5.4")
+    prompt = (
+        "Suggère un prix de vente HT réaliste pour ce produit vendu en B2B via une centrale coopérative aux Outre-mer. "
+        f"Produit : {p.get('name')} | Marque : {p.get('brand')} | Catégorie : {p.get('category')} | "
+        f"Conditionnement : {p.get('unit_label') or 'unité'} | EAN : {p.get('ean') or 'n/a'}.\n"
+        'JSON attendu : {"price_ht_cents" (entier, prix HT en centimes d\'euro), '
+        '"reason" (1 phrase en français justifiant le prix pour le marché Outre-mer)}.')
+    try:
+        raw = str(await chat.send_message(UserMessage(text=prompt))).strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1].lstrip("json").strip()
+        data = json.loads(raw)
+        price = max(1, int(data["price_ht_cents"]))
+    except Exception as exc:
+        logger.error("Prix IA échoué %s : %s", product_id, exc)
+        raise HTTPException(status_code=502, detail="Suggestion de prix échouée — réessayez")
+    await db.catalog_products.update_one(
+        {"id": product_id}, {"$set": {"pricing.price_ht_cents": price}})
+    await log_ai_usage(db, "product_scan", f"prix {p.get('name')}")
+    return {"price_ht_cents": price, "reason": data.get("reason", "")}

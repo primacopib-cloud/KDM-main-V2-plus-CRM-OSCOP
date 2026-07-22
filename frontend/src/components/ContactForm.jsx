@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { quoteAPI } from '../services/api';
 import i18n from '@/i18n';
 import { LANGS, PHONE_COUNTRIES, LEGAL_STATUSES, FORM_T } from './contactFormData';
+import { Flag } from './Flag';
 
 const inputCls = 'h-12 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50 focus:ring-[#D9B35A]/20';
 const EMPTY = { company: '', legalStatus: '', firstName: '', lastName: '', email: '', phoneCountry: 'GP', phone: '', message: '' };
@@ -129,13 +130,13 @@ const ContactForm = () => {
               <Select value={formData.phoneCountry} onValueChange={(v) => setFormData((p) => ({ ...p, phoneCountry: v }))}>
                 <SelectTrigger className="h-12 w-[130px] flex-shrink-0 bg-white/[0.04] border-white/10 text-white rounded-xl focus:border-[#D9B35A]/50" data-testid="quote-phone-country-select">
                   <SelectValue>
-                    <span className="flex items-center gap-1.5"><span className="text-base">{country.flag}</span><span className="text-sm">{country.dial}</span></span>
+                    <span className="flex items-center gap-1.5"><Flag code={country.code} className="w-5 h-auto rounded-[2px]" /><span className="text-sm">{country.dial}</span></span>
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-[#0d1117] border-white/10 max-h-64">
                   {PHONE_COUNTRIES.map((c) => (
                     <SelectItem key={c.code} value={c.code} className="text-white/80 focus:bg-white/10 focus:text-white">
-                      <span className="flex items-center gap-2"><span className="text-base">{c.flag}</span>{c.name} <span className="text-white/45">{c.dial}</span></span>
+                      <span className="flex items-center gap-2"><Flag code={c.code} className="w-5 h-auto rounded-[2px]" />{c.name} <span className="text-white/45">{c.dial}</span></span>
                     </SelectItem>
                   ))}
                 </SelectContent>

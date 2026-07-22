@@ -1,10 +1,25 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { KeyRound, Loader2, Rocket } from 'lucide-react';
+import { KeyRound, Loader2, Rocket, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import NavBar from '../components/NavBar';
 import { API } from '../services/http';
+
+const PwField = ({ value, onChange, placeholder, testId, minLength }) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input type={show ? 'text' : 'password'} required minLength={minLength} placeholder={placeholder}
+        data-testid={testId} value={value} onChange={onChange}
+        className="w-full h-11 rounded-xl px-3.5 pr-11 text-sm text-white placeholder-white/35 bg-white/[0.05] border border-[#D9B35A]/25 focus:outline-none focus:ring-1 focus:ring-[#D9B35A]/60" />
+      <button type="button" onClick={() => setShow((v) => !v)} tabIndex={-1} data-testid={`${testId}-eye`}
+        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors">
+        {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      </button>
+    </div>
+  );
+};
 
 export default function VendorActivationPage() {
   const [params] = useSearchParams();
@@ -42,14 +57,10 @@ export default function VendorActivationPage() {
             <p className="text-white/55 text-sm mt-1">{t('vendorOnboarding.actSubtitle')}</p>
           </div>
           <form onSubmit={activate} className="space-y-4">
-            <input type="password" required minLength={8} placeholder={t('vendorOnboarding.actPasswordPh')}
-              data-testid="activation-password-input"
-              className="w-full h-11 rounded-xl px-3.5 text-sm text-white placeholder-white/35 bg-white/[0.05] border border-[#D9B35A]/25 focus:outline-none focus:ring-1 focus:ring-[#D9B35A]/60"
-              value={password} onChange={(e) => setPassword(e.target.value)} />
-            <input type="password" required placeholder={t('vendorOnboarding.actConfirmPh')}
-              data-testid="activation-confirm-input"
-              className="w-full h-11 rounded-xl px-3.5 text-sm text-white placeholder-white/35 bg-white/[0.05] border border-[#D9B35A]/25 focus:outline-none focus:ring-1 focus:ring-[#D9B35A]/60"
-              value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+            <PwField value={password} onChange={(e) => setPassword(e.target.value)} minLength={8}
+              placeholder={t('vendorOnboarding.actPasswordPh')} testId="activation-password-input" />
+            <PwField value={confirm} onChange={(e) => setConfirm(e.target.value)}
+              placeholder={t('vendorOnboarding.actConfirmPh')} testId="activation-confirm-input" />
             <button type="submit" disabled={busy} data-testid="activation-submit-btn"
               className="w-full py-3 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}>

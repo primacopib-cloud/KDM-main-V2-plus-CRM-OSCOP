@@ -9,6 +9,7 @@ export const ParrainiaPanel = () => {
   const [log, setLog] = useState(null);
   const [programs, setPrograms] = useState([]);
   const [running, setRunning] = useState('');
+  const [reading, setReading] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${API}/admin/parrainia/log`, { credentials: 'include' })
@@ -29,15 +30,17 @@ export const ParrainiaPanel = () => {
     load();
   };
 
-  const createProgram = async () => {
-    setRunning('program');
+  const createProgram = async (months = 1) => {
+    setRunning(months > 1 ? 'quarter' : 'program');
     const r = await fetch(`${API}/admin/parrainia/programs/generate`, {
-      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: '{}',
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ months }),
     });
     const d = await r.json();
     setRunning('');
     if (!r.ok) return toast.error(d.detail || 'Création échouée');
-    toast.success(`Programme « ${d.theme} » planifié pour ${d.month}`);
+    if (d.items) toast.success(`${d.created} programme(s) planifié(s) : ${d.items.map((p) => p.month).join(', ')}`);
+    else toast.success(`Programme « ${d.theme} » planifié pour ${d.month}`);
     load();
   };
 
@@ -94,9 +97,13 @@ export const ParrainiaPanel = () => {
           <p className="text-xs font-semibold text-white/70 flex items-center gap-1.5">
             <CalendarPlus size={13} className="text-[#D9B35A]" /> Programmes de parrainage créés par l'IA (programmés pour diffusion)
           </p>
-          <button onClick={createProgram} disabled={!!running} data-testid="parrainia-create-program-btn"
+          <button onClick={() => createProgram(1)} disabled={!!running} data-testid="parrainia-create-program-btn"
             className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 bg-[#D9B35A]/15 border border-[#D9B35A]/30 text-[#E9CF8E] disabled:opacity-60">
-            {running === 'program' ? <Loader2 size={11} className="animate-spin" /> : <CalendarPlus size={11} />} Créer le programme du mois prochain
+            {running === 'program' ? <Loader2 size={11} className="animate-spin" /> : <CalendarPlus size={11} />} Mois prochain
+          </button>
+          <button onClick={() => createProgram(3)} disabled={!!running} data-testid="parrainia-create-quarter-btn"
+            className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 bg-[#D9B35A]/15 border border-[#D9B35A]/30 text-[#E9CF8E] disabled:opacity-60">
+            {running === 'quarter' ? <Loader2 size={11} className="animate-spin" /> : <CalendarPlus size={11} />} Planifier le trimestre
           </button>
         </div>
         {programs.length === 0 ? (
@@ -128,11 +135,34 @@ export const ParrainiaPanel = () => {
               <span className="text-white/70 truncate flex-1">« {l.subject} »</span>
               <span className="text-white/45">{l.sent} envoyé(s)</span>
               <span className="text-white/35">{new Date(l.at).toLocaleDateString('fr-FR')}</span>
+              {l.kind === 'report' && l.analysis && (
+                <button onClick={() => setReading(l)} data-testid={`parrainia-read-report-${l.id}`}
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-sky-500/15 border border-sky-500/30 text-sky-300 hover:bg-sky-500/25 transition-colors">
+                  Lire
+                </button>
+              )}
               {l.triggered_by === 'parrainia-auto' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/50">AUTO</span>}
             </div>
           );
         })}
       </div>
+
+      {reading && (
+        <div className="fixed inset-0 z-[70] bg-black/70 flex items-center justify-center p-4" onClick={() => setReading(null)} data-testid="parrainia-report-modal">
+          <div className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl bg-[#1A092D] border border-white/15 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <FileBarChart size={14} className="text-sky-300" /> Bilan PARRAIN'IA — {reading.month}
+              </h4>
+              <button onClick={() => setReading(null)} data-testid="parrainia-report-modal-close"
+                className="text-white/50 hover:text-white text-lg leading-none">✕</button>
+            </div>
+            <p className="text-[11px] text-white/45 mb-3">{reading.sent} destinataire(s) · {new Date(reading.at).toLocaleString('fr-FR')}</p>
+            <div className="text-xs text-white/80 space-y-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-4 [&_li]:mb-1"
+              dangerouslySetInnerHTML={{ __html: reading.analysis }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

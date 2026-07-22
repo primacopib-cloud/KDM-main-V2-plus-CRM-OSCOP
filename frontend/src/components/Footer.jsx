@@ -203,9 +203,16 @@ const Footer = () => {
           </button>
           {quoteOpen && (
             <div className="px-4 sm:px-6 py-6 border-t border-[#D9B35A]/20" data-testid="footer-quote-form">
-              <p className="text-white/60 text-xs mb-4">
-                Contactez-nous pour rejoindre la Communityplace ESS — votre demande est transmise à notre équipe commerciale.
-              </p>
+              <div className="text-center mb-6">
+                <span className="badge-status mb-3 inline-flex">
+                  <span className="dot"></span>
+                  Formulaire de contact
+                </span>
+                <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2 text-white">Demande de Devis</h3>
+                <p className="text-white/70 text-sm">
+                  Contactez-nous pour rejoindre la Communityplace ESS — votre demande est transmise à notre équipe commerciale.
+                </p>
+              </div>
               <div className="max-w-3xl mx-auto">
                 <ContactForm />
               </div>
