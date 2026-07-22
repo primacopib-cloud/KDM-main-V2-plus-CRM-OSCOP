@@ -537,6 +537,15 @@ app.include_router(social_public_router)
 from weekly_report import weekly_report_router, set_weekly_report_database
 set_weekly_report_database(db)
 app.include_router(weekly_report_router)
+from routes_cod import cod_router, set_cod_database
+set_cod_database(db)
+app.include_router(cod_router)
+from ventia_service import ventia_router, set_ventia_database
+set_ventia_database(db)
+app.include_router(ventia_router)
+from prospectia_pipeline import pipeline_router, set_pipeline_database
+set_pipeline_database(db)
+app.include_router(pipeline_router)
 
 from encheria_service import set_encheria_database
 set_encheria_database(db)

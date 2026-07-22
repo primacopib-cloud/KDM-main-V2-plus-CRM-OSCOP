@@ -82,6 +82,8 @@ export const SocialProofPanel = () => {
                 </span>
                 <span className={`px-2 py-0.5 rounded font-semibold ${BADGE[t.status]}`}>{LABEL[t.status]}</span>
                 {t.polished && <span className="px-1.5 py-0.5 rounded bg-purple-400/15 text-purple-300">✨ Reformulé IA</span>}
+                {t.verified_member && <span className="px-1.5 py-0.5 rounded bg-emerald-400/15 text-emerald-300">✔ Membre vérifié</span>}
+                {t.text_en && <span className="px-1.5 py-0.5 rounded bg-blue-400/15 text-blue-300">🌐 EN/ES</span>}
                 <div className="ml-auto flex gap-1">
                   {t.status !== 'approved' && (
                     <button onClick={() => moderate(t, 'approved')} data-testid={`testimonial-approve-${t.id}`}

@@ -12,7 +12,7 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { formatCurrency, MIN_INSTALLMENT_CENTS } from './checkoutUtils';
 
-export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstallment, paymentMethod, setPaymentMethod, orderNotes, setOrderNotes, signatureComplete, processingPayment, handlePayment }) => (
+export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstallment, paymentMethod, setPaymentMethod, orderNotes, setOrderNotes, signatureComplete, processingPayment, handlePayment, codEligible = false }) => (
   <>
             {/* Step 4: Payment */}
             {currentStep === 4 && (
@@ -116,6 +116,36 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                         <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">SEPA</Badge>
                       </div>
                     </div>
+
+                    {/* Paiement à la livraison (COD) — acheteurs Pro abonnés */}
+                    {codEligible && (
+                      <div className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        !useInstallment && paymentMethod === 'cod'
+                          ? 'border-emerald-500 bg-emerald-500/10'
+                          : 'border-white/[0.08] bg-white/[0.02] hover:border-white/20'
+                      }`}
+                        onClick={() => { setUseInstallment(false); setPaymentMethod('cod'); }}
+                        data-testid="cod-payment-option"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={!useInstallment && paymentMethod === 'cod'}
+                            onCheckedChange={() => { setUseInstallment(false); setPaymentMethod('cod'); }}
+                            className="border-white/30"
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium text-white flex items-center gap-2">
+                              <Truck className="w-4 h-4 text-emerald-400" />
+                              Paiement à la livraison
+                            </p>
+                            <p className="text-xs text-white/50 mt-1">
+                              Commandez en toute sérénité : réglez uniquement à réception de vos marchandises. Avantage exclusif membres Pro abonnés.
+                            </p>
+                          </div>
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Pro abonné</Badge>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -165,6 +195,11 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         {i18n.t('checkout.traitement_en_cours')}
+                      </>
+                    ) : paymentMethod === 'cod' && !useInstallment ? (
+                      <>
+                        <Truck className="w-4 h-4 mr-2" />
+                        Confirmer — je règle {formatCurrency(totals.totalTTC)} à la livraison
                       </>
                     ) : (
                       <>

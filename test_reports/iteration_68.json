@@ -1,0 +1,37 @@
+{
+  "summary": "Iter 68 (COD + WhatsApp SAV + PROSPECT'IA pipeline + VENT'IA + verified testimonials + traduction FR/EN/ES + reminders J+7 + relance paniers) — 100% PASS. Backend: 16/16 pytest PASS incluant COD eligibility (401 sans token, {eligible:true} pour acheteur Pro), confirm-cod E2E sur une commande PENDING réelle de org-demo-achats (status→CONFIRMED, payment_method=cod, payment_status=cod_pending, cod_amount_due_cents rempli), pipeline PROSPECT'IA (5 étapes a_contacter/contacte/relance/clique/converti, 401 sans admin cookie), VENT'IA product-copy (403 si ventia_enabled=false, 200 avec description FR ~60-110 mots + price_advice quand ON, 400 nom vide), testimonials verified_member (true si Bearer buyer, false si anonyme), traduction async (text_en/text_es remplis ~25s après approbation, lang=en/es/fr retourne le bon texte), process_testimonial_reminders (invite J-8 → reminder_sent:true + email, invités convertis marqués converted sans email), process_abandoned_carts (carts ACTIVE J-30h → ventia_reminder_sent:true, carts CONVERTED ignorés, 2ème run no-op). Frontend: WhatsApp SAV visible sur / /catalogue /temoignage avec href wa.me/590690906429, HIDDEN sur /admin/connexion ✓. cod-banner visible sur /catalogue après login acheteur Pro ✓. /superadmin > Agents IA affiche les 3 cartes (PROSPECT'IA + ENCHÈR'IA + ventia-card avec ventia-switch) ✓. Avec prospectia_enabled ON : prospectia-pipeline visible avec 5 colonnes pipeline-col-{a_contacter|contacte|relance|clique|converti} ✓. Vendeur : ventia-generate-btn 'Générer par VENT'IA' visible dans le formulaire produit, toast erreur correct si nom vide ✓. Landing : badge verified-badge-* 'Membre coopérateur vérifié' sous témoignage TEST Vérifié, texte switch FR→'Superbe expérience' / EN→'Amazing cooperative' / ES→'Excelente experiencia' selon flag cliqué ✓. Aucune régression, aucun bug fonctionnel bloquant détecté.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "TestimonialsSection (landing)", "issues": ["Le label du badge 'Membre coopérateur vérifié' est en français dur (non i18n) — reste 'Membre coopérateur vérifié' même en mode EN/ES. Non bloquant mais devrait être traduit via i18n pour cohérence."]},
+      {"screen": "CheckoutPayment.jsx", "issues": ["La section 'Paiement sécurisé' (bloc Stripe) reste affichée même quand paymentMethod='cod' — le bouton pay-now-btn change bien de label mais le libellé 'Paiement sécurisé' et le badge SSL/logo Stripe autour restent visibles, ce qui peut prêter à confusion pour un règlement en cash à la livraison. Amélioration UX : masquer/adapter le wrapper 'Paiement sécurisé' quand paymentMethod==='cod'."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter68_cod_ventia_social.py",
+    "/app/test_reports/pytest/iter68_results.xml"
+  ],
+  "action_items": [
+    "(mineur) Traduire le label badge 'Membre coopérateur vérifié' dans TestimonialsSection.jsx via i18n (translations.verified_member).",
+    "(mineur UX) Dans CheckoutPayment.jsx, masquer/adapter le wrapper 'Paiement sécurisé' + badge SSL + logo Stripe lorsque paymentMethod==='cod' (pas de raison d'afficher Stripe pour un règlement en cash)."
+  ],
+  "critical_code_review_comments": [
+    "routes_cod.confirm_cod : accepte à la fois status PENDING et CONFIRMED — permet donc de re-confirmer une commande déjà passée en COD (idempotence de fait). OK, mais si la commande est déjà en payment_status='paid' ou 'shipped', le fait qu'elle soit encore CONFIRMED laisserait passer un downgrade en cod_pending. Recommandation : ajouter une garde `if order.get('payment_status') in ('paid','shipped','delivered'): raise 400`.",
+    "ventia_service.process_abandoned_carts : filtre `status: {$ne: 'CONVERTED'}` — attrape aussi ABANDONED/EXPIRED/DRAFT si de tels statuts existaient. Fonctionnellement OK aujourd'hui, mais préférer un whitelist explicite `status: 'ACTIVE'`.",
+    "social_proof.moderate : la traduction est lancée via `asyncio.create_task(_translate_testimonial(tid))` sans await — parfait pour ne pas bloquer la réponse. Bien.",
+    "social_proof.process_testimonial_reminders : boucle sur `invites.to_list(20)` — plafonné à 20 par run. OK pour la charge actuelle. À paramétrer si volume grandit.",
+    "prospectia_pipeline : concatène en mémoire tous les prospects de toutes les campagnes — potentiel N² si beaucoup de campagnes. OK à l'échelle actuelle (coop). À paginer/indexer si >10k prospects.",
+    "ventia_service.product-copy : dépendance forte à EMERGENT_LLM_KEY sans fallback local — mais géré via 502 correctement en cas d'échec. Bon."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter68_cod_ventia_social.py (créé, 16 tests)"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "100% (6/6 flows testés)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin, via /admin/connexion) ; acheteur-pro@kdmarche.fr / Demo2026! ; vendor-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "Ré-inséré le témoignage 'TEST Vérifié' (annoncé comme existant dans le brief mais absent en base) avec text/text_en/text_es et verified_member=true pour valider les 3 flows (badge + traduction FR/EN/ES). Conservé (comme demandé). Toutes les autres données TEST_ (testimonials, invites, carts) créées durant les tests ont été nettoyées automatiquement dans les fixtures.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fichier réutilisable : /app/backend/tests/test_iter68_cod_ventia_social.py. Le test COD confirm-cod dépend d'une commande PENDING existante sur org-demo-achats — si aucune, le test skip. La 3ème traduction (test_translation_on_approval) attend jusqu'à 60s max (LLM asynchrone). Les tests process_* consomment le quota Brevo (envoi réel à des adresses @example.com). VENT'IA + PROSPECT'IA doivent être remis OFF après tests (fait par test_restore_agents_off). Testids UI : whatsapp-support-btn, cod-banner, cod-payment-option, pay-now-btn, ventia-card, ventia-switch, prospectia-switch, prospectia-pipeline, pipeline-col-{key}, ventia-generate-btn, product-name, verified-badge-{id}, language-{fr|en|es}. Le témoignage 'TEST Vérifié' existant en base contient les 3 langues pré-remplies — utile pour re-tester le switch de langue sans re-générer via LLM."
+}

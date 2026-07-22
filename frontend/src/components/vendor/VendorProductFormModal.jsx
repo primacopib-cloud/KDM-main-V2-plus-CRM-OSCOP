@@ -33,6 +33,27 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
   const [categories, setCategories] = useState(CATEGORIES);
   const [tvaRates, setTvaRates] = useState(TVA_RATES);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const generateAICopy = async () => {
+    if (!formData.name.trim()) return toast.error("Renseignez d'abord le nom du produit");
+    setAiLoading(true);
+    try {
+      const r = await fetch(`${API_URL}/api/vendor/ai/product-copy`, {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: formData.name, category: formData.category, brand: formData.brand, region: formData.region_of_origin }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Génération impossible');
+      setFormData((prev) => ({ ...prev, description: d.description }));
+      if (d.price_advice) toast.info(`VENT'IA — Conseil prix : ${d.price_advice}`, { duration: 9000 });
+      toast.success("Description générée par VENT'IA");
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -189,7 +210,14 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
                 />
               </div>
               <div className="col-span-2">
-                <Label htmlFor="description">{i18n.t('adm.description_2')}</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="description">{i18n.t('adm.description_2')}</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={generateAICopy} disabled={aiLoading}
+                    className="h-7 px-2 text-xs" data-testid="ventia-generate-btn">
+                    {aiLoading ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <TrendingUp className="w-3 h-3 mr-1" />}
+                    Générer par VENT'IA
+                  </Button>
+                </div>
                 <Textarea
                   id="description"
                   value={formData.description}

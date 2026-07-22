@@ -17,7 +17,7 @@ export default function TestimonialPage() {
     if (!form.name.trim() || form.text.trim().length < 15) return toast.error('Nom et témoignage (15 caractères min.) requis');
     setSending(true);
     const r = await fetch(`${API}/public/testimonials`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form),
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form),
     });
     const d = await r.json();
     setSending(false);

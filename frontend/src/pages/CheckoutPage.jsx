@@ -79,6 +79,12 @@ export default function CheckoutPage() {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [stripeSessionUrl, setStripeSessionUrl] = useState(null);
+  const [codEligible, setCodEligible] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/v2/checkout/cod-eligibility`, { headers: { Authorization: `Bearer ${getSessionToken()}` } })
+      .then((r) => r.json()).then((d) => setCodEligible(!!d.eligible)).catch(() => {});
+  }, []);
 
   // Build products from cart for DynamicOrderForm
   const products = cart?.items?.map(item => ({
@@ -220,6 +226,23 @@ export default function CheckoutPage() {
     setProcessingPayment(true);
     
     try {
+      if (paymentMethod === 'cod') {
+        const order = await ordersAPIV2.create(cart.id, selectedPickup, orderNotes, false);
+        const codResp = await fetch(`${API_URL}/api/v2/checkout/confirm-cod?order_id=${order.id}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${getSessionToken()}` },
+        });
+        if (!codResp.ok) {
+          const err = await codResp.json().catch(() => ({}));
+          throw new Error(err.detail || 'Paiement à la livraison indisponible');
+        }
+        setOrderCreated(order);
+        setPaymentSuccess(true);
+        toast.success('Commande confirmée — règlement à la livraison de vos marchandises');
+        setTimeout(() => navigate('/espace-acheteur?payment=success'), 2000);
+        return;
+      }
+
       // 1. Create the order first
       const order = await ordersAPIV2.create(
         cart.id, 
@@ -425,7 +448,7 @@ export default function CheckoutPage() {
             <DeliveryStep currentStep={currentStep} cart={cart} zones={zones} selectedZone={selectedZone} setSelectedZone={setSelectedZone} deliveryOption={deliveryOption} setDeliveryOption={setDeliveryOption} transportContractAccepted={transportContractAccepted} setTransportContractAccepted={setTransportContractAccepted} />
             <PreparationStep currentStep={currentStep} user={user} products={products} selectedZone={selectedZone} handleTotalsChange={handleTotalsChange} handlePreparationChange={handlePreparationChange} />
             <SignatureStep currentStep={currentStep} signatureComplete={signatureComplete} signatureData={signatureData} setSignatureModalOpen={setSignatureModalOpen} />
-            <PaymentStep currentStep={currentStep} totals={totals} useInstallment={useInstallment} setUseInstallment={setUseInstallment} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} orderNotes={orderNotes} setOrderNotes={setOrderNotes} signatureComplete={signatureComplete} processingPayment={processingPayment} handlePayment={handlePayment} />
+            <PaymentStep currentStep={currentStep} totals={totals} useInstallment={useInstallment} setUseInstallment={setUseInstallment} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} orderNotes={orderNotes} setOrderNotes={setOrderNotes} signatureComplete={signatureComplete} processingPayment={processingPayment} handlePayment={handlePayment} codEligible={codEligible} />
           </div>
 
           <OrderSummarySidebar currentStep={currentStep} totals={totals} signatureComplete={signatureComplete} submitting={submitting} setCurrentStep={setCurrentStep} handleSubmitOrder={handleSubmitOrder} nextStep={nextStep} />

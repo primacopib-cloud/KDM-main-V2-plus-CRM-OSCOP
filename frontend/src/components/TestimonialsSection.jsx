@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Star, Quote } from 'lucide-react';
+import { Star, Quote, BadgeCheck } from 'lucide-react';
+import i18n from '@/i18n';
 
 export const TestimonialsSection = () => {
   const [items, setItems] = useState([]);
+  const lang = (i18n.language || 'fr').slice(0, 2);
 
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/testimonials`)
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/testimonials?lang=${lang}`)
       .then((r) => r.json()).then((d) => setItems(d.items || [])).catch(() => {});
-  }, []);
+  }, [lang]);
 
   if (!items.length) return null;
   return (
@@ -31,7 +33,15 @@ export const TestimonialsSection = () => {
                 <div className="flex items-center gap-1 text-[#E9CF8E] mb-1">
                   {Array.from({ length: t.rating || 5 }).map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
                 </div>
-                <p className="text-sm text-white font-semibold">{t.name}</p>
+                <p className="text-sm text-white font-semibold flex items-center gap-1.5">
+                  {t.name}
+                  {t.verified_member && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-400/15 text-emerald-300 text-[10px] font-medium"
+                      data-testid={`verified-badge-${t.id}`}>
+                      <BadgeCheck size={11} /> Membre coopérateur vérifié
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-white/50">
                   {[t.role, t.company, t.territory].filter(Boolean).join(' · ')}
                 </p>

@@ -190,6 +190,16 @@ async def _scheduler_loop():
             await send_weekly_activity_report(_db)
         except Exception as exc:
             logger.exception("Scheduler weekly activity report crashed: %s", exc)
+        try:
+            from ventia_service import process_abandoned_carts
+            await process_abandoned_carts(_db)
+        except Exception as exc:
+            logger.exception("Scheduler ventia carts crashed: %s", exc)
+        try:
+            from social_proof import process_testimonial_reminders
+            await process_testimonial_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler testimonial reminders crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

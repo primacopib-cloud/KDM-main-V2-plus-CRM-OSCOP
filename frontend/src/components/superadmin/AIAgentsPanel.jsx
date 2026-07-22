@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Bot, Sparkles, Gavel, Loader2 } from 'lucide-react';
+import { Bot, Sparkles, Gavel, Loader2, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '../ui/switch';
 import { ProspectiaStudio } from './ProspectiaStudio';
 import { SocialProofPanel } from './SocialProofPanel';
+import { ProspectiaPipeline } from './ProspectiaPipeline';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -34,7 +35,7 @@ export const AIAgentsPanel = () => {
 
   return (
     <div className="space-y-6" data-testid="ai-agents-panel">
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
         <div className="glass-panel-soft rounded-[18px] p-5" data-testid="prospectia-card">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-display text-lg text-white flex items-center gap-2">
@@ -44,9 +45,9 @@ export const AIAgentsPanel = () => {
               onCheckedChange={(v) => toggle('prospectia_enabled', v)} data-testid="prospectia-switch" />
           </div>
           <p className="text-xs text-white/50">
-            Agent de prospection autonome : rédige emails, messages et scripts vidéo (avec storyboard illustré),
-            envoie seul vos campagnes (A/B test, relances J+3/J+7, clics traqués) et gère la preuve sociale
-            (collecte et reformulation de témoignages membres).
+            Agent de prospection autonome : rédige emails, messages et scripts vidéo (storyboard illustré),
+            envoie seul vos campagnes (A/B test, relances J+3/J+7, pipeline de vente organisé) et gère la preuve
+            sociale (témoignages : invitation, relance J+7, reformulation, traduction EN/ES).
           </p>
         </div>
         <div className="glass-panel-soft rounded-[18px] p-5" data-testid="encheria-card">
@@ -62,8 +63,22 @@ export const AIAgentsPanel = () => {
             puis produit un rapport d'adjudication IA (analyse des offres, risques, recommandation) à la clôture.
           </p>
         </div>
+        <div className="glass-panel-soft rounded-[18px] p-5" data-testid="ventia-card">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-display text-lg text-white flex items-center gap-2">
+              <Store size={16} style={{ color: '#D9B35A' }} /> VENT'IA
+            </h3>
+            <Switch checked={!!settings.ventia_enabled}
+              onCheckedChange={(v) => toggle('ventia_enabled', v)} data-testid="ventia-switch" />
+          </div>
+          <p className="text-xs text-white/50">
+            Assistant de vente des vendeurs : génère les descriptions produits et conseils de prix par IA
+            dans le formulaire produit, et relance automatiquement par email les paniers abandonnés depuis 24h.
+          </p>
+        </div>
       </div>
 
+      {settings.prospectia_enabled && <ProspectiaPipeline />}
       {settings.prospectia_enabled && <ProspectiaStudio />}
       {settings.prospectia_enabled && <SocialProofPanel />}
 

@@ -1,11 +1,12 @@
-"""PROSPECT'IA — Preuve sociale : témoignages membres (collecte IA, modération, affichage public)."""
+"""PROSPECT'IA — Preuve sociale : témoignages membres (collecte IA, modération, traduction, affichage public)."""
+import asyncio
 import logging
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from lolodrive_helpers import require_admin
@@ -40,27 +41,46 @@ class InviteBody(BaseModel):
 
 
 @social_public_router.post("")
-async def submit_testimonial(body: TestimonialSubmit):
+async def submit_testimonial(body: TestimonialSubmit, request: Request):
     if len(body.text.strip()) < 15:
         raise HTTPException(status_code=400, detail="Témoignage trop court (15 caractères minimum)")
+    verified = False
+    email = (body.email or "").strip().lower()[:120]
+    try:
+        from auth import extract_user_id_from_request
+        uid = extract_user_id_from_request(request)
+        if uid:
+            u = await db.users.find_one({"id": uid}, {"email": 1})
+            if u:
+                verified = True
+                email = email or u.get("email", "")
+    except Exception:
+        pass
     doc = {
         "id": str(uuid.uuid4()), "name": body.name.strip()[:80], "company": (body.company or "").strip()[:80],
         "role": (body.role or "").strip()[:80], "territory": (body.territory or "").strip()[:60],
-        "email": (body.email or "").strip().lower()[:120],
-        "rating": max(1, min(5, body.rating)), "text": body.text.strip()[:900],
-        "status": "pending", "source": "public",
+        "email": email, "rating": max(1, min(5, body.rating)), "text": body.text.strip()[:900],
+        "status": "pending", "source": "public", "verified_member": verified,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.testimonials.insert_one({**doc})
-    return {"ok": True, "message": "Merci ! Votre témoignage sera publié après modération."}
+    return {"ok": True, "verified_member": verified, "message": "Merci ! Votre témoignage sera publié après modération."}
 
 
 @social_public_router.get("")
-async def public_testimonials():
+async def public_testimonials(lang: str = "fr"):
     items = await db.testimonials.find(
         {"status": "approved"},
-        {"_id": 0, "id": 1, "name": 1, "company": 1, "role": 1, "territory": 1, "rating": 1, "text": 1},
+        {"_id": 0, "id": 1, "name": 1, "company": 1, "role": 1, "territory": 1, "rating": 1,
+         "text": 1, "text_en": 1, "text_es": 1, "verified_member": 1},
     ).sort("created_at", -1).to_list(12)
+    for t in items:
+        if lang == "en" and t.get("text_en"):
+            t["text"] = t["text_en"]
+        elif lang == "es" and t.get("text_es"):
+            t["text"] = t["text_es"]
+        t.pop("text_en", None)
+        t.pop("text_es", None)
     return {"items": items}
 
 
@@ -71,6 +91,33 @@ async def list_all(admin: dict = Depends(require_admin)):
     return {"items": items, "invited_count": invited}
 
 
+async def _translate_testimonial(tid: str) -> None:
+    """Traduit le témoignage en EN et ES (stocké en text_en / text_es)."""
+    t = await db.testimonials.find_one({"id": tid}, {"text": 1})
+    if not t:
+        return
+    import json as _json
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    try:
+        chat = LlmChat(
+            api_key=os.environ["EMERGENT_LLM_KEY"],
+            session_id=f"social-translate-{uuid.uuid4()}",
+            system_message="Tu es traducteur professionnel. Réponds UNIQUEMENT en JSON valide.",
+        ).with_model("openai", "gpt-5.4")
+        raw = str(await chat.send_message(UserMessage(text=(
+            f"Traduis ce témoignage client en anglais et en espagnol (naturel, première personne) :\n{t['text']}\n\n"
+            'JSON brut avec les clés "en" et "es" uniquement, sans markdown.')))).strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1].lstrip("json").strip()
+        data = _json.loads(raw)
+        await db.testimonials.update_one(
+            {"id": tid}, {"$set": {"text_en": (data.get("en") or "").strip()[:900],
+                                   "text_es": (data.get("es") or "").strip()[:900]}})
+        logger.info("Témoignage %s traduit EN/ES", tid)
+    except Exception as exc:
+        logger.error("Traduction témoignage %s échouée : %s", tid, exc)
+
+
 @social_admin_router.patch("/testimonials/{tid}")
 async def moderate(tid: str, body: ModerateBody, admin: dict = Depends(require_admin)):
     if body.status not in ("approved", "rejected", "pending"):
@@ -78,6 +125,8 @@ async def moderate(tid: str, body: ModerateBody, admin: dict = Depends(require_a
     res = await db.testimonials.update_one({"id": tid}, {"$set": {"status": body.status}})
     if not res.matched_count:
         raise HTTPException(status_code=404, detail="Témoignage introuvable")
+    if body.status == "approved":
+        asyncio.create_task(_translate_testimonial(tid))
     from consultation_audit import audit
     await audit("TESTIMONIAL_MODERATED", admin.get("email"), None, {"id": tid, "status": body.status})
     return {"ok": True}
@@ -106,6 +155,8 @@ async def polish(tid: str, admin: dict = Depends(require_admin)):
     await db.testimonials.update_one(
         {"id": tid},
         {"$set": {"text": polished[:900], "text_original": t.get("text_original") or t["text"], "polished": True}})
+    if t.get("status") == "approved":
+        asyncio.create_task(_translate_testimonial(tid))
     from consultation_audit import audit
     await audit("TESTIMONIAL_POLISHED", admin.get("email"), None, {"id": tid})
     return {"ok": True, "text": polished}
@@ -124,6 +175,12 @@ async def _generate_invite_email() -> str:
     return str(await chat.send_message(UserMessage(text=prompt))).strip()
 
 
+def _invite_html(body_text: str, link: str) -> str:
+    return ("<div style='font-family:Arial,sans-serif;max-width:560px;white-space:pre-line'>" + body_text.replace("{lien}", link) +
+            f"<p style='margin-top:16px'><a href='{link}' style='background:#5B2E8C;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none'>Laisser mon témoignage</a></p>"
+            "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP — Communityplace B2B ESS des Outre-mer</p></div>")
+
+
 @social_admin_router.post("/invite")
 async def invite_members(body: InviteBody, admin: dict = Depends(require_admin)):
     await _require_prospectia()
@@ -137,11 +194,7 @@ async def invite_members(body: InviteBody, admin: dict = Depends(require_admin))
         return {"ok": True, "sent": 0, "message": "Aucun nouveau membre à inviter"}
     template = await _generate_invite_email()
     base = os.environ.get("FRONTEND_URL", "").rstrip("/")
-    link = f"{base}/temoignage"
-    html_body = template.replace("{lien}", link)
-    html = ("<div style='font-family:Arial,sans-serif;max-width:560px;white-space:pre-line'>" + html_body +
-            f"<p style='margin-top:16px'><a href='{link}' style='background:#5B2E8C;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none'>Laisser mon témoignage</a></p>"
-            "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP — Communityplace B2B ESS des Outre-mer</p></div>")
+    html = _invite_html(template, f"{base}/temoignage")
     from brevo_service import send_email
     sent = 0
     for u in users:
@@ -156,3 +209,41 @@ async def invite_members(body: InviteBody, admin: dict = Depends(require_admin))
     from consultation_audit import audit
     await audit("TESTIMONIAL_INVITES_SENT", admin.get("email"), None, {"sent": sent})
     return {"ok": True, "sent": sent, "template": template}
+
+
+async def process_testimonial_reminders(database) -> None:
+    """Relance J+7 des membres invités qui n'ont pas encore témoigné (une seule relance)."""
+    from ai_agents_settings import get_agents_settings
+    s = await get_agents_settings(database)
+    if not s.get("prospectia_enabled"):
+        return
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    invites = await database.testimonial_invites.find(
+        {"sent_at": {"$lt": cutoff}, "reminder_sent": {"$ne": True}}).to_list(20)
+    if not invites:
+        return
+    testified = {t["email"] async for t in database.testimonials.find({"email": {"$ne": ""}}, {"email": 1})}
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    link = f"{base}/temoignage"
+    html = ("<div style='font-family:Arial,sans-serif;max-width:560px'>"
+            "<p>Bonjour,</p><p>Il y a quelques jours, nous vous invitions à partager votre expérience sur la "
+            "Communityplace KDMARCHÉ × O'SCOP. Votre avis compte énormément pour la coopérative et les futurs membres — "
+            "2 minutes suffisent.</p>"
+            f"<p><a href='{link}' style='background:#5B2E8C;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none'>Laisser mon témoignage</a></p>"
+            "<p style='color:#999;font-size:10px;margin-top:18px'>PROSPECT'IA — KDMARCHÉ × O'SCOP</p></div>")
+    from brevo_service import send_email
+    sent = 0
+    for inv in invites:
+        if inv["email"] in testified:
+            await database.testimonial_invites.update_one({"_id": inv["_id"]}, {"$set": {"reminder_sent": True, "converted": True}})
+            continue
+        try:
+            await send_email(to_email=inv["email"], to_name=None,
+                             subject="Un petit rappel — votre témoignage compte 💜",
+                             html_content=html, tags=["testimonial-reminder"])
+            sent += 1
+        except Exception as exc:
+            logger.warning("Relance témoignage échouée %s : %s", inv["email"], exc)
+        await database.testimonial_invites.update_one({"_id": inv["_id"]}, {"$set": {"reminder_sent": True}})
+    if sent:
+        logger.info("PROSPECT'IA : %s relance(s) témoignage J+7 envoyées", sent)

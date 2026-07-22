@@ -43,6 +43,7 @@ import NotificationsHistoryPage from "./pages/NotificationsHistoryPage";
 import AiChatPage from "./pages/AiChatPage";
 import VendorOnboardingPage from "./pages/VendorOnboardingPage";
 import TestimonialPage from "./pages/TestimonialPage";
+import { WhatsAppSupport } from "./components/WhatsAppSupport";
 import VendorActivationPage from "./pages/VendorActivationPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import ShoppingListsPage from "./pages/ShoppingListsPage";
@@ -203,6 +204,7 @@ function App() {
           <Route path="/paiement/retour" element={<PaymentReturnPage />} />
           <Route path="/paiement/annule" element={<PaymentReturnPage />} />
         </Routes>
+        <WhatsAppSupport />
       </BrowserRouter>
       <Toaster position="top-right" richColors />
     </div>

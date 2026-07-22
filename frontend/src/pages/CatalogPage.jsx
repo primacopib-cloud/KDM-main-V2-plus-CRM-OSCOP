@@ -376,6 +376,15 @@ export default function CatalogPage() {
           ))}
         </div>
 
+        {/* Paiement à la livraison — phrase de séduction */}
+        <div className="mb-6 p-4 rounded-xl border border-[#D9B35A]/30" style={{ background: 'linear-gradient(90deg, rgba(217,179,90,0.16), rgba(217,179,90,0.03))' }} data-testid="cod-banner">
+          <p className="text-sm text-white">
+            <strong className="text-[#D9B35A]">🛡️ Paiement à la livraison</strong> — Commandez en toute sérénité :
+            en tant qu'acheteur Pro abonné, vous ne réglez vos marchandises qu'à réception. Zéro avance de trésorerie,
+            100 % confiance coopérative.
+          </p>
+        </div>
+
         {/* Access Warning */}
         {products.length > 0 && !products[0].price_visible && (
           <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
