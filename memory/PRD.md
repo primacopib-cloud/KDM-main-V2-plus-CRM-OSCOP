@@ -1272,3 +1272,12 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - UI : AIAgentsPanel.jsx + ProspectiaStudio.jsx (studio génération, storyboard, lancement campagne, liste campagnes)
 - Testé E2E : génération email+vidéo réelles, campagne 1/1 envoyée, clic traqué (307→/adhesion, compteur), 3 images storyboard générées, relance J-2 flag OK, rapport IA généré (conservé en démo), 403 quand agent OFF
 - BUG FIXÉ : `database or db` interdit avec Motor Database (bool() non implémenté) → `if database is not None`
+
+## 2026-07-22 — Lot PROSPECT'IA avancé : A/B validé + Bibliothèque + Preuve sociale + Rapport hebdo (testé iter 67 : backend 21/21, frontend 5/5)
+- A/B testing PROSPECT'IA validé E2E : generate_campaign_extras (subject_b + relances J+3/J+7 LLM) génère un JSON propre, campagnes alternent variantes A/B
+- Bibliothèque de scripts : prospectia_library.py (POST/GET/DELETE /api/admin/prospectia/library) — sauvegarde des scripts générés, stats agrégées par campagne (campaigns_count, total_sent, total_clicks, click_rate, tri par taux de clic), library_id lié aux campagnes ; UI ProspectiaLibrary.jsx (réutiliser/supprimer) + bouton "Sauvegarder dans la bibliothèque" dans le Studio
+- Preuve sociale (PROSPECT'IA) : social_proof.py — page publique /temoignage (TestimonialPage.jsx, formulaire nom/entreprise/fonction/territoire/note étoiles/texte ≥15 chars), modération SuperAdmin (SocialProofPanel.jsx : publier/rejeter/reformuler IA gpt-5.4 avec text_original conservé), invitation IA par email Brevo aux membres actifs vendor/buyer (dédup testimonial_invites), affichage landing TestimonialsSection.jsx (GET /api/public/testimonials, approved uniquement, email jamais exposé)
+- Rapport hebdo d'activité : weekly_report.py — chaque lundi (scheduler, idempotent system_flags week_key) email Brevo à QUOTE_NOTIFY_EMAIL (contact@objectifscopoutremer.com) : commandes, CA TTC, devis, nouveaux membres, consultations, témoignages, prospection (envois 7j/clics/conversions/campagnes actives) ; déclenchement manuel POST /api/admin/reports/weekly/send
+- Actions IA (polish, invite) gardées derrière prospectia_enabled (403 sinon) ; audits TESTIMONIAL_MODERATED/POLISHED/INVITES_SENT, PROSPECTIA_SCRIPT_SAVED
+- Un témoignage démo approuvé "Jean Testeur" reste publié sur la landing (à modérer/rejeter par l'admin si non désiré)
+- LEÇON RÉAPPRISE : éditions search_replace parallèles sur le MÊME fichier = pertes (states ProspectiaStudio + import AIAgentsPanel perdus, corrigés par testing agent iter 67)
