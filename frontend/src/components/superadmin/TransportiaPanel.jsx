@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Truck, Plus, Trash2, Send, Sparkles, Loader2, MessageCircleQuestion } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { PhoneInput } from '../PhoneInput';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const STATUS_LABELS = {
@@ -119,8 +120,7 @@ export const TransportiaPanel = () => {
           onChange={(e) => setForm({ ...form, contact_name: e.target.value })} />
         <input className={`${inputCls} w-44`} placeholder="Email *" value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })} data-testid="transportia-email-input" />
-        <input className={`${inputCls} w-28`} placeholder="Téléphone" value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+        <PhoneInput value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} testId="transportia-phone-input" />
         <select className={`${inputCls} w-32`} value={form.territory}
           onChange={(e) => setForm({ ...form, territory: e.target.value })}>
           {TERRITORIES.map((t) => <option key={t} value={t}>{t}</option>)}

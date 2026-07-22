@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
-import { Sparkles, Camera, ScanBarcode, ImagePlus, Loader2 } from 'lucide-react';
+import { Sparkles, Camera, ScanBarcode, ImagePlus, Loader2, Video } from 'lucide-react';
 import { toast } from 'sonner';
+import { BarcodeScanner } from './BarcodeScanner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -29,6 +30,7 @@ export const AiProductAssistant = ({ formData, onApply }) => {
   const [scanning, setScanning] = useState(false);
   const [imgLoading, setImgLoading] = useState(false);
   const [offImage, setOffImage] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const scan = async () => {
     if (!photo && !ean.trim()) return toast.error('Ajoutez une photo du produit ou saisissez un code EAN');
@@ -94,6 +96,11 @@ export const AiProductAssistant = ({ formData, onApply }) => {
           <input value={ean} onChange={(e) => setEan(e.target.value.replace(/\D/g, ''))} placeholder="Code-barres EAN"
             data-testid="ai-scan-ean-input"
             className="h-9 w-36 px-2.5 rounded-lg text-xs text-white bg-white/[0.05] border border-white/15 font-mono" />
+          <button type="button" onClick={() => setScannerOpen(true)} data-testid="ai-scan-camera-btn"
+            title="Scanner le code-barres avec la caméra"
+            className="p-2 rounded-lg bg-white/[0.06] border border-white/15 text-white/70 hover:text-white transition-colors">
+            <Video className="w-4 h-4" />
+          </button>
         </div>
         <button type="button" onClick={scan} disabled={scanning} data-testid="ai-scan-btn"
           className="px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 disabled:opacity-60"
@@ -119,6 +126,7 @@ export const AiProductAssistant = ({ formData, onApply }) => {
         Photo (le code-barres est lu automatiquement s'il est visible) et/ou EAN → l'IA remplit nom, marque,
         descriptions, catégorie, nutrition et les tags de recherche du catalogue.
       </p>
+      <BarcodeScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onDetect={(code) => setEan(code)} />
     </div>
   );
 };

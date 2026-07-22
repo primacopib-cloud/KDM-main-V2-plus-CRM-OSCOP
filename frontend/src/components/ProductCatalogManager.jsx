@@ -17,6 +17,7 @@ import { CATEGORIES, ZONES, COUNTRIES, getEmptyProduct, formatPrice } from './ca
 import { BasicTab, PricingTab } from './catalog-manager/BasicPricingTabs';
 import { FoodTab, TechnicalTab, LogisticsTab } from './catalog-manager/SpecializedTabs';
 import { AiProductAssistant } from './catalog-manager/AiProductAssistant';
+import { BulkEanImport } from './catalog-manager/BulkEanImport';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -298,10 +299,13 @@ export default function ProductCatalogManager({ onProductSaved }) {
           </h2>
           <p className="text-sm text-white/50">{products.length} produits</p>
         </div>
-        <Button onClick={openNewProduct} className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black">
-          <Plus className="w-4 h-4 mr-2" />
-          Nouveau produit
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <BulkEanImport onDone={fetchProducts} />
+          <Button onClick={openNewProduct} className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black">
+            <Plus className="w-4 h-4 mr-2" />
+            Nouveau produit
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

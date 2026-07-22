@@ -132,3 +132,68 @@ async def ai_product_image(body: dict, admin: dict = Depends(require_admin)):
         raise HTTPException(status_code=502, detail="Génération d'image impossible — réessayez")
     await log_ai_usage(db, "product_image", f"{brand} {name}".strip())
     return {"image_url": url, "source": "generee"}
+
+
+async def _create_draft_from_fields(ean: str, fields: dict, off: dict) -> dict:
+    from datetime import datetime, timezone
+    sku = f"EAN-{ean}"
+    if await db.catalog_products.find_one({"$or": [{"sku": sku}, {"ean": ean}]}, {"id": 1}):
+        return {"ean": ean, "status": "existant", "name": fields.get("name")}
+    image_url = None
+    off_img = (off or {}).get("image_front_url")
+    if off_img:
+        try:
+            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+                r = await client.get(off_img)
+                r.raise_for_status()
+            up_dir = os.path.join(os.path.dirname(__file__), "uploads", "products")
+            os.makedirs(up_dir, exist_ok=True)
+            fname = f"off-{uuid.uuid4().hex[:8]}.jpg"
+            with open(os.path.join(up_dir, fname), "wb") as f:
+                f.write(r.content)
+            image_url = f"/api/uploads/products/{fname}"
+        except Exception:
+            pass
+    category = fields.get("category") if fields.get("category") in CATEGORY_VALUES else "alimentaire"
+    now = datetime.now(timezone.utc)
+    doc = {
+        "id": f"prod_{uuid.uuid4().hex[:12]}", "sku": sku, "ean": ean,
+        "name": fields.get("name") or f"Produit {ean}",
+        "short_description": fields.get("short_description"), "description": fields.get("description"),
+        "category": category, "subcategory": fields.get("subcategory"),
+        "tags": fields.get("tags") or [], "brand": fields.get("brand"),
+        "manufacturer": fields.get("manufacturer"), "status": "draft", "is_active": True,
+        "is_new": True, "is_featured": False, "unit_type": "piece",
+        "unit_label": fields.get("unit_label"),
+        "pricing": {"price_ht_cents": 0, "currency": "EUR",
+                    "tva_rate": 5.5 if category in ("alimentaire", "boissons") else 20},
+        "origin": {"country_code": fields.get("country_code") or "FR", "region": fields.get("region")},
+        "ingredients": fields.get("ingredients"), "image_url": image_url,
+        "created_at": now, "updated_at": now,
+    }
+    await db.catalog_products.insert_one(doc)
+    return {"ean": ean, "status": "cree", "name": doc["name"], "id": doc["id"], "image": bool(image_url)}
+
+
+@product_ai_router.post("/bulk-ai")
+async def bulk_ai_import(body: dict, admin: dict = Depends(require_admin)):
+    """Import en masse : liste de codes EAN → fiches produit brouillon créées par l'IA."""
+    raw = body.get("eans") or []
+    eans = list(dict.fromkeys(e.strip() for e in raw if e and e.strip().isdigit()))[:10]
+    if not eans:
+        raise HTTPException(status_code=400, detail="Fournissez au moins un code EAN valide (max 10)")
+    results = []
+    for ean in eans:
+        try:
+            off = await _off_lookup(ean)
+            if not off:
+                results.append({"ean": ean, "status": "introuvable"})
+                continue
+            fields = await _llm_extract(off, None, ean)
+            results.append(await _create_draft_from_fields(ean, fields, off))
+            await log_ai_usage(db, "product_scan", f"bulk {ean}")
+        except Exception as exc:
+            logger.error("Import EAN %s échoué : %s", ean, exc)
+            results.append({"ean": ean, "status": "erreur"})
+    created = sum(1 for r in results if r["status"] == "cree")
+    return {"results": results, "created": created, "total": len(eans)}

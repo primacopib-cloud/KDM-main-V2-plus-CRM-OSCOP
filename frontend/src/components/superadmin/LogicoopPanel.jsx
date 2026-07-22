@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Truck, Plus, Trash2, Power } from 'lucide-react';
+import { Truck, Plus, Trash2, Power, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { PhoneInput } from '../PhoneInput';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inp = 'h-9 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35';
@@ -87,7 +88,7 @@ export const LogicoopPanel = () => {
         <div className="flex flex-wrap gap-2">
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nom de l'opérateur" data-testid="logicoop-name-input" className={`${inp} flex-1 min-w-[160px]`} />
           <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email (compte d'accès)" data-testid="logicoop-email-input" className={`${inp} flex-1 min-w-[180px]`} />
-          <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Téléphone" data-testid="logicoop-phone-input" className={`${inp} w-36`} />
+          <PhoneInput value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} testId="logicoop-phone-input" />
         </div>
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[200px]">
@@ -132,20 +133,39 @@ export const LogicoopPanel = () => {
         {!ops.length && <p className="text-sm text-white/45 py-3">Aucun opérateur LOGICOOP pour l'instant.</p>}
       </div>
 
-      <RegisteredCarriers />
+      <RegisteredCarriers operators={ops} onPromoted={load} />
     </div>
   );
 };
 
-const RegisteredCarriers = () => {
+const RegisteredCarriers = ({ operators = [], onPromoted }) => {
   const [items, setItems] = useState(null);
+  const [promoting, setPromoting] = useState('');
+
   useEffect(() => {
     fetch(`${API}/admin/transportia/prospects`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => setItems((d?.items || []).filter((p) => p.status === 'REGISTERED')))
       .catch(() => setItems([]));
   }, []);
+
+  const promote = async (p) => {
+    if (!window.confirm(`Promouvoir « ${p.company} » en opérateur LOGICOOP ?`)) return;
+    setPromoting(p.id);
+    const r = await fetch(`${API}/admin/logicoop/operators`, {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: p.company, email: p.email, phone: p.phone || null,
+        exw_zones: p.territory ? [p.territory] : [], cif_zones: [] }),
+    });
+    const d = await r.json();
+    setPromoting('');
+    if (!r.ok) return toast.error(d.detail || 'Promotion échouée');
+    toast.success(`« ${p.company} » est maintenant opérateur LOGICOOP 🎉`);
+    onPromoted?.();
+  };
+
   if (items === null) return null;
+  const opEmails = new Set(operators.map((o) => o.email));
   return (
     <div className="mt-5 pt-4 border-t border-white/[0.08]" data-testid="logicoop-registered-carriers">
       <h4 className="text-sm font-semibold text-white flex items-center gap-2 mb-1">
@@ -165,6 +185,14 @@ const RegisteredCarriers = () => {
               </p>
               <span className="text-xs text-white/50">{p.contact_name ? `${p.contact_name} — ` : ''}{p.email}{p.phone ? ` · ${p.phone}` : ''}</span>
               {p.registered_at && <span className="text-[10px] text-white/35">le {new Date(p.registered_at).toLocaleDateString('fr-FR')}</span>}
+              {opEmails.has(p.email) ? (
+                <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white/10 text-white/50" data-testid={`carrier-promoted-${p.id}`}>Opérateur ✓</span>
+              ) : (
+                <button onClick={() => promote(p)} disabled={promoting === p.id} data-testid={`carrier-promote-${p.id}`}
+                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 bg-[#D9B35A] text-[#1F0A33] hover:bg-[#c9a34a] disabled:opacity-60 transition-colors">
+                  <ArrowUpRight size={11} /> Promouvoir en opérateur
+                </button>
+              )}
             </div>
           ))}
         </div>
