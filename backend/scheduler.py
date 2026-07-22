@@ -199,6 +199,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler quote target alert crashed: %s", exc)
         try:
+            from search_alerts import check_search_alerts
+            await check_search_alerts(_db)
+        except Exception as exc:
+            logger.exception("Scheduler search alerts crashed: %s", exc)
+        try:
             from ventia_service import process_abandoned_carts
             await process_abandoned_carts(_db)
         except Exception as exc:

@@ -128,6 +128,49 @@ def _remind_html(t: dict, name: str, company: str, base: str) -> str:
     )
 
 
+@quote_convert_router.get("/reminder-template")
+async def get_reminder_template(current_user: dict = Depends(get_current_user)):
+    """Modèle de relance personnalisé + modèles par défaut."""
+    await check_admin(current_user)
+    db = get_database()
+    doc = await db.system_flags.find_one({"key": "quote_reminder_template"}, {"_id": 0}) or {}
+    strip = lambda s: s.replace("<b>", "").replace("</b>", "")  # noqa: E731
+    defaults = {k: {"subject": v["subject"],
+                    "body": f"{v['hello']} {{name}},\n\n{strip(v['p1'])}\n\n{v['p2']}\n\n{v['footer']}"}
+                for k, v in REMIND_I18N.items()}
+    return {"templates": doc.get("templates") or {}, "defaults": defaults}
+
+
+@quote_convert_router.put("/reminder-template")
+async def save_reminder_template(body: dict, current_user: dict = Depends(get_current_user)):
+    """Enregistre le modèle de relance personnalisé (par langue)."""
+    await check_admin(current_user)
+    db = get_database()
+    templates = {}
+    for lg in ("fr", "en", "es"):
+        item = (body.get("templates") or {}).get(lg) or {}
+        templates[lg] = {"subject": str(item.get("subject") or "").strip()[:200],
+                         "body": str(item.get("body") or "").strip()[:3000]}
+    await db.system_flags.update_one(
+        {"key": "quote_reminder_template"},
+        {"$set": {"templates": templates, "updated_by": current_user.get("email"),
+                  "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+    return {"ok": True, "templates": templates}
+
+
+def _custom_remind_html(body_html: str, cta_label: str, base: str) -> str:
+    return (
+        "<div style='font-family:Arial,sans-serif;max-width:560px;margin:auto'>"
+        "<div style='background:#2A1045;border-radius:14px;padding:28px;color:#fff'>"
+        "<h2 style='color:#D4AF37;margin-top:0'>KDMARCHÉ × O'SCOP</h2>"
+        f"<p>{body_html}</p>"
+        f"<p style='text-align:center;margin:24px 0'><a href='{base}' "
+        "style='background:#D4AF37;color:#1F0A33;padding:12px 26px;border-radius:999px;"
+        "text-decoration:none;font-weight:bold'>" + cta_label + "</a></p>"
+        "</div></div>"
+    )
+
+
 @quote_convert_router.post("/{quote_id}/remind")
 async def remind_quote_prospect(quote_id: str, current_user: dict = Depends(get_current_user)):
     """Relance manuelle du prospect par email (1 clic depuis le pipeline)."""
@@ -154,10 +197,22 @@ async def remind_quote_prospect(quote_id: str, current_user: dict = Depends(get_
     contact = (f"{q.get('first_name') or ''} {q.get('last_name') or ''}".strip()
                or q.get("contact_name") or q.get("company") or email)
     base = (os.environ.get("FRONTEND_PUBLIC_URL") or os.environ.get("FRONTEND_URL") or "").rstrip("/")
+    custom = (((await db.system_flags.find_one({"key": "quote_reminder_template"})) or {})
+              .get("templates") or {}).get(lang) or {}
+    subject = (custom.get("subject") or "").strip() or t["subject"]
+    body_txt = (custom.get("body") or "").strip()
+    if body_txt:
+        import html as _html
+        body_html = (_html.escape(body_txt)
+                     .replace("{name}", f"<b>{_html.escape(contact)}</b>")
+                     .replace("{company}", f"<b>{_html.escape(q.get('company') or contact)}</b>")
+                     .replace("\n", "<br>"))
+        content = _custom_remind_html(body_html, t["cta"], base)
+    else:
+        content = _remind_html(t, contact, q.get("company") or contact, base)
     from brevo_service import send_email
-    await send_email(to_email=email, to_name=contact, subject=t["subject"],
-                     html_content=_remind_html(t, contact, q.get("company") or contact, base),
-                     tags=["quote-manual-reminder"])
+    await send_email(to_email=email, to_name=contact, subject=subject,
+                     html_content=content, tags=["quote-manual-reminder"])
     now_iso = now.isoformat()
     await db.quote_requests.update_one(
         {"id": quote_id},
@@ -165,7 +220,8 @@ async def remind_quote_prospect(quote_id: str, current_user: dict = Depends(get_
          "$push": {"manual_reminders": {"at": now_iso, "by": current_user.get("email")}}})
     count = len(q.get("manual_reminders") or []) + 1
     logger.info("Relance manuelle devis %s -> %s (%s) par %s", quote_id, email, lang, current_user.get("email"))
-    return {"ok": True, "sent_to": email, "lang": lang, "count": count, "at": now_iso}
+    return {"ok": True, "sent_to": email, "lang": lang, "count": count, "at": now_iso,
+            "custom_template": bool(body_txt)}
 
 
 @quote_convert_router.post("/{quote_id}/convert-to-member")

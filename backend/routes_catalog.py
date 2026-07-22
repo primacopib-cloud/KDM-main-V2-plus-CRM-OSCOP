@@ -234,6 +234,11 @@ async def list_products(
             {"translations.es.name": rx}, {"translations.es.description": rx},
             {"translations.es.short_description": rx},
         ]
+        try:
+            from search_alerts import record_user_search
+            await record_user_search(db, current_user, search)
+        except Exception:
+            pass
     
     if tags:
         tag_list = [t.strip() for t in tags.split(",")]

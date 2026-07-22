@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Send, Loader2, Euro, RefreshCw, Save, ExternalLink, CheckCircle2, XCircle, Clock, Download, StickyNote, Mail } from 'lucide-react';
+import { Send, Loader2, Euro, RefreshCw, Save, ExternalLink, CheckCircle2, XCircle, Clock, Download, StickyNote, Mail, Flame, Thermometer, Snowflake } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { Switch } from '../ui/switch';
 import { QuoteConvertButton } from './QuoteConvertButton';
+import { QuoteReminderTemplateEditor } from './QuoteReminderTemplateEditor';
 
 const PUSH_STATUS = {
   PUSHED: { color: '#7BC94E', icon: CheckCircle2, label: 'Transmise' },
@@ -17,6 +18,19 @@ const PIPELINE = {
   lost: { label: 'Perdu', color: '#F87171' },
 };
 const pipeKey = (s) => (s === 'processed' ? 'contacted' : (PIPELINE[s] ? s : 'pending'));
+
+const quoteScore = (q) => {
+  const pk = pipeKey(q.status);
+  if (pk === 'converted' || pk === 'lost') return null;
+  const ageDays = Math.max(0, (Date.now() - new Date(q.created_at).getTime()) / 86400000);
+  const reminders = (q.manual_reminders?.length || 0) + (q.followup_sent_at ? 1 : 0);
+  let pts = ageDays <= 3 ? 3 : ageDays <= 10 ? 2 : ageDays <= 21 ? 1 : 0;
+  if (reminders >= 2) pts -= 1;
+  const tip = `Ancienneté ${Math.round(ageDays)} j · ${reminders} relance(s)`;
+  if (pts >= 3) return { label: 'Chaud', color: '#FF7A45', Icon: Flame, tip };
+  if (pts >= 1) return { label: 'Tiède', color: '#FBBF24', Icon: Thermometer, tip };
+  return { label: 'Froid', color: '#60A5FA', Icon: Snowflake, tip };
+};
 
 const inputCls = 'w-24 rounded-lg px-2 py-1.5 text-sm text-white bg-white/[0.06] border border-[#D9B35A]/25 focus:outline-none focus:ring-1 focus:ring-[#D9B35A]/60';
 
@@ -224,6 +238,9 @@ export const DemandesAdminTab = () => {
             })}
           </div>
         </div>
+        <div className="mb-3">
+          <QuoteReminderTemplateEditor />
+        </div>
         {pushes.length === 0 ? (
           <p className="text-xs text-white/40">Aucune demande de devis reçue pour le moment.</p>
         ) : (
@@ -232,12 +249,20 @@ export const DemandesAdminTab = () => {
               const st = PUSH_STATUS[q.oscop_status] || { color: '#9CA3AF', icon: Clock, label: 'En attente' };
               const Icon = st.icon;
               const pk = pipeKey(q.status);
+              const sc = quoteScore(q);
               return (
                 <div key={q.id} className="px-3 py-2 rounded-lg bg-white/[0.04] text-xs" data-testid={`quote-row-${q.id}`}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-white/85 font-medium min-w-[140px]">
                       {q.company}
                       {q.legal_status && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-[#D9B35A]/15 text-[#E9CF8E] text-[10px]">{q.legal_status}</span>}
+                      {sc && (
+                        <span className="ml-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold align-middle"
+                          style={{ color: sc.color, background: `${sc.color}1c`, border: `1px solid ${sc.color}55` }}
+                          title={sc.tip} data-testid={`quote-score-${q.id}`}>
+                          <sc.Icon size={10} /> {sc.label}
+                        </span>
+                      )}
                     </span>
                     <span className="text-white/50 truncate">
                       {(q.first_name || q.last_name) ? `${q.first_name || ''} ${q.last_name || ''}`.trim() : q.contact_name} · {q.email}
