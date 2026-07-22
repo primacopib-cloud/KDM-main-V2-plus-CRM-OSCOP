@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { HandCoins, Loader2, CheckCircle2 } from 'lucide-react';
+import { HandCoins, CheckCircle2, PenLine } from 'lucide-react';
 import { toast } from 'sonner';
+import { CodSignatureDialog } from './CodSignatureDialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const eur = (c) => `${((c || 0) / 100).toFixed(2)} €`;
 
 export const CodCollectionPanel = () => {
   const [data, setData] = useState(null);
-  const [marking, setMarking] = useState(null);
+  const [signOrder, setSignOrder] = useState(null);
+  const [marking, setMarking] = useState(false);
 
   const load = useCallback(() => {
     fetch(`${API}/admin/cod/orders`, { credentials: 'include' })
@@ -15,12 +17,16 @@ export const CodCollectionPanel = () => {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const collect = async (o) => {
-    setMarking(o.id);
-    const r = await fetch(`${API}/admin/cod/orders/${o.id}/collected`, { method: 'POST', credentials: 'include' });
+  const collect = async ({ signature, signer_name }) => {
+    setMarking(true);
+    const r = await fetch(`${API}/admin/cod/orders/${signOrder.id}/collected`, {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ signature, signer_name }),
+    });
     const d = await r.json();
-    setMarking(null);
+    setMarking(false);
     if (!r.ok) return toast.error(d.detail || 'Encaissement impossible');
+    setSignOrder(null);
     toast.success(`Commande ${d.order_number} encaissée (${eur(d.amount_paid_cents)})${d.invoice_number ? ` — facture ${d.invoice_number}` : ''}`);
     load();
   };
@@ -45,23 +51,32 @@ export const CodCollectionPanel = () => {
             {o.org_name && <span className="text-white/50">{o.org_name}</span>}
             <span className="text-[#E9CF8E] font-semibold">{eur(o.cod_amount_due_cents || o.total_ttc_cents)}</span>
             {o.payment_status === 'succeeded' ? (
-              <span className="px-2 py-0.5 rounded bg-emerald-400/15 text-emerald-300 font-semibold inline-flex items-center gap-1">
-                <CheckCircle2 size={11} /> Encaissé
-              </span>
+              <>
+                <span className="px-2 py-0.5 rounded bg-emerald-400/15 text-emerald-300 font-semibold inline-flex items-center gap-1">
+                  <CheckCircle2 size={11} /> Encaissé
+                </span>
+                {o.cod_signer_name && (
+                  <span className="px-2 py-0.5 rounded bg-white/10 text-white/60 inline-flex items-center gap-1">
+                    <PenLine size={10} /> Signé par {o.cod_signer_name}
+                  </span>
+                )}
+              </>
             ) : (
               <>
                 <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 font-semibold">À encaisser</span>
                 {o.cod_reminder_sent && <span className="px-2 py-0.5 rounded bg-red-400/15 text-red-300">Relancé J+7</span>}
-                <button onClick={() => collect(o)} disabled={marking === o.id} data-testid={`cod-collect-btn-${o.id}`}
-                  className="ml-auto h-8 px-3 rounded-lg text-xs font-semibold text-[#1A092D] inline-flex items-center gap-1.5 disabled:opacity-50"
+                <button onClick={() => setSignOrder(o)} data-testid={`cod-collect-btn-${o.id}`}
+                  className="ml-auto h-8 px-3 rounded-lg text-xs font-semibold text-[#1A092D] inline-flex items-center gap-1.5"
                   style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
-                  {marking === o.id ? <Loader2 size={12} className="animate-spin" /> : <HandCoins size={12} />} Marquer comme encaissé
+                  <PenLine size={12} /> Encaisser + signature
                 </button>
               </>
             )}
           </div>
         ))}
       </div>
+      <CodSignatureDialog open={!!signOrder} onClose={() => setSignOrder(null)} order={signOrder}
+        onConfirm={collect} loading={marking} />
     </div>
   );
 };

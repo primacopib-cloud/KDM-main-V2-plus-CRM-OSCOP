@@ -5,6 +5,7 @@ import { Switch } from '../ui/switch';
 import { ProspectiaStudio } from './ProspectiaStudio';
 import { SocialProofPanel } from './SocialProofPanel';
 import { ProspectiaPipeline } from './ProspectiaPipeline';
+import { AIUsagePanel } from './AIUsagePanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -77,6 +78,8 @@ export const AIAgentsPanel = () => {
           </p>
         </div>
       </div>
+
+      <AIUsagePanel />
 
       {settings.prospectia_enabled && <ProspectiaPipeline />}
       {settings.prospectia_enabled && <ProspectiaStudio />}

@@ -61,6 +61,8 @@ async def generate(body: GenerateBody, admin: dict = Depends(require_admin)):
     content = await generate_script(body.target, body.territory, body.sector, body.lang, body.tone, body.content_type)
     from consultation_audit import audit
     await audit("PROSPECTIA_GENERATED", admin.get("email"), None, {"target": body.target, "type": body.content_type, "lang": body.lang})
+    from ai_usage import log_ai_usage
+    await log_ai_usage(db, "script", f"{body.content_type} {body.target}")
     return {"content": content}
 
 
@@ -71,6 +73,8 @@ async def storyboard(body: StoryboardBody, admin: dict = Depends(require_admin))
     urls = await generate_storyboard_images(body.script, body.hint or "")
     if not urls:
         raise HTTPException(status_code=502, detail="Génération d'images indisponible, réessayez")
+    from ai_usage import log_ai_usage
+    await log_ai_usage(db, "storyboard_image", None, units=len(urls))
     return {"images": urls}
 
 
@@ -101,6 +105,8 @@ async def create_campaign(body: CampaignBody, admin: dict = Depends(require_admi
         p["converted"] = False
     from prospectia_service import generate_campaign_extras
     extras = await generate_campaign_extras(body.subject.strip(), body.body)
+    from ai_usage import log_ai_usage
+    await log_ai_usage(db, "campaign_extras", body.name)
     doc = {
         "id": str(uuid.uuid4()), "name": body.name.strip() or "Campagne", "subject": body.subject.strip(),
         "subject_b": extras["subject_b"], "followup_1": extras["followup_1"], "followup_2": extras["followup_2"],

@@ -89,7 +89,8 @@ async def list_cod_orders(admin: dict = Depends(require_admin)):
 
 
 @cod_admin_router.post("/orders/{order_id}/collected")
-async def mark_cod_collected(order_id: str, admin: dict = Depends(require_admin)):
+async def mark_cod_collected(order_id: str, body: dict = None, admin: dict = Depends(require_admin)):
+    body = body or {}
     order = await db.orders.find_one({"id": order_id})
     if not order:
         raise HTTPException(status_code=404, detail="Commande introuvable")
@@ -99,10 +100,24 @@ async def mark_cod_collected(order_id: str, admin: dict = Depends(require_admin)
         raise HTTPException(status_code=400, detail="Commande déjà encaissée")
     amount = order.get("cod_amount_due_cents") or order["total_ttc_cents"]
     receipt_number = f"RE-{datetime.utcnow().strftime('%Y%m%d')}-{order_id[-8:].upper()}"
+    extra = {}
+    signature = body.get("signature") or ""
+    if signature.startswith("data:image"):
+        try:
+            import base64
+            sig_dir = os.path.join(os.path.dirname(__file__), "uploads", "signatures")
+            os.makedirs(sig_dir, exist_ok=True)
+            fname = f"sig-{order_id[-8:]}-{int(datetime.utcnow().timestamp())}.png"
+            with open(os.path.join(sig_dir, fname), "wb") as f:
+                f.write(base64.b64decode(signature.split(",", 1)[1]))
+            extra["cod_signature_url"] = f"/api/uploads/signatures/{fname}"
+            extra["cod_signer_name"] = (body.get("signer_name") or "").strip()[:80]
+        except Exception as exc:
+            logger.warning("Signature COD non sauvegardée : %s", exc)
     await db.orders.update_one(
         {"id": order_id},
         {"$set": {"payment_status": "succeeded", "amount_paid_cents": amount,
-                  "cod_receipt_number": receipt_number,
+                  "cod_receipt_number": receipt_number, **extra,
                   "paid_at": datetime.utcnow(), "updated_at": datetime.utcnow()}})
     invoice_number = None
     try:

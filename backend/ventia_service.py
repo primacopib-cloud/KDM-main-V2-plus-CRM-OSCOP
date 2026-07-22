@@ -59,6 +59,8 @@ async def product_copy(body: ProductCopyBody, user: dict = Depends(get_current_u
         if raw.startswith("```"):
             raw = raw.split("```")[1].lstrip("json").strip()
         data = _json.loads(raw)
+        from ai_usage import log_ai_usage
+        await log_ai_usage(db, "product_copy", body.name)
         return {"description": (data.get("description") or "").strip(),
                 "price_advice": (data.get("price_advice") or "").strip()}
     except Exception as exc:
@@ -102,6 +104,8 @@ async def product_image(body: ProductCopyBody, user: dict = Depends(get_current_
         await db.ventia_image_usage.insert_one({"user_id": user["id"], "date": today,
                                                 "product_name": body.name.strip()[:120],
                                                 "created_at": datetime.utcnow()})
+        from ai_usage import log_ai_usage
+        await log_ai_usage(db, "product_image", body.name)
         return {"image_url": f"/api/uploads/ventia/{fname}", "quota_remaining": quota - used - 1}
     except HTTPException:
         raise

@@ -85,6 +85,8 @@ async def generate_adjudication_report(cid: str) -> None:
             "3) Risques identifiés, 4) Recommandation motivée (quelle offre retenir ou relancer). "
             "Si aucune offre : recommande des actions concrètes de relance. Max 350 mots.")
         report = str(await chat.send_message(UserMessage(text=prompt))).strip()
+        from ai_usage import log_ai_usage
+        await log_ai_usage(db, "encheria_report", cid)
         await db.encheria_reports.insert_one({
             "id": str(uuid.uuid4()), "consultation_id": cid, "title": c.get("title", cid),
             "bids_count": len(bids), "report": report,

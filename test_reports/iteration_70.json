@@ -1,0 +1,34 @@
+{
+  "summary": "Iter 70 (FRONTEND only) — Test lot livraison (Tableau Coûts IA, Signature tactile COD, Reçu PDF avec signature). 4/4 flows PASS + 1 bug integration mineur détecté sur affichage badge 'Signé par'. (1) /superadmin onglet 'Agents IA' : panneau data-testid=ai-usage-panel visible avec total data-testid=ai-usage-total ('≈ 0.01 € · 1 génération(s)') et ligne data-testid=ai-usage-product_copy ('Descriptions produits · 1 génération · ≈ 0.01 €') OK. (2) /superadmin onglet 'Orders' : panneau data-testid=cod-collection-panel visible, commande synthétique 'TEST-UI-COD' listée avec bouton data-testid=cod-collect-btn-test-ui-cod-1 'Encaisser + signature'. (3) Clic bouton => dialog data-testid=cod-signature-dialog s'ouvre correctement, data-testid=cod-signature-confirm-btn DÉSACTIVÉ (is_disabled=True) tant que le canvas est vierge, puis dessin sur canvas data-testid=cod-signature-canvas via page.mouse (down/move x15/up) + fill signer 'Client Test UI' => bouton devient actif (is_disabled=False). Confirmation => toast succès 'Commande TEST-UI-COD encaissée (30.00 €) — facture FA-*' visible, ligne passe en 'Encaissé'. (4) PDF reçu : GET /api/v2/checkout/cod-receipts/test-ui-cod-1/pdf avec Bearer acheteur-pro => HTTP 200, magic %PDF-1.4, taille 4625 bytes, contient /XObject + /Subtype /Image (signature intégrée confirmée). DB post-encaissement : payment_status='succeeded', cod_signature_url='/api/uploads/signatures/sig-ui-cod-1-*.png', cod_signer_name='Client Test UI', paid_at rempli, facture liée. Cleanup obligatoire effectué : db.orders {id:'test-ui-cod-1'} supprimée (1 doc) + db.invoices {order_id:'test-ui-cod-1'} supprimée (1 doc).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/admin/cod/orders", "issue": "La projection MongoDB dans routes_cod.list_cod_orders (lignes 75-80) N'INCLUT PAS le champ 'cod_signer_name' → le frontend ne le reçoit jamais → badge 'Signé par {name}' ne s'affiche JAMAIS après encaissement, alors que la donnée est bien persistée en base (vérifié : cod_signer_name='Client Test UI' présent dans db.orders). Cf. CodCollectionPanel.jsx ligne 58 : `{o.cod_signer_name && (...Signé par...)}` reste toujours false. Ajouter 'cod_signer_name': 1 (et idéalement 'cod_signature_url': 1, 'cod_receipt_number': 1) dans la projection."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Encaissement COD signé — badge 'Signé par'", "issue": "Le badge 'Signé par Client Test UI' n'apparaît PAS dans la ligne après encaissement (row.text_content = 'TEST-UI-COD 30.00 € Encaissé'). Cause racine : projection backend manquante (cf. backend_issues.minor).", "affected_selectors": ["[data-testid='cod-order-test-ui-cod-1']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "BACKEND (mineur) : Ajouter les champs cod_signer_name, cod_signature_url, cod_receipt_number à la projection MongoDB de list_cod_orders (/app/backend/routes_cod.py ligne 77-79) pour que le badge 'Signé par {nom}' s'affiche correctement dans le panneau COD."
+  ],
+  "critical_code_review_comments": [
+    "routes_cod.list_cod_orders : projection incomplète — les champs signature (cod_signer_name, cod_signature_url, cod_receipt_number, cod_signed_at) devraient être retournés pour permettre à l'UI d'afficher la preuve de livraison. C'est un pattern classique 'la donnée est écrite mais pas lue'. À corriger.",
+    "CodSignatureDialog.jsx : le champ signer_name n'a AUCUNE validation côté frontend — on peut confirmer avec un nom vide. Le backend accepte 'signer_name': '' (strip()[:80] renvoie ''). Ajouter required (disabled=!hasInk || !signerName.trim()) pour forcer un signataire nommé.",
+    "CodSignatureDialog.jsx : le canvas se rend avec les dimensions CSS w-full (redimensionné à ~396px) mais la résolution interne reste width=420/height=160 → la précision du dessin est légèrement altérée sur tous les écrans. Envisager useEffect + devicePixelRatio scaling.",
+    "CodSignatureDialog.jsx : ligne 44, toDataURL('image/png') d'un canvas vierge non touché ne serait pas transmis grâce au guard hasInk — OK, mais aucune vérification de la taille de la data URL (peut dépasser plusieurs MB si canvas HD). À l'échelle, prévoir une compression ou downscale avant envoi."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only)", "frontend": "100% flow, 1 bug intégration mineur (badge signataire absent car projection API incomplète)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin, page /admin/connexion, bouton 'Secure access') ; acheteur-pro@kdmarche.fr / Demo2026! (Bearer login /api/auth/login)",
+  "seed_data_creation": "Insertion synthétique db.orders {id:'test-ui-cod-1', order_number:'TEST-UI-COD', COD_pending, 30.00 €} + insertion auto d'une facture liée lors de l'encaissement. CLEANUP EFFECTUÉ : db.orders (1 supprimée) + db.invoices (1 supprimée). Un email reçu Brevo a été envoyé à acheteur-pro@kdmarche.fr comme prévu (acceptable, 1 seul).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Le login admin utilise le bouton 'Secure access' (label anglais) sur /admin/connexion, PAS 'Se connecter'. Le sélecteur robuste = 'button[type=submit]'. Pour dessiner sur le canvas de signature : page.mouse.move puis down/move (steps>=2)/up avec bounding_box du canvas — les événements pointerdown/pointermove/pointerup sont correctement câblés dans CodSignatureDialog.jsx. Le PDF reçu COD contient bien la signature en XObject Image (confirmé par grep /Subtype/Image dans le binaire). BUG DÉTECTÉ : le badge 'Signé par' ne s'affiche pas côté UI parce que le endpoint GET /api/admin/cod/orders projette une whitelist qui n'inclut pas cod_signer_name (routes_cod.py L75-80). Le fix trivial est d'ajouter les 3-4 champs signature à la projection.",
+  "rca of the issue": "Bug 'badge Signé par absent' : la donnée est CORRECTEMENT écrite (db.orders.cod_signer_name='Client Test UI' vérifié post-encaissement) et le composant React lit bien `o.cod_signer_name` (CodCollectionPanel.jsx L58), mais l'endpoint list_cod_orders (routes_cod.py L75-80) applique une projection MongoDB explicite qui omet cod_signer_name / cod_signature_url / cod_receipt_number. Le frontend reçoit donc un objet order SANS ces champs et le rendu conditionnel `{o.cod_signer_name && ...}` reste false. Reproduction : (1) encaisser une commande COD avec signer_name via UI ; (2) recharger la liste ; (3) constater badge 'Signé par' absent alors que la DB contient le nom. Mitigation : ajouter les champs à la projection ligne 77-79."
+}

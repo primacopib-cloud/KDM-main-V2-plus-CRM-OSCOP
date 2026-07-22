@@ -113,6 +113,8 @@ async def _translate_testimonial(tid: str) -> None:
         await db.testimonials.update_one(
             {"id": tid}, {"$set": {"text_en": (data.get("en") or "").strip()[:900],
                                    "text_es": (data.get("es") or "").strip()[:900]}})
+        from ai_usage import log_ai_usage
+        await log_ai_usage(db, "translation", tid)
         logger.info("Témoignage %s traduit EN/ES", tid)
     except Exception as exc:
         logger.error("Traduction témoignage %s échouée : %s", tid, exc)
@@ -152,6 +154,8 @@ async def polish(tid: str, admin: dict = Depends(require_admin)):
         system_message="Tu es PROSPECT'IA. Tu reformules des témoignages clients pour un site web : corrige orthographe et syntaxe, garde la voix authentique et le fond exact, 40 à 70 mots, à la première personne, en français. Réponds uniquement avec le texte reformulé.",
     ).with_model("openai", "gpt-5.4")
     polished = str(await chat.send_message(UserMessage(text=t["text"]))).strip().strip('"')
+    from ai_usage import log_ai_usage
+    await log_ai_usage(db, "polish", tid)
     await db.testimonials.update_one(
         {"id": tid},
         {"$set": {"text": polished[:900], "text_original": t.get("text_original") or t["text"], "polished": True}})
@@ -193,6 +197,8 @@ async def invite_members(body: InviteBody, admin: dict = Depends(require_admin))
     if not users:
         return {"ok": True, "sent": 0, "message": "Aucun nouveau membre à inviter"}
     template = await _generate_invite_email()
+    from ai_usage import log_ai_usage
+    await log_ai_usage(db, "invite_email", f"{len(users)} membres")
     base = os.environ.get("FRONTEND_URL", "").rstrip("/")
     html = _invite_html(template, f"{base}/temoignage")
     from brevo_service import send_email

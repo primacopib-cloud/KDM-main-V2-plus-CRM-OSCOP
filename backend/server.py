@@ -547,6 +547,9 @@ app.include_router(ventia_router)
 from prospectia_pipeline import pipeline_router, set_pipeline_database
 set_pipeline_database(db)
 app.include_router(pipeline_router)
+from ai_usage import ai_usage_router, set_ai_usage_database
+set_ai_usage_database(db)
+app.include_router(ai_usage_router)
 
 from encheria_service import set_encheria_database
 set_encheria_database(db)

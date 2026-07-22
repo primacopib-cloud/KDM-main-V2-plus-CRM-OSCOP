@@ -210,6 +210,11 @@ async def _scheduler_loop():
             await process_pickup_reminders(_db)
         except Exception as exc:
             logger.exception("Scheduler pickup reminders crashed: %s", exc)
+        try:
+            from invoice_reminders import process_invoice_reminders
+            await process_invoice_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler invoice reminders crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

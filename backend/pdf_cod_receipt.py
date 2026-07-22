@@ -64,5 +64,17 @@ def generate_cod_receipt_pdf(order: dict, org_name: str, invoice_number: str = N
         Spacer(1, 10 * mm),
         Paragraph("Nous vous remercions pour votre confiance. Ce reçu atteste du règlement intégral de la commande ci-dessus.", normal),
     ]
+    sig_url = order.get("cod_signature_url")
+    if sig_url:
+        import os
+        sig_path = os.path.join(os.path.dirname(__file__), sig_url.replace("/api/uploads/", "uploads/"))
+        if os.path.exists(sig_path):
+            from reportlab.platypus import Image as RLImage
+            story += [
+                Spacer(1, 8 * mm),
+                Paragraph(f"Preuve de livraison — signature du client{(' : ' + order.get('cod_signer_name')) if order.get('cod_signer_name') else ''}", sub),
+                Spacer(1, 2 * mm),
+                RLImage(sig_path, width=70 * mm, height=26 * mm),
+            ]
     doc.build(story)
     return buf.getvalue()
