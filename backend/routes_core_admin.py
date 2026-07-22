@@ -121,16 +121,37 @@ async def quote_pipeline_stats(current_user: dict = Depends(get_current_user)):
     """KPIs du pipeline devis (taux de conversion)."""
     await check_admin(current_user)
     db = get_database()
-    quotes = await db.quote_requests.find({}, {"_id": 0, "status": 1}).to_list(2000)
+    quotes = await db.quote_requests.find(
+        {}, {"_id": 0, "status": 1, "status_history": 1, "created_at": 1}).to_list(2000)
     counts = {"pending": 0, "contacted": 0, "converted": 0, "lost": 0}
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_iso = month_start.isoformat()
+    converted_this_month = 0
     for q in quotes:
         s = q.get("status")
-        counts["contacted" if s == "processed" else (s if s in counts else "pending")] += 1
+        key = "contacted" if s == "processed" else (s if s in counts else "pending")
+        counts[key] += 1
+        if key == "converted":
+            hist = q.get("status_history") or []
+            conv_at = next((h.get("at") for h in reversed(hist) if h.get("to") == "converted"), None)
+            if conv_at:
+                if conv_at >= month_iso:
+                    converted_this_month += 1
+            else:
+                created = q.get("created_at")
+                if created is not None and hasattr(created, "tzinfo"):
+                    if created.tzinfo is None:
+                        created = created.replace(tzinfo=timezone.utc)
+                    if created >= month_start:
+                        converted_this_month += 1
     total = len(quotes)
     closed = counts["converted"] + counts["lost"]
+    target_doc = await db.system_flags.find_one({"key": "quote_monthly_target"}, {"_id": 0, "target": 1})
     return {"total": total, **counts,
             "conversion_rate": round(counts["converted"] / total * 100, 1) if total else 0,
-            "close_rate": round(counts["converted"] / closed * 100, 1) if closed else 0}
+            "close_rate": round(counts["converted"] / closed * 100, 1) if closed else 0,
+            "converted_this_month": converted_this_month,
+            "monthly_target": (target_doc or {}).get("target", 0)}
 
 
 @admin_core_router.get("/admin/quotes/export")

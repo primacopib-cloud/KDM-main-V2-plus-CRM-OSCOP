@@ -29,6 +29,19 @@ async def _collect_stats(database, since: datetime) -> dict:
     ]):
         revenue = row["total"] or 0
     quotes = await database.quote_requests.count_documents({"created_at": {"$gte": since}})
+    q_counts = {"pending": 0, "contacted": 0, "converted": 0, "lost": 0}
+    quotes_converted_week = 0
+    async for q in database.quote_requests.find({}, {"status": 1, "status_history": 1}):
+        s0 = q.get("status")
+        key = "contacted" if s0 == "processed" else (s0 if s0 in q_counts else "pending")
+        q_counts[key] += 1
+        if key == "converted":
+            hist = q.get("status_history") or []
+            at = next((h.get("at") for h in reversed(hist) if h.get("to") == "converted"), None)
+            if at and at >= since_iso:
+                quotes_converted_week += 1
+    q_total = sum(q_counts.values())
+    quote_conversion_rate = round(q_counts["converted"] / q_total * 100, 1) if q_total else 0
     new_users = await database.users.count_documents({"created_at": {"$gte": since}})
     consultations = await database.consultations.count_documents({"created_at": {"$gte": since_iso}})
     testimonials = await database.testimonials.count_documents({"created_at": {"$gte": since_iso}})
@@ -39,7 +52,12 @@ async def _collect_stats(database, since: datetime) -> dict:
         clicks += c.get("click_count", 0)
         conversions += c.get("conversions_count", 0)
         sent_week += sum(1 for p in c.get("prospects", []) if (p.get("sent_at") or "") >= since_iso)
-    return {"orders": orders, "revenue_eur": revenue / 100, "quotes": quotes, "new_users": new_users,
+    return {"orders": orders, "revenue_eur": revenue / 100, "quotes": quotes,
+            "quotes_converted_week": quotes_converted_week,
+            "quote_conversion_rate": quote_conversion_rate,
+            "quotes_pending": q_counts["pending"], "quotes_contacted": q_counts["contacted"],
+            "quotes_converted": q_counts["converted"], "quotes_lost": q_counts["lost"],
+            "new_users": new_users,
             "consultations": consultations, "testimonials": testimonials,
             "prospect_sent": sent_week, "prospect_clicks": clicks, "prospect_conversions": conversions,
             "campaigns_active": active}
@@ -68,6 +86,10 @@ async def send_weekly_activity_report(database, force: bool = False) -> bool:
         + _row("🛒 Nouvelles commandes", s["orders"])
         + _row("💶 Chiffre d'affaires TTC (hors annulées)", f"{s['revenue_eur']:.2f} €")
         + _row("📄 Demandes de devis reçues", s["quotes"])
+        + _row("🤝 Devis convertis en membres (7 j)", s.get("quotes_converted_week", 0))
+        + _row("📈 Taux de conversion des devis (global)", f"{s.get('quote_conversion_rate', 0)} %")
+        + _row("🗂 Pipeline devis (nouveau / contacté / converti / perdu)",
+               f"{s.get('quotes_pending', 0)} / {s.get('quotes_contacted', 0)} / {s.get('quotes_converted', 0)} / {s.get('quotes_lost', 0)}")
         + _row("👥 Nouveaux comptes membres", s["new_users"])
         + _row("⚖️ Consultations / enchères créées", s["consultations"])
         + _row("💬 Témoignages reçus", s["testimonials"])
@@ -107,6 +129,12 @@ REPORT_ROWS = [
     ("orders", "Nouvelles commandes"),
     ("revenue_eur", "Chiffre d'affaires TTC (hors annulées)"),
     ("quotes", "Demandes de devis reçues"),
+    ("quotes_converted_week", "Devis convertis en membres (7 j)"),
+    ("quote_conversion_rate", "Taux de conversion des devis (%)"),
+    ("quotes_pending", "Pipeline devis : nouveaux"),
+    ("quotes_contacted", "Pipeline devis : contactés"),
+    ("quotes_converted", "Pipeline devis : convertis"),
+    ("quotes_lost", "Pipeline devis : perdus"),
     ("new_users", "Nouveaux comptes membres"),
     ("consultations", "Consultations / enchères créées"),
     ("testimonials", "Témoignages reçus"),

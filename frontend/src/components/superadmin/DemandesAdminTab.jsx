@@ -3,6 +3,7 @@ import { Send, Loader2, Euro, RefreshCw, Save, ExternalLink, CheckCircle2, XCirc
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { Switch } from '../ui/switch';
+import { QuoteConvertButton } from './QuoteConvertButton';
 
 const PUSH_STATUS = {
   PUSHED: { color: '#7BC94E', icon: CheckCircle2, label: 'Transmise' },
@@ -243,6 +244,7 @@ export const DemandesAdminTab = () => {
                       style={{ color: PIPELINE[pk].color, background: `${PIPELINE[pk].color}1a`, borderColor: `${PIPELINE[pk].color}55` }}>
                       {Object.entries(PIPELINE).map(([k, v]) => <option key={k} value={k} style={{ color: '#111' }}>{v.label}</option>)}
                     </select>
+                    <QuoteConvertButton quote={q} onDone={load} />
                     {q.oscop_status !== 'PUSHED' && (
                       <button type="button" onClick={() => retry(q.id)} data-testid={`demandes-retry-${q.id}`}
                         className="px-2 py-1 rounded-md text-[10px] font-bold"

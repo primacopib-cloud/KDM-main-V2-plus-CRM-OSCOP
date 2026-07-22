@@ -226,10 +226,13 @@ async def list_products(
         query["category_id"] = category_id
     
     if search:
+        rx = {"$regex": search, "$options": "i"}
         query["$or"] = [
-            {"name": {"$regex": search, "$options": "i"}},
-            {"sku": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}},
+            {"name": rx}, {"sku": rx}, {"description": rx}, {"short_description": rx},
+            {"translations.en.name": rx}, {"translations.en.description": rx},
+            {"translations.en.short_description": rx},
+            {"translations.es.name": rx}, {"translations.es.description": rx},
+            {"translations.es.short_description": rx},
         ]
     
     if tags:

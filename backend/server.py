@@ -537,6 +537,9 @@ app.include_router(social_public_router)
 from weekly_report import weekly_report_router, set_weekly_report_database
 set_weekly_report_database(db)
 app.include_router(weekly_report_router)
+
+from routes_quote_convert import quote_convert_router
+app.include_router(quote_convert_router)
 from routes_cod import cod_router, cod_admin_router, set_cod_database
 set_cod_database(db)
 app.include_router(cod_router)
