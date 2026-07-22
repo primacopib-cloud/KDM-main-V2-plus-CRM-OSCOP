@@ -89,9 +89,7 @@ async def list_cod_orders(admin: dict = Depends(require_admin)):
     return {"items": items, "pending_count": pending, "pending_due_cents": due}
 
 
-@cod_admin_router.post("/orders/{order_id}/collected")
-async def mark_cod_collected(order_id: str, body: dict = None, admin: dict = Depends(require_admin)):
-    body = body or {}
+async def collect_order_core(order_id: str, body: dict, actor: str) -> dict:
     order = await db.orders.find_one({"id": order_id})
     if not order:
         raise HTTPException(status_code=404, detail="Commande introuvable")
@@ -144,13 +142,18 @@ async def mark_cod_collected(order_id: str, body: dict = None, admin: dict = Dep
     except Exception as exc:
         logger.error("Facture COD non générée : %s", exc)
     from consultation_audit import audit
-    await audit("ORDER_COD_COLLECTED", admin.get("email"), None,
+    await audit("ORDER_COD_COLLECTED", actor, None,
                 {"order_id": order_id, "order_number": order.get("order_number"), "amount_cents": amount})
     import asyncio
     asyncio.create_task(_send_cod_receipt(order_id, invoice_number))
-    logger.info("Encaissement COD confirmé pour %s (%s cents)", order.get("order_number"), amount)
+    logger.info("Encaissement COD confirmé pour %s (%s cents) par %s", order.get("order_number"), amount, actor)
     return {"ok": True, "order_number": order.get("order_number"), "amount_paid_cents": amount,
             "invoice_number": invoice_number}
+
+
+@cod_admin_router.post("/orders/{order_id}/collected")
+async def mark_cod_collected(order_id: str, body: dict = None, admin: dict = Depends(require_admin)):
+    return await collect_order_core(order_id, body or {}, admin.get("email"))
 
 
 async def _send_cod_receipt(order_id: str, invoice_number: str = None) -> None:

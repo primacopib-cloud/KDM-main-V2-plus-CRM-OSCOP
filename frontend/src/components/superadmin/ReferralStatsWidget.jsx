@@ -1,15 +1,33 @@
-import { useEffect, useState } from 'react';
-import { Users2, Trophy, Coins } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Users2, Trophy, Coins, Save } from 'lucide-react';
+import { toast } from 'sonner';
+import { Switch } from '../ui/switch';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export const ReferralStatsWidget = () => {
   const [data, setData] = useState(null);
+  const [challenge, setChallenge] = useState(null);
+  const [reward, setReward] = useState('');
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetch(`${API}/referral/admin/overview`, { credentials: 'include' })
       .then((r) => r.json()).then(setData).catch(() => {});
+    fetch(`${API}/admin/referral/challenge`, { credentials: 'include' })
+      .then((r) => r.json()).then((d) => { setChallenge(d); setReward(String(d.reward_credits)); }).catch(() => {});
   }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const saveChallenge = async (updates) => {
+    const r = await fetch(`${API}/admin/referral/challenge`, {
+      method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Erreur');
+    setChallenge((c) => ({ ...c, ...d }));
+    toast.success('Défi parrainage mis à jour');
+  };
 
   if (!data) return null;
   return (
@@ -31,8 +49,9 @@ export const ReferralStatsWidget = () => {
           <p className="text-[10px] text-white/50">Crédits distribués</p>
         </div>
       </div>
+
       {data.top_ambassadors?.length ? (
-        <div data-testid="referral-top-list">
+        <div className="mb-4" data-testid="referral-top-list">
           <p className="text-[11px] text-white/55 font-semibold mb-2 flex items-center gap-1.5">
             <Trophy size={11} className="text-[#D9B35A]" /> Meilleurs parrains
           </p>
@@ -47,7 +66,44 @@ export const ReferralStatsWidget = () => {
           </div>
         </div>
       ) : (
-        <p className="text-[11px] text-white/35 italic">Aucun parrainage enregistré pour le moment.</p>
+        <p className="text-[11px] text-white/35 italic mb-4">Aucun parrainage enregistré pour le moment.</p>
+      )}
+
+      {challenge && (
+        <div className="pt-3 border-t border-white/[0.08]" data-testid="referral-challenge-block">
+          <div className="flex items-center gap-2 flex-wrap mb-2">
+            <p className="text-[11px] text-white/70 font-semibold flex items-center gap-1.5">
+              <Trophy size={11} className="text-[#D9B35A]" /> Défi du mois ({challenge.month})
+            </p>
+            <Switch checked={!!challenge.enabled} onCheckedChange={(v) => saveChallenge({ enabled: v })}
+              data-testid="referral-challenge-switch" />
+            <span className="text-[10px] text-white/45">{challenge.enabled ? 'Actif' : 'Inactif'}</span>
+            <div className="ml-auto flex items-center gap-1.5">
+              <input value={reward} onChange={(e) => setReward(e.target.value.replace(/\D/g, ''))}
+                data-testid="referral-challenge-reward"
+                className="w-16 h-7 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white text-right" />
+              <span className="text-[10px] text-white/50">crédits à gagner</span>
+              <button onClick={() => saveChallenge({ reward_credits: parseInt(reward || '0', 10) })}
+                className="p-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-[#E9CF8E]" title="Enregistrer">
+                <Save size={12} />
+              </button>
+            </div>
+          </div>
+          {challenge.enabled && (
+            challenge.leaderboard?.length ? (
+              <p className="text-[11px] text-white/60">
+                🥇 Leader actuel : <span className="text-[#E9CF8E] font-semibold">{challenge.leaderboard[0].sponsor}</span> ({challenge.leaderboard[0].referred} filleul(s)) — récompense de {challenge.reward_credits} CREDI'SCOP versée automatiquement au meilleur parrain en fin de mois
+              </p>
+            ) : (
+              <p className="text-[11px] text-white/40 italic">Aucun parrainage ce mois-ci — le premier filleul prend la tête du classement !</p>
+            )
+          )}
+          {challenge.past_winners?.filter((w) => w.winner).length > 0 && (
+            <p className="mt-1.5 text-[10px] text-white/35">
+              Derniers gagnants : {challenge.past_winners.filter((w) => w.winner).slice(0, 3).map((w) => `${w.month} — ${w.winner} (+${w.reward})`).join(' · ')}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

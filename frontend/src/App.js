@@ -43,6 +43,7 @@ import NotificationsHistoryPage from "./pages/NotificationsHistoryPage";
 import AiChatPage from "./pages/AiChatPage";
 import VendorOnboardingPage from "./pages/VendorOnboardingPage";
 import TestimonialPage from "./pages/TestimonialPage";
+import CourierPage from "./pages/CourierPage";
 import { WhatsAppSupport } from "./components/WhatsAppSupport";
 import VendorActivationPage from "./pages/VendorActivationPage";
 import FavoritesPage from "./pages/FavoritesPage";
@@ -117,6 +118,7 @@ function App() {
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/adhesion" element={<OnboardingPage />} />
           <Route path="/temoignage" element={<TestimonialPage />} />
+          <Route path="/livreur" element={<CourierPage />} />
           <Route path="/catalogue" element={<CatalogPage />} />
           <Route path="/commandes" element={<OrdersPage />} />
           <Route path="/documents" element={<DocumentsPage />} />

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { HandCoins, CheckCircle2, PenLine, Camera } from 'lucide-react';
+import { HandCoins, CheckCircle2, PenLine, Camera, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { CodSignatureDialog } from './CodSignatureDialog';
 
@@ -10,6 +10,18 @@ export const CodCollectionPanel = () => {
   const [data, setData] = useState(null);
   const [signOrder, setSignOrder] = useState(null);
   const [marking, setMarking] = useState(false);
+  const [courierLink, setCourierLink] = useState('');
+
+  const createCourierLink = async () => {
+    const r = await fetch(`${API}/admin/courier/tokens`, {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Livreur' }),
+    });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Génération impossible');
+    setCourierLink(`${window.location.origin}${d.path}`);
+    toast.success('Lien livreur généré (valable 24h)');
+  };
 
   const load = useCallback(() => {
     fetch(`${API}/admin/cod/orders`, { credentials: 'include' })
@@ -84,6 +96,24 @@ export const CodCollectionPanel = () => {
       </div>
       <CodSignatureDialog open={!!signOrder} onClose={() => setSignOrder(null)} order={signOrder}
         onConfirm={collect} loading={marking} />
+      <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center gap-2 flex-wrap text-xs" data-testid="courier-access-block">
+        <span className="text-white/50">Accès livreur mobile :</span>
+        <button onClick={createCourierLink} data-testid="courier-link-btn"
+          className="h-8 px-3 rounded-lg border border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/10 inline-flex items-center gap-1.5">
+          <Truck size={12} /> Générer un lien livreur (24h)
+        </button>
+        {courierLink && (
+          <>
+            <button onClick={() => { navigator.clipboard.writeText(courierLink); toast.success('Lien copié'); }}
+              className="h-8 px-3 rounded-lg border border-white/15 text-white/70 hover:bg-white/10">Copier le lien</button>
+            <a href={`https://wa.me/?text=${encodeURIComponent('Voici votre accès livreur KDMARCHÉ (valable 24h) : ' + courierLink)}`}
+              target="_blank" rel="noreferrer"
+              className="h-8 px-3 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 inline-flex items-center">
+              Envoyer sur WhatsApp
+            </a>
+          </>
+        )}
+      </div>
     </div>
   );
 };

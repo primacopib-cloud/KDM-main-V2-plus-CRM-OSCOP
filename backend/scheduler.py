@@ -215,6 +215,11 @@ async def _scheduler_loop():
             await process_invoice_reminders(_db)
         except Exception as exc:
             logger.exception("Scheduler invoice reminders crashed: %s", exc)
+        try:
+            from referral_challenge import process_referral_challenge
+            await process_referral_challenge(_db)
+        except Exception as exc:
+            logger.exception("Scheduler referral challenge crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

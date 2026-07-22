@@ -550,6 +550,13 @@ app.include_router(pipeline_router)
 from ai_usage import ai_usage_router, set_ai_usage_database
 set_ai_usage_database(db)
 app.include_router(ai_usage_router)
+from routes_courier import courier_admin_router, courier_router, set_courier_database
+set_courier_database(db)
+app.include_router(courier_admin_router)
+app.include_router(courier_router)
+from referral_challenge import challenge_router, set_challenge_database
+set_challenge_database(db)
+app.include_router(challenge_router)
 
 from encheria_service import set_encheria_database
 set_encheria_database(db)
