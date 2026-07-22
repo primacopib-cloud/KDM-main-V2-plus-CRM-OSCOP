@@ -71,6 +71,29 @@ def _mask(email: str) -> str:
     return (local[:2] + "•••") if len(local) > 2 else local + "•••"
 
 
+@challenge_public_router.get("/standing")
+async def my_challenge_standing(request: Request):
+    from auth import extract_user_id_from_request
+    user_id = extract_user_id_from_request(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Connexion requise")
+    settings = await _get_settings(db)
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    board = await _leaderboard(db, month, limit=100)
+    my_rank, my_count = None, 0
+    for i, row in enumerate(board):
+        if row["sponsor_id"] == user_id:
+            my_rank, my_count = i + 1, row["referred"]
+            break
+    return {
+        "enabled": bool(settings.get("enabled")), "reward_credits": settings.get("reward_credits", 50),
+        "month": month, "my_rank": my_rank, "my_count": my_count,
+        "participants": len(board),
+        "top": [{"name": _mask(r["sponsor"]), "referred": r["referred"], "me": r["sponsor_id"] == user_id}
+                for r in board[:3]],
+    }
+
+
 @challenge_public_router.get("")
 async def public_challenge():
     settings = await _get_settings(db)

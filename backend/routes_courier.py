@@ -74,11 +74,21 @@ async def courier_orders(token: str = Query(...)):
     orgs = {o["id"]: o.get("legal_name") or o.get("name") for o in
             await db.organizations.find({"id": {"$in": org_ids}}, {"id": 1, "legal_name": 1, "name": 1}).to_list(100)}
     pickup_ids = list({o.get("pickup_location_id") for o in items if o.get("pickup_location_id")})
-    pickups = {p["id"]: p.get("name") for p in
-               await db.pickup_locations.find({"id": {"$in": pickup_ids}}, {"id": 1, "name": 1}).to_list(100)}
+    pickups = {p["id"]: p for p in
+               await db.pickup_locations.find({"id": {"$in": pickup_ids}},
+                                              {"id": 1, "name": 1, "coordinates": 1, "city": 1}).to_list(100)}
+    zone_centroids = {"GUADELOUPE": (16.265, -61.551), "MARTINIQUE": (14.6415, -61.0242),
+                      "GUYANE": (4.93, -52.33), "REUNION": (-21.115, 55.536), "MAYOTTE": (-12.78, 45.23)}
     for o in items:
         o["org_name"] = orgs.get(o.get("org_id"), "")
-        o["pickup_name"] = pickups.get(o.pop("pickup_location_id", None), "")
+        p = pickups.get(o.pop("pickup_location_id", None)) or {}
+        o["pickup_name"] = p.get("name", "")
+        coords = p.get("coordinates") or {}
+        if coords.get("lat") is not None:
+            o["lat"], o["lng"] = coords["lat"], coords["lng"]
+        else:
+            c = zone_centroids.get(o.get("zone_code"))
+            o["lat"], o["lng"] = (c if c else (None, None))
         o.pop("org_id", None)
         if o.get("confirmed_at") and not isinstance(o["confirmed_at"], str):
             o["confirmed_at"] = o["confirmed_at"].isoformat()

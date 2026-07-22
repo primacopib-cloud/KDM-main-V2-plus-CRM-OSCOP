@@ -77,7 +77,35 @@ async def claim_code(body: ClaimBody, user_id: str = Depends(get_current_user_id
         "sponsor_id": sponsor["user_id"], "code": code, "bonus_paid": False,
         "created_at": datetime.now(timezone.utc).isoformat()})
     await audit("REFERRAL_CLAIMED", user_id, None, {"code": code, "sponsor_id": sponsor["user_id"]})
-    return {"ok": True, "message": "Code parrain enregistré — votre parrain recevra son bonus lors de votre première inscription à une consultation"}
+    import asyncio as _asyncio
+    _asyncio.create_task(_notify_sponsor_new_filleul(sponsor["user_id"], user.get("email")))
+    return {"ok": True, "message": "Code parrain enregistré — votre parrain recevra son bonus lors de votre première inscription à une consultation ou première commande"}
+
+
+async def _notify_sponsor_new_filleul(sponsor_id: str, filleul_email: str):
+    """Email au parrain dès qu'un filleul s'inscrit avec son code."""
+    try:
+        sponsor = await db.users.find_one({"id": sponsor_id}, {"email": 1, "first_name": 1})
+        if not sponsor or not sponsor.get("email"):
+            return
+        from routes_cpc_admin import get_cpc_settings
+        bonus = (await get_cpc_settings()).get("referral_bonus", 10)
+        import os as _os
+        base = _os.environ.get("FRONTEND_URL", "").rstrip("/")
+        from brevo_service import send_email
+        await send_email(
+            to_email=sponsor["email"], to_name=sponsor.get("first_name"),
+            subject="🎉 Un nouveau filleul vient d'utiliser votre code parrain !",
+            html_content=("<div style='font-family:Arial,sans-serif;max-width:560px'><p>Bonne nouvelle !</p>"
+                          f"<p><b>{filleul_email}</b> vient de s'inscrire avec votre code parrain. "
+                          f"Vous recevrez <b>+{bonus} CREDI'SCOP</b> dès sa première commande ou inscription à une consultation.</p>"
+                          "<p>Continuez à partager votre code pour grimper au classement du défi parrainage du mois !</p>"
+                          f"<p><a href='{base}/espace-acheteur' style='background:#5B2E8C;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none'>Voir mon parrainage</a></p>"
+                          "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP</p></div>"),
+            tags=["referral-new-filleul"])
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Email nouveau filleul échoué : %s", exc)
 
 
 @referral_router.get("/admin/overview")
