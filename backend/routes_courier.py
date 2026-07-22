@@ -101,5 +101,22 @@ async def courier_collect(order_id: str, body: dict = None, token: str = Query(.
     t = await _require_token(token)
     from routes_cod import collect_order_core
     result = await collect_order_core(order_id, body or {}, f"livreur:{t['name']}")
+    await db.orders.update_one({"id": order_id},
+                               {"$set": {"cod_collected_by": t["name"], "cod_courier_token_id": t["id"]}})
     await db.courier_tokens.update_one({"id": t["id"]}, {"$inc": {"collected_count": 1}})
     return result
+
+
+@courier_router.get("/history")
+async def courier_history(token: str = Query(...)):
+    t = await _require_token(token)
+    items = await db.orders.find(
+        {"payment_method": "cod", "payment_status": "succeeded", "cod_collected_by": t["name"]},
+        {"_id": 0, "id": 1, "order_number": 1, "amount_paid_cents": 1, "paid_at": 1,
+         "cod_signer_name": 1, "cod_signature_url": 1, "cod_photo_url": 1, "cod_receipt_number": 1},
+    ).sort("paid_at", -1).to_list(50)
+    for o in items:
+        if o.get("paid_at") and not isinstance(o["paid_at"], str):
+            o["paid_at"] = o["paid_at"].isoformat()
+    return {"courier": t["name"], "items": items,
+            "total_collected_cents": sum(o.get("amount_paid_cents", 0) for o in items), "count": len(items)}

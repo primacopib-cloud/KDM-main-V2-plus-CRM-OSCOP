@@ -79,6 +79,8 @@ async def claim_code(body: ClaimBody, user_id: str = Depends(get_current_user_id
     await audit("REFERRAL_CLAIMED", user_id, None, {"code": code, "sponsor_id": sponsor["user_id"]})
     import asyncio as _asyncio
     _asyncio.create_task(_notify_sponsor_new_filleul(sponsor["user_id"], user.get("email")))
+    from referral_challenge import notify_overtaken
+    _asyncio.create_task(notify_overtaken(db, sponsor["user_id"]))
     return {"ok": True, "message": "Code parrain enregistré — votre parrain recevra son bonus lors de votre première inscription à une consultation ou première commande"}
 
 

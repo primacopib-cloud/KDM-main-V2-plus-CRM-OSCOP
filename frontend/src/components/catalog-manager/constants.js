@@ -1,4 +1,6 @@
 // Categories
+import i18n from '@/i18n';
+
 export const CATEGORIES = [
   { value: 'alimentaire', label: 'Alimentaire', icon: '🍎' },
   { value: 'boissons', label: 'Boissons', icon: '🥤' },

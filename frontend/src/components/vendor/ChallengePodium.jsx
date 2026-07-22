@@ -21,7 +21,9 @@ export const ChallengePodium = () => {
           <Trophy className="w-4 h-4 text-[#D9B35A]" /> Défi parrainage {data.month}
         </h4>
         <span className="text-[11px] font-bold text-[#E9CF8E]" data-testid="challenge-reward">
-          🏆 +{data.reward_credits} CREDI'SCOP pour le meilleur parrain
+          {data.tier_rewards && (data.tier_rewards[1] > 0 || data.tier_rewards[2] > 0)
+            ? <>🥇 +{data.tier_rewards[0]}{data.tier_rewards[1] > 0 && <> · 🥈 +{data.tier_rewards[1]}</>}{data.tier_rewards[2] > 0 && <> · 🥉 +{data.tier_rewards[2]}</>} CREDI'SCOP</>
+            : <>🏆 +{data.reward_credits} CREDI'SCOP pour le meilleur parrain</>}
         </span>
       </div>
       {data.top?.length > 0 ? (

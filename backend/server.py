@@ -559,6 +559,14 @@ set_challenge_database(db)
 app.include_router(challenge_router)
 app.include_router(challenge_public_router)
 
+from routes_product_ai import product_ai_router, set_product_ai_database
+set_product_ai_database(db)
+app.include_router(product_ai_router)
+
+from routes_transportia import transportia_router, set_transportia_database
+set_transportia_database(db)
+app.include_router(transportia_router)
+
 from encheria_service import set_encheria_database
 set_encheria_database(db)
 

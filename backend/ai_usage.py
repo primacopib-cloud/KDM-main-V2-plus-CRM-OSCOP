@@ -22,6 +22,9 @@ KIND_LABELS = {
     "polish": "Reformulations témoignages",
     "invite_email": "Emails d'invitation IA",
     "encheria_report": "Rapports d'adjudication",
+    "product_scan": "Scans fiche produit (IA)",
+    "transportia_invite": "TRANSPORT'IA — invitations & relances",
+    "transportia_assist": "TRANSPORT'IA — assistant",
 }
 
 

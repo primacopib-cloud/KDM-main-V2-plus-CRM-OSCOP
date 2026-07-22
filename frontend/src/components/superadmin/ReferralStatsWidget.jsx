@@ -9,12 +9,17 @@ export const ReferralStatsWidget = () => {
   const [data, setData] = useState(null);
   const [challenge, setChallenge] = useState(null);
   const [reward, setReward] = useState('');
+  const [reward2, setReward2] = useState('');
+  const [reward3, setReward3] = useState('');
 
   const load = useCallback(() => {
     fetch(`${API}/referral/admin/overview`, { credentials: 'include' })
       .then((r) => r.json()).then(setData).catch(() => {});
     fetch(`${API}/admin/referral/challenge`, { credentials: 'include' })
-      .then((r) => r.json()).then((d) => { setChallenge(d); setReward(String(d.reward_credits)); }).catch(() => {});
+      .then((r) => r.json()).then((d) => {
+        setChallenge(d); setReward(String(d.reward_credits));
+        setReward2(String(d.reward_2nd ?? 0)); setReward3(String(d.reward_3rd ?? 0));
+      }).catch(() => {});
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -78,12 +83,25 @@ export const ReferralStatsWidget = () => {
             <Switch checked={!!challenge.enabled} onCheckedChange={(v) => saveChallenge({ enabled: v })}
               data-testid="referral-challenge-switch" />
             <span className="text-[10px] text-white/45">{challenge.enabled ? 'Actif' : 'Inactif'}</span>
-            <div className="ml-auto flex items-center gap-1.5">
+            <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] text-white/50">🥇</span>
               <input value={reward} onChange={(e) => setReward(e.target.value.replace(/\D/g, ''))}
                 data-testid="referral-challenge-reward"
-                className="w-16 h-7 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white text-right" />
-              <span className="text-[10px] text-white/50">crédits à gagner</span>
-              <button onClick={() => saveChallenge({ reward_credits: parseInt(reward || '0', 10) })}
+                className="w-14 h-7 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white text-right" />
+              <span className="text-[10px] text-white/50">🥈</span>
+              <input value={reward2} onChange={(e) => setReward2(e.target.value.replace(/\D/g, ''))}
+                data-testid="referral-challenge-reward2"
+                className="w-14 h-7 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white text-right" />
+              <span className="text-[10px] text-white/50">🥉</span>
+              <input value={reward3} onChange={(e) => setReward3(e.target.value.replace(/\D/g, ''))}
+                data-testid="referral-challenge-reward3"
+                className="w-14 h-7 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white text-right" />
+              <span className="text-[10px] text-white/50">crédits</span>
+              <button onClick={() => saveChallenge({
+                reward_credits: parseInt(reward || '0', 10),
+                reward_2nd: parseInt(reward2 || '0', 10),
+                reward_3rd: parseInt(reward3 || '0', 10),
+              })}
                 className="p-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-[#E9CF8E]" title="Enregistrer">
                 <Save size={12} />
               </button>

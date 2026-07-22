@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { CATEGORIES, ZONES, COUNTRIES, getEmptyProduct, formatPrice } from './catalog-manager/constants';
 import { BasicTab, PricingTab } from './catalog-manager/BasicPricingTabs';
 import { FoodTab, TechnicalTab, LogisticsTab } from './catalog-manager/SpecializedTabs';
+import { AiProductAssistant } from './catalog-manager/AiProductAssistant';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -140,6 +141,7 @@ export default function ProductCatalogManager({ onProductSaved }) {
         brand: formData.brand || null,
         manufacturer: formData.manufacturer || null,
         status: formData.status,
+        image_url: formData.image_url || null,
         is_active: formData.is_active,
         is_new: formData.is_new,
         is_featured: formData.is_featured,
@@ -355,9 +357,11 @@ export default function ProductCatalogManager({ onProductSaved }) {
               key={product.id}
               className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] flex items-center gap-4 hover:bg-white/[0.04] transition-colors"
             >
-              {/* Image placeholder */}
-              <div className="w-16 h-16 rounded-xl bg-white/[0.04] flex items-center justify-center flex-shrink-0">
-                <Package className="w-6 h-6 text-white/20" />
+              {/* Image */}
+              <div className="w-16 h-16 rounded-xl bg-white/[0.04] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {product.image_url
+                  ? <img src={`${API_URL}${product.image_url}`} alt={product.name} className="w-full h-full object-cover" />
+                  : <Package className="w-6 h-6 text-white/20" />}
               </div>
               
               {/* Info */}
@@ -415,6 +419,9 @@ export default function ProductCatalogManager({ onProductSaved }) {
               {editingProduct ? 'Modifier le produit' : 'Nouveau produit'}
             </DialogTitle>
           </DialogHeader>
+
+          <AiProductAssistant formData={formData}
+            onApply={(fields) => setFormData((prev) => ({ ...prev, ...fields }))} />
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-white/[0.04] border border-white/[0.08] p-1 rounded-xl mb-4">

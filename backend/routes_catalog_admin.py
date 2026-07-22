@@ -58,6 +58,7 @@ class ProductCreate(BaseModel):
     compliance: Optional[Dict[str, Any]] = None
     logistics: Optional[Dict[str, Any]] = None
     media: Optional[Dict[str, Any]] = None
+    image_url: Optional[str] = None
 
 
 class ProductUpdate(ProductCreate):
@@ -177,6 +178,7 @@ async def create_catalog_product(product: ProductCreate):
             "compliance": product.compliance,
             "logistics": product.logistics,
             "media": product.media,
+            "image_url": product.image_url,
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
         }
@@ -247,6 +249,7 @@ async def update_catalog_product(product_id: str, product: ProductUpdate):
             "compliance": product.compliance,
             "logistics": product.logistics,
             "media": product.media,
+            "image_url": product.image_url,
             "updated_at": datetime.now(timezone.utc)
         }
         

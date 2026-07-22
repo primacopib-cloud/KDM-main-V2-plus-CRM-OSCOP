@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Truck, PenLine, RefreshCw, CheckCircle2, KeyRound, MapPin, Map } from 'lucide-react';
+import { Truck, PenLine, RefreshCw, CheckCircle2, KeyRound, MapPin, Map, Navigation, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { CodSignatureDialog } from '../components/superadmin/CodSignatureDialog';
+import { CourierHistory } from '../components/courier/CourierHistory';
 import LoloPointsMap from '../components/LoloPointsMap';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -18,6 +19,7 @@ export default function CourierPage() {
   const [marking, setMarking] = useState(false);
   const [done, setDone] = useState([]);
   const [showMap, setShowMap] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const load = useCallback(async (tk) => {
     if (!tk) return;
@@ -83,11 +85,30 @@ export default function CourierPage() {
                     : 'bg-white/[0.06] border-white/10 text-white/70'}`}>
                   <Map size={13} /> Carte
                 </button>
+                {items.some((o) => o.lat != null) && (
+                  <a data-testid="courier-navigate-btn" target="_blank" rel="noreferrer"
+                    href={(() => {
+                      const stops = items.filter((o) => o.lat != null && o.lng != null);
+                      const dest = stops[stops.length - 1];
+                      const waypoints = stops.slice(0, -1).map((o) => `${o.lat},${o.lng}`).join('|');
+                      return `https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}${waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ''}&travelmode=driving`;
+                    })()}
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 border bg-white/[0.06] border-white/10 text-white/70 hover:text-white transition-colors">
+                    <Navigation size={13} /> Itinéraire
+                  </a>
+                )}
+                <button onClick={() => setShowHistory((v) => !v)} data-testid="courier-history-toggle"
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 border transition-colors ${showHistory
+                    ? 'bg-[#D9B35A]/20 border-[#D9B35A]/40 text-[#E9CF8E]'
+                    : 'bg-white/[0.06] border-white/10 text-white/70'}`}>
+                  <History size={13} />
+                </button>
                 <button onClick={() => load(token)} className="p-2 rounded-lg bg-white/[0.06] border border-white/10" title="Actualiser">
                   <RefreshCw size={14} />
                 </button>
               </div>
             </div>
+            {showHistory && <CourierHistory token={token} />}
             {showMap && items.length > 0 && (
               <div className="mb-4" data-testid="courier-tour-map">
                 <LoloPointsMap height="300px"

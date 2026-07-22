@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Bot, Sparkles, Gavel, Loader2, Store } from 'lucide-react';
+import { Bot, Sparkles, Gavel, Loader2, Store, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '../ui/switch';
 import { ProspectiaStudio } from './ProspectiaStudio';
 import { SocialProofPanel } from './SocialProofPanel';
 import { ProspectiaPipeline } from './ProspectiaPipeline';
 import { AIUsagePanel } from './AIUsagePanel';
+import { TransportiaPanel } from './TransportiaPanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -36,7 +37,7 @@ export const AIAgentsPanel = () => {
 
   return (
     <div className="space-y-6" data-testid="ai-agents-panel">
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="glass-panel-soft rounded-[18px] p-5" data-testid="prospectia-card">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-display text-lg text-white flex items-center gap-2">
@@ -77,9 +78,25 @@ export const AIAgentsPanel = () => {
             dans le formulaire produit, et relance automatiquement par email les paniers abandonnés depuis 24h.
           </p>
         </div>
+        <div className="glass-panel-soft rounded-[18px] p-5" data-testid="transportia-card">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-display text-lg text-white flex items-center gap-2">
+              <Truck size={16} style={{ color: '#D9B35A' }} /> TRANSPORT'IA
+            </h3>
+            <Switch checked={!!settings.transportia_enabled}
+              onCheckedChange={(v) => toggle('transportia_enabled', v)} data-testid="transportia-switch" />
+          </div>
+          <p className="text-xs text-white/50">
+            Agent de recrutement des transporteurs LOGICOOP : pipeline de prospection, invitations et relances
+            IA personnalisées (adhésion transporteur gratuite), détection automatique des inscriptions et
+            assistant pour répondre aux objections.
+          </p>
+        </div>
       </div>
 
       <AIUsagePanel />
+
+      {settings.transportia_enabled && <TransportiaPanel />}
 
       {settings.prospectia_enabled && <ProspectiaPipeline />}
       {settings.prospectia_enabled && <ProspectiaStudio />}
