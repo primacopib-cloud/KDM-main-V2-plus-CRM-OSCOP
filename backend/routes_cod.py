@@ -112,9 +112,46 @@ async def mark_cod_collected(order_id: str, admin: dict = Depends(require_admin)
     from consultation_audit import audit
     await audit("ORDER_COD_COLLECTED", admin.get("email"), None,
                 {"order_id": order_id, "order_number": order.get("order_number"), "amount_cents": amount})
+    import asyncio
+    asyncio.create_task(_send_cod_receipt(order_id, invoice_number))
     logger.info("Encaissement COD confirmé pour %s (%s cents)", order.get("order_number"), amount)
     return {"ok": True, "order_number": order.get("order_number"), "amount_paid_cents": amount,
             "invoice_number": invoice_number}
+
+
+async def _send_cod_receipt(order_id: str, invoice_number: str = None) -> None:
+    """Envoie le reçu d'encaissement PDF par email aux membres de l'org."""
+    try:
+        import base64
+        order = await db.orders.find_one({"id": order_id})
+        if not order:
+            return
+        org = await db.organizations.find_one({"id": order.get("org_id")}, {"legal_name": 1, "name": 1})
+        org_name = (org or {}).get("legal_name") or (org or {}).get("name") or ""
+        from pdf_cod_receipt import generate_cod_receipt_pdf
+        pdf = generate_cod_receipt_pdf(order, org_name, invoice_number)
+        members = await db.org_memberships.find({"org_id": order.get("org_id")}).to_list(3)
+        users = await db.users.find({"id": {"$in": [m["user_id"] for m in members]}},
+                                    {"email": 1, "first_name": 1}).to_list(3)
+        amount = (order.get("amount_paid_cents") or 0) / 100
+        html = ("<div style='font-family:Arial,sans-serif;max-width:560px'>"
+                f"<p>Bonjour,</p><p>Nous confirmons l'encaissement de votre commande "
+                f"<b>{order.get('order_number')}</b> ({amount:.2f} € TTC, paiement à la livraison). "
+                "Vous trouverez votre reçu d'encaissement en pièce jointe.</p>"
+                "<p>Merci pour votre confiance,<br/>KDMARCHÉ × O'SCOP</p></div>")
+        from brevo_service import send_email
+        for u in users:
+            try:
+                await send_email(to_email=u["email"], to_name=u.get("first_name"),
+                                 subject=f"✅ Reçu d'encaissement — commande {order.get('order_number')}",
+                                 html_content=html, tags=["cod-receipt"],
+                                 attachments=[{"content": base64.b64encode(pdf).decode(),
+                                               "name": f"recu-{order.get('order_number')}.pdf"}])
+                logger.info("Reçu d'encaissement envoyé à %s (%s)", u["email"], order.get("order_number"))
+            except Exception as exc:
+                logger.warning("Envoi reçu COD échoué %s : %s", u.get("email"), exc)
+    except Exception as exc:
+        logger.error("_send_cod_receipt erreur : %s", exc)
 
 
 async def process_cod_reminders(database) -> None:

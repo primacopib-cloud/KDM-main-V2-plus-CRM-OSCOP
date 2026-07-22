@@ -72,6 +72,12 @@ async def product_image(body: ProductCopyBody, user: dict = Depends(get_current_
     await _require_ventia(db)
     if not body.name.strip():
         raise HTTPException(status_code=400, detail="Nom du produit requis")
+    quota = int(os.environ.get("VENTIA_IMAGE_DAILY_QUOTA", "5"))
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    used = await db.ventia_image_usage.count_documents({"user_id": user["id"], "date": today})
+    if used >= quota:
+        raise HTTPException(status_code=429,
+                            detail=f"Quota quotidien atteint ({quota} visuels IA/jour) — réessayez demain")
     from emergentintegrations.llm.chat import LlmChat, UserMessage
     upload_dir = os.path.join(os.path.dirname(__file__), "uploads", "ventia")
     os.makedirs(upload_dir, exist_ok=True)
@@ -93,7 +99,10 @@ async def product_image(body: ProductCopyBody, user: dict = Depends(get_current_
         fname = f"produit-{uuid.uuid4().hex[:10]}.png"
         with open(os.path.join(upload_dir, fname), "wb") as f:
             f.write(base64.b64decode(images[0]["data"]))
-        return {"image_url": f"/api/uploads/ventia/{fname}"}
+        await db.ventia_image_usage.insert_one({"user_id": user["id"], "date": today,
+                                                "product_name": body.name.strip()[:120],
+                                                "created_at": datetime.utcnow()})
+        return {"image_url": f"/api/uploads/ventia/{fname}", "quota_remaining": quota - used - 1}
     except HTTPException:
         raise
     except Exception as exc:

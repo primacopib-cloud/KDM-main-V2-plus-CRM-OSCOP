@@ -1298,3 +1298,7 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Widget hebdo SuperAdmin : GET /api/admin/reports/weekly/history (system_flags weekly_activity_report, 8 semaines) ; WeeklyReportWidget.jsx en tête du Dashboard (6 métriques + delta vs semaine précédente + mini historique)
 - FIX KPI OrdersTab : agrégation superadmin élargie (payment_status succeeded/paid + statuts PAID/INVOICED, total_ttc_cents/100 fallback) — header cohérent avec le panneau COD
 - Commande démo KDM-20260716-60C1CBA8 encaissée (facture FA-202607-0001) durant les tests
+
+## 2026-07-22 — Reçu d'encaissement PDF + Quota visuels IA (self-testé curl/python)
+- Reçu d'encaissement : pdf_cod_receipt.py (reportlab, style facture crédits) — envoyé automatiquement en pièce jointe email Brevo aux membres de l'org (fire-and-forget _send_cod_receipt dans mark_cod_collected, tag cod-receipt) ; testé : PDF 2.4Ko valide + email envoyé à acheteur-pro
+- Quota visuels IA : VENTIA_IMAGE_DAILY_QUOTA (env, défaut 5/jour/vendeur) — collection ventia_image_usage {user_id, date, product_name} ; 429 au-delà avec message clair (toast frontend existant) ; réponse inclut quota_remaining ; testé 429 après 5 usages
