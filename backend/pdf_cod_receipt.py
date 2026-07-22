@@ -76,5 +76,17 @@ def generate_cod_receipt_pdf(order: dict, org_name: str, invoice_number: str = N
                 Spacer(1, 2 * mm),
                 RLImage(sig_path, width=70 * mm, height=26 * mm),
             ]
+    photo_url = order.get("cod_photo_url")
+    if photo_url:
+        import os
+        photo_path = os.path.join(os.path.dirname(__file__), photo_url.replace("/api/uploads/", "uploads/"))
+        if os.path.exists(photo_path):
+            from reportlab.platypus import Image as RLImage
+            story += [
+                Spacer(1, 6 * mm),
+                Paragraph("Photo du colis remis à la livraison", sub),
+                Spacer(1, 2 * mm),
+                RLImage(photo_path, width=70 * mm, height=52 * mm, kind="proportional"),
+            ]
     doc.build(story)
     return buf.getvalue()

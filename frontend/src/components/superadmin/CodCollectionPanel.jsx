@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { HandCoins, CheckCircle2, PenLine } from 'lucide-react';
+import { HandCoins, CheckCircle2, PenLine, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { CodSignatureDialog } from './CodSignatureDialog';
 
@@ -17,11 +17,11 @@ export const CodCollectionPanel = () => {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const collect = async ({ signature, signer_name }) => {
+  const collect = async ({ signature, signer_name, photo }) => {
     setMarking(true);
     const r = await fetch(`${API}/admin/cod/orders/${signOrder.id}/collected`, {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ signature, signer_name }),
+      body: JSON.stringify({ signature, signer_name, photo }),
     });
     const d = await r.json();
     setMarking(false);
@@ -59,6 +59,13 @@ export const CodCollectionPanel = () => {
                   <span className="px-2 py-0.5 rounded bg-white/10 text-white/60 inline-flex items-center gap-1">
                     <PenLine size={10} /> Signé par {o.cod_signer_name}
                   </span>
+                )}
+                {o.cod_photo_url && (
+                  <a href={`${process.env.REACT_APP_BACKEND_URL}${o.cod_photo_url}`} target="_blank" rel="noreferrer"
+                    className="px-2 py-0.5 rounded bg-blue-400/15 text-blue-300 inline-flex items-center gap-1 hover:bg-blue-400/25"
+                    data-testid={`cod-photo-link-${o.id}`}>
+                    <Camera size={10} /> Photo colis
+                  </a>
                 )}
               </>
             ) : (

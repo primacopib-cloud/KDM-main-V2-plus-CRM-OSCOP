@@ -77,7 +77,7 @@ async def list_cod_orders(admin: dict = Depends(require_admin)):
         {"_id": 0, "id": 1, "order_number": 1, "org_id": 1, "status": 1, "payment_status": 1,
          "total_ttc_cents": 1, "cod_amount_due_cents": 1, "confirmed_at": 1, "paid_at": 1,
          "cod_reminder_sent": 1, "created_at": 1, "cod_signer_name": 1, "cod_signature_url": 1,
-         "cod_receipt_number": 1},
+         "cod_receipt_number": 1, "cod_photo_url": 1},
     ).sort("created_at", -1).to_list(100)
     org_ids = list({o["org_id"] for o in items if o.get("org_id")})
     orgs = {o["id"]: o.get("legal_name") or o.get("name") for o in
@@ -115,6 +115,19 @@ async def mark_cod_collected(order_id: str, body: dict = None, admin: dict = Dep
             extra["cod_signer_name"] = (body.get("signer_name") or "").strip()[:80]
         except Exception as exc:
             logger.warning("Signature COD non sauvegardée : %s", exc)
+    photo = body.get("photo") or ""
+    if photo.startswith("data:image"):
+        try:
+            import base64
+            photo_dir = os.path.join(os.path.dirname(__file__), "uploads", "deliveries")
+            os.makedirs(photo_dir, exist_ok=True)
+            ext = "jpg" if "jpeg" in photo[:22] else "png"
+            pname = f"colis-{order_id[-8:]}-{int(datetime.utcnow().timestamp())}.{ext}"
+            with open(os.path.join(photo_dir, pname), "wb") as f:
+                f.write(base64.b64decode(photo.split(",", 1)[1]))
+            extra["cod_photo_url"] = f"/api/uploads/deliveries/{pname}"
+        except Exception as exc:
+            logger.warning("Photo de livraison non sauvegardée : %s", exc)
     await db.orders.update_one(
         {"id": order_id},
         {"$set": {"payment_status": "succeeded", "amount_paid_cents": amount,
