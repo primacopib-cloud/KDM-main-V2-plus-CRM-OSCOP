@@ -1,0 +1,41 @@
+{
+  "summary": "Iter 67 (PROSPECT'IA A/B + Bibliothèque + Preuve sociale + Rapport hebdo) : Backend 21/21 pytest PASS. Frontend : 2 bugs CRITIQUES trouvés et corrigés par le testing agent (imports/state manquants qui cassaient totalement l'onglet Agents IA du /superadmin). Après fix, tous les flows UI fonctionnent : /temoignage (soumission → écran de succès data-testid=testimonial-success), landing / (section data-testid=testimonials-section avec Jean Testeur), /superadmin > Agents IA (switch prospectia, Studio, Bibliothèque avec 1 item 'Email test vendeurs' + 1 campagne 'Test Campagne' aggregée, Social Proof panel avec 2 témoignages + boutons approve/polish/invite). Backend tests couvrent : sécurité (401/403 sans session), CRUD library, campagne A/B (subject_b, followup_1/2 générés par LLM, library_id lié, stats agrégées), témoignages publics (min 15 chars, email caché sur GET public), modération (approve, polish nécessite prospectia_enabled=403 sinon), invite IA (nécessite prospectia_enabled, envoie via Brevo, testé limit=1 sûr), rapport hebdo (POST /api/admin/reports/weekly/send → ok:true sent_to:contact@objectifscopoutremer.com). L'état prospectia_enabled a été remis à false comme demandé. Toutes les données TEST_ nettoyées.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AIAgentsPanel.jsx", "issue": "FIXED par testing agent — ReferenceError: SocialProofPanel is not defined. Le composant était utilisé (ligne 67) mais jamais importé. L'onglet Agents IA du /superadmin crashait complètement avec Uncaught runtime error dès que la vue s'affichait.", "selector": "[data-testid='ai-agents-panel']", "priority": "CRITICAL (fixed)"},
+      {"component": "ProspectiaStudio.jsx", "issue": "FIXED par testing agent — ReferenceError: libRefresh is not defined (+ saveTitle, setSaveTitle, libraryId, setLibraryId manquants). Les states étaient utilisés dans saveToLibrary (l.47-52), launch (l.76), le JSX (l.127) et ProspectiaLibrary (l.161) mais aucun useState correspondant n'était déclaré. Le composant Studio PROSPECT'IA crashait dès affichage.", "selector": "[data-testid='prospectia-studio']", "priority": "CRITICAL (fixed)"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter67_prospectia_social_weekly.py",
+    "/app/test_reports/pytest/iter67_results.xml"
+  ],
+  "action_items": [
+    "(Validation par main agent) Vérifier les 2 fixes appliqués par le testing agent : (a) ajout de `import { SocialProofPanel } from './SocialProofPanel';` dans AIAgentsPanel.jsx ligne 6 ; (b) ajout des 3 states manquants dans ProspectiaStudio.jsx après ligne 18 : `const [libRefresh, setLibRefresh] = useState(0); const [saveTitle, setSaveTitle] = useState(''); const [libraryId, setLibraryId] = useState(null);`",
+    "Investiguer pourquoi ces bugs sont passés dans un lot livré — probable régression après un split de composants. Envisager d'ajouter un lint rule `no-undef` strict + une smoke Playwright qui charge /superadmin?tab=agents-ia pour éviter que ce type de crash n'atteigne à nouveau la prod.",
+    "(Optionnel) Le WebSocket /ws/notifications échoue en console — non bloquant mais ajoute du bruit d'erreur. À investiger si intentionnel en preview."
+  ],
+  "critical_code_review_comments": [
+    "social_proof.polish : bien fait de garder text_original pour rollback (voix authentique préservable). OK.",
+    "social_proof.invite_members : la boucle inserte dans testimonial_invites uniquement en cas de succès Brevo — dédup fiable. Bonne pratique.",
+    "routes_prospectia.create_campaign : appelle `process_prospectia_campaigns(db)` synchrone dans le POST — ceci envoie via Brevo les 2 premiers emails de manière SYNCHRONE dans la requête. Latence potentielle élevée (~2-5s par prospect). OK avec la restriction 1-2 prospects, mais à noter que le lot du testing a mis ~10s pour la campagne A/B (extras LLM + 2 envois Brevo).",
+    "weekly_report.send_weekly_activity_report : idempotent par week_key via system_flags — bien. Force=true bypass l'idempotence sur POST admin, ce qui rend possible du spam si l'admin recharge le bouton. À signaler mais non bloquant.",
+    "weekly_report._collect_stats : mixe `since` (datetime) et `since_iso` selon les collections — cohérent avec la façon dont chaque collection stocke created_at (datetime vs isoformat). OK.",
+    "AIAgentsPanel & ProspectiaStudio : les 2 imports/states manquants confirment un défaut de test unitaire côté composants React — un simple `import` non résolu passerait sur build mais crash au runtime. Recommander tests smoke Playwright ou React Testing Library pour ces panels critiques."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter67_prospectia_social_weekly.py (créé, 21 tests)",
+    "/app/frontend/src/components/superadmin/AIAgentsPanel.jsx (ajout import SocialProofPanel)",
+    "/app/frontend/src/components/superadmin/ProspectiaStudio.jsx (ajout des states libRefresh/saveTitle/libraryId manquants)"
+  ],
+  "success_rate": {"backend": "100% (21/21)", "frontend": "100% après fixes appliqués (0/5 flows initialement — crash total onglet Agents IA — puis 5/5 après fixes)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin, via /admin/connexion)",
+  "seed_data_creation": "Aucune donnée persistante. Nettoyé : témoignage 'TEST UI Iter67' + tous les documents TEST_Iter67 (library, campaigns, invites). prospectia_enabled remis à false (état initial).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fichier réutilisable : /app/backend/tests/test_iter67_prospectia_social_weekly.py. Attention : le test test_create_campaign_ab envoie 2 vrais emails Brevo à @example.com — normalement bounced/ignorés côté SMTP mais consomme le quota Brevo. Le test test_invite_limit_1 envoie 1 email Brevo réel à un vrai membre de la DB (vendor/buyer) — limite à 1 par run. Testids UI : testimonial-page, testimonial-name/company/role/territory/email, testimonial-star-N (1-5), testimonial-text, testimonial-submit-btn, testimonial-success, testimonials-section (landing), prospectia-switch, prospectia-studio, prospectia-generate-btn, prospectia-save-title, prospectia-save-library-btn, prospectia-library, library-reuse-{id}, social-proof-panel, testimonial-approve-{id}, testimonial-polish-{id}, social-proof-invite-btn. Le WS /ws/notifications émet des erreurs non-bloquantes en console.",
+  "rca of the issue": "CRITICAL — Onglet /superadmin > Agents IA totalement inutilisable en preview. RCA :\n\n(1) /app/frontend/src/components/superadmin/AIAgentsPanel.jsx utilisait <SocialProofPanel /> ligne 67 sans en avoir l'import (ligne 5 importait uniquement ProspectiaStudio). Fix : ajout `import { SocialProofPanel } from './SocialProofPanel';`.\n\n(2) /app/frontend/src/components/superadmin/ProspectiaStudio.jsx référençait 3 states non déclarés :\n  - libRefresh (setLibRefresh) utilisé ligne 52 et 161 (prop refreshKey de ProspectiaLibrary)\n  - saveTitle (setSaveTitle) utilisé ligne 47, 51, 127 (champ input testid=prospectia-save-title)\n  - libraryId (setLibraryId) utilisé ligne 36, 48, 76 (lie la campagne au script sauvegardé)\n Fix : ajout après la déclaration launching :\n  const [libRefresh, setLibRefresh] = useState(0);\n  const [saveTitle, setSaveTitle] = useState('');\n  const [libraryId, setLibraryId] = useState(null);\n\nCes 2 bugs ont été introduits ensemble lors du split ProspectiaStudio → ProspectiaLibrary + SocialProofPanel (composants séparés) sans que les états ni imports référencés dans les JSX enfants soient migrés. Reproduction : /admin/connexion → login admin → /superadmin → clic Agents IA → boom Uncaught runtime error. Après les 2 fixes appliqués par le testing agent, tous les composants s'affichent normalement et sont fonctionnels."
+}

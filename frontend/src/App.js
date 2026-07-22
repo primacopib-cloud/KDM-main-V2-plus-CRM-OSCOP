@@ -42,6 +42,7 @@ import ProductCardDemoPage from "./pages/ProductCardDemoPage";
 import NotificationsHistoryPage from "./pages/NotificationsHistoryPage";
 import AiChatPage from "./pages/AiChatPage";
 import VendorOnboardingPage from "./pages/VendorOnboardingPage";
+import TestimonialPage from "./pages/TestimonialPage";
 import VendorActivationPage from "./pages/VendorActivationPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import ShoppingListsPage from "./pages/ShoppingListsPage";
@@ -114,6 +115,7 @@ function App() {
           <Route path="/admin-v2" element={<AdminV2Page />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/adhesion" element={<OnboardingPage />} />
+          <Route path="/temoignage" element={<TestimonialPage />} />
           <Route path="/catalogue" element={<CatalogPage />} />
           <Route path="/commandes" element={<OrdersPage />} />
           <Route path="/documents" element={<DocumentsPage />} />

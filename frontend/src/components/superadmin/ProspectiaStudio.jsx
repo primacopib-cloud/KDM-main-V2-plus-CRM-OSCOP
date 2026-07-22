@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Sparkles, Wand2, Clapperboard, Send, Loader2, Copy, PauseCircle, PlayCircle } from 'lucide-react';
+import { Sparkles, Wand2, Clapperboard, Send, Loader2, Copy, PauseCircle, PlayCircle, BookMarked } from 'lucide-react';
 import { toast } from 'sonner';
+import { ProspectiaLibrary } from './ProspectiaLibrary';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inp = 'h-10 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35';
@@ -15,6 +16,9 @@ export const ProspectiaStudio = () => {
   const [campaign, setCampaign] = useState({ name: '', subject: '', prospects_csv: '' });
   const [campaigns, setCampaigns] = useState([]);
   const [launching, setLaunching] = useState(false);
+  const [libRefresh, setLibRefresh] = useState(0);
+  const [saveTitle, setSaveTitle] = useState('');
+  const [libraryId, setLibraryId] = useState(null);
 
   const loadCampaigns = useCallback(() => {
     fetch(`${API}/admin/prospectia/campaigns`, { credentials: 'include' })
@@ -32,7 +36,21 @@ export const ProspectiaStudio = () => {
     setGenerating(false);
     if (!r.ok) return toast.error(d.detail || 'Génération impossible');
     setContent(d.content);
+    setLibraryId(null);
     toast.success('Script généré par PROSPECT\'IA');
+  };
+
+  const saveToLibrary = async () => {
+    if (!content) return;
+    const r = await fetch(`${API}/admin/prospectia/library`, {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: saveTitle || `${form.content_type} ${form.target} ${new Date().toLocaleDateString('fr-FR')}`, content, content_type: form.content_type, target: form.target, lang: form.lang }),
+    });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Sauvegarde impossible');
+    setLibraryId(d.id); setSaveTitle('');
+    setLibRefresh((k) => k + 1);
+    toast.success('Script sauvegardé dans la bibliothèque');
   };
 
   const genStoryboard = async () => {
@@ -55,7 +73,7 @@ export const ProspectiaStudio = () => {
     setLaunching(true);
     const r = await fetch(`${API}/admin/prospectia/campaigns`, {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: campaign.name || 'Campagne PROSPECT\'IA', subject: campaign.subject || 'Rejoignez la Communityplace KDMARCHÉ × O\'SCOP', body: content, prospects_csv: campaign.prospects_csv }),
+      body: JSON.stringify({ name: campaign.name || 'Campagne PROSPECT\'IA', subject: campaign.subject || 'Rejoignez la Communityplace KDMARCHÉ × O\'SCOP', body: content, prospects_csv: campaign.prospects_csv, library_id: libraryId }),
     });
     const d = await r.json();
     setLaunching(false);
@@ -106,6 +124,12 @@ export const ProspectiaStudio = () => {
               className="h-9 px-3 rounded-lg text-xs border border-white/15 text-white/70 hover:bg-white/10 inline-flex items-center gap-1.5">
               <Copy size={12} /> Copier
             </button>
+            <input value={saveTitle} onChange={(e) => setSaveTitle(e.target.value)} placeholder="Titre du script"
+              className="h-9 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-xs text-white placeholder:text-white/35 w-44" data-testid="prospectia-save-title" />
+            <button onClick={saveToLibrary} data-testid="prospectia-save-library-btn"
+              className="h-9 px-3 rounded-lg text-xs border border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/10 inline-flex items-center gap-1.5">
+              <BookMarked size={12} /> Sauvegarder dans la bibliothèque
+            </button>
             {form.content_type === 'video_script' && (
               <button onClick={genStoryboard} disabled={sbLoading} data-testid="prospectia-storyboard-btn"
                 className="h-9 px-3 rounded-lg text-xs border border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/10 inline-flex items-center gap-1.5 disabled:opacity-50">
@@ -120,7 +144,7 @@ export const ProspectiaStudio = () => {
           )}
 
           <div className="mt-4 pt-4 border-t border-white/10">
-            <p className="text-xs text-white/55 mb-2 flex items-center gap-1.5"><Send size={12} className="text-[#D9B35A]" /> Envoi autonome — collez vos prospects (un par ligne : <code>email, entreprise, prénom</code>). Variables : {'{prenom} {entreprise} {lien}'}</p>
+            <p className="text-xs text-white/55 mb-2 flex items-center gap-1.5"><Send size={12} className="text-[#D9B35A]" /> Envoi autonome ultra-performant : A/B test d'objet automatique, relances IA J+3 et J+7 aux non-cliqueurs, conversions détectées. Prospects (un par ligne : <code>email, entreprise, prénom</code>). Variables : {'{prenom} {entreprise} {lien}'}</p>
             <div className="flex flex-wrap gap-2 mb-2">
               <input value={campaign.name} onChange={(e) => setCampaign({ ...campaign, name: e.target.value })} placeholder="Nom de la campagne" className={`${inp} w-52`} data-testid="prospectia-campaign-name" />
               <input value={campaign.subject} onChange={(e) => setCampaign({ ...campaign, subject: e.target.value })} placeholder="Objet de l'email" className={`${inp} flex-1 min-w-[220px]`} data-testid="prospectia-campaign-subject" />
@@ -137,21 +161,32 @@ export const ProspectiaStudio = () => {
         </div>
       )}
 
+      <ProspectiaLibrary refreshKey={libRefresh} onReuse={(s) => { setContent(s.content); setLibraryId(s.id); setForm((f) => ({ ...f, content_type: s.content_type, target: s.target })); toast.success(`Script « ${s.title} » chargé`); }} />
+
       {campaigns.length > 0 && (
         <div className="space-y-2 mt-2" data-testid="prospectia-campaigns">
           <p className="text-xs text-white/55 font-semibold">Campagnes ({campaigns.length})</p>
           {campaigns.map((c) => (
-            <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs flex-wrap">
-              <span className="text-white font-medium">{c.name}</span>
-              <span className="text-white/50">{c.sent_count}/{c.prospects_total} envoyés · {c.click_count} clic(s)</span>
-              <span className={`px-2 py-0.5 rounded font-semibold ${c.status === 'done' ? 'bg-emerald-400/15 text-emerald-300' : c.status === 'paused' ? 'bg-white/10 text-white/50' : 'bg-[#D9B35A]/15 text-[#E9CF8E]'}`}>
-                {c.status === 'done' ? 'Terminée' : c.status === 'paused' ? 'En pause' : 'En cours'}
-              </span>
-              {c.status !== 'done' && (
-                <button onClick={() => pause(c)} className="ml-auto p-1.5 rounded-lg hover:bg-white/10 text-white/60" title={c.status === 'running' ? 'Mettre en pause' : 'Reprendre'}>
-                  {c.status === 'running' ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
-                </button>
-              )}
+            <div key={c.id} className="p-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs" data-testid={`prospectia-campaign-${c.id}`}>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-white font-medium">{c.name}</span>
+                <span className={`px-2 py-0.5 rounded font-semibold ${c.status === 'done' ? 'bg-emerald-400/15 text-emerald-300' : c.status === 'paused' ? 'bg-white/10 text-white/50' : 'bg-[#D9B35A]/15 text-[#E9CF8E]'}`}>
+                  {c.status === 'done' ? 'Terminée' : c.status === 'paused' ? 'En pause' : 'En cours'}
+                </span>
+                {c.status !== 'done' && (
+                  <button onClick={() => pause(c)} className="ml-auto p-1.5 rounded-lg hover:bg-white/10 text-white/60" title={c.status === 'running' ? 'Mettre en pause' : 'Reprendre'}>
+                    {c.status === 'running' ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap mt-1.5 text-white/55">
+                <span>📤 {c.sent_count}/{c.prospects_total} envoyés</span>
+                <span>→</span>
+                <span className="text-[#E9CF8E]">🖱 {c.click_count} clic(s) <span className="text-white/35">(A:{c.clicks_a || 0} · B:{c.clicks_b || 0})</span></span>
+                <span>→</span>
+                <span className="text-emerald-300">✅ {c.conversions_count || 0} inscrit(s)</span>
+                <span className="text-white/35">· 🔁 {c.followups_count || 0} relance(s) auto</span>
+              </div>
             </div>
           ))}
         </div>

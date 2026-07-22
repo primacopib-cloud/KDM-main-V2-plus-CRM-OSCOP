@@ -527,6 +527,16 @@ from routes_prospectia import prospectia_router, prospectia_public_router, set_p
 set_prospectia_database(db)
 app.include_router(prospectia_router)
 app.include_router(prospectia_public_router)
+from prospectia_library import library_router, set_library_database
+set_library_database(db)
+app.include_router(library_router)
+from social_proof import social_admin_router, social_public_router, set_social_proof_database
+set_social_proof_database(db)
+app.include_router(social_admin_router)
+app.include_router(social_public_router)
+from weekly_report import weekly_report_router, set_weekly_report_database
+set_weekly_report_database(db)
+app.include_router(weekly_report_router)
 
 from encheria_service import set_encheria_database
 set_encheria_database(db)

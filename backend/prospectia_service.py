@@ -44,6 +44,40 @@ async def generate_script(target: str, territory: str, sector: str, lang: str, t
     return str(answer).strip()
 
 
+async def generate_campaign_extras(subject: str, body: str) -> dict:
+    """Génère la variante B de l'objet (A/B test) + 2 relances pour les non-cliqueurs."""
+    import json as _json
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    chat = LlmChat(
+        api_key=os.environ["EMERGENT_LLM_KEY"],
+        session_id=f"prospectia-extras-{uuid.uuid4()}",
+        system_message=f"{BRAND_CONTEXT}\nTu es PROSPECT'IA, expert en optimisation de campagnes d'acquisition. Réponds UNIQUEMENT en JSON valide.",
+    ).with_model("openai", "gpt-5.4")
+    prompt = (
+        f"Campagne d'acquisition. Objet A : « {subject} ». Corps :\n{body[:800]}\n\n"
+        "Génère un JSON avec exactement ces clés :\n"
+        '- "subject_b" : une variante d\'objet radicalement différente (angle bénéfice chiffré ou question) pour A/B test\n'
+        '- "followup_1" : relance J+3 courte (60-100 mots, angle différent du message initial, variables {prenom} {entreprise} {lien})\n'
+        '- "followup_2" : relance J+7 finale (50-80 mots, urgence douce type dernière invitation, variables {prenom} {entreprise} {lien})\n'
+        "JSON brut uniquement, sans markdown."
+    )
+    try:
+        raw = str(await chat.send_message(UserMessage(text=prompt))).strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1].lstrip("json").strip()
+        data = _json.loads(raw)
+        return {
+            "subject_b": (data.get("subject_b") or subject).strip(),
+            "followup_1": (data.get("followup_1") or "").strip(),
+            "followup_2": (data.get("followup_2") or "").strip(),
+        }
+    except Exception as exc:
+        logger.error("Extras campagne échoués : %s", exc)
+        return {"subject_b": subject,
+                "followup_1": "Bonjour {prenom}, avez-vous eu le temps de découvrir la Communityplace pour {entreprise} ? Les places partenaires partent vite : {lien}",
+                "followup_2": "Bonjour {prenom}, dernière invitation pour {entreprise} : rejoignez la Communityplace KDMARCHÉ × O'SCOP avant la clôture des adhésions fondatrices : {lien}"}
+
+
 async def generate_storyboard_images(script: str, campaign_hint: str) -> list:
     """Génère jusqu'à 3 images d'illustration de storyboard à partir du script vidéo."""
     from emergentintegrations.llm.chat import LlmChat, UserMessage

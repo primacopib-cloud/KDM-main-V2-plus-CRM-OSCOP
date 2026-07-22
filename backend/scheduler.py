@@ -185,6 +185,11 @@ async def _scheduler_loop():
             await process_encheria(_db)
         except Exception as exc:
             logger.exception("Scheduler encheria crashed: %s", exc)
+        try:
+            from weekly_report import send_weekly_activity_report
+            await send_weekly_activity_report(_db)
+        except Exception as exc:
+            logger.exception("Scheduler weekly activity report crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

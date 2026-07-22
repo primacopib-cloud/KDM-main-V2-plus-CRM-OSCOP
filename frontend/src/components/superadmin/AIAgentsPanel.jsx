@@ -3,6 +3,7 @@ import { Bot, Sparkles, Gavel, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '../ui/switch';
 import { ProspectiaStudio } from './ProspectiaStudio';
+import { SocialProofPanel } from './SocialProofPanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -44,7 +45,8 @@ export const AIAgentsPanel = () => {
           </div>
           <p className="text-xs text-white/50">
             Agent de prospection autonome : rédige emails, messages et scripts vidéo (avec storyboard illustré),
-            puis envoie seul vos campagnes aux prospects importés (20 emails/cycle, clics traqués).
+            envoie seul vos campagnes (A/B test, relances J+3/J+7, clics traqués) et gère la preuve sociale
+            (collecte et reformulation de témoignages membres).
           </p>
         </div>
         <div className="glass-panel-soft rounded-[18px] p-5" data-testid="encheria-card">
@@ -63,6 +65,7 @@ export const AIAgentsPanel = () => {
       </div>
 
       {settings.prospectia_enabled && <ProspectiaStudio />}
+      {settings.prospectia_enabled && <SocialProofPanel />}
 
       {settings.encheria_enabled && (
         <div className="glass-panel-soft rounded-[18px] p-5" data-testid="encheria-reports">
