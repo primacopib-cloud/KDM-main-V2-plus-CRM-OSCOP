@@ -86,6 +86,45 @@ async def check_quote_target_alert(db, force: bool = False) -> dict:
     return {"sent": True, "converted": converted, "target": target, "remaining_quotes": len(open_quotes)}
 
 
+@quote_target_alert_router.get("/target-history")
+async def quote_target_history(months: int = 6, current_user: dict = Depends(get_current_user)):
+    """Évolution mois par mois des devis convertis vs objectif."""
+    await check_admin(current_user)
+    db = get_database()
+    now = datetime.now(timezone.utc)
+    months = max(1, min(months, 12))
+    keys = []
+    y, m = now.year, now.month
+    for _ in range(months):
+        keys.append(f"{y:04d}-{m:02d}")
+        m -= 1
+        if m == 0:
+            y, m = y - 1, 12
+    keys.reverse()
+    counts = {k: 0 for k in keys}
+    async for q in db.quote_requests.find({"status": "converted"}, {"_id": 0, "status_history": 1, "created_at": 1}):
+        hist = q.get("status_history") or []
+        at = next((h.get("at") for h in reversed(hist) if h.get("to") == "converted"), None)
+        month = (at or "")[:7]
+        if not month:
+            c = q.get("created_at")
+            month = c.strftime("%Y-%m") if hasattr(c, "strftime") else ""
+        if month in counts:
+            counts[month] += 1
+    current_target = ((await db.system_flags.find_one({"key": "quote_monthly_target"})) or {}).get("target", 0)
+    flags = {}
+    async for f in db.system_flags.find({"key": "quote_target_alert"}, {"_id": 0, "month": 1, "target": 1}):
+        flags[f.get("month")] = f.get("target", 0)
+    current_month = now.strftime("%Y-%m")
+    items = []
+    for k in keys:
+        target = flags.get(k, current_target)
+        items.append({"month": k, "converted": counts[k], "target": target,
+                      "reached": target > 0 and counts[k] >= target,
+                      "current": k == current_month})
+    return {"items": items}
+
+
 @quote_target_alert_router.post("/target-alert/send")
 async def trigger_target_alert(force: bool = True, current_user: dict = Depends(get_current_user)):
     """Déclenchement manuel de l'alerte objectif (admin)."""

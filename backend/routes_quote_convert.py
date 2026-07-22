@@ -84,6 +84,90 @@ def _member_invite_html(name: str, email: str, password: str, role: str, login_u
     )
 
 
+REMIND_I18N = {
+    "fr": {
+        "subject": "Votre demande de devis KDMARCHÉ × O'SCOP — nous restons à votre écoute",
+        "hello": "Bonjour",
+        "p1": "vous avez récemment sollicité un devis pour <b>{company}</b> auprès de notre centrale d'achats coopérative. Votre demande est toujours entre les mains de notre équipe.",
+        "p2": "Prix mutualisés, logistique inter-îles et accompagnement ESS : nous serions ravis d'échanger avec vous pour finaliser votre proposition personnalisée.",
+        "cta": "Découvrir la plateforme",
+        "footer": "Vous pouvez répondre directement à cet email — un conseiller vous recontactera.",
+    },
+    "en": {
+        "subject": "Your KDMARCHÉ × O'SCOP quote request — we're still here for you",
+        "hello": "Hello",
+        "p1": "you recently requested a quote for <b>{company}</b> from our cooperative purchasing platform. Your request is still being handled by our team.",
+        "p2": "Pooled prices, inter-island logistics and SSE support: we would love to finalise your personalised proposal together.",
+        "cta": "Discover the platform",
+        "footer": "You can reply directly to this email — an advisor will get back to you.",
+    },
+    "es": {
+        "subject": "Su solicitud de presupuesto KDMARCHÉ × O'SCOP — seguimos a su disposición",
+        "hello": "Hola",
+        "p1": "recientemente solicitó un presupuesto para <b>{company}</b> en nuestra central de compras cooperativa. Su solicitud sigue en manos de nuestro equipo.",
+        "p2": "Precios mutualizados, logística interinsular y acompañamiento ESS: nos encantaría finalizar juntos su propuesta personalizada.",
+        "cta": "Descubrir la plataforma",
+        "footer": "Puede responder directamente a este correo — un asesor le contactará.",
+    },
+}
+
+
+def _remind_html(t: dict, name: str, company: str, base: str) -> str:
+    return (
+        "<div style='font-family:Arial,sans-serif;max-width:560px;margin:auto'>"
+        "<div style='background:#2A1045;border-radius:14px;padding:28px;color:#fff'>"
+        "<h2 style='color:#D4AF37;margin-top:0'>KDMARCHÉ × O'SCOP</h2>"
+        f"<p>{t['hello']} <b>{name}</b>,</p>"
+        f"<p>{t['p1'].format(company=company)}</p>"
+        f"<p>{t['p2']}</p>"
+        f"<p style='text-align:center;margin:24px 0'><a href='{base}' "
+        "style='background:#D4AF37;color:#1F0A33;padding:12px 26px;border-radius:999px;"
+        "text-decoration:none;font-weight:bold'>" + t["cta"] + "</a></p>"
+        f"<p style='font-size:13px;color:#ddd'>{t['footer']}</p>"
+        "</div></div>"
+    )
+
+
+@quote_convert_router.post("/{quote_id}/remind")
+async def remind_quote_prospect(quote_id: str, current_user: dict = Depends(get_current_user)):
+    """Relance manuelle du prospect par email (1 clic depuis le pipeline)."""
+    await check_admin(current_user)
+    db = get_database()
+    q = await db.quote_requests.find_one({"id": quote_id}, {"_id": 0})
+    if not q:
+        raise HTTPException(status_code=404, detail="Demande introuvable")
+    if q.get("status") == "converted":
+        raise HTTPException(status_code=400, detail="Ce prospect est déjà converti en membre")
+    email = (q.get("email") or "").strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="La demande ne contient pas d'email")
+    now = datetime.now(timezone.utc)
+    last = q.get("last_manual_reminder_at")
+    if last:
+        try:
+            if (now - datetime.fromisoformat(last)).total_seconds() < 86400:
+                raise HTTPException(status_code=409, detail="Relance déjà envoyée il y a moins de 24h")
+        except ValueError:
+            pass
+    lang = (q.get("lang") or "fr")[:2].lower()
+    t = REMIND_I18N.get(lang, REMIND_I18N["fr"])
+    contact = (f"{q.get('first_name') or ''} {q.get('last_name') or ''}".strip()
+               or q.get("contact_name") or q.get("company") or email)
+    base = (os.environ.get("FRONTEND_PUBLIC_URL") or os.environ.get("FRONTEND_URL") or "").rstrip("/")
+    from brevo_service import send_email
+    await send_email(to_email=email, to_name=contact, subject=t["subject"],
+                     html_content=_remind_html(t, contact, q.get("company") or contact, base),
+                     tags=["quote-manual-reminder"])
+    now_iso = now.isoformat()
+    await db.quote_requests.update_one(
+        {"id": quote_id},
+        {"$set": {"last_manual_reminder_at": now_iso},
+         "$push": {"manual_reminders": {"at": now_iso, "by": current_user.get("email")}}})
+    count = len(q.get("manual_reminders") or []) + 1
+    logger.info("Relance manuelle devis %s -> %s (%s) par %s", quote_id, email, lang, current_user.get("email"))
+    return {"ok": True, "sent_to": email, "lang": lang, "count": count, "at": now_iso}
+
+
 @quote_convert_router.post("/{quote_id}/convert-to-member")
 async def convert_quote_to_member(quote_id: str, body: dict, current_user: dict = Depends(get_current_user)):
     """Crée un compte membre (acheteur/vendeur) pré-rempli à partir d'une demande de devis."""

@@ -336,7 +336,8 @@
     "brouillon": "Borrador",
     "disponibles_one": "{{count}} producto disponible",
     "disponibles_other": "{{count}} productos disponibles",
-    "toast_prix_indispo": "Precio no disponible para su organización"
+    "toast_prix_indispo": "Precio no disponible para su organización",
+    "recent_searches": "Búsquedas recientes"
   },
   "seo": {
     "landing_title": "KDMARCHÉ — El ecosistema cooperativo de ultramar",

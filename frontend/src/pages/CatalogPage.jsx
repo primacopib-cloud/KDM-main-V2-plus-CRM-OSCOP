@@ -1,6 +1,6 @@
 import i18n from '@/i18n';
 import { tData } from '@/i18n/tData';
-import { SearchSuggest } from '../components/catalog/SearchSuggest';
+import { SearchSuggest, addRecentSearch } from '../components/catalog/SearchSuggest';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -53,6 +53,7 @@ export default function CatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedZone, setSelectedZone] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   
   // Cart state
   const [cart, setCart] = useState({ items: [], subtotal_ht_cents: 0 });
@@ -340,10 +341,12 @@ export default function CatalogPage() {
                 placeholder={i18n.t('catalog.rechercher')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && loadProducts()}
+                onKeyDown={(e) => { if (e.key === 'Enter') { addRecentSearch(searchTerm); loadProducts(); } }}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
                 className="pl-9 h-10 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40"
               />
-              <SearchSuggest term={searchTerm} onPick={setSearchTerm} />
+              <SearchSuggest term={searchTerm} onPick={setSearchTerm} focused={searchFocused} />
             </div>
             <Button variant="outline" onClick={loadProducts} className="border-white/10">
               <Search className="w-4 h-4" />

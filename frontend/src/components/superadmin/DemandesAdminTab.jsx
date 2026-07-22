@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Send, Loader2, Euro, RefreshCw, Save, ExternalLink, CheckCircle2, XCircle, Clock, Download, StickyNote } from 'lucide-react';
+import { Send, Loader2, Euro, RefreshCw, Save, ExternalLink, CheckCircle2, XCircle, Clock, Download, StickyNote, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { Switch } from '../ui/switch';
@@ -140,6 +140,16 @@ export const DemandesAdminTab = () => {
     load();
   };
 
+  const remindProspect = async (id) => {
+    const r = await fetch(`${API}/admin/quotes/${id}/remind`, { method: 'POST', ...opts });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Relance impossible');
+    toast.success(`Relance envoyée à ${d.sent_to} (${(d.lang || 'fr').toUpperCase()})`, {
+      description: `${d.count} relance(s) manuelle(s) au total pour ce prospect`,
+    });
+    load();
+  };
+
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-[#D9B35A]" /></div>;
 
   const achat = data?.tarif_achat || {};
@@ -245,6 +255,14 @@ export const DemandesAdminTab = () => {
                       {Object.entries(PIPELINE).map(([k, v]) => <option key={k} value={k} style={{ color: '#111' }}>{v.label}</option>)}
                     </select>
                     <QuoteConvertButton quote={q} onDone={load} />
+                    {pk !== 'converted' && (
+                      <button type="button" onClick={() => remindProspect(q.id)} data-testid={`quote-remind-${q.id}`}
+                        title={q.last_manual_reminder_at ? `Dernière relance : ${new Date(q.last_manual_reminder_at).toLocaleString('fr-FR')}` : 'Relancer le prospect par email'}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold transition-colors"
+                        style={{ background: 'rgba(96,165,250,0.14)', color: '#93C5FD', border: '1px solid rgba(96,165,250,0.45)' }}>
+                        <Mail size={10} /> Relancer
+                      </button>
+                    )}
                     {q.oscop_status !== 'PUSHED' && (
                       <button type="button" onClick={() => retry(q.id)} data-testid={`demandes-retry-${q.id}`}
                         className="px-2 py-1 rounded-md text-[10px] font-bold"
@@ -278,6 +296,12 @@ export const DemandesAdminTab = () => {
                   </div>
                   {q.followup_sent_at && (
                     <p className="text-[10px] text-sky-300/70 mt-1">↻ Relance automatique envoyée le {new Date(q.followup_sent_at).toLocaleDateString('fr-FR')}</p>
+                  )}
+                  {q.last_manual_reminder_at && (
+                    <p className="text-[10px] text-sky-300/70 mt-0.5" data-testid={`quote-manual-reminder-${q.id}`}>
+                      ✉ Relance manuelle le {new Date(q.last_manual_reminder_at).toLocaleString('fr-FR')}
+                      {(q.manual_reminders?.length || 0) > 1 && ` (×${q.manual_reminders.length})`}
+                    </p>
                   )}
                   {q.status_history?.length > 0 && (() => {
                     const h = q.status_history[q.status_history.length - 1];

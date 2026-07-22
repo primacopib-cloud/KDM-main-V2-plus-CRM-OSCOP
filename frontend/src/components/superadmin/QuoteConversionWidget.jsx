@@ -5,6 +5,7 @@ import { API, getAuthHeaders } from '../../services/http';
 
 export const QuoteConversionWidget = () => {
   const [stats, setStats] = useState(null);
+  const [history, setHistory] = useState([]);
   const [editing, setEditing] = useState(false);
   const [targetInput, setTargetInput] = useState('');
   const [saving, setSaving] = useState(false);
@@ -12,6 +13,8 @@ export const QuoteConversionWidget = () => {
   const load = () => {
     fetch(`${API}/admin/quotes/stats`, { credentials: 'include', headers: getAuthHeaders() })
       .then((r) => (r.ok ? r.json() : null)).then(setStats).catch(() => {});
+    fetch(`${API}/admin/quotes/target-history?months=6`, { credentials: 'include', headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : null)).then((d) => setHistory(d?.items || [])).catch(() => {});
   };
   useEffect(load, []);
 
@@ -103,6 +106,34 @@ export const QuoteConversionWidget = () => {
               style={{ width: `${pct}%`, background: reached ? '#7BC94E' : '#D4AF37' }} />
           </div>
         )}
+        {history.length > 0 && (() => {
+          const maxVal = Math.max(1, ...history.map((h) => Math.max(h.converted, h.target)));
+          return (
+            <div className="mt-3 flex items-end gap-2" data-testid="quote-target-history">
+              {history.map((h) => {
+                const color = h.current ? '#D4AF37' : (h.target > 0 ? (h.reached ? '#7BC94E' : '#F87171') : '#60A5FA');
+                return (
+                  <div key={h.month} className="flex-1 flex flex-col items-center gap-1"
+                    title={`${h.converted} converti(s)${h.target > 0 ? ` / objectif ${h.target}` : ''}`}
+                    data-testid={`target-history-${h.month}`}>
+                    <span className="text-[9px] font-bold" style={{ color }}>{h.converted}{h.target > 0 ? `/${h.target}` : ''}</span>
+                    <div className="w-full h-12 rounded-md bg-white/[0.04] relative overflow-hidden flex items-end">
+                      <div className="w-full rounded-md transition-all"
+                        style={{ height: `${Math.max(6, (h.converted / maxVal) * 100)}%`, background: `${color}CC` }} />
+                      {h.target > 0 && (
+                        <div className="absolute left-0 right-0 border-t border-dashed border-white/50"
+                          style={{ bottom: `${Math.min(100, (h.target / maxVal) * 100)}%` }} />
+                      )}
+                    </div>
+                    <span className="text-[9px] text-white/40 capitalize">
+                      {new Date(`${h.month}-01T00:00:00`).toLocaleDateString('fr-FR', { month: 'short' })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

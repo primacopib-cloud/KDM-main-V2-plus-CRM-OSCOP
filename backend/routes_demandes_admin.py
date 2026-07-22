@@ -54,7 +54,9 @@ async def list_pushes(admin: dict = Depends(require_admin)):
     quotes = await db.quote_requests.find(
         {}, {"_id": 0, "id": 1, "company": 1, "contact_name": 1, "first_name": 1, "last_name": 1,
              "legal_status": 1, "email": 1, "phone": 1, "phone_country": 1, "lang": 1, "status": 1,
-             "created_at": 1, "oscop_status": 1, "oscop_demande_id": 1, "oscop_error": 1, "oscop_pushed_at": 1, "message": 1}
+             "created_at": 1, "oscop_status": 1, "oscop_demande_id": 1, "oscop_error": 1, "oscop_pushed_at": 1, "message": 1,
+             "internal_note": 1, "note_by": 1, "followup_sent_at": 1, "status_history": 1,
+             "converted_user_id": 1, "converted_role": 1, "last_manual_reminder_at": 1, "manual_reminders": 1}
     ).sort("created_at", -1).limit(50).to_list(50)
     for q in quotes:
         if isinstance(q.get("created_at"), object) and hasattr(q["created_at"], "isoformat"):

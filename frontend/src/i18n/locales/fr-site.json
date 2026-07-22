@@ -336,7 +336,8 @@
     "brouillon": "Brouillon",
     "disponibles_one": "{{count}} produit disponible",
     "disponibles_other": "{{count}} produits disponibles",
-    "toast_prix_indispo": "Prix non disponible pour votre organisation"
+    "toast_prix_indispo": "Prix non disponible pour votre organisation",
+    "recent_searches": "Recherches récentes"
   },
   "seo": {
     "landing_title": "KDMARCHÉ — L'écosystème coopératif des Outre-mer",

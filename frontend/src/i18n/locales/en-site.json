@@ -336,7 +336,8 @@
     "brouillon": "Draft",
     "disponibles_one": "{{count}} product available",
     "disponibles_other": "{{count}} products available",
-    "toast_prix_indispo": "Price not available for your organization"
+    "toast_prix_indispo": "Price not available for your organization",
+    "recent_searches": "Recent searches"
   },
   "seo": {
     "landing_title": "KDMARCHÉ — The cooperative ecosystem of the overseas territories",
