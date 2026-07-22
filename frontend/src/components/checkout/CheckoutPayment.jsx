@@ -152,21 +152,35 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                 {/* Stripe Payment Form */}
                 <div className="glass-panel-soft rounded-[18px] p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-emerald-400" />
-                      {i18n.t('checkout.paiement_securise')}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <img 
-                        src="https://stripe.com/img/v3/home/twitter.png" 
-                        alt="Stripe" 
-                        className="h-6 opacity-60"
-                        onError={(e) => e.target.style.display = 'none'}
-                      />
-                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
-                        {i18n.t('checkout.ssl_256_bit')}
-                      </Badge>
-                    </div>
+                    {(!useInstallment && paymentMethod === 'cod') ? (
+                      <>
+                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                          <Truck className="w-4 h-4 text-emerald-400" />
+                          Règlement à la livraison
+                        </h3>
+                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
+                          Sans avance de trésorerie
+                        </Badge>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                          <Lock className="w-4 h-4 text-emerald-400" />
+                          {i18n.t('checkout.paiement_securise')}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src="https://stripe.com/img/v3/home/twitter.png" 
+                            alt="Stripe" 
+                            className="h-6 opacity-60"
+                            onError={(e) => e.target.style.display = 'none'}
+                          />
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
+                            {i18n.t('checkout.ssl_256_bit')}
+                          </Badge>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Payment Info */}

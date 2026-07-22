@@ -1281,3 +1281,12 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Actions IA (polish, invite) gardées derrière prospectia_enabled (403 sinon) ; audits TESTIMONIAL_MODERATED/POLISHED/INVITES_SENT, PROSPECTIA_SCRIPT_SAVED
 - Un témoignage démo approuvé "Jean Testeur" reste publié sur la landing (à modérer/rejeter par l'admin si non désiré)
 - LEÇON RÉAPPRISE : éditions search_replace parallèles sur le MÊME fichier = pertes (states ProspectiaStudio + import AIAgentsPanel perdus, corrigés par testing agent iter 67)
+
+## 2026-07-22 — Lot Vente scalable : COD + WhatsApp SAV + Pipeline IA + VENT'IA + Témoignages avancés (testé iter 68 : backend 16/16, frontend 6/6)
+- Paiement à la livraison (COD) : routes_cod.py — GET /api/v2/checkout/cod-eligibility + POST /confirm-cod (réservé acheteurs Pro org APPROVED + subscription ACTIVE ; order → CONFIRMED, payment_status=cod_pending, payment_method=cod, garde anti-double-paiement, audit ORDER_COD_CONFIRMED + webhook ERP). UI : option COD dans CheckoutPayment (badge Pro abonné, bloc "Règlement à la livraison" remplace le bloc Stripe), bannière séduction data-testid=cod-banner sur /catalogue
+- WhatsApp support S.A.V : WhatsAppSupport.jsx — bouton flottant vert (wa.me/590690906429) monté globalement dans App.js, masqué sur /admin /superadmin /pos /crm /reporting
+- Pipeline de vente PROSPECT'IA : prospectia_pipeline.py — GET /api/admin/prospectia/pipeline (kanban 5 étapes : à contacter/contacté/relancé/a cliqué/converti + taux de conversion + suggestion IA par colonne) ; UI ProspectiaPipeline.jsx dans onglet Agents IA
+- VENT'IA (3e agent IA, switch ventia_enabled) : ventia_service.py — POST /api/vendor/ai/product-copy (description produit IA 60-110 mots + conseil prix B2B, bouton "Générer par VENT'IA" dans VendorProductFormModal) + process_abandoned_carts (relance email paniers ACTIVE inactifs 24h, une seule relance, scheduler)
+- Témoignages : verified_member (badge "Membre coopérateur vérifié" traduit FR/EN/ES si soumission par compte connecté), traduction auto EN/ES à l'approbation (_translate_testimonial async, GET public ?lang=), relance J+7 des invités sans témoignage (process_testimonial_reminders, scheduler, une seule relance, invités convertis marqués)
+- Témoignages démo publiés sur la landing : "TEST Vérifié" (avec badge + 3 langues) et "Jean Testeur" — à rejeter par l'admin quand de vrais témoignages arrivent
+- Agents IA remis OFF après tests

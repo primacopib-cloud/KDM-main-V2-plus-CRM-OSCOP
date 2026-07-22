@@ -74,7 +74,7 @@ async def process_abandoned_carts(database) -> None:
         return
     cutoff = datetime.utcnow() - timedelta(hours=24)
     carts = await database.carts.find({
-        "status": {"$ne": "CONVERTED"},
+        "status": "ACTIVE",
         "items.0": {"$exists": True},
         "updated_at": {"$lt": cutoff},
         "ventia_reminder_sent": {"$ne": True},

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Star, Quote, BadgeCheck } from 'lucide-react';
 import i18n from '@/i18n';
 
+const VERIFIED_LABELS = { fr: 'Membre coopérateur vérifié', en: 'Verified cooperative member', es: 'Miembro cooperador verificado' };
+
 export const TestimonialsSection = () => {
   const [items, setItems] = useState([]);
   const lang = (i18n.language || 'fr').slice(0, 2);
@@ -38,7 +40,7 @@ export const TestimonialsSection = () => {
                   {t.verified_member && (
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-400/15 text-emerald-300 text-[10px] font-medium"
                       data-testid={`verified-badge-${t.id}`}>
-                      <BadgeCheck size={11} /> Membre coopérateur vérifié
+                      <BadgeCheck size={11} /> {VERIFIED_LABELS[lang] || VERIFIED_LABELS.fr}
                     </span>
                   )}
                 </p>

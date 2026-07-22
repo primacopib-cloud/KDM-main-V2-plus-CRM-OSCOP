@@ -36,6 +36,8 @@ async def confirm_cod(order_id: str = Query(...), current_user: dict = Depends(g
     order, _ = await get_order_with_access_check(order_id, current_user)
     if order["status"] not in ["PENDING", "CONFIRMED"]:
         raise HTTPException(status_code=400, detail="Commande non éligible")
+    if order.get("payment_status") in ("succeeded", "paid"):
+        raise HTTPException(status_code=400, detail="Commande déjà payée")
     amount = order["total_ttc_cents"]
     await db.orders.update_one(
         {"id": order_id},
