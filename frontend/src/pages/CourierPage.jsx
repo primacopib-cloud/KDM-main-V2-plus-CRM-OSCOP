@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Truck, PenLine, RefreshCw, CheckCircle2, KeyRound, MapPin } from 'lucide-react';
+import { Truck, PenLine, RefreshCw, CheckCircle2, KeyRound, MapPin, Map } from 'lucide-react';
 import { toast } from 'sonner';
 import { CodSignatureDialog } from '../components/superadmin/CodSignatureDialog';
+import LoloPointsMap from '../components/LoloPointsMap';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const eur = (c) => `${((c || 0) / 100).toFixed(2)} €`;
+const ZONE_TO_TERRITORY = { GUADELOUPE: 'GP', MARTINIQUE: 'MQ', GUYANE: 'GF', REUNION: 'RE' };
 
 export default function CourierPage() {
   const [params] = useSearchParams();
@@ -15,6 +17,7 @@ export default function CourierPage() {
   const [signOrder, setSignOrder] = useState(null);
   const [marking, setMarking] = useState(false);
   const [done, setDone] = useState([]);
+  const [showMap, setShowMap] = useState(false);
 
   const load = useCallback(async (tk) => {
     if (!tk) return;
@@ -73,10 +76,30 @@ export default function CourierPage() {
               <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-xs font-semibold" data-testid="courier-pending-count">
                 {items.length} encaissement(s) à faire
               </span>
-              <button onClick={() => load(token)} className="p-2 rounded-lg bg-white/[0.06] border border-white/10" title="Actualiser">
-                <RefreshCw size={14} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowMap((v) => !v)} data-testid="courier-map-toggle"
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 border transition-colors ${showMap
+                    ? 'bg-[#D9B35A]/20 border-[#D9B35A]/40 text-[#E9CF8E]'
+                    : 'bg-white/[0.06] border-white/10 text-white/70'}`}>
+                  <Map size={13} /> Carte
+                </button>
+                <button onClick={() => load(token)} className="p-2 rounded-lg bg-white/[0.06] border border-white/10" title="Actualiser">
+                  <RefreshCw size={14} />
+                </button>
+              </div>
             </div>
+            {showMap && items.length > 0 && (
+              <div className="mb-4" data-testid="courier-tour-map">
+                <LoloPointsMap height="300px"
+                  territory={ZONE_TO_TERRITORY[items[0]?.zone_code] || null}
+                  points={items.filter((o) => o.lat != null && o.lng != null).map((o, i) => ({
+                    id: o.id, code: o.order_number, name: `Arrêt ${i + 1} — ${o.pickup_name || o.order_number}`,
+                    lat: o.lat, lng: o.lng, city: o.org_name, territory: String(i + 1),
+                    zone_name: o.zone_code,
+                  }))} />
+                <p className="text-[10px] text-white/40 mt-1.5">Les marqueurs suivent l'ordre optimisé de la tournée (1 → {items.length}).</p>
+              </div>
+            )}
             <div className="space-y-3">
               {items.map((o, idx) => (
                 <div key={o.id}>

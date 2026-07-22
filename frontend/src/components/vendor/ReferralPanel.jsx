@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Gift, Copy, CheckCircle2, MessageCircle, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { ChallengePodium } from './ChallengePodium';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -100,6 +101,7 @@ export const ReferralPanel = () => {
         </div>
       )}
       {data.my_sponsor_code && <p className="text-[11px] text-white/40">Parrainé avec le code {data.my_sponsor_code}.</p>}
+      <ChallengePodium />
       <p className="text-[11px] text-white/40">
         Votre filleul saisit votre code dans son espace (avant sa première consultation) — vous recevez le bonus
         dès sa première inscription, et votre filleul reçoit aussi un bonus de bienvenue. Le tout est tracé au registre.
