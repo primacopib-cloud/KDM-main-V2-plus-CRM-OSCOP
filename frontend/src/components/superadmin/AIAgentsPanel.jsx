@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Bot, Sparkles, Gavel, Loader2, Store, Truck } from 'lucide-react';
+import { Bot, Sparkles, Gavel, Loader2, Store, Truck, Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '../ui/switch';
 import { ProspectiaStudio } from './ProspectiaStudio';
@@ -7,6 +7,7 @@ import { SocialProofPanel } from './SocialProofPanel';
 import { ProspectiaPipeline } from './ProspectiaPipeline';
 import { AIUsagePanel } from './AIUsagePanel';
 import { TransportiaPanel } from './TransportiaPanel';
+import { ParrainiaPanel } from './ParrainiaPanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -92,10 +93,24 @@ export const AIAgentsPanel = () => {
             assistant pour répondre aux objections.
           </p>
         </div>
+        <div className="glass-panel-soft rounded-[18px] p-5" data-testid="parrainia-card">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-display text-lg text-white flex items-center gap-2">
+              <Megaphone size={16} style={{ color: '#D9B35A' }} /> PARRAIN'IA
+            </h3>
+            <Switch checked={!!settings.parrainia_enabled}
+              onCheckedChange={(v) => toggle('parrainia_enabled', v)} data-testid="parrainia-switch" />
+          </div>
+          <p className="text-xs text-white/50">
+            Animateur du programme de parrainage : lance automatiquement le défi en début de mois, envoie des
+            emails de motivation personnalisés (classement, filleuls) et relance les parrains à mi-parcours.
+          </p>
+        </div>
       </div>
 
       <AIUsagePanel />
 
+      {settings.parrainia_enabled && <ParrainiaPanel />}
       {settings.transportia_enabled && <TransportiaPanel />}
 
       {settings.prospectia_enabled && <ProspectiaPipeline />}

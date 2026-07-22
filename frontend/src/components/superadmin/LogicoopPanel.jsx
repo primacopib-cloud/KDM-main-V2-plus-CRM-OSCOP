@@ -131,6 +131,44 @@ export const LogicoopPanel = () => {
         ))}
         {!ops.length && <p className="text-sm text-white/45 py-3">Aucun opérateur LOGICOOP pour l'instant.</p>}
       </div>
+
+      <RegisteredCarriers />
+    </div>
+  );
+};
+
+const RegisteredCarriers = () => {
+  const [items, setItems] = useState(null);
+  useEffect(() => {
+    fetch(`${API}/admin/transportia/prospects`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setItems((d?.items || []).filter((p) => p.status === 'REGISTERED')))
+      .catch(() => setItems([]));
+  }, []);
+  if (items === null) return null;
+  return (
+    <div className="mt-5 pt-4 border-t border-white/[0.08]" data-testid="logicoop-registered-carriers">
+      <h4 className="text-sm font-semibold text-white flex items-center gap-2 mb-1">
+        <Truck size={13} className="text-emerald-300" /> Transporteurs inscrits via TRANSPORT'IA
+        <span className="text-xs font-normal text-white/50">({items.length})</span>
+      </h4>
+      <p className="text-[11px] text-white/40 mb-3">Prospects recrutés par l'agent TRANSPORT'IA dont l'inscription membre a été détectée — prêts à devenir opérateurs LOGICOOP.</p>
+      {items.length === 0 ? (
+        <p className="text-xs text-white/40 italic" data-testid="logicoop-registered-empty">Aucun transporteur inscrit pour le moment — la prospection continue via l'onglet Agents IA.</p>
+      ) : (
+        <div className="space-y-1.5">
+          {items.map((p) => (
+            <div key={p.id} className="flex flex-wrap items-center gap-2 p-2.5 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20" data-testid={`logicoop-carrier-${p.id}`}>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300">Inscrit ✓</span>
+              <p className="text-sm font-semibold text-white flex-1 min-w-[140px]">{p.company}
+                <span className="text-white/40 font-normal text-xs"> · {p.territory}{p.fleet_type ? ` · ${p.fleet_type}` : ''}</span>
+              </p>
+              <span className="text-xs text-white/50">{p.contact_name ? `${p.contact_name} — ` : ''}{p.email}{p.phone ? ` · ${p.phone}` : ''}</span>
+              {p.registered_at && <span className="text-[10px] text-white/35">le {new Date(p.registered_at).toLocaleDateString('fr-FR')}</span>}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

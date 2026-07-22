@@ -22,6 +22,7 @@ import { VendorProductFormModal as ProductFormModal } from '../components/vendor
 import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
 import { AIStudioModal } from '../components/vendor/AIStudioModal';
 import { ProductActions } from '../components/vendor/ProductActions';
+import { ProductContractBadge } from '../components/vendor/ProductContractBadge';
 import { VendorDashboardTab } from '../components/vendor/VendorDashboardTab';
 import { VendorInvoicesTab } from '../components/vendor/VendorInvoicesTab';
 import { VendorCpcTab } from '../components/vendor/VendorCpcTab';
@@ -71,7 +72,19 @@ const VendorSpacePage = () => {
   const [aiProduct, setAiProduct] = useState(null);
   const [credits, setCredits] = useState(null);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [contractsByProduct, setContractsByProduct] = useState({});
   const [rechargeParams] = useSearchParams();
+
+  useEffect(() => {
+    if (!vendorId) return;
+    fetch(`${API_URL}/api/vendor/contracts/${vendorId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const map = {};
+        (d?.contracts || []).forEach((c) => { if (c.product_id) map[c.product_id] = c; });
+        setContractsByProduct(map);
+      }).catch(() => {});
+  }, [vendorId]);
 
   useEffect(() => {
     if (rechargeParams.get('recharge') === '1') setCreditsModalOpen(true);
@@ -376,6 +389,8 @@ const VendorSpacePage = () => {
                               </Badge>
                             ))}
                           </div>
+
+                          <ProductContractBadge contract={contractsByProduct[product.id]} vendorId={vendorId} />
                         </div>
                         
                         <ProductActions

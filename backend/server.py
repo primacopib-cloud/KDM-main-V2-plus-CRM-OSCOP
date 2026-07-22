@@ -567,6 +567,10 @@ from routes_transportia import transportia_router, set_transportia_database
 set_transportia_database(db)
 app.include_router(transportia_router)
 
+from routes_parrainia import parrainia_router, set_parrainia_database
+set_parrainia_database(db)
+app.include_router(parrainia_router)
+
 from encheria_service import set_encheria_database
 set_encheria_database(db)
 

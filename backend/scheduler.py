@@ -220,6 +220,11 @@ async def _scheduler_loop():
             await process_referral_challenge(_db)
         except Exception as exc:
             logger.exception("Scheduler referral challenge crashed: %s", exc)
+        try:
+            from routes_parrainia import process_parrainia
+            await process_parrainia(_db)
+        except Exception as exc:
+            logger.exception("Scheduler PARRAIN'IA crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

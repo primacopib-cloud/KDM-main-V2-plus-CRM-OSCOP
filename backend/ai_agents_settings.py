@@ -15,7 +15,7 @@ ai_agents_router = APIRouter(prefix="/api/admin/ai-agents", tags=["ai-agents"])
 db = None
 
 DEFAULTS = {"id": "default", "prospectia_enabled": False, "encheria_enabled": False, "ventia_enabled": False,
-            "transportia_enabled": False}
+            "transportia_enabled": False, "parrainia_enabled": False}
 
 
 def set_ai_agents_database(database):
@@ -34,6 +34,7 @@ class AgentsBody(BaseModel):
     encheria_enabled: Optional[bool] = None
     ventia_enabled: Optional[bool] = None
     transportia_enabled: Optional[bool] = None
+    parrainia_enabled: Optional[bool] = None
 
 
 @ai_agents_router.get("")

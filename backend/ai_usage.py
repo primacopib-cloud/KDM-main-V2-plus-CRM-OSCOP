@@ -25,6 +25,7 @@ KIND_LABELS = {
     "product_scan": "Scans fiche produit (IA)",
     "transportia_invite": "TRANSPORT'IA — invitations & relances",
     "transportia_assist": "TRANSPORT'IA — assistant",
+    "parrainia_campaign": "PARRAIN'IA — animations parrainage",
 }
 
 
