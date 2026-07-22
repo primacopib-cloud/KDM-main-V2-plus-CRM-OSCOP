@@ -7,6 +7,57 @@ logger = logging.getLogger(__name__)
 QUOTE_NOTIFY_EMAIL = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
 
 STALE_HOURS = 48
+FOLLOWUP_DAYS = 3
+
+FOLLOWUP_T = {
+    "fr": ("Votre demande de devis est entre de bonnes mains",
+           "<p>Bonjour {name},</p><p>Votre demande de devis pour <b>{company}</b> est en cours de traitement par notre équipe commerciale. "
+           "Un conseiller KDMARCHÉ × O'SCOP vous recontacte très vite.</p>"
+           "<p>Besoin d'ajouter une précision ? Répondez simplement à cet email.</p>"
+           "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP — Communityplace coopérative</p>"),
+    "en": ("Your quote request is in good hands",
+           "<p>Hello {name},</p><p>Your quote request for <b>{company}</b> is being processed by our sales team. "
+           "A KDMARCHÉ × O'SCOP advisor will get back to you shortly.</p>"
+           "<p>Need to add anything? Simply reply to this email.</p>"
+           "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP</p>"),
+    "es": ("Su solicitud de presupuesto está en buenas manos",
+           "<p>Hola {name},</p><p>Su solicitud de presupuesto para <b>{company}</b> está siendo procesada por nuestro equipo comercial. "
+           "Un asesor de KDMARCHÉ × O'SCOP le contactará muy pronto.</p>"
+           "<p>¿Necesita añadir algo? Responda simplemente a este correo.</p>"
+           "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP</p>"),
+}
+
+
+async def send_quote_followups(db) -> None:
+    """Relance automatique client : demandes restées « Nouveau » depuis plus de 3 jours."""
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    cutoff = now - timedelta(days=FOLLOWUP_DAYS)
+    oldest = now - timedelta(days=30)
+    stale = await db.quote_requests.find(
+        {"status": "pending", "created_at": {"$lt": cutoff, "$gt": oldest},
+         "followup_sent_at": {"$exists": False}},
+        {"_id": 0}).sort("created_at", 1).to_list(30)
+    if not stale:
+        return
+    from brevo_service import send_email
+    for q in stale:
+        if not q.get("email"):
+            continue
+        lang = q.get("lang") if q.get("lang") in FOLLOWUP_T else "fr"
+        subject, body = FOLLOWUP_T[lang]
+        name = q.get("first_name") or q.get("company") or ""
+        try:
+            await send_email(to_email=q["email"], to_name=name,
+                             subject=subject,
+                             html_content=body.replace("{name}", name).replace("{company}", q.get("company", "")),
+                             tags=["quote-followup"])
+            await db.quote_requests.update_one(
+                {"id": q["id"]},
+                {"$set": {"followup_sent_at": datetime.now(timezone.utc).isoformat()}})
+            logger.info("Relance devis J+%s envoyée à %s (%s)", FOLLOWUP_DAYS, q["email"], lang)
+        except Exception as exc:
+            logger.warning("Relance devis %s échouée : %s", q.get("email"), exc)
 
 
 async def send_stale_quote_reminders(db) -> None:

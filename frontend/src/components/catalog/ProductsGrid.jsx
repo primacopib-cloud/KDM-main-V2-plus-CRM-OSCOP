@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Loader2, Package, Plus, Play } from 'lucide-react';
 import { tData } from '@/i18n/tData';
+import i18n from '@/i18n';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { FavoriteButton } from '../FavoriteButton';
@@ -9,6 +10,8 @@ import { ProductVideoModal } from './ProductVideoModal';
 
 export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) => {
   const [videoProduct, setVideoProduct] = useState(null);
+  const lang = (i18n.language || 'fr').slice(0, 2);
+  const tr = (p) => (lang !== 'fr' && p.translations?.[lang]) || {};
   return (
   <>
         {/* Products Grid */}
@@ -51,7 +54,12 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               </Badge>
               
               {/* Product info */}
-              <h3 className="font-medium text-white/90 mb-1 line-clamp-2">{product.name}</h3>
+              <h3 className="font-medium text-white/90 mb-1 line-clamp-2">{tr(product).name || product.name}</h3>
+              {(tr(product).short_description || tr(product).description || product.description) && (
+                <p className="text-xs text-white/55 mb-1 line-clamp-2" data-testid={`product-desc-${product.sku}`}>
+                  {tr(product).short_description || tr(product).description || product.description}
+                </p>
+              )}
               <p className="text-xs text-white/50 mb-3">{product.sku} · {product.unit_quantity} {product.unit}</p>
               
               {/* Price & Add to cart */}

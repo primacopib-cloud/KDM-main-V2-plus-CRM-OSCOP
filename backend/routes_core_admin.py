@@ -2,7 +2,7 @@
 listing, vendor alias (split from server.py)."""
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, HTTPException, Depends, status
@@ -114,6 +114,51 @@ async def get_all_quotes(
 
     quotes = await db.quote_requests.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     return [QuoteRequestResponse(**q) for q in quotes]
+
+
+@admin_core_router.get("/admin/quotes/export")
+async def export_quotes_csv(current_user: dict = Depends(get_current_user)):
+    """Export CSV du pipeline des demandes de devis."""
+    await check_admin(current_user)
+    db = get_database()
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+    quotes = await db.quote_requests.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    labels = {"pending": "Nouveau", "processed": "Contacté", "contacted": "Contacté",
+              "converted": "Converti", "lost": "Perdu"}
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["Date", "Société", "Contact", "Email", "Téléphone", "Langue", "Statut", "Note interne", "Relancé le", "Message"])
+    for q in quotes:
+        created = q.get("created_at")
+        w.writerow([
+            created.strftime("%d/%m/%Y %H:%M") if hasattr(created, "strftime") else str(created or ""),
+            q.get("company", ""),
+            f"{q.get('first_name', '')} {q.get('last_name', '')}".strip(),
+            q.get("email", ""), f"{q.get('phone_country', '')} {q.get('phone', '')}".strip(),
+            (q.get("lang") or "fr").upper(), labels.get(q.get("status"), q.get("status", "")),
+            q.get("internal_note", ""), (q.get("followup_sent_at") or "")[:10], (q.get("message") or "").replace("\n", " ")[:300],
+        ])
+    buf.seek(0)
+    return StreamingResponse(
+        iter(["\ufeff" + buf.getvalue()]), media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=pipeline-devis.csv"})
+
+
+@admin_core_router.put("/admin/quotes/{quote_id}/note", response_model=dict)
+async def update_quote_note(quote_id: str, body: dict, current_user: dict = Depends(get_current_user)):
+    """Note interne équipe sur une demande de devis."""
+    await check_admin(current_user)
+    db = get_database()
+    note = (body.get("note") or "").strip()[:500]
+    result = await db.quote_requests.update_one(
+        {"id": quote_id},
+        {"$set": {"internal_note": note, "note_by": current_user.get("email"),
+                  "note_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Demande introuvable")
+    return {"ok": True, "note": note}
 
 
 @admin_core_router.put("/admin/quotes/{quote_id}/status", response_model=dict)

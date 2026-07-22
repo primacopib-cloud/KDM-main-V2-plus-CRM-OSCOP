@@ -117,6 +117,7 @@ class ProductResponse(BaseModel):
     video_url: Optional[str] = None
     video_urls: Optional[dict] = None
     tags: List[str] = []
+    translations: Optional[dict] = None
     status: str
     # Price (only if authorized)
     price_visible: bool = False

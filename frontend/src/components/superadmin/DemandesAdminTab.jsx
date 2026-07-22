@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Send, Loader2, Euro, RefreshCw, Save, ExternalLink, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Send, Loader2, Euro, RefreshCw, Save, ExternalLink, CheckCircle2, XCircle, Clock, Download, StickyNote } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { Switch } from '../ui/switch';
@@ -59,7 +59,32 @@ export const DemandesAdminTab = () => {
   const [pushes, setPushes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pipeFilter, setPipeFilter] = useState('all');
+  const [noteEdit, setNoteEdit] = useState(null);
   const opts = { headers: getAuthHeaders(), credentials: 'include' };
+
+  const saveNote = async () => {
+    const r = await fetch(`${API}/admin/quotes/${noteEdit.id}/note`, {
+      method: 'PUT', ...opts, headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: noteEdit.text }),
+    });
+    if (!r.ok) return toast.error('Note non enregistrée');
+    toast.success('Note interne enregistrée');
+    setNoteEdit(null);
+    load();
+  };
+
+  const exportCsv = async () => {
+    try {
+      const r = await fetch(`${API}/admin/quotes/export`, opts);
+      if (!r.ok) throw new Error();
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'pipeline-devis.csv'; a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Pipeline exporté en CSV');
+    } catch { toast.error('Export impossible'); }
+  };
 
   const load = () => {
     fetch(`${API}/admin/demandes/remote-tarifs`, opts)
@@ -167,7 +192,11 @@ export const DemandesAdminTab = () => {
       <div className="glass-panel-soft rounded-[18px] p-4" data-testid="demandes-pushes-log">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h3 className="text-sm font-semibold text-[#D9B35A]">Suivi des demandes de devis (pipeline)</h3>
-          <div className="flex gap-1.5 flex-wrap" data-testid="quotes-pipeline-chips">
+          <div className="flex gap-1.5 flex-wrap items-center" data-testid="quotes-pipeline-chips">
+            <button onClick={exportCsv} data-testid="quotes-export-btn"
+              className="px-2 py-1 rounded-full text-[10px] font-bold border border-[#D9B35A]/40 text-[#E9CF8E] bg-[#D9B35A]/10 hover:bg-[#D9B35A]/20 inline-flex items-center gap-1 transition-colors">
+              <Download size={10} /> Export CSV
+            </button>
             <button onClick={() => setPipeFilter('all')}
               className={`px-2 py-1 rounded-full text-[10px] font-bold border transition-colors ${pipeFilter === 'all' ? 'bg-white/15 border-white/30 text-white' : 'bg-white/[0.04] border-white/10 text-white/50'}`}>
               Toutes ({pushes.length})
@@ -223,6 +252,31 @@ export const DemandesAdminTab = () => {
                     )}
                   </div>
                   {q.message && <p className="text-white/40 mt-1 truncate">{q.message}</p>}
+                  <div className="mt-1.5 flex items-start gap-2">
+                    <StickyNote size={12} className="text-[#D9B35A]/70 mt-0.5 flex-shrink-0" />
+                    {noteEdit?.id === q.id ? (
+                      <span className="flex-1 flex gap-1.5">
+                        <input autoFocus value={noteEdit.text} data-testid={`quote-note-input-${q.id}`}
+                          onChange={(e) => setNoteEdit({ ...noteEdit, text: e.target.value })}
+                          onKeyDown={(e) => e.key === 'Enter' && saveNote()}
+                          placeholder="Note interne pour l'équipe…"
+                          className="flex-1 h-7 px-2 rounded-md text-[11px] text-white bg-white/[0.06] border border-white/20" />
+                        <button onClick={saveNote} data-testid={`quote-note-save-${q.id}`}
+                          className="px-2 h-7 rounded-md text-[10px] font-bold bg-[#D9B35A] text-[#1F0A33]">OK</button>
+                        <button onClick={() => setNoteEdit(null)} className="px-1.5 h-7 rounded-md text-[10px] text-white/50 border border-white/15">✕</button>
+                      </span>
+                    ) : (
+                      <button type="button" onClick={() => setNoteEdit({ id: q.id, text: q.internal_note || '' })}
+                        data-testid={`quote-note-${q.id}`}
+                        className={`flex-1 text-left text-[11px] ${q.internal_note ? 'text-[#E9CF8E]/90' : 'text-white/35 italic'} hover:text-white transition-colors`}>
+                        {q.internal_note || 'Ajouter une note interne…'}
+                        {q.note_by && q.internal_note && <span className="text-white/30 not-italic"> — {q.note_by}</span>}
+                      </button>
+                    )}
+                  </div>
+                  {q.followup_sent_at && (
+                    <p className="text-[10px] text-sky-300/70 mt-1">↻ Relance automatique envoyée le {new Date(q.followup_sent_at).toLocaleDateString('fr-FR')}</p>
+                  )}
                 </div>
               );
             })}
