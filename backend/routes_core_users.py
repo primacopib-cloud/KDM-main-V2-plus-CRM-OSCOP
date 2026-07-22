@@ -214,7 +214,13 @@ async def add_credits(
     credits_data: CreditsAdd,
     current_user: dict = Depends(get_current_user)
 ):
-    """Add credits to user wallet."""
+    """Ajout direct de crédits — réservé aux administrateurs. Les membres achètent leurs crédits."""
+    admin_roles = ("SUPER_ADMIN", "ADMIN", "oscop_super_admin", "kdm_b2b_admin", "admin")
+    if not (current_user.get("is_admin") or current_user.get("role") in admin_roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Les crédits CREDI'SCOP s'obtiennent uniquement par achat. Rendez-vous dans votre portefeuille pour acheter des crédits.",
+        )
     db = get_database()
     new_credits = current_user["credits"] + credits_data.amount
 
@@ -227,8 +233,16 @@ async def add_credits(
             }
         }
     )
+    await db.credits_history.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "type": "added",
+        "amount": credits_data.amount,
+        "description": f"Ajout direct par administrateur ({current_user['email']})",
+        "created_at": datetime.utcnow()
+    })
 
-    logger.info(f"User {current_user['email']} added {credits_data.amount} credits")
+    logger.info(f"Admin {current_user['email']} added {credits_data.amount} credits to own account")
 
     return CreditsResponse(
         credits=new_credits,

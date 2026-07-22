@@ -23,7 +23,7 @@ import {
   Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { authAPI, creditsAPI, downloadOffer } from '../services/api';
+import { authAPI, downloadOffer } from '../services/api';
 import { BuyerCreditHistory } from '../components/BuyerCreditHistory';
 
 const DashboardPage = () => {
@@ -31,7 +31,6 @@ const DashboardPage = () => {
   const { plans: subscriptionPlans } = usePublicPlans();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [addingCredits, setAddingCredits] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -59,19 +58,6 @@ const DashboardPage = () => {
     authAPI.logout();
     toast.success('Déconnexion réussie');
     navigate('/');
-  };
-
-  const handleAddCredits = async (amount) => {
-    setAddingCredits(true);
-    try {
-      const result = await creditsAPI.add(amount);
-      setUser(prev => ({ ...prev, credits: result.credits }));
-      toast.success(result.message);
-    } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setAddingCredits(false);
-    }
   };
 
   if (isLoading) {
@@ -165,12 +151,13 @@ const DashboardPage = () => {
               <div className="p-2.5 rounded-xl" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.20)' }}>
                 <Wallet className="w-5 h-5 text-[#D4AF37]" />
               </div>
-              <button 
-                className="btn-ghost p-1.5 rounded-lg"
-                onClick={() => handleAddCredits(100)}
-                disabled={addingCredits}
+              <button
+                className="btn-ghost px-2 py-1.5 rounded-lg inline-flex items-center gap-1 text-[11px] font-semibold"
+                onClick={() => navigate('/wallet')}
+                title="Acheter des crédits CREDI'SCOP"
+                data-testid="dashboard-buy-credits-btn"
               >
-                {addingCredits ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                <Plus className="w-4 h-4" /> Acheter
               </button>
             </div>
             <p className="text-xs text-white/60 mb-1">CREDI&rsquo;SCOP</p>
