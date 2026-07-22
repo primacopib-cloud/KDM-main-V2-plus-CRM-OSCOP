@@ -1302,3 +1302,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 ## 2026-07-22 — Reçu d'encaissement PDF + Quota visuels IA (self-testé curl/python)
 - Reçu d'encaissement : pdf_cod_receipt.py (reportlab, style facture crédits) — envoyé automatiquement en pièce jointe email Brevo aux membres de l'org (fire-and-forget _send_cod_receipt dans mark_cod_collected, tag cod-receipt) ; testé : PDF 2.4Ko valide + email envoyé à acheteur-pro
 - Quota visuels IA : VENTIA_IMAGE_DAILY_QUOTA (env, défaut 5/jour/vendeur) — collection ventia_image_usage {user_id, date, product_name} ; 429 au-delà avec message clair (toast frontend existant) ; réponse inclut quota_remaining ; testé 429 après 5 usages
+
+## 2026-07-22 — Historique reçus + Export hebdo PDF + Rappel enlèvement SMS (self-testé curl/python/screenshot)
+- Historique reçus acheteur : GET /api/v2/checkout/cod-receipts (org-scoped) + GET /cod-receipts/{order_id}/pdf (PDF à la volée, receipt_number stable stocké cod_receipt_number à l'encaissement) ; UI CodReceiptsSection.jsx en tête de l'onglet Factures de l'espace acheteur (bouton Reçu PDF, testé screenshot)
+- Export hebdo PDF : GET /api/admin/reports/weekly/{week}/pdf (reportlab, tableau indicateurs + évolution vs semaine précédente) ; bouton PDF data-testid=weekly-pdf-btn dans WeeklyReportWidget
+- Rappel enlèvement SMS : process_pickup_reminders (order_sms.py, scheduler) — SMS Brevo si READY_FOR_PICKUP + ready_at > 48h, un seul rappel (flag pickup_reminder_sent), testé avec commande synthétique (envoyé + no-op 2e run + nettoyé)
+- FIX : facture générée à l'encaissement COD désormais marquée PAID (statut + payment_status + paid_at) — facture existante FA-202607-0001 corrigée

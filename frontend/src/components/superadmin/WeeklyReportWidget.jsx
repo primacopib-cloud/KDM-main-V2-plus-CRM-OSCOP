@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarDays, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { CalendarDays, TrendingUp, TrendingDown, Minus, FileDown } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -36,6 +36,20 @@ export const WeeklyReportWidget = () => {
   const latest = items[0];
   const prev = items[1];
 
+  const downloadPdf = async () => {
+    try {
+      const r = await fetch(`${API}/admin/reports/weekly/${latest.week}/pdf`, { credentials: 'include' });
+      if (!r.ok) throw new Error('Export impossible');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapport-hebdo-${latest.week}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { /* silencieux */ }
+  };
+
   return (
     <div className="mb-8 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.08]" data-testid="weekly-report-widget">
       <div className="flex items-center gap-3 flex-wrap mb-4">
@@ -44,6 +58,11 @@ export const WeeklyReportWidget = () => {
         </h3>
         <span className="px-2 py-0.5 rounded bg-[#D9B35A]/15 text-[#E9CF8E] text-xs font-semibold">Semaine {latest.week}</span>
         {prev && <span className="text-[10px] text-white/40">évolution vs semaine {prev.week}</span>}
+        <button onClick={downloadPdf} data-testid="weekly-pdf-btn"
+          className="ml-auto inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-semibold transition-colors hover:brightness-110"
+          style={{ background: 'rgba(217,179,90,0.14)', border: '1px solid rgba(217,179,90,0.4)', color: '#E9CF8E' }}>
+          <FileDown size={11} /> PDF
+        </button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {METRICS.map((m) => (

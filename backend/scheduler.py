@@ -205,6 +205,11 @@ async def _scheduler_loop():
             await process_cod_reminders(_db)
         except Exception as exc:
             logger.exception("Scheduler COD reminders crashed: %s", exc)
+        try:
+            from order_sms import process_pickup_reminders
+            await process_pickup_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler pickup reminders crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

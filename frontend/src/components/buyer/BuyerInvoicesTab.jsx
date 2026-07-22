@@ -12,6 +12,7 @@ import {
 } from '../ui/select';
 import { formatCurrency, formatDate } from './buyerUtils';
 import { BuyerOscopInvoices } from './BuyerOscopInvoices';
+import { CodReceiptsSection } from './CodReceiptsSection';
 
 export const BuyerInvoicesTab = ({
   invoices, filteredInvoices, invoiceStats, searchTerm, setSearchTerm,
@@ -19,6 +20,7 @@ export const BuyerInvoicesTab = ({
 }) => (
           <TabsContent value="invoices" className="space-y-6">
             <BuyerOscopInvoices />
+            <CodReceiptsSection />
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-white">Factures de marchandises</h3>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/40">ÉMETTEUR : KDMARCHÉ PRO</span>

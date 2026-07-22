@@ -101,3 +101,66 @@ async def weekly_history(admin: dict = Depends(require_admin)):
         {"key": "weekly_activity_report"}, {"_id": 0, "week": 1, "sent_at": 1, "stats": 1},
     ).sort("week", -1).to_list(8)
     return {"items": items}
+
+
+REPORT_ROWS = [
+    ("orders", "Nouvelles commandes"),
+    ("revenue_eur", "Chiffre d'affaires TTC (hors annulées)"),
+    ("quotes", "Demandes de devis reçues"),
+    ("new_users", "Nouveaux comptes membres"),
+    ("consultations", "Consultations / enchères créées"),
+    ("testimonials", "Témoignages reçus"),
+    ("prospect_sent", "Prospection : emails envoyés (7 j)"),
+    ("prospect_clicks", "Prospection : clics cumulés"),
+    ("prospect_conversions", "Prospection : conversions cumulées"),
+    ("campaigns_active", "Campagnes PROSPECT'IA actives"),
+]
+
+
+@weekly_report_router.get("/weekly/{week}/pdf")
+async def weekly_report_pdf(week: str, admin: dict = Depends(require_admin)):
+    from fastapi import HTTPException
+    from fastapi.responses import Response
+    doc = await db.system_flags.find_one({"key": "weekly_activity_report", "week": week}, {"_id": 0})
+    if not doc or not doc.get("stats"):
+        raise HTTPException(status_code=404, detail="Rapport introuvable pour cette semaine")
+    prev = await db.system_flags.find_one(
+        {"key": "weekly_activity_report", "week": {"$lt": week}}, {"_id": 0, "stats": 1}, sort=[("week", -1)])
+    from io import BytesIO
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import mm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    s, ps = doc["stats"], (prev or {}).get("stats") or {}
+    rows = [["Indicateur", "Valeur", "Évolution"]]
+    for key, label in REPORT_ROWS:
+        cur = s.get(key, 0)
+        val = f"{cur:.2f} €" if key == "revenue_eur" else str(cur)
+        delta = ""
+        if key in ps:
+            diff = (cur or 0) - (ps.get(key) or 0)
+            delta = "stable" if diff == 0 else f"{'+' if diff > 0 else ''}{diff:.0f}"
+        rows.append([label, val, delta])
+    table = Table(rows, colWidths=[100 * mm, 35 * mm, 30 * mm])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1F2A3A")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    styles = getSampleStyleSheet()
+    buf = BytesIO()
+    pdf_doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=18 * mm, bottomMargin=18 * mm)
+    pdf_doc.build([
+        Paragraph("Rapport hebdo d'activité — Communityplace", ParagraphStyle("t", parent=styles["Title"], fontSize=17)),
+        Paragraph(f"Semaine {week} — KDMARCHÉ × O'SCOP", ParagraphStyle("s", parent=styles["Normal"], textColor=colors.HexColor("#B8860B"))),
+        Spacer(1, 8 * mm),
+        table,
+        Spacer(1, 8 * mm),
+        Paragraph("Rapport généré automatiquement chaque lundi. Évolution calculée par rapport à la semaine précédente disponible.", styles["Normal"]),
+    ])
+    return Response(content=buf.getvalue(), media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=rapport-hebdo-{week}.pdf"})

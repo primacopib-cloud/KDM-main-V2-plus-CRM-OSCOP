@@ -20,9 +20,15 @@ def generate_cod_receipt_pdf(order: dict, org_name: str, invoice_number: str = N
     sub = ParagraphStyle("s", parent=styles["Normal"], textColor=GOLD, fontSize=10)
     normal = styles["Normal"]
 
-    now = datetime.now()
+    paid_at = order.get("paid_at")
+    if isinstance(paid_at, str):
+        try:
+            paid_at = datetime.fromisoformat(paid_at)
+        except ValueError:
+            paid_at = None
+    paid_at = paid_at or datetime.utcnow()
     amount = (order.get("amount_paid_cents") or order.get("cod_amount_due_cents") or order.get("total_ttc_cents") or 0) / 100
-    receipt_num = f"RE-{now.strftime('%Y%m%d')}-{(order.get('id') or '')[-8:].upper()}"
+    receipt_num = order.get("cod_receipt_number") or f"RE-{paid_at.strftime('%Y%m%d')}-{(order.get('id') or '')[-8:].upper()}"
 
     rows = [
         ["Désignation", "Montant"],
@@ -46,9 +52,9 @@ def generate_cod_receipt_pdf(order: dict, org_name: str, invoice_number: str = N
         Paragraph("KDMARCHÉ × O'SCOP — Communityplace B2B ESS des Outre-mer", sub),
         Spacer(1, 8 * mm),
         Paragraph(f"Reçu n° : <b>{receipt_num}</b>", normal),
-        Paragraph(f"Date d'encaissement : {now.strftime('%d/%m/%Y à %H:%M')}", normal),
+        Paragraph(f"Date d'encaissement : {paid_at.strftime('%d/%m/%Y à %H:%M')}", normal),
         Paragraph(f"Client : <b>{org_name or 'N/A'}</b>", normal),
-        Paragraph(f"Mode de règlement : Paiement à la livraison (espèces / à réception)", normal),
+        Paragraph("Mode de règlement : Paiement à la livraison (espèces / à réception)", normal),
     ]
     if invoice_number:
         story.append(Paragraph(f"Facture associée : {invoice_number}", normal))

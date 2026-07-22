@@ -98,15 +98,20 @@ async def mark_cod_collected(order_id: str, admin: dict = Depends(require_admin)
     if order.get("payment_status") == "succeeded":
         raise HTTPException(status_code=400, detail="Commande déjà encaissée")
     amount = order.get("cod_amount_due_cents") or order["total_ttc_cents"]
+    receipt_number = f"RE-{datetime.utcnow().strftime('%Y%m%d')}-{order_id[-8:].upper()}"
     await db.orders.update_one(
         {"id": order_id},
         {"$set": {"payment_status": "succeeded", "amount_paid_cents": amount,
+                  "cod_receipt_number": receipt_number,
                   "paid_at": datetime.utcnow(), "updated_at": datetime.utcnow()}})
     invoice_number = None
     try:
         from routes_invoices import generate_invoice_for_order
         invoice = await generate_invoice_for_order(order_id)
         invoice_number = invoice.get("invoice_number")
+        await db.invoices.update_one(
+            {"order_id": order_id},
+            {"$set": {"status": "PAID", "payment_status": "PAID", "paid_at": datetime.utcnow().isoformat()}})
     except Exception as exc:
         logger.error("Facture COD non générée : %s", exc)
     from consultation_audit import audit
@@ -196,3 +201,36 @@ async def process_cod_reminders(database) -> None:
         await database.orders.update_one({"id": o["id"]}, {"$set": {"cod_reminder_sent": True}})
     if sent:
         logger.info("COD : %s relance(s) impayé J+7 envoyées", sent)
+
+
+# ============== ACHETEUR : HISTORIQUE DES REÇUS ==============
+
+@cod_router.get("/cod-receipts")
+async def list_my_cod_receipts(current_user: dict = Depends(get_current_user_checkout)):
+    membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
+    if not membership:
+        return {"items": []}
+    items = await db.orders.find(
+        {"org_id": membership["org_id"], "payment_method": "cod", "payment_status": "succeeded"},
+        {"_id": 0, "id": 1, "order_number": 1, "cod_receipt_number": 1, "amount_paid_cents": 1, "paid_at": 1},
+    ).sort("paid_at", -1).to_list(50)
+    for it in items:
+        it["receipt_number"] = it.pop("cod_receipt_number", None)
+        if it.get("paid_at") and not isinstance(it["paid_at"], str):
+            it["paid_at"] = it["paid_at"].isoformat()
+    return {"items": items}
+
+
+@cod_router.get("/cod-receipts/{order_id}/pdf")
+async def download_cod_receipt(order_id: str, current_user: dict = Depends(get_current_user_checkout)):
+    from fastapi.responses import Response
+    order, _ = await get_order_with_access_check(order_id, current_user)
+    if order.get("payment_method") != "cod" or order.get("payment_status") != "succeeded":
+        raise HTTPException(status_code=400, detail="Aucun reçu disponible pour cette commande")
+    org = await db.organizations.find_one({"id": order.get("org_id")}, {"legal_name": 1, "name": 1})
+    org_name = (org or {}).get("legal_name") or (org or {}).get("name") or ""
+    invoice = await db.invoices.find_one({"order_id": order_id}, {"invoice_number": 1})
+    from pdf_cod_receipt import generate_cod_receipt_pdf
+    pdf = generate_cod_receipt_pdf(order, org_name, (invoice or {}).get("invoice_number"))
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=recu-{order.get('order_number')}.pdf"})
