@@ -139,9 +139,7 @@ export const catalogAPI = {
 
   myZones: async () => {
     return apiCallV2('/catalog/my-zones');
-  },
-
-  getProducts: async (params = {}) => {
+  },  getProducts: async (params = {}) => {
     const searchParams = new URLSearchParams();
     if (params.categoryId) searchParams.append('category_id', params.categoryId);
     if (params.zoneCode) searchParams.append('zone_code', params.zoneCode);

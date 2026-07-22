@@ -1,6 +1,7 @@
 import i18n from '@/i18n';
 import { tData } from '@/i18n/tData';
 import { SearchSuggest, addRecentSearch } from '../components/catalog/SearchSuggest';
+import { ZoneAddonDialog } from '../components/catalog/ZoneAddonDialog';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -27,7 +28,7 @@ import {
 } from '../components/ui/dialog';
 
 import { partners } from '../data/mock';
-import { authAPI, catalogAPI, zonesAPIV2, ordersAPIV2, installmentAPI } from '../services/api';
+import { authAPI, catalogAPI, zonesAPIV2, ordersAPIV2, installmentAPI, zoneAddonAPI } from '../services/api';
 import { BreadcrumbPill } from '../components/Breadcrumb';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 import { FavoriteButton, useFavorites } from '../components/FavoriteButton';
@@ -49,6 +50,20 @@ export default function CatalogPage() {
   const [pickupLocations, setPickupLocations] = useState([]);
   const [zones, setZones] = useState([]);
   const [entitledZones, setEntitledZones] = useState(null);
+  const [addonZone, setAddonZone] = useState(null);
+
+  const handleZoneChange = (code) => {
+    if (Array.isArray(entitledZones) && !entitledZones.includes(code)) {
+      setAddonZone(zones.find((z) => z.code === code) || { code, name: code });
+      return;
+    }
+    setSelectedZone(code);
+  };
+
+  const handleZoneActivated = (code) => {
+    setEntitledZones((prev) => (Array.isArray(prev) ? [...prev, code] : prev));
+    setSelectedZone(code);
+  };
   
   // Filters
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -144,6 +159,35 @@ export default function CatalogPage() {
 
     init();
   }, [navigate]);
+
+  // Retour de paiement Stripe zone additionnelle
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    if (params.get('zone_payment') === 'success' && sessionId) {
+      window.history.replaceState({}, '', '/catalogue');
+      let attempts = 0;
+      const poll = async () => {
+        attempts += 1;
+        try {
+          const d = await zoneAddonAPI.status(sessionId);
+          if (d.activated) {
+            toast.success(`Zone ${d.zone_name || d.zone_code} activée !`, {
+              description: 'Les tarifs de cette zone sont maintenant accessibles.',
+            });
+            handleZoneActivated(d.zone_code);
+            return;
+          }
+          if (d.payment_status === 'unpaid' && attempts < 6) setTimeout(poll, 2000);
+        } catch { /* ignore */ }
+      };
+      poll();
+    } else if (params.get('zone_payment') === 'cancelled') {
+      window.history.replaceState({}, '', '/catalogue');
+      toast.info('Paiement de la zone annulé');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load products when zone or category changes
   const loadProducts = useCallback(async () => {
@@ -314,7 +358,7 @@ export default function CatalogPage() {
         zones={zones}
         entitledZones={entitledZones}
         selectedZone={selectedZone}
-        setSelectedZone={setSelectedZone}
+        setSelectedZone={handleZoneChange}
         cart={cart}
         cartOpen={cartOpen}
         setCartOpen={setCartOpen}
@@ -444,6 +488,11 @@ export default function CatalogPage() {
         setUseInstallment={setUseInstallment}
         installmentPlan={installmentPlan}
         installmentLoading={installmentLoading}
+      />
+      <ZoneAddonDialog
+        zone={addonZone}
+        onClose={() => setAddonZone(null)}
+        onActivated={handleZoneActivated}
       />
     </div>
   );

@@ -76,7 +76,7 @@ export const TopupDialog = ({ open, onOpenChange, amount, setAmount, loading, on
   </Dialog>
 );
 
-export const ZoneAddDialog = ({ open, onOpenChange, selectedZone, loading, onSubmit, onCancel }) => (
+export const ZoneAddDialog = ({ open, onOpenChange, selectedZone, loading, onSubmit, onCancel, pricing }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="bg-[#0a0d14] border-white/10 text-white sm:max-w-md">
       <DialogHeader>
@@ -100,6 +100,11 @@ export const ZoneAddDialog = ({ open, onOpenChange, selectedZone, loading, onSub
             {selectedZone.exw_only && (
               <p className="text-xs text-amber-400 mt-2">
                 ⚠️ Cette zone fonctionne en Incoterm EXW uniquement
+              </p>
+            )}
+            {pricing && (
+              <p className="text-sm font-bold text-[#E9CF8E] mt-2" data-testid="zone-add-price">
+                Zone additionnelle : {pricing.credits} crédits CREDI&rsquo;SCOP
               </p>
             )}
           </div>

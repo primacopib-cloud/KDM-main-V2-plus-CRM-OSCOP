@@ -294,7 +294,11 @@ async def add_zone_entitlement(
     current_user: dict = Depends(get_current_user_v2),
     request: Request = None,
 ):
-    """Add zone entitlement (addon purchase)"""
+    """Add zone entitlement (admin uniquement — les membres passent par l'achat de zone additionnelle)"""
+    if not current_user.get("is_admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="L'ajout d'une zone se fait via l'achat d'une zone additionnelle (crédits ou carte).")
     membership = await get_user_membership(current_user["id"], org_id)
     if not membership or membership["role"] != CustomerRole.CUSTOMER_ORG_OWNER.value:
         raise HTTPException(status_code=403, detail="Accès non autorisé")

@@ -18,6 +18,7 @@ export {
   exportAPI,
   paymentAPI,
   adminPlansAPI,
+  zoneAddonAPI,
 } from './api.core';
 
 export {

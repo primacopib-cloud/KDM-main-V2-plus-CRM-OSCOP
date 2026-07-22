@@ -419,3 +419,12 @@ export const adminPlansAPI = {
   deleteWalletPack: (packId) =>
     apiCall(`/admin/wallet-packs/${packId}`, { method: 'DELETE' }),
 };
+
+export const zoneAddonAPI = {
+  pricing: async () => apiCall('/zone-addon/pricing'),
+  purchaseCredits: async (zoneCode) =>
+    apiCall('/zone-addon/purchase-credits', { method: 'POST', body: JSON.stringify({ zone_code: zoneCode }) }),
+  checkout: async (zoneCode, originUrl) =>
+    apiCall('/zone-addon/checkout', { method: 'POST', body: JSON.stringify({ zone_code: zoneCode, origin_url: originUrl }) }),
+  status: async (sessionId) => apiCall(`/zone-addon/status/${sessionId}`),
+};

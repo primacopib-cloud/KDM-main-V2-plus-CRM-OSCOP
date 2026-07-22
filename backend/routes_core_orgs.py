@@ -295,8 +295,12 @@ async def add_org_zone(
     zone_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Add a zone to organization (as addon)."""
+    """Add a zone to organization (admin uniquement — les membres passent par l'achat de zone additionnelle)."""
     db = get_database()
+    if not current_user.get("is_admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="L'ajout d'une zone se fait via l'achat d'une zone additionnelle (crédits ou carte).")
     org = await db.organizations.find_one({"id": org_id})
     if not org:
         raise HTTPException(status_code=404, detail="Organisation non trouvée")

@@ -7,7 +7,7 @@ import { ArrowLeft, AlertCircle, Loader2, RefreshCw, ShoppingCart, FileDown } fr
 import { Button } from '../components/ui/button';
 import { partners } from '../data/mock';
 import { BrandLogos } from '../components/BrandLogos';
-import { authAPI, walletAPIV2, zonesAPIV2, paymentAPI } from '../services/api';
+import { authAPI, walletAPIV2, zonesAPIV2, paymentAPI, zoneAddonAPI } from '../services/api';
 import { API, getAuthHeaders } from '../services/http';
 import { formatCredits } from '../components/wallet/walletUtils';
 import { WalletOrgTabs } from '../components/wallet/WalletOrgTabs';
@@ -57,6 +57,11 @@ export default function WalletPage() {
 
   // Zone add dialog
   const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
+  const [zonePricing, setZonePricing] = useState(null);
+
+  useEffect(() => {
+    zoneAddonAPI.pricing().then(setZonePricing).catch(() => {});
+  }, []);
   const [selectedZone, setSelectedZone] = useState(null);
   const [zoneLoading, setZoneLoading] = useState(false);
 
@@ -203,8 +208,10 @@ export default function WalletPage() {
 
     setZoneLoading(true);
     try {
-      await zonesAPIV2.addEntitlement(orgId, selectedZone.id);
-      toast.success(i18n.t('wallet.toast_zone', { name: selectedZone.name }));
+      const d = await zoneAddonAPI.purchaseCredits(selectedZone.code);
+      toast.success(`Zone ${d.zone_name} activée !`, {
+        description: `${d.credits_spent} crédits débités — nouveau solde : ${d.new_credits} crédits`,
+      });
       setZoneDialogOpen(false);
       setSelectedZone(null);
 
@@ -355,6 +362,7 @@ export default function WalletPage() {
         onOpenChange={setZoneDialogOpen}
         selectedZone={selectedZone}
         loading={zoneLoading}
+        pricing={zonePricing}
         onSubmit={handleAddZone}
         onCancel={() => {
           setZoneDialogOpen(false);

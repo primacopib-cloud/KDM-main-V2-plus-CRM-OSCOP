@@ -546,6 +546,9 @@ app.include_router(quote_target_alert_router)
 
 from search_alerts import search_alerts_router
 app.include_router(search_alerts_router)
+
+from routes_zone_addon import zone_addon_router
+app.include_router(zone_addon_router)
 from routes_cod import cod_router, cod_admin_router, set_cod_database
 set_cod_database(db)
 app.include_router(cod_router)

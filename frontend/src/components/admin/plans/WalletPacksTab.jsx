@@ -1,8 +1,10 @@
 import { Plus, Pencil, Trash2, Eye, EyeOff, Star } from 'lucide-react';
 import { Button } from '../../ui/button';
+import { ZoneAddonPricingCard } from './ZoneAddonPricingCard';
 
 export const WalletPacksTab = ({ packs, onCreate, onEdit, onDelete, onToggleActive }) => (
   <div data-testid="wallet-packs-tab">
+    <ZoneAddonPricingCard />
     <div className="flex items-center justify-between mb-4">
       <p className="text-white/60 text-sm">
         Packs proposés dans « Acheter des crédits » (CREDI&rsquo;SCOP) — achetables par carte via Stripe.

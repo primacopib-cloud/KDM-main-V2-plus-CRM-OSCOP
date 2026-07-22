@@ -76,11 +76,11 @@ export const CatalogHeader = ({
                 {zones.map(zone => {
                   const locked = Array.isArray(entitledZones) && !entitledZones.includes(zone.code);
                   return (
-                    <SelectItem key={zone.code} value={zone.code} disabled={locked}
+                    <SelectItem key={zone.code} value={zone.code}
                       data-testid={`zone-option-${zone.code}`}>
                       <span className="inline-flex items-center gap-1.5">
-                        {locked && <Lock className="w-3 h-3 opacity-60" />}
-                        {zone.name}{locked ? ' — non incluse' : ''}
+                        {locked && <Lock className="w-3 h-3 text-[#D9B35A]" />}
+                        {zone.name}{locked ? ' — ajouter' : ''}
                       </span>
                     </SelectItem>
                   );
