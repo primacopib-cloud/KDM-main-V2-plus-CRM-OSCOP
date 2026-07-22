@@ -11,6 +11,7 @@ from lolodrive_helpers import require_admin
 
 logger = logging.getLogger(__name__)
 challenge_router = APIRouter(prefix="/api/admin/referral/challenge", tags=["referral-challenge"])
+challenge_public_router = APIRouter(prefix="/api/public/referral-challenge", tags=["referral-challenge-public"])
 db = None
 
 DEFAULTS = {"id": "default", "enabled": False, "reward_credits": 50}
@@ -61,6 +62,30 @@ async def update_challenge(body: ChallengeBody, admin: dict = Depends(require_ad
         from consultation_audit import audit
         await audit("REFERRAL_CHALLENGE_UPDATED", admin.get("email"), None, updates)
     return await _get_settings(db)
+
+
+def _mask(email: str) -> str:
+    if not email or "@" not in email:
+        return email or "Un membre"
+    local = email.split("@")[0]
+    return (local[:2] + "•••") if len(local) > 2 else local + "•••"
+
+
+@challenge_public_router.get("")
+async def public_challenge():
+    settings = await _get_settings(db)
+    last = await db.referral_challenges.find_one(
+        {"winner": {"$ne": None}}, {"_id": 0, "month": 1, "winner": 1, "referred": 1, "reward": 1},
+        sort=[("month", -1)])
+    if not settings.get("enabled") and not last:
+        return {"active": False}
+    return {
+        "active": bool(settings.get("enabled")),
+        "reward_credits": settings.get("reward_credits", 50),
+        "month": datetime.now(timezone.utc).strftime("%Y-%m"),
+        "last_winner": ({"month": last["month"], "name": _mask(last["winner"]),
+                         "referred": last["referred"], "reward": last["reward"]} if last else None),
+    }
 
 
 async def process_referral_challenge(database) -> None:

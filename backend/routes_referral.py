@@ -110,8 +110,9 @@ async def referral_admin_overview(admin: dict = Depends(require_admin)):
     }
 
 
-async def maybe_pay_referral_bonus(filleul_id: str):
-    """Appelé après une inscription à une consultation : verse le bonus au parrain (une seule fois)."""
+async def maybe_pay_referral_bonus(filleul_id: str, event_label: str = "première inscription à une consultation"):
+    """Appelé après une première inscription à une consultation OU une première commande :
+    verse le bonus au parrain + le bonus de bienvenue au filleul (une seule fois)."""
     link = await db.referral_links.find_one({"filleul_id": filleul_id, "bonus_paid": False}, {"_id": 0})
     if not link:
         return
@@ -122,7 +123,7 @@ async def maybe_pay_referral_bonus(filleul_id: str):
     entry = await add_cpc_movement(
         link["sponsor_id"], "PROMO_GRANT", bonus,
         idempotency_key=f"referral:{filleul_id}",
-        reason=f"Bonus parrainage — première inscription de {link.get('filleul_email', 'votre filleul')}")
+        reason=f"Bonus parrainage — {event_label} de {link.get('filleul_email', 'votre filleul')}")
     if entry is None:
         return
     welcome = settings.get("referral_welcome_bonus", 5)
@@ -131,7 +132,7 @@ async def maybe_pay_referral_bonus(filleul_id: str):
         w_entry = await add_cpc_movement(
             filleul_id, "PROMO_GRANT", welcome,
             idempotency_key=f"referral-welcome:{filleul_id}",
-            reason="Bonus de bienvenue parrainage — première inscription à une consultation")
+            reason=f"Bonus de bienvenue parrainage — {event_label}")
         if w_entry:
             try:
                 if await channel_allowed(filleul_id, "referral_welcome", "inapp"):

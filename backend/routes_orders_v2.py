@@ -173,6 +173,11 @@ async def create_order(
     
     await db.orders.insert_one(order_dict)
     
+    # Bonus parrainage filleul acheteur — première commande (fire-and-forget)
+    import asyncio as _asyncio
+    from routes_referral import maybe_pay_referral_bonus
+    _asyncio.create_task(maybe_pay_referral_bonus(current_user["id"], event_label="première commande"))
+    
     # Mark cart as converted
     await db.carts.update_one(
         {"id": cart["id"]},

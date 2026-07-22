@@ -29,6 +29,7 @@ import TerritorySelector from '../components/TerritorySelector';
 import WhyCommunityplaceSection from '../components/WhyCommunityplaceSection';
 import PartnerCarousel from '../components/PartnerCarousel';
 import { TestimonialsSection } from '../components/TestimonialsSection';
+import { ReferralChallengeBanner } from '../components/ReferralChallengeBanner';
 
 const LandingPage = () => {
   return (
@@ -134,6 +135,9 @@ const LandingPage = () => {
 
       {/* Témoignages membres */}
       <TestimonialsSection />
+
+      {/* Défi parrainage */}
+      <ReferralChallengeBanner />
 
       {/* Access Condition */}
       <section className="py-8 px-5">

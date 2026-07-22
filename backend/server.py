@@ -554,9 +554,10 @@ from routes_courier import courier_admin_router, courier_router, set_courier_dat
 set_courier_database(db)
 app.include_router(courier_admin_router)
 app.include_router(courier_router)
-from referral_challenge import challenge_router, set_challenge_database
+from referral_challenge import challenge_router, challenge_public_router, set_challenge_database
 set_challenge_database(db)
 app.include_router(challenge_router)
+app.include_router(challenge_public_router)
 
 from encheria_service import set_encheria_database
 set_encheria_database(db)
