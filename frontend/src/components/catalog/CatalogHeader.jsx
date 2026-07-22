@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import {
-  ArrowLeft, MapPin, Minus, Package, Plus, ShoppingCart, Trash2,
+  ArrowLeft, Lock, MapPin, Minus, Package, Plus, ShoppingCart, Trash2,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
@@ -18,7 +18,7 @@ import { CartSuggestions } from './CartSuggestions';
 import { BrandLogos } from '../BrandLogos';
 
 export const CatalogHeader = ({
-  zones, selectedZone, setSelectedZone, cart, cartOpen, setCartOpen,
+  zones, entitledZones, selectedZone, setSelectedZone, cart, cartOpen, setCartOpen,
   cartLoading, cartItemCount, cartTotal, handleUpdateQuantity,
   handleRemoveFromCart, handleAddToCart, navigate,
 }) => (
@@ -73,11 +73,18 @@ export const CatalogHeader = ({
                 <SelectValue placeholder="Zone" />
               </SelectTrigger>
               <SelectContent>
-                {zones.map(zone => (
-                  <SelectItem key={zone.code} value={zone.code}>
-                    {zone.name}
-                  </SelectItem>
-                ))}
+                {zones.map(zone => {
+                  const locked = Array.isArray(entitledZones) && !entitledZones.includes(zone.code);
+                  return (
+                    <SelectItem key={zone.code} value={zone.code} disabled={locked}
+                      data-testid={`zone-option-${zone.code}`}>
+                      <span className="inline-flex items-center gap-1.5">
+                        {locked && <Lock className="w-3 h-3 opacity-60" />}
+                        {zone.name}{locked ? ' — non incluse' : ''}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 

@@ -201,23 +201,36 @@ async def create_category(
 
 # ============== PRODUCTS ==============
 
+@catalog_router.get("/my-zones")
+async def my_zones(current_user: dict = Depends(get_current_user_catalog)):
+    """Zones autorisées par l'abonnement de l'utilisateur (pour verrouiller le sélecteur)."""
+    _, _, _, _, entitled = await get_user_org_context(current_user)
+    selected = await get_selected_zone(current_user)
+    return {"entitled": entitled, "selected": selected,
+            "is_admin": bool(current_user.get("is_admin"))}
+
+
 @catalog_router.get("/products", response_model=List[ProductResponse])
 async def list_products(
     current_user: dict = Depends(get_current_user_catalog),
     category_id: Optional[str] = None,
     search: Optional[str] = None,
     tags: Optional[str] = None,
+    zone_code: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
 ):
     """List products with ABAC-controlled pricing"""
-    # Get user's selected zone
-    zone_code = await get_selected_zone(current_user)
+    # Zone demandée par l'UI, sinon zone sélectionnée côté serveur
+    zone_code = zone_code or await get_selected_zone(current_user)
     
-    # Check price access
+    # Check price access (entitlement de la zone demandée obligatoire)
     price_visible = False
     if zone_code:
-        price_visible = await check_price_access(current_user, zone_code)
+        if current_user.get("is_admin"):
+            price_visible = True
+        else:
+            price_visible = await check_price_access(current_user, zone_code)
     
     # Build query
     query = {"status": ProductStatus.ACTIVE.value}
@@ -291,16 +304,20 @@ async def suggest_products(
 async def get_product(
     product_id: str,
     current_user: dict = Depends(get_current_user_catalog),
+    zone_code: Optional[str] = None,
 ):
     """Get product details with ABAC-controlled pricing"""
     product = await db.products.find_one({"id": product_id})
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
     
-    zone_code = await get_selected_zone(current_user)
+    zone_code = zone_code or await get_selected_zone(current_user)
     price_visible = False
     if zone_code:
-        price_visible = await check_price_access(current_user, zone_code)
+        if current_user.get("is_admin"):
+            price_visible = True
+        else:
+            price_visible = await check_price_access(current_user, zone_code)
     
     return await _build_product_response(product, zone_code, price_visible)
 

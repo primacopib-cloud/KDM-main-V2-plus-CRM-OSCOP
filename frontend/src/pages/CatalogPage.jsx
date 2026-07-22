@@ -48,6 +48,7 @@ export default function CatalogPage() {
   const [products, setProducts] = useState([]);
   const [pickupLocations, setPickupLocations] = useState([]);
   const [zones, setZones] = useState([]);
+  const [entitledZones, setEntitledZones] = useState(null);
   
   // Filters
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -86,18 +87,24 @@ export default function CatalogPage() {
         const userData = await authAPI.getMe();
         setUser(userData);
 
-        // Load zones and categories in parallel
-        const [zonesData, categoriesData] = await Promise.all([
+        // Load zones, entitlements and categories in parallel
+        const [zonesData, categoriesData, myZonesData] = await Promise.all([
           zonesAPIV2.list(),
           catalogAPI.getCategories(),
+          catalogAPI.myZones().catch(() => null),
         ]);
 
         setZones(zonesData);
         setCategories(categoriesData);
+        const entitled = myZonesData?.is_admin ? null : (myZonesData?.entitled || []);
+        setEntitledZones(entitled);
 
-        // Set default zone if available
+        // Set default zone: priorité aux zones autorisées par l'abonnement
         if (zonesData.length > 0) {
-          const defaultZone = zonesData[0].code;
+          const allowedZone = entitled === null
+            ? zonesData[0]
+            : (zonesData.find((z) => entitled.includes(z.code)) || zonesData[0]);
+          const defaultZone = allowedZone.code;
           setSelectedZone(defaultZone);
           
           // Load products and pickup locations for this zone
@@ -305,6 +312,7 @@ export default function CatalogPage() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }} data-testid="catalog-page">
       <CatalogHeader
         zones={zones}
+        entitledZones={entitledZones}
         selectedZone={selectedZone}
         setSelectedZone={setSelectedZone}
         cart={cart}

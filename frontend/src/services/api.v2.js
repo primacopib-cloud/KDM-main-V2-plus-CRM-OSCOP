@@ -137,6 +137,10 @@ export const catalogAPI = {
     return apiCallV2(`/catalog/suggest?q=${encodeURIComponent(q)}&lang=${lang}`);
   },
 
+  myZones: async () => {
+    return apiCallV2('/catalog/my-zones');
+  },
+
   getProducts: async (params = {}) => {
     const searchParams = new URLSearchParams();
     if (params.categoryId) searchParams.append('category_id', params.categoryId);
