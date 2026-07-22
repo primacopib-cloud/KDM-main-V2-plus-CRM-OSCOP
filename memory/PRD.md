@@ -1369,3 +1369,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Publication brouillons : POST /api/catalog/admin/products/{id}/publish (draft→approved) + bouton « Publier » sur chaque fiche draft (testé curl : Biscuits sésame publié)
 - Prix suggéré IA : POST /api/catalog/admin/products/{id}/ai-price (GPT-5.4 expert pricing Outre-mer : octroi de mer, fret) → applique pricing.price_ht_cents + justification ; bouton « Prix IA » sur les drafts (testé : 3,29 € HT appliqué avec justification)
 - FIX : résidu de syntaxe dans ContactForm.jsx (« ort default ») qui cassait la compilation — corrigé
+
+## 2026-07-22 — Lot 6 : Description IA + Publication groupée + Aperçu emails programme + Accusé devis (self-testé curl + screenshot)
+- Description IA : POST /api/catalog/admin/products/ai-describe {name, brand, category…} → short_description + description + tags rédigés par GPT-5.4 ; bouton « Rédiger la description » (data-testid=ai-describe-btn) dans AiProductAssistant (testé curl : confiture goyave-rhum)
+- Publication groupée : POST /api/catalog/admin/products/publish-bulk {ids max 50} (draft→approved) ; checkbox sur chaque fiche brouillon (data-testid=product-select-*) + bouton « Publier la sélection (n) » (data-testid=publish-selected-btn) — testé curl (1 publiée, plus aucun draft de démo)
+- Aperçu emails programme : PUT /api/admin/parrainia/programs/{id} (SCHEDULED uniquement : theme, sujets/corps kickoff & boost, récompenses ; updated_by/at) ; bouton « Aperçu emails » sur chaque programme planifié → modal d'édition avec rendu HTML en direct et variables remplacées ({prenom}→Marie…) — testé PUT + screenshot
+- Accusé de réception devis : DÉJÀ EXISTANT (quote_notify.send_quote_ack_email, multilingue fr/en/es, Brevo tag quote-ack) — vérifié E2E : POST /api/quotes → log « Accusé de réception devis (fr) envoyé » ; devis de test nettoyé

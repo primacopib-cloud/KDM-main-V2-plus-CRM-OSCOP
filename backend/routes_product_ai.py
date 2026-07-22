@@ -199,6 +199,48 @@ async def bulk_ai_import(body: dict, admin: dict = Depends(require_admin)):
     return {"results": results, "created": created, "total": len(eans)}
 
 
+@product_ai_router.post("/ai-describe")
+async def ai_describe(body: dict, admin: dict = Depends(require_admin)):
+    """L'IA rédige les descriptions (accroche + description + tags) à partir des infos saisies."""
+    name = (body.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Renseignez d'abord le nom du produit")
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    chat = LlmChat(
+        api_key=os.environ["EMERGENT_LLM_KEY"], session_id=f"ai-describe-{uuid.uuid4()}",
+        system_message=("Tu es un rédacteur e-commerce B2B pour une centrale coopérative des Outre-mer. "
+                        "Réponds UNIQUEMENT en JSON valide, sans markdown."),
+    ).with_model("openai", "gpt-5.4")
+    ctx = " | ".join(f"{k} : {body.get(k)}" for k in ("name", "brand", "manufacturer", "category", "subcategory", "unit_label", "ingredients") if body.get(k))
+    prompt = (
+        f"Rédige la fiche commerciale de ce produit : {ctx}.\n"
+        'JSON attendu : {"short_description" (accroche vendeuse max 180 caractères, en français), '
+        '"description" (3-5 phrases en français, ton professionnel et chaleureux, oriente vers l\'achat B2B), '
+        '"tags" (6 à 8 mots-clés français en minuscules pour la barre de recherche du catalogue)}.')
+    try:
+        raw = str(await chat.send_message(UserMessage(text=prompt))).strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1].lstrip("json").strip()
+        data = json.loads(raw)
+    except Exception as exc:
+        logger.error("Description IA échouée : %s", exc)
+        raise HTTPException(status_code=502, detail="Rédaction IA échouée — réessayez")
+    await log_ai_usage(db, "product_scan", f"description {name}")
+    return {k: v for k, v in data.items() if k in ("short_description", "description", "tags") and v}
+
+
+@product_ai_router.post("/publish-bulk")
+async def publish_bulk(body: dict, admin: dict = Depends(require_admin)):
+    """Publie plusieurs fiches brouillon d'un coup."""
+    ids = [i for i in (body.get("ids") or []) if isinstance(i, str)][:50]
+    if not ids:
+        raise HTTPException(status_code=400, detail="Sélectionnez au moins une fiche")
+    res = await db.catalog_products.update_many(
+        {"id": {"$in": ids}, "status": "draft"},
+        {"$set": {"status": "approved", "is_active": True}})
+    return {"published": res.modified_count, "requested": len(ids)}
+
+
 @product_ai_router.post("/{product_id}/publish")
 async def publish_product(product_id: str, admin: dict = Depends(require_admin)):
     """Publie une fiche brouillon (status draft → approved)."""

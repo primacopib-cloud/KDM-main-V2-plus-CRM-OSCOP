@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Sparkles, Camera, ScanBarcode, ImagePlus, Loader2, Video } from 'lucide-react';
+import { Sparkles, Camera, ScanBarcode, ImagePlus, Loader2, Video, PenLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { BarcodeScanner } from './BarcodeScanner';
 
@@ -31,6 +31,26 @@ export const AiProductAssistant = ({ formData, onApply }) => {
   const [imgLoading, setImgLoading] = useState(false);
   const [offImage, setOffImage] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [describing, setDescribing] = useState(false);
+
+  const describe = async () => {
+    if (!formData.name) return toast.error('Renseignez d\'abord le nom du produit');
+    setDescribing(true);
+    try {
+      const r = await fetch(`${API}/api/catalog/admin/products/ai-describe`, {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name, brand: formData.brand, manufacturer: formData.manufacturer,
+          category: formData.category, subcategory: formData.subcategory,
+          unit_label: formData.unit_label, ingredients: formData.ingredients,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) return toast.error(d.detail || 'Rédaction échouée');
+      onApply(d);
+      toast.success('Descriptions et tags rédigés par l\'IA');
+    } catch { toast.error('Erreur de connexion'); } finally { setDescribing(false); }
+  };
 
   const scan = async () => {
     if (!photo && !ean.trim()) return toast.error('Ajoutez une photo du produit ou saisissez un code EAN');
@@ -112,6 +132,11 @@ export const AiProductAssistant = ({ formData, onApply }) => {
           className="px-3 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 bg-white/[0.06] border border-white/15 text-white/75 hover:text-white disabled:opacity-60 transition-colors">
           {imgLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
           {imgLoading ? 'Image en cours...' : 'Image produit (Marque)'}
+        </button>
+        <button type="button" onClick={describe} disabled={describing} data-testid="ai-describe-btn"
+          className="px-3 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 bg-white/[0.06] border border-white/15 text-white/75 hover:text-white disabled:opacity-60 transition-colors">
+          {describing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenLine className="w-3.5 h-3.5" />}
+          {describing ? 'Rédaction...' : 'Rédiger la description'}
         </button>
       </div>
       {formData.image_url && (

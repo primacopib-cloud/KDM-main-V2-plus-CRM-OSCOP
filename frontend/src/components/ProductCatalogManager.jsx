@@ -275,6 +275,21 @@ export default function ProductCatalogManager({ onProductSaved }) {
   };
 
   const [pricingId, setPricingId] = useState('');
+  const [selected, setSelected] = useState([]);
+
+  const toggleSelect = (id) => setSelected((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
+
+  const publishSelected = async () => {
+    const res = await fetch(`${API_URL}/api/catalog/admin/products/publish-bulk`, {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: selected }),
+    });
+    const d = await res.json();
+    if (!res.ok) return toast.error(d.detail || 'Publication échouée');
+    toast.success(`${d.published} fiche(s) publiée(s) au catalogue ✓`);
+    setSelected([]);
+    fetchProducts();
+  };
 
   const publishProduct = async (product) => {
     const res = await fetch(`${API_URL}/api/catalog/admin/products/${product.id}/publish`, {
@@ -325,6 +340,12 @@ export default function ProductCatalogManager({ onProductSaved }) {
           <p className="text-sm text-white/50">{products.length} produits</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          {selected.length > 0 && (
+            <Button onClick={publishSelected} data-testid="publish-selected-btn"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Rocket className="w-4 h-4 mr-2" /> Publier la sélection ({selected.length})
+            </Button>
+          )}
           <BulkEanImport onDone={fetchProducts} />
           <Button onClick={openNewProduct} className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black">
             <Plus className="w-4 h-4 mr-2" />
@@ -386,6 +407,12 @@ export default function ProductCatalogManager({ onProductSaved }) {
               key={product.id}
               className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] flex items-center gap-4 hover:bg-white/[0.04] transition-colors"
             >
+              {/* Sélection (brouillons) */}
+              {product.status === 'draft' && (
+                <input type="checkbox" checked={selected.includes(product.id)} onChange={() => toggleSelect(product.id)}
+                  data-testid={`product-select-${product.id}`}
+                  className="w-4 h-4 accent-[#D9B35A] flex-shrink-0 cursor-pointer" />
+              )}
               {/* Image */}
               <div className="w-16 h-16 rounded-xl bg-white/[0.04] flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {product.image_url

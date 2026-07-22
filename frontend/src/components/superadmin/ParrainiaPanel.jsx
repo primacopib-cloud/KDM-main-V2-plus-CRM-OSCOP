@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Megaphone, Rocket, Flame, Loader2, FileBarChart, CalendarPlus, Trash2 } from 'lucide-react';
+import { Megaphone, Rocket, Flame, Loader2, FileBarChart, CalendarPlus, Trash2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -10,6 +10,22 @@ export const ParrainiaPanel = () => {
   const [programs, setPrograms] = useState([]);
   const [running, setRunning] = useState('');
   const [reading, setReading] = useState(null);
+  const [editing, setEditing] = useState(null);
+
+  const saveProgram = async () => {
+    const r = await fetch(`${API}/admin/parrainia/programs/${editing.id}`, {
+      method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        theme: editing.theme, kickoff_subject: editing.kickoff_subject, kickoff_body: editing.kickoff_body,
+        boost_subject: editing.boost_subject, boost_body: editing.boost_body,
+      }),
+    });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Enregistrement échoué');
+    toast.success(`Programme ${d.month} mis à jour`);
+    setEditing(null);
+    load();
+  };
 
   const load = useCallback(() => {
     fetch(`${API}/admin/parrainia/log`, { credentials: 'include' })
@@ -117,9 +133,15 @@ export const ParrainiaPanel = () => {
             <span className="text-white/70 truncate flex-1">« {p.theme} »</span>
             <span className="text-[#E9CF8E] font-bold">🥇{p.reward_credits} 🥈{p.reward_2nd} 🥉{p.reward_3rd}</span>
             {p.status === 'SCHEDULED' && (
-              <button onClick={() => deleteProgram(p)} className="p-1 rounded text-white/40 hover:text-red-400" data-testid={`parrainia-program-delete-${p.id}`}>
-                <Trash2 size={12} />
-              </button>
+              <>
+                <button onClick={() => setEditing({ ...p })} data-testid={`parrainia-program-preview-${p.id}`}
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-[#D9B35A]/15 border border-[#D9B35A]/30 text-[#E9CF8E] hover:bg-[#D9B35A]/25 inline-flex items-center gap-1 transition-colors">
+                  <Mail size={10} /> Aperçu emails
+                </button>
+                <button onClick={() => deleteProgram(p)} className="p-1 rounded text-white/40 hover:text-red-400" data-testid={`parrainia-program-delete-${p.id}`}>
+                  <Trash2 size={12} />
+                </button>
+              </>
             )}
           </div>
         ))}
@@ -146,6 +168,50 @@ export const ParrainiaPanel = () => {
           );
         })}
       </div>
+
+      {editing && (
+        <div className="fixed inset-0 z-[70] bg-black/70 flex items-center justify-center p-4" onClick={() => setEditing(null)} data-testid="parrainia-program-modal">
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-[#1A092D] border border-white/15 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <Mail size={14} className="text-[#D9B35A]" /> Emails du programme {editing.month}
+              </h4>
+              <button onClick={() => setEditing(null)} className="text-white/50 hover:text-white text-lg leading-none">✕</button>
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-white/60 uppercase">Thème</label>
+              <input value={editing.theme} onChange={(e) => setEditing({ ...editing, theme: e.target.value })}
+                data-testid="parrainia-edit-theme"
+                className="w-full h-9 mt-1 px-2.5 rounded-lg text-xs text-white bg-white/[0.05] border border-white/15" />
+            </div>
+            {[['kickoff', '🚀 Email de coup d\'envoi (début de mois)'], ['boost', '🔥 Email de relance (mi-mois)']].map(([kind, label]) => (
+              <div key={kind} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.07] space-y-2">
+                <p className="text-[11px] font-bold text-white/60 uppercase">{label}</p>
+                <input value={editing[`${kind}_subject`]} onChange={(e) => setEditing({ ...editing, [`${kind}_subject`]: e.target.value })}
+                  data-testid={`parrainia-edit-${kind}-subject`} placeholder="Objet"
+                  className="w-full h-9 px-2.5 rounded-lg text-xs text-white bg-white/[0.05] border border-white/15" />
+                <textarea rows={5} value={editing[`${kind}_body`]} onChange={(e) => setEditing({ ...editing, [`${kind}_body`]: e.target.value })}
+                  data-testid={`parrainia-edit-${kind}-body`}
+                  className="w-full px-2.5 py-2 rounded-lg text-xs text-white bg-white/[0.05] border border-white/15" />
+                <p className="text-[10px] text-white/40 mb-1">Aperçu :</p>
+                <div className="p-3 rounded-lg bg-white text-gray-800 text-xs [&_p]:mb-1.5"
+                  dangerouslySetInnerHTML={{ __html: (editing[`${kind}_body`] || '')
+                    .replaceAll('{prenom}', 'Marie').replaceAll('{classement}', '#2')
+                    .replaceAll('{filleuls}', '3').replaceAll('{recompense}', `+${editing.reward_credits} CREDI'SCOP`)
+                    .replaceAll('{lien}', '#') }} />
+              </div>
+            ))}
+            <p className="text-[10px] text-white/40">Variables disponibles : {'{prenom} {classement} {filleuls} {recompense} {lien}'} — remplacées pour chaque parrain à l'envoi.</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setEditing(null)} className="px-3 py-2 rounded-lg text-xs text-white/60 border border-white/15">Annuler</button>
+              <button onClick={saveProgram} data-testid="parrainia-program-save-btn"
+                className="px-4 py-2 rounded-lg text-xs font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>
+                Enregistrer le programme
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {reading && (
         <div className="fixed inset-0 z-[70] bg-black/70 flex items-center justify-center p-4" onClick={() => setReading(null)} data-testid="parrainia-report-modal">

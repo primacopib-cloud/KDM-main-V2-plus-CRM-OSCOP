@@ -310,6 +310,29 @@ async def list_programs(admin: dict = Depends(require_admin)):
     return {"items": items}
 
 
+@parrainia_router.put("/programs/{pid}")
+async def update_program(pid: str, body: dict, admin: dict = Depends(require_admin)):
+    """Relecture/modification d'un programme planifié avant diffusion."""
+    prog = await db.parrainia_programs.find_one({"id": pid}, {"_id": 0})
+    if not prog:
+        raise HTTPException(status_code=404, detail="Programme introuvable")
+    if prog.get("status") != "SCHEDULED":
+        raise HTTPException(status_code=409, detail="Programme déjà lancé — non modifiable")
+    updates = {}
+    for k in ("theme", "pitch", "kickoff_subject", "kickoff_body", "boost_subject", "boost_body"):
+        if isinstance(body.get(k), str):
+            updates[k] = body[k].strip()
+    for k, lo in (("reward_credits", 1), ("reward_2nd", 0), ("reward_3rd", 0)):
+        if body.get(k) is not None:
+            updates[k] = max(lo, min(int(body[k]), 1000))
+    if not updates:
+        raise HTTPException(status_code=400, detail="Rien à mettre à jour")
+    updates["updated_by"] = admin.get("email")
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.parrainia_programs.update_one({"id": pid}, {"$set": updates})
+    return await db.parrainia_programs.find_one({"id": pid}, {"_id": 0})
+
+
 @parrainia_router.delete("/programs/{pid}")
 async def delete_program(pid: str, admin: dict = Depends(require_admin)):
     res = await db.parrainia_programs.delete_one({"id": pid, "status": "SCHEDULED"})
