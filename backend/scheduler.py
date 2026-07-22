@@ -200,6 +200,11 @@ async def _scheduler_loop():
             await process_testimonial_reminders(_db)
         except Exception as exc:
             logger.exception("Scheduler testimonial reminders crashed: %s", exc)
+        try:
+            from routes_cod import process_cod_reminders
+            await process_cod_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler COD reminders crashed: %s", exc)
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 

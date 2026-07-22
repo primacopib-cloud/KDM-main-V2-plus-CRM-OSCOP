@@ -93,3 +93,11 @@ async def send_weekly_activity_report(database, force: bool = False) -> bool:
 async def trigger_weekly_report(admin: dict = Depends(require_admin)):
     await send_weekly_activity_report(db, force=True)
     return {"ok": True, "sent_to": REPORT_EMAIL}
+
+
+@weekly_report_router.get("/weekly/history")
+async def weekly_history(admin: dict = Depends(require_admin)):
+    items = await db.system_flags.find(
+        {"key": "weekly_activity_report"}, {"_id": 0, "week": 1, "sent_at": 1, "stats": 1},
+    ).sort("week", -1).to_list(8)
+    return {"items": items}

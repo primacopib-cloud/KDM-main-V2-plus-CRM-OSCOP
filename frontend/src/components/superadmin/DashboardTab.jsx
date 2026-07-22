@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { StatCard, AlertCard, ActivityItem, KPISection, formatCurrency } from './widgets';
 import { API, getAuthHeaders } from '../../services/http';
+import { WeeklyReportWidget } from './WeeklyReportWidget';
 
 const downloadComplianceReport = async () => {
   const month = new Date().toISOString().slice(0, 7);
@@ -40,6 +41,7 @@ export const DashboardTab = ({ kpis, alerts, activities, period, setActiveTab })
         Rapport conformité (PDF)
       </button>
     </div>
+    <WeeklyReportWidget />
     {/* Top Stats Row */}
     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
       <StatCard

@@ -1,0 +1,36 @@
+{
+  "summary": "Iter 69 (COD admin encaissement + relance J+7 + SMS statut commande Brevo + VENT'IA product-image + Widget hebdo admin) — 13/13 backend PASS + 3/3 UI flows PASS. Backend pytest : (1) GET /api/admin/cod/orders 401 sans admin + 200 avec admin (structure {items[], pending_count, pending_due_cents}, org_name résolu, _id exclu) ; (2) POST /api/admin/cod/orders/{id}/collected sur commande synthétique COD_pending => payment_status=succeeded, amount_paid_cents=1628, paid_at rempli, facture générée (invoice_number présent), 2e appel 400 'déjà encaissée', non-COD 400 ; (3) process_cod_reminders sur commande J-8 => cod_reminder_sent:true + emails Brevo, 2e run no-op ; (4) send_order_status_sms direct OK, POST /api/v2/orders/admin/{id}/status?new_status=READY_FOR_PICKUP OK (log 'SMS statut commande envoyé à +590690555555' confirmé dans backend.err.log) ; (5) POST /api/vendor/ai/product-image : 403 si ventia OFF, 400 nom vide, 200 avec image_url servi 200 (fichier PNG > 500B) ; (6) GET /api/admin/reports/weekly/history : 401 sans admin, 200 avec 8 items max triés desc, sans _id. Frontend : /superadmin dashboard affiche weekly-report-widget avec badge 'Semaine 2026-W30' et 6 métriques (revenue_eur=69€, orders=1, quotes=9, new_users=7, prospect_sent=3, testimonials=2) ✓. /superadmin onglet Orders montre cod-collection-panel avec badge 'Encaissé' pour la commande KDM-20260716-60C1CBA8 (déjà encaissée par main agent) et, après insertion d'une commande synthétique COD_pending TEST-UI-E14E1A, affiche le bouton cod-collect-btn-{id} 'Marquer comme encaissé' fonctionnel : clic => toast 'Commande TEST-UI-E14E1A encaissée (27.13 €) — facture FA-202607-0002', badge switch vers 'Encaissé' ✓. Espace vendeur : bouton ventia-image-btn 'Pas de photo ? Générer un visuel IA (VENT'IA)' visible quand aucune photo, toast erreur si nom vide, avec nom + ventia ON => image générée en ~7.5s, ajoutée à la grille (Blob preview 1), toast succès, bouton disparaît ✓. Aucun bug fonctionnel. Agents IA remis OFF, données synthétiques nettoyées.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "SuperAdmin OrdersTab", "issues": ["Les KPI header (Total revenue €0.00, Orders 0, Average basket €0.00) restent à 0 alors que 2 commandes CONFIRMED existent (dont une encaissée à 69.44 € et une test encaissée 27.13 €). Le compteur 'Breakdown by status : CONFIRMED 2' est correct mais 'Orders' et 'Total revenue' ne prennent pas en compte les commandes du panneau COD. Peu bloquant mais incohérent visuellement."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter69_cod_admin_sms_ventia_weekly.py",
+    "/app/test_reports/pytest/iter69_results.xml"
+  ],
+  "action_items": [
+    "(mineur design) Harmoniser le compteur 'Orders' / 'Total revenue' du header OrdersTab avec les commandes affichées dans le panneau COD (actuellement à 0 malgré 2 commandes CONFIRMED)."
+  ],
+  "critical_code_review_comments": [
+    "routes_cod.mark_cod_collected : la génération de facture se fait via try/except silencieux — si generate_invoice_for_order lève, on continue quand même avec succès (payment_status=succeeded déjà commis) et invoice_number=None. Bien mais devrait au moins remonter un flag 'invoice_pending' ou logguer un audit spécifique pour éviter les commandes 'encaissées sans facture' silencieuses.",
+    "routes_cod.process_cod_reminders : appelle `send_email` en série (await) pour chaque user × chaque order dans la boucle — coût I/O croît linéairement. À 1 order c'est OK, à 100 orders * 3 users = 300 appels Brevo séquentiels. Envisager asyncio.gather() ou une file d'attente si le volume grandit.",
+    "order_sms.send_order_status_sms : limite à 2 users par org (to_list(2)). Documenter clairement — les orgs avec 3+ membres ne recevront pas tous le SMS. Explicit is better.",
+    "ventia_service.product_image : pas de rate-limiting ni de garde-fou anti-abus côté endpoint. Un vendeur pourrait générer des dizaines d'images (coût LLM). Ajouter un compteur / quota par vendeur ou par jour.",
+    "weekly_report.weekly_history : limité à 8 items en dur (to_list(8)). OK pour un widget UI, mais devrait être paramétrable via query string ?limit=N pour l'export/audit.",
+    "checkout_common.get_current_user_checkout : sur token invalide renvoie 'Token invalide' — bon. Mais 'Utilisateur non trouvé' devrait probablement être 403 (utilisateur supprimé, pas un problème de token) plutôt que 401. Nit."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter69_cod_admin_sms_ventia_weekly.py (créé, 13 tests, 13 PASS)"
+  ],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "100% (3/3 flows)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin) ; vendor-pro@kdmarche.fr / Demo2026! ; acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "Créé 5 commandes synthétiques temporaires (préfixe TEST_COD_/TEST_NONCOD_/TEST_SMS_/TEST_CODREM_/TEST_UI_COD_) pour tester encaissement, non-COD 400, relance J+7, hook SMS et UI cod-collect-btn. Toutes NETTOYÉES en fin de test. Facture FA-202607-0002 générée par le flow UI puis supprimée. Agents IA remis à ventia_enabled=false, prospectia_enabled=false après tests.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fichier réutilisable : /app/backend/tests/test_iter69_cod_admin_sms_ventia_weekly.py. Le test SMS via HTTP admin fonctionne car POST /api/v2/orders/admin/{id}/status accepte l'auth cookie admin (get_current_user_catalog lit le cookie via extract_user_id_from_request). Le hook SMS log 'SMS statut commande envoyé à +590690555555' est vérifiable dans /var/log/supervisor/backend.err.log. Attention : le login vendeur via Playwright doit attendre `wait_for_url('**/vendor**')` + `wait_for_timeout(2500)` avant d'appeler des endpoints protégés — sinon le cookie access_token n'est pas encore persisté dans le contexte et /api/vendor/ai/product-image renvoie 401 (faux positif). L'endpoint /api/uploads/ventia/*.png est public (200 sans auth) donc le fetch blob côté client fonctionne. Les tests suppriment automatiquement leurs invoices via db.invoices.delete_many({order_id: regex ^TEST_}). Widget hebdo affiche 6 métriques exposées via weekly_metric-{revenue_eur,orders,quotes,new_users,prospect_sent,testimonials} — l'ordre est fixe dans WeeklyReportWidget.jsx.",
+  "rca of the issue": "N/A — aucun bug fonctionnel bloquant détecté. La seule incohérence visuelle est le header KPI de l'onglet Orders qui affiche 0 commandes alors que le panneau COD en montre 2 CONFIRMED (semble être 2 sources de vérité différentes : header lit une agrégation, panneau lit toutes les commandes payment_method=cod)."
+}

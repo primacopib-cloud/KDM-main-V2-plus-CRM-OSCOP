@@ -402,6 +402,8 @@ async def admin_update_order_status(
     from erp_webhooks import dispatch_order_event
     asyncio.create_task(dispatch_order_event(order_id, "order.status_changed",
                                              {"previous_status": order["status"], "new_status": new_status.value}))
+    from order_sms import send_order_status_sms
+    asyncio.create_task(send_order_status_sms(db, order_id, new_status.value))
 
     # Rétention de garantie 5% sur facture (contrats d'engagement de volume)
     if new_status in (OrderStatus.INVOICED, OrderStatus.PAID):

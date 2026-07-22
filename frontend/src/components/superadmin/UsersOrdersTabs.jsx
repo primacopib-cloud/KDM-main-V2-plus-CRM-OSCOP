@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Users, ShoppingCart, Building2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { formatCurrency } from './widgets';
+import { CodCollectionPanel } from './CodCollectionPanel';
 
 export const UsersTab = ({ kpis }) => (
   <div className="rounded-2xl bg-white/[0.02] border border-white/[0.08] p-6">
@@ -77,6 +78,8 @@ export const OrdersTab = ({ kpis }) => (
         </div>
       </div>
     )}
+
+    <CodCollectionPanel />
 
     <Link to="/commandes">
       <Button className="bg-[#F59E0B] hover:bg-[#D97706] text-black">

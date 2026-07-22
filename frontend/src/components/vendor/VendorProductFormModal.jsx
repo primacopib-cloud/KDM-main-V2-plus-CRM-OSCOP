@@ -55,6 +55,29 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
     }
   };
 
+  const [aiImgLoading, setAiImgLoading] = useState(false);
+  const generateAIImage = async () => {
+    if (!formData.name.trim()) return toast.error("Renseignez d'abord le nom du produit");
+    setAiImgLoading(true);
+    try {
+      const r = await fetch(`${API_URL}/api/vendor/ai/product-image`, {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: formData.name, category: formData.category, brand: formData.brand, region: formData.region_of_origin }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Génération impossible');
+      const imgUrl = `${API_URL}${d.image_url}`;
+      const blob = await (await fetch(imgUrl)).blob();
+      const file = new File([blob], 'visuel-ventia.png', { type: 'image/png' });
+      setPhotos((prev) => [...prev, { file, preview: URL.createObjectURL(file), isPrimary: prev.length === 0 }]);
+      toast.success("Visuel généré par VENT'IA — ajouté aux photos du produit");
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setAiImgLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
     setPhotos([]);
@@ -171,6 +194,13 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Photos */}
           <ProductPhotoUploader photos={photos} setPhotos={setPhotos} />
+          {photos.length === 0 && (
+            <Button type="button" variant="outline" size="sm" onClick={generateAIImage} disabled={aiImgLoading}
+              className="mt-1 h-8 px-3 text-xs" data-testid="ventia-image-btn">
+              {aiImgLoading ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <TrendingUp className="w-3 h-3 mr-1" />}
+              Pas de photo ? Générer un visuel IA (VENT'IA)
+            </Button>
+          )}
 
           {/* Basic Info */}
           <div className="space-y-4">

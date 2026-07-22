@@ -66,6 +66,41 @@ async def product_copy(body: ProductCopyBody, user: dict = Depends(get_current_u
         raise HTTPException(status_code=502, detail="Génération IA indisponible, réessayez")
 
 
+@ventia_router.post("/product-image")
+async def product_image(body: ProductCopyBody, user: dict = Depends(get_current_user_checkout)):
+    """Génère un visuel produit d'illustration par IA (quand le vendeur n'a pas de photo)."""
+    await _require_ventia(db)
+    if not body.name.strip():
+        raise HTTPException(status_code=400, detail="Nom du produit requis")
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    upload_dir = os.path.join(os.path.dirname(__file__), "uploads", "ventia")
+    os.makedirs(upload_dir, exist_ok=True)
+    try:
+        chat = LlmChat(
+            api_key=os.environ["EMERGENT_LLM_KEY"],
+            session_id=f"ventia-img-{uuid.uuid4()}",
+            system_message="You are a professional product photographer.",
+        )
+        chat.with_model("gemini", "gemini-3.1-flash-image-preview").with_params(modalities=["image", "text"])
+        msg = UserMessage(text=(
+            f"Professional e-commerce product photo, clean studio lighting, neutral warm background, "
+            f"appetizing and premium look, square format, no text or watermark. Product: {body.name}. "
+            f"Category: {body.category or 'food'}. Origin: {body.region or 'French Caribbean'}."))
+        _t, images = await chat.send_message_multimodal_response(msg)
+        if not images:
+            raise ValueError("no image")
+        import base64
+        fname = f"produit-{uuid.uuid4().hex[:10]}.png"
+        with open(os.path.join(upload_dir, fname), "wb") as f:
+            f.write(base64.b64decode(images[0]["data"]))
+        return {"image_url": f"/api/uploads/ventia/{fname}"}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("VENT'IA product-image échoué : %s", exc)
+        raise HTTPException(status_code=502, detail="Génération d'image indisponible, réessayez")
+
+
 async def process_abandoned_carts(database) -> None:
     """Relance par email les paniers actifs inactifs depuis 24h (une seule relance par panier)."""
     from ai_agents_settings import get_agents_settings
