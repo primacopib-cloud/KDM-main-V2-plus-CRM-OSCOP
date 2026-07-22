@@ -1290,3 +1290,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Témoignages : verified_member (badge "Membre coopérateur vérifié" traduit FR/EN/ES si soumission par compte connecté), traduction auto EN/ES à l'approbation (_translate_testimonial async, GET public ?lang=), relance J+7 des invités sans témoignage (process_testimonial_reminders, scheduler, une seule relance, invités convertis marqués)
 - Témoignages démo publiés sur la landing : "TEST Vérifié" (avec badge + 3 langues) et "Jean Testeur" — à rejeter par l'admin quand de vrais témoignages arrivent
 - Agents IA remis OFF après tests
+
+## 2026-07-22 — Lot Encaissement COD + SMS commande + Visuel produit IA + Widget hebdo (testé iter 69 : backend 13/13, frontend 3/3)
+- Suivi encaissement COD : cod_admin_router (routes_cod.py) — GET /api/admin/cod/orders (liste + pending_count + montant dû), POST /api/admin/cod/orders/{id}/collected (payment_status=succeeded + facture générée + audit ORDER_COD_COLLECTED), process_cod_reminders (scheduler : relance email client + alerte admin si cod_pending J+7, une relance, flag cod_reminder_sent) ; UI CodCollectionPanel.jsx dans SuperAdmin > onglet Orders (bouton « Marquer comme encaissé », badges Encaissé/À encaisser/Relancé J+7)
+- SMS suivi commande (choix utilisateur : Brevo, pas WhatsApp API) : order_sms.py — send_order_status_sms hooké dans POST /api/v2/orders/admin/{id}/status (SMS Brevo aux 2 premiers membres org avec téléphone, libellés FR par statut, lien /commandes)
+- Visuel produit IA : POST /api/vendor/ai/product-image (VENT'IA, gemini nano banana → /api/uploads/ventia/*.png) ; UI bouton « Pas de photo ? Générer un visuel IA » dans VendorProductFormModal quand photos vides (image ajoutée au flux d'upload existant)
+- Widget hebdo SuperAdmin : GET /api/admin/reports/weekly/history (system_flags weekly_activity_report, 8 semaines) ; WeeklyReportWidget.jsx en tête du Dashboard (6 métriques + delta vs semaine précédente + mini historique)
+- FIX KPI OrdersTab : agrégation superadmin élargie (payment_status succeeded/paid + statuts PAID/INVOICED, total_ttc_cents/100 fallback) — header cohérent avec le panneau COD
+- Commande démo KDM-20260716-60C1CBA8 encaissée (facture FA-202607-0001) durant les tests

@@ -95,12 +95,16 @@ async def get_kpis(period: str = "month"):
     try:
         # Total revenue from orders
         orders_pipeline = [
-            {"$match": {"status": {"$in": ["COMPLETED", "DELIVERED", "confirmed"]}}},
+            {"$match": {"$or": [
+                {"status": {"$in": ["COMPLETED", "DELIVERED", "confirmed", "PAID", "INVOICED"]}},
+                {"payment_status": {"$in": ["succeeded", "paid"]}},
+            ]}},
+            {"$addFields": {"_rev": {"$ifNull": ["$total_ttc", {"$divide": [{"$ifNull": ["$total_ttc_cents", 0]}, 100]}]}}},
             {"$group": {
                 "_id": None,
-                "total_revenue": {"$sum": "$total_ttc"},
+                "total_revenue": {"$sum": "$_rev"},
                 "total_orders": {"$sum": 1},
-                "avg_basket": {"$avg": "$total_ttc"}
+                "avg_basket": {"$avg": "$_rev"}
             }}
         ]
         sales_result = await db.orders.aggregate(orders_pipeline).to_list(1)
