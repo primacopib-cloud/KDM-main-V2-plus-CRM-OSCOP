@@ -39,13 +39,17 @@ export default function VerifyAttestationPage() {
                 : <><Clock size={16} /> Attestation émise — en attente de contre-signature</>}
             </div>
             <dl className="text-sm space-y-1.5">
-              {[['Référence', att.ref], ['Fournisseur', att.vendor_name],
+              {[['Référence', `${att.ref}${att.version ? ` / ${att.version}` : ''}`],
+                ['Réf. FOGEDOM-RCR', att.fogedom_ref || '—'],
+                ['Convention-cadre', att.convention_ref || '—'],
+                ['Fournisseur', att.vendor_name],
                 ['Produit', `${att.product_name} (${att.category})`],
                 ['Territoire(s)', (att.zones || []).join(', ') || '—'],
-                ['Volume agrégé', `${att.volume} ${att.unit}(s)`],
-                ['Montant agrégé HT', `${(att.montant_agrege_cents / 100).toFixed(2)} €`],
+                ["Volume d'Achat Ferme", `${att.volume} ${att.unit}(s)`],
+                ["Montant d'Achat Ferme HT", `${(att.montant_agrege_cents / 100).toFixed(2)} €`],
                 ['Taux RCR / Plafond-cible', `${att.rcr_rate}% — ${(att.plafond_cible_cents / 100).toFixed(2)} €`],
-                ['Émise le', new Date(att.created_at).toLocaleDateString('fr-FR')]].map(([k, v]) => (
+                ['Émise le', new Date(att.created_at).toLocaleDateString('fr-FR')],
+                ['Expire le', att.date_expiration ? new Date(att.date_expiration).toLocaleDateString('fr-FR') : '—']].map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-4 border-b border-white/[0.06] pb-1">
                   <dt className="text-white/45">{k}</dt><dd className="text-white/90 text-right">{v}</dd>
                 </div>

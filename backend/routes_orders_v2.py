@@ -48,6 +48,7 @@ def set_orders_database(database):
     db = database
 
 from routes_catalog import get_current_user_catalog, get_user_org_context, check_price_access, get_selected_zone
+from role_guards import ensure_can_buy
 
 # ============== ORDERS ==============
 
@@ -58,6 +59,7 @@ async def create_order(
     request: Request = None,
 ):
     """Create order from cart (EXW only)"""
+    ensure_can_buy(current_user)
     membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
     if not membership:
         raise HTTPException(status_code=400, detail="Aucune organisation associée")

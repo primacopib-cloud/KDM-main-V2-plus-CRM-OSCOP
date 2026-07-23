@@ -167,8 +167,10 @@ async def vendor_zone_allowance(vendor_id: str):
 
 
 @vendor_router.post("/products")
-async def submit_product(vendor_id: str, data: ProductSubmission):
+async def submit_product(vendor_id: str, data: ProductSubmission, request: Request):
     """Submit a new product for approval"""
+    from role_guards import ensure_seller_request
+    await ensure_seller_request(db, request, vendor_id)
     
     vendor = await get_vendor_by_id(vendor_id)
     if not vendor:
@@ -348,8 +350,10 @@ async def get_product_detail(vendor_id: str, product_id: str):
 
 
 @vendor_router.put("/products/{vendor_id}/{product_id}")
-async def update_product(vendor_id: str, product_id: str, data: ProductUpdate):
+async def update_product(vendor_id: str, product_id: str, data: ProductUpdate, request: Request):
     """Update a product"""
+    from role_guards import ensure_seller_request
+    await ensure_seller_request(db, request, vendor_id)
     
     product = await db.vendor_products.find_one({"id": product_id, "vendor_id": vendor_id})
     if not product:
@@ -360,6 +364,20 @@ async def update_product(vendor_id: str, product_id: str, data: ProductUpdate):
         raise HTTPException(status_code=400, detail="Produit en cours de validation, modification impossible")
     
     update_data = {k: v for k, v in data.dict().items() if v is not None}
+    
+    # Limite de zones selon l'abonnement du vendeur
+    if update_data.get("available_zones"):
+        from vendor_zone_allowance import get_vendor_zone_allowance
+        allowance = await get_vendor_zone_allowance(db, vendor_id)
+        zones = update_data["available_zones"]
+        if len(zones) > allowance["count"]:
+            raise HTTPException(status_code=403,
+                                detail=f"Votre abonnement donne droit à {allowance['count']} zone(s).")
+        if allowance["codes"]:
+            forbidden = [z for z in zones if z.upper() not in allowance["codes"]]
+            if forbidden:
+                raise HTTPException(status_code=403,
+                                    detail=f"Zone(s) non incluse(s) dans votre abonnement : {', '.join(forbidden)}.")
     
     # Recalculate TTC if price changes
     if "price_ht" in update_data:

@@ -49,6 +49,7 @@ def set_cart_database(database):
     db = database
 
 from routes_catalog import get_current_user_catalog, get_user_org_context, check_price_access, get_selected_zone, ensure_member_active, ensure_member_active
+from role_guards import ensure_can_buy
 
 # ============== CART ==============
 
@@ -91,6 +92,7 @@ async def add_to_cart(
     current_user: dict = Depends(get_current_user_catalog),
 ):
     """Add item to cart"""
+    ensure_can_buy(current_user)
     membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
     if not membership:
         raise HTTPException(status_code=400, detail="Aucune organisation associée")

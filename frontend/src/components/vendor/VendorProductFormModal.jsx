@@ -1,6 +1,6 @@
 import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
-import { Package, Plus, RefreshCw, Clock, Flag, ShoppingCart, TrendingUp, Save } from 'lucide-react';
+import { Package, Plus, RefreshCw, Clock, Flag, ShoppingCart, TrendingUp, Save, Lock } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -34,6 +34,26 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
   const [tvaRates, setTvaRates] = useState(TVA_RATES);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [aiLoading, setAiLoading] = useState(false);
+  const [allowance, setAllowance] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen || !vendorId) return;
+    fetch(`${API_URL}/api/vendor/zone-allowance/${vendorId}`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        setAllowance(d);
+        if (!editProduct && d.codes?.length) {
+          setFormData((prev) => {
+            const kept = prev.available_zones.filter((z) => d.codes.includes(z));
+            return { ...prev, available_zones: kept.length ? kept : [d.codes[0]] };
+          });
+        }
+      })
+      .catch(() => {});
+  }, [isOpen, vendorId, editProduct]);
+
+  const isZoneLocked = (zone) => Boolean(allowance?.codes?.length) && !allowance.codes.includes(zone);
 
   const generateAICopy = async () => {
     if (!formData.name.trim()) return toast.error("Renseignez d'abord le nom du produit");
@@ -102,9 +122,22 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
   };
 
   const handleZoneToggle = (zone) => {
+    if (isZoneLocked(zone)) {
+      toast.info('Zone non incluse dans votre abonnement', {
+        description: 'Ajoutez une zone additionnelle depuis votre portefeuille (Wallet) pour étendre votre couverture.',
+      });
+      return;
+    }
+    const selected = formData.available_zones.includes(zone);
+    if (!selected && allowance?.count && formData.available_zones.length >= allowance.count) {
+      toast.error(`Votre abonnement autorise ${allowance.count} zone(s) maximum`, {
+        description: 'Ajoutez une zone additionnelle depuis votre portefeuille pour en sélectionner davantage.',
+      });
+      return;
+    }
     setFormData(prev => ({
       ...prev,
-      available_zones: prev.available_zones.includes(zone)
+      available_zones: selected
         ? prev.available_zones.filter(z => z !== zone)
         : [...prev.available_zones, zone]
     }));
@@ -137,6 +170,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
         };
         const response = await fetch(`${API_URL}/api/vendor/products/${vendorId}/${editProduct.id}`, {
           method: 'PUT',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(editPayload),
         });
@@ -476,19 +510,37 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
               {i18n.t('adm.zones_disponibilite_req')}
             </h3>
+            {allowance && (
+              <p className="text-xs text-gray-600" data-testid="zone-allowance-info">
+                {formData.available_zones.length} / {allowance.count} zone(s) incluse(s) dans votre abonnement
+                {' — '}
+                <a href="/wallet" className="text-purple-600 underline" data-testid="zone-allowance-wallet-link">
+                  ajouter une zone additionnelle
+                </a>
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
-              {ZONES.map(zone => (
-                <Button
-                  key={zone}
-                  type="button"
-                  variant={formData.available_zones.includes(zone) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleZoneToggle(zone)}
-                  className={formData.available_zones.includes(zone) ? "bg-purple-600 hover:bg-purple-700" : ""}
-                >
-                  {zone}
-                </Button>
-              ))}
+              {ZONES.map(zone => {
+                const locked = isZoneLocked(zone);
+                return (
+                  <Button
+                    key={zone}
+                    type="button"
+                    variant={formData.available_zones.includes(zone) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleZoneToggle(zone)}
+                    data-testid={`product-zone-${zone}`}
+                    className={
+                      formData.available_zones.includes(zone)
+                        ? "bg-purple-600 hover:bg-purple-700"
+                        : locked ? "opacity-50 border-dashed" : ""
+                    }
+                  >
+                    {locked && <Lock className="w-3 h-3 mr-1" />}
+                    {zone}{locked ? ' — non incluse' : ''}
+                  </Button>
+                );
+              })}
             </div>
             {formData.available_zones.length === 0 && (
               <p className="text-sm text-red-500">{i18n.t('adm.selectionnez_au_moins_une_zone')}</p>
