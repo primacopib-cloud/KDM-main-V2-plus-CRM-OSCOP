@@ -42,6 +42,16 @@ async def _collect_stats(database, since: datetime) -> dict:
                 quotes_converted_week += 1
     q_total = sum(q_counts.values())
     quote_conversion_rate = round(q_counts["converted"] / q_total * 100, 1) if q_total else 0
+    zone_sales_count, zone_sales_credits, zone_sales_eur = 0, 0, 0.0
+    async for zs in database.zone_addon_transactions.find({"status": "PAID"}, {"created_at": 1, "method": 1, "credits_spent": 1, "amount_cents": 1}):
+        c = zs.get("created_at")
+        if not (hasattr(c, "tzinfo") and (c.replace(tzinfo=timezone.utc) if c.tzinfo is None else c) >= (since.replace(tzinfo=timezone.utc) if since.tzinfo is None else since)):
+            continue
+        zone_sales_count += 1
+        if zs.get("method") == "card":
+            zone_sales_eur += zs.get("amount_cents", 0) / 100
+        else:
+            zone_sales_credits += zs.get("credits_spent", 0)
     new_users = await database.users.count_documents({"created_at": {"$gte": since}})
     consultations = await database.consultations.count_documents({"created_at": {"$gte": since_iso}})
     testimonials = await database.testimonials.count_documents({"created_at": {"$gte": since_iso}})
@@ -57,6 +67,9 @@ async def _collect_stats(database, since: datetime) -> dict:
             "quote_conversion_rate": quote_conversion_rate,
             "quotes_pending": q_counts["pending"], "quotes_contacted": q_counts["contacted"],
             "quotes_converted": q_counts["converted"], "quotes_lost": q_counts["lost"],
+            "zone_sales_count": zone_sales_count,
+            "zone_sales_credits": zone_sales_credits,
+            "zone_sales_eur": round(zone_sales_eur, 2),
             "new_users": new_users,
             "consultations": consultations, "testimonials": testimonials,
             "prospect_sent": sent_week, "prospect_clicks": clicks, "prospect_conversions": conversions,
@@ -90,6 +103,9 @@ async def send_weekly_activity_report(database, force: bool = False) -> bool:
         + _row("📈 Taux de conversion des devis (global)", f"{s.get('quote_conversion_rate', 0)} %")
         + _row("🗂 Pipeline devis (nouveau / contacté / converti / perdu)",
                f"{s.get('quotes_pending', 0)} / {s.get('quotes_contacted', 0)} / {s.get('quotes_converted', 0)} / {s.get('quotes_lost', 0)}")
+        + _row("🗺 Zones additionnelles vendues (7 j)", s.get("zone_sales_count", 0))
+        + _row("💳 Revenus zones (7 j)",
+               f"{s.get('zone_sales_credits', 0)} crédits + {s.get('zone_sales_eur', 0):.2f} €")
         + _row("👥 Nouveaux comptes membres", s["new_users"])
         + _row("⚖️ Consultations / enchères créées", s["consultations"])
         + _row("💬 Témoignages reçus", s["testimonials"])
@@ -135,6 +151,9 @@ REPORT_ROWS = [
     ("quotes_contacted", "Pipeline devis : contactés"),
     ("quotes_converted", "Pipeline devis : convertis"),
     ("quotes_lost", "Pipeline devis : perdus"),
+    ("zone_sales_count", "Zones additionnelles vendues"),
+    ("zone_sales_credits", "Revenus zones (crédits)"),
+    ("zone_sales_eur", "Revenus zones (€)"),
     ("new_users", "Nouveaux comptes membres"),
     ("consultations", "Consultations / enchères créées"),
     ("testimonials", "Témoignages reçus"),

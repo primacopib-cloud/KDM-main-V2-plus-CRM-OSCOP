@@ -91,6 +91,36 @@ async def zone_addon_sales(current_user: dict = Depends(get_current_user)):
                        "eur_total_cents": eur_total_cents}}
 
 
+@zone_addon_router.get("/admin/sales/export")
+async def export_zone_sales_csv(current_user: dict = Depends(get_current_user)):
+    """Export CSV des ventes de zones additionnelles (comptabilité)."""
+    await check_admin(current_user)
+    db = get_database()
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+    sales = await db.zone_addon_transactions.find(
+        {"status": "PAID"}, {"_id": 0}).sort("created_at", -1).to_list(2000)
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["Date", "Membre", "Email", "Zone", "Moyen de paiement",
+                "Crédits", "Montant EUR HT", "Référence"])
+    for s in sales:
+        c = s.get("created_at")
+        w.writerow([
+            c.strftime("%d/%m/%Y %H:%M") if hasattr(c, "strftime") else str(c or ""),
+            s.get("company_name", ""), s.get("user_email", ""),
+            s.get("zone_name") or s.get("zone_code", ""),
+            "Carte bancaire" if s.get("method") == "card" else "Crédits CREDI'SCOP",
+            s.get("credits_spent", 0) or "",
+            f"{s.get('amount_cents', 0) / 100:.2f}".replace(".", ",") if s.get("method") == "card" else "",
+            s.get("session_id", ""),
+        ])
+    return StreamingResponse(
+        io.BytesIO(buf.getvalue().encode("utf-8-sig")), media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=ventes-zones-additionnelles.csv"})
+
+
 @zone_addon_router.post("/purchase-credits")
 async def purchase_zone_with_credits(body: dict, current_user: dict = Depends(get_current_user)):
     """Achat d'une zone additionnelle en crédits CREDI'SCOP (débit immédiat)."""
