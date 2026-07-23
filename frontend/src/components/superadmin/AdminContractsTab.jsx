@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { FileSignature, Loader2, Undo2, MapPin, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiCall } from '../../services/http';
+import { ConventionRegistres } from './ConventionRegistres';
 
 const eur = (cents) => `${((cents || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 
@@ -89,6 +90,7 @@ export const AdminContractsTab = () => {
 
   return (
     <div className="space-y-5" data-testid="admin-contracts-tab">
+      <ConventionRegistres />
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-lg font-semibold flex items-center gap-2 text-[#4C2A6E]">
           <FileSignature className="w-5 h-5 text-[#D9B35A]" /> Contrats d'engagement de volume

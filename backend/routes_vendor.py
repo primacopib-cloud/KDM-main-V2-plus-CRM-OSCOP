@@ -159,6 +159,13 @@ async def update_vendor_profile(vendor_id: str, data: VendorProfile):
     return {"success": True, "message": "Profil mis à jour"}
 
 
+@vendor_router.get("/zone-allowance/{vendor_id}")
+async def vendor_zone_allowance(vendor_id: str):
+    """Zones autorisées par l'abonnement du vendeur (pour le formulaire produit)."""
+    from vendor_zone_allowance import get_vendor_zone_allowance
+    return await get_vendor_zone_allowance(db, vendor_id)
+
+
 @vendor_router.post("/products")
 async def submit_product(vendor_id: str, data: ProductSubmission):
     """Submit a new product for approval"""
@@ -174,6 +181,23 @@ async def submit_product(vendor_id: str, data: ProductSubmission):
     existing = await db.vendor_products.find_one({"vendor_id": vendor_id, "sku": data.sku})
     if existing:
         raise HTTPException(status_code=400, detail="Ce SKU existe déjà pour votre compte")
+
+    # Limite de zones selon l'abonnement du vendeur
+    from vendor_zone_allowance import get_vendor_zone_allowance
+    allowance = await get_vendor_zone_allowance(db, vendor_id)
+    if data.available_zones and len(data.available_zones) > allowance["count"]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Votre abonnement donne droit à {allowance['count']} zone(s). "
+                   f"Vous ne pouvez pas soumettre ce produit sur {len(data.available_zones)} zones. "
+                   "Ajoutez une zone additionnelle depuis votre portefeuille pour étendre votre couverture.")
+    if allowance["codes"] and data.available_zones:
+        forbidden = [z for z in data.available_zones if z.upper() not in allowance["codes"]]
+        if forbidden:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Zone(s) non incluse(s) dans votre abonnement : {', '.join(forbidden)}. "
+                       "Ajoutez ces zones via une zone additionnelle.")
 
     from vendor_credits import consume_credits
     await consume_credits(vendor_id, "product_submission", f"Fiche produit {data.name}",
@@ -260,6 +284,13 @@ async def submit_product(vendor_id: str, data: ProductSubmission):
     }
     
     await db.vendor_products.insert_one(product)
+
+    # Attestation nominative (IA + signature vendeur) — best effort
+    try:
+        from attestation_nominative import create_attestation_for_product
+        await create_attestation_for_product(db, product, vendor)
+    except Exception as exc:
+        logger.warning("Attestation non créée pour %s : %s", product_id, exc)
     
     # Update vendor product count
     await db.vendors.update_one(

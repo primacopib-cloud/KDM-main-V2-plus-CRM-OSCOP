@@ -29,6 +29,7 @@ import { VendorCpcTab } from '../components/vendor/VendorCpcTab';
 import { VendorConsultationsTab } from '../components/vendor/VendorConsultationsTab';
 import { CreditPacksModal } from '../components/vendor/CreditPacksModal';
 import { VendorContractsTab } from '../components/vendor/VendorContractsTab';
+import { VendorConventionCard } from '../components/vendor/VendorConventionCard';
 import { VendorSuspendedNotice } from '../components/vendor/VendorSuspendedNotice';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
@@ -426,6 +427,7 @@ const VendorSpacePage = () => {
 
           {/* Contracts Tab */}
           <TabsContent value="contracts">
+            <VendorConventionCard vendorId={vendorId} />
             <VendorContractsTab vendorId={vendorId} />
           </TabsContent>
 

@@ -148,7 +148,14 @@ async def admin_approve_product(product_id: str):
     product = await db.vendor_products.find_one({"id": product_id})
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
-    
+
+    # Contre-signature O'SCOP / KDMARCHÉ de l'attestation nominative — best effort
+    try:
+        from attestation_nominative import countersign_attestation
+        await countersign_attestation(db, product_id)
+    except Exception:
+        pass
+
     now = datetime.now(timezone.utc)
     
     await db.vendor_products.update_one(
