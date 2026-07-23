@@ -111,6 +111,14 @@ export const ConventionRegistres = () => {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] text-white/75 hover:text-[#E9CF8E] border border-white/15">
                 <FileSpreadsheet size={12} /> Export CSV
               </button>
+              <button type="button" data-testid="rcr-export-comptable-btn"
+                onClick={async () => {
+                  try { await download(`${API}/convention/admin/registres/export-comptable.csv`, 'ecritures-rcr.csv'); toast.success('Export comptable téléchargé'); }
+                  catch (e) { toast.error(e.message); }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] text-white/75 hover:text-[#E9CF8E] border border-white/15">
+                <FileSpreadsheet size={12} /> Export comptable
+              </button>
               <button type="button" data-testid="rcr-export-pdf-btn"
                 onClick={async () => {
                   try { await download(`${API}/convention/admin/registres/export.pdf`, 'registre-fogedom-rcr.pdf'); toast.success('Export PDF téléchargé'); }

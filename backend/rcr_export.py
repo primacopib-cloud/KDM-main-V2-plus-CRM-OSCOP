@@ -52,6 +52,51 @@ async def export_registres_csv(current_user: dict = Depends(get_current_user)):
         headers={"Content-Disposition": f"attachment; filename=registre-fogedom-rcr-{datetime.now().strftime('%Y%m%d')}.csv"})
 
 
+@rcr_export_router.get("/admin/registres/export-comptable.csv")
+async def export_ecritures_comptables(current_user: dict = Depends(get_current_user)):
+    """Journal des écritures RCR (constitutions + remboursements) — format compatible comptabilité (FEC simplifié)."""
+    await check_admin(current_user)
+    db = get_database()
+    from attestation_nominative import compute_rcr_ledger
+    out = StringIO()
+    w = csv.writer(out, delimiter=";")
+    w.writerow(["JournalCode", "EcritureDate", "PieceRef", "CompteNum", "CompteLib",
+                "EcritureLib", "Debit", "Credit", "Attestation", "Fournisseur"])
+    entries = []
+    async for att in db.attestations_nominatives.find({}, {"_id": 0, "ai_text": 0}):
+        ledger = await compute_rcr_ledger(db, att)
+        for f in ledger["fractions"]:
+            if f["fraction_cents"] <= 0:
+                continue
+            lib = f"Constitution fraction RCR {att['ref']} — commande {f['order_ref']}"
+            entries.append((f["date"], f["order_ref"], "401FOUR", "Fournisseur — retenue sur règlement",
+                            lib, f["fraction_cents"], 0, att["ref"], att.get("vendor_name")))
+            entries.append((f["date"], f["order_ref"], "4671RCR", "RCR FOGEDOM-SCIC individualisée",
+                            lib, 0, f["fraction_cents"], att["ref"], att.get("vendor_name")))
+    async for r in db.rcr_reimbursements.find({}, {"_id": 0}):
+        if (r.get("amount_cents") or 0) <= 0:
+            continue
+        d = (r.get("created_at") or "")[:10]
+        lib = f"Remboursement RCR {r['ref']} — clôture {r.get('attestation_ref', '')}"
+        entries.append((d, r["ref"], "4671RCR", "RCR FOGEDOM-SCIC individualisée",
+                        lib, r.get("amount_cents", 0), 0, r.get("attestation_ref"), r.get("vendor_name")))
+        entries.append((d, r["ref"], "512OSC", "Banque O'SCOP (exécution monétaire)",
+                        lib, 0, r.get("amount_cents", 0), r.get("attestation_ref"), r.get("vendor_name")))
+    entries.sort(key=lambda e: (e[0] or "", e[1] or ""))
+    def cents(v):
+        return f"{v / 100:.2f}".replace(".", ",")
+    for d, piece, compte, compte_lib, lib, debit, credit, att_ref, vendor in entries:
+        w.writerow(["RCR", d, piece, compte, compte_lib, lib,
+                    cents(debit) if debit else "", cents(credit) if credit else "", att_ref, vendor])
+    total_d = sum(e[5] for e in entries)
+    total_c = sum(e[6] for e in entries)
+    w.writerow([])
+    w.writerow(["RCR", "", "TOTAUX", "", "", f"{len(entries)} écriture(s)", cents(total_d), cents(total_c), "", ""])
+    return Response(
+        content="\ufeff" + out.getvalue(), media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename=ecritures-rcr-{datetime.now().strftime('%Y%m%d')}.csv"})
+
+
 @rcr_export_router.get("/admin/registres/export.pdf")
 async def export_registres_pdf(current_user: dict = Depends(get_current_user)):
     await check_admin(current_user)

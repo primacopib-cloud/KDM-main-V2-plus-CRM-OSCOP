@@ -75,12 +75,17 @@ export const NotificationsBell = ({ className = '' }) => {
           {(data.notifications || []).map((n) => (
             <button key={n.id} type="button" data-testid={`notification-item-${n.id}`}
               onClick={() => { setOpen(false); if (n.data?.link) navigate(n.data.link); }}
-              className={`w-full text-left px-4 py-2.5 border-b border-white/5 last:border-0 hover:bg-white/[0.05] transition-colors ${n.is_read ? 'opacity-60' : ''}`}>
+              className={`w-full text-left px-4 py-2.5 border-b border-white/5 hover:bg-white/[0.05] transition-colors ${n.is_read ? 'opacity-60' : ''}`}>
               <p className="text-xs font-semibold text-[#E9CF8E]">{n.title}</p>
               <p className="text-[11px] text-white/65 mt-0.5">{n.message}</p>
               <p className="text-[10px] text-white/35 mt-0.5">{String(n.created_at || '').slice(0, 16).replace('T', ' ')}</p>
             </button>
           ))}
+          <button type="button" data-testid="notifications-see-all-btn"
+            onClick={() => { setOpen(false); navigate('/notifications'); }}
+            className="w-full px-4 py-2.5 text-center text-[11px] font-bold text-[#D9B35A] hover:bg-white/[0.05] transition-colors">
+            Voir tout l'historique
+          </button>
         </div>
       )}
     </div>

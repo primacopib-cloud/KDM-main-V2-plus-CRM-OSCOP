@@ -3,6 +3,7 @@ import React from 'react';
 import {
   Bell, FileText, User, Building2, Wallet, AlertTriangle, ShoppingCart,
   Truck, Package, CreditCard, ClipboardCheck, CheckCircle, XCircle,
+  Plus, Minus, FileSignature, PiggyBank, Clock,
 } from 'lucide-react';
 
 export const getNotificationIcon = (type) => {
@@ -22,6 +23,9 @@ export const getNotificationIcon = (type) => {
     system_alert: Bell,
     document_ready: FileText,
     pod_available: ClipboardCheck,
+    attestation_signed: FileSignature,
+    rcr_reimbursed: PiggyBank,
+    attestation_expiring: Clock,
   };
   return icons[type] || Bell;
 };
@@ -43,6 +47,9 @@ export const getNotificationColor = (type) => {
     system_alert: '#6B7280',
     document_ready: '#8B5CF6',
     pod_available: '#0EA5E9',
+    attestation_signed: '#7BC94E',
+    rcr_reimbursed: '#60A5FA',
+    attestation_expiring: '#F59E0B',
   };
   return colors[type] || '#6B7280';
 };

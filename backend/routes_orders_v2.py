@@ -47,7 +47,7 @@ def set_orders_database(database):
     global db
     db = database
 
-from routes_catalog import get_current_user_catalog, get_user_org_context, check_price_access, get_selected_zone
+from routes_catalog import get_current_user_catalog, get_user_org_context, check_price_access, get_selected_zone, ensure_member_active
 from role_guards import ensure_can_buy
 
 # ============== ORDERS ==============
