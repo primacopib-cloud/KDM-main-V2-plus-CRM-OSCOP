@@ -1,7 +1,7 @@
 import i18n from '@/i18n';
 import { TabsList, TabsTrigger } from '../ui/tabs';
 import { Badge } from '../ui/badge';
-import { TrendingUp, Package, FileText, Wallet, Gavel, BrainCircuit } from 'lucide-react';
+import { TrendingUp, Package, FileText, Wallet, Gavel, BrainCircuit, Truck } from 'lucide-react';
 
 const cls = 'data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg';
 
@@ -25,6 +25,9 @@ export const BuyerTabsNav = ({ pendingOrders }) => (
     </TabsTrigger>
     <TabsTrigger value="tools" data-testid="buyer-tab-tools" className={cls}>
       <BrainCircuit className="w-4 h-4 mr-2" />Outils d'achat
+    </TabsTrigger>
+    <TabsTrigger value="transport" data-testid="buyer-tab-transport" className={cls}>
+      <Truck className="w-4 h-4 mr-2" />Transport
     </TabsTrigger>
   </TabsList>
 );

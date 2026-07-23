@@ -22,6 +22,7 @@ import { BuyerWalletTab } from '../components/buyer/BuyerWalletTab';
 import { BuyerModals } from '../components/buyer/BuyerModals';
 import { BuyerConsultationsTab } from '../components/buyer/BuyerConsultationsTab';
 import { BuyerToolsTab } from '../components/buyer/BuyerToolsTab';
+import { BuyerTransportTab } from '../components/buyer/transport/BuyerTransportTab';
 import { BuyerTabsNav } from '../components/buyer/BuyerTabsNav';
 import { BrandLogos } from '../components/BrandLogos';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
@@ -446,6 +447,7 @@ export default function BuyerSpacePage() {
           <BuyerWalletTab wallet={wallet} transactions={transactions} />
           <BuyerConsultationsTab />
           <BuyerToolsTab />
+          <BuyerTransportTab />
         </Tabs>
       </div>
 

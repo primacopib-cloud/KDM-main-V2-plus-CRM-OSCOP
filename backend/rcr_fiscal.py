@@ -163,18 +163,8 @@ def build_annual_statement_pdf(vendor: dict, year: str, data: dict) -> bytes:
     return buf.getvalue()
 
 
-@rcr_fiscal_router.get("/rcr-annual/{vendor_id}/{year}/pdf")
-async def annual_statement_pdf(vendor_id: str, year: str, current_user: dict = Depends(get_current_user)):
-    """Relevé annuel fiscal RCR — admin ou fournisseur propriétaire."""
-    if not current_user.get("is_admin") and current_user.get("vendor_id") != vendor_id:
-        raise HTTPException(status_code=403, detail="Accès refusé")
-    if not (year.isdigit() and len(year) == 4):
-        raise HTTPException(status_code=400, detail="Année invalide")
-    db = get_database()
-    vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
-    if not vendor:
-        raise HTTPException(status_code=404, detail="Fournisseur introuvable")
-    await sync_rcr_fiscal_register(db)
+async def build_annual_data(db, vendor_id: str, year: str) -> dict:
+    """Données du relevé annuel fiscal (mensuel + soldes par attestation)."""
     entries = await db.rcr_fiscal_register.find(
         {"vendor_id": vendor_id, "date": {"$regex": f"^{year}"}}, {"_id": 0}).to_list(2000)
     monthly = {f"{year}-{m:02d}": {"constitue": 0, "extourne": 0, "rembourse": 0} for m in range(1, 13)}
@@ -197,8 +187,23 @@ async def annual_statement_pdf(vendor_id: str, year: str, current_user: dict = D
         solde = 0 if att.get("status") == "closed" else ledger["solde_cents"]
         soldes.append({"attestation_ref": att["ref"], "product_name": att.get("product_name"),
                        "status": att.get("status"), "solde_cents": solde})
-    data = {"monthly": [{"month": k, **v} for k, v in sorted(monthly.items())],
+    return {"monthly": [{"month": k, **v} for k, v in sorted(monthly.items())],
             "totals": totals, "soldes": soldes, "entries_count": len(entries)}
+
+
+@rcr_fiscal_router.get("/rcr-annual/{vendor_id}/{year}/pdf")
+async def annual_statement_pdf(vendor_id: str, year: str, current_user: dict = Depends(get_current_user)):
+    """Relevé annuel fiscal RCR — admin ou fournisseur propriétaire."""
+    if not current_user.get("is_admin") and current_user.get("vendor_id") != vendor_id:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    if not (year.isdigit() and len(year) == 4):
+        raise HTTPException(status_code=400, detail="Année invalide")
+    db = get_database()
+    vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Fournisseur introuvable")
+    await sync_rcr_fiscal_register(db)
+    data = await build_annual_data(db, vendor_id, year)
     pdf = build_annual_statement_pdf(vendor, year, data)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename=releve-annuel-rcr-{year}-{vendor_id[:8]}.pdf"})

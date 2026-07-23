@@ -15,6 +15,7 @@ import { BuyersTab } from '../components/superadmin/BuyersTab';
 import { TaxonomyTab } from '../components/superadmin/TaxonomyTab';
 import { VendorCreditsTab } from '../components/superadmin/VendorCreditsTab';
 import { LogicoopPanel } from '../components/superadmin/LogicoopPanel';
+import { LogiscopTransportAdminPanel } from '../components/superadmin/LogiscopTransportAdminPanel';
 import { PartnerApplicationsPanel } from '../components/superadmin/PartnerApplicationsPanel';
 import { SupportTicketsTab } from '../components/superadmin/SupportTicketsTab';
 import { MemberRegistryTab } from '../components/superadmin/MemberRegistryTab';
@@ -173,6 +174,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="logicoop" className="space-y-6">
             <LogicoopPanel />
+            <LogiscopTransportAdminPanel />
             <PartnerApplicationsPanel />
           </TabsContent>
 

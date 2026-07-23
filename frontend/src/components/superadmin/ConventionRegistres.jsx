@@ -7,6 +7,8 @@ import { AttestationQueue } from './AttestationQueue';
 import { RcrStatements } from './RcrStatements';
 import { AttestationGedLinks } from './AttestationGedLinks';
 import { RcrFiscalPanel } from './RcrFiscalPanel';
+import { RcrTreasuryPanel } from './RcrTreasuryPanel';
+import { RcrAnnualArchiveCard } from './RcrAnnualArchiveCard';
 
 const FIELDS = [['capital', 'Capital (€)'], ['siege', 'Siège social'], ['rcs', 'RCS'], ['siren', 'SIREN'], ['representant', 'Représentant']];
 
@@ -181,6 +183,10 @@ export const ConventionRegistres = () => {
       <RcrReimbursements />
 
       <RcrFiscalPanel />
+
+      <RcrTreasuryPanel />
+
+      <RcrAnnualArchiveCard />
 
       <RcrStatements />
     </div>
