@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 
 from core_deps import get_current_user, check_admin, create_notification
 from db import get_database
+from logiscop_transport_billing import (build_transport_invoice_pdf, create_transport_invoice,
+                                        send_invoice_email)
 from logiscop_transport_pdf import build_logiscop_convention_pdf, build_transport_order_pdf
 from role_guards import ensure_can_buy
 
@@ -60,6 +62,16 @@ class AcceptBody(BaseModel):
 
 class RefuseBody(BaseModel):
     reason: str = Field(min_length=3, max_length=500)
+
+
+EPOD_OUTCOMES = ["LIVRE_CONFORME", "LIVRE_AVEC_RESERVES", "PARTIEL", "REFUSE_LIVRAISON"]
+
+
+class EpodBody(BaseModel):
+    outcome: str
+    reserves: str = Field(default="", max_length=1000)
+    name: str = Field(min_length=2, max_length=120)
+    quality: str = Field(min_length=2, max_length=120)
 
 
 async def _buyer_context(user: dict) -> dict:
@@ -251,6 +263,53 @@ async def transport_order_pdf(ot_id: str, current_user: dict = Depends(get_curre
                              f"attachment; filename=ot-logiscop-{ot['ref'].replace('/', '-')}.pdf"})
 
 
+@logiscop_transport_router.post("/orders/{ot_id}/epod")
+async def close_order_epod(ot_id: str, body: EpodBody, current_user: dict = Depends(get_current_user)):
+    """Clôture de l'OT à la livraison : signature ePOD, réserves éventuelles, statut final."""
+    if body.outcome not in EPOD_OUTCOMES:
+        raise HTTPException(status_code=400, detail=f"Résultat invalide ({', '.join(EPOD_OUTCOMES)})")
+    if body.outcome != "LIVRE_CONFORME" and len(body.reserves.strip()) < 3:
+        raise HTTPException(status_code=400, detail="Des réserves précises et motivées sont obligatoires (article 17)")
+    db = get_database()
+    ot = await _get_ot(db, ot_id, current_user)
+    if ot["status"] != "ACCEPTE":
+        raise HTTPException(status_code=409, detail=f"Seul un OT accepté peut être clôturé (statut : {ot['status']})")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    epod = {"outcome": body.outcome, "reserves": body.reserves.strip() or None,
+            "name": body.name, "quality": body.quality, "at": now_iso}
+    await db.logiscop_transport_orders.update_one(
+        {"id": ot_id}, {"$set": {"status": body.outcome, "epod": epod}})
+    await create_notification(
+        "logiscop_ot_delivered", "Ordre de Transport clôturé (ePOD)",
+        f"OT {ot['ref']} clôturé par {body.name} : {body.outcome.replace('_', ' ')}"
+        + (f" — Réserves : {body.reserves.strip()[:120]}" if epod["reserves"] else "."),
+        target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+        data={"ot_id": ot_id, "ref": ot["ref"], "outcome": body.outcome})
+    return await db.logiscop_transport_orders.find_one({"id": ot_id}, {"_id": 0})
+
+
+@logiscop_transport_router.get("/invoices")
+async def list_my_invoices(current_user: dict = Depends(get_current_user)):
+    ctx = await _buyer_context(current_user)
+    db = get_database()
+    return await db.logiscop_transport_invoices.find(
+        {"org_id": ctx["org_id"]}, {"_id": 0}).sort("issued_at", -1).to_list(200)
+
+
+@logiscop_transport_router.get("/invoices/{invoice_id}/pdf")
+async def invoice_pdf(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    inv = await db.logiscop_transport_invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(status_code=404, detail="Facture introuvable")
+    await _get_ot(db, inv["ot_id"], current_user)
+    ot = await db.logiscop_transport_orders.find_one({"id": inv["ot_id"]}, {"_id": 0}) or {}
+    conv = await db.logiscop_transport_conventions.find_one({"id": ot.get("convention_id")}, {"_id": 0}) or {}
+    pdf = build_transport_invoice_pdf(inv, ot, conv)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename={inv['ref']}.pdf"})
+
+
 # ================= ADMIN =================
 
 @logiscop_transport_router.get("/admin/overview")
@@ -259,12 +318,14 @@ async def admin_overview(current_user: dict = Depends(get_current_user)):
     db = get_database()
     conventions = await db.logiscop_transport_conventions.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
     orders = await db.logiscop_transport_orders.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
-    return {"conventions": conventions, "orders": orders,
+    invoices = await db.logiscop_transport_invoices.find({}, {"_id": 0}).sort("issued_at", -1).to_list(200)
+    return {"conventions": conventions, "orders": orders, "invoices": invoices,
             "pending_orders": sum(1 for o in orders if o["status"] == "PROPOSE")}
 
 
 @logiscop_transport_router.post("/admin/orders/{ot_id}/accept")
-async def admin_accept_order(ot_id: str, body: AcceptBody, current_user: dict = Depends(get_current_user)):
+async def admin_accept_order(ot_id: str, body: AcceptBody, background_tasks: BackgroundTasks,
+                             current_user: dict = Depends(get_current_user)):
     await check_admin(current_user)
     db = get_database()
     ot = await db.logiscop_transport_orders.find_one({"id": ot_id}, {"_id": 0})
@@ -272,18 +333,22 @@ async def admin_accept_order(ot_id: str, body: AcceptBody, current_user: dict = 
         raise HTTPException(status_code=404, detail="Ordre de transport introuvable")
     if ot["status"] != "PROPOSE":
         raise HTTPException(status_code=409, detail=f"Statut actuel : {ot['status']}")
+    if body.price_ht_eur is None or body.price_ht_eur <= 0:
+        raise HTTPException(status_code=400, detail="Prix HT requis : l'acceptation déclenche la facturation")
     now_iso = datetime.now(timezone.utc).isoformat()
-    update = {"status": "ACCEPTE",
+    update = {"status": "ACCEPTE", "price_ht_cents": int(round(body.price_ht_eur * 100)),
               "acceptance": {"admin_name": f"O'SCOP / LOGI'SCOP ({current_user.get('email')})", "at": now_iso}}
-    if body.price_ht_eur is not None:
-        update["price_ht_cents"] = int(round(body.price_ht_eur * 100))
     await db.logiscop_transport_orders.update_one({"id": ot_id}, {"$set": update})
+    ot = await db.logiscop_transport_orders.find_one({"id": ot_id}, {"_id": 0})
+    conv = await db.logiscop_transport_conventions.find_one({"id": ot["convention_id"]}, {"_id": 0}) or {}
+    invoice = await create_transport_invoice(db, ot, conv)
+    background_tasks.add_task(send_invoice_email, db, invoice["id"])
     await create_notification(
         "logiscop_ot_accepted", "Ordre de Transport accepté",
-        f"LOGI'SCOP a accepté votre OT {ot['ref']}"
-        + (f" — prix {body.price_ht_eur:.2f} € HT." if body.price_ht_eur is not None else "."),
-        target_user_id=ot["user_id"], data={"ot_id": ot_id, "ref": ot["ref"]})
-    return await db.logiscop_transport_orders.find_one({"id": ot_id}, {"_id": 0})
+        f"LOGI'SCOP a accepté votre OT {ot['ref']} — prix {body.price_ht_eur:.2f} € HT. "
+        f"Facture {invoice['ref']} émise.",
+        target_user_id=ot["user_id"], data={"ot_id": ot_id, "ref": ot["ref"], "invoice_ref": invoice["ref"]})
+    return {**ot, "invoice": invoice}
 
 
 @logiscop_transport_router.post("/admin/orders/{ot_id}/refuse")

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Truck, Warehouse, Ship, ArrowLeft, PackageCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { BrandLogos } from '../components/BrandLogos';
+import { TransportMissions } from '../components/logicoop/TransportMissions';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const eur = (c) => `${((c || 0) / 100).toFixed(2).replace('.', ',')} €`;
@@ -64,6 +65,8 @@ export default function LogicoopSpacePage() {
           <div data-testid="logicoop-dashboard">
             <h1 className="text-2xl font-bold text-white mb-1">Bienvenue, {op.name}</h1>
             <p className="text-sm text-white/55 mb-8">Vos zones opérationnelles assignées par la coopérative.</p>
+
+            <TransportMissions />
 
             <div className="glass-panel-soft rounded-[18px] p-5 mb-4" data-testid="logicoop-missions">
               <h2 className="font-display text-lg text-white flex items-center gap-2 mb-1">

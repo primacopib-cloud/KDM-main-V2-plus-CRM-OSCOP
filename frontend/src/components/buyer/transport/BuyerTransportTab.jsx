@@ -9,6 +9,7 @@ import { TransportOrdersList } from './TransportOrdersList';
 export const BuyerTransportTab = () => {
   const [sub, setSub] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [invoicesByOt, setInvoicesByOt] = useState({});
 
   const authHeaders = () => ({ Authorization: `Bearer ${getSessionToken()}`, ...getAuthHeaders() });
 
@@ -17,6 +18,13 @@ export const BuyerTransportTab = () => {
       .then((r) => (r.ok ? r.json() : null)).then(setSub).catch(() => {});
     fetch(`${API}/logiscop-transport/orders`, { credentials: 'include', headers: authHeaders() })
       .then((r) => (r.ok ? r.json() : [])).then((d) => setOrders(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch(`${API}/logiscop-transport/invoices`, { credentials: 'include', headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => {
+        const map = {};
+        (Array.isArray(list) ? list : []).forEach((i) => { map[i.ot_id] = i; });
+        setInvoicesByOt(map);
+      }).catch(() => {});
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -49,7 +57,7 @@ export const BuyerTransportTab = () => {
         </div>
       )}
       {signed && <TransportOrderForm zones={conv.zones || []} onCreated={load} />}
-      <TransportOrdersList orders={orders} />
+      <TransportOrdersList orders={orders} invoicesByOt={invoicesByOt} onChanged={load} />
     </TabsContent>
   );
 };

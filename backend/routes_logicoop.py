@@ -155,6 +155,35 @@ async def my_missions(user_id: str = Depends(get_current_user_id)):
 MISSION_STATUSES = ["PRISE_EN_CHARGE", "LIVREE"]
 
 
+@logicoop_router.get("/logicoop/transport-missions")
+async def my_transport_missions(user_id: str = Depends(get_current_user_id)):
+    """OT LOGI'SCOP acceptés à exécuter : enlèvement (zone EXW) ou livraison (zone CIF) de l'opérateur."""
+    op = await my_operator_space(user_id)
+    exw, cif = set(op.get("exw_zones", [])), set(op.get("cif_zones", []))
+    items = []
+    async for ot in db.logiscop_transport_orders.find(
+            {"status": {"$in": ["ACCEPTE", "LIVRE_CONFORME", "LIVRE_AVEC_RESERVES", "PARTIEL"]}},
+            {"_id": 0}).sort("created_at", -1).limit(100):
+        pk, dl = ot.get("pickup") or {}, ot.get("delivery") or {}
+        missions = []
+        if pk.get("zone_code") in exw:
+            missions.append("ENLEVEMENT")
+        if dl.get("zone_code") in cif:
+            missions.append("LIVRAISON")
+        if not missions:
+            continue
+        items.append({
+            "ot_id": ot["id"], "ref": ot["ref"], "status": ot["status"],
+            "missions": missions, "company_name": ot.get("company_name"),
+            "pickup": pk, "delivery": dl,
+            "goods_summary": ", ".join(g.get("designation", "") for g in ot.get("goods", []))[:80],
+            "price_ht_cents": ot.get("price_ht_cents"),
+            "epod_outcome": (ot.get("epod") or {}).get("outcome"),
+            "created_at": str(ot.get("created_at", ""))[:16],
+        })
+    return {"items": items}
+
+
 class MissionStatusBody(BaseModel):
     status: str
 

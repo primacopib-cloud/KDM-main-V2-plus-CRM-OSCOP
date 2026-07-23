@@ -4,7 +4,11 @@ import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
 const CONV_STATUS = { PENDING_SIGNATURE: ['En attente signature', '#FBBF24'], SIGNED: ['Signée', '#7BC94E'] };
-const OT_STATUS = { PROPOSE: ['Proposé', '#FBBF24'], ACCEPTE: ['Accepté', '#7BC94E'], REFUSE: ['Refusé', '#F87171'] };
+const OT_STATUS = {
+  PROPOSE: ['Proposé', '#FBBF24'], ACCEPTE: ['Accepté', '#7BC94E'], REFUSE: ['Refusé', '#F87171'],
+  LIVRE_CONFORME: ['Livré conforme ✓', '#7BC94E'], LIVRE_AVEC_RESERVES: ['Livré avec réserves', '#FBBF24'],
+  PARTIEL: ['Partiel', '#F0ABFC'], REFUSE_LIVRAISON: ['Refusé à livraison', '#F87171'],
+};
 
 export const LogiscopTransportAdminPanel = () => {
   const [data, setData] = useState(null);
@@ -92,13 +96,24 @@ export const LogiscopTransportAdminPanel = () => {
           <tbody>
             {data.orders.map((o) => {
               const [label, color] = OT_STATUS[o.status] || [o.status, '#999'];
+              const inv = (data.invoices || []).find((i) => i.ot_id === o.id);
               return (
                 <tr key={o.id} className="border-b border-white/[0.04] text-white/75" data-testid={`admin-ot-${o.id}`}>
                   <td className="py-1.5 pr-3 font-semibold">{o.ref}</td>
                   <td className="py-1.5 pr-3">{o.company_name}</td>
                   <td className="py-1.5 pr-3">{o.pickup?.zone_code} → {o.delivery?.zone_code}</td>
-                  <td className="py-1.5 pr-3 font-bold" style={{ color }}>{label}</td>
-                  <td className="py-1.5 pr-3">{o.price_ht_cents ? `${(o.price_ht_cents / 100).toFixed(2)} €` : '—'}</td>
+                  <td className="py-1.5 pr-3 font-bold" style={{ color }}>{label}
+                    {o.epod?.reserves && (
+                      <span className="block font-normal text-white/40">Réserves : {o.epod.reserves.slice(0, 40)}</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 pr-3">{o.price_ht_cents ? `${(o.price_ht_cents / 100).toFixed(2)} €` : '—'}
+                    {inv && (
+                      <button type="button" data-testid={`admin-invoice-${inv.ref}`}
+                        onClick={() => download(`/logiscop-transport/invoices/${inv.id}/pdf`, `${inv.ref}.pdf`)}
+                        className="block text-[10px] text-[#93C5FD] hover:text-[#E9CF8E]">{inv.ref}</button>
+                    )}
+                  </td>
                   <td className="py-1.5">
                     <span className="inline-flex items-center gap-1.5">
                       <button type="button" onClick={() => download(`/logiscop-transport/orders/${o.id}/pdf`,
@@ -111,10 +126,10 @@ export const LogiscopTransportAdminPanel = () => {
                             onChange={(e) => setPrices({ ...prices, [o.id]: e.target.value })}
                             className="w-20 h-7 px-2 rounded bg-white/[0.06] border border-white/15 text-[10px] text-white" />
                           <button type="button" data-testid={`admin-ot-accept-${o.id}`}
-                            onClick={() => act(o.id, 'accept',
-                              { price_ht_eur: prices[o.id] ? Number(prices[o.id]) : null })}
-                            className="px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 inline-flex items-center gap-1">
-                            <Check size={11} /> Accepter
+                            disabled={!prices[o.id] || Number(prices[o.id]) <= 0}
+                            onClick={() => act(o.id, 'accept', { price_ht_eur: Number(prices[o.id]) })}
+                            className="px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 inline-flex items-center gap-1">
+                            <Check size={11} /> Accepter + Facturer
                           </button>
                           <button type="button" data-testid={`admin-ot-refuse-${o.id}`} onClick={() => refuse(o)}
                             className="px-2 py-1 rounded-lg text-[10px] font-bold bg-red-500/15 text-red-300 hover:bg-red-500/25 inline-flex items-center gap-1">

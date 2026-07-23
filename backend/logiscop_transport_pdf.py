@@ -217,10 +217,18 @@ def build_transport_order_pdf(ot: dict, conv: dict) -> bytes:
                  Paragraph("NON APPLICABLE — EXÉCUTION EN PROPRE", st["cell"])]]
     tv = Table(val_rows, colWidths=[61 * mm, 61 * mm, 60 * mm])
     tv.setStyle(_header_table_style())
+    epod = ot.get("epod") or {}
+    closure = epod.get("outcome") or "[LIVRE CONFORME / LIVRE AVEC RESERVES / REFUSE / PARTIEL]"
     story += [tv, Paragraph("8. EXÉCUTION, RÉSERVES ET CLÔTURE", st["h2"]),
-              Paragraph("Champ de clôture : [LIVRE CONFORME / LIVRE AVEC RESERVES / REFUSE / PARTIEL] — renseigné "
-                        "à la livraison via le Dashboard (ePOD).", st["n"]),
-              Spacer(1, 3 * mm), Paragraph(MODE_D_REMINDER, st["small"]),
+              Paragraph(f"Champ de clôture : <b>{closure.replace('_', ' ')}</b>"
+                        + ("" if epod else " — renseigné à la livraison via le Dashboard (ePOD)."), st["n"])]
+    if epod:
+        story += [Paragraph(
+            f"ePOD signé électroniquement par <b>{epod.get('name')}</b> ({epod.get('quality') or '—'}) "
+            f"le {_fmt_date(epod.get('at'))}."
+            + (f" Réserves : {epod.get('reserves')}" if epod.get("reserves") else " Aucune réserve formulée."),
+            st["n"])]
+    story += [Spacer(1, 3 * mm), Paragraph(MODE_D_REMINDER, st["small"]),
               Paragraph("Ordre de transport opérationnel à rattacher à une Convention d'adhésion-cadre en vigueur "
                         f"({conv.get('ref') or '—'}). Généré par le Dashboard KDMARCHÉ × O'SCOP.", st["small"])]
     doc.build(story)

@@ -142,6 +142,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler RCR annual archive crashed: %s", exc)
         try:
+            from logiscop_transport_billing import send_pickup_reminders
+            await send_pickup_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler LOGISCOP pickup reminders crashed: %s", exc)
+        try:
             from routes_accounting import snapshot_fiscal_register
             await snapshot_fiscal_register(_db)
         except Exception as exc:
