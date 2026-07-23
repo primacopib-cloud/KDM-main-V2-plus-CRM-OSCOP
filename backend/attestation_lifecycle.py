@@ -32,6 +32,19 @@ def _eur(cents) -> str:
     return f"{(cents or 0) / 100:,.2f} €".replace(",", " ").replace(".", ",")
 
 
+async def _notify_vendor(db, vendor_id: str, ntype: str, title: str, message: str, data: dict = None):
+    """Notification in-app (cloche) pour l'utilisateur rattaché au vendeur — best effort."""
+    try:
+        user = await db.users.find_one({"vendor_id": vendor_id}, {"_id": 0, "id": 1})
+        if not user:
+            return
+        from core_deps import create_notification
+        await create_notification(ntype, title, message,
+                                  target_roles=["vendor_member"], target_user_id=user["id"], data=data or {})
+    except Exception as exc:
+        logger.warning("Notification vendeur %s impossible : %s", vendor_id, exc)
+
+
 # ============== ENVOI EMAIL + ARCHIVAGE GEDESS À LA CONTRE-SIGNATURE ==============
 
 async def send_signed_attestation(db, product_id: str) -> None:
@@ -42,6 +55,15 @@ async def send_signed_attestation(db, product_id: str) -> None:
         return
     vendor = await db.vendors.find_one({"id": att["vendor_id"]}, {"_id": 0}) or {}
     pdf = build_attestation_pdf(att)
+    if not att.get("notified_signed_at"):
+        await _notify_vendor(
+            db, att["vendor_id"], "attestation_signed",
+            f"Attestation {att['ref']} signée",
+            f"Votre attestation « {att.get('product_name')} » a été contre-signée par O'SCOP et KDMARCHÉ PRO. "
+            "Elle est désormais active — PDF disponible dans l'onglet Contrats.",
+            {"attestation_id": att["id"], "ref": att["ref"]})
+        await db.attestations_nominatives.update_one(
+            {"id": att["id"]}, {"$set": {"notified_signed_at": datetime.now(timezone.utc).isoformat()}})
     if not att.get("delivered_email_at"):
         try:
             from brevo_service import is_brevo_configured, send_email, _wrap_html
@@ -90,6 +112,12 @@ async def check_attestation_renewals(db) -> int:
          "next_ref": None, "renewal_alert_sent_at": None}, {"_id": 0, "ai_text": 0})
     async for att in cursor:
         vendor = await db.vendors.find_one({"id": att["vendor_id"]}, {"_id": 0}) or {}
+        exp_txt = (att.get("date_expiration") or "")[:10]
+        await _notify_vendor(
+            db, att["vendor_id"], "attestation_expiring",
+            f"Attestation {att['ref']} expire bientôt",
+            f"Expiration le {exp_txt} — renouvelez-la en un clic depuis l'onglet Contrats de votre espace vendeur.",
+            {"attestation_id": att["id"], "ref": att["ref"], "date_expiration": att.get("date_expiration")})
         try:
             from brevo_service import is_brevo_configured, send_email, _wrap_html
             if is_brevo_configured() and vendor.get("email"):
@@ -277,6 +305,12 @@ async def reimburse_attestation(att_id: str, body: dict = None,
     await db.attestations_nominatives.update_one(
         {"id": att["id"]},
         {"$set": {"status": "closed", "reimbursed_at": now_iso, "reimbursement_id": r["id"]}})
+    await _notify_vendor(
+        db, att["vendor_id"], "rcr_reimbursed",
+        f"RCR remboursée — {_eur(amount)}",
+        f"La RCR de votre attestation {att['ref']} vous a été remboursée par le FOGEDOM-SCIC. "
+        "L'attestation est clôturée — reçu disponible dans l'onglet Contrats.",
+        {"attestation_id": att["id"], "ref": att["ref"], "reimbursement_id": r["id"], "amount_cents": amount})
     try:
         from brevo_service import is_brevo_configured, send_email, _wrap_html
         vendor = await db.vendors.find_one({"id": att["vendor_id"]}, {"_id": 0}) or {}
@@ -297,6 +331,39 @@ async def reimburse_attestation(att_id: str, body: dict = None,
         logger.warning("Email reçu remboursement %s impossible : %s", r["ref"], exc)
     logger.info("Remboursement RCR %s (%s c) — attestation %s clôturée", r["ref"], amount, att["ref"])
     return {"success": True, "reimbursement": r}
+
+
+@lifecycle_router.get("/{att_id}/ged-info")
+async def attestation_ged_info(att_id: str, current_user: dict = Depends(get_current_user)):
+    """Métadonnées live du document GEDESS archivé pour cette attestation (admin)."""
+    await check_admin(current_user)
+    db = get_database()
+    att = await db.attestations_nominatives.find_one({"id": att_id}, {"_id": 0, "ged_doc_id": 1, "ref": 1})
+    if not att:
+        raise HTTPException(status_code=404, detail="Attestation introuvable")
+    if not att.get("ged_doc_id"):
+        return {"archived": False}
+    import os as _os
+    import httpx
+    from gedess_client import is_gedess_configured, _login
+    if not is_gedess_configured():
+        return {"archived": True, "doc_id": att["ged_doc_id"], "live": False}
+    base = _os.environ["GEDESS_BASE_URL"].rstrip("/")
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            token = await _login(client, base)
+            resp = await client.get(f"{base}/api/ged/documents/{att['ged_doc_id']}",
+                                    headers={"Authorization": f"Bearer {token}"})
+            resp.raise_for_status()
+            doc = resp.json()
+        return {"archived": True, "live": True, "doc_id": att["ged_doc_id"], "gedess_url": base,
+                "document": {"original_filename": doc.get("original_filename"),
+                             "file_size": doc.get("file_size"), "categorie": doc.get("categorie"),
+                             "description": doc.get("description"), "created_at": doc.get("created_at"),
+                             "tags": doc.get("tags")}}
+    except Exception as exc:
+        logger.warning("GEDESS info %s : %s", att["ged_doc_id"], exc)
+        return {"archived": True, "live": False, "doc_id": att["ged_doc_id"], "gedess_url": base}
 
 
 @lifecycle_router.get("/reimbursements/{rid}/receipt.pdf")

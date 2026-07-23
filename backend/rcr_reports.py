@@ -180,6 +180,41 @@ async def rcr_statement_pdf(sid: str, current_user: dict = Depends(get_current_u
                     headers={"Content-Disposition": f"attachment; filename=releve-rcr-{rec['month']}-{rec['vendor_id'][:8]}.pdf"})
 
 
+# ============== STATISTIQUES RCR (DASHBOARD) ==============
+
+@rcr_reports_router.get("/admin/rcr-stats")
+async def rcr_stats(months: int = 6, current_user: dict = Depends(get_current_user)):
+    """Évolution mensuelle des fractions RCR constituées et remboursées."""
+    await check_admin(current_user)
+    db = get_database()
+    months = max(1, min(months, 24))
+    now = datetime.now(timezone.utc)
+    keys = []
+    y, m = now.year, now.month
+    for _ in range(months):
+        keys.append(f"{y:04d}-{m:02d}")
+        m -= 1
+        if m == 0:
+            y, m = y - 1, 12
+    keys.reverse()
+    constitue = {k: 0 for k in keys}
+    rembourse = {k: 0 for k in keys}
+    async for att in db.attestations_nominatives.find({}, {"_id": 0, "ai_text": 0}):
+        ledger = await compute_rcr_ledger(db, att)
+        for f in ledger["fractions"]:
+            k = (f.get("date") or "")[:7]
+            if k in constitue:
+                constitue[k] += f["fraction_cents"]
+    async for r in db.rcr_reimbursements.find({}, {"_id": 0, "amount_cents": 1, "created_at": 1}):
+        k = (r.get("created_at") or "")[:7]
+        if k in rembourse:
+            rembourse[k] += r.get("amount_cents", 0)
+    return {"months": [{"month": k, "constitue_cents": constitue[k], "rembourse_cents": rembourse[k]}
+                       for k in keys],
+            "total_constitue_cents": sum(constitue.values()),
+            "total_rembourse_cents": sum(rembourse.values())}
+
+
 # ============== ALERTES PLAFOND RCR (80 % DU CAP GLOBAL) ==============
 
 async def check_rcr_cap_alerts(db) -> int:

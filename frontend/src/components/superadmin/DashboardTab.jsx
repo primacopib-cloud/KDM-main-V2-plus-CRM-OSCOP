@@ -8,6 +8,7 @@ import {
 import { StatCard, AlertCard, ActivityItem, KPISection, formatCurrency } from './widgets';
 import { API, getAuthHeaders } from '../../services/http';
 import { WeeklyReportWidget } from './WeeklyReportWidget';
+import { RcrStatsWidget } from './RcrStatsWidget';
 import { ReferralStatsWidget } from './ReferralStatsWidget';
 import { QuoteConversionWidget } from './QuoteConversionWidget';
 
@@ -44,6 +45,7 @@ export const DashboardTab = ({ kpis, alerts, activities, period, setActiveTab })
       </button>
     </div>
     <WeeklyReportWidget />
+    <RcrStatsWidget />
     <QuoteConversionWidget />
     <ReferralStatsWidget />
     {/* Top Stats Row */}

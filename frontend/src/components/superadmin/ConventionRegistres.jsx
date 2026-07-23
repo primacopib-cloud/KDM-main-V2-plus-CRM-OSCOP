@@ -5,6 +5,7 @@ import { API, getAuthHeaders } from '../../services/http';
 import { RcrReimbursements } from './RcrReimbursements';
 import { AttestationQueue } from './AttestationQueue';
 import { RcrStatements } from './RcrStatements';
+import { AttestationGedLinks } from './AttestationGedLinks';
 
 const FIELDS = [['capital', 'Capital (€)'], ['siege', 'Siège social'], ['rcs', 'RCS'], ['siren', 'SIREN'], ['representant', 'Représentant']];
 
@@ -147,9 +148,7 @@ export const ConventionRegistres = () => {
               </tbody>
             </table>
           </div>
-          <p className="text-[10px] text-white/35 mt-2">
-            Attestations récentes : {reg.attestations.slice(0, 5).map((a) => `${a.ref} (${a.status === 'signed' ? 'signée' : a.status === 'closed' ? 'clôturée' : 'en attente'})`).join(' · ') || 'aucune'}
-          </p>
+          <AttestationGedLinks attestations={reg.attestations} />
         </div>
       )}
 
