@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileText, FileDown, Loader2, QrCode, CheckCircle2, Clock, PiggyBank } from 'lucide-react';
+import { FileText, FileDown, Loader2, QrCode, CheckCircle2, Clock, PiggyBank, RefreshCw, HandCoins } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { AttestationRcrLedger } from './AttestationRcrLedger';
@@ -19,6 +19,28 @@ export const VendorConventionCard = ({ vendorId }) => {
   const [atts, setAtts] = useState([]);
   const [busy, setBusy] = useState('');
   const [expanded, setExpanded] = useState(null);
+
+  const loadAtts = () => {
+    fetch(`${API}/attestations/vendor/${vendorId}`, { credentials: 'include', headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : [])).then(setAtts).catch(() => {});
+  };
+
+  const isExpiring = (a) => a.status === 'signed' && !a.next_ref && a.date_expiration
+    && (new Date(a.date_expiration) - Date.now()) < 30 * 86400000;
+
+  const renew = async (a) => {
+    setBusy(a.id);
+    try {
+      const r = await fetch(`${API}/attestations/${a.id}/renew`, {
+        method: 'POST', credentials: 'include', headers: getAuthHeaders(),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Renouvellement impossible');
+      toast.success(`Attestation renouvelée — ${d.new_ref}`, { description: 'En attente de contre-signature O\'SCOP / KDMARCHÉ.' });
+      loadAtts();
+    } catch (e) { toast.error(e.message); }
+    setBusy('');
+  };
 
   useEffect(() => {
     if (!vendorId) return;
@@ -73,8 +95,29 @@ export const VendorConventionCard = ({ vendorId }) => {
                   <span className="inline-flex items-center gap-2">
                     {a.status === 'signed' ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#7BC94E]"><CheckCircle2 size={10} /> Signée (3 parties)</span>
+                    ) : a.status === 'closed' ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#93C5FD]" data-testid={`attestation-closed-badge-${a.id}`}>
+                        <HandCoins size={10} /> Clôturée — RCR remboursée
+                      </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FBBF24]"><Clock size={10} /> Attente contre-signature</span>
+                    )}
+                    {isExpiring(a) && (
+                      <button type="button" disabled={busy === a.id} onClick={() => renew(a)}
+                        data-testid={`attestation-renew-btn-${a.id}`}
+                        title={`Expire le ${new Date(a.date_expiration).toLocaleDateString('fr-FR')} — renouveler en un clic`}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold disabled:opacity-50"
+                        style={{ background: '#D9B35A', color: '#070A10' }}>
+                        {busy === a.id ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />} Renouveler
+                      </button>
+                    )}
+                    {a.status === 'closed' && a.reimbursement_id && (
+                      <button type="button" data-testid={`attestation-receipt-btn-${a.id}`}
+                        title="Reçu de remboursement RCR"
+                        onClick={async () => { try { await dl(`${API}/attestations/reimbursements/${a.reimbursement_id}/receipt.pdf`, 'recu-remboursement-rcr.pdf'); } catch (e) { toast.error(e.message); } }}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-white/[0.06] text-[#93C5FD]">
+                        <FileDown size={11} /> Reçu RCR
+                      </button>
                     )}
                     <button type="button" data-testid={`attestation-rcr-toggle-${a.id}`}
                       onClick={() => setExpanded(expanded === a.id ? null : a.id)}

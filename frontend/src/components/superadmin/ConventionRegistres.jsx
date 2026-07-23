@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Scale, Save, Loader2, BookOpen, FileDown, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
+import { RcrReimbursements } from './RcrReimbursements';
 
 const FIELDS = [['capital', 'Capital (€)'], ['siege', 'Siège social'], ['rcs', 'RCS'], ['siren', 'SIREN'], ['representant', 'Représentant']];
 
@@ -138,10 +139,12 @@ export const ConventionRegistres = () => {
             </table>
           </div>
           <p className="text-[10px] text-white/35 mt-2">
-            Attestations récentes : {reg.attestations.slice(0, 5).map((a) => `${a.ref} (${a.status === 'signed' ? 'signée' : 'en attente'})`).join(' · ') || 'aucune'}
+            Attestations récentes : {reg.attestations.slice(0, 5).map((a) => `${a.ref} (${a.status === 'signed' ? 'signée' : a.status === 'closed' ? 'clôturée' : 'en attente'})`).join(' · ') || 'aucune'}
           </p>
         </div>
       )}
+
+      <RcrReimbursements />
     </div>
   );
 };

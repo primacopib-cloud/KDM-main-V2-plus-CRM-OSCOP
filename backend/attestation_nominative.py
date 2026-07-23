@@ -28,7 +28,7 @@ async def _ai_attestation_text(product: dict, vendor: dict) -> str:
         prompt = (
             "Rédige le paragraphe déclaratif (3 à 4 phrases) d'une Attestation Nominative d'ACHAT DE VOLUMES "
             "de produits prédéfinis et de rattachement à la RCR FOGEDOM-SCIC (contrat d'application de la "
-            "Convention-cadre V2.0 tripartite O'SCOP / KDMARCHE PRO / Fournisseur) :\n"
+            "Convention en vigueur tripartite O'SCOP / KDMARCHE PRO / Fournisseur) :\n"
             f"- Fournisseur : {vendor.get('company_name')}\n"
             f"- Produit : {product.get('name')} (catégorie {product.get('category')})\n"
             f"- Volume d'Achat Ferme : {product.get('stock_quantity')} {product.get('unit_type', 'unité')}(s)\n"
@@ -46,10 +46,11 @@ async def _ai_attestation_text(product: dict, vendor: dict) -> str:
     return (f"Le Fournisseur {vendor.get('company_name')} accepte l'achat d'un Volume d'Achat Ferme de "
             f"{product.get('stock_quantity')} {product.get('unit_type', 'unité')}(s) du produit "
             f"« {product.get('name')} » (catégorie {product.get('category')}), au prix plafond HT de "
-            f"{product.get('price_ht')} €. Le Volume d'Achat Ferme engage KDMARCHE PRO à acheter et le "
-            "Fournisseur à fournir, sans mécanisme take-or-pay (non sélectionné). Le règlement est scindé : "
-            "net Fournisseur + fraction RCR individualisée par facture et ligne produit, conservée par le "
-            "FOGEDOM-SCIC, le Fournisseur demeurant bénéficiaire économique du solde jusqu'à remboursement.")
+            f"{product.get('price_ht')} €, dans le cadre de la Convention en vigueur. Le Volume d'Achat Ferme "
+            "engage KDMARCHE PRO à acheter et le Fournisseur à fournir, sans mécanisme take-or-pay (non "
+            "sélectionné). Le règlement est scindé : net Fournisseur + fraction RCR individualisée par facture "
+            "et ligne produit, conservée par le FOGEDOM-SCIC, le Fournisseur demeurant bénéficiaire économique "
+            "du solde jusqu'à remboursement.")
 
 
 async def create_attestation_for_product(db, product: dict, vendor: dict) -> dict:
@@ -173,15 +174,8 @@ async def attestation_qr(att_id: str, current_user: dict = Depends(get_current_u
                     headers={"Cache-Control": "private, max-age=3600"})
 
 
-@attestation_router.get("/{att_id}/rcr-ledger")
-async def attestation_rcr_ledger(att_id: str, current_user: dict = Depends(get_current_user)):
-    """Suivi des fractions RCR constituées facture par facture pour cette attestation."""
-    db = get_database()
-    att = await db.attestations_nominatives.find_one({"id": att_id}, {"_id": 0, "ai_text": 0})
-    if not att:
-        raise HTTPException(status_code=404, detail="Attestation introuvable")
-    if not current_user.get("is_admin") and current_user.get("vendor_id") != att["vendor_id"]:
-        raise HTTPException(status_code=403, detail="Accès refusé")
+async def compute_rcr_ledger(db, att: dict) -> dict:
+    """Fractions RCR constituées facture par facture pour une attestation."""
     settings = await get_convention_settings(db)
     rate = float(att.get("rcr_rate") or settings["rcr_default_rate"])
     plafond = int(att.get("plafond_cible_cents") or 0)
@@ -216,3 +210,15 @@ async def attestation_rcr_ledger(att_id: str, current_user: dict = Depends(get_c
             "fractions": fractions, "invoices_count": len(fractions),
             "reimbursement_days": days,
             "date_expiration": exp_iso, "remboursement_prevu": remboursement_prevu}
+
+
+@attestation_router.get("/{att_id}/rcr-ledger")
+async def attestation_rcr_ledger(att_id: str, current_user: dict = Depends(get_current_user)):
+    """Suivi des fractions RCR constituées facture par facture pour cette attestation."""
+    db = get_database()
+    att = await db.attestations_nominatives.find_one({"id": att_id}, {"_id": 0, "ai_text": 0})
+    if not att:
+        raise HTTPException(status_code=404, detail="Attestation introuvable")
+    if not current_user.get("is_admin") and current_user.get("vendor_id") != att["vendor_id"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    return await compute_rcr_ledger(db, att)

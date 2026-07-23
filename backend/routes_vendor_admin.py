@@ -153,6 +153,9 @@ async def admin_approve_product(product_id: str):
     try:
         from attestation_nominative import countersign_attestation
         await countersign_attestation(db, product_id)
+        from attestation_lifecycle import send_signed_attestation
+        import asyncio
+        asyncio.create_task(send_signed_attestation(db, product_id))
     except Exception:
         pass
 

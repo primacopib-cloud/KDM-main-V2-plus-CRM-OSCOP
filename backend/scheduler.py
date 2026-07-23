@@ -121,6 +121,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler weekly unpaid report crashed: %s", exc)
         try:
+            from attestation_lifecycle import check_attestation_renewals
+            await check_attestation_renewals(_db)
+        except Exception as exc:
+            logger.exception("Scheduler attestation renewals crashed: %s", exc)
+        try:
             from routes_accounting import snapshot_fiscal_register
             await snapshot_fiscal_register(_db)
         except Exception as exc:

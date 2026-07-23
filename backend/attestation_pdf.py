@@ -123,7 +123,7 @@ def build_attestation_pdf(att: dict) -> bytes:
     els = [
         Paragraph("ATTESTATION NOMINATIVE D'ACHAT DE VOLUMES DE PRODUITS PRÉDÉFINIS<br/>"
                   "ET DE RATTACHEMENT À LA RCR FOGEDOM-SCIC", h1),
-        Paragraph(f"Contrat d'application de la Convention-cadre {version} — "
+        Paragraph("Contrat d'application de la Convention en vigueur — "
                   "O'SCOP / KDMARCHE PRO / FOURNISSEUR — une Attestation par catégorie de Produits", sub),
         Spacer(1, 4 * mm),
         Paragraph("1. IDENTIFICATION, VALIDITÉ ET RATTACHEMENT FOGEDOM-RCR", h2),
@@ -194,7 +194,6 @@ def build_attestation_pdf(att: dict) -> bytes:
             ("Délai de mise à disposition", att.get("delai") or "[À COMPLÉTER]"),
             ("Température / chaîne du froid", att.get("storage_conditions") or "—"),
             ("Mode de règlement", "Règlement scindé : net Fournisseur + fraction RCR"),
-            ("PFH / PSP mandant", att.get("mode_execution", "O'SCOP AGENT DE PSP")),
             ("Comité FOGEDOM-RCR", "Double validation : OUI"),
             ("Take-or-pay", "NON"),
             ("Renouvellement de l'Attestation", "NON — nouvelle Attestation par période"),

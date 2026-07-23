@@ -33,10 +33,12 @@ export default function VerifyAttestationPage() {
         )}
         {att && (
           <div className="space-y-3" data-testid="verify-result">
-            <div className={`rounded-xl px-4 py-3 text-sm font-bold flex items-center gap-2 ${att.status === 'signed' ? 'bg-[#7BC94E]/12 text-[#A5E27E] border border-[#7BC94E]/40' : 'bg-[#FBBF24]/10 text-[#FBBF24] border border-[#FBBF24]/40'}`}>
+            <div className={`rounded-xl px-4 py-3 text-sm font-bold flex items-center gap-2 ${att.status === 'signed' ? 'bg-[#7BC94E]/12 text-[#A5E27E] border border-[#7BC94E]/40' : att.status === 'closed' ? 'bg-[#60A5FA]/10 text-[#93C5FD] border border-[#60A5FA]/40' : 'bg-[#FBBF24]/10 text-[#FBBF24] border border-[#FBBF24]/40'}`}>
               {att.status === 'signed'
                 ? <><CheckCircle2 size={16} /> Attestation authentique — signée par les trois parties</>
-                : <><Clock size={16} /> Attestation émise — en attente de contre-signature</>}
+                : att.status === 'closed'
+                  ? <><CheckCircle2 size={16} /> Attestation clôturée — RCR remboursée au Fournisseur</>
+                  : <><Clock size={16} /> Attestation émise — en attente de contre-signature</>}
             </div>
             <dl className="text-sm space-y-1.5">
               {[['Référence', `${att.ref}${att.version ? ` / ${att.version}` : ''}`],
