@@ -53,6 +53,12 @@ export const BuyerDisputesCard = ({ disputes, onChanged }) => {
                 <span className="text-white/50">OT {d.ot_ref} · Incident température (article 12)</span>
                 <span className="font-bold" style={{ color }}>{label}</span>
                 <span className="text-white/45">Responsabilité : <b className="text-white/70">{RESP_LABEL[d.responsibility]}</b></span>
+                <button type="button" data-testid={`dispute-report-${d.ref}`}
+                  onClick={() => downloadTransportPdf(`/logiscop-transport/disputes/${d.id}/report/pdf`,
+                    `rapport-litige-${d.ref}.pdf`)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-white/[0.06] text-[#93C5FD] hover:text-[#E9CF8E] border border-white/15">
+                  <Download size={11} /> Rapport PDF
+                </button>
                 <button type="button" data-testid={`dispute-add-piece-${d.ref}`}
                   onClick={() => { setTarget(d.id); fileRef.current?.click(); }}
                   className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-white/[0.06] text-white/60 hover:text-[#E9CF8E] border border-white/15">

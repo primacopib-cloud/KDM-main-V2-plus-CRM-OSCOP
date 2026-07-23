@@ -64,6 +64,12 @@ export const LogiscopDisputesPanel = () => {
                 </span>
               )}
               <span className="ml-auto inline-flex items-center gap-1.5">
+                <button type="button" data-testid={`admin-dispute-report-${d.ref}`}
+                  onClick={() => download(`/logiscop-transport/disputes/${d.id}/report/pdf`, `rapport-litige-${d.ref}.pdf`)}
+                  title={d.report_ged_doc_id ? 'Rapport archivé en GEDESS' : 'Rapport de litige (PDF)'}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-white/[0.06] text-[#93C5FD] hover:text-[#E9CF8E] border border-white/15">
+                  <Download size={10} /> Rapport{d.report_ged_doc_id ? ' · GED ✓' : ''}
+                </button>
                 <select value={d.status} className={sel} data-testid={`dispute-status-${d.ref}`}
                   onChange={(e) => update(d, { status: e.target.value }, `Litige ${d.ref} → ${e.target.value}`)}>
                   {STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}

@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { FileDown, Receipt, PenLine, Thermometer, CreditCard, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders, getSessionToken } from '../../../services/http';
@@ -31,6 +31,19 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, disputesByOt = 
   const [epodFor, setEpodFor] = useState(null);
   const [mediaFor, setMediaFor] = useState(null);
   const [paying, setPaying] = useState(null);
+  const [creditsByOt, setCreditsByOt] = useState({});
+
+  useEffect(() => {
+    fetch(`${API}/logiscop-transport/credits`, {
+      credentials: 'include',
+      headers: { Authorization: `Bearer ${getSessionToken()}`, ...getAuthHeaders() },
+    }).then((r) => (r.ok ? r.json() : []))
+      .then((list) => {
+        const map = {};
+        (Array.isArray(list) ? list : []).forEach((c) => { map[c.ot_id] = c; });
+        setCreditsByOt(map);
+      }).catch(() => {});
+  }, [orders]);
 
   const pay = async (inv) => {
     setPaying(inv.id);
@@ -66,6 +79,7 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, disputesByOt = 
             const [label, color] = STATUS[o.status] || [o.status, '#999'];
             const inv = invoicesByOt[o.id];
             const dispute = disputesByOt[o.id];
+            const credit = creditsByOt[o.id];
             return (
               <Fragment key={o.id}>
                 <tr className="border-b border-white/[0.04] text-white/75" data-testid={`transport-order-${o.ref.replace(/\//g, '-')}`}>
@@ -98,6 +112,14 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, disputesByOt = 
                           className="inline-flex items-center gap-1 text-[#93C5FD] hover:text-[#E9CF8E]">
                           <Receipt size={12} /> {inv.ref}
                         </button>
+                        {credit && (
+                          <button type="button" data-testid={`credit-pdf-${credit.ref}`}
+                            title={`Avoir de service (article 22) — ${credit.reasons.join(' + ')}`}
+                            onClick={() => downloadTransportPdf(`/logiscop-transport/credits/${credit.id}/pdf`, `${credit.ref}.pdf`)}
+                            className="block text-[10px] font-bold text-[#F0ABFC] hover:text-[#E9CF8E]">
+                            Avoir {credit.ref} : −{(credit.total_ttc_cents / 100).toFixed(2)} €
+                          </button>
+                        )}
                         {inv.status === 'PAID' ? (
                           <span className="block text-[10px] font-bold text-emerald-400">✓ Payée</span>
                         ) : (

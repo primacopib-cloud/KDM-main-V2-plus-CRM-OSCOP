@@ -301,6 +301,16 @@ async def close_order_epod(ot_id: str, body: EpodBody, background_tasks: Backgro
             epod["temperature_analysis"] = analysis
     await db.logiscop_transport_orders.update_one(
         {"id": ot_id}, {"$set": {"status": body.outcome, "epod": epod}})
+    ot_after = await db.logiscop_transport_orders.find_one({"id": ot_id}, {"_id": 0})
+    from logiscop_transport_billing import create_service_credit
+    credit = await create_service_credit(db, ot_after)
+    if credit:
+        await create_notification(
+            "logiscop_service_credit", "Avoir de service émis (article 22)",
+            f"Un avoir {credit['ref']} de {credit['total_ttc_cents'] / 100:.2f} € TTC "
+            f"({' + '.join(credit['reasons'])}, {credit['pct_total']:.0f} %) a été appliqué sur votre facture "
+            f"{credit['invoice_ref']} — OT {ot['ref']}.",
+            target_user_id=ot["user_id"], data={"credit_id": credit["id"], "ref": credit["ref"]})
     background_tasks.add_task(archive_ot_documents_to_ged, db, ot_id)
     await create_notification(
         "logiscop_ot_delivered", "Ordre de Transport clôturé (ePOD)",
@@ -381,7 +391,8 @@ async def admin_overview(current_user: dict = Depends(get_current_user)):
     conventions = await db.logiscop_transport_conventions.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
     orders = await db.logiscop_transport_orders.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
     invoices = await db.logiscop_transport_invoices.find({}, {"_id": 0}).sort("issued_at", -1).to_list(200)
-    return {"conventions": conventions, "orders": orders, "invoices": invoices,
+    credits = await db.logiscop_transport_credits.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return {"conventions": conventions, "orders": orders, "invoices": invoices, "credits": credits,
             "pending_orders": sum(1 for o in orders if o["status"] == "PROPOSE")}
 
 

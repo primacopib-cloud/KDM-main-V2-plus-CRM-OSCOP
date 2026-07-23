@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
@@ -137,7 +137,8 @@ async def admin_disputes(current_user: dict = Depends(get_current_user)):
 
 
 @logiscop_media_router.patch("/logiscop-transport/admin/disputes/{dispute_id}")
-async def update_dispute(dispute_id: str, body: DisputeUpdateBody, current_user: dict = Depends(get_current_user)):
+async def update_dispute(dispute_id: str, body: DisputeUpdateBody, background_tasks: BackgroundTasks,
+                         current_user: dict = Depends(get_current_user)):
     await check_admin(current_user)
     db = get_database()
     d = await db.logiscop_disputes.find_one({"id": dispute_id}, {"_id": 0})
@@ -164,12 +165,32 @@ async def update_dispute(dispute_id: str, body: DisputeUpdateBody, current_user:
     entry = {"at": datetime.now(timezone.utc).isoformat(),
              "by": current_user.get("email"), "action": " ; ".join(actions)}
     await db.logiscop_disputes.update_one({"id": dispute_id}, {"$set": update, "$push": {"timeline": entry}})
+    if update.get("status") == "RESOLVED":
+        from logiscop_dispute_report import archive_dispute_report_to_ged
+        background_tasks.add_task(archive_dispute_report_to_ged, db, dispute_id)
     if update.get("status"):
         await create_notification(
             "logiscop_dispute_update", f"Litige {d['ref']} — mise à jour",
             f"Litige {d['ref']} (OT {d['ot_ref']}) : {' ; '.join(actions)}.",
             target_user_id=d["user_id"], data={"dispute_id": dispute_id, "ref": d["ref"]})
     return await db.logiscop_disputes.find_one({"id": dispute_id}, {"_id": 0})
+
+
+@logiscop_media_router.get("/logiscop-transport/disputes/{dispute_id}/report/pdf")
+async def dispute_report_pdf(dispute_id: str, current_user: dict = Depends(get_current_user)):
+    """Rapport de litige complet (incident, pièces, chronologie, résolution) — acheteur concerné ou admin."""
+    db = get_database()
+    d = await db.logiscop_disputes.find_one({"id": dispute_id}, {"_id": 0})
+    if not d:
+        raise HTTPException(status_code=404, detail="Litige introuvable")
+    if not current_user.get("is_admin") and d["user_id"] != current_user["id"]:
+        m = await db.org_memberships.find_one({"user_id": current_user["id"], "org_id": d["org_id"]})
+        if not m:
+            raise HTTPException(status_code=403, detail="Accès refusé")
+    ot = await db.logiscop_transport_orders.find_one({"id": d["ot_id"]}, {"_id": 0}) or {}
+    from logiscop_dispute_report import build_dispute_report_pdf
+    return Response(content=build_dispute_report_pdf(d, ot), media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=rapport-litige-{d['ref']}.pdf"})
 
 
 @logiscop_media_router.post("/logiscop-transport/disputes/{dispute_id}/pieces")

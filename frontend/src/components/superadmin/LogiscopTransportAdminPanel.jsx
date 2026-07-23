@@ -185,7 +185,16 @@ export const LogiscopTransportAdminPanel = () => {
                     </td>
                     <td className="py-1.5 pr-3">{inv.ot_ref}</td>
                     <td className="py-1.5 pr-3">{inv.company_name}</td>
-                    <td className="py-1.5 pr-3 font-bold text-[#E9CF8E]">{eur(inv.total_ttc_cents)}</td>
+                    <td className="py-1.5 pr-3 font-bold text-[#E9CF8E]">{eur(inv.total_ttc_cents)}
+                      {(data.credits || []).filter((c) => c.invoice_id === inv.id).map((c) => (
+                        <button key={c.id} type="button" data-testid={`admin-credit-${c.ref}`}
+                          onClick={() => download(`/logiscop-transport/credits/${c.id}/pdf`, `${c.ref}.pdf`)}
+                          title={`Avoir de service (article 22) — ${c.reasons.join(' + ')}`}
+                          className="block font-normal text-[10px] text-[#F0ABFC] hover:text-[#E9CF8E]">
+                          Avoir {c.ref} : −{eur(c.total_ttc_cents)}
+                        </button>
+                      ))}
+                    </td>
                     <td className="py-1.5 pr-3 text-white/50">{(inv.issued_at || '').slice(0, 10)}</td>
                     <td className={`py-1.5 pr-3 font-bold ${cls}`}>{st}
                       {inv.reminder_sent_at && (

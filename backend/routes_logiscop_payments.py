@@ -71,6 +71,34 @@ async def pay_invoice(invoice_id: str, body: PayBody, current_user: dict = Depen
     return {"checkout_url": session.url, "session_id": session.id}
 
 
+@logiscop_payments_router.get("/credits")
+async def my_credits(current_user: dict = Depends(get_current_user)):
+    """Avoirs de service du Donneur d'Ordre (article 22)."""
+    db = get_database()
+    m = await db.org_memberships.find_one({"user_id": current_user["id"]}, {"_id": 0, "org_id": 1})
+    org_id = current_user.get("organization_id") or (m or {}).get("org_id")
+    if not org_id:
+        return []
+    return await db.logiscop_transport_credits.find({"org_id": org_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+
+
+@logiscop_payments_router.get("/credits/{credit_id}/pdf")
+async def credit_note_pdf(credit_id: str, current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    credit = await db.logiscop_transport_credits.find_one({"id": credit_id}, {"_id": 0})
+    if not credit:
+        raise HTTPException(status_code=404, detail="Avoir introuvable")
+    if not current_user.get("is_admin") and credit["user_id"] != current_user["id"]:
+        m = await db.org_memberships.find_one({"user_id": current_user["id"], "org_id": credit["org_id"]})
+        if not m:
+            raise HTTPException(status_code=403, detail="Accès refusé")
+    ot = await db.logiscop_transport_orders.find_one({"id": credit["ot_id"]}, {"_id": 0}) or {}
+    from logiscop_transport_billing import build_credit_note_pdf
+    from fastapi.responses import Response
+    return Response(content=build_credit_note_pdf(credit, ot), media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename={credit['ref']}.pdf"})
+
+
 @logiscop_payments_router.get("/invoices/pay/status/{session_id}")
 async def invoice_payment_status(session_id: str, current_user: dict = Depends(get_current_user)):
     db = get_database()
