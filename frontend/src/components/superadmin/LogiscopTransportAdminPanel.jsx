@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Truck, FileDown, Check, X } from 'lucide-react';
+import { Truck, FileDown, Check, X, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
@@ -8,6 +8,13 @@ const OT_STATUS = {
   PROPOSE: ['Proposé', '#FBBF24'], ACCEPTE: ['Accepté', '#7BC94E'], REFUSE: ['Refusé', '#F87171'],
   LIVRE_CONFORME: ['Livré conforme ✓', '#7BC94E'], LIVRE_AVEC_RESERVES: ['Livré avec réserves', '#FBBF24'],
   PARTIEL: ['Partiel', '#F0ABFC'], REFUSE_LIVRAISON: ['Refusé à livraison', '#F87171'],
+};
+const eur = (c) => `${((c || 0) / 100).toFixed(2)} €`;
+
+const invoiceState = (inv) => {
+  if (inv.status === 'PAID') return ['PAYÉE ✓', 'text-emerald-400'];
+  const overdue = Date.now() - new Date(inv.issued_at).getTime() > 30 * 864e5;
+  return overdue ? ['EN RETARD (+30 j)', 'text-red-300'] : ['EN ATTENTE', 'text-amber-300'];
 };
 
 export const LogiscopTransportAdminPanel = () => {
@@ -28,23 +35,24 @@ export const LogiscopTransportAdminPanel = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  const act = async (otId, action, body) => {
+  const post = async (path, body, okMsg) => {
     try {
-      const r = await fetch(`${API}/logiscop-transport/admin/orders/${otId}/${action}`, {
+      const r = await fetch(`${API}${path}`, {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify(body),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Action impossible');
-      toast.success(action === 'accept' ? `OT ${d.ref} accepté` : `OT ${d.ref} refusé`);
+      toast.success(okMsg(d));
       load();
     } catch (e) { toast.error(e.message); }
   };
 
   const refuse = (ot) => {
     const reason = window.prompt(`Motif du refus de l'OT ${ot.ref} :`);
-    if (reason && reason.trim().length >= 3) act(ot.id, 'refuse', { reason: reason.trim() });
+    if (reason && reason.trim().length >= 3)
+      post(`/logiscop-transport/admin/orders/${ot.id}/refuse`, { reason: reason.trim() }, (d) => `OT ${d.ref} refusé`);
   };
 
   if (!data || (data.conventions.length === 0 && data.orders.length === 0)) return null;
@@ -86,9 +94,9 @@ export const LogiscopTransportAdminPanel = () => {
 
       <p className="text-[11px] font-bold text-white/60 mb-1">Ordres de Transport ({data.orders.length})</p>
       {data.orders.length === 0 ? (
-        <p className="text-[11px] text-white/45">Aucun OT émis.</p>
+        <p className="text-[11px] text-white/45 mb-4">Aucun OT émis.</p>
       ) : (
-        <table className="w-full text-[11px]">
+        <table className="w-full text-[11px] mb-4">
           <thead><tr className="text-left text-white/40 border-b border-white/[0.08]">
             <th className="py-1 pr-3">Référence</th><th className="py-1 pr-3">Donneur d'Ordre</th>
             <th className="py-1 pr-3">Trajet</th><th className="py-1 pr-3">Statut</th>
@@ -96,24 +104,24 @@ export const LogiscopTransportAdminPanel = () => {
           <tbody>
             {data.orders.map((o) => {
               const [label, color] = OT_STATUS[o.status] || [o.status, '#999'];
-              const inv = (data.invoices || []).find((i) => i.ot_id === o.id);
               return (
                 <tr key={o.id} className="border-b border-white/[0.04] text-white/75" data-testid={`admin-ot-${o.id}`}>
-                  <td className="py-1.5 pr-3 font-semibold">{o.ref}</td>
+                  <td className="py-1.5 pr-3 font-semibold">{o.ref}
+                    {o.ged_doc_id && <span className="block font-normal text-[10px] text-white/35">GED ✓</span>}
+                  </td>
                   <td className="py-1.5 pr-3">{o.company_name}</td>
                   <td className="py-1.5 pr-3">{o.pickup?.zone_code} → {o.delivery?.zone_code}</td>
                   <td className="py-1.5 pr-3 font-bold" style={{ color }}>{label}
+                    {o.status === 'ACCEPTE' && o.execution && (
+                      <span className="block font-normal text-[#93C5FD]/80">
+                        {o.execution.status === 'LIVREE' ? `Livré par ${o.execution.operator_name}` : `En acheminement — ${o.execution.operator_name}`}
+                      </span>
+                    )}
                     {o.epod?.reserves && (
                       <span className="block font-normal text-white/40">Réserves : {o.epod.reserves.slice(0, 40)}</span>
                     )}
                   </td>
-                  <td className="py-1.5 pr-3">{o.price_ht_cents ? `${(o.price_ht_cents / 100).toFixed(2)} €` : '—'}
-                    {inv && (
-                      <button type="button" data-testid={`admin-invoice-${inv.ref}`}
-                        onClick={() => download(`/logiscop-transport/invoices/${inv.id}/pdf`, `${inv.ref}.pdf`)}
-                        className="block text-[10px] text-[#93C5FD] hover:text-[#E9CF8E]">{inv.ref}</button>
-                    )}
-                  </td>
+                  <td className="py-1.5 pr-3">{o.price_ht_cents ? eur(o.price_ht_cents) : '—'}</td>
                   <td className="py-1.5">
                     <span className="inline-flex items-center gap-1.5">
                       <button type="button" onClick={() => download(`/logiscop-transport/orders/${o.id}/pdf`,
@@ -127,7 +135,9 @@ export const LogiscopTransportAdminPanel = () => {
                             className="w-20 h-7 px-2 rounded bg-white/[0.06] border border-white/15 text-[10px] text-white" />
                           <button type="button" data-testid={`admin-ot-accept-${o.id}`}
                             disabled={!prices[o.id] || Number(prices[o.id]) <= 0}
-                            onClick={() => act(o.id, 'accept', { price_ht_eur: Number(prices[o.id]) })}
+                            onClick={() => post(`/logiscop-transport/admin/orders/${o.id}/accept`,
+                              { price_ht_eur: Number(prices[o.id]) },
+                              (d) => `OT ${d.ref} accepté — facture ${d.invoice?.ref} émise et envoyée`)}
                             className="px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 inline-flex items-center gap-1">
                             <Check size={11} /> Accepter + Facturer
                           </button>
@@ -144,6 +154,64 @@ export const LogiscopTransportAdminPanel = () => {
             })}
           </tbody>
         </table>
+      )}
+
+      {(data.invoices || []).length > 0 && (
+        <>
+          <p className="text-[11px] font-bold text-white/60 mb-1 flex items-center gap-1.5">
+            <Receipt size={12} className="text-[#93C5FD]" /> Factures transport ({data.invoices.length}) — relance auto à 30 jours
+          </p>
+          <table className="w-full text-[11px]" data-testid="admin-invoices-table">
+            <thead><tr className="text-left text-white/40 border-b border-white/[0.08]">
+              <th className="py-1 pr-3">Facture</th><th className="py-1 pr-3">OT</th><th className="py-1 pr-3">Client</th>
+              <th className="py-1 pr-3">TTC</th><th className="py-1 pr-3">Émise le</th>
+              <th className="py-1 pr-3">Règlement</th><th className="py-1">Actions</th></tr></thead>
+            <tbody>
+              {data.invoices.map((inv) => {
+                const [st, cls] = invoiceState(inv);
+                return (
+                  <tr key={inv.id} className="border-b border-white/[0.04] text-white/75" data-testid={`admin-invoice-${inv.ref}`}>
+                    <td className="py-1.5 pr-3 font-semibold">{inv.ref}
+                      {inv.ged_doc_id && <span className="block font-normal text-[10px] text-white/35">GED ✓</span>}
+                    </td>
+                    <td className="py-1.5 pr-3">{inv.ot_ref}</td>
+                    <td className="py-1.5 pr-3">{inv.company_name}</td>
+                    <td className="py-1.5 pr-3 font-bold text-[#E9CF8E]">{eur(inv.total_ttc_cents)}</td>
+                    <td className="py-1.5 pr-3 text-white/50">{(inv.issued_at || '').slice(0, 10)}</td>
+                    <td className={`py-1.5 pr-3 font-bold ${cls}`}>{st}
+                      {inv.reminder_sent_at && (
+                        <span className="block font-normal text-[10px] text-white/40">
+                          Relancée le {inv.reminder_sent_at.slice(0, 10)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-1.5">
+                      <span className="inline-flex items-center gap-1.5">
+                        <button type="button" onClick={() => download(`/logiscop-transport/invoices/${inv.id}/pdf`, `${inv.ref}.pdf`)}
+                          className="text-white/50 hover:text-[#E9CF8E]"><FileDown size={14} /></button>
+                        {inv.status === 'PAID' ? (
+                          <button type="button" data-testid={`admin-invoice-unpay-${inv.ref}`}
+                            onClick={() => post(`/logiscop-transport/admin/invoices/${inv.id}/mark-paid`, { paid: false },
+                              (d) => `Pointage annulé — ${d.ref}`)}
+                            className="px-2 py-1 rounded-lg text-[10px] text-white/50 hover:text-white border border-white/15">
+                            Annuler pointage
+                          </button>
+                        ) : (
+                          <button type="button" data-testid={`admin-invoice-pay-${inv.ref}`}
+                            onClick={() => post(`/logiscop-transport/admin/invoices/${inv.id}/mark-paid`, { paid: true },
+                              (d) => `Facture ${d.ref} pointée payée`)}
+                            className="px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 inline-flex items-center gap-1">
+                            <Check size={11} /> Pointer payée
+                          </button>
+                        )}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </>
       )}
     </div>
   );

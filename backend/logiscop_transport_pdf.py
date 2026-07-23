@@ -226,8 +226,17 @@ def build_transport_order_pdf(ot: dict, conv: dict) -> bytes:
         story += [Paragraph(
             f"ePOD signé électroniquement par <b>{epod.get('name')}</b> ({epod.get('quality') or '—'}) "
             f"le {_fmt_date(epod.get('at'))}."
-            + (f" Réserves : {epod.get('reserves')}" if epod.get("reserves") else " Aucune réserve formulée."),
+            + (f" Réserves : {epod.get('reserves')}" if epod.get("reserves") else " Aucune réserve formulée.")
+            + (f" Relevé de température joint : {epod['temperature_file']['name']}."
+               if epod.get("temperature_file") else ""),
             st["n"])]
+    execution = ot.get("execution") or {}
+    if execution:
+        story += [Paragraph(
+            f"Exécution tracée : pris en charge par <b>{execution.get('operator_name')}</b> "
+            f"le {_fmt_date(execution.get('taken_at'))}"
+            + (f", livré le {_fmt_date(execution.get('delivered_at'))}" if execution.get("delivered_at") else "")
+            + ".", st["n"])]
     story += [Spacer(1, 3 * mm), Paragraph(MODE_D_REMINDER, st["small"]),
               Paragraph("Ordre de transport opérationnel à rattacher à une Convention d'adhésion-cadre en vigueur "
                         f"({conv.get('ref') or '—'}). Généré par le Dashboard KDMARCHÉ × O'SCOP.", st["small"])]

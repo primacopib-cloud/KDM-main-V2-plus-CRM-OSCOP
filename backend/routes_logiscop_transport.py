@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 
 from core_deps import get_current_user, check_admin, create_notification
 from db import get_database
-from logiscop_transport_billing import (build_transport_invoice_pdf, create_transport_invoice,
-                                        send_invoice_email)
+from logiscop_transport_billing import (archive_ot_documents_to_ged, build_transport_invoice_pdf,
+                                        create_transport_invoice, send_invoice_email)
 from logiscop_transport_pdf import build_logiscop_convention_pdf, build_transport_order_pdf
 from role_guards import ensure_can_buy
 
@@ -72,6 +72,13 @@ class EpodBody(BaseModel):
     reserves: str = Field(default="", max_length=1000)
     name: str = Field(min_length=2, max_length=120)
     quality: str = Field(min_length=2, max_length=120)
+    temperature_file_b64: Optional[str] = Field(default=None, max_length=8_000_000)
+    temperature_file_name: Optional[str] = Field(default=None, max_length=150)
+    temperature_file_mime: Optional[str] = Field(default=None, max_length=80)
+
+
+class PaidBody(BaseModel):
+    paid: bool = True
 
 
 async def _buyer_context(user: dict) -> dict:
@@ -264,8 +271,9 @@ async def transport_order_pdf(ot_id: str, current_user: dict = Depends(get_curre
 
 
 @logiscop_transport_router.post("/orders/{ot_id}/epod")
-async def close_order_epod(ot_id: str, body: EpodBody, current_user: dict = Depends(get_current_user)):
-    """Clôture de l'OT à la livraison : signature ePOD, réserves éventuelles, statut final."""
+async def close_order_epod(ot_id: str, body: EpodBody, background_tasks: BackgroundTasks,
+                           current_user: dict = Depends(get_current_user)):
+    """Clôture de l'OT à la livraison : signature ePOD, réserves, relevé de température, statut final."""
     if body.outcome not in EPOD_OUTCOMES:
         raise HTTPException(status_code=400, detail=f"Résultat invalide ({', '.join(EPOD_OUTCOMES)})")
     if body.outcome != "LIVRE_CONFORME" and len(body.reserves.strip()) < 3:
@@ -277,8 +285,16 @@ async def close_order_epod(ot_id: str, body: EpodBody, current_user: dict = Depe
     now_iso = datetime.now(timezone.utc).isoformat()
     epod = {"outcome": body.outcome, "reserves": body.reserves.strip() or None,
             "name": body.name, "quality": body.quality, "at": now_iso}
+    if body.temperature_file_b64 and body.temperature_file_name:
+        file_id = str(uuid.uuid4())
+        await db.logiscop_temperature_files.insert_one({
+            "id": file_id, "ot_id": ot_id, "name": body.temperature_file_name,
+            "mime": body.temperature_file_mime or "application/octet-stream",
+            "content_b64": body.temperature_file_b64, "uploaded_at": now_iso})
+        epod["temperature_file"] = {"id": file_id, "name": body.temperature_file_name}
     await db.logiscop_transport_orders.update_one(
         {"id": ot_id}, {"$set": {"status": body.outcome, "epod": epod}})
+    background_tasks.add_task(archive_ot_documents_to_ged, db, ot_id)
     await create_notification(
         "logiscop_ot_delivered", "Ordre de Transport clôturé (ePOD)",
         f"OT {ot['ref']} clôturé par {body.name} : {body.outcome.replace('_', ' ')}"
@@ -286,6 +302,18 @@ async def close_order_epod(ot_id: str, body: EpodBody, current_user: dict = Depe
         target_roles=["oscop_super_admin", "kdm_b2b_admin"],
         data={"ot_id": ot_id, "ref": ot["ref"], "outcome": body.outcome})
     return await db.logiscop_transport_orders.find_one({"id": ot_id}, {"_id": 0})
+
+
+@logiscop_transport_router.get("/orders/{ot_id}/temperature-file")
+async def download_temperature_file(ot_id: str, current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    await _get_ot(db, ot_id, current_user)
+    f = await db.logiscop_temperature_files.find_one({"ot_id": ot_id}, {"_id": 0})
+    if not f:
+        raise HTTPException(status_code=404, detail="Aucun relevé de température joint")
+    import base64
+    return Response(content=base64.b64decode(f["content_b64"]), media_type=f["mime"],
+                    headers={"Content-Disposition": f"attachment; filename={f['name']}"})
 
 
 @logiscop_transport_router.get("/invoices")
@@ -349,6 +377,26 @@ async def admin_accept_order(ot_id: str, body: AcceptBody, background_tasks: Bac
         f"Facture {invoice['ref']} émise.",
         target_user_id=ot["user_id"], data={"ot_id": ot_id, "ref": ot["ref"], "invoice_ref": invoice["ref"]})
     return {**ot, "invoice": invoice}
+
+
+@logiscop_transport_router.post("/admin/invoices/{invoice_id}/mark-paid")
+async def admin_mark_invoice_paid(invoice_id: str, body: PaidBody,
+                                  current_user: dict = Depends(get_current_user)):
+    """Pointage d'une facture transport payée (ou annulation du pointage)."""
+    await check_admin(current_user)
+    db = get_database()
+    inv = await db.logiscop_transport_invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(status_code=404, detail="Facture introuvable")
+    update = ({"status": "PAID", "paid_at": datetime.now(timezone.utc).isoformat()}
+              if body.paid else {"status": "ISSUED", "paid_at": None})
+    await db.logiscop_transport_invoices.update_one({"id": invoice_id}, {"$set": update})
+    if body.paid:
+        await create_notification(
+            "logiscop_invoice_paid", "Facture transport réglée",
+            f"Votre règlement de la facture {inv['ref']} ({(inv['total_ttc_cents']) / 100:.2f} € TTC) a été pointé. Merci.",
+            target_user_id=inv["user_id"], data={"invoice_id": invoice_id, "ref": inv["ref"]})
+    return await db.logiscop_transport_invoices.find_one({"id": invoice_id}, {"_id": 0})
 
 
 @logiscop_transport_router.post("/admin/orders/{ot_id}/refuse")

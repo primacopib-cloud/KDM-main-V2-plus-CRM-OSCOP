@@ -155,6 +155,54 @@ async def my_missions(user_id: str = Depends(get_current_user_id)):
 MISSION_STATUSES = ["PRISE_EN_CHARGE", "LIVREE"]
 
 
+class TransportMissionStatusBody(BaseModel):
+    status: str
+
+
+@logicoop_router.post("/logicoop/transport-missions/{ot_id}/status")
+async def set_transport_mission_status(ot_id: str, body: TransportMissionStatusBody,
+                                       user_id: str = Depends(get_current_user_id)):
+    """L'opérateur trace l'exécution de l'OT : pris en charge puis livré (l'acheteur clôture ensuite l'ePOD)."""
+    if body.status not in MISSION_STATUSES:
+        raise HTTPException(status_code=400, detail="Statut invalide (PRISE_EN_CHARGE ou LIVREE)")
+    op = await my_operator_space(user_id)
+    ot = await db.logiscop_transport_orders.find_one({"id": ot_id}, {"_id": 0})
+    if not ot:
+        raise HTTPException(status_code=404, detail="Ordre de transport introuvable")
+    exw, cif = set(op.get("exw_zones", [])), set(op.get("cif_zones", []))
+    if (ot.get("pickup") or {}).get("zone_code") not in exw and (ot.get("delivery") or {}).get("zone_code") not in cif:
+        raise HTTPException(status_code=403, detail="Cet OT n'est pas dans vos zones")
+    if ot["status"] != "ACCEPTE":
+        raise HTTPException(status_code=409, detail=f"OT non exécutable (statut : {ot['status']})")
+    current = (ot.get("execution") or {}).get("status")
+    if body.status == "PRISE_EN_CHARGE" and current:
+        raise HTTPException(status_code=409, detail="OT déjà pris en charge")
+    if body.status == "LIVREE" and current != "PRISE_EN_CHARGE":
+        raise HTTPException(status_code=409, detail="Prenez d'abord l'OT en charge")
+    now = _now()
+    execution = {"status": body.status, "operator_id": op["id"], "operator_name": op["name"],
+                 "taken_at": (ot.get("execution") or {}).get("taken_at") or now,
+                 "updated_at": now}
+    if body.status == "LIVREE":
+        execution["delivered_at"] = now
+    await db.logiscop_transport_orders.update_one(
+        {"id": ot_id}, {"$set": {"execution": execution},
+                        "$push": {"execution_history": {"status": body.status, "at": now, "operator": op["name"]}}})
+    from core_deps import create_notification
+    if body.status == "LIVREE":
+        await create_notification(
+            "logiscop_ot_operator_delivered", "OT livré par l'opérateur",
+            f"{op['name']} a livré votre OT {ot['ref']} — clôturez l'ePOD dans votre espace Transport.",
+            target_user_id=ot["user_id"], data={"ot_id": ot_id, "ref": ot["ref"]})
+    else:
+        await create_notification(
+            "logiscop_ot_taken", "OT pris en charge",
+            f"{op['name']} a pris en charge votre OT {ot['ref']} — acheminement en cours.",
+            target_user_id=ot["user_id"], data={"ot_id": ot_id, "ref": ot["ref"]})
+    logger.info("OT %s → %s par %s", ot["ref"], body.status, op["name"])
+    return {"ok": True, "execution": execution}
+
+
 @logicoop_router.get("/logicoop/transport-missions")
 async def my_transport_missions(user_id: str = Depends(get_current_user_id)):
     """OT LOGI'SCOP acceptés à exécuter : enlèvement (zone EXW) ou livraison (zone CIF) de l'opérateur."""
@@ -178,6 +226,7 @@ async def my_transport_missions(user_id: str = Depends(get_current_user_id)):
             "pickup": pk, "delivery": dl,
             "goods_summary": ", ".join(g.get("designation", "") for g in ot.get("goods", []))[:80],
             "price_ht_cents": ot.get("price_ht_cents"),
+            "execution": ot.get("execution"),
             "epod_outcome": (ot.get("epod") or {}).get("outcome"),
             "created_at": str(ot.get("created_at", ""))[:16],
         })

@@ -122,6 +122,76 @@ async def send_invoice_email(db, invoice_id: str) -> None:
         logger.warning("Envoi facture transport %s échoué : %s", invoice_id, exc)
 
 
+async def send_invoice_reminders(db) -> int:
+    """Relance automatique des factures transport impayées à 30 jours (idempotent par facture)."""
+    now = datetime.now(timezone.utc)
+    sent = 0
+    async for inv in db.logiscop_transport_invoices.find(
+            {"status": "ISSUED", "reminder_sent_at": None}, {"_id": 0}):
+        try:
+            issued = datetime.fromisoformat(inv["issued_at"])
+        except ValueError:
+            continue
+        if now - issued < timedelta(days=30):
+            continue
+        html = (
+            f"<div style='font-family:Arial;color:#2A1045'><h2 style='color:#B91C1C'>Relance — facture {inv['ref']} impayée</h2>"
+            f"<p>Sauf erreur de notre part, la facture <b>{inv['ref']}</b> ({_eur(inv['total_ttc_cents'])} TTC) "
+            f"relative à l'Ordre de Transport <b>{inv['ot_ref']}</b>, émise le {inv['issued_at'][:10]}, "
+            "demeure impayée à l'échéance de 30 jours (article 15 de la Convention).</p>"
+            "<p>Merci de procéder au règlement sous 8 jours ou de nous contacter en cas de difficulté.</p>"
+            "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP — LOGI'SCOP</b></p></div>")
+        try:
+            from brevo_service import send_email
+            if inv.get("email"):
+                await send_email(to_email=inv["email"], to_name=inv.get("company_name"),
+                                 subject=f"Relance : facture transport {inv['ref']} impayée (30 jours)",
+                                 html_content=html, tags=["logiscop-invoice-reminder"])
+            admin_email = os.environ.get("ADMIN_ALERT_EMAIL")
+            if admin_email:
+                await send_email(to_email=admin_email, to_name="LOGI'SCOP",
+                                 subject=f"[LOGI'SCOP] Facture {inv['ref']} impayée à 30 j ({inv.get('company_name')})",
+                                 html_content=html, tags=["logiscop-invoice-reminder"])
+            await db.logiscop_transport_invoices.update_one(
+                {"id": inv["id"]}, {"$set": {"reminder_sent_at": now.isoformat()}})
+            sent += 1
+        except Exception as exc:
+            logger.warning("Relance facture %s échouée : %s", inv["ref"], exc)
+    if sent:
+        logger.info("Relances factures transport envoyées : %d", sent)
+    return sent
+
+
+async def archive_ot_documents_to_ged(db, ot_id: str) -> None:
+    """Archive GEDESS de l'OT clôturé (PDF avec ePOD) et de sa facture (best effort, tâche de fond)."""
+    try:
+        from gedess_client import gedess_upload_file, is_gedess_configured
+        if not is_gedess_configured():
+            return
+        ot = await db.logiscop_transport_orders.find_one({"id": ot_id}, {"_id": 0})
+        if not ot:
+            return
+        conv = await db.logiscop_transport_conventions.find_one({"id": ot.get("convention_id")}, {"_id": 0}) or {}
+        slug = ot["ref"].replace("/", "-")
+        if not ot.get("ged_doc_id"):
+            from logiscop_transport_pdf import build_transport_order_pdf
+            doc = await gedess_upload_file(
+                f"ot-logiscop-{slug}.pdf", build_transport_order_pdf(ot, conv), categorie="convention",
+                description=f"OT LOGI'SCOP {ot['ref']} clôturé ({(ot.get('epod') or {}).get('outcome')}) — {ot.get('company_name')}",
+                tags="logiscop,transport,ot", mime_type="application/pdf")
+            await db.logiscop_transport_orders.update_one({"id": ot_id}, {"$set": {"ged_doc_id": doc.get("id")}})
+        inv = await db.logiscop_transport_invoices.find_one({"ot_id": ot_id}, {"_id": 0})
+        if inv and not inv.get("ged_doc_id"):
+            doc = await gedess_upload_file(
+                f"{inv['ref']}.pdf", build_transport_invoice_pdf(inv, ot, conv), categorie="facture",
+                description=f"Facture transport {inv['ref']} — OT {ot['ref']} — {inv.get('company_name')}",
+                tags="logiscop,transport,facture", mime_type="application/pdf")
+            await db.logiscop_transport_invoices.update_one({"id": inv["id"]}, {"$set": {"ged_doc_id": doc.get("id")}})
+        logger.info("Archivage GEDESS OT %s + facture terminé", ot["ref"])
+    except Exception as exc:
+        logger.warning("Archivage GEDESS OT %s échoué : %s", ot_id, exc)
+
+
 async def send_pickup_reminders(db) -> int:
     """Rappel J-1 : email au Donneur d'Ordre + à LOGI'SCOP la veille de chaque enlèvement (idempotent par OT)."""
     tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")

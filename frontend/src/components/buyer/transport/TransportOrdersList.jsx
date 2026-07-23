@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react';
-import { FileDown, Receipt, PenLine } from 'lucide-react';
+import { FileDown, Receipt, PenLine, Thermometer } from 'lucide-react';
 import { downloadTransportPdf } from './LogiscopSubscribeCard';
 import { TransportEpodForm } from './TransportEpodForm';
 
@@ -11,6 +11,19 @@ const STATUS = {
   LIVRE_AVEC_RESERVES: ['Livré avec réserves', '#FBBF24'],
   PARTIEL: ['Livraison partielle', '#F0ABFC'],
   REFUSE_LIVRAISON: ['Refusé à livraison', '#F87171'],
+};
+
+const ExecBadge = ({ execution }) => {
+  if (!execution) return null;
+  return execution.status === 'LIVREE' ? (
+    <span className="block font-normal text-emerald-300/80">
+      ✓ Livré par {execution.operator_name} — clôturez l'ePOD
+    </span>
+  ) : (
+    <span className="block font-normal text-[#93C5FD]/80">
+      En acheminement — {execution.operator_name}
+    </span>
+  );
 };
 
 export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) => {
@@ -45,6 +58,7 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
                   </td>
                   <td className="py-1.5 pr-3">{o.pickup?.zone_code} → {o.delivery?.zone_code}</td>
                   <td className="py-1.5 pr-3 font-bold" style={{ color }}>{label}
+                    {o.status === 'ACCEPTE' && <ExecBadge execution={o.execution} />}
                     {o.status === 'REFUSE' && o.refusal_reason && (
                       <span className="block font-normal text-white/40">{o.refusal_reason.slice(0, 50)}</span>
                     )}
@@ -55,11 +69,16 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
                   <td className="py-1.5 pr-3">{o.price_ht_cents ? `${(o.price_ht_cents / 100).toFixed(2)} €` : '—'}</td>
                   <td className="py-1.5 pr-3">
                     {inv ? (
-                      <button type="button" data-testid={`invoice-pdf-${inv.ref}`}
-                        onClick={() => downloadTransportPdf(`/logiscop-transport/invoices/${inv.id}/pdf`, `${inv.ref}.pdf`)}
-                        className="inline-flex items-center gap-1 text-[#93C5FD] hover:text-[#E9CF8E]">
-                        <Receipt size={12} /> {inv.ref}
-                      </button>
+                      <span>
+                        <button type="button" data-testid={`invoice-pdf-${inv.ref}`}
+                          onClick={() => downloadTransportPdf(`/logiscop-transport/invoices/${inv.id}/pdf`, `${inv.ref}.pdf`)}
+                          className="inline-flex items-center gap-1 text-[#93C5FD] hover:text-[#E9CF8E]">
+                          <Receipt size={12} /> {inv.ref}
+                        </button>
+                        <span className={`block text-[10px] font-bold ${inv.status === 'PAID' ? 'text-emerald-400' : 'text-white/40'}`}>
+                          {inv.status === 'PAID' ? '✓ Payée' : 'En attente de règlement'}
+                        </span>
+                      </span>
                     ) : '—'}
                   </td>
                   <td className="py-1.5">
@@ -68,6 +87,13 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
                         onClick={() => downloadTransportPdf(`/logiscop-transport/orders/${o.id}/pdf`,
                           `ot-logiscop-${o.ref.replace(/\//g, '-')}.pdf`)}
                         className="text-white/50 hover:text-[#E9CF8E]"><FileDown size={14} /></button>
+                      {o.epod?.temperature_file && (
+                        <button type="button" data-testid={`temp-file-${o.ref.replace(/\//g, '-')}`}
+                          title={`Relevé de température : ${o.epod.temperature_file.name}`}
+                          onClick={() => downloadTransportPdf(`/logiscop-transport/orders/${o.id}/temperature-file`,
+                            o.epod.temperature_file.name)}
+                          className="text-[#93C5FD] hover:text-[#E9CF8E]"><Thermometer size={14} /></button>
+                      )}
                       {o.status === 'ACCEPTE' && (
                         <button type="button" data-testid={`epod-open-${o.ref.replace(/\//g, '-')}`}
                           onClick={() => setEpodFor(epodFor === o.id ? null : o.id)}

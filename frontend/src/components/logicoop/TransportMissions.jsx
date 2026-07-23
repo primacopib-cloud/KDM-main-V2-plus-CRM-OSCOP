@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Truck } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Truck, PackageCheck } from 'lucide-react';
+import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const eur = (c) => `${((c || 0) / 100).toFixed(2).replace('.', ',')} €`;
@@ -14,11 +15,27 @@ const STATUS = {
 export const TransportMissions = () => {
   const [items, setItems] = useState(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetch(`${API}/logicoop/transport-missions`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : { items: [] }))
       .then((d) => setItems(d.items || [])).catch(() => setItems([]));
   }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const setStatus = async (m, status) => {
+    try {
+      const r = await fetch(`${API}/logicoop/transport-missions/${m.ot_id}/status`, {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Erreur');
+      toast.success(status === 'PRISE_EN_CHARGE'
+        ? `OT ${m.ref} pris en charge — l'acheteur est informé`
+        : `OT ${m.ref} livré — l'acheteur peut clôturer l'ePOD`);
+      load();
+    } catch (e) { toast.error(e.message); }
+  };
 
   if (!items) return null;
 
@@ -33,6 +50,7 @@ export const TransportMissions = () => {
       <div className="space-y-1.5">
         {items.map((m) => {
           const [label, cls] = STATUS[m.status] || [m.status, 'bg-white/10 text-white/60'];
+          const exec = m.execution?.status;
           return (
             <div key={m.ot_id} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs"
               data-testid={`transport-mission-${m.ot_id}`}>
@@ -46,6 +64,26 @@ export const TransportMissions = () => {
                 <span className="text-white/50 flex-1 min-w-[120px]">{m.company_name}</span>
                 <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold ${cls}`}>{label}</span>
                 {m.price_ht_cents ? <span className="font-bold text-[#E9CF8E]">{eur(m.price_ht_cents)} HT</span> : null}
+                {m.status === 'ACCEPTE' && (
+                  exec === 'LIVREE' ? (
+                    <span className="px-2 py-0.5 rounded-lg text-[9px] font-bold bg-emerald-500/15 text-emerald-400"
+                      data-testid={`mission-exec-${m.ot_id}`}>✓ LIVRÉ — ePOD acheteur en attente</span>
+                  ) : exec === 'PRISE_EN_CHARGE' ? (
+                    <>
+                      <span className="px-2 py-0.5 rounded-lg text-[9px] font-bold bg-[#60A5FA]/20 text-[#60A5FA]"
+                        data-testid={`mission-exec-${m.ot_id}`}>EN ACHEMINEMENT</span>
+                      <button type="button" onClick={() => setStatus(m, 'LIVREE')} data-testid={`mission-ot-deliver-${m.ot_id}`}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 hover:bg-emerald-500/25">
+                        <PackageCheck size={11} /> Marquer livré
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" onClick={() => setStatus(m, 'PRISE_EN_CHARGE')} data-testid={`mission-ot-take-${m.ot_id}`}
+                      className="px-2 py-1 rounded-lg text-[10px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>
+                      Prendre en charge
+                    </button>
+                  )
+                )}
               </div>
               <p className="mt-1 text-white/50">
                 <b className="text-white/70">Enlèvement :</b> {m.pickup?.address} ({m.pickup?.zone_code})
