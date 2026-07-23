@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import { FileDown, Receipt, PenLine, Thermometer } from 'lucide-react';
 import { downloadTransportPdf } from './LogiscopSubscribeCard';
 import { TransportEpodForm } from './TransportEpodForm';
+import { TransportRating } from './TransportRating';
 
 const STATUS = {
   PROPOSE: ['Proposé — en attente LOGI\'SCOP', '#FBBF24'],
@@ -65,6 +66,11 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
                     {o.epod?.reserves && (
                       <span className="block font-normal text-white/40">Réserves : {o.epod.reserves.slice(0, 45)}</span>
                     )}
+                    {o.epod?.temperature_incident && (
+                      <span className="block font-bold text-red-300" data-testid={`temp-incident-${o.ref.replace(/\//g, '-')}`}>
+                        ⚠ Incident température ({o.epod.temperature_incident.violations_count} hors consigne)
+                      </span>
+                    )}
                   </td>
                   <td className="py-1.5 pr-3">{o.price_ht_cents ? `${(o.price_ht_cents / 100).toFixed(2)} €` : '—'}</td>
                   <td className="py-1.5 pr-3">
@@ -93,6 +99,9 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
                           onClick={() => downloadTransportPdf(`/logiscop-transport/orders/${o.id}/temperature-file`,
                             o.epod.temperature_file.name)}
                           className="text-[#93C5FD] hover:text-[#E9CF8E]"><Thermometer size={14} /></button>
+                      )}
+                      {['LIVRE_CONFORME', 'LIVRE_AVEC_RESERVES', 'PARTIEL', 'REFUSE_LIVRAISON'].includes(o.status) && (
+                        <TransportRating ot={o} onChanged={onChanged} />
                       )}
                       {o.status === 'ACCEPTE' && (
                         <button type="button" data-testid={`epod-open-${o.ref.replace(/\//g, '-')}`}

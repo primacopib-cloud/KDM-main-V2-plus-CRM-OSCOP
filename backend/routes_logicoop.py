@@ -228,9 +228,17 @@ async def my_transport_missions(user_id: str = Depends(get_current_user_id)):
             "price_ht_cents": ot.get("price_ht_cents"),
             "execution": ot.get("execution"),
             "epod_outcome": (ot.get("epod") or {}).get("outcome"),
+            "rating": (ot.get("rating") or {}).get("stars"),
             "created_at": str(ot.get("created_at", ""))[:16],
         })
-    return {"items": items}
+    rate_doc = await db.logiscop_settings.find_one({"key": "operator_share_rate"}, {"_id": 0})
+    rate = float(rate_doc["value"]) if rate_doc else 80.0
+    earned_ht = 0
+    async for ot in db.logiscop_transport_orders.find(
+            {"execution.operator_id": op["id"], "execution.status": "LIVREE"}, {"_id": 0, "price_ht_cents": 1}):
+        earned_ht += ot.get("price_ht_cents") or 0
+    return {"items": items, "earnings": {"rate_percent": rate, "base_ht_cents": earned_ht,
+                                         "share_cents": round(earned_ht * rate / 100)}}
 
 
 class MissionStatusBody(BaseModel):

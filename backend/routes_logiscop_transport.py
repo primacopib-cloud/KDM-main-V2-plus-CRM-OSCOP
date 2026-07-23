@@ -286,12 +286,19 @@ async def close_order_epod(ot_id: str, body: EpodBody, background_tasks: Backgro
     epod = {"outcome": body.outcome, "reserves": body.reserves.strip() or None,
             "name": body.name, "quality": body.quality, "at": now_iso}
     if body.temperature_file_b64 and body.temperature_file_name:
+        import base64
+        raw = base64.b64decode(body.temperature_file_b64)
         file_id = str(uuid.uuid4())
         await db.logiscop_temperature_files.insert_one({
             "id": file_id, "ot_id": ot_id, "name": body.temperature_file_name,
             "mime": body.temperature_file_mime or "application/octet-stream",
             "content_b64": body.temperature_file_b64, "uploaded_at": now_iso})
         epod["temperature_file"] = {"id": file_id, "name": body.temperature_file_name}
+        from logiscop_temperature import process_temperature_analysis
+        analysis = await process_temperature_analysis(db, ot, raw, body.temperature_file_name)
+        if analysis:
+            epod["temperature_incident"] = analysis if analysis.get("incident") else None
+            epod["temperature_analysis"] = analysis
     await db.logiscop_transport_orders.update_one(
         {"id": ot_id}, {"$set": {"status": body.outcome, "epod": epod}})
     background_tasks.add_task(archive_ot_documents_to_ged, db, ot_id)
@@ -314,6 +321,33 @@ async def download_temperature_file(ot_id: str, current_user: dict = Depends(get
     import base64
     return Response(content=base64.b64decode(f["content_b64"]), media_type=f["mime"],
                     headers={"Content-Disposition": f"attachment; filename={f['name']}"})
+
+
+class RatingBody(BaseModel):
+    stars: int = Field(ge=1, le=5)
+    comment: str = Field(default="", max_length=600)
+
+
+@logiscop_transport_router.post("/orders/{ot_id}/rating")
+async def rate_delivery(ot_id: str, body: RatingBody, current_user: dict = Depends(get_current_user)):
+    """L'acheteur note la qualité de la livraison (modifiable), rattachée à l'opérateur exécutant."""
+    db = get_database()
+    ot = await _get_ot(db, ot_id, current_user)
+    if ot["status"] not in ("LIVRE_CONFORME", "LIVRE_AVEC_RESERVES", "PARTIEL", "REFUSE_LIVRAISON"):
+        raise HTTPException(status_code=409, detail="Seule une livraison clôturée peut être notée")
+    rating = {"stars": body.stars, "comment": body.comment.strip() or None,
+              "by": current_user.get("contact_name") or current_user.get("email"),
+              "at": datetime.now(timezone.utc).isoformat()}
+    await db.logiscop_transport_orders.update_one({"id": ot_id}, {"$set": {"rating": rating}})
+    op_name = (ot.get("execution") or {}).get("operator_name")
+    await create_notification(
+        "logiscop_delivery_rated", "Livraison notée",
+        f"OT {ot['ref']} noté {body.stars}/5 par {ot.get('company_name')}"
+        + (f" (opérateur : {op_name})" if op_name else "")
+        + (f" — « {body.comment.strip()[:100]} »" if body.comment.strip() else "."),
+        target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+        data={"ot_id": ot_id, "ref": ot["ref"], "stars": body.stars})
+    return await db.logiscop_transport_orders.find_one({"id": ot_id}, {"_id": 0})
 
 
 @logiscop_transport_router.get("/invoices")

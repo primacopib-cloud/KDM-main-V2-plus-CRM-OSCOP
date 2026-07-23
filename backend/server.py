@@ -560,6 +560,7 @@ from rcr_fiscal import rcr_fiscal_router
 from rcr_annual_archive import rcr_annual_archive_router
 from rcr_treasury import rcr_treasury_router
 from routes_logiscop_transport import logiscop_transport_router
+from routes_logiscop_analytics import logiscop_analytics_router
 app.include_router(convention_settings_router)
 app.include_router(convention_router)
 app.include_router(attestation_router)
@@ -570,6 +571,7 @@ app.include_router(rcr_fiscal_router)
 app.include_router(rcr_annual_archive_router)
 app.include_router(rcr_treasury_router)
 app.include_router(logiscop_transport_router)
+app.include_router(logiscop_analytics_router)
 from routes_cod import cod_router, cod_admin_router, set_cod_database
 set_cod_database(db)
 app.include_router(cod_router)

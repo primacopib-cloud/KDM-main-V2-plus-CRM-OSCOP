@@ -14,11 +14,13 @@ const STATUS = {
 
 export const TransportMissions = () => {
   const [items, setItems] = useState(null);
+  const [earnings, setEarnings] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${API}/logicoop/transport-missions`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : { items: [] }))
-      .then((d) => setItems(d.items || [])).catch(() => setItems([]));
+      .then((d) => { setItems(d.items || []); setEarnings(d.earnings || null); })
+      .catch(() => setItems([]));
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -47,6 +49,12 @@ export const TransportMissions = () => {
       <p className="text-xs text-white/45 mb-3">
         Ordres de Transport Mode D acceptés par LOGI'SCOP dans vos zones (enlèvement EXW / livraison CIF).
       </p>
+      {earnings && earnings.base_ht_cents > 0 && (
+        <p className="text-xs mb-3 px-3 py-2 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/25 text-emerald-300"
+          data-testid="operator-earnings-line">
+          Rémunération sur vos OT livrés : <b>{eur(earnings.share_cents)}</b> ({earnings.rate_percent} % de {eur(earnings.base_ht_cents)} HT transporté)
+        </p>
+      )}
       <div className="space-y-1.5">
         {items.map((m) => {
           const [label, cls] = STATUS[m.status] || [m.status, 'bg-white/10 text-white/60'];
