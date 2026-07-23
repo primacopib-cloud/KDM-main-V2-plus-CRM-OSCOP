@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { FileText, FileDown, Loader2, QrCode, CheckCircle2, Clock } from 'lucide-react';
+import { FileText, FileDown, Loader2, QrCode, CheckCircle2, Clock, PiggyBank } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
+import { AttestationRcrLedger } from './AttestationRcrLedger';
 
 const dl = async (url, filename) => {
   const r = await fetch(url, { credentials: 'include', headers: getAuthHeaders() });
@@ -17,6 +18,7 @@ export const VendorConventionCard = ({ vendorId }) => {
   const [conv, setConv] = useState(null);
   const [atts, setAtts] = useState([]);
   const [busy, setBusy] = useState('');
+  const [expanded, setExpanded] = useState(null);
 
   useEffect(() => {
     if (!vendorId) return;
@@ -56,26 +58,40 @@ export const VendorConventionCard = ({ vendorId }) => {
           <p className="text-[11px] uppercase tracking-wide text-white/40 mb-1.5">Attestations nominatives ({atts.length})</p>
           <div className="space-y-1.5">
             {atts.map((a) => (
-              <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white/[0.04] text-xs"
-                data-testid={`attestation-row-${a.id}`}>
-                <span className="text-white/85">
-                  <b>{a.ref}</b> — {a.product_name}
-                  <span className="text-white/45"> · plafond RCR {(a.plafond_cible_cents / 100).toFixed(2)} €</span>
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  {a.status === 'signed' ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#7BC94E]"><CheckCircle2 size={10} /> Signée (3 parties)</span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FBBF24]"><Clock size={10} /> Attente contre-signature</span>
-                  )}
-                  <a href={`/verifier-attestation/${a.id}`} target="_blank" rel="noreferrer" title="Page de vérification QR"
-                    className="text-white/50 hover:text-[#E9CF8E]" data-testid={`attestation-verify-link-${a.id}`}>
-                    <QrCode size={13} />
-                  </a>
-                  <button type="button" data-testid={`attestation-pdf-${a.id}`}
-                    onClick={async () => { try { await dl(`${API}/attestations/${a.id}/pdf`, `${a.ref}.pdf`); } catch (e) { toast.error(e.message); } }}
-                    className="text-white/50 hover:text-[#E9CF8E]"><FileDown size={13} /></button>
-                </span>
+              <div key={a.id} className="px-3 py-2 rounded-lg bg-white/[0.04] text-xs" data-testid={`attestation-row-${a.id}`}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-2.5 text-white/85">
+                    {a.status === 'signed' && (
+                      <img src={`${API}/attestations/${a.id}/qr.png`} alt="QR de vérification"
+                        className="w-11 h-11 rounded bg-white p-0.5" data-testid={`attestation-qr-img-${a.id}`} />
+                    )}
+                    <span>
+                      <b>{a.ref}</b> — {a.product_name}
+                      <span className="text-white/45"> · plafond RCR {(a.plafond_cible_cents / 100).toFixed(2)} €</span>
+                    </span>
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    {a.status === 'signed' ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#7BC94E]"><CheckCircle2 size={10} /> Signée (3 parties)</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FBBF24]"><Clock size={10} /> Attente contre-signature</span>
+                    )}
+                    <button type="button" data-testid={`attestation-rcr-toggle-${a.id}`}
+                      onClick={() => setExpanded(expanded === a.id ? null : a.id)}
+                      title="Suivi des fractions RCR"
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold ${expanded === a.id ? 'bg-[#D9B35A]/20 text-[#E9CF8E]' : 'bg-white/[0.06] text-white/60 hover:text-[#E9CF8E]'}`}>
+                      <PiggyBank size={11} /> Suivi RCR
+                    </button>
+                    <a href={`/verifier-attestation/${a.id}`} target="_blank" rel="noreferrer" title="Page de vérification QR"
+                      className="text-white/50 hover:text-[#E9CF8E]" data-testid={`attestation-verify-link-${a.id}`}>
+                      <QrCode size={13} />
+                    </a>
+                    <button type="button" data-testid={`attestation-pdf-${a.id}`}
+                      onClick={async () => { try { await dl(`${API}/attestations/${a.id}/pdf`, `${a.ref}.pdf`); } catch (e) { toast.error(e.message); } }}
+                      className="text-white/50 hover:text-[#E9CF8E]"><FileDown size={13} /></button>
+                  </span>
+                </div>
+                {expanded === a.id && <AttestationRcrLedger attId={a.id} />}
               </div>
             ))}
           </div>

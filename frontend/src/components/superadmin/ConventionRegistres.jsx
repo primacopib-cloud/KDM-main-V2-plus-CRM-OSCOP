@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Scale, Save, Loader2, BookOpen } from 'lucide-react';
+import { Scale, Save, Loader2, BookOpen, FileDown, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
 const FIELDS = [['capital', 'Capital (€)'], ['siege', 'Siège social'], ['rcs', 'RCS'], ['siren', 'SIREN'], ['representant', 'Représentant']];
+
+const download = async (url, filename) => {
+  const r = await fetch(url, { credentials: 'include', headers: getAuthHeaders() });
+  if (!r.ok) throw new Error('Export impossible');
+  const blob = await r.blob();
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = u; a.download = filename; a.click();
+  URL.revokeObjectURL(u);
+};
 
 export const ConventionRegistres = () => {
   const [settings, setSettings] = useState(null);
@@ -77,9 +87,30 @@ export const ConventionRegistres = () => {
 
       {reg && (
         <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <p className="flex items-center gap-2 text-sm font-semibold text-white/85 mb-2">
-            <BookOpen className="w-4 h-4 text-[#7BC94E]" /> Registres — Conventions, Attestations & FOGEDOM-RCR
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <p className="flex items-center gap-2 text-sm font-semibold text-white/85">
+              <BookOpen className="w-4 h-4 text-[#7BC94E]" /> Registres — Conventions, Attestations & FOGEDOM-RCR
+            </p>
+            <span className="inline-flex gap-2">
+              <button type="button" data-testid="rcr-export-csv-btn"
+                onClick={async () => {
+                  try { await download(`${API}/convention/admin/registres/export.csv`, 'registre-fogedom-rcr.csv'); toast.success('Export CSV téléchargé'); }
+                  catch (e) { toast.error(e.message); }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] text-white/75 hover:text-[#E9CF8E] border border-white/15">
+                <FileSpreadsheet size={12} /> Export CSV
+              </button>
+              <button type="button" data-testid="rcr-export-pdf-btn"
+                onClick={async () => {
+                  try { await download(`${API}/convention/admin/registres/export.pdf`, 'registre-fogedom-rcr.pdf'); toast.success('Export PDF téléchargé'); }
+                  catch (e) { toast.error(e.message); }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold"
+                style={{ background: '#D9B35A', color: '#070A10' }}>
+                <FileDown size={12} /> Export PDF (double validation)
+              </button>
+            </span>
+          </div>
           <div className="flex flex-wrap gap-2 text-[10px] font-bold mb-3">
             <span className="px-2 py-1 rounded-full text-white/70 bg-white/[0.06]">{reg.totaux.conventions} convention(s)</span>
             <span className="px-2 py-1 rounded-full text-white/70 bg-white/[0.06]">{reg.totaux.attestations} attestation(s)</span>

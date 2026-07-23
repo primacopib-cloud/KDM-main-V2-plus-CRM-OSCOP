@@ -56,7 +56,11 @@ async def create_attestation_for_product(db, product: dict, vendor: dict) -> dic
     """Créée à la soumission du produit ; le vendeur signe automatiquement (modèle V2.0)."""
     settings = await get_convention_settings(db)
     rate = settings["rcr_default_rate"]
-    montant_cents = int(round(float(product.get("price_ht") or 0) * 100)) * int(product.get("stock_quantity") or 0)
+    price_ht = float(product.get("price_ht") if product.get("price_ht") is not None
+                     else (product.get("price_ht_cents") or 0) / 100)
+    volume = int(product.get("stock_quantity") if product.get("stock_quantity") is not None
+                 else (product.get("stock_qty") or 0))
+    montant_cents = int(round(price_ht * 100)) * volume
     plafond_cents = int(montant_cents * rate / 100)
     cap_cents = int(settings["rcr_global_cap_eur"] * 100)
     seq = await db.attestations_nominatives.count_documents({}) + 1
@@ -77,8 +81,8 @@ async def create_attestation_for_product(db, product: dict, vendor: dict) -> dic
         "product_sku": product.get("sku"),
         "category": product.get("category"),
         "zones": product.get("available_zones") or [],
-        "volume": product.get("stock_quantity"), "unit": product.get("unit_type", "unité"),
-        "price_ht": product.get("price_ht"),
+        "volume": volume, "unit": product.get("unit_type", "unité"),
+        "price_ht": price_ht,
         "montant_agrege_cents": montant_cents,
         "rcr_rate": rate,
         "plafond_cible_cents": min(plafond_cents, cap_cents),
@@ -152,3 +156,63 @@ async def download_attestation_pdf(att_id: str, current_user: dict = Depends(get
     pdf = build_attestation_pdf(att)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename={att['ref']}.pdf"})
+
+
+@attestation_router.get("/{att_id}/qr.png")
+async def attestation_qr(att_id: str, current_user: dict = Depends(get_current_user)):
+    """QR code de vérification de l'attestation (PNG)."""
+    db = get_database()
+    att = await db.attestations_nominatives.find_one({"id": att_id}, {"_id": 0, "id": 1, "vendor_id": 1})
+    if not att:
+        raise HTTPException(status_code=404, detail="Attestation introuvable")
+    if not current_user.get("is_admin") and current_user.get("vendor_id") != att["vendor_id"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    from attestation_pdf import _qr_png
+    base = (os.environ.get("FRONTEND_PUBLIC_URL") or os.environ.get("FRONTEND_URL") or "").rstrip("/")
+    return Response(content=_qr_png(f"{base}/verifier-attestation/{att_id}"), media_type="image/png",
+                    headers={"Cache-Control": "private, max-age=3600"})
+
+
+@attestation_router.get("/{att_id}/rcr-ledger")
+async def attestation_rcr_ledger(att_id: str, current_user: dict = Depends(get_current_user)):
+    """Suivi des fractions RCR constituées facture par facture pour cette attestation."""
+    db = get_database()
+    att = await db.attestations_nominatives.find_one({"id": att_id}, {"_id": 0, "ai_text": 0})
+    if not att:
+        raise HTTPException(status_code=404, detail="Attestation introuvable")
+    if not current_user.get("is_admin") and current_user.get("vendor_id") != att["vendor_id"]:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+    settings = await get_convention_settings(db)
+    rate = float(att.get("rcr_rate") or settings["rcr_default_rate"])
+    plafond = int(att.get("plafond_cible_cents") or 0)
+    fractions, cumul = [], 0
+    cursor = db.orders.find(
+        {"items.product_id": att["product_id"], "status": {"$nin": ["CANCELLED", "REFUSED"]}},
+        {"_id": 0, "id": 1, "order_number": 1, "items": 1, "created_at": 1, "status": 1}).sort("created_at", 1)
+    async for o in cursor:
+        base = sum(i.get("line_total_ht_cents") or 0 for i in o.get("items", [])
+                   if i.get("product_id") == att["product_id"])
+        if base <= 0:
+            continue
+        frac = int(base * rate / 100)
+        applied = min(frac, max(plafond - cumul, 0))
+        cumul += applied
+        fractions.append({"order_id": o.get("id"), "order_ref": o.get("order_number") or o.get("id"),
+                          "date": str(o.get("created_at"))[:10], "status": o.get("status"),
+                          "base_ht_cents": base, "fraction_cents": applied,
+                          "cumul_cents": cumul, "capped": applied < frac})
+    days = int(settings.get("reimbursement_days", 45))
+    remboursement_prevu = None
+    exp_iso = att.get("date_expiration")
+    if exp_iso:
+        try:
+            remboursement_prevu = (datetime.fromisoformat(exp_iso) + timedelta(days=days)).date().isoformat()
+        except ValueError:
+            pass
+    return {"attestation_ref": att["ref"], "product_name": att.get("product_name"),
+            "rcr_rate": rate, "plafond_cible_cents": plafond,
+            "solde_cents": cumul, "restant_cents": max(plafond - cumul, 0),
+            "plafond_atteint": cumul >= plafond and plafond > 0,
+            "fractions": fractions, "invoices_count": len(fractions),
+            "reimbursement_days": days,
+            "date_expiration": exp_iso, "remboursement_prevu": remboursement_prevu}

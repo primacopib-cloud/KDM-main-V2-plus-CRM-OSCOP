@@ -65,11 +65,8 @@ async def save_convention_settings(body: dict, current_user: dict = Depends(get_
     return {"ok": True, "settings": current}
 
 
-@convention_settings_router.get("/admin/registres")
-async def registres_convention(current_user: dict = Depends(get_current_user)):
+async def build_rcr_registry(db) -> dict:
     """Registres : conventions cadres, attestations nominatives, registre analytique FOGEDOM-RCR."""
-    await check_admin(current_user)
-    db = get_database()
     settings = await get_convention_settings(db)
     conventions = await db.conventions_cadres.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
     attestations = await db.attestations_nominatives.find(
@@ -100,3 +97,9 @@ async def registres_convention(current_user: dict = Depends(get_current_user)):
                        "plafond_cible_total_cents": sum(v["plafond_cible_cents"] for v in registre_rcr),
                        "retenues_effectives_cents": retained_total,
                        "rcr_global_cap_eur": settings["rcr_global_cap_eur"]}}
+
+
+@convention_settings_router.get("/admin/registres")
+async def registres_convention(current_user: dict = Depends(get_current_user)):
+    await check_admin(current_user)
+    return await build_rcr_registry(get_database())
