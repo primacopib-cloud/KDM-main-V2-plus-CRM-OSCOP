@@ -187,6 +187,14 @@ async def archive_ot_documents_to_ged(db, ot_id: str) -> None:
                 description=f"Facture transport {inv['ref']} — OT {ot['ref']} — {inv.get('company_name')}",
                 tags="logiscop,transport,facture", mime_type="application/pdf")
             await db.logiscop_transport_invoices.update_one({"id": inv["id"]}, {"$set": {"ged_doc_id": doc.get("id")}})
+        import base64 as _b64
+        async for m in db.logiscop_cargo_media.find({"ot_id": ot_id, "ged_doc_id": None}):
+            doc = await gedess_upload_file(
+                f"{slug}-{m['stage'].lower()}-{m['name']}", _b64.b64decode(m["content_b64"]),
+                categorie="convention",
+                description=f"Média cargaison OT {ot['ref']} — {m['stage'].replace('_', ' ').lower()} ({m.get('operator_name')})",
+                tags="logiscop,transport,cargo-media", mime_type=m["mime"])
+            await db.logiscop_cargo_media.update_one({"id": m["id"]}, {"$set": {"ged_doc_id": doc.get("id")}})
         logger.info("Archivage GEDESS OT %s + facture terminé", ot["ref"])
     except Exception as exc:
         logger.warning("Archivage GEDESS OT %s échoué : %s", ot_id, exc)

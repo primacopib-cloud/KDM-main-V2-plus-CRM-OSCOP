@@ -102,6 +102,47 @@ async def operator_earnings(current_user: dict = Depends(get_current_user)):
             "total_share_cents": sum(o["share_cents"] for o in operators)}
 
 
+@logiscop_analytics_router.get("/admin/quality-history")
+async def quality_history(current_user: dict = Depends(get_current_user)):
+    """Évolution mensuelle : ponctualité, notes et réserves — global et par opérateur."""
+    await check_admin(current_user)
+    db = get_database()
+    months = {}
+    async for ot in db.logiscop_transport_orders.find({"status": {"$in": CLOSED_STATUSES}}, {"_id": 0}):
+        month = ((ot.get("epod") or {}).get("at") or ot.get("created_at", ""))[:7]
+        if not month:
+            continue
+        rec = months.setdefault(month, {"month": month, "delivered": 0, "on_time": 0, "on_time_base": 0,
+                                        "with_reserves": 0, "stars_sum": 0, "stars_count": 0, "operators": {}})
+        due = (ot.get("delivery") or {}).get("date")
+        done = ((ot.get("execution") or {}).get("delivered_at") or (ot.get("epod") or {}).get("at") or "")[:10]
+        stars = (ot.get("rating") or {}).get("stars")
+        op_name = (ot.get("execution") or {}).get("operator_name") or "Sans opérateur"
+        for target in (rec, rec["operators"].setdefault(
+                op_name, {"delivered": 0, "on_time": 0, "on_time_base": 0,
+                          "with_reserves": 0, "stars_sum": 0, "stars_count": 0})):
+            target["delivered"] += 1
+            if (ot.get("epod") or {}).get("reserves"):
+                target["with_reserves"] += 1
+            if due and done:
+                target["on_time_base"] += 1
+                if done <= due:
+                    target["on_time"] += 1
+            if stars:
+                target["stars_sum"] += stars
+                target["stars_count"] += 1
+
+    def _fmt(t):
+        return {"delivered": t["delivered"],
+                "on_time_rate": round(100 * t["on_time"] / t["on_time_base"], 1) if t["on_time_base"] else None,
+                "reserves_rate": round(100 * t["with_reserves"] / t["delivered"], 1) if t["delivered"] else None,
+                "avg_rating": round(t["stars_sum"] / t["stars_count"], 2) if t["stars_count"] else None}
+
+    return {"months": [{"month": m, **_fmt(rec),
+                        "operators": [{"operator_name": k, **_fmt(v)} for k, v in sorted(rec["operators"].items())]}
+                       for m, rec in sorted(months.items())]}
+
+
 @logiscop_analytics_router.post("/admin/operator-share-rate")
 async def set_operator_share_rate(body: ShareRateBody, current_user: dict = Depends(get_current_user)):
     await check_admin(current_user)

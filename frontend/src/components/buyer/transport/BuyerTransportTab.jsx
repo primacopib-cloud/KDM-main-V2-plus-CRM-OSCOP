@@ -1,15 +1,19 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TabsContent } from '../../ui/tabs';
 import { CheckCircle2, FileDown } from 'lucide-react';
+import { toast } from 'sonner';
 import { API, getAuthHeaders, getSessionToken } from '../../../services/http';
 import { LogiscopSubscribeCard, downloadTransportPdf } from './LogiscopSubscribeCard';
 import { TransportOrderForm } from './TransportOrderForm';
 import { TransportOrdersList } from './TransportOrdersList';
+import { BuyerDisputesCard } from './BuyerDisputesCard';
 
 export const BuyerTransportTab = () => {
   const [sub, setSub] = useState(null);
   const [orders, setOrders] = useState([]);
   const [invoicesByOt, setInvoicesByOt] = useState({});
+  const [disputes, setDisputes] = useState([]);
+  const polled = useRef(false);
 
   const authHeaders = () => ({ Authorization: `Bearer ${getSessionToken()}`, ...getAuthHeaders() });
 
@@ -25,11 +29,42 @@ export const BuyerTransportTab = () => {
         (Array.isArray(list) ? list : []).forEach((i) => { map[i.ot_id] = i; });
         setInvoicesByOt(map);
       }).catch(() => {});
+    fetch(`${API}/logiscop-transport/disputes`, { credentials: 'include', headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : [])).then((d) => setDisputes(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (polled.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('invoice_payment') !== 'success' || !params.get('session_id')) return;
+    polled.current = true;
+    const sessionId = params.get('session_id');
+    window.history.replaceState({}, '', window.location.pathname);
+    let attempts = 0;
+    const poll = async () => {
+      attempts += 1;
+      try {
+        const r = await fetch(`${API}/logiscop-transport/invoices/pay/status/${sessionId}`, {
+          credentials: 'include', headers: authHeaders(),
+        });
+        const d = await r.json();
+        if (d.payment_status === 'paid') {
+          toast.success('Paiement confirmé — votre facture transport est réglée. Merci !');
+          load();
+          return;
+        }
+      } catch { /* retry */ }
+      if (attempts < 6) setTimeout(poll, 2000);
+      else toast.info('Paiement en cours de confirmation — actualisez dans quelques instants.');
+    };
+    poll();
+  }, [load]);
+
   const conv = sub?.convention;
   const signed = conv?.status === 'SIGNED';
+  const disputesByOt = {};
+  disputes.forEach((d) => { disputesByOt[d.ot_id] = d; });
 
   return (
     <TabsContent value="transport" className="space-y-4" data-testid="buyer-transport-tab">
@@ -57,7 +92,8 @@ export const BuyerTransportTab = () => {
         </div>
       )}
       {signed && <TransportOrderForm zones={conv.zones || []} onCreated={load} />}
-      <TransportOrdersList orders={orders} invoicesByOt={invoicesByOt} onChanged={load} />
+      <TransportOrdersList orders={orders} invoicesByOt={invoicesByOt} disputesByOt={disputesByOt} onChanged={load} />
+      <BuyerDisputesCard disputes={disputes} onChanged={load} />
     </TabsContent>
   );
 };

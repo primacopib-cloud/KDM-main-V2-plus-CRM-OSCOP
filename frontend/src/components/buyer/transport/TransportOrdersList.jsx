@@ -1,8 +1,11 @@
 import { Fragment, useState } from 'react';
-import { FileDown, Receipt, PenLine, Thermometer } from 'lucide-react';
+import { FileDown, Receipt, PenLine, Thermometer, CreditCard, Camera, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { API, getAuthHeaders, getSessionToken } from '../../../services/http';
 import { downloadTransportPdf } from './LogiscopSubscribeCard';
 import { TransportEpodForm } from './TransportEpodForm';
 import { TransportRating } from './TransportRating';
+import { CargoMediaList } from './CargoMediaList';
 
 const STATUS = {
   PROPOSE: ['Proposé — en attente LOGI\'SCOP', '#FBBF24'],
@@ -13,22 +16,35 @@ const STATUS = {
   PARTIEL: ['Livraison partielle', '#F0ABFC'],
   REFUSE_LIVRAISON: ['Refusé à livraison', '#F87171'],
 };
+const CLOSED = ['LIVRE_CONFORME', 'LIVRE_AVEC_RESERVES', 'PARTIEL', 'REFUSE_LIVRAISON'];
 
 const ExecBadge = ({ execution }) => {
   if (!execution) return null;
   return execution.status === 'LIVREE' ? (
-    <span className="block font-normal text-emerald-300/80">
-      ✓ Livré par {execution.operator_name} — clôturez l'ePOD
-    </span>
+    <span className="block font-normal text-emerald-300/80">✓ Livré par {execution.operator_name} — clôturez l'ePOD</span>
   ) : (
-    <span className="block font-normal text-[#93C5FD]/80">
-      En acheminement — {execution.operator_name}
-    </span>
+    <span className="block font-normal text-[#93C5FD]/80">En acheminement — {execution.operator_name}</span>
   );
 };
 
-export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) => {
+export const TransportOrdersList = ({ orders, invoicesByOt = {}, disputesByOt = {}, onChanged }) => {
   const [epodFor, setEpodFor] = useState(null);
+  const [mediaFor, setMediaFor] = useState(null);
+  const [paying, setPaying] = useState(null);
+
+  const pay = async (inv) => {
+    setPaying(inv.id);
+    try {
+      const r = await fetch(`${API}/logiscop-transport/invoices/${inv.id}/pay`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSessionToken()}`, ...getAuthHeaders() },
+        body: JSON.stringify({ origin_url: window.location.origin }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Paiement indisponible');
+      window.location.href = d.checkout_url;
+    } catch (e) { toast.error(e.message); setPaying(null); }
+  };
 
   if (!orders.length) {
     return (
@@ -49,6 +65,7 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
           {orders.map((o) => {
             const [label, color] = STATUS[o.status] || [o.status, '#999'];
             const inv = invoicesByOt[o.id];
+            const dispute = disputesByOt[o.id];
             return (
               <Fragment key={o.id}>
                 <tr className="border-b border-white/[0.04] text-white/75" data-testid={`transport-order-${o.ref.replace(/\//g, '-')}`}>
@@ -68,7 +85,7 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
                     )}
                     {o.epod?.temperature_incident && (
                       <span className="block font-bold text-red-300" data-testid={`temp-incident-${o.ref.replace(/\//g, '-')}`}>
-                        ⚠ Incident température ({o.epod.temperature_incident.violations_count} hors consigne)
+                        ⚠ Incident température{dispute ? ` — litige ${dispute.ref}` : ''}
                       </span>
                     )}
                   </td>
@@ -81,9 +98,16 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
                           className="inline-flex items-center gap-1 text-[#93C5FD] hover:text-[#E9CF8E]">
                           <Receipt size={12} /> {inv.ref}
                         </button>
-                        <span className={`block text-[10px] font-bold ${inv.status === 'PAID' ? 'text-emerald-400' : 'text-white/40'}`}>
-                          {inv.status === 'PAID' ? '✓ Payée' : 'En attente de règlement'}
-                        </span>
+                        {inv.status === 'PAID' ? (
+                          <span className="block text-[10px] font-bold text-emerald-400">✓ Payée</span>
+                        ) : (
+                          <button type="button" data-testid={`invoice-pay-${inv.ref}`} disabled={paying === inv.id}
+                            onClick={() => pay(inv)}
+                            className="mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-[#635BFF]/25 text-[#B3AFFF] hover:bg-[#635BFF]/40 disabled:opacity-50">
+                            {paying === inv.id ? <Loader2 size={10} className="animate-spin" /> : <CreditCard size={10} />}
+                            Payer {(inv.total_ttc_cents / 100).toFixed(2)} €
+                          </button>
+                        )}
                       </span>
                     ) : '—'}
                   </td>
@@ -93,6 +117,12 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
                         onClick={() => downloadTransportPdf(`/logiscop-transport/orders/${o.id}/pdf`,
                           `ot-logiscop-${o.ref.replace(/\//g, '-')}.pdf`)}
                         className="text-white/50 hover:text-[#E9CF8E]"><FileDown size={14} /></button>
+                      {['ACCEPTE', ...CLOSED].includes(o.status) && (
+                        <button type="button" data-testid={`media-open-${o.ref.replace(/\//g, '-')}`}
+                          title="Photos / vidéos de la cargaison"
+                          onClick={() => setMediaFor(mediaFor === o.id ? null : o.id)}
+                          className="text-white/50 hover:text-[#93C5FD]"><Camera size={14} /></button>
+                      )}
                       {o.epod?.temperature_file && (
                         <button type="button" data-testid={`temp-file-${o.ref.replace(/\//g, '-')}`}
                           title={`Relevé de température : ${o.epod.temperature_file.name}`}
@@ -100,9 +130,7 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
                             o.epod.temperature_file.name)}
                           className="text-[#93C5FD] hover:text-[#E9CF8E]"><Thermometer size={14} /></button>
                       )}
-                      {['LIVRE_CONFORME', 'LIVRE_AVEC_RESERVES', 'PARTIEL', 'REFUSE_LIVRAISON'].includes(o.status) && (
-                        <TransportRating ot={o} onChanged={onChanged} />
-                      )}
+                      {CLOSED.includes(o.status) && <TransportRating ot={o} onChanged={onChanged} />}
                       {o.status === 'ACCEPTE' && (
                         <button type="button" data-testid={`epod-open-${o.ref.replace(/\//g, '-')}`}
                           onClick={() => setEpodFor(epodFor === o.id ? null : o.id)}
@@ -113,6 +141,9 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, onChanged }) =>
                     </span>
                   </td>
                 </tr>
+                {mediaFor === o.id && (
+                  <tr><td colSpan={6}><CargoMediaList otId={o.id} /></td></tr>
+                )}
                 {epodFor === o.id && (
                   <tr><td colSpan={6}>
                     <TransportEpodForm ot={o} onCancel={() => setEpodFor(null)}

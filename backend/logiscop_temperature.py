@@ -49,12 +49,31 @@ async def process_temperature_analysis(db, ot: dict, raw: bytes, file_name: str)
     if analysis["violations_count"] == 0:
         return {**analysis, "incident": False}
     incident = {**analysis, "incident": True}
+    import uuid as _uuid
+    year = ot.get("created_at", "")[:4] or "2026"
+    n = await db.logiscop_disputes.count_documents({"ref": {"$regex": f"^LIT-{year}-"}}) + 1
+    from datetime import datetime, timezone
+    now_iso = datetime.now(timezone.utc).isoformat()
+    dispute = {
+        "id": str(_uuid.uuid4()), "ref": f"LIT-{year}-{n:04d}",
+        "ot_id": ot["id"], "ot_ref": ot["ref"], "org_id": ot["org_id"], "user_id": ot["user_id"],
+        "company_name": ot.get("company_name"), "type": "TEMPERATURE_EXCURSION",
+        "status": "OPEN", "responsibility": "INDETERMINEE", "resolution_note": None,
+        "incident": {k: analysis[k] for k in ("violations_count", "min", "max", "consigne", "tolerance", "readings_count")},
+        "pieces": [], "resolved_at": None,
+        "timeline": [{"at": now_iso, "by": "SYSTÈME",
+                      "action": f"Ouverture automatique — incident température article 12 "
+                                f"({analysis['violations_count']} lecture(s) hors consigne, {file_name})"}],
+        "created_at": now_iso,
+    }
+    await db.logiscop_disputes.insert_one({**dispute})
+    incident["dispute_ref"] = dispute["ref"]
     from core_deps import create_notification
     await create_notification(
         "logiscop_temperature_incident", "INCIDENT CRITIQUE — rupture de température",
         f"OT {ot['ref']} : {analysis['violations_count']} lecture(s) hors consigne "
         f"{consigne:+.1f} °C ±{abs(tolerance):.1f} (min {analysis['min']:.1f} / max {analysis['max']:.1f} °C). "
-        "Article 12 de la Convention — traçabilité conservée.",
+        f"Dossier de litige {dispute['ref']} ouvert automatiquement (article 12).",
         target_roles=["oscop_super_admin", "kdm_b2b_admin"],
         data={"ot_id": ot["id"], "ref": ot["ref"], "violations": analysis["violations_count"]})
     admin_email = os.environ.get("ADMIN_ALERT_EMAIL")

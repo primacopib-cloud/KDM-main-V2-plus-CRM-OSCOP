@@ -3,6 +3,8 @@ import { Truck, FileDown, Check, X, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { LogiscopTransportKpis } from './LogiscopTransportKpis';
+import { LogiscopDisputesPanel } from './LogiscopDisputesPanel';
+import { LogiscopQualityHistory } from './LogiscopQualityHistory';
 
 const CONV_STATUS = { PENDING_SIGNATURE: ['En attente signature', '#FBBF24'], SIGNED: ['Signée', '#7BC94E'] };
 const OT_STATUS = {
@@ -69,6 +71,10 @@ export const LogiscopTransportAdminPanel = () => {
       </p>
 
       <LogiscopTransportKpis />
+
+      <LogiscopDisputesPanel />
+
+      <LogiscopQualityHistory />
 
       <p className="text-[11px] font-bold text-white/60 mb-1">Conventions cadres ({data.conventions.length})</p>
       <table className="w-full text-[11px] mb-4">

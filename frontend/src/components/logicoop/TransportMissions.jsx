@@ -1,9 +1,52 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Truck, PackageCheck } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Truck, PackageCheck, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const eur = (c) => `${((c || 0) / 100).toFixed(2).replace('.', ',')} €`;
+
+const MediaUpload = ({ m, onDone }) => {
+  const fileRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const stage = m.execution?.status === 'LIVREE' || m.status !== 'ACCEPTE' ? 'LIVRAISON'
+    : m.execution?.status === 'PRISE_EN_CHARGE' ? 'TRANSIT' : 'PRISE_EN_CHARGE';
+
+  const pick = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 9 * 1024 * 1024) { toast.error('Fichier trop volumineux (9 Mo max)'); return; }
+    setBusy(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const r = await fetch(`${API}/logicoop/transport-missions/${m.ot_id}/media`, {
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stage, name: f.name, mime: f.type || 'application/octet-stream',
+            content_b64: String(reader.result).split(',')[1] }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.detail || 'Envoi impossible');
+        toast.success(`« ${f.name} » transmis (${stage.replace('_', ' ').toLowerCase()}) — archivage avec le bon de livraison`);
+        onDone();
+      } catch (err) { toast.error(err.message); }
+      setBusy(false);
+    };
+    reader.readAsDataURL(f);
+    e.target.value = '';
+  };
+
+  return (
+    <>
+      <input ref={fileRef} type="file" className="hidden" accept="image/*,video/*" onChange={pick}
+        data-testid={`media-input-${m.ot_id}`} />
+      <button type="button" disabled={busy} onClick={() => fileRef.current?.click()}
+        data-testid={`media-upload-${m.ot_id}`} title={`Photo/vidéo cargaison — étape : ${stage}`}
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-[#60A5FA]/15 border border-[#60A5FA]/35 text-[#93C5FD] hover:bg-[#60A5FA]/25 disabled:opacity-50">
+        {busy ? <Loader2 size={11} className="animate-spin" /> : <Camera size={11} />} Photo/vidéo
+      </button>
+    </>
+  );
+};
 
 const STATUS = {
   ACCEPTE: ['À EXÉCUTER', 'bg-[#D9B35A]/20 text-[#E9CF8E]'],
@@ -72,6 +115,7 @@ export const TransportMissions = () => {
                 <span className="text-white/50 flex-1 min-w-[120px]">{m.company_name}</span>
                 <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold ${cls}`}>{label}</span>
                 {m.price_ht_cents ? <span className="font-bold text-[#E9CF8E]">{eur(m.price_ht_cents)} HT</span> : null}
+                {m.status === 'ACCEPTE' && <MediaUpload m={m} onDone={load} />}
                 {m.status === 'ACCEPTE' && (
                   exec === 'LIVREE' ? (
                     <span className="px-2 py-0.5 rounded-lg text-[9px] font-bold bg-emerald-500/15 text-emerald-400"
