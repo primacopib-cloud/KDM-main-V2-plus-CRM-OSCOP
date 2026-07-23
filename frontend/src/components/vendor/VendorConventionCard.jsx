@@ -63,6 +63,18 @@ export const VendorConventionCard = ({ vendorId }) => {
             <p className="text-[11px] text-white/50">{conv.ref} · Taux RCR {conv.rcr_rate}% · Plafond global {conv.rcr_global_cap_eur?.toLocaleString('fr-FR')} €</p>
           </div>
         </div>
+        <span className="inline-flex gap-2">
+          <button type="button" data-testid="vendor-annual-statement-btn" disabled={busy === 'annual'}
+            onClick={async () => {
+              setBusy('annual');
+              const y = new Date().getFullYear();
+              try { await dl(`${API}/convention/rcr-annual/${vendorId}/${y}/pdf`, `releve-annuel-rcr-${y}.pdf`); toast.success(`Relevé annuel ${y} téléchargé`); }
+              catch (e) { toast.error(e.message); }
+              setBusy('');
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] text-white/75 hover:text-[#E9CF8E] border border-white/15 disabled:opacity-50">
+            {busy === 'annual' ? <Loader2 size={12} className="animate-spin" /> : <FileDown size={12} />} Relevé annuel {new Date().getFullYear()}
+          </button>
         <button type="button" data-testid="convention-download-btn" disabled={busy === 'conv'}
           onClick={async () => {
             setBusy('conv');
@@ -74,6 +86,7 @@ export const VendorConventionCard = ({ vendorId }) => {
           style={{ background: '#D9B35A', color: '#070A10' }}>
           {busy === 'conv' ? <Loader2 size={12} className="animate-spin" /> : <FileDown size={12} />} Télécharger (PDF)
         </button>
+        </span>
       </div>
       {atts.length > 0 && (
         <div>

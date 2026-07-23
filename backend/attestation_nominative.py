@@ -181,7 +181,8 @@ async def compute_rcr_ledger(db, att: dict) -> dict:
     plafond = int(att.get("plafond_cible_cents") or 0)
     fractions, cumul = [], 0
     cursor = db.orders.find(
-        {"items.product_id": att["product_id"], "status": {"$nin": ["CANCELLED", "REFUSED"]}},
+        {"items.product_id": att["product_id"],
+         "status": {"$nin": ["DRAFT", "CANCELED", "CANCELLED", "REFUSED", "REFUNDED"]}},
         {"_id": 0, "id": 1, "order_number": 1, "items": 1, "created_at": 1, "status": 1}).sort("created_at", 1)
     async for o in cursor:
         base = sum(i.get("line_total_ht_cents") or 0 for i in o.get("items", [])

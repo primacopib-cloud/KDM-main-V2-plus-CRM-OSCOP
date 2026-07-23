@@ -6,6 +6,7 @@ import { RcrReimbursements } from './RcrReimbursements';
 import { AttestationQueue } from './AttestationQueue';
 import { RcrStatements } from './RcrStatements';
 import { AttestationGedLinks } from './AttestationGedLinks';
+import { RcrFiscalPanel } from './RcrFiscalPanel';
 
 const FIELDS = [['capital', 'Capital (€)'], ['siege', 'Siège social'], ['rcs', 'RCS'], ['siren', 'SIREN'], ['representant', 'Représentant']];
 
@@ -142,7 +143,7 @@ export const ConventionRegistres = () => {
               <thead><tr className="text-left text-white/40 border-b border-white/[0.08]">
                 <th className="py-1.5 pr-3">Fournisseur</th><th className="py-1.5 pr-3">Attestations</th>
                 <th className="py-1.5 pr-3">Montant agrégé</th><th className="py-1.5 pr-3">Plafond-cible RCR</th>
-                <th className="py-1.5">Cap</th></tr></thead>
+                <th className="py-1.5 pr-3">Cap</th><th className="py-1.5">Relevé annuel</th></tr></thead>
               <tbody>
                 {reg.registre_rcr.map((v) => (
                   <tr key={v.vendor_id} className="border-b border-white/[0.04] text-white/75" data-testid={`rcr-row-${v.vendor_id}`}>
@@ -150,7 +151,24 @@ export const ConventionRegistres = () => {
                     <td className="py-1.5 pr-3">{v.attestations}</td>
                     <td className="py-1.5 pr-3">{(v.montant_agrege_cents / 100).toLocaleString('fr-FR')} €</td>
                     <td className="py-1.5 pr-3 font-bold text-[#E9CF8E]">{(v.plafond_cible_cents / 100).toLocaleString('fr-FR')} €</td>
-                    <td className="py-1.5">{v.cap_reached ? <span className="text-red-400 font-bold">Atteint</span> : <span className="text-[#7BC94E]">OK</span>}</td>
+                    <td className="py-1.5 pr-3">
+                      {v.cap_reached
+                        ? <span className="text-red-400 font-bold" data-testid={`cap-status-${v.vendor_id}`}>Atteint</span>
+                        : (v.plafond_cible_cents / 100) >= (reg.totaux.rcr_global_cap_eur || 50000) * 0.8
+                          ? <span className="text-[#FBBF24] font-bold" data-testid={`cap-status-${v.vendor_id}`}>⚠ ≥ 80 %</span>
+                          : <span className="text-[#7BC94E]" data-testid={`cap-status-${v.vendor_id}`}>OK</span>}
+                    </td>
+                    <td className="py-1.5">
+                      <button type="button" data-testid={`rcr-annual-btn-${v.vendor_id}`}
+                        title={`Relevé annuel fiscal ${new Date().getFullYear()}`}
+                        onClick={async () => {
+                          try { await download(`${API}/convention/rcr-annual/${v.vendor_id}/${new Date().getFullYear()}/pdf`, `releve-annuel-rcr-${new Date().getFullYear()}.pdf`); toast.success('Relevé annuel téléchargé'); }
+                          catch (e) { toast.error(e.message); }
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-white/[0.06] text-white/60 hover:text-[#E9CF8E]">
+                        <FileDown size={10} /> {new Date().getFullYear()}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -161,6 +179,8 @@ export const ConventionRegistres = () => {
       )}
 
       <RcrReimbursements />
+
+      <RcrFiscalPanel />
 
       <RcrStatements />
     </div>

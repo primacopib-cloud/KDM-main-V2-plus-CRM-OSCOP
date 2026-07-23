@@ -556,12 +556,14 @@ from attestation_nominative import attestation_router
 from rcr_export import rcr_export_router
 from attestation_lifecycle import lifecycle_router
 from rcr_reports import rcr_reports_router
+from rcr_fiscal import rcr_fiscal_router
 app.include_router(convention_settings_router)
 app.include_router(convention_router)
 app.include_router(attestation_router)
 app.include_router(rcr_export_router)
 app.include_router(lifecycle_router)
 app.include_router(rcr_reports_router)
+app.include_router(rcr_fiscal_router)
 from routes_cod import cod_router, cod_admin_router, set_cod_database
 set_cod_database(db)
 app.include_router(cod_router)

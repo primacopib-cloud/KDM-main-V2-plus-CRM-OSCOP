@@ -132,6 +132,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler RCR reports crashed: %s", exc)
         try:
+            from rcr_fiscal import sync_rcr_fiscal_register
+            await sync_rcr_fiscal_register(_db)
+        except Exception as exc:
+            logger.exception("Scheduler RCR fiscal sync crashed: %s", exc)
+        try:
             from routes_accounting import snapshot_fiscal_register
             await snapshot_fiscal_register(_db)
         except Exception as exc:
