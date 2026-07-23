@@ -126,6 +126,12 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler attestation renewals crashed: %s", exc)
         try:
+            from rcr_reports import send_monthly_rcr_statements, check_rcr_cap_alerts
+            await send_monthly_rcr_statements(_db)
+            await check_rcr_cap_alerts(_db)
+        except Exception as exc:
+            logger.exception("Scheduler RCR reports crashed: %s", exc)
+        try:
             from routes_accounting import snapshot_fiscal_register
             await snapshot_fiscal_register(_db)
         except Exception as exc:

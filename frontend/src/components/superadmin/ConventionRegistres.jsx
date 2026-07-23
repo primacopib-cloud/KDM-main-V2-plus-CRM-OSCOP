@@ -3,6 +3,8 @@ import { Scale, Save, Loader2, BookOpen, FileDown, FileSpreadsheet } from 'lucid
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { RcrReimbursements } from './RcrReimbursements';
+import { AttestationQueue } from './AttestationQueue';
+import { RcrStatements } from './RcrStatements';
 
 const FIELDS = [['capital', 'Capital (€)'], ['siege', 'Siège social'], ['rcs', 'RCS'], ['siren', 'SIREN'], ['representant', 'Représentant']];
 
@@ -22,10 +24,15 @@ export const ConventionRegistres = () => {
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
 
+  const loadReg = () => {
+    const h = { credentials: 'include', headers: getAuthHeaders() };
+    fetch(`${API}/convention/admin/registres`, h).then((r) => (r.ok ? r.json() : null)).then(setReg).catch(() => {});
+  };
+
   useEffect(() => {
     const h = { credentials: 'include', headers: getAuthHeaders() };
     fetch(`${API}/convention/admin/settings`, h).then((r) => (r.ok ? r.json() : null)).then(setSettings).catch(() => {});
-    fetch(`${API}/convention/admin/registres`, h).then((r) => (r.ok ? r.json() : null)).then(setReg).catch(() => {});
+    loadReg();
   }, []);
 
   const save = async () => {
@@ -86,6 +93,8 @@ export const ConventionRegistres = () => {
         )}
       </div>
 
+      <AttestationQueue onSigned={loadReg} />
+
       {reg && (
         <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -145,6 +154,8 @@ export const ConventionRegistres = () => {
       )}
 
       <RcrReimbursements />
+
+      <RcrStatements />
     </div>
   );
 };

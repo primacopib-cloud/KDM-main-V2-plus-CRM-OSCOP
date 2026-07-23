@@ -148,6 +148,46 @@ async def renew_attestation(att_id: str, current_user: dict = Depends(get_curren
             "message": "Nouvelle attestation générée — en attente de contre-signature O'SCOP / KDMARCHÉ"}
 
 
+# ============== FILE D'ATTENTE & CONTRE-SIGNATURE GROUPÉE ==============
+
+@lifecycle_router.get("/admin/pending")
+async def pending_attestations(current_user: dict = Depends(get_current_user)):
+    """File d'attente des attestations en attente de contre-signature."""
+    await check_admin(current_user)
+    db = get_database()
+    pending = await db.attestations_nominatives.find(
+        {"status": "pending_countersign"}, {"_id": 0, "ai_text": 0}).sort("created_at", 1).to_list(200)
+    return {"pending": pending, "count": len(pending)}
+
+
+@lifecycle_router.post("/admin/countersign-bulk")
+async def countersign_bulk(body: dict, current_user: dict = Depends(get_current_user)):
+    """Contre-signe en un clic une sélection d'attestations (O'SCOP + KDMARCHÉ)."""
+    await check_admin(current_user)
+    db = get_database()
+    ids = list(body.get("ids") or [])[:100]
+    if not ids:
+        raise HTTPException(status_code=400, detail="Aucune attestation sélectionnée")
+    import asyncio
+    now_iso = datetime.now(timezone.utc).isoformat()
+    admin_email = current_user.get("email") or ""
+    signed = []
+    for att_id in ids:
+        att = await db.attestations_nominatives.find_one(
+            {"id": att_id, "status": "pending_countersign"}, {"_id": 0, "id": 1, "ref": 1, "product_id": 1})
+        if not att:
+            continue
+        await db.attestations_nominatives.update_one(
+            {"id": att_id},
+            {"$set": {"status": "signed",
+                      "signatures.oscop": {"name": f"O'SCOP ({admin_email})", "at": now_iso},
+                      "signatures.kdmarche": {"name": "KDMARCHÉ PRO", "at": now_iso}}})
+        asyncio.create_task(send_signed_attestation(db, att["product_id"]))
+        signed.append(att["ref"])
+    logger.info("Contre-signature groupée : %s attestation(s) par %s", len(signed), admin_email)
+    return {"success": True, "count": len(signed), "signed": signed}
+
+
 # ============== REMBOURSEMENTS RCR (CLÔTURE) ==============
 
 def build_reimbursement_receipt_pdf(r: dict) -> bytes:
