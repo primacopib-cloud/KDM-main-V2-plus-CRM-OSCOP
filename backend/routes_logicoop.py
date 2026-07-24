@@ -327,8 +327,10 @@ class ApplicationBody(BaseModel):
     name: str
     email: EmailStr
     company: Optional[str] = None
+    legal_status: Optional[str] = None
     phone: Optional[str] = None
     message: Optional[str] = None
+    lang: Optional[str] = "fr"
 
 
 @logicoop_router.post("/partners/apply")
@@ -341,42 +343,16 @@ async def apply_partner(body: ApplicationBody):
         raise HTTPException(status_code=400, detail="Nom requis")
     doc = {"id": str(uuid.uuid4()), "type": t["code"], "type_label": t["label"],
            "name": body.name.strip(), "email": body.email.lower(), "company": body.company,
-           "phone": body.phone, "message": (body.message or "")[:2000],
+           "legal_status": body.legal_status, "phone": body.phone,
+           "message": (body.message or "")[:2000],
+           "lang": body.lang if body.lang in ("fr", "en", "es", "gcf") else "fr",
            "status": "NOUVELLE", "created_at": _now()}
     await db.partner_applications.insert_one({**doc})
     logger.info("Candidature partenaire %s : %s", t["code"], body.email)
     import os
     try:
-        from brevo_service import send_email
-
-        def _r(label, value):
-            return (f"<tr><td style='padding:7px 12px;border-bottom:1px solid #eee;color:#777;width:150px'>{label}</td>"
-                    f"<td style='padding:7px 12px;border-bottom:1px solid #eee;font-weight:bold'>{value}</td></tr>")
-        recap = (
-            "<table style='width:100%;border-collapse:collapse;font-size:13px;margin:16px 0;"
-            "border:1px solid #eee;border-radius:10px'>"
-            + _r("Type de partenariat", t["label"])
-            + _r("Nom", doc["name"])
-            + _r("Société", doc.get("company") or "—")
-            + _r("Email", doc["email"])
-            + _r("Téléphone", doc.get("phone") or "—")
-            + _r("Votre projet", doc.get("message") or "—")
-            + _r("Référence", doc["id"][:8].upper())
-            + "</table>")
-        await send_email(
-            to_email=doc["email"], to_name=doc["name"],
-            subject=f"Candidature reçue — {t['label']} | KDMARCHÉ × O'SCOP",
-            html_content=f"""<h2 style="color:#451F6B;">Merci pour votre candidature !</h2>
-            <p>Bonjour {doc['name']},</p>
-            <p>Nous avons bien reçu votre demande « <strong>{t['label']}</strong> »
-            {f"pour {doc['company']}" if doc.get('company') else ''}.
-            Notre équipe l'étudie et reviendra vers vous rapidement.</p>
-            <p style="margin-bottom:4px;"><strong>Récapitulatif de votre candidature :</strong></p>
-            {recap}
-            <p style="color:#777;font-size:12px;">Conservez la référence <strong>{doc['id'][:8].upper()}</strong> pour tout échange
-            avec notre équipe partenariats — réponse sous 48 h ouvrées.</p>
-            <p style="color:#D4AF37;"><strong>La coopérative KDMARCHÉ × O'SCOP</strong></p>""",
-            tags=["partner-application-ack"])
+        from partner_ack_email import send_partner_ack
+        await send_partner_ack(doc)
     except Exception as exc:
         logger.warning("Accusé réception candidature %s : %s", doc["email"], exc)
     try:
@@ -387,7 +363,8 @@ async def apply_partner(body: ApplicationBody):
             subject=f"Nouvelle candidature partenaire : {t['label']} — {doc['name']}",
             html_content=f"""<h2 style="color:#451F6B;">Nouvelle candidature « {t['label']} »</h2>
             <ul><li><strong>Nom :</strong> {doc['name']}</li>
-            <li><strong>Société :</strong> {doc.get('company') or '—'}</li>
+            <li><strong>Raison sociale :</strong> {doc.get('company') or '—'}</li>
+            <li><strong>Statut juridique :</strong> {doc.get('legal_status') or '—'}</li>
             <li><strong>Email :</strong> {doc['email']}</li>
             <li><strong>Téléphone :</strong> {doc.get('phone') or '—'}</li>
             <li><strong>Message :</strong> {doc.get('message') or '—'}</li></ul>

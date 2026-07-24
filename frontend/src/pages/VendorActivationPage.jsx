@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { KeyRound, Loader2, Rocket, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import NavBar from '../components/NavBar';
+import { PasswordStrength } from '../components/PasswordStrength';
 import { API } from '../services/http';
 
 const PwField = ({ value, onChange, placeholder, testId, minLength }) => {
@@ -59,6 +60,7 @@ export default function VendorActivationPage() {
           <form onSubmit={activate} className="space-y-4">
             <PwField value={password} onChange={(e) => setPassword(e.target.value)} minLength={8}
               placeholder={t('vendorOnboarding.actPasswordPh')} testId="activation-password-input" />
+            <PasswordStrength password={password} />
             <PwField value={confirm} onChange={(e) => setConfirm(e.target.value)}
               placeholder={t('vendorOnboarding.actConfirmPh')} testId="activation-confirm-input" />
             <button type="submit" disabled={busy} data-testid="activation-submit-btn"

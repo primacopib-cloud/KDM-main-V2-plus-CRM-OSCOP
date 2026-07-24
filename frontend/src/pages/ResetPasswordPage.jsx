@@ -7,6 +7,7 @@ import { BrandLogos } from '../components/BrandLogos';
 import { ArrowLeft, Lock, Loader2, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { passwordAPI } from '../services/api';
+import { PasswordStrength } from '../components/PasswordStrength';
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -151,6 +152,7 @@ const ResetPasswordPage = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <PasswordStrength password={formData.password} />
               </div>
               
               <div className="space-y-2">
