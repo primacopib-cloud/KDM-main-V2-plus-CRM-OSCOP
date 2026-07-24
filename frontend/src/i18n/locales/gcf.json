@@ -1,0 +1,61 @@
+{
+  "common": {
+    "join": "Vin jwenn", "discover": "Dékouvè", "back": "Viré dèyè", "next": "Aprè",
+    "save": "Anrijistré", "cancel": "Anilé", "loading": "Ka chajé…", "language": "Lang",
+    "back_home": "Viré an paj lakay", "or": "oben", "error": "On érè rivé",
+    "see_more": "Vwè plis", "search": "Chèché", "all": "Tout", "confirm": "Konfimé",
+    "delete": "Efasé", "add": "Ajouté", "close": "Fèmé", "free": "Gratis",
+    "month": "mwa", "year": "lanné", "quantity": "Kantité", "total": "Total",
+    "subtotal": "Sou-total", "price": "Pri", "status": "Léta", "date": "Dat",
+    "actions": "Aksyon", "yes": "Wi", "no": "Non"
+  },
+  "nav": {
+    "home": "Lakay", "pro_access": "Aksè Pro", "my_space": "Espas an mwen",
+    "catalog": "Katalòg", "my_orders": "Komann an mwen", "wallet": "CREDI'SCOP an mwen",
+    "documents": "Dokiman", "shopping_lists": "Lis acha", "vendor_space": "Espas Vandè",
+    "super_admin": "Super Admin", "plans_credits": "Fòmil é Kridi",
+    "logout": "Dékonèkté", "notifications": "Notifikasyon", "login": "Konèkté",
+    "user": "Itilizatè", "my_account": "Kont an mwen", "vendor": "Vandè",
+    "administration": "Administrasyon", "favorite_alerts": "Alèt favori"
+  },
+  "footer": {
+    "navigation": "Navigasyon", "our_offers": "Òf an nou", "b2b_catalog": "Katalòg B2B",
+    "join": "Adéré", "spaces": "Espas", "client_space": "Espas kliyan",
+    "buyer_space": "Espas achtè", "administration": "Administrasyon",
+    "ged_documents": "Dokiman GED", "contact": "Kontak",
+    "regions": "Gwadloup · Matinik · Giyàn · La Rényon · Mayòt",
+    "legal_notice": "Mansion légal é CGV", "ess_charter": "Chart ESS",
+    "privacy": "Politik konfidansyalité",
+    "tagline": "Communityplace B2B ESS - Patenarya ofisyèl pou Ékonomi Sosyal é Solidè.",
+    "ess_certified": "Mityalizasyon ESS sètifyé", "legal_docs": "Dokiman Légal",
+    "copyright": "© 2025 Communityplace B2B ESS - KDMARCHE & O'SCOP. Tout dwa rézèvé.",
+    "hub_short": "Communityplace B2B ESS"
+  },
+  "auth": {
+    "members_area": "Espas manm", "welcome_1": "Byenvini adan", "welcome_2": "ékosistèm-la",
+    "welcome_subtitle": "Communityplace koopératif a Sé Zil-la. Mityalizasyon, sikwi kout é gouvènans patajé o sèvis a téritwa a'w.",
+    "benefit1_title": "Acha mityalizé", "benefit1_desc": "Pwofité dè pri négosyé gras a fòs a kolèktif-la.",
+    "benefit2_title": "Kwasans lokal", "benefit2_desc": "Soutienn prodiktè é ékonomi a téritwa a'w.",
+    "benefit3_title": "Gouvènans ESS", "benefit3_desc": "On koopérativ transparant, piloté pa manm a'y.",
+    "encrypted_data": "Doné chifré", "member_login": "Konèksyon manm",
+    "access_your_space": "Antré adan espas a'w",
+    "login_subtitle": "Konèkté'w pou routouvé katalòg a'w, komann a'w é CREDI'SCOP a'w.",
+    "email_label": "Adrès e-mail", "password_label": "Modpas",
+    "forgot_password": "Ou oublyé modpas a'w ?", "sign_in": "Konèkté mwen",
+    "logging_in": "Konèksyon ka fèt…", "login_success": "Konèksyon rési ! Byenvini.",
+    "invalid_credentials": "Idantifyan pa bon", "continue_google": "Kontinyé èvè Google",
+    "not_member_yet": "Ou poko manm ?", "join_central": "Vin jwenn santral-la",
+    "are_you_admin": "Ou sé administratè ?", "create_account": "Kréyé on kont",
+    "create_my_account": "Kréyé kont an mwen", "already_account": "Ou ja tin on kont ?",
+    "back_to_login": "Viré an konèksyon", "sending": "Ka voyé...", "send_link": "Voyé lyen-la"
+  },
+  "landing": {
+    "hero_badge": "Communityplace koopératif B2B2C",
+    "hero_h1": "Ékosistèm koopératif a Sé Zil-la",
+    "hero_subtitle": "PASS Vie Chère, Rézo LOLODRIVE, gouvènans ESS — pou rann sa ki nésésè aksésib ba tout moun.",
+    "cta_register": "Kréyé kont an mwen", "cta_signin": "Konèkté mwen",
+    "cta_become_relay": "Vin on relè LOLODRIVE", "cta_activate_pass_here": "Aktivé PASS an mwen isi-la",
+    "find_relay_title": "Touvé relè koopératif", "find_relay_highlight": "ki pi pré a'w",
+    "relay_count_active": "relè aktif", "relay_count_active_one": "relè aktif"
+  }
+}

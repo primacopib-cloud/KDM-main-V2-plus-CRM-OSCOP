@@ -1,0 +1,32 @@
+export const TOUR_STEPS = {
+  buyer: [
+    { selector: '[data-testid="buyer-tab-dashboard"]', title: 'Tableau de bord',
+      text: "Votre vue d'ensemble : commandes récentes, dépenses et solde CREDI'SCOP en un coup d'œil." },
+    { selector: '[data-testid="buyer-tab-orders"]', title: 'Commandes',
+      text: 'Suivez toutes vos commandes B2B, leurs statuts et leurs documents.' },
+    { selector: '[data-testid="buyer-tab-invoices"]', title: 'Factures',
+      text: 'Retrouvez et réglez vos factures marchandises et vos reçus de paiement.' },
+    { selector: '[data-testid="buyer-tab-consultations"]', title: 'Consultations',
+      text: 'Lancez des consultations compétitives (enchères inversées) auprès des vendeurs.' },
+    { selector: '[data-testid="buyer-tab-transport"]', title: "Transport LOGI'SCOP",
+      text: 'Émettez vos Ordres de Transport, suivez les livraisons et payez vos factures transport.' },
+    { selector: '[data-testid="ai-guide-fab"]', title: "GUID'IA",
+      text: 'Je reste disponible ici à tout moment : questions, montants exacts, raccourcis et dictée vocale !' },
+  ],
+  admin: [
+    { selector: '[data-testid="superadmin-tab-dashboard"]', title: 'Dashboard',
+      text: "Vue d'ensemble : KPIs, rapport hebdo, RCR FOGEDOM et alertes de l'écosystème." },
+    { selector: '[data-testid="superadmin-tab-accounting"]', title: 'Comptabilité',
+      text: 'Journal comptable, exports CSV/Excel et trésorerie consolidée 30/60/90 jours.' },
+    { selector: '[data-testid="superadmin-tab-logicoop"]', title: 'LOGICOOP',
+      text: 'Pilotage transport : OT, factures, litiges, avoirs, synthèses mensuelles et opérateurs.' },
+    { selector: '[data-testid="superadmin-tab-users"]', title: 'Membres',
+      text: 'Gérez les comptes vendeurs, acheteurs et leurs rôles.' },
+    { selector: '[data-testid="ai-guide-fab"]', title: "GUID'IA",
+      text: 'Demandez-moi la santé financière, les impayés ou les points de friction des membres.' },
+  ],
+  member: [
+    { selector: '[data-testid="ai-guide-fab"]', title: "GUID'IA",
+      text: 'Je vous guide : PASS Vie Chère, wallet UC, retraits en Lolo Point… posez-moi vos questions !' },
+  ],
+};

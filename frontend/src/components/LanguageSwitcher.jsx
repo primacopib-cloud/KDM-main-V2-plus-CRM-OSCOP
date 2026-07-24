@@ -5,15 +5,17 @@ const LANGS = [
   { code: 'fr', label: 'Français', flag: 'fr' },
   { code: 'en', label: 'English', flag: 'gb' },
   { code: 'es', label: 'Español', flag: 'es' },
+  { code: 'gcf', label: 'Kréyòl', flag: 'gp' },
 ];
 
 /**
- * Language switcher with country flags (FR · EN · ES).
+ * Language switcher with country flags (FR · EN · ES · Kréyòl).
  * Persisted via i18next-browser-languagedetector → localStorage.
  */
 export default function LanguageSwitcher({ className = '' }) {
   const { i18n } = useTranslation();
-  const current = (i18n.language || 'fr').slice(0, 2);
+  const lng = i18n.language || 'fr';
+  const current = lng.startsWith('gcf') ? 'gcf' : lng.slice(0, 2);
 
   return (
     <div className={`inline-flex items-center gap-1.5 ${className}`} data-testid="language-switcher">

@@ -384,6 +384,28 @@ async def check_guidia_friction(db) -> int:
     return alerts
 
 
+class TtsBody(BaseModel):
+    text: str
+
+
+@ai_guide_router.post("/tts")
+async def guide_tts(body: TtsBody, current_user: dict = Depends(get_current_user)):
+    """Lecture audio premium des réponses GUID'IA (OpenAI TTS voix naturelle)."""
+    text = body.text.strip()[:900]
+    if not text:
+        raise HTTPException(status_code=400, detail="Texte vide")
+    from emergentintegrations.llm.openai import OpenAITextToSpeech
+    from fastapi.responses import Response
+    try:
+        tts = OpenAITextToSpeech(api_key=os.environ.get("EMERGENT_LLM_KEY"))
+        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice="coral")
+    except Exception as exc:
+        logger.warning("GUID'IA TTS erreur : %s", exc)
+        raise HTTPException(status_code=502, detail="Synthèse vocale momentanément indisponible")
+    return Response(content=audio, media_type="audio/mpeg",
+                    headers={"Cache-Control": "no-store"})
+
+
 @ai_guide_router.get("/sessions")
 async def guide_sessions(current_user: dict = Depends(get_current_user)):
     """Conversations passées de l'utilisateur avec GUID'IA."""

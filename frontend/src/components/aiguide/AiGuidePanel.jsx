@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass } from 'lucide-react';
 import { API, getAuthHeaders } from '../../services/http';
 import { AiGuideHistory } from './AiGuideHistory';
 
 const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
-export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null, onClose }) => {
+export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
+  tourAvailable = false, onStartTour, onClose }) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([{ role: 'assistant', content: welcome.greeting }]);
   const [suggestions, setSuggestions] = useState(welcome.suggestions || []);
@@ -22,7 +23,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null, onCl
   const lastTipAt = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, busy]);
-  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+  useEffect(() => () => { window.speechSynthesis?.cancel(); audioRef.current?.pause(); }, []);
 
   useEffect(() => {
     if (!bootTip?.tip || bootTip.at === lastTipAt.current) return;
@@ -33,13 +34,30 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null, onCl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bootTip?.at]);
 
-  const readAloud = (text) => {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'fr-FR';
-    u.rate = 1.05;
-    window.speechSynthesis.speak(u);
+  const audioRef = useRef(null);
+
+  const readAloud = async (text) => {
+    try {
+      audioRef.current?.pause();
+      const r = await fetch(`${API}/ai-guide/tts`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ text: text.slice(0, 900) }),
+      });
+      if (!r.ok) throw new Error('tts');
+      const url = URL.createObjectURL(await r.blob());
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => URL.revokeObjectURL(url);
+      await audio.play();
+    } catch {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'fr-FR';
+      u.rate = 1.05;
+      window.speechSynthesis.speak(u);
+    }
   };
 
   const dictate = () => {
@@ -126,7 +144,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null, onCl
             {showHistory ? <ArrowLeft size={14} /> : <History size={14} />}
           </button>
           <button type="button" data-testid="ai-guide-tts-toggle" title={speak ? 'Couper la lecture audio' : 'Lire les réponses à voix haute'}
-            onClick={() => { setSpeak(!speak); if (speak) window.speechSynthesis?.cancel(); }}
+            onClick={() => { setSpeak(!speak); if (speak) { window.speechSynthesis?.cancel(); audioRef.current?.pause(); } }}
             className={`p-1.5 rounded-lg transition-colors ${speak ? 'text-[#E9CF8E] bg-[#D9B35A]/15' : 'text-white/40 hover:text-white'}`}>
             {speak ? <Volume2 size={14} /> : <VolumeX size={14} />}
           </button>
@@ -154,6 +172,13 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null, onCl
               <div className="flex items-center gap-2 text-white/40 text-[11px] pl-1">
                 <Loader2 size={12} className="animate-spin text-[#E9CF8E]" /> GUID'IA réfléchit…
               </div>
+            )}
+            {!busy && tourAvailable && (
+              <button type="button" onClick={onStartTour} data-testid="ai-guide-start-tour"
+                className="w-full rounded-xl px-3 py-2.5 text-left text-[12px] font-bold text-[#2A1045] flex items-center gap-2 transition-transform hover:scale-[1.01]"
+                style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
+                <Compass size={15} /> Nouveau ici ? Lancez la visite guidée de votre espace
+              </button>
             )}
             {!busy && actions.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-0.5" data-testid="ai-guide-actions">

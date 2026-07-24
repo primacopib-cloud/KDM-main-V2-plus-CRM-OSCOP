@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { Sparkles, X } from 'lucide-react';
 import { API, getAuthHeaders, getSessionToken } from '../../services/http';
 import { AiGuidePanel } from './AiGuidePanel';
+import { GuidedTour } from './GuidedTour';
+import { TOUR_STEPS } from './tourSteps';
 
 const spaceFromPath = (p) => {
   if (p.startsWith('/superadmin') || p.startsWith('/admin')) return 'admin';
@@ -16,7 +18,10 @@ const spaceFromPath = (p) => {
   return 'general';
 };
 const HIDDEN = ['/connexion', '/admin/connexion', '/inscription', '/mot-de-passe', '/reinitialiser', '/auth/'];
-const getLang = () => (localStorage.getItem('i18nextLng') || 'fr').slice(0, 2);
+const getLang = () => {
+  const l = localStorage.getItem('i18nextLng') || 'fr';
+  return l.startsWith('gcf') ? 'gcf' : l.slice(0, 2);
+};
 const STUCK_DELAY_MS = 45000;
 
 export const AiGuideWidget = () => {
@@ -24,10 +29,22 @@ export const AiGuideWidget = () => {
   const [open, setOpen] = useState(false);
   const [welcome, setWelcome] = useState(null);
   const [bootTip, setBootTip] = useState(null);
+  const [tourActive, setTourActive] = useState(false);
   const lastSpace = useRef(null);
   const token = getSessionToken();
   const path = location.pathname;
   const space = spaceFromPath(path);
+  const tourSteps = TOUR_STEPS[space];
+  const tourDone = localStorage.getItem(`guidia_tour_${space}`);
+
+  const startTour = () => {
+    setOpen(false);
+    setTourActive(true);
+  };
+  const endTour = () => {
+    setTourActive(false);
+    localStorage.setItem(`guidia_tour_${space}`, '1');
+  };
 
   useEffect(() => {
     if (!token || lastSpace.current === space || HIDDEN.some((h) => path.startsWith(h)) || path === '/') return;
@@ -91,8 +108,10 @@ export const AiGuideWidget = () => {
 
   return (
     <>
+      {tourActive && tourSteps && <GuidedTour steps={tourSteps} onFinish={endTour} />}
       {open && welcome && (
         <AiGuidePanel key={space} welcome={welcome} space={space} lang={getLang()} bootTip={bootTip}
+          tourAvailable={Boolean(tourSteps && !tourDone)} onStartTour={startTour}
           onClose={() => setOpen(false)} />
       )}
       <button type="button" data-testid="ai-guide-fab" aria-label="Ouvrir GUID'IA"

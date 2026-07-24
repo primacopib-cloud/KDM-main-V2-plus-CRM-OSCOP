@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import fr from './locales/fr.json';
+import gcf from './locales/gcf.json';
 import frSite from './locales/fr-site.json';
 import frApp from './locales/fr-app.json';
 import en from './locales/en.json';
@@ -31,9 +32,10 @@ i18n
       fr: { translation: { ...fr, ...frSite, ...frApp, ...frAdmin, ...frData } },
       en: { translation: { ...en, ...enSite, ...enApp, ...enAdmin, ...enData } },
       es: { translation: { ...es, ...esSite, ...esApp, ...esAdmin, ...esData } },
+      gcf: { translation: gcf },
     },
     fallbackLng: 'fr',
-    supportedLngs: ['fr', 'en', 'es'],
+    supportedLngs: ['fr', 'en', 'es', 'gcf'],
     interpolation: { escapeValue: false },
     detection: {
       order: ['querystring', 'localStorage', 'navigator', 'htmlTag'],
