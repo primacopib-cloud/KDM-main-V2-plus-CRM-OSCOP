@@ -222,3 +222,16 @@ async def accounting_export_xlsx(date_from: Optional[str] = None, date_to: Optio
     return Response(content=content,
                     media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": 'attachment; filename="journal-comptable.xlsx"'})
+
+
+@accounting_router.get("/export-transport.xlsx")
+async def accounting_export_transport_xlsx(date_from: Optional[str] = None, date_to: Optional[str] = None,
+                                           admin: dict = Depends(require_admin)):
+    """Export Excel dédié aux opérations transport LOGI'SCOP (factures + avoirs)."""
+    entries = [e for e in await _collect_entries(date_from or "", date_to or "")
+               if e["type"] in ("TRANSPORT_FACTURE", "TRANSPORT_AVOIR")]
+    from accounting_excel import build_accounting_workbook
+    content = build_accounting_workbook(entries, KIND_LABELS)
+    return Response(content=content,
+                    media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": 'attachment; filename="transport-logiscop.xlsx"'})

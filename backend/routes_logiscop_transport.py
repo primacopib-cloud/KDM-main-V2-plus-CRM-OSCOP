@@ -211,6 +211,12 @@ async def create_transport_order(body: OtCreate, current_user: dict = Depends(ge
         {"org_id": ctx["org_id"], "status": "SIGNED"}, {"_id": 0})
     if not conv:
         raise HTTPException(status_code=403, detail="Convention cadre LOGI'SCOP signée requise avant tout Ordre de Transport")
+    from logiscop_transport_billing import get_ot_suspension
+    susp = await get_ot_suspension(db, ctx["org_id"])
+    if susp:
+        raise HTTPException(status_code=403,
+                            detail=f"Émission d'OT suspendue : mise en demeure en cours sur la facture {susp['ref']} "
+                                   "impayée à 45 jours. Régularisez le règlement pour rétablir le service.")
     for stop, lbl in ((body.pickup, "d'enlèvement"), (body.delivery, "de livraison")):
         if stop.zone_code not in ctx["zones"]:
             raise HTTPException(status_code=403,

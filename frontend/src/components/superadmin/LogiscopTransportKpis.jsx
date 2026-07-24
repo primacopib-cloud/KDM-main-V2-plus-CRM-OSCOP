@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BarChart3, Star, Check, FileText } from 'lucide-react';
+import { BarChart3, Star, Check, FileText, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
@@ -23,15 +23,32 @@ const MonthlyReportButton = () => {
     setBusy(false);
   };
 
+  const downloadXlsx = async () => {
+    try {
+      const r = await fetch(`${API}/admin/accounting/export-transport.xlsx?date_from=2020-01-01`,
+        { credentials: 'include', headers: getAuthHeaders() });
+      if (!r.ok) throw new Error('Export impossible');
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a');
+      a.href = url; a.download = 'transport-logiscop.xlsx'; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { toast.error(e.message); }
+  };
+
   return (
     <span className="inline-flex items-center gap-1.5 ml-auto">
       <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
         data-testid="monthly-report-month"
         className="h-7 px-2 rounded bg-white/[0.06] border border-white/15 text-[10px] text-white" />
       <button type="button" onClick={download} disabled={busy} data-testid="monthly-report-download"
-        title="Synthèse mensuelle (CA, avoirs, litiges) — aussi envoyée automatiquement par email le 1er du mois"
+        title="Synthèse mensuelle (CA, avoirs, litiges) — aussi envoyée automatiquement par email le 1er du mois et archivée en GEDESS"
         className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white/[0.06] text-white/70 hover:text-[#E9CF8E] border border-white/15 inline-flex items-center gap-1 disabled:opacity-50">
         <FileText size={10} /> Synthèse mensuelle PDF
+      </button>
+      <button type="button" onClick={downloadXlsx} data-testid="transport-export-xlsx"
+        title="Export Excel des opérations transport (factures + avoirs)"
+        className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white/[0.06] text-[#A5E27B] hover:text-[#E9CF8E] border border-white/15 inline-flex items-center gap-1">
+        <FileSpreadsheet size={10} /> Excel transport
       </button>
     </span>
   );

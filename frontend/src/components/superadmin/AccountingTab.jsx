@@ -3,6 +3,7 @@ import { Calculator, Download, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { RevenueChart, FiscalRegisterSection } from './FiscalRegisterSection';
+import { TreasuryConsolidatedPanel } from './TreasuryConsolidatedPanel';
 
 const eur = (cents) => `${(cents / 100).toFixed(2).replace('.', ',')} €`;
 
@@ -94,6 +95,7 @@ export const AccountingTab = () => {
           </div>
 
           <RevenueChart byMonth={data.by_month} />
+          <TreasuryConsolidatedPanel />
           <FiscalRegisterSection />
 
           <div className="grid lg:grid-cols-2 gap-4">

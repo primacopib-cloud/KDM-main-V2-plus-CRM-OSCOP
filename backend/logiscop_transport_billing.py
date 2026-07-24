@@ -207,6 +207,7 @@ async def send_invoice_reminders(db) -> int:
     """Relance automatique des factures transport impayées à 30 jours (idempotent par facture)."""
     now = datetime.now(timezone.utc)
     sent = 0
+    sent += await _send_demand_notices(db, now)
     async for inv in db.logiscop_transport_invoices.find(
             {"status": "ISSUED", "reminder_sent_at": None}, {"_id": 0}):
         try:
@@ -241,6 +242,55 @@ async def send_invoice_reminders(db) -> int:
     if sent:
         logger.info("Relances factures transport envoyées : %d", sent)
     return sent
+
+
+async def _send_demand_notices(db, now) -> int:
+    """2e relance à 45 jours : mise en demeure + suspension des nouveaux OT (idempotent par facture)."""
+    sent = 0
+    async for inv in db.logiscop_transport_invoices.find(
+            {"status": "ISSUED", "demand_notice_sent_at": None,
+             "reminder_sent_at": {"$ne": None}}, {"_id": 0}):
+        try:
+            issued = datetime.fromisoformat(inv["issued_at"])
+        except ValueError:
+            continue
+        if now - issued < timedelta(days=45):
+            continue
+        html = (
+            f"<div style='font-family:Arial;color:#2A1045'><h2 style='color:#B91C1C'>MISE EN DEMEURE — facture {inv['ref']}</h2>"
+            f"<p>Malgré notre relance, la facture <b>{inv['ref']}</b> ({_eur(inv['total_ttc_cents'])} TTC), "
+            f"relative à l'Ordre de Transport <b>{inv['ot_ref']}</b> et émise le {inv['issued_at'][:10]}, "
+            "demeure impayée à 45 jours.</p>"
+            "<p><b>Vous êtes mis en demeure de régler cette facture sous 8 jours.</b> À défaut, des intérêts de "
+            "retard et l'indemnité forfaitaire de recouvrement seront appliqués (article 15 de la Convention).</p>"
+            "<p style='color:#B91C1C'><b>L'émission de nouveaux Ordres de Transport est suspendue</b> jusqu'à "
+            "régularisation complète de l'impayé.</p>"
+            "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP — LOGI'SCOP</b></p></div>")
+        try:
+            from brevo_service import send_email
+            if inv.get("email"):
+                await send_email(to_email=inv["email"], to_name=inv.get("company_name"),
+                                 subject=f"MISE EN DEMEURE : facture transport {inv['ref']} impayée (45 jours)",
+                                 html_content=html, tags=["logiscop-demand-notice"])
+            admin_email = os.environ.get("ADMIN_ALERT_EMAIL")
+            if admin_email:
+                await send_email(to_email=admin_email, to_name="LOGI'SCOP",
+                                 subject=f"[LOGI'SCOP] Mise en demeure {inv['ref']} — OT suspendus ({inv.get('company_name')})",
+                                 html_content=html, tags=["logiscop-demand-notice"])
+            await db.logiscop_transport_invoices.update_one(
+                {"id": inv["id"]}, {"$set": {"demand_notice_sent_at": now.isoformat()}})
+            sent += 1
+            logger.info("Mise en demeure envoyée pour %s — OT suspendus (org %s)", inv["ref"], inv.get("org_id"))
+        except Exception as exc:
+            logger.warning("Mise en demeure %s échouée : %s", inv["ref"], exc)
+    return sent
+
+
+async def get_ot_suspension(db, org_id: str) -> dict | None:
+    """Facture en mise en demeure impayée → émission de nouveaux OT suspendue pour l'org."""
+    return await db.logiscop_transport_invoices.find_one(
+        {"org_id": org_id, "status": {"$ne": "PAID"}, "demand_notice_sent_at": {"$ne": None}},
+        {"_id": 0, "ref": 1, "total_ttc_cents": 1, "demand_notice_sent_at": 1})
 
 
 async def archive_ot_documents_to_ged(db, ot_id: str) -> None:

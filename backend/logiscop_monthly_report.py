@@ -165,4 +165,26 @@ async def send_monthly_transport_report(db, force: bool = False, month: str | No
         {"key": "logiscop_monthly_report", "month": month},
         {"$set": {"sent_at": now.isoformat(), "skipped": False}}, upsert=True)
     logger.info("Synthèse mensuelle transport %s envoyée à %s", month, REPORT_EMAIL)
+    await archive_monthly_report_to_ged(db, month, pdf)
     return True
+
+
+async def archive_monthly_report_to_ged(db, month: str, pdf: bytes) -> None:
+    """Archive GEDESS de la synthèse mensuelle (best effort, idempotent via system_flags.ged_doc_id)."""
+    try:
+        from gedess_client import gedess_upload_file, is_gedess_configured
+        if not is_gedess_configured():
+            return
+        flag = await db.system_flags.find_one({"key": "logiscop_monthly_report", "month": month}, {"_id": 0})
+        if flag and flag.get("ged_doc_id"):
+            return
+        doc = await gedess_upload_file(
+            f"synthese-transport-{month}.pdf", pdf, categorie="rapport",
+            description=f"Synthèse mensuelle transport LOGI'SCOP {month} (CA, avoirs, litiges)",
+            tags="logiscop,transport,synthese-mensuelle", mime_type="application/pdf")
+        await db.system_flags.update_one(
+            {"key": "logiscop_monthly_report", "month": month},
+            {"$set": {"ged_doc_id": doc.get("id")}}, upsert=True)
+        logger.info("Synthèse mensuelle %s archivée en GEDESS (%s)", month, doc.get("id"))
+    except Exception as exc:
+        logger.warning("Archivage GEDESS synthèse %s échoué : %s", month, exc)
