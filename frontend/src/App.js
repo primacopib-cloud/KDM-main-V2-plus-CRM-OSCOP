@@ -47,6 +47,7 @@ import TestimonialPage from "./pages/TestimonialPage";
 import CourierPage from "./pages/CourierPage";
 import { WhatsAppSupport } from "./components/WhatsAppSupport";
 import { AiGuideWidget } from "./components/aiguide/AiGuideWidget";
+import { LanguagePrefSync } from "./components/LanguagePrefSync";
 import VendorActivationPage from "./pages/VendorActivationPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import ShoppingListsPage from "./pages/ShoppingListsPage";
@@ -211,6 +212,7 @@ function App() {
         </Routes>
         <WhatsAppSupport />
         <AiGuideWidget />
+        <LanguagePrefSync />
       </BrowserRouter>
       <Toaster position="top-right" richColors />
     </div>

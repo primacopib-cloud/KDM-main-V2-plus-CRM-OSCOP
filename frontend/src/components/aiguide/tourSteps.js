@@ -10,7 +10,7 @@ export const TOUR_STEPS = {
       text: 'Lancez des consultations compétitives (enchères inversées) auprès des vendeurs.' },
     { selector: '[data-testid="buyer-tab-transport"]', title: "Transport LOGI'SCOP",
       text: 'Émettez vos Ordres de Transport, suivez les livraisons et payez vos factures transport.' },
-    { selector: '[data-testid="ai-guide-fab"]', title: "GUID'IA",
+    { selector: '[data-testid="ai-guide-fab"]', title: "Oracle",
       text: 'Je reste disponible ici à tout moment : questions, montants exacts, raccourcis et dictée vocale !' },
   ],
   admin: [
@@ -22,11 +22,11 @@ export const TOUR_STEPS = {
       text: 'Pilotage transport : OT, factures, litiges, avoirs, synthèses mensuelles et opérateurs.' },
     { selector: '[data-testid="superadmin-tab-users"]', title: 'Membres',
       text: 'Gérez les comptes vendeurs, acheteurs et leurs rôles.' },
-    { selector: '[data-testid="ai-guide-fab"]', title: "GUID'IA",
+    { selector: '[data-testid="ai-guide-fab"]', title: "Oracle",
       text: 'Demandez-moi la santé financière, les impayés ou les points de friction des membres.' },
   ],
   member: [
-    { selector: '[data-testid="ai-guide-fab"]', title: "GUID'IA",
+    { selector: '[data-testid="ai-guide-fab"]', title: "Oracle",
       text: 'Je vous guide : PASS Vie Chère, wallet UC, retraits en Lolo Point… posez-moi vos questions !' },
   ],
   operator: [
@@ -36,7 +36,7 @@ export const TOUR_STEPS = {
       text: 'Acceptez vos missions, renseignez les températures et clôturez avec la preuve de livraison ePOD.' },
     { selector: '[data-testid="logicoop-exw-zones"]', title: 'Zones EXW',
       text: 'Les zones d’enlèvement départ usine que vous couvrez.' },
-    { selector: '[data-testid="ai-guide-fab"]', title: "GUID'IA",
+    { selector: '[data-testid="ai-guide-fab"]', title: "Oracle",
       text: 'Une question sur un ePOD, un incident température ou votre rémunération ? Je suis là.' },
   ],
   pos: [
@@ -44,7 +44,7 @@ export const TOUR_STEPS = {
       text: 'Scannez le QR-code du client ou saisissez son code pour retrouver sa commande instantanément.' },
     { selector: '[data-testid="tab-ready"]', title: 'Commandes prêtes',
       text: 'Les commandes prêtes à être remises aux clients apparaissent ici.' },
-    { selector: '[data-testid="ai-guide-fab"]', title: "GUID'IA",
+    { selector: '[data-testid="ai-guide-fab"]', title: "Oracle",
       text: 'Besoin d’aide sur un encaissement ou un remboursement UC ? Demandez-moi !' },
   ],
   lolo_point: [
@@ -52,7 +52,7 @@ export const TOUR_STEPS = {
       text: 'Suivez le chiffre, les retraits et l’activité de votre Lolo Point.' },
     { selector: '[data-testid="manager-ranking-section"]', title: 'Classement réseau',
       text: 'Votre position dans le réseau LOLODRIVE — motivez votre équipe !' },
-    { selector: '[data-testid="ai-guide-fab"]', title: "GUID'IA",
+    { selector: '[data-testid="ai-guide-fab"]', title: "Oracle",
       text: 'Réassorts B2B, réception clients, statistiques : je réponds à toutes vos questions.' },
   ],
 };

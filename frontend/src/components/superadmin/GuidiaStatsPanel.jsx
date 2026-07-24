@@ -14,7 +14,7 @@ export const GuidiaStatsPanel = () => {
   return (
     <div className="glass-panel-soft rounded-[14px] p-3 mt-4" data-testid="guidia-stats-panel">
       <p className="text-[11px] font-semibold text-[#D9B35A] mb-2 flex items-center gap-1.5">
-        <Sparkles className="w-3.5 h-3.5" /> GUID'IA — questions des membres (points de friction)
+        <Sparkles className="w-3.5 h-3.5" /> Oracle — questions des membres (points de friction)
       </p>
       <div className="flex flex-wrap gap-2 mb-3">
         <span className="rounded-lg px-3 py-1.5 bg-white/[0.04] border border-white/[0.08] text-[11px] text-white/70">

@@ -1,15 +1,15 @@
-"""Textes multilingues GUID'IA — français, anglais, espagnol, créole antillais (gcf)."""
+"""Textes multilingues Oracle — français, anglais, espagnol, créole antillais (gcf)."""
 
 SUPPORTED_LANGS = ["fr", "en", "es", "gcf"]
 
 GREETINGS = {
-    "fr": {"hello": "Bonjour{name} 👋 Je suis GUID'IA, votre copilote Communityplace.",
+    "fr": {"hello": "Bonjour{name} 👋 Je suis Oracle, votre copilote Communityplace.",
            "note": " À noter aujourd'hui : {facts}.", "ask": " Comment puis-je vous guider ?"},
-    "en": {"hello": "Hello{name} 👋 I'm GUID'IA, your Communityplace copilot.",
+    "en": {"hello": "Hello{name} 👋 I'm Oracle, your Communityplace copilot.",
            "note": " Worth noting today: {facts}.", "ask": " How can I help you?"},
-    "es": {"hello": "Hola{name} 👋 Soy GUID'IA, su copiloto de Communityplace.",
+    "es": {"hello": "Hola{name} 👋 Soy Oracle, su copiloto de Communityplace.",
            "note": " A tener en cuenta hoy: {facts}.", "ask": " ¿Cómo puedo ayudarle?"},
-    "gcf": {"hello": "Bonjou{name} 👋 Sé mwen GUID'IA, kopilòt a'w asi Communityplace.",
+    "gcf": {"hello": "Bonjou{name} 👋 Sé mwen Oracle, kopilòt a'w asi Communityplace.",
             "note": " Jòdi-la, gadé sa : {facts}.", "ask": " Ki jan an pé édé'w ?"},
 }
 

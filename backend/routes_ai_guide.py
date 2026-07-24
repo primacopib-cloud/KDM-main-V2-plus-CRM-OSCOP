@@ -1,4 +1,4 @@
-"""GUID'IA — assistant conversationnel gratuit qui guide chaque utilisateur dans son espace."""
+"""Oracle — assistant conversationnel gratuit qui guide chaque utilisateur dans son espace."""
 import logging
 import os
 import re
@@ -80,7 +80,7 @@ SPACE_ACTIONS = {
 }
 
 SYSTEM_PROMPT = (
-    "Tu es GUID'IA, le copilote conversationnel haut de gamme de Communityplace (KDMARCHÉ × O'SCOP), "
+    "Tu es Oracle, le copilote conversationnel haut de gamme de Communityplace (KDMARCHÉ × O'SCOP), "
     "plateforme coopérative B2B2C de l'Économie Sociale et Solidaire des Outre-mer (Guadeloupe, Martinique, "
     "Guyane, La Réunion, Mayotte). Tu guides l'utilisateur pas à pas dans son espace, de façon proactive, "
     "chaleureuse et ultra professionnelle.\n"
@@ -130,7 +130,7 @@ async def _facts(db, user: dict, space: str, lang: str = "fr") -> str:
                 pending = await db.products.count_documents({"vendor_id": vid, "status": "pending"})
                 return FACT_TEMPLATES["vendor"][lang].format(pending=pending)
     except Exception as exc:
-        logger.debug("GUID'IA facts: %s", exc)
+        logger.debug("Oracle facts: %s", exc)
     return ""
 
 
@@ -186,7 +186,7 @@ async def _data_pack(db, user: dict, space: str) -> str:
             if w:
                 lines.append(f"Solde wallet : {w.get('balance_uc', 0)} UC.")
     except Exception as exc:
-        logger.debug("GUID'IA data pack: %s", exc)
+        logger.debug("Oracle data pack: %s", exc)
     return "\n".join(lines)[:900]
 
 
@@ -207,7 +207,7 @@ async def guide_welcome(space: str = "general", lang: str = "fr",
     greeting += g["ask"]
     suggestions = (SUGGESTIONS_I18N.get(lang, {}).get(space)
                    or BASE_SUGGESTIONS.get(space, BASE_SUGGESTIONS["general"]))
-    return {"assistant_name": "GUID'IA", "greeting": greeting, "space": space, "lang": lang,
+    return {"assistant_name": "Oracle", "greeting": greeting, "space": space, "lang": lang,
             "suggestions": suggestions}
 
 
@@ -234,7 +234,7 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
         {"session_id": session_id, "user_id": current_user["id"]},
         {"_id": 0, "role": 1, "content": 1}).sort("created_at", -1).limit(12).to_list(12)
     history_txt = "\n".join(
-        f"{'Utilisateur' if m['role'] == 'user' else 'GUID’IA'}: {m['content'][:500]}" for m in reversed(history))
+        f"{'Utilisateur' if m['role'] == 'user' else 'Oracle'}: {m['content'][:500]}" for m in reversed(history))
 
     facts = await _facts(db, current_user, space)
     data_pack = await _data_pack(db, current_user, space)
@@ -260,8 +260,8 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
                        system_message=SYSTEM_PROMPT).with_model("openai", "gpt-5.4")
         raw = await chat.send_message(UserMessage(text=prompt)) or ""
     except Exception as exc:
-        logger.exception("GUID'IA erreur (session %s): %s", session_id, exc)
-        raise HTTPException(status_code=502, detail="GUID'IA est momentanément indisponible — réessayez dans un instant.")
+        logger.exception("Oracle erreur (session %s): %s", session_id, exc)
+        raise HTTPException(status_code=502, detail="Oracle est momentanément indisponible — réessayez dans un instant.")
 
     suggestions = []
     answer = raw
@@ -321,7 +321,7 @@ async def guide_form_help(body: FormHelpBody, current_user: dict = Depends(get_c
                        system_message=SYSTEM_PROMPT).with_model("openai", "gpt-5.4")
         raw = await chat.send_message(UserMessage(text=prompt)) or ""
     except Exception as exc:
-        logger.warning("GUID'IA form-help erreur : %s", exc)
+        logger.warning("Oracle form-help erreur : %s", exc)
         raise HTTPException(status_code=502, detail="Aide momentanément indisponible")
     suggestions = []
     match = re.search(r"SUGGESTIONS\s*:\s*(.+)$", raw, re.IGNORECASE | re.DOTALL)
@@ -351,7 +351,7 @@ async def check_guidia_friction(db) -> int:
         try:
             from core_deps import create_notification
             await create_notification(
-                "guidia_friction", "Point de friction détecté par GUID'IA",
+                "guidia_friction", "Point de friction détecté par Oracle",
                 f"La question « {question} » a été posée {count} fois ces 7 derniers jours — "
                 "la page concernée mérite peut-être d'être clarifiée.",
                 target_roles=["oscop_super_admin", "kdm_b2b_admin"],
@@ -365,12 +365,12 @@ async def check_guidia_friction(db) -> int:
             if is_brevo_configured():
                 await send_email(
                     to_email=admin_email, to_name="Administration KDMARCHÉ × O'SCOP",
-                    subject=f"[GUID'IA] Point de friction : une question revient {count} fois",
+                    subject=f"[Oracle] Point de friction : une question revient {count} fois",
                     html_content=(
                         "<div style='font-family:Arial;color:#2A1045'><h2 style='color:#5B2E8C'>Point de friction détecté</h2>"
                         f"<p>La question <b>« {question} »</b> a été posée <b>{count} fois</b> ces 7 derniers jours "
-                        "via GUID'IA.</p><p>C'est le signe qu'une page, un onglet ou un parcours mérite d'être "
-                        "clarifié. Consultez le panneau « GUID'IA — questions des membres » (onglet Chat IA du "
+                        "via Oracle.</p><p>C'est le signe qu'une page, un onglet ou un parcours mérite d'être "
+                        "clarifié. Consultez le panneau « Oracle — questions des membres » (onglet Chat IA du "
                         "Super Admin) pour le détail.</p>"
                         "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP</b></p></div>"),
                     tags=["guidia-friction"])
@@ -380,7 +380,7 @@ async def check_guidia_friction(db) -> int:
                                           "count": count,
                                           "sent_at": datetime.now(timezone.utc).isoformat()})
         alerts += 1
-        logger.info("Alerte friction GUID'IA : « %s » ×%d", question, count)
+        logger.info("Alerte friction Oracle : « %s » ×%d", question, count)
     return alerts
 
 
@@ -411,7 +411,7 @@ class TtsBody(BaseModel):
 
 @ai_guide_router.post("/tts")
 async def guide_tts(body: TtsBody, current_user: dict = Depends(get_current_user)):
-    """Lecture audio premium des réponses GUID'IA (OpenAI TTS voix naturelle)."""
+    """Lecture audio premium des réponses Oracle (OpenAI TTS voix naturelle)."""
     text = body.text.strip()[:900]
     if not text:
         raise HTTPException(status_code=400, detail="Texte vide")
@@ -422,7 +422,7 @@ async def guide_tts(body: TtsBody, current_user: dict = Depends(get_current_user
         tts = OpenAITextToSpeech(api_key=os.environ.get("EMERGENT_LLM_KEY"))
         audio = await tts.generate_speech(text=text, model="tts-1-hd", voice=voice)
     except Exception as exc:
-        logger.warning("GUID'IA TTS erreur : %s", exc)
+        logger.warning("Oracle TTS erreur : %s", exc)
         raise HTTPException(status_code=502, detail="Synthèse vocale momentanément indisponible")
     return Response(content=audio, media_type="audio/mpeg",
                     headers={"Cache-Control": "no-store"})
@@ -430,7 +430,7 @@ async def guide_tts(body: TtsBody, current_user: dict = Depends(get_current_user
 
 @ai_guide_router.get("/sessions")
 async def guide_sessions(current_user: dict = Depends(get_current_user)):
-    """Conversations passées de l'utilisateur avec GUID'IA."""
+    """Conversations passées de l'utilisateur avec Oracle."""
     db = get_database()
     sessions = await db.ai_guide_sessions.find(
         {"user_id": current_user["id"]}, {"_id": 0}).sort("last_message_at", -1).limit(15).to_list(15)
@@ -451,7 +451,7 @@ async def guide_session_messages(session_id: str, current_user: dict = Depends(g
 
 @ai_guide_router.get("/admin/stats")
 async def guide_admin_stats(current_user: dict = Depends(get_current_user)):
-    """Questions les plus posées à GUID'IA — détection des points de friction."""
+    """Questions les plus posées à Oracle — détection des points de friction."""
     from core_deps import check_admin
     await check_admin(current_user)
     db = get_database()

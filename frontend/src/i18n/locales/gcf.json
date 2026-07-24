@@ -267,5 +267,42 @@
     "description": "Dèskripsyon",
     "categorie": "Katégori",
     "organisations": "Òganizasyon"
+  },
+  "logicoop": {
+    "back": "Viré dèyè",
+    "space": "Espas LOGICOOP",
+    "denied_title": "Espas rézèvé ba opératè LOGICOOP",
+    "welcome": "Byenvini, {{name}}",
+    "zones_intro": "Zòn opérasyonèl a'w, bay pa koopérativ-la.",
+    "missions_title": "Misyon ka fèt",
+    "missions_desc": "Komann pou pran (EXW adan zòn dépo a'w) oben pou livré (CIF adan zòn livrézon a'w).",
+    "to_pickup": "POU PRAN",
+    "to_deliver": "POU LIVRÉ",
+    "delivered": "✓ LIVRÉ",
+    "in_progress": "KA FÈT",
+    "mark_delivered": "Maké livré",
+    "take_charge": "Pran an chaj",
+    "no_missions": "Pon misyon ka fèt adan zòn a'w.",
+    "exw_zones": "Zòn dépo EXW",
+    "cif_zones": "Zòn livrézon CIF",
+    "no_exw": "Pon zòn EXW bay.",
+    "no_cif": "Pon zòn CIF bay.",
+    "items": "atik"
+  },
+  "pos": {
+    "title": "Entèfas POS LOLODRIVE",
+    "subtitle": "Fil a komann, chanjman léta é scan pou rimèt.",
+    "queue": "Fil POS",
+    "scan_title": "Scan rétrè",
+    "ready": "Paré",
+    "all": "Tout"
+  },
+  "lolopoint": {
+    "no_relay": "Pon relè bay",
+    "performance": "Pèfòmans a pwen-la",
+    "ranking": "Klasman rézo",
+    "my_point": "Lolo Point an mwen",
+    "restock": "Réyaprovizyònman B2B",
+    "my_orders": "Komann an mwen"
   }
 }

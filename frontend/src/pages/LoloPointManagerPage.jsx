@@ -149,7 +149,7 @@ export default function LoloPointManagerPage() {
 
           {/* Performance temporelle (Recharts) */}
           <SectionCard
-            title="Performance"
+            title={i18n.t('lolopoint.performance', 'Performance')}
             action={
               <div className="inline-flex rounded-full border border-white/10 bg-white/[0.04] p-1">
                 {[7, 30, 90].map((d) => (
@@ -205,7 +205,7 @@ export default function LoloPointManagerPage() {
 
           {/* Classement réseau */}
           <SectionCard
-            title="Classement réseau"
+            title={i18n.t('lolopoint.ranking', 'Classement réseau')}
             action={
               ranking.my_rank ? (
                 <Badge color="#D9B35A" data-testid="my-rank-badge">

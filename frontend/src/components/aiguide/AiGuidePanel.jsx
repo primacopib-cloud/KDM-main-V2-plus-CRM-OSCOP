@@ -156,7 +156,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
           <Sparkles size={15} className="text-[#E9CF8E]" />
         </span>
         <span>
-          <p className="text-[13px] font-bold text-[#E9CF8E] leading-tight">GUID'IA</p>
+          <p className="text-[13px] font-bold text-[#E9CF8E] leading-tight">Oracle</p>
           <p className="text-[9.5px] text-white/45 leading-tight">Votre copilote Communityplace — gratuit</p>
         </span>
         <span className="ml-auto flex items-center gap-1">
@@ -172,7 +172,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
           </button>
           {voices.length > 0 && (
             <span className="relative">
-              <button type="button" data-testid="ai-guide-voice-btn" title="Choisir ma voix GUID'IA"
+              <button type="button" data-testid="ai-guide-voice-btn" title="Choisir ma voix Oracle"
                 onClick={() => setShowVoices(!showVoices)}
                 className={`p-1.5 rounded-lg transition-colors ${showVoices ? 'text-[#E9CF8E] bg-[#D9B35A]/15' : 'text-white/40 hover:text-white'}`}>
                 <AudioLines size={14} />
@@ -214,7 +214,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
             ))}
             {busy && (
               <div className="flex items-center gap-2 text-white/40 text-[11px] pl-1">
-                <Loader2 size={12} className="animate-spin text-[#E9CF8E]" /> GUID'IA réfléchit…
+                <Loader2 size={12} className="animate-spin text-[#E9CF8E]" /> Oracle réfléchit…
               </div>
             )}
             {!busy && tourAvailable && (

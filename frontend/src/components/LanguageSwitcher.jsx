@@ -1,5 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { API, getAuthHeaders, getSessionToken } from '../services/http';
+
+const saveLangToProfile = (code) => {
+  if (!getSessionToken()) return Promise.resolve();
+  return fetch(`${API}/profile/language`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ language: code }),
+  }).catch(() => {});
+};
 
 const LANGS = [
   { code: 'fr', label: 'Français', flag: 'fr' },
@@ -22,7 +32,7 @@ export default function LanguageSwitcher({ className = '' }) {
       {LANGS.map((l) => (
         <button
           key={l.code}
-          onClick={() => i18n.changeLanguage(l.code).then(() => window.location.reload())}
+          onClick={() => Promise.all([i18n.changeLanguage(l.code), saveLangToProfile(l.code)]).then(() => window.location.reload())}
           data-testid={`language-${l.code}`}
           className={`p-1 rounded-md transition-all ${
             current === l.code

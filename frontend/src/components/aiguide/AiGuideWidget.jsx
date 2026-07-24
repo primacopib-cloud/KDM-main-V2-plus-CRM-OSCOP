@@ -114,7 +114,7 @@ export const AiGuideWidget = () => {
           tourAvailable={Boolean(tourSteps && !tourDone)} onStartTour={startTour}
           onClose={() => setOpen(false)} />
       )}
-      <button type="button" data-testid="ai-guide-fab" aria-label="Ouvrir GUID'IA"
+      <button type="button" data-testid="ai-guide-fab" aria-label="Ouvrir Oracle"
         onClick={() => {
           if (!welcome) {
             fetch(`${API}/ai-guide/welcome?space=${space}&lang=${getLang()}`, { credentials: 'include', headers: getAuthHeaders() })
