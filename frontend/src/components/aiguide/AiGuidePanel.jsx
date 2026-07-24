@@ -258,7 +258,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
             )}
             {!busy && tourAvailable && (
               <button type="button" onClick={onStartTour} data-testid="ai-guide-start-tour"
-                className="w-full rounded-xl px-3 py-2.5 text-left text-[12px] font-bold text-[#2A1045] flex items-center gap-2 transition-transform hover:scale-[1.01]"
+                className="on-light w-full rounded-xl px-3 py-2.5 text-left text-[12px] font-bold text-[#2A1045] flex items-center gap-2 transition-transform hover:scale-[1.01]"
                 style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
                 <Compass size={15} /> Nouveau ici ? Lancez la visite guidée de votre espace
               </button>
@@ -268,7 +268,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                 {actions.map((a) => (
                   <button key={a.id} type="button" data-testid={`ai-guide-action-${a.id}`}
                     onClick={() => navigate(`${a.path}${a.path.includes('?') ? '&' : '?'}t=${Date.now()}`)}
-                    className="px-3 py-1.5 rounded-full text-[10.5px] font-bold inline-flex items-center gap-1.5 text-[#2A1045] transition-transform hover:scale-[1.03]"
+                    className="on-light px-3 py-1.5 rounded-full text-[10.5px] font-bold inline-flex items-center gap-1.5 text-[#2A1045] transition-transform hover:scale-[1.03]"
                     style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
                     {a.label} <ArrowRight size={11} />
                   </button>

@@ -456,7 +456,7 @@ img[src*="kdmarche-pro"], img[src*="oscop"] {
 .on-light .text-slate-700, .on-light .text-gray-700 { color: #334155 !important; }
 .on-light .text-slate-800, .on-light .text-gray-800 { color: #1e293b !important; }
 .on-light .text-slate-900, .on-light .text-gray-900 { color: #0f172a !important; }
-.on-light .text-\[\#2A1045\] { color: #2A1045 !important; }
+.on-light .text-\[\#2A1045\], .on-light.text-\[\#2A1045\] { color: #2A1045 !important; }
 .on-light .text-\[\#4a1776\] { color: #4a1776 !important; }
 .on-light .text-\[\#4C2A6E\] { color: #4C2A6E !important; }
 .on-light .text-\[\#3B1A5C\] { color: #3B1A5C !important; }

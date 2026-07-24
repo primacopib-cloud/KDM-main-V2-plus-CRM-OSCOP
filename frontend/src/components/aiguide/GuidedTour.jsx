@@ -58,7 +58,7 @@ export const GuidedTour = ({ steps, onFinish }) => {
             )}
             <button type="button" data-testid="tour-next"
               onClick={() => (idx + 1 < steps.length ? setIdx(idx + 1) : onFinish())}
-              className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-[#2A1045]"
+              className="on-light px-3 py-1.5 rounded-lg text-[11px] font-bold text-[#2A1045]"
               style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
               {idx + 1 < steps.length ? 'Suivant' : 'Terminer'}
             </button>
