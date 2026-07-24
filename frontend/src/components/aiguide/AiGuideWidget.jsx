@@ -7,7 +7,7 @@ import { AiGuidePanel } from './AiGuidePanel';
 const spaceFromPath = (p) => {
   if (p.startsWith('/superadmin') || p.startsWith('/admin')) return 'admin';
   if (p.startsWith('/espace-acheteur')) return 'buyer';
-  if (p.startsWith('/vendor') || p.startsWith('/vendeur')) return 'vendor';
+  if (p.startsWith('/vendor') || p.startsWith('/vendeur') || p.startsWith('/espace-vendeur')) return 'vendor';
   if (p.startsWith('/logicoop')) return 'operator';
   if (p.startsWith('/pos')) return 'pos';
   if (p.startsWith('/lolo-point')) return 'lolo_point';
@@ -16,11 +16,14 @@ const spaceFromPath = (p) => {
   return 'general';
 };
 const HIDDEN = ['/connexion', '/admin/connexion', '/inscription', '/mot-de-passe', '/reinitialiser', '/auth/'];
+const getLang = () => (localStorage.getItem('i18nextLng') || 'fr').slice(0, 2);
+const STUCK_DELAY_MS = 45000;
 
 export const AiGuideWidget = () => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [welcome, setWelcome] = useState(null);
+  const [bootTip, setBootTip] = useState(null);
   const lastSpace = useRef(null);
   const token = getSessionToken();
   const path = location.pathname;
@@ -29,7 +32,7 @@ export const AiGuideWidget = () => {
   useEffect(() => {
     if (!token || lastSpace.current === space || HIDDEN.some((h) => path.startsWith(h)) || path === '/') return;
     lastSpace.current = space;
-    fetch(`${API}/ai-guide/welcome?space=${space}`, { credentials: 'include', headers: getAuthHeaders() })
+    fetch(`${API}/ai-guide/welcome?space=${space}&lang=${getLang()}`, { credentials: 'include', headers: getAuthHeaders() })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!d) return;
@@ -42,17 +45,60 @@ export const AiGuideWidget = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, path]);
 
+  useEffect(() => {
+    if (!token || HIDDEN.some((h) => path.startsWith(h)) || path === '/') return undefined;
+    let timer = null;
+    let lastField = null;
+    const fire = async () => {
+      const key = `guidia_formhelp_${window.location.pathname}`;
+      if (!lastField || sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+      const hint = lastField.placeholder || lastField.getAttribute('aria-label') || lastField.name
+        || lastField.closest('form')?.getAttribute('data-testid') || 'formulaire en cours';
+      try {
+        const r = await fetch(`${API}/ai-guide/form-help`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({ form_hint: hint, page: document.title, space, lang: getLang() }),
+        });
+        const d = await r.json();
+        if (r.ok && d.tip) {
+          setBootTip({ tip: d.tip.replace(/\*\*/g, ''), suggestions: d.suggestions || [], at: Date.now() });
+          setOpen(true);
+        }
+      } catch { /* silencieux */ }
+    };
+    const arm = (e) => {
+      const el = e.target;
+      if (!el.matches || !el.matches('input, textarea, select')) return;
+      if (el.closest('[data-testid="ai-guide-panel"]')) return;
+      lastField = el;
+      clearTimeout(timer);
+      timer = setTimeout(fire, STUCK_DELAY_MS);
+    };
+    const reset = () => { if (lastField) { clearTimeout(timer); timer = setTimeout(fire, STUCK_DELAY_MS); } };
+    document.addEventListener('focusin', arm);
+    document.addEventListener('input', reset);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('focusin', arm);
+      document.removeEventListener('input', reset);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, path, space]);
+
   if (!token || HIDDEN.some((h) => path.startsWith(h)) || path === '/') return null;
 
   return (
     <>
       {open && welcome && (
-        <AiGuidePanel key={space} welcome={welcome} space={space} onClose={() => setOpen(false)} />
+        <AiGuidePanel key={space} welcome={welcome} space={space} lang={getLang()} bootTip={bootTip}
+          onClose={() => setOpen(false)} />
       )}
       <button type="button" data-testid="ai-guide-fab" aria-label="Ouvrir GUID'IA"
         onClick={() => {
           if (!welcome) {
-            fetch(`${API}/ai-guide/welcome?space=${space}`, { credentials: 'include', headers: getAuthHeaders() })
+            fetch(`${API}/ai-guide/welcome?space=${space}&lang=${getLang()}`, { credentials: 'include', headers: getAuthHeaders() })
               .then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) { setWelcome(d); setOpen(true); } })
               .catch(() => {});
           } else setOpen(!open);

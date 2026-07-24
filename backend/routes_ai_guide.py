@@ -110,50 +110,112 @@ def _space_of(user: dict, requested: str) -> str:
     return "general"
 
 
-async def _facts(db, user: dict, space: str) -> str:
-    facts = []
+async def _facts(db, user: dict, space: str, lang: str = "fr") -> str:
+    from ai_guide_i18n import FACT_TEMPLATES
     try:
         if space == "buyer":
-            m = await db.org_memberships.find_one({"user_id": user["id"]}, {"_id": 0, "org_id": 1})
-            org_id = user.get("organization_id") or (m or {}).get("org_id")
+            org_id = await _org_of(db, user)
             if org_id:
                 unpaid = await db.logiscop_transport_invoices.count_documents(
                     {"org_id": org_id, "status": {"$ne": "PAID"}})
                 ots = await db.logiscop_transport_orders.count_documents({"org_id": org_id})
-                facts.append(f"{unpaid} facture(s) transport en attente de règlement, {ots} OT émis")
+                return FACT_TEMPLATES["buyer"][lang].format(unpaid=unpaid, ots=ots)
         elif space == "admin":
             pending = await db.logiscop_transport_orders.count_documents({"status": "PROPOSE"})
             disputes = await db.logiscop_disputes.count_documents({"status": {"$ne": "RESOLVED"}})
-            facts.append(f"{pending} OT en attente d'acceptation, {disputes} litige(s) ouvert(s)")
+            return FACT_TEMPLATES["admin"][lang].format(pending=pending, disputes=disputes)
         elif space == "vendor":
             vid = user.get("vendor_id")
             if vid:
                 pending = await db.products.count_documents({"vendor_id": vid, "status": "pending"})
-                facts.append(f"{pending} produit(s) en attente de validation")
+                return FACT_TEMPLATES["vendor"][lang].format(pending=pending)
     except Exception as exc:
         logger.debug("GUID'IA facts: %s", exc)
-    return " ; ".join(facts)
+    return ""
+
+
+async def _org_of(db, user: dict):
+    m = await db.org_memberships.find_one({"user_id": user["id"]}, {"_id": 0, "org_id": 1})
+    return user.get("organization_id") or (m or {}).get("org_id")
+
+
+def _eur(cents) -> str:
+    return f"{(cents or 0) / 100:.2f} €"
+
+
+async def _data_pack(db, user: dict, space: str) -> str:
+    """Chiffres précis du membre injectés dans le prompt (impayés, échéances, soldes)."""
+    lines = []
+    try:
+        if space == "buyer":
+            org_id = await _org_of(db, user)
+            if org_id:
+                total, overdue = 0, 0
+                from datetime import timedelta
+                now = datetime.now(timezone.utc)
+                async for inv in db.logiscop_transport_invoices.find(
+                        {"org_id": org_id, "status": {"$ne": "PAID"}}, {"_id": 0}).limit(10):
+                    credit = await db.logiscop_transport_credits.find_one(
+                        {"invoice_id": inv["id"]}, {"_id": 0, "total_ttc_cents": 1})
+                    net = max(0, (inv.get("total_ttc_cents") or 0) - ((credit or {}).get("total_ttc_cents") or 0))
+                    total += net
+                    due = datetime.fromisoformat(inv["issued_at"]) + timedelta(days=30)
+                    late = due < now
+                    if late:
+                        overdue += net
+                    lines.append(f"Facture {inv['ref']} : {_eur(net)} net à régler, échéance {due.date()}"
+                                 + (" (ÉCHUE)" if late else ""))
+                    plan = (inv.get("payment_plan") or {}).get("installments") or []
+                    nxt = next((i for i in plan if i.get("status") != "PAID"), None)
+                    if nxt:
+                        lines.append(f"  Prochaine échéance de l'échéancier {inv['ref']} : "
+                                     f"{_eur(nxt['amount_cents'])} le {nxt['due_date']}")
+                lines.insert(0, f"Total restant à régler (transport) : {_eur(total)} dont {_eur(overdue)} échus.")
+                credits = await db.logiscop_transport_credits.count_documents({"org_id": org_id, "invoice_id": None})
+        elif space == "admin":
+            from routes_treasury_consolidated import compute_consolidated_treasury
+            t = await compute_consolidated_treasury(db)
+            lines.append(
+                f"Trésorerie : RCR détenue {_eur(t['rcr']['held_cents'])} ; encours transport "
+                f"{_eur(t['transport']['outstanding_cents'])} ({t['transport']['unpaid_count']} factures, "
+                f"dont échu {_eur(t['transport']['overdue_cents'])}) ; adhésions/mois "
+                f"{_eur(t['memberships']['mrr_cents'])} ({t['memberships']['active_count']} actifs) ; "
+                f"net projeté 90 j {_eur(t['projected_net_90d_cents'])}.")
+        elif space in ("member", "general"):
+            w = await db.lolodrive_wallets.find_one({"user_id": user["id"]}, {"_id": 0, "balance_uc": 1})
+            if w:
+                lines.append(f"Solde wallet : {w.get('balance_uc', 0)} UC.")
+    except Exception as exc:
+        logger.debug("GUID'IA data pack: %s", exc)
+    return "\n".join(lines)[:900]
 
 
 @ai_guide_router.get("/welcome")
-async def guide_welcome(space: str = "general", current_user: dict = Depends(get_current_user)):
-    """Accueil personnalisé instantané + suggestions contextuelles (sans appel LLM)."""
+async def guide_welcome(space: str = "general", lang: str = "fr",
+                        current_user: dict = Depends(get_current_user)):
+    """Accueil personnalisé instantané multilingue + suggestions contextuelles (sans appel LLM)."""
+    from ai_guide_i18n import GREETINGS, SUGGESTIONS_I18N, norm_lang
     db = get_database()
     space = _space_of(current_user, space)
+    lang = norm_lang(lang)
     first = (current_user.get("contact_name") or current_user.get("name") or "").split(" ")[0]
-    facts = await _facts(db, current_user, space)
-    greeting = f"Bonjour{' ' + first if first else ''} 👋 Je suis GUID'IA, votre copilote Communityplace."
+    facts = await _facts(db, current_user, space, lang)
+    g = GREETINGS[lang]
+    greeting = g["hello"].format(name=f" {first}" if first else "")
     if facts:
-        greeting += f" À noter aujourd'hui : {facts}."
-    greeting += " Comment puis-je vous guider ?"
-    return {"assistant_name": "GUID'IA", "greeting": greeting, "space": space,
-            "suggestions": BASE_SUGGESTIONS.get(space, BASE_SUGGESTIONS["general"])}
+        greeting += g["note"].format(facts=facts)
+    greeting += g["ask"]
+    suggestions = (SUGGESTIONS_I18N.get(lang, {}).get(space)
+                   or BASE_SUGGESTIONS.get(space, BASE_SUGGESTIONS["general"]))
+    return {"assistant_name": "GUID'IA", "greeting": greeting, "space": space, "lang": lang,
+            "suggestions": suggestions}
 
 
 class GuideChatBody(BaseModel):
     message: str
     session_id: Optional[str] = None
     space: str = "general"
+    lang: str = "fr"
 
 
 @ai_guide_router.post("/chat")
@@ -175,13 +237,18 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
         f"{'Utilisateur' if m['role'] == 'user' else 'GUID’IA'}: {m['content'][:500]}" for m in reversed(history))
 
     facts = await _facts(db, current_user, space)
+    data_pack = await _data_pack(db, current_user, space)
+    from ai_guide_i18n import LANG_NAMES, norm_lang
+    lang = norm_lang(body.lang)
     action_ids = SPACE_ACTIONS.get(space, [])
     actions_txt = " ; ".join(f"{a}: {ACTIONS[a][0]}" for a in action_ids)
     context = (
         f"Profil : {current_user.get('contact_name') or current_user.get('email')} — rôle {current_user.get('role')} "
-        f"— espace actuel : {SPACE_LABELS[space]}."
+        f"— espace actuel : {SPACE_LABELS[space]}. Langue préférée : {LANG_NAMES[lang]} — réponds dans cette langue."
         + (f" Données en direct : {facts}." if facts else "")
-        + (f" Actions disponibles : {actions_txt}." if actions_txt else ""))
+        + (f" Actions disponibles : {actions_txt}." if actions_txt else "")
+        + (f"\nDonnées chiffrées exactes du membre (utilise-les pour répondre avec des montants précis) :\n{data_pack}"
+           if data_pack else ""))
     prompt = f"{context}\n"
     if history_txt:
         prompt += f"Historique :\n{history_txt}\n"
@@ -226,6 +293,95 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
          "$inc": {"messages": 2}},
         upsert=True)
     return {"answer": answer, "suggestions": suggestions, "actions": actions, "session_id": session_id}
+
+
+class FormHelpBody(BaseModel):
+    form_hint: str
+    page: str = ""
+    space: str = "general"
+    lang: str = "fr"
+
+
+@ai_guide_router.post("/form-help")
+async def guide_form_help(body: FormHelpBody, current_user: dict = Depends(get_current_user)):
+    """Conseil ciblé quand l'utilisateur semble bloqué sur un formulaire."""
+    db = get_database()
+    space = _space_of(current_user, body.space)
+    from ai_guide_i18n import LANG_NAMES, norm_lang
+    lang = norm_lang(body.lang)
+    prompt = (
+        f"L'utilisateur ({current_user.get('role')}) semble bloqué depuis un moment sur un formulaire de la page "
+        f"« {body.page[:120]} » de l'espace {SPACE_LABELS[space]}. Champ / formulaire concerné : "
+        f"« {body.form_hint[:200]} ». Donne-lui spontanément un conseil ciblé, bienveillant et concret "
+        f"(2-3 phrases max) pour l'aider à compléter ce formulaire, en {LANG_NAMES[lang]}.")
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    try:
+        chat = LlmChat(api_key=os.environ.get("EMERGENT_LLM_KEY"),
+                       session_id=f"formhelp_{uuid.uuid4().hex[:10]}",
+                       system_message=SYSTEM_PROMPT).with_model("openai", "gpt-5.4")
+        raw = await chat.send_message(UserMessage(text=prompt)) or ""
+    except Exception as exc:
+        logger.warning("GUID'IA form-help erreur : %s", exc)
+        raise HTTPException(status_code=502, detail="Aide momentanément indisponible")
+    suggestions = []
+    match = re.search(r"SUGGESTIONS\s*:\s*(.+)$", raw, re.IGNORECASE | re.DOTALL)
+    if match:
+        suggestions = [s.strip(" -•\n") for s in match.group(1).split("|") if s.strip()][:3]
+        raw = raw[:match.start()].strip()
+    raw = re.sub(r"^ACTIONS\s*:.*$", "", raw, flags=re.IGNORECASE | re.MULTILINE).strip()
+    return {"tip": raw, "suggestions": suggestions}
+
+
+FRICTION_THRESHOLD = int(os.environ.get("GUIDIA_FRICTION_THRESHOLD", "5"))
+
+
+async def check_guidia_friction(db) -> int:
+    """Alerte admins quand une même question revient souvent sur 7 jours (idempotent question+semaine)."""
+    from datetime import timedelta
+    since = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    week = datetime.now(timezone.utc).strftime("%G-W%V")
+    alerts = 0
+    async for g in db.ai_guide_messages.aggregate([
+            {"$match": {"role": "user", "created_at": {"$gte": since}}},
+            {"$group": {"_id": {"$toLower": {"$trim": {"input": "$content"}}}, "n": {"$sum": 1}}},
+            {"$match": {"n": {"$gte": FRICTION_THRESHOLD}}}, {"$sort": {"n": -1}}, {"$limit": 5}]):
+        question, count = g["_id"][:150], g["n"]
+        if await db.system_flags.find_one({"key": "guidia_friction", "week": week, "question": question}):
+            continue
+        try:
+            from core_deps import create_notification
+            await create_notification(
+                "guidia_friction", "Point de friction détecté par GUID'IA",
+                f"La question « {question} » a été posée {count} fois ces 7 derniers jours — "
+                "la page concernée mérite peut-être d'être clarifiée.",
+                target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+                data={"question": question, "count": count})
+        except Exception as exc:
+            logger.warning("Notification friction échouée : %s", exc)
+        try:
+            from brevo_service import send_email, is_brevo_configured
+            admin_email = os.environ.get("ADMIN_ALERT_EMAIL") or os.environ.get(
+                "QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
+            if is_brevo_configured():
+                await send_email(
+                    to_email=admin_email, to_name="Administration KDMARCHÉ × O'SCOP",
+                    subject=f"[GUID'IA] Point de friction : une question revient {count} fois",
+                    html_content=(
+                        "<div style='font-family:Arial;color:#2A1045'><h2 style='color:#5B2E8C'>Point de friction détecté</h2>"
+                        f"<p>La question <b>« {question} »</b> a été posée <b>{count} fois</b> ces 7 derniers jours "
+                        "via GUID'IA.</p><p>C'est le signe qu'une page, un onglet ou un parcours mérite d'être "
+                        "clarifié. Consultez le panneau « GUID'IA — questions des membres » (onglet Chat IA du "
+                        "Super Admin) pour le détail.</p>"
+                        "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP</b></p></div>"),
+                    tags=["guidia-friction"])
+        except Exception as exc:
+            logger.warning("Email friction échoué : %s", exc)
+        await db.system_flags.insert_one({"key": "guidia_friction", "week": week, "question": question,
+                                          "count": count,
+                                          "sent_at": datetime.now(timezone.utc).isoformat()})
+        alerts += 1
+        logger.info("Alerte friction GUID'IA : « %s » ×%d", question, count)
+    return alerts
 
 
 @ai_guide_router.get("/sessions")

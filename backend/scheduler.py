@@ -163,6 +163,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler payment plans crashed: %s", exc)
         try:
+            from routes_ai_guide import check_guidia_friction
+            await check_guidia_friction(_db)
+        except Exception as exc:
+            logger.exception("Scheduler GUIDIA friction crashed: %s", exc)
+        try:
             from routes_accounting import snapshot_fiscal_register
             await snapshot_fiscal_register(_db)
         except Exception as exc:

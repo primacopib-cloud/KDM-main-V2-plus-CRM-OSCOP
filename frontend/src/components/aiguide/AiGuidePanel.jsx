@@ -6,7 +6,7 @@ import { AiGuideHistory } from './AiGuideHistory';
 
 const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
-export const AiGuidePanel = ({ welcome, space, onClose }) => {
+export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null, onClose }) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([{ role: 'assistant', content: welcome.greeting }]);
   const [suggestions, setSuggestions] = useState(welcome.suggestions || []);
@@ -19,9 +19,19 @@ export const AiGuidePanel = ({ welcome, space, onClose }) => {
   const [sessionId, setSessionId] = useState(sessionStorage.getItem(`guidia_session_${space}`) || null);
   const endRef = useRef(null);
   const recRef = useRef(null);
+  const lastTipAt = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, busy]);
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
+
+  useEffect(() => {
+    if (!bootTip?.tip || bootTip.at === lastTipAt.current) return;
+    lastTipAt.current = bootTip.at;
+    setMessages((m) => [...m, { role: 'assistant', content: bootTip.tip }]);
+    if (bootTip.suggestions?.length) setSuggestions(bootTip.suggestions);
+    if (speak) readAloud(bootTip.tip);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bootTip?.at]);
 
   const readAloud = (text) => {
     if (!window.speechSynthesis) return;
@@ -63,7 +73,7 @@ export const AiGuidePanel = ({ welcome, space, onClose }) => {
       const r = await fetch(`${API}/ai-guide/chat`, {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ message, session_id: sessionId, space }),
+        body: JSON.stringify({ message, session_id: sessionId, space, lang }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Réponse indisponible');
