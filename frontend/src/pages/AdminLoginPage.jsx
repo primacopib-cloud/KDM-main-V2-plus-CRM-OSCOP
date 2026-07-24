@@ -196,6 +196,13 @@ const AdminLoginPage = () => {
                   <Label htmlFor="password" className="text-white/80 text-sm font-medium">
                     {i18n.t('adm.mot_de_passe')}
                   </Label>
+                  <Link
+                    to="/mot-de-passe-oublie"
+                    className="text-xs text-[#E9CF8E] hover:text-white font-medium"
+                    data-testid="admin-forgot-password-link"
+                  >
+                    {i18n.t('auth.forgot_password')}
+                  </Link>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />

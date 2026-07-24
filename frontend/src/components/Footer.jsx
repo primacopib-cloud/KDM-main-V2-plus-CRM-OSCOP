@@ -9,6 +9,7 @@ import { PartnerForm } from './PartnerForm';
 const Footer = () => {
   const { t } = useTranslation();
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [partnerOpen, setPartnerOpen] = useState(false);
   return (
     <footer style={{
       background: 'linear-gradient(180deg, #221038 0%, #1A092D 100%)',
@@ -48,8 +49,6 @@ const Footer = () => {
                 {t('footer.ess_certified')}
               </p>
             </div>
-
-            <PartnerForm />
           </div>
 
           {/* Navigation */}
@@ -215,6 +214,40 @@ const Footer = () => {
               </div>
               <div className="max-w-3xl mx-auto">
                 <ContactForm />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Devenir partenaire — onglet dépliable (même style que la demande de devis) */}
+        <div className="rounded-2xl border border-[#D9B35A]/30 overflow-hidden mb-10" data-testid="footer-partner-accordion">
+          <button
+            type="button"
+            onClick={() => setPartnerOpen((v) => !v)}
+            data-testid="footer-partner-toggle"
+            className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.04]"
+            style={{ background: 'rgba(217,179,90,0.08)' }}
+            aria-expanded={partnerOpen}
+          >
+            <span className="flex items-center gap-2.5 text-sm font-bold text-[#E9CF8E] uppercase tracking-wider">
+              <Handshake className="w-4 h-4 text-[#D4AF37]" /> Devenir partenaire
+            </span>
+            <ChevronDown className={`w-4 h-4 text-[#D4AF37] transition-transform duration-300 ${partnerOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {partnerOpen && (
+            <div className="px-4 sm:px-6 py-6 border-t border-[#D9B35A]/20">
+              <div className="text-center mb-6">
+                <span className="badge-status mb-3 inline-flex">
+                  <span className="dot"></span>
+                  Candidature partenariat
+                </span>
+                <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2 text-white">Devenir Partenaire</h3>
+                <p className="text-white/70 text-sm">
+                  Opérateurs logistiques, coopératives, acteurs ESS — rejoignez l&apos;écosystème KDMARCHÉ × O&apos;SCOP en tant que partenaire officiel.
+                </p>
+              </div>
+              <div className="max-w-3xl mx-auto">
+                <PartnerForm />
               </div>
             </div>
           )}
