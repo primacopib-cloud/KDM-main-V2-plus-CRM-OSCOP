@@ -307,6 +307,12 @@ async def public_partner_types():
 class PartnerTypeBody(BaseModel):
     code: str
     label: str
+    labels: Optional[dict] = None
+
+
+def _clean_labels(raw: Optional[dict]) -> dict:
+    return {k: v.strip() for k, v in (raw or {}).items()
+            if k in ("fr", "en", "es", "gcf") and isinstance(v, str) and v.strip()}
 
 
 @logicoop_router.get("/admin/partners/types")
@@ -320,9 +326,28 @@ async def add_partner_type(body: PartnerTypeBody, admin: dict = Depends(require_
     code = body.code.strip().upper().replace(" ", "_")
     if await db.partner_types.find_one({"code": code}):
         raise HTTPException(status_code=409, detail="Ce type existe déjà")
-    doc = {"id": str(uuid.uuid4()), "code": code, "label": body.label.strip(), "active": True, "created_at": _now()}
+    labels = _clean_labels(body.labels)
+    labels.setdefault("fr", body.label.strip())
+    doc = {"id": str(uuid.uuid4()), "code": code, "label": body.label.strip(),
+           "labels": labels, "active": True, "created_at": _now()}
     await db.partner_types.insert_one({**doc})
     return doc
+
+
+class TypeLabelsBody(BaseModel):
+    labels: dict
+
+
+@logicoop_router.put("/admin/partners/types/{type_id}/labels")
+async def update_partner_type_labels(type_id: str, body: TypeLabelsBody, admin: dict = Depends(require_admin)):
+    t = await db.partner_types.find_one({"id": type_id})
+    if not t:
+        raise HTTPException(status_code=404, detail="Type introuvable")
+    labels = _clean_labels(body.labels)
+    if not labels.get("fr"):
+        raise HTTPException(status_code=400, detail="Le libellé français est requis")
+    await db.partner_types.update_one({"id": type_id}, {"$set": {"labels": labels, "label": labels["fr"]}})
+    return {"ok": True, "labels": labels}
 
 
 @logicoop_router.patch("/admin/partners/types/{type_id}")

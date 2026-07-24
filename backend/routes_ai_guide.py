@@ -410,6 +410,21 @@ class TtsBody(BaseModel):
     voice: Optional[str] = None
 
 
+@ai_guide_router.get("/weekly-summary")
+async def guide_weekly_summary(lang: str = "fr", current_user: dict = Depends(get_current_user)):
+    """Chiffres clés de la semaine, formulés pour lecture vocale — réservé aux admins."""
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    from datetime import timedelta
+    from weekly_report import _collect_stats
+    from weekly_summary_voice import build_weekly_summary
+    db = get_database()
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    stats = await _collect_stats(db, since)
+    apps_week = await db.partner_applications.count_documents({"created_at": {"$gte": since.isoformat()}})
+    return {"text": build_weekly_summary(stats, lang, apps_week)}
+
+
 @ai_guide_router.post("/tts")
 async def guide_tts(body: TtsBody, current_user: dict = Depends(get_current_user)):
     """Lecture audio premium des réponses Oracle (OpenAI TTS voix naturelle)."""

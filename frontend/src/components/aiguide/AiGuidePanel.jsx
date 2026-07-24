@@ -16,6 +16,10 @@ const VOICE_MENU_TITLE = {
   gcf: 'Vwa ki ké li akèy-la', fr: "Voix de lecture & d'accueil",
   en: 'Reading & welcome voice', es: 'Voz de lectura y bienvenida',
 };
+const WEEKLY_BTN = {
+  fr: 'Écouter le résumé de la semaine', en: 'Listen to the weekly summary',
+  es: 'Escuchar el resumen de la semana', gcf: 'Kouté rézimé a simenn-lan',
+};
 
 export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   tourAvailable = false, onStartTour, onClose }) => {
@@ -33,6 +37,18 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   const [voices, setVoices] = useState([]);
   const [showVoices, setShowVoices] = useState(false);
   const [previewing, setPreviewing] = useState(null);
+  const [weeklyBusy, setWeeklyBusy] = useState(false);
+
+  const playWeekly = async () => {
+    setWeeklyBusy(true);
+    try {
+      const r = await fetch(`${API}/ai-guide/weekly-summary?lang=${lang}`, { credentials: 'include', headers: getAuthHeaders() });
+      if (!r.ok) throw new Error('summary');
+      const d = await r.json();
+      setMessages((m) => [...m, { role: 'assistant', content: d.text }]);
+      readAloud(d.text);
+    } catch { /* silencieux */ } finally { setWeeklyBusy(false); }
+  };
 
   useEffect(() => {
     fetch(`${API}/ai-guide/voice`, { credentials: 'include', headers: getAuthHeaders() })
@@ -261,6 +277,14 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                 className="on-light w-full rounded-xl px-3 py-2.5 text-left text-[12px] font-bold text-[#2A1045] flex items-center gap-2 transition-transform hover:scale-[1.01]"
                 style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
                 <Compass size={15} /> Nouveau ici ? Lancez la visite guidée de votre espace
+              </button>
+            )}
+            {!busy && space === 'admin' && (
+              <button type="button" onClick={playWeekly} disabled={weeklyBusy} data-testid="ai-guide-weekly-summary"
+                className="on-light w-full rounded-xl px-3 py-2.5 text-left text-[12px] font-bold text-[#2A1045] flex items-center gap-2 transition-transform hover:scale-[1.01] disabled:opacity-60"
+                style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
+                {weeklyBusy ? <Loader2 size={15} className="animate-spin" /> : <AudioLines size={15} />}
+                {WEEKLY_BTN[lang] || WEEKLY_BTN.fr}
               </button>
             )}
             {!busy && actions.length > 0 && (

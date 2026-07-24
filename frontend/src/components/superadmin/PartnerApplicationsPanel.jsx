@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Handshake, Plus, Power } from 'lucide-react';
+import { Handshake, Languages, Plus, Power } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inp = 'h-9 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35';
+const LANGS = [['fr', 'FR *'], ['en', 'EN'], ['es', 'ES'], ['gcf', 'KRÉYÒL']];
 const STATUS = {
   NOUVELLE: 'bg-[#60A5FA]/15 text-[#60A5FA]', EN_COURS: 'bg-[#D9B35A]/20 text-[#E9CF8E]',
   ACCEPTEE: 'bg-emerald-500/15 text-emerald-400', REFUSEE: 'bg-red-500/15 text-red-400',
@@ -12,7 +13,9 @@ const STATUS = {
 export const PartnerApplicationsPanel = () => {
   const [apps, setApps] = useState([]);
   const [types, setTypes] = useState([]);
-  const [newType, setNewType] = useState({ code: '', label: '' });
+  const [newType, setNewType] = useState({ code: '', fr: '', en: '', es: '', gcf: '' });
+  const [editing, setEditing] = useState(null);
+  const [editLabels, setEditLabels] = useState({});
 
   const load = useCallback(() => {
     fetch(`${API}/admin/partners/applications`, { credentials: 'include' })
@@ -33,15 +36,34 @@ export const PartnerApplicationsPanel = () => {
   };
 
   const addType = async () => {
-    if (!newType.code.trim() || !newType.label.trim()) return toast.error('Code et libellé requis');
+    if (!newType.code.trim() || !newType.fr.trim()) return toast.error('Code et libellé FR requis');
     const r = await fetch(`${API}/admin/partners/types`, {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newType),
+      body: JSON.stringify({ code: newType.code, label: newType.fr,
+        labels: { fr: newType.fr, en: newType.en, es: newType.es, gcf: newType.gcf } }),
     });
     const d = await r.json();
     if (!r.ok) return toast.error(d.detail || 'Erreur');
     toast.success(`Espace « ${d.label} » ajouté au formulaire partenaire`);
-    setNewType({ code: '', label: '' });
+    setNewType({ code: '', fr: '', en: '', es: '', gcf: '' });
+    load();
+  };
+
+  const openEdit = (t) => {
+    setEditing(t.id);
+    setEditLabels({ fr: t.labels?.fr || t.label || '', en: t.labels?.en || '', es: t.labels?.es || '', gcf: t.labels?.gcf || '' });
+  };
+
+  const saveLabels = async () => {
+    if (!editLabels.fr?.trim()) return toast.error('Le libellé FR est requis');
+    const r = await fetch(`${API}/admin/partners/types/${editing}/labels`, {
+      method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ labels: editLabels }),
+    });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Erreur');
+    toast.success('Traductions enregistrées');
+    setEditing(null);
     load();
   };
 
@@ -58,18 +80,45 @@ export const PartnerApplicationsPanel = () => {
       </h3>
       <p className="text-xs text-white/45 mb-4">Demandes reçues via le formulaire du pied de page. Gérez aussi les espaces proposés dans le formulaire.</p>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-        {types.map((t) => (
-          <button key={t.id} type="button" onClick={() => toggleType(t)} data-testid={`partner-type-${t.code}`}
-            title={t.active ? 'Cliquer pour masquer du formulaire' : 'Cliquer pour réafficher'}
-            className={`px-2 py-1 rounded-lg text-[10px] font-bold border inline-flex items-center gap-1 transition-colors ${t.active ? 'bg-[#D9B35A]/20 text-[#E9CF8E] border-[#D9B35A]/40' : 'bg-white/[0.04] text-white/35 border-white/10 line-through'}`}>
-            <Power size={10} /> {t.label}
-          </button>
-        ))}
-        <input value={newType.code} onChange={(e) => setNewType({ ...newType, code: e.target.value })} placeholder="CODE" data-testid="partner-type-code-input" className={`${inp} w-28`} />
-        <input value={newType.label} onChange={(e) => setNewType({ ...newType, label: e.target.value })} placeholder="Libellé du nouvel espace" data-testid="partner-type-label-input" className={`${inp} flex-1 min-w-[160px]`} />
-        <button type="button" onClick={addType} data-testid="partner-type-add-btn"
-          className="btn-gold h-9 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1"><Plus size={13} /> Ajouter</button>
+      <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {types.map((t) => (
+            <span key={t.id} className="inline-flex items-center">
+              <button type="button" onClick={() => toggleType(t)} data-testid={`partner-type-${t.code}`}
+                title={t.active ? 'Cliquer pour masquer du formulaire' : 'Cliquer pour réafficher'}
+                className={`px-2 py-1 rounded-l-lg text-[10px] font-bold border inline-flex items-center gap-1 transition-colors ${t.active ? 'bg-[#D9B35A]/20 text-[#E9CF8E] border-[#D9B35A]/40' : 'bg-white/[0.04] text-white/35 border-white/10 line-through'}`}>
+                <Power size={10} /> {t.label}
+              </button>
+              <button type="button" onClick={() => (editing === t.id ? setEditing(null) : openEdit(t))}
+                data-testid={`partner-type-${t.code}-translate`} title="Traduire ce type (FR/EN/ES/Kréyòl)"
+                className={`px-1.5 py-1 rounded-r-lg border border-l-0 transition-colors ${editing === t.id ? 'bg-[#D9B35A]/30 text-[#E9CF8E] border-[#D9B35A]/40' : 'bg-white/[0.04] text-white/40 border-white/10 hover:text-[#E9CF8E]'}`}>
+                <Languages size={11} />
+              </button>
+            </span>
+          ))}
+        </div>
+        {editing && (
+          <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-[#D9B35A]/[0.06] border border-[#D9B35A]/20" data-testid="partner-type-labels-editor">
+            {LANGS.map(([k, lbl]) => (
+              <label key={k} className="flex items-center gap-1.5 text-[10px] font-bold text-white/50">
+                {lbl}
+                <input value={editLabels[k] || ''} onChange={(e) => setEditLabels({ ...editLabels, [k]: e.target.value })}
+                  data-testid={`partner-type-label-${k}`} className={`${inp} w-44 font-normal`} />
+              </label>
+            ))}
+            <button type="button" onClick={saveLabels} data-testid="partner-type-labels-save"
+              className="btn-gold h-9 px-3 rounded-lg text-xs font-semibold">Enregistrer</button>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <input value={newType.code} onChange={(e) => setNewType({ ...newType, code: e.target.value })} placeholder="CODE" data-testid="partner-type-code-input" className={`${inp} w-24`} />
+          <input value={newType.fr} onChange={(e) => setNewType({ ...newType, fr: e.target.value })} placeholder="Libellé FR *" data-testid="partner-type-label-input" className={`${inp} flex-1 min-w-[130px]`} />
+          <input value={newType.en} onChange={(e) => setNewType({ ...newType, en: e.target.value })} placeholder="EN" data-testid="partner-type-en-input" className={`${inp} w-32`} />
+          <input value={newType.es} onChange={(e) => setNewType({ ...newType, es: e.target.value })} placeholder="ES" data-testid="partner-type-es-input" className={`${inp} w-32`} />
+          <input value={newType.gcf} onChange={(e) => setNewType({ ...newType, gcf: e.target.value })} placeholder="Kréyòl" data-testid="partner-type-gcf-input" className={`${inp} w-32`} />
+          <button type="button" onClick={addType} data-testid="partner-type-add-btn"
+            className="btn-gold h-9 px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1"><Plus size={13} /> Ajouter</button>
+        </div>
       </div>
 
       <div className="space-y-2">
