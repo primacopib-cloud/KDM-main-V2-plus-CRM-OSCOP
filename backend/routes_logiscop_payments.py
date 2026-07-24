@@ -35,9 +35,26 @@ async def pay_invoice(invoice_id: str, body: PayBody, current_user: dict = Depen
     inv = await _get_invoice_for_user(db, invoice_id, current_user)
     if inv["status"] == "PAID":
         raise HTTPException(status_code=409, detail="Facture déjà réglée")
+    credit = await db.logiscop_transport_credits.find_one({"invoice_id": invoice_id}, {"_id": 0})
+    credit_cents = credit["total_ttc_cents"] if credit else 0
+    net_cents = inv["total_ttc_cents"] - credit_cents
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if net_cents <= 0:
+        await db.logiscop_transport_invoices.update_one(
+            {"id": invoice_id}, {"$set": {"status": "PAID", "paid_at": now_iso,
+                                          "payment_method": "avoir", "credit_applied_cents": credit_cents}})
+        await create_notification(
+            "logiscop_invoice_paid_online", "Facture transport soldée par avoir",
+            f"La facture {inv['ref']} a été intégralement soldée par l'avoir {credit['ref']}.",
+            target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+            data={"invoice_id": invoice_id, "ref": inv["ref"]})
+        return {"paid_without_charge": True, "invoice_status": "PAID", "credit_applied_cents": credit_cents}
     origin = body.origin_url.rstrip("/")
     if not origin:
         raise HTTPException(status_code=400, detail="origin_url requis")
+    label = f"LOGI'SCOP — Facture transport {inv['ref']} (OT {inv['ot_ref']})"
+    if credit:
+        label += f" — avoir {credit['ref']} déduit (−{credit_cents / 100:.2f} €)"
     from routes_payment import _wallet_stripe_key
     try:
         session = stripe.checkout.Session.create(
@@ -47,8 +64,8 @@ async def pay_invoice(invoice_id: str, body: PayBody, current_user: dict = Depen
             line_items=[{
                 "price_data": {
                     "currency": "eur",
-                    "unit_amount": inv["total_ttc_cents"],
-                    "product_data": {"name": f"LOGI'SCOP — Facture transport {inv['ref']} (OT {inv['ot_ref']})"},
+                    "unit_amount": net_cents,
+                    "product_data": {"name": label},
                 },
                 "quantity": 1,
             }],
@@ -66,7 +83,7 @@ async def pay_invoice(invoice_id: str, body: PayBody, current_user: dict = Depen
         "id": f"lip_{uuid.uuid4().hex[:12]}", "session_id": session.id,
         "invoice_id": invoice_id, "invoice_ref": inv["ref"],
         "user_id": current_user["id"], "org_id": inv["org_id"],
-        "amount_cents": inv["total_ttc_cents"], "currency": "EUR",
+        "amount_cents": net_cents, "credit_applied_cents": credit_cents, "currency": "EUR",
         "status": "created", "created_at": datetime.now(timezone.utc).isoformat()})
     return {"checkout_url": session.url, "session_id": session.id}
 

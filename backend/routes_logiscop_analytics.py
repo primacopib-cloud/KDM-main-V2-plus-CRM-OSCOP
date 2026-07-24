@@ -143,6 +143,32 @@ async def quality_history(current_user: dict = Depends(get_current_user)):
                        for m, rec in sorted(months.items())]}
 
 
+class CreditRatesBody(BaseModel):
+    late_pct: float = Field(ge=0, le=100)
+    reserves_pct: float = Field(ge=0, le=100)
+
+
+@logiscop_analytics_router.get("/admin/service-credit-rates")
+async def get_service_credit_rates(current_user: dict = Depends(get_current_user)):
+    await check_admin(current_user)
+    db = get_database()
+    late = await db.logiscop_settings.find_one({"key": "service_credit_late_pct"}, {"_id": 0})
+    res = await db.logiscop_settings.find_one({"key": "service_credit_reserves_pct"}, {"_id": 0})
+    return {"late_pct": float(late["value"]) if late else 10.0,
+            "reserves_pct": float(res["value"]) if res else 10.0}
+
+
+@logiscop_analytics_router.post("/admin/service-credit-rates")
+async def set_service_credit_rates(body: CreditRatesBody, current_user: dict = Depends(get_current_user)):
+    await check_admin(current_user)
+    db = get_database()
+    await db.logiscop_settings.update_one(
+        {"key": "service_credit_late_pct"}, {"$set": {"value": body.late_pct}}, upsert=True)
+    await db.logiscop_settings.update_one(
+        {"key": "service_credit_reserves_pct"}, {"$set": {"value": body.reserves_pct}}, upsert=True)
+    return {"ok": True, "late_pct": body.late_pct, "reserves_pct": body.reserves_pct}
+
+
 @logiscop_analytics_router.post("/admin/operator-share-rate")
 async def set_operator_share_rate(body: ShareRateBody, current_user: dict = Depends(get_current_user)):
     await check_admin(current_user)

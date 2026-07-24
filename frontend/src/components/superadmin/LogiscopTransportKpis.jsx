@@ -5,6 +5,51 @@ import { API, getAuthHeaders } from '../../services/http';
 
 const eur = (c) => `${((c || 0) / 100).toFixed(2)} €`;
 
+const ServiceCreditRates = () => {
+  const [rates, setRates] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API}/logiscop-transport/admin/service-credit-rates`, { credentials: 'include', headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : null)).then(setRates).catch(() => {});
+  }, []);
+
+  const save = async () => {
+    try {
+      const r = await fetch(`${API}/logiscop-transport/admin/service-credit-rates`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ late_pct: Number(rates.late_pct), reserves_pct: Number(rates.reserves_pct) }),
+      });
+      if (!r.ok) throw new Error((await r.json()).detail || 'Erreur');
+      toast.success(`Avoirs de service : retard ${rates.late_pct} % · réserves ${rates.reserves_pct} %`);
+    } catch (e) { toast.error(e.message); }
+  };
+
+  if (!rates) return null;
+  const inp = 'w-14 h-7 px-2 rounded bg-white/[0.06] border border-white/15 text-[10px] text-white text-center';
+  return (
+    <div className="rounded-lg p-3 mt-2 bg-white/[0.04] border border-white/[0.08] flex flex-wrap items-center gap-2"
+      data-testid="service-credit-rates">
+      <p className="text-[11px] font-bold text-white/60">Avoirs de service (article 22) :</p>
+      <label className="inline-flex items-center gap-1.5 text-[10px] text-white/50">
+        Retard
+        <input value={rates.late_pct} data-testid="credit-rate-late"
+          onChange={(e) => setRates({ ...rates, late_pct: e.target.value.replace(/[^\d.]/g, '') })} className={inp} /> %
+      </label>
+      <label className="inline-flex items-center gap-1.5 text-[10px] text-white/50">
+        Réserves
+        <input value={rates.reserves_pct} data-testid="credit-rate-reserves"
+          onChange={(e) => setRates({ ...rates, reserves_pct: e.target.value.replace(/[^\d.]/g, '') })} className={inp} /> %
+      </label>
+      <button type="button" onClick={save} data-testid="credit-rates-save"
+        className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white/[0.06] text-white/70 hover:text-[#E9CF8E] border border-white/15 inline-flex items-center gap-1">
+        <Check size={10} /> OK
+      </button>
+      <span className="text-[9px] text-white/35">Appliqués automatiquement à la clôture ePOD, cumulables, déduits du paiement en ligne.</span>
+    </div>
+  );
+};
+
 export const LogiscopTransportKpis = () => {
   const [kpi, setKpi] = useState(null);
   const [earn, setEarn] = useState(null);
@@ -65,8 +110,7 @@ export const LogiscopTransportKpis = () => {
       </div>
 
       {earn && (
-        <div className="rounded-lg p-3 bg-white/[0.04] border border-white/[0.08]" data-testid="operator-earnings">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <div className="rounded-lg p-3 bg-white/[0.04] border border-white/[0.08]" data-testid="operator-earnings">          <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
             <p className="text-[11px] font-bold text-white/60">
               Rémunération des opérateurs (OT livrés) — total à reverser :{' '}
               <b className="text-[#E9CF8E]">{eur(earn.total_share_cents)}</b>
@@ -113,6 +157,8 @@ export const LogiscopTransportKpis = () => {
           )}
         </div>
       )}
+
+      <ServiceCreditRates />
     </div>
   );
 };

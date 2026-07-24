@@ -55,6 +55,12 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, disputesByOt = 
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Paiement indisponible');
+      if (d.paid_without_charge) {
+        toast.success('Facture intégralement soldée par votre avoir de service — rien à payer !');
+        setPaying(null);
+        onChanged?.();
+        return;
+      }
       window.location.href = d.checkout_url;
     } catch (e) { toast.error(e.message); setPaying(null); }
   };
@@ -127,7 +133,7 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, disputesByOt = 
                             onClick={() => pay(inv)}
                             className="mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-[#635BFF]/25 text-[#B3AFFF] hover:bg-[#635BFF]/40 disabled:opacity-50">
                             {paying === inv.id ? <Loader2 size={10} className="animate-spin" /> : <CreditCard size={10} />}
-                            Payer {(inv.total_ttc_cents / 100).toFixed(2)} €
+                            Payer {(Math.max(0, inv.total_ttc_cents - (credit?.total_ttc_cents || 0)) / 100).toFixed(2)} €
                           </button>
                         )}
                       </span>

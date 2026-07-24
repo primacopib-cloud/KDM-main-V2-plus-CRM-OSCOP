@@ -20,6 +20,7 @@ KIND_LABELS = {
     "PASS": "PASS Vie Chère", "RECHARGE": "Recharge crédits", "ORDER": "Commande",
     "adhesion": "Adhésion (1er mois)", "renouvellement": "Renouvellement adhésion",
     "remboursement": "Remboursement", "CREDIT_PACK": "Pack crédits vendeur",
+    "TRANSPORT_FACTURE": "Facture transport LOGI'SCOP", "TRANSPORT_AVOIR": "Avoir de service transport",
 }
 
 
@@ -77,6 +78,18 @@ async def _collect_entries(date_from: str, date_to: str) -> list:
                                   f"Remboursement pack CPC {p.get('pack_label')}",
                                   -(p.get("price_ht_cents") or 0), -(p.get("vat_cents") or 0),
                                   -(p.get("ttc_cents") or 0), p.get("country"), p.get("email"), (p.get("id", ""))[:18]))
+    # 4) Transport LOGI'SCOP : factures + avoirs de service (article 22)
+    async for inv in db.logiscop_transport_invoices.find({}, {"_id": 0}):
+        entries.append(_entry(str(inv.get("issued_at") or ""), "TRANSPORT_FACTURE",
+                              f"Facture transport {inv.get('ref')} — OT {inv.get('ot_ref')} ({inv.get('company_name')})",
+                              inv.get("amount_ht_cents"), inv.get("vat_cents"), inv.get("total_ttc_cents"),
+                              "", inv.get("email"), inv.get("ref")))
+    async for c in db.logiscop_transport_credits.find({}, {"_id": 0}):
+        entries.append(_entry(str(c.get("created_at") or ""), "TRANSPORT_AVOIR",
+                              f"Avoir de service {c.get('ref')} ({' + '.join(c.get('reasons') or [])}) — "
+                              f"facture {c.get('invoice_ref')} ({c.get('company_name')})",
+                              -(c.get("amount_ht_cents") or 0), -(c.get("vat_cents") or 0),
+                              -(c.get("total_ttc_cents") or 0), "", "", c.get("ref")))
     # Filtre période + tri
     def keep(e):
         d = e["date"][:10]
