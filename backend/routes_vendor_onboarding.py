@@ -106,7 +106,7 @@ async def start_onboarding(body: StartBody):
         "email": body.email.lower(), "phone": body.phone,
         "siret": "".join(c for c in body.siret if c.isdigit()),
         "member_type": body.member_type if body.member_type else "vendor",
-        "locale": body.locale if body.locale in ("fr", "en", "es") else "fr",
+        "locale": body.locale if body.locale in ("fr", "en", "es", "gcf") else "fr",
         "country": (body.country or "GP").upper(),
         "legal_form": body.legal_form.strip(),
         "first_name": body.first_name.strip(), "last_name": body.last_name.strip(),
@@ -271,6 +271,7 @@ async def activate_account(body: ActivateBody, response: Response):
         raise HTTPException(status_code=400, detail="Le mot de passe doit contenir au moins 8 caractères")
     await db.users.update_one({"id": ob["user_id"]}, {"$set": {
         "is_active": True, "password_hash": get_password_hash(body.password),
+        "preferred_language": ob.get("locale") or "fr",
     }})
     existing_vendor = await db.vendors.find_one({"id": ob["user_id"]})
     from routes_member_profiles import get_profile

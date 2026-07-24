@@ -8,6 +8,7 @@ import { PlanPicker } from '../components/onboarding/PlanPicker';
 import { CountrySelect, PhoneInput } from '../components/onboarding/CountryPhoneFields';
 import { vatRateFor } from '../components/onboarding/countries';
 import { API } from '../services/http';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const TERRITOIRES = ['Guadeloupe', 'Martinique', 'Guyane', 'La Réunion', 'Mayotte', 'Saint-Martin'];
 const inputCls = 'w-full h-11 rounded-xl px-3.5 text-sm text-white placeholder-white/35 bg-white/[0.05] border border-[#D9B35A]/25 focus:outline-none focus:ring-1 focus:ring-[#D9B35A]/60';
@@ -83,7 +84,7 @@ export default function VendorOnboardingPage() {
     try {
       const r = await fetch(`${API}/vendor-onboarding/start`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...start, contact_name: `${start.first_name} ${start.last_name}`.trim(), phone: `${dial.split('|')[0]} ${phoneNum}`.trim(), origin_url: window.location.origin, locale: (i18n.language || 'fr').slice(0, 2) }),
+        body: JSON.stringify({ ...start, contact_name: `${start.first_name} ${start.last_name}`.trim(), phone: `${dial.split('|')[0]} ${phoneNum}`.trim(), origin_url: window.location.origin, locale: i18n.language?.startsWith('gcf') ? 'gcf' : (i18n.language || 'fr').slice(0, 2) }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Erreur');
@@ -132,6 +133,13 @@ export default function VendorOnboardingPage() {
 
         {step === 0 && (
           <form onSubmit={launchPayment} className="glass-panel rounded-[22px] p-6 space-y-4" data-testid="vendor-start-form">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-white/[0.08]"
+              data-testid="onboarding-language-picker">
+              <span className="text-xs text-white/60">
+                {t('vendorOnboarding.chooseLanguage', 'Choisissez votre langue · Choose your language · Elija su idioma · Chwazi lang a\'w')}
+              </span>
+              <LanguageSwitcher />
+            </div>
             <div>
               <p className="text-xs text-white/60 mb-2">{t('vendorOnboarding.memberTypeLabel')}</p>
               <div className="grid sm:grid-cols-2 gap-3" data-testid="member-type-choice">

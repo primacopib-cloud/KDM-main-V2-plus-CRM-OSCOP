@@ -1551,3 +1551,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Langue profil multi-appareils** (`routes_profile_prefs.py`) : GET/POST /api/profile/language (fr/en/es/gcf, 422 sinon, `users.preferred_language`) ; LanguageSwitcher sauvegarde au changement si connecté ; `LanguagePrefSync.jsx` (monté dans App.js) applique la langue du profil au chargement (1×/session, reload si différente). Testé E2E : profil gcf → nouveau navigateur fr → login → interface en créole automatiquement.
 - **Créole espaces opérateurs** : LogicoopSpacePage entièrement i18n-isée (t(clé, défaut) — 16 clés `logicoop.*`), POS titre/sous-titre (`pos.*`), Lolo Point titres sections Performance/Classement/Mes commandes (`lolopoint.*`) ; traductions créoles ajoutées à gcf.json (sections logicoop/pos/lolopoint), autres langues = défaut français.
 - Tous fichiers <500 lignes.
+
+## 2026-07-24 — Lot : Sélecteur de langue à l'inscription (self-testé screenshot E2E)
+- Bandeau « Chwazi lang a'w · Choisissez votre langue · Choose your language · Elija su idioma » + LanguageSwitcher (4 drapeaux) en tête du formulaire d'adhésion (`VendorOnboardingPage`, étape 0, data-testid onboarding-language-picker).
+- Locale envoyée au /vendor-onboarding/start gère désormais gcf (frontend startsWith('gcf'), backend liste autorisée + gcf) ; à l'activation du compte, `preferred_language` est posé depuis `ob.locale` → la langue choisie à l'inscription suit le membre sur tous ses appareils (via LanguagePrefSync).
+- 35 clés `vendorOnboarding.*` traduites en créole (titre « Adézyon Vandè Pro oben Achtè Pro », étapes Pèman/Konvansyon/Siyati/Aktivasyon, champs Rézon sosyal, Prénon/Non a kontak-la, boutons pèman/aktivasyon).
+- Vérifié UI : formulaire complet en créole avec sélecteur, i18nextLng=gcf après clic drapeau.
