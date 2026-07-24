@@ -5,6 +5,7 @@ import { API, getAuthHeaders } from '../../services/http';
 import { LogiscopTransportKpis } from './LogiscopTransportKpis';
 import { LogiscopDisputesPanel } from './LogiscopDisputesPanel';
 import { LogiscopQualityHistory } from './LogiscopQualityHistory';
+import { MonthlyReportsHistory } from './MonthlyReportsHistory';
 
 const CONV_STATUS = { PENDING_SIGNATURE: ['En attente signature', '#FBBF24'], SIGNED: ['Signée', '#7BC94E'] };
 const OT_STATUS = {
@@ -75,6 +76,8 @@ export const LogiscopTransportAdminPanel = () => {
       <LogiscopDisputesPanel />
 
       <LogiscopQualityHistory />
+
+      <MonthlyReportsHistory />
 
       <p className="text-[11px] font-bold text-white/60 mb-1">Conventions cadres ({data.conventions.length})</p>
       <table className="w-full text-[11px] mb-4">
@@ -202,11 +205,30 @@ export const LogiscopTransportAdminPanel = () => {
                           Relancée le {inv.reminder_sent_at.slice(0, 10)}
                         </span>
                       )}
+                      {inv.demand_notice_sent_at && !inv.suspension_lifted_at && inv.status !== 'PAID' && (
+                        <span className="block font-normal text-[10px] text-red-300" data-testid={`suspension-badge-${inv.ref}`}>
+                          Mise en demeure {inv.demand_notice_sent_at.slice(0, 10)} — OT suspendus
+                        </span>
+                      )}
+                      {inv.suspension_lifted_at && (
+                        <span className="block font-normal text-[10px] text-emerald-300/80">
+                          Suspension levée le {inv.suspension_lifted_at.slice(0, 10)}
+                        </span>
+                      )}
                     </td>
                     <td className="py-1.5">
                       <span className="inline-flex items-center gap-1.5">
                         <button type="button" onClick={() => download(`/logiscop-transport/invoices/${inv.id}/pdf`, `${inv.ref}.pdf`)}
                           className="text-white/50 hover:text-[#E9CF8E]"><FileDown size={14} /></button>
+                        {inv.demand_notice_sent_at && !inv.suspension_lifted_at && inv.status !== 'PAID' && (
+                          <button type="button" data-testid={`admin-lift-suspension-${inv.ref}`}
+                            title="Lever la suspension d'OT (accord d'échelonnement)"
+                            onClick={() => post(`/logiscop-transport/admin/invoices/${inv.id}/lift-suspension`, {},
+                              (d) => `Suspension levée — ${d.ref} (le Donneur d'Ordre est notifié)`)}
+                            className="px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30">
+                            Lever suspension
+                          </button>
+                        )}
                         {inv.status === 'PAID' ? (
                           <button type="button" data-testid={`admin-invoice-unpay-${inv.ref}`}
                             onClick={() => post(`/logiscop-transport/admin/invoices/${inv.id}/mark-paid`, { paid: false },

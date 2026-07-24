@@ -1495,3 +1495,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Export Excel transport** : GET /api/admin/accounting/export-transport.xlsx (entries filtrées TRANSPORT_*, classeur Synthèse + Factures + Avoirs) ; bouton « Excel transport » dans le bloc admin LOGICOOP à côté de la synthèse mensuelle.
 - Incident corrigé : lignes dupliquées orphelines en fin de `LogiscopTransportKpis.jsx` (erreur de compilation) — nettoyées, compilation OK.
 - Tous fichiers <500 lignes.
+
+## 2026-07-24 — Lot : Historique synthèses + Levée suspension + Alerte trésorerie + Graphique trésorerie (self-testé curl E2E + 2 screenshots)
+- **Historique synthèses en ligne** : GET /api/logiscop-transport/admin/monthly-reports (12 derniers mois : OT créés/livrés, CA TTC, encaissé, avoirs, litiges, sent_at + ged_doc_id du system_flag) ; UI `MonthlyReportsHistory.jsx` (table + badge « Envoyée / GED ✓ » + download PDF par mois) dans le panneau LOGICOOP. Vérifié : 2026-07 envoyée+GED, 2026-06 non envoyée.
+- **Levée suspension admin** : POST /api/logiscop-transport/admin/invoices/{id}/lift-suspension (check_admin, 409 si pas de mise en demeure ou déjà levée) → `suspension_lifted_at/by` + notification + email Brevo au DO ; `get_ot_suspension` exclut les suspensions levées. UI : badge rouge « Mise en demeure — OT suspendus » + bouton « Lever suspension » (ambre) + badge vert « Suspension levée le … » dans la table factures admin. Testé E2E : 403 création OT → levée admin (buyer=403, double=409) → OT créé OK → données test nettoyées.
+- **Alerte trésorerie basse** (`check_treasury_alert` dans routes_treasury_consolidated.py + hook scheduler) : si net cumulé projeté 90 j < 0 → email Brevo admins (table buckets) + notification, idempotent 1/jour via system_flags {key: treasury_low_alert, date}. Testé : positif=False, simulation −500 €=True (email réel), 2e appel=False ; notification best-effort (flag toujours écrit).
+- **Graphique trésorerie** : `compute_treasury_history` (12 mois : encaissements transport payés + adhésions payées/renouvellements + RCR net mensuel, cumul) inclus dans /consolidated ; courbe recharts (Cumul or + Transport/Adhésions/RCR pointillés) sous la table de projection, s'affiche dès 1 mois de données.
+- Labels registre fiscal complétés (TRANSPORT_FACTURE/TRANSPORT_AVOIR).
+- Tous fichiers <500 lignes.

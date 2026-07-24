@@ -132,6 +132,7 @@ SOURCE_LABELS = {
     "RECHARGE": "Recharges de crédits", "CREDIT_PACK": "Packs crédits vendeurs",
     "CPC_PACK": "Packs CPC (consultations)",
     "remboursement": "Remboursements", "RCR": "Retenue contributive remboursable (RCR)",
+    "TRANSPORT_FACTURE": "Factures transport LOGI'SCOP", "TRANSPORT_AVOIR": "Avoirs de service transport",
 }
 
 

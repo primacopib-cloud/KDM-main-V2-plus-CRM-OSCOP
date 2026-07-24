@@ -169,6 +169,31 @@ async def set_service_credit_rates(body: CreditRatesBody, current_user: dict = D
     return {"ok": True, "late_pct": body.late_pct, "reserves_pct": body.reserves_pct}
 
 
+@logiscop_analytics_router.get("/admin/monthly-reports")
+async def monthly_reports_history(current_user: dict = Depends(get_current_user)):
+    """Historique des synthèses mensuelles : KPIs par mois + statut d'envoi et d'archivage GEDESS."""
+    await check_admin(current_user)
+    db = get_database()
+    from logiscop_monthly_report import collect_monthly_stats
+    months = set()
+    async for inv in db.logiscop_transport_invoices.find({}, {"_id": 0, "issued_at": 1}):
+        months.add((inv.get("issued_at") or "")[:7])
+    async for ot in db.logiscop_transport_orders.find({}, {"_id": 0, "created_at": 1}):
+        months.add((ot.get("created_at") or "")[:7])
+    months.discard("")
+    out = []
+    for month in sorted(months, reverse=True)[:12]:
+        s = await collect_monthly_stats(db, month)
+        flag = await db.system_flags.find_one(
+            {"key": "logiscop_monthly_report", "month": month}, {"_id": 0}) or {}
+        out.append({"month": month, "ot_created": s["ot_created"], "ot_delivered": s["ot_delivered"],
+                    "invoiced_ttc_cents": s["invoiced_ttc_cents"], "paid_ttc_cents": s["paid_ttc_cents"],
+                    "credits_count": len(s["credits"]), "credits_ttc_cents": s["credits_ttc_cents"],
+                    "disputes_opened": len(s["disputes_opened"]), "disputes_resolved": s["disputes_resolved"],
+                    "sent_at": flag.get("sent_at"), "ged_doc_id": flag.get("ged_doc_id")})
+    return out
+
+
 @logiscop_analytics_router.get("/admin/monthly-report/pdf")
 async def monthly_report_pdf(month: str, current_user: dict = Depends(get_current_user)):
     """Synthèse mensuelle transport (CA, avoirs, litiges) — téléchargement PDF admin."""

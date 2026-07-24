@@ -91,6 +91,48 @@ async def pay_invoice(invoice_id: str, body: PayBody, background_tasks: Backgrou
     return {"checkout_url": session.url, "session_id": session.id}
 
 
+@logiscop_payments_router.post("/admin/invoices/{invoice_id}/lift-suspension")
+async def lift_ot_suspension(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    """Levée manuelle de la suspension d'OT (accord d'échelonnement) — admin uniquement."""
+    from core_deps import check_admin
+    await check_admin(current_user)
+    db = get_database()
+    inv = await db.logiscop_transport_invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not inv:
+        raise HTTPException(status_code=404, detail="Facture introuvable")
+    if not inv.get("demand_notice_sent_at"):
+        raise HTTPException(status_code=409, detail="Aucune mise en demeure sur cette facture")
+    if inv.get("suspension_lifted_at"):
+        raise HTTPException(status_code=409, detail="Suspension déjà levée")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    await db.logiscop_transport_invoices.update_one(
+        {"id": invoice_id},
+        {"$set": {"suspension_lifted_at": now_iso,
+                  "suspension_lifted_by": current_user.get("email")}})
+    await create_notification(
+        "logiscop_suspension_lifted", "Suspension d'OT levée",
+        f"La suspension liée à la facture {inv['ref']} a été levée par {current_user.get('email')} "
+        "(accord d'échelonnement).",
+        target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+        data={"invoice_id": invoice_id, "ref": inv["ref"]})
+    if inv.get("email"):
+        try:
+            from brevo_service import send_email
+            await send_email(
+                to_email=inv["email"], to_name=inv.get("company_name"),
+                subject=f"LOGI'SCOP : suspension levée — facture {inv['ref']}",
+                html_content=(
+                    f"<div style='font-family:Arial;color:#2A1045'><h2 style='color:#5B2E8C'>Suspension levée</h2>"
+                    f"<p>Suite à notre accord, la suspension d'émission d'Ordres de Transport liée à la facture "
+                    f"<b>{inv['ref']}</b> est levée. Vous pouvez de nouveau émettre des OT.</p>"
+                    "<p>Le règlement de la facture reste dû selon l'échéancier convenu.</p>"
+                    "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP — LOGI'SCOP</b></p></div>"),
+                tags=["logiscop-suspension-lifted"])
+        except Exception as exc:
+            logger.warning("Email levée suspension %s échoué : %s", inv["ref"], exc)
+    return {"ok": True, "ref": inv["ref"], "suspension_lifted_at": now_iso}
+
+
 @logiscop_payments_router.get("/credits")
 async def my_credits(current_user: dict = Depends(get_current_user)):
     """Avoirs de service du Donneur d'Ordre (article 22)."""

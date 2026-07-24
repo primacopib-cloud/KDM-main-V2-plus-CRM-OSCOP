@@ -153,6 +153,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler LOGISCOP monthly report crashed: %s", exc)
         try:
+            from routes_treasury_consolidated import check_treasury_alert
+            await check_treasury_alert(_db)
+        except Exception as exc:
+            logger.exception("Scheduler treasury alert crashed: %s", exc)
+        try:
             from routes_accounting import snapshot_fiscal_register
             await snapshot_fiscal_register(_db)
         except Exception as exc:
