@@ -7,10 +7,12 @@ const inputCls = 'w-full h-9 rounded-lg px-2.5 text-xs text-white bg-white/[0.05
 const labelCls = 'block text-[10.5px] text-white/55 mb-1';
 
 const EMPTY = {
-  slug: '', titles: { fr: '', en: '', es: '' }, descriptions: { fr: '', en: '', es: '' },
+  slug: '', titles: { fr: '', en: '', es: '', gcf: '' }, descriptions: { fr: '', en: '', es: '', gcf: '' },
   space_route: '/espace-acheteur', convention_template: 'v2_0_buyer', default_plan_slug: '',
   creates_vendor_record: false, active: true, sort_order: 10,
 };
+
+const LANG_LABEL = { fr: 'FR', en: 'EN', es: 'ES', gcf: 'KRÉYÒL' };
 
 export const ProfileFormModal = ({ initial, templates, onClose, onSaved }) => {
   const isEdit = Boolean(initial);

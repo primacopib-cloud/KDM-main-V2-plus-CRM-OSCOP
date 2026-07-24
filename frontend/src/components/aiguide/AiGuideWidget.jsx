@@ -24,6 +24,20 @@ const getLang = () => {
 };
 const STUCK_DELAY_MS = 45000;
 
+const autoSpeakCreole = (text) => {
+  if (getLang() !== 'gcf' || !text) return;
+  const today = new Date().toISOString().slice(0, 10);
+  if (localStorage.getItem('oracle_tts_welcome') === today) return;
+  localStorage.setItem('oracle_tts_welcome', today);
+  fetch(`${API}/ai-guide/tts`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ text: text.replace(/[👋🎯📊✨]/g, '').trim() }),
+  }).then((r) => (r.ok ? r.blob() : null))
+    .then((b) => { if (b) new Audio(URL.createObjectURL(b)).play().catch(() => {}); })
+    .catch(() => {});
+};
+
 export const AiGuideWidget = () => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -54,6 +68,7 @@ export const AiGuideWidget = () => {
       .then((d) => {
         if (!d) return;
         setWelcome(d);
+        autoSpeakCreole(d.greeting);
         if (!sessionStorage.getItem('guidia_welcomed')) {
           sessionStorage.setItem('guidia_welcomed', '1');
           setOpen(true);

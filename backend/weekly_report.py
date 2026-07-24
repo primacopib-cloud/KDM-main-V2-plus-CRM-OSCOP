@@ -62,7 +62,16 @@ async def _collect_stats(database, since: datetime) -> dict:
         clicks += c.get("click_count", 0)
         conversions += c.get("conversions_count", 0)
         sent_week += sum(1 for p in c.get("prospects", []) if (p.get("sent_at") or "") >= since_iso)
+    oracle_questions_week = await database.ai_guide_messages.count_documents(
+        {"role": "user", "created_at": {"$gte": since_iso}})
+    oracle_top = []
+    async for g in database.ai_guide_messages.aggregate([
+            {"$match": {"role": "user", "created_at": {"$gte": since_iso}}},
+            {"$group": {"_id": {"$toLower": {"$trim": {"input": "$content"}}}, "n": {"$sum": 1}}},
+            {"$match": {"n": {"$gte": 2}}}, {"$sort": {"n": -1}}, {"$limit": 5}]):
+        oracle_top.append({"question": g["_id"][:120], "count": g["n"]})
     return {"orders": orders, "revenue_eur": revenue / 100, "quotes": quotes,
+            "oracle_questions_week": oracle_questions_week, "oracle_top_questions": oracle_top,
             "quotes_converted_week": quotes_converted_week,
             "quote_conversion_rate": quote_conversion_rate,
             "quotes_pending": q_counts["pending"], "quotes_contacted": q_counts["contacted"],
@@ -113,9 +122,16 @@ async def send_weekly_activity_report(database, force: bool = False) -> bool:
         + _row("🖱 Prospection : clics cumulés", s["prospect_clicks"])
         + _row("✅ Prospection : conversions cumulées", s["prospect_conversions"])
         + _row("🚀 Campagnes PROSPECT'IA actives", s["campaigns_active"])
+        + _row("🔮 Questions posées à Oracle (7 j)", s.get("oracle_questions_week", 0))
         + "</table>"
-        "<p style='color:#999;font-size:11px;margin-top:18px'>Rapport automatique KDMARCHÉ × O'SCOP — envoyé chaque lundi.</p></div>"
     )
+    if s.get("oracle_top_questions"):
+        items = "".join(f"<li style='margin-bottom:4px'>« {q['question']} » — <b>{q['count']}×</b></li>"
+                        for q in s["oracle_top_questions"])
+        html += ("<h3 style='color:#5B2E8C;margin-top:18px;font-size:14px'>🔮 Questions récurrentes posées à Oracle (7 j)</h3>"
+                 f"<ul style='font-size:13px;color:#333;padding-left:18px'>{items}</ul>"
+                 "<p style='color:#999;font-size:11px'>Une question qui revient souvent signale une page ou un parcours à clarifier.</p>")
+    html += "<p style='color:#999;font-size:11px;margin-top:18px'>Rapport automatique KDMARCHÉ × O'SCOP — envoyé chaque lundi.</p></div>"
     from brevo_service import send_email
     await send_email(to_email=REPORT_EMAIL, to_name="Équipe dirigeante",
                      subject=f"📊 Rapport hebdo Communityplace — semaine {week_key}",
@@ -161,6 +177,7 @@ REPORT_ROWS = [
     ("prospect_clicks", "Prospection : clics cumulés"),
     ("prospect_conversions", "Prospection : conversions cumulées"),
     ("campaigns_active", "Campagnes PROSPECT'IA actives"),
+    ("oracle_questions_week", "Questions posées à Oracle (7 j)"),
 ]
 
 

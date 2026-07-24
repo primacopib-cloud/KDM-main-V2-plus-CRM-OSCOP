@@ -92,8 +92,49 @@ def build_transport_invoice_pdf(inv: dict, ot: dict, conv: dict) -> bytes:
     return buf.getvalue()
 
 
+INVOICE_EMAIL_I18N = {
+    "fr": {"subject": "Facture transport {ref} — OT {ot_ref} accepté",
+           "html": "<div style='font-family:Arial;color:#2A1045'><h2 style='color:#5B2E8C'>Facture transport {ref}</h2>"
+                   "<p>Bonjour,</p><p>LOGI'SCOP a accepté votre Ordre de Transport <b>{ot_ref}</b>. "
+                   "Vous trouverez ci-joint la facture correspondante :</p>"
+                   "<p style='font-size:18px'><b>{ttc} TTC</b> ({ht} HT — {vat_label})</p>"
+                   "<p>Règlement à 30 jours maximum, conformément à l'article 15 de la Convention cadre.</p>"
+                   "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP — LOGI'SCOP</b></p></div>"},
+    "en": {"subject": "Transport invoice {ref} — transport order {ot_ref} accepted",
+           "html": "<div style='font-family:Arial;color:#2A1045'><h2 style='color:#5B2E8C'>Transport invoice {ref}</h2>"
+                   "<p>Hello,</p><p>LOGI'SCOP has accepted your transport order <b>{ot_ref}</b>. "
+                   "Please find the corresponding invoice attached:</p>"
+                   "<p style='font-size:18px'><b>{ttc} incl. tax</b> ({ht} excl. tax — {vat_label})</p>"
+                   "<p>Payment within 30 days maximum, as per article 15 of the framework agreement.</p>"
+                   "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP — LOGI'SCOP</b></p></div>"},
+    "es": {"subject": "Factura de transporte {ref} — orden {ot_ref} aceptada",
+           "html": "<div style='font-family:Arial;color:#2A1045'><h2 style='color:#5B2E8C'>Factura de transporte {ref}</h2>"
+                   "<p>Hola:</p><p>LOGI'SCOP ha aceptado su orden de transporte <b>{ot_ref}</b>. "
+                   "Adjunto encontrará la factura correspondiente:</p>"
+                   "<p style='font-size:18px'><b>{ttc} IVA incl.</b> ({ht} sin IVA — {vat_label})</p>"
+                   "<p>Pago a 30 días como máximo, conforme al artículo 15 del convenio marco.</p>"
+                   "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP — LOGI'SCOP</b></p></div>"},
+    "gcf": {"subject": "Fakti transpò {ref} — OT {ot_ref} aksèpté",
+            "html": "<div style='font-family:Arial;color:#2A1045'><h2 style='color:#5B2E8C'>Fakti transpò {ref}</h2>"
+                    "<p>Bonjou,</p><p>LOGI'SCOP aksèpté Òd Transpò a'w <b>{ot_ref}</b>. "
+                    "Ou ké touvé fakti-la jwenn adan mèl-lasa :</p>"
+                    "<p style='font-size:18px'><b>{ttc} TTC</b> ({ht} HT — {vat_label})</p>"
+                    "<p>Péyman avan 30 jou maksimòm, dapré awtik 15 a Konvansyon kad-la.</p>"
+                    "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP — LOGI'SCOP</b></p></div>"},
+}
+
+
+async def _recipient_lang(db, email: str) -> str:
+    try:
+        u = await db.users.find_one({"email": email}, {"_id": 0, "preferred_language": 1})
+        pref = (u or {}).get("preferred_language")
+        return pref if pref in INVOICE_EMAIL_I18N else "fr"
+    except Exception:
+        return "fr"
+
+
 async def send_invoice_email(db, invoice_id: str) -> None:
-    """Envoi Brevo de la facture PDF au Donneur d'Ordre (best effort, tâche de fond)."""
+    """Envoi Brevo de la facture PDF au Donneur d'Ordre, dans la langue du membre (best effort)."""
     inv = await db.logiscop_transport_invoices.find_one({"id": invoice_id}, {"_id": 0})
     if not inv or not inv.get("email"):
         return
@@ -102,17 +143,12 @@ async def send_invoice_email(db, invoice_id: str) -> None:
         conv = await db.logiscop_transport_conventions.find_one({"id": ot.get("convention_id")}, {"_id": 0}) or {}
         pdf = build_transport_invoice_pdf(inv, ot, conv)
         from brevo_service import send_email
-        html = (
-            f"<div style='font-family:Arial;color:#2A1045'><h2 style='color:#5B2E8C'>Facture transport {inv['ref']}</h2>"
-            f"<p>Bonjour,</p><p>LOGI'SCOP a accepté votre Ordre de Transport <b>{inv['ot_ref']}</b>. "
-            f"Vous trouverez ci-joint la facture correspondante :</p>"
-            f"<p style='font-size:18px'><b>{_eur(inv['total_ttc_cents'])} TTC</b> "
-            f"({_eur(inv['amount_ht_cents'])} HT — {inv['vat_label']})</p>"
-            "<p>Règlement à 30 jours maximum, conformément à l'article 15 de la Convention cadre.</p>"
-            "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP — LOGI'SCOP</b></p></div>")
+        t = INVOICE_EMAIL_I18N[await _recipient_lang(db, inv["email"])]
+        html = t["html"].format(ref=inv["ref"], ot_ref=inv["ot_ref"], ttc=_eur(inv["total_ttc_cents"]),
+                                ht=_eur(inv["amount_ht_cents"]), vat_label=inv["vat_label"])
         await send_email(
             to_email=inv["email"], to_name=inv.get("company_name"),
-            subject=f"Facture transport {inv['ref']} — OT {inv['ot_ref']} accepté",
+            subject=t["subject"].format(ref=inv["ref"], ot_ref=inv["ot_ref"]),
             html_content=html, tags=["logiscop-invoice"],
             attachments=[{"content": base64.b64encode(pdf).decode(), "name": f"{inv['ref']}.pdf"}])
         await db.logiscop_transport_invoices.update_one(

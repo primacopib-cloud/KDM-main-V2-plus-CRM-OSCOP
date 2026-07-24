@@ -24,22 +24,24 @@ def set_member_profiles_database(database):
 DEFAULT_PROFILES = [
     {
         "slug": "vendor",
-        "titles": {"fr": "Vendeur Pro", "en": "Pro Seller", "es": "Vendedor Pro"},
+        "titles": {"fr": "Vendeur Pro", "en": "Pro Seller", "es": "Vendedor Pro", "gcf": "Vandè Pro"},
         "descriptions": {
             "fr": "Je propose mes produits à la centrale et développe mes ventes B2B.",
             "en": "I offer my products to the purchasing hub and grow my B2B sales.",
             "es": "Ofrezco mis productos a la central y desarrollo mis ventas B2B.",
+            "gcf": "An ka pwopozé pwodui an mwen ba santral-la é fè vant B2B an mwen vansé.",
         },
         "space_route": "/espace-vendeur", "convention_template": "v1_5_vendor",
         "creates_vendor_record": True, "active": True, "sort_order": 1, "system": True,
     },
     {
         "slug": "buyer",
-        "titles": {"fr": "Acheteur Pro", "en": "Pro Buyer", "es": "Comprador Pro"},
+        "titles": {"fr": "Acheteur Pro", "en": "Pro Buyer", "es": "Comprador Pro", "gcf": "Achtè Pro"},
         "descriptions": {
             "fr": "J'achète aux prix mutualisés et j'accède à la centrale B2B.",
             "en": "I buy at pooled prices and access the B2B purchasing hub.",
             "es": "Compro a precios mutualizados y accedo a la central B2B.",
+            "gcf": "An ka achté a pri mityalizé é an ka rantré adan santral B2B-la.",
         },
         "space_route": "/espace-acheteur", "convention_template": "v2_0_buyer",
         "creates_vendor_record": False, "active": True, "sort_order": 2, "system": True,
@@ -53,9 +55,14 @@ async def seed_member_profiles(database) -> int:
     inserted = 0
     now = datetime.now(timezone.utc).isoformat()
     for p in DEFAULT_PROFILES:
-        if not await database.member_profiles.find_one({"slug": p["slug"]}):
+        existing = await database.member_profiles.find_one({"slug": p["slug"]}, {"_id": 0, "titles": 1})
+        if not existing:
             await database.member_profiles.insert_one({**p, "id": str(uuid.uuid4()), "created_at": now, "updated_at": now})
             inserted += 1
+        elif "gcf" not in (existing.get("titles") or {}):
+            await database.member_profiles.update_one({"slug": p["slug"]}, {"$set": {
+                "titles.gcf": p["titles"]["gcf"], "descriptions.gcf": p["descriptions"]["gcf"],
+                "updated_at": now}})
     return inserted
 
 

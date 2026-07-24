@@ -147,7 +147,7 @@ export default function VendorOnboardingPage() {
                   { slug: 'vendor', titles: { fr: t('vendorOnboarding.vendorTitle') }, descriptions: { fr: t('vendorOnboarding.vendorDesc') } },
                   { slug: 'buyer', titles: { fr: t('vendorOnboarding.buyerTitle') }, descriptions: { fr: t('vendorOnboarding.buyerDesc') } },
                 ]).map((tp) => {
-                  const lang = (i18n.language || 'fr').slice(0, 2);
+                  const lang = i18n.language?.startsWith('gcf') ? 'gcf' : (i18n.language || 'fr').slice(0, 2);
                   return (
                     <button type="button" key={tp.slug} data-testid={`member-type-${tp.slug}`}
                       onClick={() => setStart({ ...start, member_type: tp.slug, plan_slug: tp.default_plan_slug || start.plan_slug })}

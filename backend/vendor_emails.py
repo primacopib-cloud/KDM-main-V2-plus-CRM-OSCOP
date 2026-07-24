@@ -26,7 +26,21 @@ async def _log_reminder(ob: dict, kind: str):
 
 
 def _locale(ob: dict) -> str:
-    return ob.get("locale") if ob.get("locale") in ("en", "es") else "fr"
+    return ob.get("locale") if ob.get("locale") in ("en", "es", "gcf") else "fr"
+
+
+async def _with_member_locale(ob: dict) -> dict:
+    """La langue préférée du compte membre (profil) prime sur la locale d'adhésion."""
+    if _db is None or not ob.get("email"):
+        return ob
+    try:
+        u = await _db.users.find_one({"email": ob["email"]}, {"_id": 0, "preferred_language": 1})
+        pref = (u or {}).get("preferred_language")
+        if pref in ("fr", "en", "es", "gcf"):
+            return {**ob, "locale": pref}
+    except Exception:
+        pass
+    return ob
 
 
 def _frontend() -> str:
@@ -284,12 +298,19 @@ seller space is active again. Thank you!</p>""",
 }
 
 
+from vendor_emails_gcf import EMAILS_GCF
+
+for _k, _v in EMAILS_GCF.items():
+    EMAILS[_k]["gcf"] = _v
+
+
 def _tpl(kind: str, ob: dict) -> dict:
     return EMAILS[kind].get(_locale(ob), EMAILS[kind]["fr"])
 
 
 async def send_activation_email(ob: dict, activation_token: str, pdf: bytes | None = None):
     from brevo_service import send_email
+    ob = await _with_member_locale(ob)
     t = _tpl("activation", ob)
     link = f"{_frontend()}/activation-vendeur?token={activation_token}&lang={_locale(ob)}"
     code = (ob.get("signature") or {}).get("verification_code", "")
@@ -308,6 +329,7 @@ async def send_dunning_email(db, ob: dict, invoice_url: str | None = None):
         return
     try:
         from brevo_service import send_email
+        ob = await _with_member_locale(ob)
         t = _tpl("dunning", ob)
         link = invoice_url or ob.get("hosted_invoice_url") or ""
         html = t["html"].format(name=ob.get("contact_name"), plan=ob.get("plan_name"), btn=_btn(link, t["btn"]))
@@ -323,6 +345,7 @@ async def send_dunning_email(db, ob: dict, invoice_url: str | None = None):
 async def _send_simple(ob: dict, kind: str, **params):
     try:
         from brevo_service import send_email
+        ob = await _with_member_locale(ob)
         t = _tpl(kind, ob)
         link = params.pop("link", ob.get("hosted_invoice_url") or "")
         html = t["html"].format(name=ob.get("contact_name"), plan=ob.get("plan_name"),
