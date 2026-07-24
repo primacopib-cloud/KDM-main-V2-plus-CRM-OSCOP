@@ -220,11 +220,12 @@ const AdminLoginPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/70 transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#E9CF8E]/80 hover:text-[#E9CF8E] transition-colors"
                     tabIndex={-1}
+                    data-testid="admin-password-eye"
                     aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
