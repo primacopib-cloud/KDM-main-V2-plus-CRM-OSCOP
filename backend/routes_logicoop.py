@@ -348,6 +348,21 @@ async def apply_partner(body: ApplicationBody):
     import os
     try:
         from brevo_service import send_email
+
+        def _r(label, value):
+            return (f"<tr><td style='padding:7px 12px;border-bottom:1px solid #eee;color:#777;width:150px'>{label}</td>"
+                    f"<td style='padding:7px 12px;border-bottom:1px solid #eee;font-weight:bold'>{value}</td></tr>")
+        recap = (
+            "<table style='width:100%;border-collapse:collapse;font-size:13px;margin:16px 0;"
+            "border:1px solid #eee;border-radius:10px'>"
+            + _r("Type de partenariat", t["label"])
+            + _r("Nom", doc["name"])
+            + _r("Société", doc.get("company") or "—")
+            + _r("Email", doc["email"])
+            + _r("Téléphone", doc.get("phone") or "—")
+            + _r("Votre projet", doc.get("message") or "—")
+            + _r("Référence", doc["id"][:8].upper())
+            + "</table>")
         await send_email(
             to_email=doc["email"], to_name=doc["name"],
             subject=f"Candidature reçue — {t['label']} | KDMARCHÉ × O'SCOP",
@@ -356,7 +371,11 @@ async def apply_partner(body: ApplicationBody):
             <p>Nous avons bien reçu votre demande « <strong>{t['label']}</strong> »
             {f"pour {doc['company']}" if doc.get('company') else ''}.
             Notre équipe l'étudie et reviendra vers vous rapidement.</p>
-            <p style="color:#777;font-size:12px;">Référence : {doc['id'][:8].upper()} — La coopérative KDMARCHÉ × O'SCOP.</p>""",
+            <p style="margin-bottom:4px;"><strong>Récapitulatif de votre candidature :</strong></p>
+            {recap}
+            <p style="color:#777;font-size:12px;">Conservez la référence <strong>{doc['id'][:8].upper()}</strong> pour tout échange
+            avec notre équipe partenariats — réponse sous 48 h ouvrées.</p>
+            <p style="color:#D4AF37;"><strong>La coopérative KDMARCHÉ × O'SCOP</strong></p>""",
             tags=["partner-application-ack"])
     except Exception as exc:
         logger.warning("Accusé réception candidature %s : %s", doc["email"], exc)

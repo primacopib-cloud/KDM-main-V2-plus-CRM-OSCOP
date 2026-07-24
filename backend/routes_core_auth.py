@@ -215,27 +215,8 @@ async def forgot_password(request: PasswordResetRequest):
     await db.password_resets.insert_one(reset_token.dict())
 
     try:
-        import os
-        from brevo_service import send_email as brevo_send
-        frontend = os.environ.get("FRONTEND_PUBLIC_URL") or os.environ.get("FRONTEND_URL", "")
-        reset_link = f"{frontend}/reinitialiser-mot-de-passe?token={reset_token.token}"
-        name = user.get("contact_name") or user.get("name") or ""
-        html = (
-            "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#2A1045'>"
-            "<h2 style='color:#5B2E8C'>Réinitialisation de votre mot de passe</h2>"
-            f"<p>Bonjour {name},</p>"
-            "<p>Vous avez demandé la réinitialisation de votre mot de passe sur la Communityplace KDMARCHÉ × O'SCOP.</p>"
-            "<p>Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :</p>"
-            f"<p style='margin:24px 0;text-align:center'><a href='{reset_link}' "
-            "style='background:#D4AF37;color:#1F0A33;padding:14px 28px;border-radius:12px;"
-            "text-decoration:none;font-weight:bold;'>Réinitialiser mon mot de passe</a></p>"
-            "<p style='background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.25);"
-            "padding:12px;border-radius:10px;font-size:13px;color:#7a2e2e'>⚠️ Ce lien expire dans 1 heure. "
-            "Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>"
-            "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP</b> — Communityplace B2B ESS</p></div>")
-        await brevo_send(to_email=user["email"], to_name=name,
-                         subject="Réinitialisation de votre mot de passe — KDMARCHÉ × O'SCOP",
-                         html_content=html, tags=["password-reset"])
+        from password_reset_email import send_reset_email
+        await send_reset_email(db, user, reset_token.token)
         logger.info(f"Password reset email sent to: {request.email}")
     except Exception as e:
         logger.error(f"Failed to send password reset email: {str(e)}")
