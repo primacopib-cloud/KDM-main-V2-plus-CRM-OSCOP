@@ -1,7 +1,7 @@
 import { getSessionToken } from '../services/http';
 import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   ShoppingBag, Package,
   CheckCircle2, ChevronRight, ArrowLeft, RefreshCw,
@@ -36,6 +36,12 @@ export default function BuyerSpacePage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const location = useLocation();
+
+  useEffect(() => {
+    const tab = new URLSearchParams(location.search).get('tab');
+    if (tab) setActiveTab(tab);
+  }, [location.search]);
   
   // Data states
   const [orders, setOrders] = useState([]);

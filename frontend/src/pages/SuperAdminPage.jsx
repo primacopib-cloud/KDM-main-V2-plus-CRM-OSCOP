@@ -1,5 +1,6 @@
 import i18n from '@/i18n';
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { BarChart3, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent } from '../components/ui/tabs';
 import { toast } from 'sonner';
@@ -33,6 +34,7 @@ import { AdminContractsTab } from '../components/superadmin/AdminContractsTab';
 import { EmailPreviewsTab } from '../components/superadmin/EmailPreviewsTab';
 import { EcosystemHealthTab } from '../components/superadmin/EcosystemHealthTab';
 import { AiChatAdminTab } from '../components/superadmin/AiChatAdminTab';
+import { GuidiaStatsPanel } from '../components/superadmin/GuidiaStatsPanel';
 import { DemandesAdminTab } from '../components/superadmin/DemandesAdminTab';
 import { ShowcasePartnersPanel } from '../components/superadmin/ShowcasePartnersPanel';
 import { LicensesPanel } from '../components/superadmin/LicensesPanel';
@@ -48,6 +50,12 @@ export default function SuperAdminPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [period, setPeriod] = useState('month');
+  const location = useLocation();
+
+  useEffect(() => {
+    const tab = new URLSearchParams(location.search).get('tab');
+    if (tab) setActiveTab(tab);
+  }, [location.search]);
 
   // WebSocket notifications
   const { isConnected } = useNotificationWebSocket(
@@ -247,6 +255,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="ai-chat">
             <AiChatAdminTab />
+            <GuidiaStatsPanel />
           </TabsContent>
 
           <TabsContent value="demandes">

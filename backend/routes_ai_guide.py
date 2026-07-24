@@ -49,6 +49,36 @@ BASE_SUGGESTIONS = {
     "general": ["Que puis-je faire sur Communityplace ?", "Comment adhérer à la coopérative ?"],
 }
 
+ACTIONS = {
+    "buyer_orders": ("Voir mes commandes", "/espace-acheteur?tab=orders"),
+    "buyer_invoices": ("Voir mes factures", "/espace-acheteur?tab=invoices"),
+    "buyer_transport": ("Ouvrir Transport LOGI'SCOP", "/espace-acheteur?tab=transport"),
+    "buyer_consultations": ("Mes consultations compétitives", "/espace-acheteur?tab=consultations"),
+    "buyer_catalog": ("Parcourir le catalogue B2B", "/espace-acheteur?tab=dashboard"),
+    "buyer_tools": ("Outils d'achat", "/espace-acheteur?tab=tools"),
+    "buyer_credits": ("Mon CREDI'SCOP", "/espace-acheteur?tab=crediscop"),
+    "vendor_products": ("Gérer mes produits", "/espace-vendeur"),
+    "admin_accounting": ("Ouvrir la Comptabilité", "/superadmin?tab=accounting"),
+    "admin_logicoop": ("Ouvrir LOGICOOP", "/superadmin?tab=logicoop"),
+    "admin_users": ("Gérer les membres", "/superadmin?tab=users"),
+    "admin_support": ("Voir le Support", "/superadmin?tab=support"),
+    "admin_registres": ("Ouvrir les Registres", "/superadmin?tab=registry"),
+    "admin_stats": ("Voir les Statistiques", "/superadmin?tab=stats"),
+    "member_pass": ("Mon PASS Vie Chère", "/pass"),
+    "member_catalog": ("Catalogue LOLODRIVE", "/catalogue-lolodrive"),
+    "operator_missions": ("Mes missions transport", "/logicoop"),
+}
+SPACE_ACTIONS = {
+    "buyer": ["buyer_orders", "buyer_invoices", "buyer_transport", "buyer_consultations",
+              "buyer_catalog", "buyer_tools", "buyer_credits"],
+    "vendor": ["vendor_products"],
+    "admin": ["admin_accounting", "admin_logicoop", "admin_users", "admin_support",
+              "admin_registres", "admin_stats"],
+    "operator": ["operator_missions"],
+    "member": ["member_pass", "member_catalog"],
+    "pos": [], "lolo_point": [], "general": ["member_pass", "member_catalog"],
+}
+
 SYSTEM_PROMPT = (
     "Tu es GUID'IA, le copilote conversationnel haut de gamme de Communityplace (KDMARCHÉ × O'SCOP), "
     "plateforme coopérative B2B2C de l'Économie Sociale et Solidaire des Outre-mer (Guadeloupe, Martinique, "
@@ -66,7 +96,9 @@ SYSTEM_PROMPT = (
     "Si une question sort de la plateforme, ramène poliment vers son usage.\n"
     "IMPORTANT : termine CHAQUE réponse par une ligne exactement au format "
     "« SUGGESTIONS: question 1 | question 2 | question 3 » proposant 3 questions de suivi courtes et "
-    "pertinentes pour cet utilisateur."
+    "pertinentes pour cet utilisateur. Si une action de navigation aide directement l'utilisateur, ajoute "
+    "juste avant la ligne SUGGESTIONS une ligne « ACTIONS: id1 | id2 » (2 maximum) en choisissant les id "
+    "STRICTEMENT dans la liste d'actions disponibles fournie dans le contexte."
 )
 
 
@@ -143,10 +175,13 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
         f"{'Utilisateur' if m['role'] == 'user' else 'GUID’IA'}: {m['content'][:500]}" for m in reversed(history))
 
     facts = await _facts(db, current_user, space)
+    action_ids = SPACE_ACTIONS.get(space, [])
+    actions_txt = " ; ".join(f"{a}: {ACTIONS[a][0]}" for a in action_ids)
     context = (
         f"Profil : {current_user.get('contact_name') or current_user.get('email')} — rôle {current_user.get('role')} "
         f"— espace actuel : {SPACE_LABELS[space]}."
-        + (f" Données en direct : {facts}." if facts else ""))
+        + (f" Données en direct : {facts}." if facts else "")
+        + (f" Actions disponibles : {actions_txt}." if actions_txt else ""))
     prompt = f"{context}\n"
     if history_txt:
         prompt += f"Historique :\n{history_txt}\n"
@@ -167,6 +202,15 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
     if match:
         suggestions = [s.strip(" -•\n") for s in match.group(1).split("|") if s.strip()][:3]
         answer = raw[:match.start()].strip()
+    actions = []
+    amatch = re.search(r"ACTIONS\s*:\s*(.+?)$", answer, re.IGNORECASE | re.MULTILINE)
+    if amatch:
+        allowed = SPACE_ACTIONS.get(space, [])
+        for aid in [a.strip(" -•«»\n") for a in amatch.group(1).split("|")]:
+            if aid in ACTIONS and aid in allowed:
+                actions.append({"id": aid, "label": ACTIONS[aid][0], "path": ACTIONS[aid][1]})
+        actions = actions[:2]
+        answer = (answer[:amatch.start()] + answer[amatch.end():]).strip()
 
     await db.ai_guide_messages.insert_many([
         {"id": str(uuid.uuid4()), "session_id": session_id, "user_id": current_user["id"],
@@ -174,4 +218,58 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
         {"id": str(uuid.uuid4()), "session_id": session_id, "user_id": current_user["id"],
          "role": "assistant", "content": answer, "space": space,
          "created_at": datetime.now(timezone.utc).isoformat()}])
-    return {"answer": answer, "suggestions": suggestions, "session_id": session_id}
+    await db.ai_guide_sessions.update_one(
+        {"id": session_id},
+        {"$set": {"user_id": current_user["id"], "space": space,
+                  "last_message_at": datetime.now(timezone.utc).isoformat()},
+         "$setOnInsert": {"created_at": now_iso, "title": message[:70]},
+         "$inc": {"messages": 2}},
+        upsert=True)
+    return {"answer": answer, "suggestions": suggestions, "actions": actions, "session_id": session_id}
+
+
+@ai_guide_router.get("/sessions")
+async def guide_sessions(current_user: dict = Depends(get_current_user)):
+    """Conversations passées de l'utilisateur avec GUID'IA."""
+    db = get_database()
+    sessions = await db.ai_guide_sessions.find(
+        {"user_id": current_user["id"]}, {"_id": 0}).sort("last_message_at", -1).limit(15).to_list(15)
+    return {"sessions": sessions}
+
+
+@ai_guide_router.get("/sessions/{session_id}/messages")
+async def guide_session_messages(session_id: str, current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    session = await db.ai_guide_sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session or session.get("user_id") != current_user["id"]:
+        raise HTTPException(status_code=404, detail="Conversation introuvable")
+    msgs = await db.ai_guide_messages.find(
+        {"session_id": session_id}, {"_id": 0, "role": 1, "content": 1, "created_at": 1}
+    ).sort("created_at", 1).to_list(100)
+    return {"session": session, "messages": msgs}
+
+
+@ai_guide_router.get("/admin/stats")
+async def guide_admin_stats(current_user: dict = Depends(get_current_user)):
+    """Questions les plus posées à GUID'IA — détection des points de friction."""
+    from core_deps import check_admin
+    await check_admin(current_user)
+    db = get_database()
+    total = await db.ai_guide_messages.count_documents({"role": "user"})
+    users = await db.ai_guide_messages.distinct("user_id", {"role": "user"})
+    by_space = {}
+    async for g in db.ai_guide_messages.aggregate(
+            [{"$match": {"role": "user"}}, {"$group": {"_id": "$space", "n": {"$sum": 1}}}]):
+        by_space[g["_id"] or "general"] = g["n"]
+    top = []
+    async for g in db.ai_guide_messages.aggregate([
+            {"$match": {"role": "user"}},
+            {"$group": {"_id": {"$toLower": {"$trim": {"input": "$content"}}},
+                        "n": {"$sum": 1}, "last": {"$max": "$created_at"}}},
+            {"$sort": {"n": -1, "last": -1}}, {"$limit": 10}]):
+        top.append({"question": g["_id"][:120], "count": g["n"], "last_asked": g["last"]})
+    recent = await db.ai_guide_messages.find(
+        {"role": "user"}, {"_id": 0, "content": 1, "space": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    return {"total_questions": total, "unique_users": len(users),
+            "by_space": by_space, "top_questions": top, "recent": recent}

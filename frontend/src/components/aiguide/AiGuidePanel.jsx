@@ -1,22 +1,62 @@
 import { useEffect, useRef, useState } from 'react';
-import { Send, Sparkles, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft } from 'lucide-react';
 import { API, getAuthHeaders } from '../../services/http';
+import { AiGuideHistory } from './AiGuideHistory';
+
+const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
 export const AiGuidePanel = ({ welcome, space, onClose }) => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([{ role: 'assistant', content: welcome.greeting }]);
   const [suggestions, setSuggestions] = useState(welcome.suggestions || []);
+  const [actions, setActions] = useState([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [speak, setSpeak] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [sessionId, setSessionId] = useState(sessionStorage.getItem(`guidia_session_${space}`) || null);
   const endRef = useRef(null);
+  const recRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, busy]);
+  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+
+  const readAloud = (text) => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR';
+    u.rate = 1.05;
+    window.speechSynthesis.speak(u);
+  };
+
+  const dictate = () => {
+    if (!SR) return;
+    if (listening) { recRef.current?.stop(); return; }
+    const rec = new SR();
+    recRef.current = rec;
+    rec.lang = 'fr-FR';
+    rec.interimResults = false;
+    rec.onresult = (e) => {
+      const text = e.results[0][0].transcript;
+      setInput(text);
+      setListening(false);
+      send(text);
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    setListening(true);
+    rec.start();
+  };
 
   const send = async (text) => {
     const message = (text || input).trim();
     if (!message || busy) return;
     setInput('');
     setSuggestions([]);
+    setActions([]);
     setMessages((m) => [...m, { role: 'user', content: message }]);
     setBusy(true);
     try {
@@ -29,12 +69,24 @@ export const AiGuidePanel = ({ welcome, space, onClose }) => {
       if (!r.ok) throw new Error(d.detail || 'Réponse indisponible');
       setSessionId(d.session_id);
       sessionStorage.setItem(`guidia_session_${space}`, d.session_id);
-      setMessages((m) => [...m, { role: 'assistant', content: d.answer.replace(/\*\*/g, '') }]);
+      const answer = d.answer.replace(/\*\*/g, '');
+      setMessages((m) => [...m, { role: 'assistant', content: answer }]);
       setSuggestions(d.suggestions || []);
+      setActions(d.actions || []);
+      if (speak) readAloud(answer);
     } catch (e) {
       setMessages((m) => [...m, { role: 'assistant', content: `⚠ ${e.message}` }]);
     }
     setBusy(false);
+  };
+
+  const resumeSession = (session, msgs) => {
+    setSessionId(session.id);
+    sessionStorage.setItem(`guidia_session_${space}`, session.id);
+    setMessages(msgs.map((m) => ({ role: m.role, content: m.content })));
+    setSuggestions([]);
+    setActions([]);
+    setShowHistory(false);
   };
 
   return (
@@ -57,49 +109,88 @@ export const AiGuidePanel = ({ welcome, space, onClose }) => {
           <p className="text-[13px] font-bold text-[#E9CF8E] leading-tight">GUID'IA</p>
           <p className="text-[9.5px] text-white/45 leading-tight">Votre copilote Communityplace — gratuit</p>
         </span>
-        <button type="button" onClick={onClose} data-testid="ai-guide-close"
-          className="ml-auto text-white/40 hover:text-white text-lg leading-none px-1">×</button>
+        <span className="ml-auto flex items-center gap-1">
+          <button type="button" data-testid="ai-guide-history-btn" title="Conversations passées"
+            onClick={() => setShowHistory(!showHistory)}
+            className={`p-1.5 rounded-lg transition-colors ${showHistory ? 'text-[#E9CF8E] bg-[#D9B35A]/15' : 'text-white/40 hover:text-white'}`}>
+            {showHistory ? <ArrowLeft size={14} /> : <History size={14} />}
+          </button>
+          <button type="button" data-testid="ai-guide-tts-toggle" title={speak ? 'Couper la lecture audio' : 'Lire les réponses à voix haute'}
+            onClick={() => { setSpeak(!speak); if (speak) window.speechSynthesis?.cancel(); }}
+            className={`p-1.5 rounded-lg transition-colors ${speak ? 'text-[#E9CF8E] bg-[#D9B35A]/15' : 'text-white/40 hover:text-white'}`}>
+            {speak ? <Volume2 size={14} /> : <VolumeX size={14} />}
+          </button>
+          <button type="button" onClick={onClose} data-testid="ai-guide-close"
+            className="text-white/40 hover:text-white text-lg leading-none px-1">×</button>
+        </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5" data-testid="ai-guide-messages">
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-[12px] leading-relaxed whitespace-pre-wrap ${
-              m.role === 'user'
-                ? 'bg-[#D9B35A]/20 text-[#F3EDE4] border border-[#D9B35A]/30 rounded-br-sm'
-                : 'bg-white/[0.06] text-white/85 border border-white/10 rounded-bl-sm'}`}>
-              {m.content}
-            </div>
-          </div>
-        ))}
-        {busy && (
-          <div className="flex items-center gap-2 text-white/40 text-[11px] pl-1">
-            <Loader2 size={12} className="animate-spin text-[#E9CF8E]" /> GUID'IA réfléchit…
-          </div>
-        )}
-        {!busy && suggestions.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1" data-testid="ai-guide-suggestions">
-            {suggestions.map((s, i) => (
-              <button key={i} type="button" onClick={() => send(s)} data-testid={`ai-guide-suggestion-${i}`}
-                className="px-2.5 py-1.5 rounded-full text-[10.5px] text-left text-[#E9CF8E] bg-[#D9B35A]/10 border border-[#D9B35A]/30 hover:bg-[#D9B35A]/25 transition-colors">
-                {s}
-              </button>
+      {showHistory ? (
+        <AiGuideHistory onResume={resumeSession} />
+      ) : (
+        <>
+          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5" data-testid="ai-guide-messages">
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-[12px] leading-relaxed whitespace-pre-wrap ${
+                  m.role === 'user'
+                    ? 'bg-[#D9B35A]/20 text-[#F3EDE4] border border-[#D9B35A]/30 rounded-br-sm'
+                    : 'bg-white/[0.06] text-white/85 border border-white/10 rounded-bl-sm'}`}>
+                  {m.content}
+                </div>
+              </div>
             ))}
+            {busy && (
+              <div className="flex items-center gap-2 text-white/40 text-[11px] pl-1">
+                <Loader2 size={12} className="animate-spin text-[#E9CF8E]" /> GUID'IA réfléchit…
+              </div>
+            )}
+            {!busy && actions.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-0.5" data-testid="ai-guide-actions">
+                {actions.map((a) => (
+                  <button key={a.id} type="button" data-testid={`ai-guide-action-${a.id}`}
+                    onClick={() => navigate(`${a.path}${a.path.includes('?') ? '&' : '?'}t=${Date.now()}`)}
+                    className="px-3 py-1.5 rounded-full text-[10.5px] font-bold inline-flex items-center gap-1.5 text-[#2A1045] transition-transform hover:scale-[1.03]"
+                    style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
+                    {a.label} <ArrowRight size={11} />
+                  </button>
+                ))}
+              </div>
+            )}
+            {!busy && suggestions.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1" data-testid="ai-guide-suggestions">
+                {suggestions.map((s, i) => (
+                  <button key={i} type="button" onClick={() => send(s)} data-testid={`ai-guide-suggestion-${i}`}
+                    className="px-2.5 py-1.5 rounded-full text-[10.5px] text-left text-[#E9CF8E] bg-[#D9B35A]/10 border border-[#D9B35A]/30 hover:bg-[#D9B35A]/25 transition-colors">
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div ref={endRef} />
           </div>
-        )}
-        <div ref={endRef} />
-      </div>
 
-      <div className="p-2.5 flex items-center gap-2" style={{ borderTop: '1px solid rgba(217,179,90,0.25)' }}>
-        <input value={input} onChange={(e) => setInput(e.target.value)} data-testid="ai-guide-input"
-          onKeyDown={(e) => e.key === 'Enter' && send()}
-          placeholder="Posez votre question…" maxLength={800}
-          className="flex-1 h-9 px-3 rounded-xl bg-white/[0.06] border border-white/15 text-[12px] text-white placeholder:text-white/30 outline-none focus:border-[#D9B35A]/50" />
-        <button type="button" onClick={() => send()} disabled={busy || !input.trim()} data-testid="ai-guide-send"
-          className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#D9B35A]/20 border border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/35 disabled:opacity-40 transition-colors">
-          <Send size={14} />
-        </button>
-      </div>
+          <div className="p-2.5 flex items-center gap-1.5" style={{ borderTop: '1px solid rgba(217,179,90,0.25)' }}>
+            {SR && (
+              <button type="button" onClick={dictate} data-testid="ai-guide-mic" title="Dicter ma question"
+                className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-colors ${
+                  listening
+                    ? 'bg-red-500/25 border-red-400/60 text-red-300 animate-pulse'
+                    : 'bg-white/[0.06] border-white/15 text-white/50 hover:text-[#E9CF8E]'}`}>
+                <Mic size={14} />
+              </button>
+            )}
+            <input value={input} onChange={(e) => setInput(e.target.value)} data-testid="ai-guide-input"
+              onKeyDown={(e) => e.key === 'Enter' && send()}
+              placeholder={listening ? 'Je vous écoute…' : 'Posez votre question…'} maxLength={800}
+              className="flex-1 h-9 px-3 rounded-xl bg-white/[0.06] border border-white/15 text-[12px] text-white placeholder:text-white/30 outline-none focus:border-[#D9B35A]/50" />
+            <button type="button" onClick={() => send()} disabled={busy || !input.trim()} data-testid="ai-guide-send"
+              className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#D9B35A]/20 border border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/35 disabled:opacity-40 transition-colors">
+              <Send size={14} />
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };
