@@ -46,6 +46,7 @@ import VerifyAttestationPage from "./pages/VerifyAttestationPage";
 import TestimonialPage from "./pages/TestimonialPage";
 import CourierPage from "./pages/CourierPage";
 import { WhatsAppSupport } from "./components/WhatsAppSupport";
+import { AiGuideWidget } from "./components/aiguide/AiGuideWidget";
 import VendorActivationPage from "./pages/VendorActivationPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import ShoppingListsPage from "./pages/ShoppingListsPage";
@@ -209,6 +210,7 @@ function App() {
           <Route path="/paiement/annule" element={<PaymentReturnPage />} />
         </Routes>
         <WhatsAppSupport />
+        <AiGuideWidget />
       </BrowserRouter>
       <Toaster position="top-right" richColors />
     </div>

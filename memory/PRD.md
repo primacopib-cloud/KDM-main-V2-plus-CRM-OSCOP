@@ -1509,3 +1509,13 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Seuil alerte réglable** : GET/POST /api/admin/treasury/alert-threshold (persisté `treasury_settings`) ; `check_treasury_alert` compare net 90 j au seuil (défaut 0) et le mentionne dans l'email ; UI input « Alerte si net 90 j < X € » dans l'entête du panneau Trésorerie consolidée. Testé : 0→500→persistance→0.
 - **Notation publique transporteur** : GET /api/logiscop-transport/service-quality (tout utilisateur authentifié : livraisons, note moyenne, nb avis, ponctualité) ; badge doré `TransportQualityBadge.jsx` en tête de l'onglet Transport acheteur (« ★ 5/5 (1 avis) · 5 livraisons · 80 % à l'heure »).
 - Tous fichiers <500 lignes.
+
+## 2026-07-24 — Lot : GUID'IA, assistant IA conversationnel dans tous les espaces (self-testé curl E2E + 2 screenshots UI)
+- **Backend** (`routes_ai_guide.py`, gratuit — distinct du Chat IA payant COOP'IA) :
+  - GET /api/ai-guide/welcome?space= : accueil instantané personnalisé (prénom + données live : factures impayées/OT pour acheteur, OT en attente/litiges pour admin, produits pending pour vendeur) + 2-4 suggestions contextuelles par espace (buyer/vendor/admin/operator/pos/lolo_point/member/general).
+  - POST /api/ai-guide/chat {message, session_id, space} : LLM gpt-5.4 via EMERGENT_LLM_KEY (emergentintegrations, pattern existant), prompt système riche (contexte plateforme complet : LOGI'SCOP, RCR, PASS, LOLODRIVE, GEDESS…), profil + faits live injectés, historique 12 messages (`ai_guide_messages`), réponses texte brut sans Markdown, chaque réponse se termine par 3 suggestions de suivi parsées (« SUGGESTIONS: a | b | c »). Multi-tours testé (le tour 2 exploite le contexte).
+- **Frontend** (`aiguide/AiGuideWidget.jsx` + `AiGuidePanel.jsx`, montés globalement dans App.js à côté de WhatsAppSupport) :
+  - FAB doré/violet bottom-right (pulse), visible sur toutes les pages authentifiées (masqué pages publiques/login).
+  - Panneau glassmorphism 370px : header GUID'IA, fil de messages, chips de suggestions cliquables, input 800 car., typing indicator.
+  - **Auto-ouverture à la connexion** (1×/session navigateur via sessionStorage) avec accueil + suggestions ; welcome rafraîchi à chaque changement d'espace (panneau remonté par espace, session LLM par espace `guidia_session_{space}`).
+- Testé : welcome buyer (Sophie + 4 factures/6 OT), chat 2 tours contextualisés, UI admin E2E (clic suggestion « santé financière » → réponse exploitant les données live + 3 follow-ups), markdown éliminé.
