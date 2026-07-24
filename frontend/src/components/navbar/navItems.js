@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 
 export const getNavItems = (userRole, isAdmin) => {
+  // « Mon Espace » mène à l'espace du rôle : vendeur → espace vendeur, sinon espace acheteur.
+  const mySpace = userRole === 'vendor' ? '/espace-vendeur' : '/espace-acheteur';
   // Top bar: keep it lean — 4 public + 2 member shortcuts.
   const baseItems = [
     { href: '/', label: 'nav.home', icon: Home, public: true },
@@ -14,7 +16,7 @@ export const getNavItems = (userRole, isAdmin) => {
 
   // Member-only shortcuts kept in top bar (per product decision).
   const memberShortcuts = [
-    { href: '/espace-acheteur', label: 'nav.my_space', icon: LayoutDashboard },
+    { href: mySpace, label: 'nav.my_space', icon: LayoutDashboard },
     { href: '/catalogue', label: 'nav.catalog', icon: ShoppingCart },
   ];
 
@@ -28,7 +30,7 @@ export const getNavItems = (userRole, isAdmin) => {
     topBar: baseItems.concat(userRole || isAdmin ? memberShortcuts : []),
     dropdown: {
       buyer: [
-        { href: '/espace-acheteur', label: 'nav.my_space', icon: LayoutDashboard },
+        { href: mySpace, label: 'nav.my_space', icon: LayoutDashboard },
         { href: '/commandes', label: 'nav.my_orders', icon: Package },
         { href: '/wallet', label: 'nav.wallet', icon: Wallet },
         { href: '/documents', label: 'nav.documents', icon: FileText },

@@ -163,6 +163,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         subscription=current_user["subscription"],
         credits=current_user["credits"],
         is_admin=current_user.get("is_admin", False),
+        role=current_user.get("role"),
         must_change_password=current_user.get("must_change_password", False),
         created_at=current_user["created_at"]
     )
