@@ -407,6 +407,7 @@ async def set_voice(body: VoiceBody, current_user: dict = Depends(get_current_us
 
 class TtsBody(BaseModel):
     text: str
+    voice: Optional[str] = None
 
 
 @ai_guide_router.post("/tts")
@@ -415,7 +416,7 @@ async def guide_tts(body: TtsBody, current_user: dict = Depends(get_current_user
     text = body.text.strip()[:900]
     if not text:
         raise HTTPException(status_code=400, detail="Texte vide")
-    voice = current_user.get("guidia_voice") or "coral"
+    voice = body.voice if body.voice in VOICES else (current_user.get("guidia_voice") or "coral")
     from emergentintegrations.llm.openai import OpenAITextToSpeech
     from fastapi.responses import Response
     try:
