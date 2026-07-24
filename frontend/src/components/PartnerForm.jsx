@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
-import i18n from '@/i18n';
+import { useTranslation } from 'react-i18next';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { LEGAL_STATUSES, PHONE_COUNTRIES } from './contactFormData';
 import { Flag } from './Flag';
+import { PARTNER_L10N, partnerLang } from './partnerFormI18n';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inputCls = 'h-12 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50 focus:ring-[#D9B35A]/20';
 const EMPTY = { type: '', name: '', company: '', legal_status: '', email: '', phoneCountry: 'GP', phone: '', message: '' };
 
 export const PartnerForm = () => {
+  const { i18n } = useTranslation();
+  const lang = partnerLang(i18n.language);
+  const L = PARTNER_L10N[lang] || PARTNER_L10N.fr;
   const [types, setTypes] = useState([]);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -31,7 +35,6 @@ export const PartnerForm = () => {
     e.preventDefault();
     setSending(true);
     try {
-      const lang = i18n.language?.startsWith('gcf') ? 'gcf' : (i18n.language || 'fr').slice(0, 2);
       const r = await fetch(`${API}/partners/apply`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -41,9 +44,9 @@ export const PartnerForm = () => {
         }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.detail || "Erreur lors de l'envoi");
+      if (!r.ok) throw new Error(d.detail || L.toastErr);
       setSent(true);
-      toast.success('Candidature envoyée — nous revenons vers vous rapidement');
+      toast.success(L.toastOk);
     } catch (err) { toast.error(err.message); } finally { setSending(false); }
   };
 
@@ -54,8 +57,8 @@ export const PartnerForm = () => {
           style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.30)' }}>
           <CheckCircle2 className="w-10 h-10 text-[#D4AF37]" />
         </div>
-        <h3 className="text-2xl font-bold mb-4 text-white">Candidature transmise !</h3>
-        <p className="text-white/70">Merci ! Votre candidature a bien été transmise à la coopérative — un accusé de réception détaillé vous a été envoyé par email.</p>
+        <h3 className="text-2xl font-bold mb-4 text-white">{L.successTitle}</h3>
+        <p className="text-white/70">{L.successText}</p>
       </div>
     );
   }
@@ -64,10 +67,10 @@ export const PartnerForm = () => {
     <div className="glass-panel rounded-[22px] p-6" data-testid="footer-partner-form">
       <form onSubmit={submit} className="space-y-5">
         <div className="space-y-2">
-          <Label className="text-white/80 text-sm">Type de partenariat *</Label>
+          <Label className="text-white/80 text-sm">{L.type}</Label>
           <Select value={f.type} onValueChange={(v) => setF((p) => ({ ...p, type: v }))} required>
             <SelectTrigger className="h-12 bg-white/[0.04] border-white/10 text-white rounded-xl focus:border-[#D9B35A]/50" data-testid="partner-form-type">
-              <SelectValue placeholder="Choisissez un type de partenariat" />
+              <SelectValue placeholder={L.typePh} />
             </SelectTrigger>
             <SelectContent className="bg-[#0d1117] border-white/10 max-h-64">
               {types.map((tp) => (
@@ -79,15 +82,15 @@ export const PartnerForm = () => {
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="partner-company" className="text-white/80 text-sm">Raison sociale</Label>
+            <Label htmlFor="partner-company" className="text-white/80 text-sm">{L.company}</Label>
             <Input id="partner-company" value={f.company} onChange={(e) => setF({ ...f, company: e.target.value })}
-              placeholder="Nom légal de votre entreprise" className={inputCls} data-testid="partner-form-company" />
+              placeholder={L.companyPh} className={inputCls} data-testid="partner-form-company" />
           </div>
           <div className="space-y-2">
-            <Label className="text-white/80 text-sm">Statut juridique</Label>
+            <Label className="text-white/80 text-sm">{L.legal}</Label>
             <Select value={f.legal_status} onValueChange={(v) => setF((p) => ({ ...p, legal_status: v }))}>
               <SelectTrigger className="h-12 bg-white/[0.04] border-white/10 text-white rounded-xl focus:border-[#D9B35A]/50" data-testid="partner-form-legal">
-                <SelectValue placeholder="Sélectionnez un statut" />
+                <SelectValue placeholder={L.legalPh} />
               </SelectTrigger>
               <SelectContent className="bg-[#0d1117] border-white/10 max-h-64">
                 {LEGAL_STATUSES.map((s) => (
@@ -100,19 +103,19 @@ export const PartnerForm = () => {
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="partner-name" className="text-white/80 text-sm">Nom complet *</Label>
+            <Label htmlFor="partner-name" className="text-white/80 text-sm">{L.name}</Label>
             <Input id="partner-name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })}
-              placeholder="Jean Dupont" required className={inputCls} data-testid="partner-form-name" />
+              placeholder={L.namePh} required className={inputCls} data-testid="partner-form-name" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="partner-email" className="text-white/80 text-sm">Email professionnel *</Label>
+            <Label htmlFor="partner-email" className="text-white/80 text-sm">{L.email}</Label>
             <Input id="partner-email" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })}
-              placeholder="contact@entreprise.fr" required className={inputCls} data-testid="partner-form-email" />
+              placeholder={L.emailPh} required className={inputCls} data-testid="partner-form-email" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="partner-phone" className="text-white/80 text-sm">Téléphone</Label>
+          <Label htmlFor="partner-phone" className="text-white/80 text-sm">{L.phone}</Label>
           <div className="flex gap-2">
             <Select value={f.phoneCountry} onValueChange={(v) => setF((p) => ({ ...p, phoneCountry: v }))}>
               <SelectTrigger className="h-12 w-[130px] flex-shrink-0 bg-white/[0.04] border-white/10 text-white rounded-xl focus:border-[#D9B35A]/50" data-testid="partner-form-phone-country">
@@ -134,19 +137,19 @@ export const PartnerForm = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="partner-message" className="text-white/80 text-sm">Votre projet</Label>
+          <Label htmlFor="partner-message" className="text-white/80 text-sm">{L.project}</Label>
           <Textarea id="partner-message" value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })}
-            placeholder="Décrivez votre activité et le partenariat envisagé…" rows={4}
+            placeholder={L.projectPh} rows={4}
             className="resize-none bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50 focus:ring-[#D9B35A]/20"
             data-testid="partner-form-message" />
         </div>
 
         <button type="submit" disabled={sending} data-testid="partner-form-submit"
           className="btn-gold w-full h-14 inline-flex items-center justify-center gap-2.5 rounded-[14px] text-base font-semibold disabled:opacity-50">
-          {sending ? (<><Loader2 className="w-5 h-5 animate-spin" />Envoi en cours…</>) : (<><Send className="w-5 h-5" />Envoyer ma candidature</>)}
+          {sending ? (<><Loader2 className="w-5 h-5 animate-spin" />{L.sending}</>) : (<><Send className="w-5 h-5" />{L.submit}</>)}
         </button>
 
-        <p className="text-xs text-white/50 text-center">Votre candidature est étudiée par la coopérative — réponse sous 48 h ouvrées.</p>
+        <p className="text-xs text-white/50 text-center">{L.disclaimer}</p>
       </form>
     </div>
   );

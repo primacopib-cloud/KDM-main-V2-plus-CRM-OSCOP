@@ -5,9 +5,11 @@ import { partners } from '../data/mock';
 import { Mail, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf, Store, ChevronDown, FileSpreadsheet } from 'lucide-react';
 import ContactForm from './ContactForm';
 import { PartnerForm } from './PartnerForm';
+import { PARTNER_L10N, partnerLang } from './partnerFormI18n';
 
 const Footer = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const pl = PARTNER_L10N[partnerLang(i18n.language)] || PARTNER_L10N.fr;
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [partnerOpen, setPartnerOpen] = useState(false);
   return (
@@ -230,7 +232,7 @@ const Footer = () => {
             aria-expanded={partnerOpen}
           >
             <span className="flex items-center gap-2.5 text-sm font-bold text-[#E9CF8E] uppercase tracking-wider">
-              <Handshake className="w-4 h-4 text-[#D4AF37]" /> Devenir partenaire
+              <Handshake className="w-4 h-4 text-[#D4AF37]" /> {pl.toggle}
             </span>
             <ChevronDown className={`w-4 h-4 text-[#D4AF37] transition-transform duration-300 ${partnerOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -239,12 +241,10 @@ const Footer = () => {
               <div className="text-center mb-6">
                 <span className="badge-status mb-3 inline-flex">
                   <span className="dot"></span>
-                  Candidature partenariat
+                  {pl.badge}
                 </span>
-                <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2 text-white">Devenir Partenaire</h3>
-                <p className="text-white/70 text-sm">
-                  Opérateurs logistiques, coopératives, acteurs ESS — rejoignez l&apos;écosystème KDMARCHÉ × O&apos;SCOP en tant que partenaire officiel.
-                </p>
+                <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2 text-white">{pl.heading}</h3>
+                <p className="text-white/70 text-sm">{pl.sub}</p>
               </div>
               <div className="max-w-3xl mx-auto">
                 <PartnerForm />

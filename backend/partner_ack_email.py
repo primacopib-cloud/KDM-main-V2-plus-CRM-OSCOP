@@ -59,6 +59,72 @@ ACK_I18N = {
 }
 
 
+DECISION_I18N = {
+    "fr": {
+        "hello": "Bonjour {name},", "ref": "Référence : {ref} — KDMARCHÉ × O'SCOP.",
+        "accepted": {"subject": "🎉 Candidature acceptée — {type}", "title": "Bienvenue dans la coopérative !",
+                     "body": "Bonne nouvelle : votre candidature « <strong>{type}</strong> » a été "
+                             "<strong style='color:#1E8449;'>acceptée</strong>. Notre équipe vous contactera très vite "
+                             "pour finaliser votre intégration et vos accès."},
+        "rejected": {"subject": "Votre candidature {type} — réponse", "title": "Réponse à votre candidature",
+                     "body": "Après étude, nous ne pouvons pas donner suite à votre candidature "
+                             "« <strong>{type}</strong> » pour le moment. Vous pourrez candidater à nouveau "
+                             "ultérieurement — merci de l'intérêt porté à la coopérative."},
+    },
+    "en": {
+        "hello": "Hello {name},", "ref": "Reference: {ref} — KDMARCHÉ × O'SCOP.",
+        "accepted": {"subject": "🎉 Application accepted — {type}", "title": "Welcome to the cooperative!",
+                     "body": "Great news: your \u201c<strong>{type}</strong>\u201d application has been "
+                             "<strong style='color:#1E8449;'>accepted</strong>. Our team will contact you very soon "
+                             "to finalise your onboarding and access."},
+        "rejected": {"subject": "Your {type} application — answer", "title": "Answer to your application",
+                     "body": "After review, we cannot move forward with your \u201c<strong>{type}</strong>\u201d "
+                             "application at this time. You may apply again later — thank you for your interest "
+                             "in the cooperative."},
+    },
+    "es": {
+        "hello": "Hola {name}:", "ref": "Referencia: {ref} — KDMARCHÉ × O'SCOP.",
+        "accepted": {"subject": "🎉 Candidatura aceptada — {type}", "title": "¡Bienvenido a la cooperativa!",
+                     "body": "Buenas noticias: su candidatura « <strong>{type}</strong> » ha sido "
+                             "<strong style='color:#1E8449;'>aceptada</strong>. Nuestro equipo le contactará muy pronto "
+                             "para finalizar su integración y sus accesos."},
+        "rejected": {"subject": "Su candidatura {type} — respuesta", "title": "Respuesta a su candidatura",
+                     "body": "Tras el estudio, no podemos dar curso a su candidatura « <strong>{type}</strong> » "
+                             "por el momento. Podrá presentarse de nuevo más adelante — gracias por su interés "
+                             "en la cooperativa."},
+    },
+    "gcf": {
+        "hello": "Bonjou {name},", "ref": "Référans : {ref} — KDMARCHÉ × O'SCOP.",
+        "accepted": {"subject": "🎉 Kandidati a'w aksèpté — {type}", "title": "Byenvini adan koopérativ-la !",
+                     "body": "Bon nouvèl : kandidati a'w « <strong>{type}</strong> » "
+                             "<strong style='color:#1E8449;'>aksèpté</strong>. Ékip an nou ké kontakté'w byen vit "
+                             "pou fini entégrasyon a'w é ba'w aksè a'w."},
+        "rejected": {"subject": "Répons asi kandidati a'w {type}", "title": "Répons asi kandidati a'w",
+                     "body": "Apré nou gadé'y byen, nou pa pé bay swit a kandidati a'w « <strong>{type}</strong> » "
+                             "pou lè moman. Ou ké pé pozé kandidati a'w ankò pli ta — mèsi pou lentéré "
+                             "ou ka pòté ba koopérativ-la."},
+    },
+}
+
+
+async def send_partner_decision(doc: dict, accepted: bool):
+    """Email de décision (acceptée/refusée) au candidat, dans sa langue."""
+    from brevo_service import send_email
+    lang = doc.get("lang")
+    t = DECISION_I18N.get(lang if lang in DECISION_I18N else "fr")
+    d = t["accepted" if accepted else "rejected"]
+    type_label = doc.get("type_label") or doc.get("type")
+    html = (
+        "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#2A1045'>"
+        f"<h2 style='color:#451F6B'>{d['title']}</h2>"
+        f"<p>{t['hello'].format(name=doc['name'])}</p>"
+        f"<p>{d['body'].format(type=type_label)}</p>"
+        f"<p style='color:#777;font-size:12px'>{t['ref'].format(ref=doc['id'][:8].upper())}</p></div>")
+    await send_email(to_email=doc["email"], to_name=doc["name"],
+                     subject=d["subject"].format(type=type_label),
+                     html_content=html, tags=["partner-application-decision"])
+
+
 def _row(label: str, value: str) -> str:
     return (f"<tr><td style='padding:7px 12px;border-bottom:1px solid #eee;color:#777;width:160px'>{label}</td>"
             f"<td style='padding:7px 12px;border-bottom:1px solid #eee;font-weight:bold'>{value}</td></tr>")

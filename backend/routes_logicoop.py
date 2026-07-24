@@ -404,27 +404,9 @@ async def update_application(app_id: str, body: AppStatusBody, admin: dict = Dep
     await db.partner_applications.update_one(
         {"id": app_id}, {"$set": {"status": body.status, "updated_at": _now(), "updated_by": admin.get("email")}})
     if body.status in ("ACCEPTEE", "REFUSEE"):
-        accepted = body.status == "ACCEPTEE"
         try:
-            from brevo_service import send_email
-            await send_email(
-                to_email=app_doc["email"], to_name=app_doc["name"],
-                subject=(f"🎉 Candidature acceptée — {app_doc.get('type_label', app_doc['type'])}" if accepted
-                         else f"Votre candidature {app_doc.get('type_label', app_doc['type'])} — réponse"),
-                html_content=(
-                    f"""<h2 style="color:#451F6B;">Bienvenue dans la coopérative !</h2>
-                    <p>Bonjour {app_doc['name']},</p>
-                    <p>Bonne nouvelle : votre candidature « <strong>{app_doc.get('type_label', app_doc['type'])}</strong> »
-                    a été <strong style="color:#1E8449;">acceptée</strong>. Notre équipe vous contactera très vite pour
-                    finaliser votre intégration et vos accès.</p>
-                    <p style="color:#777;font-size:12px;">Référence : {app_doc['id'][:8].upper()} — KDMARCHÉ × O'SCOP.</p>""" if accepted else
-                    f"""<h2 style="color:#451F6B;">Réponse à votre candidature</h2>
-                    <p>Bonjour {app_doc['name']},</p>
-                    <p>Après étude, nous ne pouvons pas donner suite à votre candidature
-                    « <strong>{app_doc.get('type_label', app_doc['type'])}</strong> » pour le moment.
-                    Vous pourrez candidater à nouveau ultérieurement — merci de l'intérêt porté à la coopérative.</p>
-                    <p style="color:#777;font-size:12px;">Référence : {app_doc['id'][:8].upper()} — KDMARCHÉ × O'SCOP.</p>"""),
-                tags=["partner-application-decision"])
+            from partner_ack_email import send_partner_decision
+            await send_partner_decision(app_doc, body.status == "ACCEPTEE")
         except Exception as exc:
             logger.warning("Email décision candidature %s : %s", app_doc["email"], exc)
     return {"ok": True}
