@@ -74,7 +74,7 @@ export const PartnerForm = () => {
             </SelectTrigger>
             <SelectContent className="bg-[#0d1117] border-white/10 max-h-64">
               {types.map((tp) => (
-                <SelectItem key={tp.code} value={tp.code} className="text-white/80 focus:bg-white/10 focus:text-white">{tp.label}</SelectItem>
+                <SelectItem key={tp.code} value={tp.code} className="text-white/80 focus:bg-white/10 focus:text-white">{tp.labels?.[lang] || tp.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>

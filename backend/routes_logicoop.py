@@ -18,8 +18,19 @@ logicoop_router = APIRouter(prefix="/api", tags=["logicoop"])
 db = None
 
 DEFAULT_PARTNER_TYPES = [
-    {"code": "COOPERS", "label": "Devenir COOPER'S"},
-    {"code": "LOGICOOP", "label": "Devenir LOGICOOP (opérateur logistique)"},
+    {"code": "COOPERS", "label": "Devenir COOPER'S",
+     "labels": {"fr": "Devenir COOPER'S", "en": "Become a COOPER'S",
+                "es": "Hacerse COOPER'S", "gcf": "Vin COOPER'S"}},
+    {"code": "LOGICOOP", "label": "Devenir LOGICOOP (opérateur logistique)",
+     "labels": {"fr": "Devenir LOGICOOP (opérateur logistique)",
+                "en": "Become a LOGICOOP (logistics operator)",
+                "es": "Hacerse LOGICOOP (operador logístico)",
+                "gcf": "Vin LOGICOOP (opératè lojistik)"}},
+    {"code": "LOLODRIVE", "label": "Devenir Point Relais LOLODRIVE",
+     "labels": {"fr": "Devenir Point Relais LOLODRIVE",
+                "en": "Become a LOLODRIVE pickup point",
+                "es": "Hacerse punto de recogida LOLODRIVE",
+                "gcf": "Vin Pwen Rilé LOLODRIVE"}},
 ]
 
 
@@ -278,9 +289,12 @@ async def set_mission_status(order_id: str, body: MissionStatusBody, user_id: st
 # ---------- Types de partenariat ----------
 
 async def _ensure_types():
-    if await db.partner_types.count_documents({}) == 0:
-        for t in DEFAULT_PARTNER_TYPES:
+    for t in DEFAULT_PARTNER_TYPES:
+        existing = await db.partner_types.find_one({"code": t["code"]}, {"_id": 0, "code": 1, "labels": 1})
+        if existing is None:
             await db.partner_types.insert_one({"id": str(uuid.uuid4()), **t, "active": True, "created_at": _now()})
+        elif not existing.get("labels"):
+            await db.partner_types.update_one({"code": t["code"]}, {"$set": {"labels": t["labels"]}})
 
 
 @logicoop_router.get("/partners/types")
@@ -341,11 +355,12 @@ async def apply_partner(body: ApplicationBody):
         raise HTTPException(status_code=400, detail="Type de partenariat inconnu")
     if not body.name.strip():
         raise HTTPException(status_code=400, detail="Nom requis")
-    doc = {"id": str(uuid.uuid4()), "type": t["code"], "type_label": t["label"],
+    lang = body.lang if body.lang in ("fr", "en", "es", "gcf") else "fr"
+    doc = {"id": str(uuid.uuid4()), "type": t["code"],
+           "type_label": (t.get("labels") or {}).get(lang) or t["label"],
            "name": body.name.strip(), "email": body.email.lower(), "company": body.company,
            "legal_status": body.legal_status, "phone": body.phone,
-           "message": (body.message or "")[:2000],
-           "lang": body.lang if body.lang in ("fr", "en", "es", "gcf") else "fr",
+           "message": (body.message or "")[:2000], "lang": lang,
            "status": "NOUVELLE", "created_at": _now()}
     await db.partner_applications.insert_one({**doc})
     logger.info("Candidature partenaire %s : %s", t["code"], body.email)
