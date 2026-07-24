@@ -1,9 +1,41 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BarChart3, Star, Check } from 'lucide-react';
+import { BarChart3, Star, Check, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
 const eur = (c) => `${((c || 0) / 100).toFixed(2)} €`;
+
+const MonthlyReportButton = () => {
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [busy, setBusy] = useState(false);
+
+  const download = async () => {
+    setBusy(true);
+    try {
+      const r = await fetch(`${API}/logiscop-transport/admin/monthly-report/pdf?month=${month}`,
+        { credentials: 'include', headers: getAuthHeaders() });
+      if (!r.ok) throw new Error('Génération impossible');
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a');
+      a.href = url; a.download = `synthese-transport-${month}.pdf`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { toast.error(e.message); }
+    setBusy(false);
+  };
+
+  return (
+    <span className="inline-flex items-center gap-1.5 ml-auto">
+      <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
+        data-testid="monthly-report-month"
+        className="h-7 px-2 rounded bg-white/[0.06] border border-white/15 text-[10px] text-white" />
+      <button type="button" onClick={download} disabled={busy} data-testid="monthly-report-download"
+        title="Synthèse mensuelle (CA, avoirs, litiges) — aussi envoyée automatiquement par email le 1er du mois"
+        className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white/[0.06] text-white/70 hover:text-[#E9CF8E] border border-white/15 inline-flex items-center gap-1 disabled:opacity-50">
+        <FileText size={10} /> Synthèse mensuelle PDF
+      </button>
+    </span>
+  );
+};
 
 const ServiceCreditRates = () => {
   const [rates, setRates] = useState(null);
@@ -46,6 +78,7 @@ const ServiceCreditRates = () => {
         <Check size={10} /> OK
       </button>
       <span className="text-[9px] text-white/35">Appliqués automatiquement à la clôture ePOD, cumulables, déduits du paiement en ligne.</span>
+      <MonthlyReportButton />
     </div>
   );
 };

@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 
 from core_deps import get_current_user, create_notification
@@ -30,7 +30,8 @@ async def _get_invoice_for_user(db, invoice_id: str, user: dict) -> dict:
 
 
 @logiscop_payments_router.post("/invoices/{invoice_id}/pay")
-async def pay_invoice(invoice_id: str, body: PayBody, current_user: dict = Depends(get_current_user)):
+async def pay_invoice(invoice_id: str, body: PayBody, background_tasks: BackgroundTasks,
+                      current_user: dict = Depends(get_current_user)):
     db = get_database()
     inv = await _get_invoice_for_user(db, invoice_id, current_user)
     if inv["status"] == "PAID":
@@ -48,6 +49,8 @@ async def pay_invoice(invoice_id: str, body: PayBody, current_user: dict = Depen
             f"La facture {inv['ref']} a été intégralement soldée par l'avoir {credit['ref']}.",
             target_roles=["oscop_super_admin", "kdm_b2b_admin"],
             data={"invoice_id": invoice_id, "ref": inv["ref"]})
+        from logiscop_payment_receipt import archive_payment_receipt_to_ged
+        background_tasks.add_task(archive_payment_receipt_to_ged, db, invoice_id)
         return {"paid_without_charge": True, "invoice_status": "PAID", "credit_applied_cents": credit_cents}
     origin = body.origin_url.rstrip("/")
     if not origin:
@@ -116,8 +119,23 @@ async def credit_note_pdf(credit_id: str, current_user: dict = Depends(get_curre
                     headers={"Content-Disposition": f"attachment; filename={credit['ref']}.pdf"})
 
 
+@logiscop_payments_router.get("/invoices/{invoice_id}/receipt/pdf")
+async def payment_receipt_pdf(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    """Reçu de paiement PDF (facture payée, avoir déduit détaillé)."""
+    db = get_database()
+    inv = await _get_invoice_for_user(db, invoice_id, current_user)
+    if inv.get("status") != "PAID":
+        raise HTTPException(status_code=409, detail="Facture non réglée — reçu indisponible")
+    from logiscop_payment_receipt import build_payment_receipt_pdf, load_receipt_context
+    inv, ot, credit, txn = await load_receipt_context(db, invoice_id)
+    from fastapi.responses import Response
+    return Response(content=build_payment_receipt_pdf(inv, ot, credit, txn), media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=recu-{inv['ref']}.pdf"})
+
+
 @logiscop_payments_router.get("/invoices/pay/status/{session_id}")
-async def invoice_payment_status(session_id: str, current_user: dict = Depends(get_current_user)):
+async def invoice_payment_status(session_id: str, background_tasks: BackgroundTasks,
+                                 current_user: dict = Depends(get_current_user)):
     db = get_database()
     txn = await db.logiscop_invoice_payments.find_one({"session_id": session_id}, {"_id": 0})
     if not txn:
@@ -142,6 +160,8 @@ async def invoice_payment_status(session_id: str, current_user: dict = Depends(g
             f"La facture {txn['invoice_ref']} ({txn['amount_cents'] / 100:.2f} € TTC) a été réglée par carte (Stripe).",
             target_roles=["oscop_super_admin", "kdm_b2b_admin"],
             data={"invoice_id": txn["invoice_id"], "ref": txn["invoice_ref"]})
+        from logiscop_payment_receipt import archive_payment_receipt_to_ged
+        background_tasks.add_task(archive_payment_receipt_to_ged, db, txn["invoice_id"])
         logger.info("Facture transport %s réglée via Stripe (%s)", txn["invoice_ref"], session_id)
     inv = await db.logiscop_transport_invoices.find_one({"id": txn["invoice_id"]}, {"_id": 0, "status": 1, "ref": 1})
     return {"session_id": session_id, "payment_status": session.payment_status,

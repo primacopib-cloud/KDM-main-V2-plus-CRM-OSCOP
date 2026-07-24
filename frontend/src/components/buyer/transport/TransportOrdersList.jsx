@@ -127,7 +127,15 @@ export const TransportOrdersList = ({ orders, invoicesByOt = {}, disputesByOt = 
                           </button>
                         )}
                         {inv.status === 'PAID' ? (
-                          <span className="block text-[10px] font-bold text-emerald-400">✓ Payée</span>
+                          <span className="block text-[10px] font-bold text-emerald-400">
+                            ✓ Payée
+                            <button type="button" data-testid={`receipt-pdf-${inv.ref}`}
+                              title="Reçu de paiement (avoir déduit détaillé)"
+                              onClick={() => downloadTransportPdf(`/logiscop-transport/invoices/${inv.id}/receipt/pdf`, `recu-${inv.ref}.pdf`)}
+                              className="ml-1.5 text-[#93C5FD] hover:text-[#E9CF8E] underline decoration-dotted">
+                              Reçu
+                            </button>
+                          </span>
                         ) : (
                           <button type="button" data-testid={`invoice-pay-${inv.ref}`} disabled={paying === inv.id}
                             onClick={() => pay(inv)}

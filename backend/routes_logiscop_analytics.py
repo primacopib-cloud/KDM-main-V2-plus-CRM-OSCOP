@@ -169,6 +169,18 @@ async def set_service_credit_rates(body: CreditRatesBody, current_user: dict = D
     return {"ok": True, "late_pct": body.late_pct, "reserves_pct": body.reserves_pct}
 
 
+@logiscop_analytics_router.get("/admin/monthly-report/pdf")
+async def monthly_report_pdf(month: str, current_user: dict = Depends(get_current_user)):
+    """Synthèse mensuelle transport (CA, avoirs, litiges) — téléchargement PDF admin."""
+    await check_admin(current_user)
+    db = get_database()
+    from logiscop_monthly_report import build_monthly_report_pdf, collect_monthly_stats
+    stats = await collect_monthly_stats(db, month[:7])
+    from fastapi.responses import Response
+    return Response(content=build_monthly_report_pdf(stats), media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=synthese-transport-{month[:7]}.pdf"})
+
+
 @logiscop_analytics_router.post("/admin/operator-share-rate")
 async def set_operator_share_rate(body: ShareRateBody, current_user: dict = Depends(get_current_user)):
     await check_admin(current_user)

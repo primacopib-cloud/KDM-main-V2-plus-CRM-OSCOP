@@ -148,6 +148,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler LOGISCOP pickup reminders crashed: %s", exc)
         try:
+            from logiscop_monthly_report import send_monthly_transport_report
+            await send_monthly_transport_report(_db)
+        except Exception as exc:
+            logger.exception("Scheduler LOGISCOP monthly report crashed: %s", exc)
+        try:
             from routes_accounting import snapshot_fiscal_register
             await snapshot_fiscal_register(_db)
         except Exception as exc:

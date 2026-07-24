@@ -210,3 +210,15 @@ async def accounting_export(date_from: Optional[str] = None, date_to: Optional[s
                     f"{e['ttc_cents'] / 100:.2f}".replace(".", ",")])
     return Response(content=buf.getvalue().encode("utf-8-sig"), media_type="text/csv",
                     headers={"Content-Disposition": 'attachment; filename="journal-comptable.csv"'})
+
+
+@accounting_router.get("/export.xlsx")
+async def accounting_export_xlsx(date_from: Optional[str] = None, date_to: Optional[str] = None,
+                                 admin: dict = Depends(require_admin)):
+    """Export Excel formaté : onglet Synthèse + un onglet par type d'opération."""
+    entries = await _collect_entries(date_from or "", date_to or "")
+    from accounting_excel import build_accounting_workbook
+    content = build_accounting_workbook(entries, KIND_LABELS)
+    return Response(content=content,
+                    media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": 'attachment; filename="journal-comptable.xlsx"'})

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Calculator, Download, Loader2 } from 'lucide-react';
+import { Calculator, Download, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { RevenueChart, FiscalRegisterSection } from './FiscalRegisterSection';
@@ -61,10 +61,16 @@ export const AccountingTab = () => {
                 days === p.days ? 'bg-[#D9B35A] text-[#1F0A33]' : 'bg-white/10 text-white/55 hover:text-white/80'
               }`}>{p.label}</button>
           ))}
-          <button type="button" onClick={exportCsv} data-testid="acct-export-csv"
+          <button type="button" onClick={() => exportFile('csv')} data-testid="acct-export-csv"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold"
             style={{ background: 'rgba(217,179,90,0.15)', color: '#E9CF8E', border: '1px solid rgba(217,179,90,0.4)' }}>
-            <Download className="w-3.5 h-3.5" /> Export CSV comptable
+            <Download className="w-3.5 h-3.5" /> CSV
+          </button>
+          <button type="button" onClick={() => exportFile('xlsx')} data-testid="acct-export-xlsx"
+            title="Classeur Excel : onglet Synthèse + un onglet par type d'opération"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold"
+            style={{ background: 'rgba(123,201,78,0.15)', color: '#A5E27B', border: '1px solid rgba(123,201,78,0.4)' }}>
+            <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
           </button>
         </div>
       </div>
