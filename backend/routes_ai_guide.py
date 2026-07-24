@@ -384,6 +384,27 @@ async def check_guidia_friction(db) -> int:
     return alerts
 
 
+VOICES = ["alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer"]
+
+
+class VoiceBody(BaseModel):
+    voice: str
+
+
+@ai_guide_router.get("/voice")
+async def get_voice(current_user: dict = Depends(get_current_user)):
+    return {"voice": current_user.get("guidia_voice") or "coral", "voices": VOICES}
+
+
+@ai_guide_router.post("/voice")
+async def set_voice(body: VoiceBody, current_user: dict = Depends(get_current_user)):
+    if body.voice not in VOICES:
+        raise HTTPException(status_code=422, detail="Voix inconnue")
+    await get_database().users.update_one(
+        {"id": current_user["id"]}, {"$set": {"guidia_voice": body.voice}})
+    return {"ok": True, "voice": body.voice}
+
+
 class TtsBody(BaseModel):
     text: str
 
@@ -394,11 +415,12 @@ async def guide_tts(body: TtsBody, current_user: dict = Depends(get_current_user
     text = body.text.strip()[:900]
     if not text:
         raise HTTPException(status_code=400, detail="Texte vide")
+    voice = current_user.get("guidia_voice") or "coral"
     from emergentintegrations.llm.openai import OpenAITextToSpeech
     from fastapi.responses import Response
     try:
         tts = OpenAITextToSpeech(api_key=os.environ.get("EMERGENT_LLM_KEY"))
-        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice="coral")
+        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice=voice)
     except Exception as exc:
         logger.warning("GUID'IA TTS erreur : %s", exc)
         raise HTTPException(status_code=502, detail="Synthèse vocale momentanément indisponible")

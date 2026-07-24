@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass } from 'lucide-react';
+import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass, AudioLines } from 'lucide-react';
 import { API, getAuthHeaders } from '../../services/http';
 import { AiGuideHistory } from './AiGuideHistory';
 
@@ -18,6 +18,28 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   const [speak, setSpeak] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [sessionId, setSessionId] = useState(sessionStorage.getItem(`guidia_session_${space}`) || null);
+  const [voice, setVoice] = useState(null);
+  const [voices, setVoices] = useState([]);
+  const [showVoices, setShowVoices] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API}/ai-guide/voice`, { credentials: 'include', headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) { setVoice(d.voice); setVoices(d.voices || []); } }).catch(() => {});
+  }, []);
+
+  const saveVoice = async (v) => {
+    setVoice(v);
+    setShowVoices(false);
+    try {
+      await fetch(`${API}/ai-guide/voice`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ voice: v }),
+      });
+      readAloud(`Bonjour, je suis la voix ${v}.`);
+    } catch { /* silencieux */ }
+  };
   const endRef = useRef(null);
   const recRef = useRef(null);
   const lastTipAt = useRef(null);
@@ -148,6 +170,28 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
             className={`p-1.5 rounded-lg transition-colors ${speak ? 'text-[#E9CF8E] bg-[#D9B35A]/15' : 'text-white/40 hover:text-white'}`}>
             {speak ? <Volume2 size={14} /> : <VolumeX size={14} />}
           </button>
+          {voices.length > 0 && (
+            <span className="relative">
+              <button type="button" data-testid="ai-guide-voice-btn" title="Choisir ma voix GUID'IA"
+                onClick={() => setShowVoices(!showVoices)}
+                className={`p-1.5 rounded-lg transition-colors ${showVoices ? 'text-[#E9CF8E] bg-[#D9B35A]/15' : 'text-white/40 hover:text-white'}`}>
+                <AudioLines size={14} />
+              </button>
+              {showVoices && (
+                <span className="absolute right-0 top-8 z-10 w-32 rounded-xl p-1.5 flex flex-col gap-0.5"
+                  data-testid="ai-guide-voice-menu"
+                  style={{ background: 'rgba(30,12,52,0.98)', border: '1px solid rgba(217,179,90,0.4)' }}>
+                  {voices.map((v) => (
+                    <button key={v} type="button" onClick={() => saveVoice(v)} data-testid={`voice-${v}`}
+                      className={`px-2 py-1 rounded-lg text-left text-[11px] capitalize transition-colors ${
+                        v === voice ? 'bg-[#D9B35A]/25 text-[#E9CF8E] font-bold' : 'text-white/60 hover:text-white hover:bg-white/[0.06]'}`}>
+                      {v}
+                    </button>
+                  ))}
+                </span>
+              )}
+            </span>
+          )}
           <button type="button" onClick={onClose} data-testid="ai-guide-close"
             className="text-white/40 hover:text-white text-lg leading-none px-1">×</button>
         </span>
