@@ -31,6 +31,10 @@
     "yes": "Wi",
     "no": "Non"
   },
+  "roles": {
+    "vendor_pro": "Vandè Pro",
+    "buyer_pro": "Achtè Pro"
+  },
   "nav": {
     "home": "Lakay",
     "pro_access": "Aksè Pro",

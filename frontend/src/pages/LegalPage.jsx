@@ -369,8 +369,8 @@ export default function LegalPage() {
         <div className="mt-12 p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] text-center">
           <p className="text-xs text-white/50">
             Ces documents sont fournis à titre informatif. Pour toute question, contactez-nous à{' '}
-            <a href="mailto:juridique@kdmarche-oscop.fr" className="text-[#D9B35A] hover:underline">
-              juridique@kdmarche-oscop.fr
+            <a href="mailto:juridique@objectifscopoutremer.com" className="text-[#D9B35A] hover:underline">
+              juridique@objectifscopoutremer.com
             </a>
           </p>
         </div>

@@ -31,6 +31,10 @@
     "yes": "Yes",
     "no": "No"
   },
+  "roles": {
+    "vendor_pro": "Pro Seller",
+    "buyer_pro": "Pro Buyer"
+  },
   "nav": {
     "home": "Home",
     "pro_access": "Pro Access",

@@ -33,7 +33,16 @@ export const UserMenu = ({ user, nav, showUserMenu, setShowUserMenu, handleLogou
                     >
                       <div className="max-h-[78vh] overflow-y-auto">
                       <div className="p-3 border-b border-[#D9B35A]/25" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.14), rgba(212,175,55,0.04))' }}>
-                        <p className="text-sm font-semibold text-white">{user?.contact_name || 'Utilisateur'}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-white">{user?.contact_name || 'Utilisateur'}</p>
+                          <span data-testid="user-menu-role-badge"
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide border ${
+                              user?.is_admin ? 'bg-[#D9B35A]/20 text-[#E9CF8E] border-[#D9B35A]/40'
+                                : user?.role === 'vendor' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
+                                  : 'bg-[#8B5CF6]/20 text-[#CDB4F0] border-[#8B5CF6]/40'}`}>
+                            {user?.is_admin ? 'Admin' : user?.role === 'vendor' ? t('roles.vendor_pro') : t('roles.buyer_pro')}
+                          </span>
+                        </div>
                         <p className="text-xs text-white/50 truncate">{user?.email}</p>
                         {user?.company_name && (
                           <p className="text-xs text-[#D9B35A] mt-1 font-medium">{user.company_name}</p>
