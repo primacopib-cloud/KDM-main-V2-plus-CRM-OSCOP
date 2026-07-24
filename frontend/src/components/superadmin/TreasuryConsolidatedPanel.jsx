@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Landmark } from 'lucide-react';
+import { toast } from 'sonner';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { API, getAuthHeaders } from '../../services/http';
 
@@ -34,6 +35,40 @@ const TreasuryHistoryChart = ({ history }) => {
   );
 };
 
+const AlertThreshold = () => {
+  const [val, setVal] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API}/admin/treasury/alert-threshold`, { credentials: 'include', headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : null)).then((d) => d && setVal(String(d.threshold_eur))).catch(() => {});
+  }, []);
+
+  const save = async () => {
+    try {
+      const r = await fetch(`${API}/admin/treasury/alert-threshold`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ threshold_eur: Number(val) || 0 }),
+      });
+      if (!r.ok) throw new Error('Enregistrement impossible');
+      toast.success(`Alerte trésorerie si net 90 j < ${Number(val) || 0} €`);
+    } catch (e) { toast.error(e.message); }
+  };
+
+  if (val === null) return null;
+  return (
+    <span className="inline-flex items-center gap-1.5 ml-auto text-[10px] text-white/50" data-testid="treasury-alert-threshold">
+      Alerte si net 90 j &lt;
+      <input type="number" value={val} onChange={(e) => setVal(e.target.value)} data-testid="alert-threshold-input"
+        className="w-20 h-6 px-2 rounded bg-white/[0.06] border border-white/15 text-[10px] text-white text-right" /> €
+      <button type="button" onClick={save} data-testid="alert-threshold-save"
+        className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-white/[0.06] text-white/70 hover:text-[#E9CF8E] border border-white/15">
+        OK
+      </button>
+    </span>
+  );
+};
+
 export const TreasuryConsolidatedPanel = () => {
   const [data, setData] = useState(null);
 
@@ -46,8 +81,9 @@ export const TreasuryConsolidatedPanel = () => {
   const { transport, memberships, rcr, buckets } = data;
   return (
     <div className="glass-panel-soft rounded-[14px] p-3" data-testid="treasury-consolidated-panel">
-      <p className="text-[11px] font-semibold text-[#D9B35A] mb-2 flex items-center gap-1.5">
+      <p className="text-[11px] font-semibold text-[#D9B35A] mb-2 flex flex-wrap items-center gap-1.5">
         <Landmark className="w-3.5 h-3.5" /> Trésorerie consolidée — RCR · Transport LOGI'SCOP · Adhésions
+        <AlertThreshold />
       </p>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
         {[

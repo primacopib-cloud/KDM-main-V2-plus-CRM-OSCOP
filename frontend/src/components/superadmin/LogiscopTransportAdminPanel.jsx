@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, Fragment } from 'react';
 import { Truck, FileDown, Check, X, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
@@ -6,6 +6,7 @@ import { LogiscopTransportKpis } from './LogiscopTransportKpis';
 import { LogiscopDisputesPanel } from './LogiscopDisputesPanel';
 import { LogiscopQualityHistory } from './LogiscopQualityHistory';
 import { MonthlyReportsHistory } from './MonthlyReportsHistory';
+import { LiftSuspensionForm, InvoicePaymentPlan } from './InvoicePaymentPlan';
 
 const CONV_STATUS = { PENDING_SIGNATURE: ['En attente signature', '#FBBF24'], SIGNED: ['Signée', '#7BC94E'] };
 const OT_STATUS = {
@@ -24,6 +25,7 @@ const invoiceState = (inv) => {
 export const LogiscopTransportAdminPanel = () => {
   const [data, setData] = useState(null);
   const [prices, setPrices] = useState({});
+  const [liftFor, setLiftFor] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${API}/logiscop-transport/admin/overview`, { credentials: 'include', headers: getAuthHeaders() })
@@ -182,7 +184,8 @@ export const LogiscopTransportAdminPanel = () => {
               {data.invoices.map((inv) => {
                 const [st, cls] = invoiceState(inv);
                 return (
-                  <tr key={inv.id} className="border-b border-white/[0.04] text-white/75" data-testid={`admin-invoice-${inv.ref}`}>
+                  <Fragment key={inv.id}>
+                  <tr className="border-b border-white/[0.04] text-white/75" data-testid={`admin-invoice-${inv.ref}`}>
                     <td className="py-1.5 pr-3 font-semibold">{inv.ref}
                       {inv.ged_doc_id && <span className="block font-normal text-[10px] text-white/35">GED ✓</span>}
                     </td>
@@ -210,21 +213,26 @@ export const LogiscopTransportAdminPanel = () => {
                           Mise en demeure {inv.demand_notice_sent_at.slice(0, 10)} — OT suspendus
                         </span>
                       )}
-                      {inv.suspension_lifted_at && (
+                      {inv.plan_breached_at && inv.status !== 'PAID' && (
+                        <span className="block font-normal text-[10px] text-red-300" data-testid={`plan-breach-badge-${inv.ref}`}>
+                          Échéancier rompu — OT suspendus
+                        </span>
+                      )}
+                      {inv.suspension_lifted_at && !inv.plan_breached_at && (
                         <span className="block font-normal text-[10px] text-emerald-300/80">
                           Suspension levée le {inv.suspension_lifted_at.slice(0, 10)}
                         </span>
                       )}
+                      <InvoicePaymentPlan invoice={inv} onChanged={load} />
                     </td>
                     <td className="py-1.5">
                       <span className="inline-flex items-center gap-1.5">
                         <button type="button" onClick={() => download(`/logiscop-transport/invoices/${inv.id}/pdf`, `${inv.ref}.pdf`)}
                           className="text-white/50 hover:text-[#E9CF8E]"><FileDown size={14} /></button>
-                        {inv.demand_notice_sent_at && !inv.suspension_lifted_at && inv.status !== 'PAID' && (
+                        {inv.demand_notice_sent_at && (!inv.suspension_lifted_at || inv.plan_breached_at) && inv.status !== 'PAID' && (
                           <button type="button" data-testid={`admin-lift-suspension-${inv.ref}`}
                             title="Lever la suspension d'OT (accord d'échelonnement)"
-                            onClick={() => post(`/logiscop-transport/admin/invoices/${inv.id}/lift-suspension`, {},
-                              (d) => `Suspension levée — ${d.ref} (le Donneur d'Ordre est notifié)`)}
+                            onClick={() => setLiftFor(liftFor === inv.id ? null : inv.id)}
                             className="px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30">
                             Lever suspension
                           </button>
@@ -247,6 +255,12 @@ export const LogiscopTransportAdminPanel = () => {
                       </span>
                     </td>
                   </tr>
+                  {liftFor === inv.id && (
+                    <tr><td colSpan={7}>
+                      <LiftSuspensionForm invoice={inv} onDone={() => { setLiftFor(null); load(); }} />
+                    </td></tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>

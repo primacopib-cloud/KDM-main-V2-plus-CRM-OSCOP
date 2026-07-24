@@ -287,11 +287,11 @@ async def _send_demand_notices(db, now) -> int:
 
 
 async def get_ot_suspension(db, org_id: str) -> dict | None:
-    """Facture en mise en demeure impayée (suspension non levée) → émission de nouveaux OT bloquée."""
+    """Mise en demeure impayée (suspension non levée) ou échéancier rompu → nouveaux OT bloqués."""
     return await db.logiscop_transport_invoices.find_one(
         {"org_id": org_id, "status": {"$ne": "PAID"}, "demand_notice_sent_at": {"$ne": None},
-         "suspension_lifted_at": None},
-        {"_id": 0, "ref": 1, "total_ttc_cents": 1, "demand_notice_sent_at": 1})
+         "$or": [{"suspension_lifted_at": None}, {"plan_breached_at": {"$ne": None}}]},
+        {"_id": 0, "ref": 1, "total_ttc_cents": 1, "demand_notice_sent_at": 1, "plan_breached_at": 1})
 
 
 async def archive_ot_documents_to_ged(db, ot_id: str) -> None:

@@ -18,6 +18,15 @@ class PayBody(BaseModel):
     origin_url: str
 
 
+class Installment(BaseModel):
+    due_date: str
+    amount_eur: float
+
+
+class LiftBody(BaseModel):
+    installments: list[Installment] = []
+
+
 async def _get_invoice_for_user(db, invoice_id: str, user: dict) -> dict:
     inv = await db.logiscop_transport_invoices.find_one({"id": invoice_id}, {"_id": 0})
     if not inv:
@@ -92,8 +101,9 @@ async def pay_invoice(invoice_id: str, body: PayBody, background_tasks: Backgrou
 
 
 @logiscop_payments_router.post("/admin/invoices/{invoice_id}/lift-suspension")
-async def lift_ot_suspension(invoice_id: str, current_user: dict = Depends(get_current_user)):
-    """Levée manuelle de la suspension d'OT (accord d'échelonnement) — admin uniquement."""
+async def lift_ot_suspension(invoice_id: str, body: LiftBody = None,
+                             current_user: dict = Depends(get_current_user)):
+    """Levée manuelle de la suspension d'OT, avec échéancier de paiement optionnel — admin uniquement."""
     from core_deps import check_admin
     await check_admin(current_user)
     db = get_database()
@@ -102,13 +112,26 @@ async def lift_ot_suspension(invoice_id: str, current_user: dict = Depends(get_c
         raise HTTPException(status_code=404, detail="Facture introuvable")
     if not inv.get("demand_notice_sent_at"):
         raise HTTPException(status_code=409, detail="Aucune mise en demeure sur cette facture")
-    if inv.get("suspension_lifted_at"):
+    if inv.get("suspension_lifted_at") and not inv.get("plan_breached_at"):
         raise HTTPException(status_code=409, detail="Suspension déjà levée")
     now_iso = datetime.now(timezone.utc).isoformat()
-    await db.logiscop_transport_invoices.update_one(
-        {"id": invoice_id},
-        {"$set": {"suspension_lifted_at": now_iso,
-                  "suspension_lifted_by": current_user.get("email")}})
+    update = {"suspension_lifted_at": now_iso,
+              "suspension_lifted_by": current_user.get("email"),
+              "plan_breached_at": None}
+    installments = (body.installments if body else []) or []
+    plan_html = ""
+    if installments:
+        for i in installments:
+            if i.amount_eur <= 0 or not i.due_date:
+                raise HTTPException(status_code=422, detail="Chaque échéance requiert un montant > 0 et une date")
+        update["payment_plan"] = {
+            "created_at": now_iso, "created_by": current_user.get("email"),
+            "installments": [{"due_date": i.due_date, "amount_cents": round(i.amount_eur * 100),
+                              "status": "PENDING", "paid_at": None} for i in installments]}
+        plan_html = ("<p><b>Échéancier convenu :</b></p><ul>" + "".join(
+            f"<li>{i.due_date} — {i.amount_eur:.2f} €</li>" for i in installments) + "</ul>"
+            "<p>Tout retard sur une échéance entraînera la suspension automatique des nouveaux OT.</p>")
+    await db.logiscop_transport_invoices.update_one({"id": invoice_id}, {"$set": update})
     await create_notification(
         "logiscop_suspension_lifted", "Suspension d'OT levée",
         f"La suspension liée à la facture {inv['ref']} a été levée par {current_user.get('email')} "
@@ -125,12 +148,49 @@ async def lift_ot_suspension(invoice_id: str, current_user: dict = Depends(get_c
                     f"<div style='font-family:Arial;color:#2A1045'><h2 style='color:#5B2E8C'>Suspension levée</h2>"
                     f"<p>Suite à notre accord, la suspension d'émission d'Ordres de Transport liée à la facture "
                     f"<b>{inv['ref']}</b> est levée. Vous pouvez de nouveau émettre des OT.</p>"
+                    f"{plan_html}"
                     "<p>Le règlement de la facture reste dû selon l'échéancier convenu.</p>"
                     "<p style='color:#D4AF37'><b>KDMARCHÉ × O'SCOP — LOGI'SCOP</b></p></div>"),
                 tags=["logiscop-suspension-lifted"])
         except Exception as exc:
             logger.warning("Email levée suspension %s échoué : %s", inv["ref"], exc)
-    return {"ok": True, "ref": inv["ref"], "suspension_lifted_at": now_iso}
+    return {"ok": True, "ref": inv["ref"], "suspension_lifted_at": now_iso,
+            "installments": len(installments)}
+
+
+@logiscop_payments_router.post("/admin/invoices/{invoice_id}/plan/{idx}/mark-paid")
+async def mark_installment_paid(invoice_id: str, idx: int, current_user: dict = Depends(get_current_user)):
+    """Pointage d'une échéance de l'échéancier — si toutes réglées, la facture passe PAYÉE."""
+    from core_deps import check_admin
+    await check_admin(current_user)
+    db = get_database()
+    inv = await db.logiscop_transport_invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not inv or not (inv.get("payment_plan") or {}).get("installments"):
+        raise HTTPException(status_code=404, detail="Échéancier introuvable")
+    installments = inv["payment_plan"]["installments"]
+    if idx < 0 or idx >= len(installments):
+        raise HTTPException(status_code=404, detail="Échéance introuvable")
+    if installments[idx].get("status") == "PAID":
+        raise HTTPException(status_code=409, detail="Échéance déjà réglée")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    installments[idx]["status"] = "PAID"
+    installments[idx]["paid_at"] = now_iso
+    update = {"payment_plan.installments": installments}
+    all_paid = all(i.get("status") == "PAID" for i in installments)
+    if all_paid:
+        update.update({"status": "PAID", "paid_at": now_iso, "payment_method": "echeancier",
+                       "plan_breached_at": None})
+    else:
+        update["plan_breached_at"] = None if not any(
+            i.get("status") == "OVERDUE" for i in installments) else inv.get("plan_breached_at")
+    await db.logiscop_transport_invoices.update_one({"id": invoice_id}, {"$set": update})
+    if all_paid:
+        await create_notification(
+            "logiscop_plan_completed", "Échéancier soldé",
+            f"La facture {inv['ref']} ({inv.get('company_name')}) est intégralement réglée via son échéancier.",
+            target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+            data={"invoice_id": invoice_id, "ref": inv["ref"]})
+    return {"ok": True, "ref": inv["ref"], "installment": idx, "invoice_paid": all_paid}
 
 
 @logiscop_payments_router.get("/credits")

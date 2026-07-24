@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from attestation_nominative import compute_rcr_ledger
 from convention_settings import get_convention_settings
@@ -11,6 +12,31 @@ from db import get_database
 treasury_consolidated_router = APIRouter(prefix="/api/admin/treasury", tags=["treasury"])
 
 BUCKETS = [("0-30 j", 0, 30), ("31-60 j", 31, 60), ("61-90 j", 61, 90)]
+
+
+class ThresholdBody(BaseModel):
+    threshold_eur: float
+
+
+async def get_alert_threshold_cents(db) -> int:
+    doc = await db.treasury_settings.find_one({"key": "alert_threshold_cents"}, {"_id": 0})
+    return int(doc["value"]) if doc else 0
+
+
+@treasury_consolidated_router.get("/alert-threshold")
+async def get_alert_threshold(current_user: dict = Depends(get_current_user)):
+    await check_admin(current_user)
+    cents = await get_alert_threshold_cents(get_database())
+    return {"threshold_eur": cents / 100}
+
+
+@treasury_consolidated_router.post("/alert-threshold")
+async def set_alert_threshold(body: ThresholdBody, current_user: dict = Depends(get_current_user)):
+    await check_admin(current_user)
+    await get_database().treasury_settings.update_one(
+        {"key": "alert_threshold_cents"},
+        {"$set": {"value": round(body.threshold_eur * 100)}}, upsert=True)
+    return {"ok": True, "threshold_eur": body.threshold_eur}
 
 
 def _bucket_index(days: float) -> int | None:
@@ -137,13 +163,14 @@ async def compute_treasury_history(db, months: int = 12) -> list:
 
 
 async def check_treasury_alert(db) -> bool:
-    """Alerte email quand le net cumulé projeté à 90 j devient négatif (1 envoi max / jour)."""
+    """Alerte email quand le net cumulé projeté à 90 j passe sous le seuil réglable (1 envoi max / jour)."""
     import logging
     import os
     logger = logging.getLogger(__name__)
     data = await compute_consolidated_treasury(db)
     net = data["projected_net_90d_cents"]
-    if net >= 0:
+    threshold = await get_alert_threshold_cents(db)
+    if net >= threshold:
         return False
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     if await db.system_flags.find_one({"key": "treasury_low_alert", "date": today}):
@@ -163,8 +190,9 @@ async def check_treasury_alert(db) -> bool:
         f"<td style='padding:4px 10px;text-align:right'><b>{eur(b['cumulative_cents'])}</b></td></tr>"
         for b in data["buckets"])
     html = (
-        f"<div style='font-family:Arial;color:#2A1045'><h2 style='color:#B91C1C'>ALERTE TRÉSORERIE — projection 90 jours négative</h2>"
-        f"<p>Le net cumulé projeté à 90 jours est de <b style='color:#B91C1C'>{eur(net)}</b>.</p>"
+        f"<div style='font-family:Arial;color:#2A1045'><h2 style='color:#B91C1C'>ALERTE TRÉSORERIE — projection 90 jours sous le seuil</h2>"
+        f"<p>Le net cumulé projeté à 90 jours est de <b style='color:#B91C1C'>{eur(net)}</b> "
+        f"(seuil d'alerte : {eur(threshold)}).</p>"
         "<table style='border-collapse:collapse;font-size:13px'><tr style='background:#FBF6EE'>"
         "<th style='padding:4px 10px'>Période</th><th style='padding:4px 10px'>Transport</th>"
         "<th style='padding:4px 10px'>Adhésions</th><th style='padding:4px 10px'>Sorties RCR</th>"
@@ -176,13 +204,13 @@ async def check_treasury_alert(db) -> bool:
     report_email = os.environ.get("ADMIN_ALERT_EMAIL") or os.environ.get("WEEKLY_REPORT_EMAIL") \
         or os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
     await send_email(to_email=report_email, to_name="Administration KDMARCHÉ × O'SCOP",
-                     subject=f"[ALERTE] Trésorerie projetée à 90 j négative : {eur(net)}",
+                     subject=f"[ALERTE] Trésorerie projetée à 90 j sous le seuil : {eur(net)}",
                      html_content=html, tags=["treasury-low-alert"])
     from core_deps import create_notification
     try:
         await create_notification(
             "treasury_low_alert", "Alerte trésorerie basse",
-            f"Le net cumulé projeté à 90 jours est négatif : {eur(net)}.",
+            f"Le net cumulé projeté à 90 jours ({eur(net)}) est sous le seuil d'alerte ({eur(threshold)}).",
             target_roles=["oscop_super_admin", "kdm_b2b_admin"], data={"net_90d_cents": net})
     except Exception as exc:
         logger.warning("Notification alerte trésorerie échouée : %s", exc)

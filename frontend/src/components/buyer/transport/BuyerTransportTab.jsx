@@ -7,6 +7,7 @@ import { LogiscopSubscribeCard, downloadTransportPdf } from './LogiscopSubscribe
 import { TransportOrderForm } from './TransportOrderForm';
 import { TransportOrdersList } from './TransportOrdersList';
 import { BuyerDisputesCard } from './BuyerDisputesCard';
+import { TransportQualityBadge } from './TransportQualityBadge';
 
 export const BuyerTransportTab = () => {
   const [sub, setSub] = useState(null);
@@ -72,6 +73,7 @@ export const BuyerTransportTab = () => {
         Transport routier LOGI'SCOP Mode D — convention d'adhésion-cadre tripartite V1.2 et Ordres de Transport
         nominatifs, limités aux zones couvertes par votre abonnement.
       </p>
+      <TransportQualityBadge />
       {sub && !signed && (
         <LogiscopSubscribeCard convention={conv} zones={sub.zones || []} onChanged={load} />
       )}

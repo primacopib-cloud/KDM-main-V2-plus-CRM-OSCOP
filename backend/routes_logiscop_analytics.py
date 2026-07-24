@@ -169,6 +169,29 @@ async def set_service_credit_rates(body: CreditRatesBody, current_user: dict = D
     return {"ok": True, "late_pct": body.late_pct, "reserves_pct": body.reserves_pct}
 
 
+@logiscop_analytics_router.get("/service-quality")
+async def public_service_quality(current_user: dict = Depends(get_current_user)):
+    """Indicateurs qualité LOGI'SCOP visibles par les acheteurs : note moyenne, livraisons, ponctualité."""
+    db = get_database()
+    delivered, on_time, on_time_base, stars_sum, stars_count = 0, 0, 0, 0, 0
+    async for ot in db.logiscop_transport_orders.find({"status": {"$in": CLOSED_STATUSES}}, {"_id": 0}):
+        delivered += 1
+        due = (ot.get("delivery") or {}).get("date")
+        done = ((ot.get("execution") or {}).get("delivered_at") or (ot.get("epod") or {}).get("at") or "")[:10]
+        if due and done:
+            on_time_base += 1
+            if done <= due:
+                on_time += 1
+        stars = (ot.get("rating") or {}).get("stars")
+        if stars:
+            stars_sum += stars
+            stars_count += 1
+    return {"delivered": delivered,
+            "avg_rating": round(stars_sum / stars_count, 1) if stars_count else None,
+            "ratings_count": stars_count,
+            "on_time_rate": round(100 * on_time / on_time_base, 1) if on_time_base else None}
+
+
 @logiscop_analytics_router.get("/admin/monthly-reports")
 async def monthly_reports_history(current_user: dict = Depends(get_current_user)):
     """Historique des synthèses mensuelles : KPIs par mois + statut d'envoi et d'archivage GEDESS."""
