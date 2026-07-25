@@ -156,14 +156,14 @@ export const CreditAnalyticsPanel = () => {
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4 text-center">
         {[
-          ['Achetés', data.totals.purchased, '#6FA82E'],
+          ['Achetés', data.totals.purchased, '#8CC63E'],
           ['Consommés', data.totals.consumed, '#E9CF8E'],
           ['Remboursés', data.totals.refunded, '#5B9BD5'],
-          ['Revenus', `${data.totals.revenue_eur} €`, '#5B2E8C'],
+          ['Revenus', `${data.totals.revenue_eur} €`, '#CDB4F0'],
         ].map(([label, value, color]) => (
-          <div key={label} className="rounded-xl bg-white/50 border border-white/10 p-2.5">
+          <div key={label} className="rounded-xl bg-white/[0.06] border border-white/10 p-2.5">
             <p className="text-lg font-bold" style={{ color }}>{value}</p>
-            <p className="text-[10px] uppercase opacity-50">{label}</p>
+            <p className="text-[10px] uppercase text-white/60">{label}</p>
           </div>
         ))}
       </div>

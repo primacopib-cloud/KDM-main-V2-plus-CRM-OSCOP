@@ -67,7 +67,7 @@ export default function CooperSpacePage() {
             {TABS.map((t) => (
               <button key={t.value} onClick={() => setTab(t.value)}
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-colors ${
-                  tab === t.value ? 'bg-[#6FA82E]/15 text-[#4d7a1c] border-[#6FA82E]/40' : 'bg-white/60 border-black/10 opacity-70 hover:opacity-100'
+                  tab === t.value ? 'bg-[#6FA82E]/15 text-[#4d7a1c] border-[#6FA82E]/40' : 'bg-white/[0.06] border-white/15 text-white/70 hover:text-white'
                 }`}
                 data-testid={`cooper-tab-${t.value}`}>
                 <t.icon className="w-3.5 h-3.5" /> {t.label}

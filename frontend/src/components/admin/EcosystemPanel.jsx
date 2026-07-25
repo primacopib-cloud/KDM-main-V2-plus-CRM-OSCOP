@@ -67,7 +67,7 @@ export const EcosystemPanel = () => {
                 type="button"
                 key={app.name}
                 onClick={() => setHistoryApp(app)}
-                className="rounded-xl p-3 bg-white/50 border border-black/5 text-left cursor-pointer hover:border-[#D9B35A]/50 transition-colors"
+                className="rounded-xl p-3 bg-white/[0.06] border border-white/10 text-left cursor-pointer hover:border-[#D9B35A]/50 transition-colors"
                 data-testid={`eco-app-${app.name}`}
                 title={i18n.t('adm.eco_history_hint')}
               >

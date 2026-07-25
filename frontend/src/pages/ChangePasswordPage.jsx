@@ -14,7 +14,7 @@ const Field = ({ label, value, onChange, show, toggle, testId }) => (
         value={value}
         onChange={(e) => onChange(e.target.value)}
         data-testid={testId}
-        className="h-11 w-full px-3 pr-10 rounded-lg bg-white/60 border border-black/10 text-sm text-[#1F2A3A]"
+        className="h-11 w-full px-3 pr-10 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-[#1F2A3A]"
         autoComplete="new-password"
       />
       <button type="button" onClick={toggle} className="absolute right-3 top-3 opacity-40 hover:opacity-80" tabIndex={-1}>
