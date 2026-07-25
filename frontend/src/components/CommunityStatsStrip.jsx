@@ -1,6 +1,6 @@
 import i18n from '@/i18n';
 import { useEffect, useRef, useState } from 'react';
-import { Users, MapPin, Package, Store } from 'lucide-react';
+import { Users, MapPin, Package, Store, ShoppingBag } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -48,7 +48,7 @@ export const CommunityStatsStrip = () => {
     <section className="py-6 px-5" data-testid="community-stats-strip">
       <div className="max-w-[1160px] mx-auto">
         <div
-          className="rounded-[22px] py-5 px-4 grid grid-cols-2 sm:grid-cols-4 gap-2"
+          className="rounded-[22px] py-5 px-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"
           style={{
             background: 'linear-gradient(180deg, rgba(217,179,90,0.10), rgba(255,255,255,0.02))',
             border: '1px solid rgba(217,179,90,0.22)',
@@ -58,6 +58,8 @@ export const CommunityStatsStrip = () => {
             label={i18n.t('landing.stat_adherents', 'Adhérents professionnels')} />
           <StatItem icon={MapPin} value={stats.territories} testId="stat-territories"
             label={i18n.t('landing.stat_territoires', 'Territoires couverts')} />
+          <StatItem icon={ShoppingBag} value={stats.orders} testId="stat-orders"
+            label={i18n.t('landing.stat_commandes', 'Commandes traitées')} />
           <StatItem icon={Package} value={stats.products} testId="stat-products"
             label={i18n.t('landing.stat_produits', 'Produits au catalogue')} />
           <StatItem icon={Store} value={stats.lolo_points} testId="stat-lolo-points"

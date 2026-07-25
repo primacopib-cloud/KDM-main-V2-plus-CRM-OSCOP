@@ -208,6 +208,7 @@ class ApplicationResponse(BaseModel):
     decision_reason_code: Optional[str] = None
     decision_comment: Optional[str] = None
     reminder_sent_at: Optional[datetime] = None
+    reminder2_sent_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     org: Optional[dict] = None

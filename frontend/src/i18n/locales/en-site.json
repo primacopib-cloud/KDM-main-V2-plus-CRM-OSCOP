@@ -111,7 +111,8 @@
     "stat_adherents": "Professional members",
     "stat_territoires": "Territories covered",
     "stat_produits": "Products in catalog",
-    "stat_points": "LOLO pickup points"
+    "stat_points": "LOLO pickup points",
+    "stat_commandes": "Orders processed"
   },
   "partners": {
     "badge": "Partnership logic",

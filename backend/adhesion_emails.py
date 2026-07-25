@@ -233,6 +233,13 @@ _REMINDER = {
 
 _REQUIRED_DOC_TYPES = ["REGISTRATION_DOC", "ID_SIGNATORY"]
 
+_LAST_REMINDER_PREFIX = {
+    "fr": "Dernier rappel — ",
+    "en": "Final reminder — ",
+    "es": "Último recordatorio — ",
+    "gcf": "Dènyé rapèl — ",
+}
+
 _DOC_LABELS = {
     "fr": {"REGISTRATION_DOC": "Extrait Kbis / Registre du commerce", "ID_SIGNATORY": "Pièce d'identité du signataire"},
     "en": {"REGISTRATION_DOC": "Company registration extract (Kbis)", "ID_SIGNATORY": "Signatory ID document"},
@@ -253,7 +260,17 @@ async def run_adhesion_reminders(db, base_url: str = None, only_app_id: str = No
     else:
         query["created_at"] = {"$lt": cutoff}
     if not force:
-        query["$or"] = [{"reminder_sent_at": {"$exists": False}}, {"reminder_sent_at": None}]
+        cutoff_j7 = datetime.utcnow() - timedelta(days=7)
+        query["$or"] = [
+            # 1re relance : jamais relancé
+            {"reminder_sent_at": {"$exists": False}},
+            {"reminder_sent_at": None},
+            # 2e relance (J+7) : relancé il y a 7 j+ et pas encore de 2e relance
+            {"$and": [
+                {"reminder_sent_at": {"$lt": cutoff_j7}},
+                {"$or": [{"reminder2_sent_at": {"$exists": False}}, {"reminder2_sent_at": None}]},
+            ]},
+        ]
     apps = await db.b2b_applications.find(query).to_list(200)
     sent = 0
     for app in apps:
@@ -268,6 +285,8 @@ async def run_adhesion_reminders(db, base_url: str = None, only_app_id: str = No
         lang = (user or {}).get("preferred_language") or "fr"
         lang = lang if lang in _REMINDER else "fr"
         t = _REMINDER[lang]
+        is_second = (not force) and bool(app.get("reminder_sent_at"))
+        subject = (_LAST_REMINDER_PREFIX[lang] + t["subject"]) if is_second else t["subject"]
         name = org.get("contact_name") or (user or {}).get("contact_name") or ""
         link = f"{base}/adhesion"
         # Pièces manquantes précises
@@ -292,12 +311,14 @@ async def run_adhesion_reminders(db, base_url: str = None, only_app_id: str = No
         """
         try:
             from brevo_service import send_email
-            await send_email(to_email=email, to_name=name or None, subject=t["subject"],
-                             html_content=html, tags=["adhesion-reminder"])
+            await send_email(to_email=email, to_name=name or None, subject=subject,
+                             html_content=html, tags=["adhesion-reminder-2" if is_second else "adhesion-reminder"])
+            flag = "reminder2_sent_at" if is_second else "reminder_sent_at"
             await db.b2b_applications.update_one(
-                {"id": app["id"]}, {"$set": {"reminder_sent_at": datetime.utcnow()}})
+                {"id": app["id"]}, {"$set": {flag: datetime.utcnow()}})
             sent += 1
-            logger.info("Relance dossier incomplet envoyée à %s (app %s, %s, manquants=%s)", email, app["id"], lang, missing)
+            logger.info("Relance%s dossier incomplet envoyée à %s (app %s, %s, manquants=%s)",
+                        " J+7" if is_second else "", email, app["id"], lang, missing)
         except Exception as exc:
             logger.warning("Relance dossier %s : %s", app["id"], exc)
     return sent

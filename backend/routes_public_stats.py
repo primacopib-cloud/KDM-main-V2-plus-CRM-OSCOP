@@ -87,11 +87,14 @@ async def community_stats():
     territories = len(await db.orgs.distinct("territory", {"status": "APPROVED", "territory": {"$nin": [None, ""]}}))
     products = await db.products.count_documents({"status": {"$in": ["ACTIVE", "active"]}})
     lolo_points = await db.lolodrive_points.count_documents({})
+    orders_b2b = await db.orders.count_documents({})
+    orders_lolo = await db.lolodrive_orders.count_documents({})
     return {
         "members": members,
         "territories": max(territories, 1),
         "products": products,
         "lolo_points": lolo_points,
+        "orders": orders_b2b + orders_lolo,
     }
 
 

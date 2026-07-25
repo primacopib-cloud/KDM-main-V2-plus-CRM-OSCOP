@@ -111,7 +111,8 @@
     "stat_adherents": "Miembros profesionales",
     "stat_territoires": "Territorios cubiertos",
     "stat_produits": "Productos en catálogo",
-    "stat_points": "Puntos de recogida LOLO"
+    "stat_points": "Puntos de recogida LOLO",
+    "stat_commandes": "Pedidos procesados"
   },
   "partners": {
     "badge": "Lógica de la alianza",

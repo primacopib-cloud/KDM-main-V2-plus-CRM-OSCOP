@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 import i18n from '@/i18n';
 import { Button } from '../ui/button';
@@ -8,7 +8,7 @@ import { FavoriteButton } from '../FavoriteButton';
 import { formatPrice } from './catalogUtils';
 import { ProductVideoModal } from './ProductVideoModal';
 
-const ProductImageCarousel = ({ product }) => {
+const ProductImageCarousel = ({ product, onZoom }) => {
   const [idx, setIdx] = useState(0);
   const imgs = (product.images && product.images.length > 0)
     ? product.images
@@ -18,10 +18,13 @@ const ProductImageCarousel = ({ product }) => {
     e.stopPropagation();
     setIdx((i) => (i + delta + imgs.length) % imgs.length);
   };
+  const current = Math.min(idx, imgs.length - 1);
   return (
     <>
-      <img src={imgs[Math.min(idx, imgs.length - 1)]} alt={product.name}
-        className="w-full h-full object-cover rounded-xl" loading="lazy" />
+      <img src={imgs[current]} alt={product.name}
+        onClick={() => onZoom && onZoom(product, current)}
+        data-testid={`product-image-${product.sku}`}
+        className="w-full h-full object-cover rounded-xl cursor-zoom-in" loading="lazy" />
       {imgs.length > 1 && (
         <>
           <button type="button" onClick={(e) => go(e, -1)}
@@ -47,8 +50,61 @@ const ProductImageCarousel = ({ product }) => {
   );
 };
 
+const ProductLightbox = ({ zoom, onClose }) => {
+  const [idx, setIdx] = useState(zoom?.index || 0);
+  if (!zoom) return null;
+  const { product } = zoom;
+  const imgs = (product.images && product.images.length > 0)
+    ? product.images
+    : (product.image_url ? [product.image_url] : []);
+  const current = Math.min(idx, imgs.length - 1);
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose} data-testid="product-lightbox">
+      <button type="button" onClick={onClose} data-testid="lightbox-close"
+        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">
+        <X className="w-5 h-5" />
+      </button>
+      <div className="max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="relative">
+          <img src={imgs[current]} alt={product.name}
+            className="w-full max-h-[75vh] object-contain rounded-2xl bg-white/[0.03]" />
+          {imgs.length > 1 && (
+            <>
+              <button type="button" data-testid="lightbox-prev"
+                onClick={() => setIdx((i) => (i - 1 + imgs.length) % imgs.length)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button type="button" data-testid="lightbox-next"
+                onClick={() => setIdx((i) => (i + 1) % imgs.length)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center">
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-white font-semibold text-sm">{product.name}</p>
+          {imgs.length > 1 && (
+            <div className="flex gap-2">
+              {imgs.map((im, i) => (
+                <button key={i} type="button" onClick={() => setIdx(i)}
+                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 ${i === current ? 'border-[#D9B35A]' : 'border-transparent opacity-60'}`}>
+                  <img src={im} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) => {
   const [videoProduct, setVideoProduct] = useState(null);
+  const [zoom, setZoom] = useState(null);
   const lang = (i18n.language || 'fr').slice(0, 2);
   const tr = (p) => (lang !== 'fr' && p.translations?.[lang]) || {};
   return (
@@ -63,7 +119,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
             >
               {/* Product Image gallery (carousel jusqu'à 3 photos) */}
               <div className="aspect-square rounded-xl bg-white/[0.04] mb-4 flex items-center justify-center relative overflow-hidden">
-                <ProductImageCarousel product={product} />
+                <ProductImageCarousel product={product} onZoom={(p, index) => setZoom({ product: p, index })} />
                 {/* Favorite button - positioned top right */}
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <FavoriteButton 
@@ -156,6 +212,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
           </div>
         )}
         {videoProduct && <ProductVideoModal product={videoProduct} onClose={() => setVideoProduct(null)} />}
+        {zoom && <ProductLightbox key={`${zoom.product.id}-${zoom.index}`} zoom={zoom} onClose={() => setZoom(null)} />}
   </>
   );
 };

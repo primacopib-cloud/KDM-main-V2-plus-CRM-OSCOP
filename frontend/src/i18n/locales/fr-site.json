@@ -111,7 +111,8 @@
     "stat_adherents": "Adhérents professionnels",
     "stat_territoires": "Territoires couverts",
     "stat_produits": "Produits au catalogue",
-    "stat_points": "Points relais LOLO"
+    "stat_points": "Points relais LOLO",
+    "stat_commandes": "Commandes traitées"
   },
   "partners": {
     "badge": "Logique du partenariat",

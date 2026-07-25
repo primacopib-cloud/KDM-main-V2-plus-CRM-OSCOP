@@ -125,7 +125,8 @@ export const ApplicationsTab = ({
                   const StatusIcon = statusConfig.icon;
                   const isExpanded = expandedApp === app.id;
                   const canDecide = ['SUBMITTED', 'PENDING_REVIEW'].includes(app.status);
-                  const remindedAt = remindedNow[app.id] || app.reminder_sent_at;
+                  const remindedAt = remindedNow[app.id] || app.reminder2_sent_at || app.reminder_sent_at;
+                  const remindCount = (app.reminder_sent_at ? 1 : 0) + (app.reminder2_sent_at ? 1 : 0) + (remindedNow[app.id] ? 1 : 0);
 
                   return (
                     <Collapsible 
@@ -151,7 +152,7 @@ export const ApplicationsTab = ({
                             {remindedAt && (
                               <Badge className="bg-orange-500/15 text-orange-300 border-0 hidden sm:inline-flex items-center gap-1" data-testid={`app-reminded-badge-${app.id}`}>
                                 <BellRing className="w-3 h-3" />
-                                {i18n.t('adm.relance_le', 'Relancé le')} {formatDate(remindedAt)}
+                                {remindCount > 1 ? `${remindCount}× · ` : ''}{i18n.t('adm.relance_le', 'Relancé le')} {formatDate(remindedAt)}
                               </Badge>
                             )}
                             <Badge className={statusConfig.color}>

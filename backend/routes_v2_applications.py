@@ -485,7 +485,8 @@ async def decide_application(
                 if approved else
                 f"La demande d'adhésion de {org_name} a été refusée." + (f" Motif : {decision.comment}" if decision.comment else "")
             ),
-            "data": {"application_id": app_id, "org_id": org_id, "decision": decision.decision.upper()},
+            "data": {"application_id": app_id, "org_id": org_id, "decision": decision.decision.upper(),
+                     "link": "/catalogue" if approved else "/adhesion"},
             "target_user_id": app["submitted_by_user_id"],
             "is_read": False,
             "read_by": [],
