@@ -18,6 +18,7 @@ import {
 } from './product-card/productCardUtils';
 import { GeneralTab, NutritionTab, TechnicalTab } from './product-card/ProductCardTabsGeneral';
 import { LogisticsTab, ComplianceTab, DocumentsTab } from './product-card/ProductCardTabsLogistics';
+import { SupplierTab, DlcTab, WarrantyTab, NormsTab } from './product-card/ProductCardTabsExtra';
 
 export default function ProductCardView({ product, showActions = true }) {
   const [activeTab, setActiveTab] = useState('general');
@@ -198,6 +199,22 @@ export default function ProductCardView({ product, showActions = true }) {
               Technique
             </TabsTrigger>
           )}
+          <TabsTrigger value="supplier" data-testid="product-tab-trigger-supplier" className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg">
+            <Building2 className="w-4 h-4 mr-2" />
+            Fournisseur
+          </TabsTrigger>
+          <TabsTrigger value="dlc" data-testid="product-tab-trigger-dlc" className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg">
+            <Calendar className="w-4 h-4 mr-2" />
+            DLC
+          </TabsTrigger>
+          <TabsTrigger value="warranty" data-testid="product-tab-trigger-warranty" className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg">
+            <Shield className="w-4 h-4 mr-2" />
+            Garantie
+          </TabsTrigger>
+          <TabsTrigger value="norms" data-testid="product-tab-trigger-norms" className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg">
+            <Award className="w-4 h-4 mr-2" />
+            Norme
+          </TabsTrigger>
           <TabsTrigger value="logistics" className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] rounded-lg">
             <Truck className="w-4 h-4 mr-2" />
             Logistique
@@ -216,6 +233,10 @@ export default function ProductCardView({ product, showActions = true }) {
         <GeneralTab product={product} />
         {isFood && <NutritionTab product={product} />}
         {(isEquipment || isMaterial) && <TechnicalTab product={product} />}
+        <SupplierTab product={product} />
+        <DlcTab product={product} />
+        <WarrantyTab product={product} />
+        <NormsTab product={product} />
         <LogisticsTab product={product} />
         <ComplianceTab product={product} />
         <DocumentsTab product={product} />

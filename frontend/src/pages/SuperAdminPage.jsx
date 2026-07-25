@@ -87,6 +87,12 @@ export default function SuperAdminPage() {
     fetchData();
   }, [fetchData]);
 
+  // Auto-actualisation silencieuse des chiffres toutes les 2 minutes
+  useEffect(() => {
+    const id = setInterval(fetchData, 120000);
+    return () => clearInterval(id);
+  }, [fetchData]);
+
   const [refreshKey, setRefreshKey] = useState(0);
   const handleRefresh = () => {
     fetchData();
