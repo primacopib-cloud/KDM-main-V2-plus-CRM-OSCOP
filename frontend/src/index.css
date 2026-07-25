@@ -444,6 +444,11 @@ img[src*="kdmarche-pro"], img[src*="oscop"] {
 .bg-\[\#F8F1E1\], .bg-\[\#F3E9D2\], .bg-\[\#FBF6EC\], .bg-\[\#FBF6EE\], .bg-\[\#FDF9F0\] {
   background-color: rgba(255,255,255,0.07) !important;
 }
+/* Survols ivoire/crème hérités → surbrillance sombre lisible (texte clair conservé) */
+.hover\:bg-\[\#F3E9D2\]:hover, .hover\:bg-\[\#FBF4E4\]:hover, .hover\:bg-\[\#FBF6EC\]:hover,
+.hover\:bg-\[\#F8F1E1\]:hover, .hover\:bg-\[\#FBF6EE\]:hover, .hover\:bg-\[\#FDF9F0\]:hover {
+  background-color: rgba(217,179,90,0.14) !important;
+}
 /* Textes sombres hérités → variantes claires lisibles sur violet */
 .text-\[\#1F2A3A\] { color: #F3EDE4 !important; }
 .text-\[\#8A785F\], .text-\[\#7A6850\], .text-\[\#A8977C\], .text-\[\#5C4B36\], .text-\[\#3D2E1E\] { color: #C9BBA4 !important; }
