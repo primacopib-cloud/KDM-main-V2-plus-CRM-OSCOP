@@ -230,6 +230,8 @@ async def list_products(
     tags: Optional[str] = None,
     zone_code: Optional[str] = None,
     incoterm: Optional[str] = None,
+    min_rating: Optional[float] = None,
+    sort: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
 ):
@@ -282,11 +284,18 @@ async def list_products(
                 query.setdefault("$and", []).append(
                     {"$or": [{f"incoterms.{z}": incoterm} for z in zone_codes]})
     
+    # Filtre note minimale (avis adhérents)
+    if min_rating is not None:
+        query["rating_avg"] = {"$gte": min_rating}
+
     # Get products
-    products = await db.products.find(query).skip(skip).limit(limit).to_list(limit)
+    cursor = db.products.find(query)
+    if sort == "rating":
+        cursor = cursor.sort([("rating_avg", -1), ("rating_count", -1)])
+    products = await cursor.skip(skip).limit(limit).to_list(limit)
     
     # Initialize sample products if empty
-    if not products and not category_id and not search and not incoterm:
+    if not products and not category_id and not search and not incoterm and min_rating is None:
         await _init_sample_products()
         products = await db.products.find(query).skip(skip).limit(limit).to_list(limit)
     

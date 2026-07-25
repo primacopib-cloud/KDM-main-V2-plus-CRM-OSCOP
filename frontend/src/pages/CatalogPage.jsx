@@ -68,6 +68,8 @@ export default function CatalogPage() {
   // Filters
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedIncoterm, setSelectedIncoterm] = useState('all');
+  const [minRating, setMinRating] = useState('all');
+  const [sortByRating, setSortByRating] = useState(false);
   const [selectedZone, setSelectedZone] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -215,13 +217,19 @@ export default function CatalogPage() {
       if (selectedIncoterm && selectedIncoterm !== 'all') {
         params.incoterm = selectedIncoterm;
       }
+      if (minRating !== 'all') {
+        params.minRating = minRating;
+      }
+      if (sortByRating) {
+        params.sort = 'rating';
+      }
       
       const data = await catalogAPI.getProducts(params);
       setProducts(data);
     } catch (error) {
       console.error('Error loading products:', error);
     }
-  }, [selectedZone, selectedCategory, searchTerm, selectedIncoterm]);
+  }, [selectedZone, selectedCategory, searchTerm, selectedIncoterm, minRating, sortByRating]);
 
   useEffect(() => {
     if (selectedZone) {
@@ -435,6 +443,10 @@ export default function CatalogPage() {
           setSelectedCategory={setSelectedCategory}
           selectedIncoterm={selectedIncoterm}
           setSelectedIncoterm={setSelectedIncoterm}
+          minRating={minRating}
+          setMinRating={setMinRating}
+          sortByRating={sortByRating}
+          setSortByRating={setSortByRating}
           products={products}
           user={user}
           navigate={navigate}

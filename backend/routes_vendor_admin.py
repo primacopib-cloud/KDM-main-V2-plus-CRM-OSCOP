@@ -232,6 +232,13 @@ async def admin_approve_product(product_id: str):
         await ensure_contract(db, product["vendor_id"], product)
     except Exception as e:
         logger.error(f"Volume contract creation failed for {product_id}: {e}")
+
+    # Alerte les adhérents suivant un incoterm du produit
+    try:
+        from routes_incoterm_alerts import notify_incoterm_watchers
+        await notify_incoterm_watchers(db, product_for_catalog)
+    except Exception as e:
+        logger.warning(f"Incoterm watcher notification failed for {product_id}: {e}")
     
     return {"success": True, "message": "Produit approuvé et publié au catalogue"}
 

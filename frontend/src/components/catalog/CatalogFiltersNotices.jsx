@@ -1,11 +1,15 @@
 import i18n from '@/i18n';
-import { AlertCircle, Ship } from 'lucide-react';
+import { AlertCircle, Ship, Star } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 import { Button } from '../ui/button';
 import { INCOTERMS } from '../vendor/vendorConstants';
+import { IncotermAlertBell } from './IncotermAlertBell';
 
-// Rangée de catégories + filtre incoterm + bandeaux (COD, tarifs adhérents) du catalogue
-export const CatalogFiltersNotices = ({ categories, selectedCategory, setSelectedCategory, products, user, navigate, selectedIncoterm, setSelectedIncoterm }) => (
+// Rangée de catégories + filtres incoterm/note + bandeaux (COD, tarifs adhérents) du catalogue
+export const CatalogFiltersNotices = ({
+  categories, selectedCategory, setSelectedCategory, products, user, navigate,
+  selectedIncoterm, setSelectedIncoterm, minRating, setMinRating, sortByRating, setSortByRating,
+}) => (
   <>
     {/* Categories */}
     <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -66,6 +70,40 @@ export const CatalogFiltersNotices = ({ categories, selectedCategory, setSelecte
           {inc.code}
         </button>
       ))}
+      <IncotermAlertBell selectedIncoterm={selectedIncoterm} user={user} />
+
+      <span className="mx-2 h-4 w-px bg-white/10 shrink-0" />
+
+      {/* Filtre / tri par note */}
+      <span className="inline-flex items-center gap-1.5 text-xs text-white/50 shrink-0">
+        <Star className="w-3.5 h-3.5" />
+        {i18n.t('catalog.note', 'Note')} :
+      </span>
+      {[3, 4].map((n) => (
+        <button
+          key={n}
+          onClick={() => setMinRating(minRating === n ? 'all' : n)}
+          data-testid={`rating-filter-${n}`}
+          className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+            minRating === n
+              ? 'bg-[#D9B35A]/20 text-[#D9B35A] border border-[#D9B35A]/30'
+              : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
+          }`}
+        >
+          ≥ {n}★
+        </button>
+      ))}
+      <button
+        onClick={() => setSortByRating(!sortByRating)}
+        data-testid="rating-sort-btn"
+        className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+          sortByRating
+            ? 'bg-[#D9B35A]/20 text-[#D9B35A] border border-[#D9B35A]/30'
+            : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
+        }`}
+      >
+        ★ {i18n.t('catalog.meilleures_notes', 'Meilleures notes')}
+      </button>
     </div>
 
     {/* Paiement à la livraison — phrase de séduction */}

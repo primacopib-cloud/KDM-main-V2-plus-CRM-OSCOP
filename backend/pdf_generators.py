@@ -324,6 +324,16 @@ def generate_invoice_pdf(invoice: dict, order: dict = None) -> bytes:
         ['Client :', invoice.get('org_name', 'N/A')],
         ['Statut :', 'Payée' if invoice.get('payment_status') == 'PAID' else 'En attente'],
     ]
+    # Incoterms retenus (repris de la commande liée pour l'alignement contractuel)
+    order_items = (order or {}).get('items', [])
+    inco_by_key = {}
+    for oi in order_items:
+        codes = oi.get('incoterms') or []
+        inco_by_key[oi.get('product_sku')] = codes
+        inco_by_key[oi.get('product_name')] = codes
+    retained = sorted({c for oi in order_items for c in (oi.get('incoterms') or [])})
+    default_inco = (order or {}).get('incoterm', 'EXW')
+    info_data.append(['Incoterm(s) :', ", ".join(retained) if retained else default_inco])
     
     info_table = Table(info_data, colWidths=[4*cm, 12*cm])
     info_table.setStyle(TableStyle([
@@ -335,23 +345,26 @@ def generate_invoice_pdf(invoice: dict, order: dict = None) -> bytes:
     elements.append(Spacer(1, 20))
     
     # Items table
-    table_data = [['Désignation', 'Qté', 'P.U. HT', 'Total HT']]
+    table_data = [['Désignation', 'Incoterms', 'Qté', 'P.U. HT', 'Total HT']]
     
     for item in invoice.get('items', []):
+        item_inco = inco_by_key.get(item.get('product_sku')) or inco_by_key.get(item.get('product_name')) or []
         table_data.append([
-            item.get('product_name', 'N/A')[:50],
+            item.get('product_name', 'N/A')[:40],
+            ", ".join(item_inco) or default_inco,
             str(item.get('quantity', 0)),
             f"{item.get('unit_price_ht_cents', 0) / 100:.2f} €",
             f"{item.get('line_total_ht_cents', 0) / 100:.2f} €",
         ])
     
-    items_table = Table(table_data, colWidths=[9*cm, 2*cm, 3*cm, 3*cm])
+    items_table = Table(table_data, colWidths=[7*cm, 2.2*cm, 1.8*cm, 3*cm, 3*cm])
     items_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a2e')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+        ('ALIGN', (1, 1), (1, -1), 'CENTER'),
+        ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ('TOPPADDING', (0, 0), (-1, -1), 6),

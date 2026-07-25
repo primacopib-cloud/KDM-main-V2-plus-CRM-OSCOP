@@ -182,6 +182,8 @@ export const catalogAPI = {
     if (params.search) searchParams.append('search', params.search);
     if (params.tags) searchParams.append('tags', params.tags);
     if (params.incoterm) searchParams.append('incoterm', params.incoterm);
+    if (params.minRating) searchParams.append('min_rating', params.minRating);
+    if (params.sort) searchParams.append('sort', params.sort);
     if (params.skip) searchParams.append('skip', params.skip);
     if (params.limit) searchParams.append('limit', params.limit);
     return apiCallV2(`/catalog/products?${searchParams}`);
