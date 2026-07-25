@@ -87,7 +87,14 @@ export default function SuperAdminPage() {
     fetchData();
   }, [fetchData]);
 
-  if (loading) {
+  const [refreshKey, setRefreshKey] = useState(0);
+  const handleRefresh = () => {
+    fetchData();
+    setRefreshKey((k) => k + 1);
+    toast.success(i18n.t('adm.donnees_actualisees', 'Données actualisées'));
+  };
+
+  if (loading && !kpis) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}>
         <Loader2 className="w-8 h-8 animate-spin text-[#D9B35A]" />
@@ -105,7 +112,7 @@ export default function SuperAdminPage() {
         setActiveTab={setActiveTab}
         period={period}
         setPeriod={setPeriod}
-        onRefresh={fetchData}
+        onRefresh={handleRefresh}
         isConnected={isConnected}
       />
 
@@ -114,7 +121,7 @@ export default function SuperAdminPage() {
           <BreadcrumbPill />
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs key={refreshKey} value={activeTab} onValueChange={setActiveTab}>
           <TabsContent value="dashboard">
             <DashboardTab
               kpis={kpis}
