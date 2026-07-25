@@ -107,7 +107,11 @@
       "Produits sélectionnés",
       "Force collective",
       "Coopération mutualisation"
-    ]
+    ],
+    "stat_adherents": "Adhérents professionnels",
+    "stat_territoires": "Territoires couverts",
+    "stat_produits": "Produits au catalogue",
+    "stat_points": "Points relais LOLO"
   },
   "partners": {
     "badge": "Logique du partenariat",

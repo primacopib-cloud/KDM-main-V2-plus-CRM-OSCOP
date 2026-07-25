@@ -30,6 +30,7 @@ import WhyCommunityplaceSection from '../components/WhyCommunityplaceSection';
 import PartnerCarousel from '../components/PartnerCarousel';
 import { TestimonialsSection } from '../components/TestimonialsSection';
 import { ReferralChallengeBanner } from '../components/ReferralChallengeBanner';
+import { CommunityStatsStrip } from '../components/CommunityStatsStrip';
 
 const LandingPage = () => {
   return (
@@ -125,6 +126,9 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Compteurs publics de la coopérative */}
+      <CommunityStatsStrip />
 
       {/* Pourquoi Communityplace ? */}
       <WhyCommunityplaceSection />

@@ -107,7 +107,11 @@
       "Productos seleccionados",
       "Fuerza colectiva",
       "Cooperación mutualización"
-    ]
+    ],
+    "stat_adherents": "Miembros profesionales",
+    "stat_territoires": "Territorios cubiertos",
+    "stat_produits": "Productos en catálogo",
+    "stat_points": "Puntos de recogida LOLO"
   },
   "partners": {
     "badge": "Lógica de la alianza",

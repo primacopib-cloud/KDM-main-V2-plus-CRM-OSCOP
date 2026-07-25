@@ -80,6 +80,21 @@ async def track_video_view(payload: VideoViewPayload):
     return {"ok": result.matched_count == 1}
 
 
+@public_stats_router.get("/community-stats")
+async def community_stats():
+    """Compteurs publics page d'accueil : adhérents, territoires, produits, points relais."""
+    members = await db.orgs.count_documents({"status": "APPROVED"})
+    territories = len(await db.orgs.distinct("territory", {"status": "APPROVED", "territory": {"$nin": [None, ""]}}))
+    products = await db.products.count_documents({"status": {"$in": ["ACTIVE", "active"]}})
+    lolo_points = await db.lolodrive_points.count_documents({})
+    return {
+        "members": members,
+        "territories": max(territories, 1),
+        "products": products,
+        "lolo_points": lolo_points,
+    }
+
+
 @public_stats_router.get("/kdmarche-stats")
 async def kdmarche_stats():
     products = await db.products.count_documents({"status": "ACTIVE"})

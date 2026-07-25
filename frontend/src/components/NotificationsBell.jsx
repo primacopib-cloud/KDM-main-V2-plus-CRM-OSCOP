@@ -40,14 +40,13 @@ export const NotificationsBell = ({ className = '' }) => {
   if (!isLoggedIn || !data) return null;
   const unread = data.unread_count || 0;
 
-  const toggle = () => {
-    const next = !open;
-    setOpen(next);
-    if (next && unread > 0) {
-      apiCall('/notifications/read-all', { method: 'POST' })
-        .then(() => apiCall('/notifications?limit=15').then(setData))
-        .catch(() => {});
-    }
+  const toggle = () => setOpen((o) => !o);
+
+  const markAllRead = () => {
+    apiCall('/notifications/read-all', { method: 'POST' })
+      .then(() => apiCall('/notifications?limit=15').then(setData))
+      .then(() => toast.success('Toutes les notifications sont marquées comme lues'))
+      .catch(() => {});
   };
 
   return (
@@ -69,6 +68,14 @@ export const NotificationsBell = ({ className = '' }) => {
             <p className="text-xs font-bold text-white">Notifications</p>
             <CheckCheck className="w-3.5 h-3.5 text-white/40" />
           </div>
+          {unread > 0 && (
+            <button type="button" data-testid="notifications-mark-all-read-btn"
+              onClick={markAllRead}
+              className="w-full px-4 py-2.5 flex items-center justify-center gap-2 text-[11px] font-bold text-[#D9B35A] bg-[#D9B35A]/10 hover:bg-[#D9B35A]/20 transition-colors">
+              <CheckCheck className="w-3.5 h-3.5" />
+              Tout marquer comme lu ({unread})
+            </button>
+          )}
           {!(data.notifications || []).length && (
             <p className="px-4 py-6 text-xs text-white/40 text-center">Aucune notification.</p>
           )}

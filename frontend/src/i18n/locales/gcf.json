@@ -121,7 +121,11 @@
     "find_relay_title": "Touvé relè koopératif",
     "find_relay_highlight": "ki pi pré a'w",
     "relay_count_active": "relè aktif",
-    "relay_count_active_one": "relè aktif"
+    "relay_count_active_one": "relè aktif",
+    "stat_adherents": "Adéran pwofésyonèl",
+    "stat_territoires": "Téritwa kouvè",
+    "stat_produits": "Pwodui adan katalòg-la",
+    "stat_points": "Pwen rèlè LOLO"
   },
   "buyer": {
     "accueil": "Lakay",

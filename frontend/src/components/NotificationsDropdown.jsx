@@ -254,7 +254,18 @@ const NotificationsDropdown = ({ isAdmin = false }) => {
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="p-3 border-t border-white/[0.08]">
+              <div className="p-3 border-t border-white/[0.08] space-y-1">
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    data-testid="notifications-mark-all-read-btn"
+                    onClick={handleMarkAllAsRead}
+                    className="w-full py-2 flex items-center justify-center gap-2 text-sm rounded-lg bg-[#D9B35A]/10 text-[#D9B35A] hover:bg-[#D9B35A]/20 font-medium transition-colors"
+                  >
+                    <CheckCheck className="w-4 h-4" />
+                    Tout marquer comme lu ({unreadCount})
+                  </button>
+                )}
                 <button
                   type="button"
                   data-testid="notifications-view-all-btn"

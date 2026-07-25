@@ -107,7 +107,11 @@
       "Selected products",
       "Collective strength",
       "Cooperative pooling"
-    ]
+    ],
+    "stat_adherents": "Professional members",
+    "stat_territoires": "Territories covered",
+    "stat_produits": "Products in catalog",
+    "stat_points": "LOLO pickup points"
   },
   "partners": {
     "badge": "Partnership logic",
