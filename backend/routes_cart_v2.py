@@ -53,15 +53,32 @@ from role_guards import ensure_can_buy
 
 # ============== CART ==============
 
+async def _resolve_zone(current_user: dict, org_id: str, zone_code: Optional[str] = None) -> Optional[str]:
+    """Zone explicite du client (persistée) ou zone sélectionnée côté serveur"""
+    if zone_code:
+        zone = await db.zones_v2.find_one({"code": zone_code})
+        if zone:
+            await db.org_runtime_preferences.update_one(
+                {"org_id": org_id},
+                {"$set": {"org_id": org_id, "selected_zone_id": zone["id"], "updated_at": datetime.utcnow()}},
+                upsert=True,
+            )
+            return zone_code
+    return await get_selected_zone(current_user)
+
+
 @cart_router.get("/cart", response_model=CartResponse)
-async def get_cart(current_user: dict = Depends(get_current_user_catalog)):
+async def get_cart(
+    zone_code: Optional[str] = None,
+    current_user: dict = Depends(get_current_user_catalog),
+):
     """Get current user's cart"""
     membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
     if not membership:
         raise HTTPException(status_code=400, detail="Aucune organisation associée")
     await ensure_member_active(membership["org_id"])
     
-    zone_code = await get_selected_zone(current_user)
+    zone_code = await _resolve_zone(current_user, membership["org_id"], zone_code)
     if not zone_code:
         raise HTTPException(status_code=400, detail="Sélectionnez une zone d'abord")
     
@@ -89,6 +106,7 @@ async def get_cart(current_user: dict = Depends(get_current_user_catalog)):
 @cart_router.post("/cart/items", response_model=CartResponse)
 async def add_to_cart(
     item: CartItemCreate,
+    zone_code: Optional[str] = None,
     current_user: dict = Depends(get_current_user_catalog),
 ):
     """Add item to cart"""
@@ -98,12 +116,12 @@ async def add_to_cart(
         raise HTTPException(status_code=400, detail="Aucune organisation associée")
     await ensure_member_active(membership["org_id"])
     
-    zone_code = await get_selected_zone(current_user)
+    zone_code = await _resolve_zone(current_user, membership["org_id"], zone_code)
     if not zone_code:
         raise HTTPException(status_code=400, detail="Sélectionnez une zone d'abord")
     
     # Check price access
-    if not await check_price_access(current_user, zone_code):
+    if not current_user.get("is_admin") and not await check_price_access(current_user, zone_code):
         raise HTTPException(status_code=403, detail="Accès non autorisé à cette zone")
     
     # Get product

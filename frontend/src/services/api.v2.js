@@ -196,16 +196,16 @@ export const catalogAPI = {
     return apiCallV2(`/catalog/pickup-locations${params}`);
   },
 
-  getCart: async () => {
-    return apiCallV2('/catalog/cart');
+  getCart: async (zoneCode = null) => {
+    return apiCallV2(`/catalog/cart${zoneCode ? `?zone_code=${zoneCode}` : ''}`);
   },
 
   getCartSuggestions: async (limit = 4) => {
     return apiCallV2(`/catalog/cart/suggestions?limit=${limit}`);
   },
 
-  addToCart: async (productId, quantity) => {
-    return apiCallV2('/catalog/cart/items', {
+  addToCart: async (productId, quantity, zoneCode = null) => {
+    return apiCallV2(`/catalog/cart/items${zoneCode ? `?zone_code=${zoneCode}` : ''}`, {
       method: 'POST',
       body: JSON.stringify({ product_id: productId, quantity }),
     });

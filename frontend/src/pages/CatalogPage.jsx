@@ -215,6 +215,10 @@ export default function CatalogPage() {
       loadProducts();
       // Load pickup locations for zone
       catalogAPI.getPickupLocations(selectedZone).then(setPickupLocations).catch(console.error);
+      // Sync cart with selected zone (members only)
+      if (authAPI.isAuthenticated()) {
+        catalogAPI.getCart(selectedZone).then(setCart).catch(() => {});
+      }
     }
   }, [selectedZone, loadProducts]);
 
@@ -232,7 +236,7 @@ export default function CatalogPage() {
 
     setCartLoading(true);
     try {
-      const updatedCart = await catalogAPI.addToCart(product.id, product.min_order_qty || 1);
+      const updatedCart = await catalogAPI.addToCart(product.id, product.min_order_qty || 1, selectedZone);
       setCart(updatedCart);
       toast.success(i18n.t('catalog.toast_ajoute_panier', { name: product.name }));
     } catch (error) {

@@ -1,0 +1,20 @@
+{
+  "summary": "Iter 73 — BUG FIX validation (cart zone_code persistence) + carousel photos catalog. Backend 4/4 tests PASS: (1) GET /api/v2/catalog/products?zone_code=GUADELOUPE public retourne 200 et DAM-RHUM-BLANC-1L a bien 3 images en gallery (champ images: 3 URLs). (2) Buyer acheteur-pro POST /api/v2/catalog/cart/items?zone_code=MARTINIQUE avec min_order_qty=5 retourne 200 et cart.zone_code=MARTINIQUE. (3) Zone non autorisée (GUYANE) retourne bien 400/403 (pas 200). (4) Admin (portal=admin) n'est PAS bloqué par check_price_access (accepte 200 ou 400 mais jamais 403). Frontend UI 5/5 flows validés: (a) Visiteur anonyme /catalogue affiche 11 produits sans tarifs, bannière catalog-price-locked-banner visible, add-to-cart-DAM-RHUM-BLANC-1L présent et disabled. (b) Carrousel DAM-RHUM-BLANC-1L: carousel-prev/next/dots-DAM-RHUM-BLANC-1L présents ET visibles au survol, click sur next change bien la src de l'image (vp-damoiseau-rhum-blanc-phot → vp-damoiseau-rhum-blanc-2ace). (c) Produits à 1 seule photo (Test Attestation Jus, Rhum Vieux Test Attestation) n'affichent PAS de flèches — placeholder box visible seulement. (d) Login acheteur-pro OK, zone Martinique sélectionnée par défaut dans le header (les 2 zones GUADELOUPE+MARTINIQUE sont autorisées via seed). (e) Click sur add-to-cart-ALI-RIZ-001 → toast succès 'Riz long grain 5kg ajouté au panier', compteur mini-panier passe de 10 à 15 (min_order_qty=5), AUCUN message d'erreur 'Sélectionnez une zone d'abord'. Le bug est corrigé.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_iter73_cart_zone_bugfix.py"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_cart_v2.py: _resolve_zone persiste correctement la zone dans org_runtime_preferences via upsert — bien conçu, permet aux GET/POST suivants sans query param de retrouver la zone.",
+    "Le bypass admin dans add_to_cart (`if not current_user.get('is_admin') and not await check_price_access(...)`) est cohérent, mais garder à l'esprit que l'admin sans org_membership recevra 400 'Aucune organisation associée' — pas un bug mais utile de documenter pour les futurs testeurs.",
+    "ProductImageCarousel: le fait que les flèches n'apparaissent qu'au survol est vérifié sur DAM-RHUM-BLANC-1L (3 photos) et absentes pour les produits mono-photo — bon UX."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter73_cart_zone_bugfix.py"],
+  "success_rate": {"backend": "100% (4/4)", "frontend": "100% (5/5 flows)"},
+  "seed_data_creation": "Aucune donnée créée hors panier acheteur-pro (ajout 5×Riz + éventuellement re-add). Cart de l'acheteur incrémenté (10→15). Pas de suppression effectuée.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "acheteur-pro@kdmarche.fr / Demo2026! ; admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin)",
+  "context_for_next_testing_agent": "Le bugfix zone_code query param est complètement validé (backend + UI). Le compteur du mini-panier a été laissé à 15 (10 items initiaux + 5 Riz min_order_qty). Si besoin de réinitialiser: DELETE /api/v2/catalog/cart avec token acheteur-pro. Carousel: seuls les produits avec >1 image affichent flèches/dots au survol.",
+  "rca_of_the_issue": "Bug initial: le header persistait la zone uniquement côté React state; le backend GET/POST cart appelait get_selected_zone (lecture org_runtime_preferences) qui restait vide → 400 'Sélectionnez une zone d'abord'. Correction: query param zone_code + _resolve_zone qui upsert org_runtime_preferences côté serveur. Le frontend envoie désormais selectedZone via catalogAPI.getCart(zoneCode)/addToCart(...zoneCode). Admin bypass check_price_access évite un 403 sur les comptes admin sans zone_access."
+}

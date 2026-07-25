@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Package, Plus, Play, Lock } from 'lucide-react';
+import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 import i18n from '@/i18n';
 import { Button } from '../ui/button';
@@ -7,6 +7,45 @@ import { Badge } from '../ui/badge';
 import { FavoriteButton } from '../FavoriteButton';
 import { formatPrice } from './catalogUtils';
 import { ProductVideoModal } from './ProductVideoModal';
+
+const ProductImageCarousel = ({ product }) => {
+  const [idx, setIdx] = useState(0);
+  const imgs = (product.images && product.images.length > 0)
+    ? product.images
+    : (product.image_url ? [product.image_url] : []);
+  if (imgs.length === 0) return <Package className="w-12 h-12 text-white/20" />;
+  const go = (e, delta) => {
+    e.stopPropagation();
+    setIdx((i) => (i + delta + imgs.length) % imgs.length);
+  };
+  return (
+    <>
+      <img src={imgs[Math.min(idx, imgs.length - 1)]} alt={product.name}
+        className="w-full h-full object-cover rounded-xl" loading="lazy" />
+      {imgs.length > 1 && (
+        <>
+          <button type="button" onClick={(e) => go(e, -1)}
+            data-testid={`carousel-prev-${product.sku}`}
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button type="button" onClick={(e) => go(e, 1)}
+            data-testid={`carousel-next-${product.sku}`}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5" data-testid={`carousel-dots-${product.sku}`}>
+            {imgs.map((_, i) => (
+              <button key={i} type="button"
+                onClick={(e) => { e.stopPropagation(); setIdx(i); }}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === idx ? 'bg-[#D9B35A]' : 'bg-white/40'}`} />
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  );
+};
 
 export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) => {
   const [videoProduct, setVideoProduct] = useState(null);
@@ -22,13 +61,9 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               className="glass-panel-soft rounded-[18px] p-4 flex flex-col group"
               data-testid={`product-card-${product.sku}`}
             >
-              {/* Product Image placeholder */}
+              {/* Product Image gallery (carousel jusqu'à 3 photos) */}
               <div className="aspect-square rounded-xl bg-white/[0.04] mb-4 flex items-center justify-center relative overflow-hidden">
-                {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover rounded-xl" />
-                ) : (
-                  <Package className="w-12 h-12 text-white/20" />
-                )}
+                <ProductImageCarousel product={product} />
                 {/* Favorite button - positioned top right */}
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <FavoriteButton 

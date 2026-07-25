@@ -344,6 +344,13 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
         category = await db.categories.find_one({"id": product["category_id"]})
     category_name = category["name"] if category else None
     
+    # Galerie photos (jusqu'à 3) — normalise dicts {url} et fallback image_url
+    raw_imgs = product.get("images") or []
+    gallery = [i.get("url") if isinstance(i, dict) else i for i in raw_imgs]
+    gallery = [i for i in gallery if i]
+    if product.get("image_url") and product["image_url"] not in gallery:
+        gallery.insert(0, product["image_url"])
+    
     resp = ProductResponse(
         id=product["id"],
         sku=product["sku"],
@@ -356,6 +363,7 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
         min_order_qty=product["min_order_qty"],
         max_order_qty=product.get("max_order_qty"),
         image_url=product.get("image_url"),
+        images=gallery or None,
         video_url=product.get("video_url"),
         video_urls=product.get("video_urls"),
         tags=product.get("tags", []),
@@ -463,8 +471,5 @@ async def list_pickup_locations(
     
     return [PickupLocationResponse(**loc) for loc in locations]
 
-
-   
-    return [PickupLocationResponse(**loc) for loc in locations]
 
 
