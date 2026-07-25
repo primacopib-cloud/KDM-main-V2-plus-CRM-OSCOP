@@ -1,9 +1,11 @@
 import i18n from '@/i18n';
+import { useState } from 'react';
 import {
-  Building2, FileText, CheckCircle2, XCircle, ChevronDown, ChevronUp, MapPin,
+  Building2, FileText, CheckCircle2, XCircle, ChevronDown, ChevronUp, MapPin, Search,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import { Input } from '../ui/input';
 import { TabsContent } from '../ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -12,22 +14,29 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '../ui/collapsible';
 import { APP_STATUSES, REJECTION_REASONS, formatDate } from './adminV2Constants';
+import { DocPreviewModal } from './DocPreviewModal';
 
 export const ApplicationsTab = ({
   applications, appStatusFilter, setAppStatusFilter,
   expandedApp, setExpandedApp, openDecisionDialog,
 }) => {
-  const filtered = appStatusFilter === 'all'
+  const [search, setSearch] = useState('');
+  const [previewDoc, setPreviewDoc] = useState(null);
+  const q = search.trim().toLowerCase();
+  const filtered = (appStatusFilter === 'all'
     ? applications
     : applications.filter((a) =>
         appStatusFilter === 'PENDING_REVIEW'
           ? ['PENDING_REVIEW', 'SUBMITTED'].includes(a.status)
           : a.status === appStatusFilter
-      );
+      )
+  ).filter((a) => !q
+    || (a.org?.legal_name || '').toLowerCase().includes(q)
+    || (a.org?.registration_id || '').toLowerCase().includes(q));
   return (
           <TabsContent value="applications">
-            {/* Filter */}
-            <div className="flex gap-3 mb-4">
+            {/* Filter + Search */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <Select value={appStatusFilter} onValueChange={setAppStatusFilter}>
                 <SelectTrigger className="w-[200px] bg-white/[0.04] border-white/10 text-white" data-testid="admin-app-status-filter">
                   <SelectValue placeholder={i18n.t('adm.filtrer_par_statut')} />
@@ -39,6 +48,16 @@ export const ApplicationsTab = ({
                   <SelectItem value="REJECTED">{i18n.t('adm.rejete')}</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={i18n.t('adm.recherche_raison_siret', 'Rechercher par raison sociale ou SIRET…')}
+                  className="pl-9 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40"
+                  data-testid="admin-app-search-input"
+                />
+              </div>
             </div>
 
             {/* Applications List */}
@@ -142,7 +161,6 @@ export const ApplicationsTab = ({
                                   <div className="space-y-2">
                                     {app.documents.map((doc, idx) => {
                                       const isRealFile = (doc.file_url || '').startsWith('/api');
-                                      const href = isRealFile ? `${process.env.REACT_APP_BACKEND_URL}${doc.file_url}` : null;
                                       const inner = (
                                         <>
                                           <FileText className="w-4 h-4 text-[#D4AF37]" />
@@ -153,12 +171,13 @@ export const ApplicationsTab = ({
                                           </Badge>
                                         </>
                                       );
-                                      return href ? (
-                                        <a key={doc.id || `${doc.doc_type}-${idx}`} href={href} target="_blank" rel="noreferrer"
+                                      return isRealFile ? (
+                                        <button key={doc.id || `${doc.doc_type}-${idx}`} type="button"
+                                          onClick={() => setPreviewDoc(doc)}
                                           data-testid={`admin-doc-link-${doc.doc_type}`}
-                                          className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] transition-colors cursor-pointer">
+                                          className="w-full flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] transition-colors cursor-pointer text-left">
                                           {inner}
-                                        </a>
+                                        </button>
                                       ) : (
                                         <div key={doc.id || `${doc.doc_type}-${idx}`} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
                                           {inner}
@@ -212,6 +231,7 @@ export const ApplicationsTab = ({
                 })
               )}
             </div>
+            <DocPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
           </TabsContent>
   );
 };

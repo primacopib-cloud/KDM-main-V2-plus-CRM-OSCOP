@@ -209,7 +209,8 @@ async def get_document_file(doc_id: str, current_user: dict = Depends(get_curren
         membership = await get_user_membership(current_user["id"], doc["org_id"])
         if not membership:
             raise HTTPException(status_code=403, detail="Accès refusé")
-    return FileResponse(doc["file_path"], filename=doc.get("file_name") or "document")
+    return FileResponse(doc["file_path"], filename=doc.get("file_name") or "document",
+                        content_disposition_type="inline")
 
 
 @applications_v2_router.post("/applications/{app_id}/submit", response_model=ApplicationResponse)
@@ -448,6 +449,28 @@ async def decide_application(
         request=request,
     )
     
+    # Email de décision au membre (multilingue)
+    try:
+        from adhesion_emails import send_adhesion_decision_email
+        org_doc = await db.orgs.find_one({"id": org_id}) or {}
+        submitter = None
+        if app.get("submitted_by_user_id"):
+            submitter = await db.users.find_one({"id": app["submitted_by_user_id"]},
+                                                {"_id": 0, "email": 1, "contact_name": 1, "preferred_language": 1})
+        if not org_doc.get("contact_email") and submitter:
+            org_doc["contact_email"] = submitter.get("email")
+            org_doc.setdefault("contact_name", submitter.get("contact_name"))
+        lang = (submitter or {}).get("preferred_language") or "fr"
+        await send_adhesion_decision_email(
+            org_doc,
+            approved=(decision.decision.upper() == "APPROVED"),
+            reason_code=decision.reason_code,
+            comment=decision.comment,
+            lang=lang,
+        )
+    except Exception as exc:
+        logger.warning("Email décision adhésion : %s", exc)
+
     updated = await db.b2b_applications.find_one({"id": app_id})
     return ApplicationResponse(**updated)
 

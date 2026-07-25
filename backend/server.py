@@ -69,6 +69,9 @@ set_applications_v2_database(db)
 set_billing_v2_database(db)
 app.include_router(api_v2_router)
 app.include_router(applications_v2_router)
+from routes_adhesion_reminders import adhesion_reminders_router, set_adhesion_reminders_database
+set_adhesion_reminders_database(db)
+app.include_router(adhesion_reminders_router)
 app.include_router(billing_v2_router)
 
 # Import and include catalog routes (cart & orders split into dedicated modules)

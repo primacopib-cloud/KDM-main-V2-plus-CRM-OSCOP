@@ -116,6 +116,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler abandoned onboardings crashed: %s", exc)
         try:
+            from adhesion_emails import run_adhesion_reminders
+            await run_adhesion_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler adhesion reminders crashed: %s", exc)
+        try:
             from vendor_weekly_report import send_weekly_unpaid_report
             await send_weekly_unpaid_report(_db)
         except Exception as exc:
