@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI, downloadOffer } from '../services/api';
+import { isAdminUser } from '../components/navbar/navItems';
 import { BuyerCreditHistory } from '../components/BuyerCreditHistory';
 
 const DashboardPage = () => {
@@ -41,6 +42,10 @@ const DashboardPage = () => {
       
       try {
         const userData = await authAPI.getMe();
+        if (isAdminUser(userData)) {
+          navigate('/superadmin', { replace: true });
+          return;
+        }
         setUser(userData);
       } catch (error) {
         console.error('Failed to load user:', error);
