@@ -12,6 +12,7 @@ import {
 } from '../ui/select';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
+import { LegalFormField, CountryField, PhoneField, AddressFields } from './OnboardingCompanyFields';
 
 export const TERRITORIES = [
   { code: 'MARTINIQUE', name: 'Martinique', flag: '🇲🇶' },
@@ -90,15 +91,18 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="legalName">{i18n.t('onboarding.raison_sociale')}</Label>
-          <Input
-            id="legalName"
-            placeholder="Ex: SARL MonEntreprise"
-            value={formData.legalName}
-            onChange={(e) => setFormData(prev => ({ ...prev, legalName: e.target.value }))}
-            data-testid="input-legal-name"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="legalName">{i18n.t('onboarding.raison_sociale')}</Label>
+            <Input
+              id="legalName"
+              placeholder="Ex: MonEntreprise"
+              value={formData.legalName}
+              onChange={(e) => setFormData(prev => ({ ...prev, legalName: e.target.value }))}
+              data-testid="input-legal-name"
+            />
+          </div>
+          <LegalFormField formData={formData} setFormData={setFormData} />
         </div>
         
         <div className="space-y-2">
@@ -116,29 +120,32 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
           </p>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="territory">{i18n.t('onboarding.territoire_principal')}</Label>
-          <Select
-            value={formData.territory}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, territory: value }))}
-          >
-            <SelectTrigger data-testid="select-territory">
-              <SelectValue placeholder="Sélectionnez votre territoire" />
-            </SelectTrigger>
-            <SelectContent>
-              {TERRITORIES.map(t => (
-                <SelectItem key={t.code} value={t.code}>
-                  <span className="flex items-center gap-2">
-                    <span>{t.flag}</span>
-                    <span>{t.name}</span>
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-gray-500">
-            {i18n.t('onboarding.zone_geographique_principale_pour')}
-          </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="territory">{i18n.t('onboarding.territoire_principal')}</Label>
+            <Select
+              value={formData.territory}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, territory: value }))}
+            >
+              <SelectTrigger data-testid="select-territory">
+                <SelectValue placeholder="Sélectionnez votre territoire" />
+              </SelectTrigger>
+              <SelectContent>
+                {TERRITORIES.map(t => (
+                  <SelectItem key={t.code} value={t.code}>
+                    <span className="flex items-center gap-2">
+                      <span>{t.flag}</span>
+                      <span>{t.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">
+              {i18n.t('onboarding.zone_geographique_principale_pour')}
+            </p>
+          </div>
+          <CountryField formData={formData} setFormData={setFormData} />
         </div>
         
         {/* Contact Information */}
@@ -172,27 +179,9 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="contactPhone">{i18n.t('onboarding.telephone')}</Label>
-              <Input
-                id="contactPhone"
-                type="tel"
-                placeholder="Ex: 0596 12 34 56"
-                value={formData.contactPhone}
-                onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
-                data-testid="input-contact-phone"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="address">{i18n.t('onboarding.adresse_optionnel')}</Label>
-              <Input
-                id="address"
-                placeholder="Adresse de l'entreprise"
-                value={formData.address}
-                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-              />
-            </div>
+            <PhoneField formData={formData} setFormData={setFormData} />
+
+            <AddressFields formData={formData} setFormData={setFormData} />
           </div>
         </div>
         
@@ -354,7 +343,7 @@ export const OnboardingStep2 = ({ documents, legalDocs, createdOrg, loading, set
   );
 
   // Step 3: Confirmation / Status
-export const OnboardingStep3 = ({ createdOrg, uploadedDocs, navigate }) => (
+export const OnboardingStep3 = ({ createdOrg, uploadedDocs, documents = {}, navigate }) => (
     <Card className="max-w-2xl mx-auto">
       <CardHeader className="text-center">
         <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">

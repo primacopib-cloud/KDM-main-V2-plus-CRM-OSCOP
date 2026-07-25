@@ -65,6 +65,7 @@ class DocType(str, Enum):
     REGISTRATION_DOC = "REGISTRATION_DOC"  # KBIS, extrait RCS
     ID_SIGNATORY = "ID_SIGNATORY"          # Pièce d'identité signataire
     PROOF_ADDRESS = "PROOF_ADDRESS"        # Justificatif adresse
+    BANK_RIB = "BANK_RIB"                  # RIB de l'entreprise
     OTHER = "OTHER"
 
 

@@ -26,6 +26,7 @@ import {
   TERRITORIES, REQUIRED_DOCUMENTS, steps,
   OnboardingStep1, OnboardingStep2, OnboardingStep3,
 } from '../components/onboarding/OnboardingSteps';
+import { PHONE_COUNTRIES } from '../components/contactFormData';
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -41,13 +42,18 @@ export default function OnboardingPage() {
   // Form data
   const [formData, setFormData] = useState({
     legalName: '',
+    legalForm: '',
     registrationId: '', // SIRET
     territory: '',
+    country: 'GP',
     memberType: 'BUYER_PRO',
     contactName: '',
     contactEmail: '',
+    phoneCountry: 'GP',
     contactPhone: '',
     address: '',
+    postalCode: '',
+    city: '',
     description: '',
   });
   
@@ -93,6 +99,17 @@ export default function OnboardingPage() {
               setCurrentStep(3);
             } else if (org.status === 'DRAFT') {
               setCurrentStep(2);
+            }
+
+            // Reload existing application for this org (needed to submit docs)
+            try {
+              const apps = await applicationsAPIV2.listByOrg(org.id);
+              const activeApp = (apps || []).find(a => a.status === 'DRAFT')
+                || (apps || []).find(a => ['SUBMITTED', 'PENDING_REVIEW'].includes(a.status))
+                || null;
+              if (activeApp) setCreatedApp(activeApp);
+            } catch (e) {
+              console.debug('No existing application found:', e);
             }
           }
         } catch (e) {
@@ -165,16 +182,22 @@ export default function OnboardingPage() {
     setLoading(true);
     try {
       // Create organization
+      const dial = (PHONE_COUNTRIES.find((c) => c.code === formData.phoneCountry) || {}).dial || '';
+      const fullAddress = [formData.address, [formData.postalCode, formData.city].filter(Boolean).join(' ')]
+        .filter(Boolean).join(', ');
       const org = await orgsAPIV2.create({
         legalName: formData.legalName,
-        registrationCountry: 'FR',
+        legalForm: formData.legalForm || null,
+        registrationCountry: formData.country || 'GP',
         registrationId: formData.registrationId.replace(/\s/g, ''),
         territory: formData.territory,
         memberType: formData.memberType,
         contactName: formData.contactName,
         contactEmail: formData.contactEmail,
-        contactPhone: formData.contactPhone,
-        address: formData.address || null,
+        contactPhone: formData.contactPhone ? `${dial} ${formData.contactPhone}`.trim() : formData.contactPhone,
+        address: fullAddress || null,
+        postalCode: formData.postalCode || null,
+        city: formData.city || null,
       });
       
       setCreatedOrg(org);
@@ -209,17 +232,33 @@ export default function OnboardingPage() {
   // Step 2: Upload documents and submit
   const handleUploadDocuments = async () => {
     if (!validateStep2()) return;
-    if (!createdApp) {
-      toast.error(i18n.t('onboarding.toast_app_introuvable'));
-      return;
-    }
-    
+
     setLoading(true);
+    let app = createdApp;
     try {
+      // Recover or create the application if missing (e.g. resumed session)
+      if (!app && createdOrg) {
+        try {
+          const apps = await applicationsAPIV2.listByOrg(createdOrg.id);
+          app = (apps || []).find(a => a.status === 'DRAFT') || null;
+        } catch (e) {
+          console.debug('listByOrg failed:', e);
+        }
+        if (!app) {
+          app = await applicationsAPIV2.create(createdOrg.id);
+        }
+        setCreatedApp(app);
+      }
+      if (!app) {
+        toast.error(i18n.t('onboarding.toast_app_introuvable'));
+        setLoading(false);
+        return;
+      }
+
       // Upload each document
       for (const [docType, docData] of Object.entries(documents)) {
         await applicationsAPIV2.uploadDocument(
-          createdApp.id,
+          app.id,
           docType,
           docData.url,
           null // checksum
@@ -228,7 +267,7 @@ export default function OnboardingPage() {
       }
       
       // Submit application
-      await applicationsAPIV2.submit(createdApp.id);
+      await applicationsAPIV2.submit(app.id);
       
       toast.success('Dossier soumis pour validation !');
       setCurrentStep(3);
@@ -323,7 +362,7 @@ export default function OnboardingPage() {
         {/* Step content */}
         {currentStep === 1 && <OnboardingStep1 formData={formData} setFormData={setFormData} loading={loading} handleCreateOrg={handleCreateOrg} />}
         {currentStep === 2 && <OnboardingStep2 documents={documents} legalDocs={legalDocs} createdOrg={createdOrg} loading={loading} setCurrentStep={setCurrentStep} handleDocumentChange={handleDocumentChange} handleUploadDocuments={handleUploadDocuments} />}
-        {currentStep === 3 && <OnboardingStep3 createdOrg={createdOrg} uploadedDocs={uploadedDocs} navigate={navigate} />}
+        {currentStep === 3 && <OnboardingStep3 createdOrg={createdOrg} uploadedDocs={uploadedDocs} documents={documents} navigate={navigate} />}
       </main>
       
       <Footer />

@@ -38,6 +38,7 @@ from schema_v2_zones import (  # noqa: F401 — ré-exports
 class OrgCreate(BaseModel):
     """Create organization request"""
     legal_name: str = Field(..., min_length=2, max_length=255)
+    legal_form: Optional[str] = None
     registration_country: str = Field(default="FR", max_length=2)
     registration_id: str = Field(..., min_length=9, max_length=20)  # SIRET
     territory: str = Field(...)  # Primary zone code
@@ -46,6 +47,8 @@ class OrgCreate(BaseModel):
     contact_name: str
     contact_phone: str
     address: Optional[str] = None
+    postal_code: Optional[str] = None
+    city: Optional[str] = None
 
 
 class OrgResponse(BaseModel):
@@ -191,7 +194,7 @@ class DocumentUpload(BaseModel):
     """Upload document"""
     doc_type: DocType
     file_url: str
-    checksum_sha256: str
+    checksum_sha256: Optional[str] = None
 
 
 class DocumentResponse(BaseModel):
@@ -201,7 +204,7 @@ class DocumentResponse(BaseModel):
     org_id: str
     doc_type: str
     file_url: str
-    checksum_sha256: str
+    checksum_sha256: Optional[str] = None
     status: str
     reviewed_by_user_id: Optional[str] = None
     review_comment: Optional[str] = None
@@ -218,7 +221,7 @@ class DocumentInDB(BaseModel):
     org_id: str
     doc_type: str
     file_url: str
-    checksum_sha256: str
+    checksum_sha256: Optional[str] = None
     status: str = DocStatus.UPLOADED.value
     reviewed_by_user_id: Optional[str] = None
     review_comment: Optional[str] = None

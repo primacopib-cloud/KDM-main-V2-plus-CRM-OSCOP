@@ -1575,3 +1575,12 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Locale envoyée au /vendor-onboarding/start gère désormais gcf (frontend startsWith('gcf'), backend liste autorisée + gcf) ; à l'activation du compte, `preferred_language` est posé depuis `ob.locale` → la langue choisie à l'inscription suit le membre sur tous ses appareils (via LanguagePrefSync).
 - 35 clés `vendorOnboarding.*` traduites en créole (titre « Adézyon Vandè Pro oben Achtè Pro », étapes Pèman/Konvansyon/Siyati/Aktivasyon, champs Rézon sosyal, Prénon/Non a kontak-la, boutons pèman/aktivasyon).
 - Vérifié UI : formulaire complet en créole avec sélecteur, i18nextLng=gcf après clic drapeau.
+
+## 2026-07-25 — Bugfix : « Erreur: application non trouvée » à la soumission du dossier /adhesion (self-testé curl + screenshot E2E)
+- **3 causes racines corrigées** :
+  1. Session reprise (org DRAFT existante) : `createdApp` jamais rechargé → nouvel endpoint `GET /api/v2/orgs/{org_id}/applications` (routes_v2_applications.py) + `applicationsAPIV2.listByOrg` (api.v2.js) ; OnboardingPage recharge la demande au montage et la récupère/recrée à la volée dans handleUploadDocuments.
+  2. `checksum_sha256` obligatoire dans DocumentUpload/DocumentInDB/DocumentResponse (schema_v2.py) alors que le front envoie null → 422/500 sur chaque upload. Rendu Optional.
+  3. Type `BANK_RIB` (RIB entreprise, front) absent de l'enum DocType (schema_v2_enums.py) → 422. Ajouté.
+- Bonus : crash React « documents is not defined » dans OnboardingStep3 (prop manquante) corrigé.
+- Import manquant `PHONE_COUNTRIES` dans OnboardingPage.jsx ajouté (ReferenceError à la création d'org).
+- Testé E2E : login → /adhesion (reprise session DRAFT) → 3 docs → Soumettre → toast « Dossier soumis pour validation ! » + étape 3 OK. Backend : submit → PENDING_REVIEW.

@@ -8,6 +8,7 @@ export const orgsAPIV2 = {
       method: 'POST',
       body: JSON.stringify({
         legal_name: orgData.legalName,
+        legal_form: orgData.legalForm || null,
         registration_country: orgData.registrationCountry || 'FR',
         registration_id: orgData.registrationId,
         territory: orgData.territory,
@@ -16,6 +17,8 @@ export const orgsAPIV2 = {
         contact_name: orgData.contactName,
         contact_phone: orgData.contactPhone,
         address: orgData.address || null,
+        postal_code: orgData.postalCode || null,
+        city: orgData.city || null,
       }),
     });
   },
@@ -34,6 +37,10 @@ export const applicationsAPIV2 = {
     return apiCallV2(`/orgs/${orgId}/applications`, {
       method: 'POST',
     });
+  },
+
+  listByOrg: async (orgId) => {
+    return apiCallV2(`/orgs/${orgId}/applications`);
   },
 
   uploadDocument: async (appId, docType, fileUrl, checksum = null) => {

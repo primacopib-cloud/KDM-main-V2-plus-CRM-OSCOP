@@ -103,6 +103,24 @@ async def create_application(
     return ApplicationResponse(**app.dict())
 
 
+@applications_v2_router.get("/orgs/{org_id}/applications", response_model=List[ApplicationResponse])
+async def list_org_applications(
+    org_id: str,
+    current_user: dict = Depends(get_current_user_v2),
+):
+    """List applications for an organization (member access)"""
+    org = await db.orgs.find_one({"id": org_id})
+    if not org:
+        raise HTTPException(status_code=404, detail="Organisation non trouvée")
+
+    membership = await get_user_membership(current_user["id"], org_id)
+    if not membership and not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Accès refusé")
+
+    apps = await db.b2b_applications.find({"org_id": org_id}).sort("created_at", -1).to_list(50)
+    return [ApplicationResponse(**a) for a in apps]
+
+
 @applications_v2_router.post("/applications/{app_id}/documents", response_model=DocumentResponse)
 async def upload_document(
     app_id: str,
