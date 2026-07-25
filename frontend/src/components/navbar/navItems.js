@@ -4,9 +4,23 @@ import {
   Store, Building2, MapPin, CreditCard, Home, Truck, HeartHandshake, Server, Settings, Plug, Heart,
 } from 'lucide-react';
 
+// « Mon Espace » mène à l'espace du rôle de l'utilisateur.
+export const SPACE_BY_ROLE = {
+  vendor: '/espace-vendeur',
+  COOPER: '/espace-cooper',
+  GERANT_LOLO_POINT: '/gerant',
+  OPERATEUR_POS: '/pos',
+  TITULAIRE_PASS: '/pass',
+};
+
+export const isAdminUser = (user) =>
+  Boolean(user?.is_admin || ['admin', 'ADMIN', 'SUPER_ADMIN'].includes(user?.role) || user?.email?.includes('admin'));
+
+export const getMySpace = (user) =>
+  (isAdminUser(user) ? '/superadmin' : SPACE_BY_ROLE[user?.role] || '/espace-acheteur');
+
 export const getNavItems = (userRole, isAdmin) => {
-  // « Mon Espace » mène à l'espace du rôle : vendeur → espace vendeur, sinon espace acheteur.
-  const mySpace = userRole === 'vendor' ? '/espace-vendeur' : '/espace-acheteur';
+  const mySpace = isAdmin ? '/superadmin' : SPACE_BY_ROLE[userRole] || '/espace-acheteur';
   // Top bar: keep it lean — 4 public + 2 member shortcuts.
   const baseItems = [
     { href: '/', label: 'nav.home', icon: Home, public: true },

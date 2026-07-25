@@ -44,7 +44,7 @@ function FavoritesNavButton() {
 }
 
 // Navigation items for different user roles
-import { getNavItems } from './navbar/navItems';
+import { getNavItems, isAdminUser } from './navbar/navItems';
 import { UserMenu } from './navbar/UserMenu';
 
 const NavBar = ({ variant = 'default' }) => {
@@ -58,7 +58,7 @@ const NavBar = ({ variant = 'default' }) => {
   
   // Check if user is logged in
   const isAuthenticated = authAPI.isAuthenticated();
-  const isAdmin = user?.role === 'admin' || user?.email?.includes('admin');
+  const isAdmin = isAdminUser(user);
 
   // WebSocket notifications for admin
   const { isConnected, notifications } = useNotificationWebSocket(

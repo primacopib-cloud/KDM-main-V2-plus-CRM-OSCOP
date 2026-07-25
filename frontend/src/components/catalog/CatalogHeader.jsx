@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import {
   ArrowLeft, Lock, MapPin, Minus, Package, Plus, ShoppingCart, Trash2,
 } from 'lucide-react';
@@ -16,12 +17,19 @@ import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
 import { formatPrice } from './catalogUtils';
 import { CartSuggestions } from './CartSuggestions';
 import { BrandLogos } from '../BrandLogos';
+import { authAPI } from '../../services/api';
+import { getMySpace, isAdminUser } from '../navbar/navItems';
 
 export const CatalogHeader = ({
   zones, entitledZones, selectedZone, setSelectedZone, cart, cartOpen, setCartOpen,
   cartLoading, cartItemCount, cartTotal, handleUpdateQuantity,
   handleRemoveFromCart, handleAddToCart, navigate,
-}) => (
+}) => {
+  const [me, setMe] = useState(null);
+  useEffect(() => { authAPI.getMe().then(setMe).catch(() => {}); }, []);
+  const mySpace = getMySpace(me);
+  const admin = isAdminUser(me);
+  return (
       <header 
         className="sticky top-0 z-50"
         style={{
@@ -32,7 +40,7 @@ export const CatalogHeader = ({
       >
         <div className="max-w-[1280px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/espace-acheteur" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+            <Link to={mySpace} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors" data-testid="catalog-back-my-space">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm hidden sm:inline">Mon Espace</span>
             </Link>
@@ -46,7 +54,7 @@ export const CatalogHeader = ({
             <Link to="/" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
               Accueil
             </Link>
-            <Link to="/espace-acheteur" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+            <Link to={mySpace} className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors" data-testid="catalog-nav-my-space">
               Mon Espace
             </Link>
             <Link to="/commandes" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
@@ -55,9 +63,16 @@ export const CatalogHeader = ({
             <Link to="/wallet" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
               CREDI&rsquo;SCOP
             </Link>
-            <Link to="/espace-vendeur" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              Vendeur
-            </Link>
+            {(me?.role === 'vendor' || admin) && (
+              <Link to="/espace-vendeur" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                Vendeur
+              </Link>
+            )}
+            {admin && (
+              <Link to="/superadmin" className="px-3 py-1.5 text-xs text-[#E9CF8E]/80 hover:text-[#E9CF8E] hover:bg-white/5 rounded-lg transition-colors" data-testid="catalog-nav-superadmin">
+                Super Admin
+              </Link>
+            )}
           </nav>
           
           <div className="flex items-center gap-3">
@@ -216,5 +231,5 @@ export const CatalogHeader = ({
           </div>
         </div>
       </header>
-
-);
+  );
+};

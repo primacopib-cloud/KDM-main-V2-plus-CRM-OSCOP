@@ -6,6 +6,19 @@ import {
   FileSignature, MapPin, CreditCard, Home, Heart, Truck, HeartHandshake, Server,
 } from 'lucide-react';
 
+const roleBadge = (user, t) => {
+  if (user?.is_admin || ['admin', 'ADMIN', 'SUPER_ADMIN'].includes(user?.role))
+    return ['Admin', 'bg-[#D9B35A]/20 text-[#E9CF8E] border-[#D9B35A]/40'];
+  const map = {
+    vendor: [t('roles.vendor_pro'), 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'],
+    COOPER: ["COOPER'S", 'bg-sky-500/15 text-sky-300 border-sky-400/30'],
+    GERANT_LOLO_POINT: ['Gérant LOLODRIVE', 'bg-orange-500/15 text-orange-300 border-orange-400/30'],
+    OPERATEUR_POS: ['Opérateur POS', 'bg-rose-500/15 text-rose-300 border-rose-400/30'],
+    TITULAIRE_PASS: ['PASS', 'bg-teal-500/15 text-teal-300 border-teal-400/30'],
+  };
+  return map[user?.role] || [t('roles.buyer_pro'), 'bg-[#8B5CF6]/20 text-[#CDB4F0] border-[#8B5CF6]/40'];
+};
+
 export const UserMenu = ({ user, nav, showUserMenu, setShowUserMenu, handleLogout, unreadCount, t }) => (
                 <div className="relative">
                   <button 
@@ -35,13 +48,12 @@ export const UserMenu = ({ user, nav, showUserMenu, setShowUserMenu, handleLogou
                       <div className="p-3 border-b border-[#D9B35A]/25" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.14), rgba(212,175,55,0.04))' }}>
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-semibold text-white">{user?.contact_name || 'Utilisateur'}</p>
-                          <span data-testid="user-menu-role-badge"
-                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide border ${
-                              user?.is_admin ? 'bg-[#D9B35A]/20 text-[#E9CF8E] border-[#D9B35A]/40'
-                                : user?.role === 'vendor' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
-                                  : 'bg-[#8B5CF6]/20 text-[#CDB4F0] border-[#8B5CF6]/40'}`}>
-                            {user?.is_admin ? 'Admin' : user?.role === 'vendor' ? t('roles.vendor_pro') : t('roles.buyer_pro')}
-                          </span>
+                          {(() => { const [label, cls] = roleBadge(user, t); return (
+                            <span data-testid="user-menu-role-badge"
+                              className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide border ${cls}`}>
+                              {label}
+                            </span>
+                          ); })()}
                         </div>
                         <p className="text-xs text-white/50 truncate">{user?.email}</p>
                         {user?.company_name && (
