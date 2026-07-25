@@ -337,7 +337,14 @@
     "disponibles_one": "{{count}} product available",
     "disponibles_other": "{{count}} products available",
     "toast_prix_indispo": "Price not available for your organization",
-    "recent_searches": "Recent searches"
+    "recent_searches": "Recent searches",
+    "tarifs_adherents": "Prices reserved for members",
+    "tarifs_adherents_desc": "Browse the catalog freely. Prices are visible only to subscribed cooperative members.",
+    "se_connecter": "Log in",
+    "devenir_adherent": "Become a member",
+    "voir_abonnements": "See subscriptions",
+    "visiteur_connexion": "Log in to order",
+    "tarif_adherent": "Members-only price"
   },
   "seo": {
     "landing_title": "KDMARCHÉ — The cooperative ecosystem of the overseas territories",

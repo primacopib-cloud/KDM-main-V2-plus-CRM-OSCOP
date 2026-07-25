@@ -337,7 +337,14 @@
     "disponibles_one": "{{count}} produit disponible",
     "disponibles_other": "{{count}} produits disponibles",
     "toast_prix_indispo": "Prix non disponible pour votre organisation",
-    "recent_searches": "Recherches récentes"
+    "recent_searches": "Recherches récentes",
+    "tarifs_adherents": "Tarifs réservés aux adhérents",
+    "tarifs_adherents_desc": "Consultez librement le catalogue. Les tarifs sont visibles uniquement par les membres abonnés de la coopérative.",
+    "se_connecter": "Se connecter",
+    "devenir_adherent": "Devenir adhérent",
+    "voir_abonnements": "Voir les abonnements",
+    "visiteur_connexion": "Connectez-vous pour commander",
+    "tarif_adherent": "Tarif réservé aux adhérents"
   },
   "seo": {
     "landing_title": "KDMARCHÉ — L'écosystème coopératif des Outre-mer",

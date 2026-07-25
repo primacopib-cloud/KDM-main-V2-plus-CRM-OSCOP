@@ -345,5 +345,14 @@
     "doneTitle": "Adézyon fèt !",
     "paidToast": "Pèman rési !",
     "chooseLanguage": "Chwazi lang a'w · Choisissez votre langue · Choose your language · Elija su idioma"
+  },
+  "catalog": {
+    "tarifs_adherents": "Tarif rézèvé pou adéran",
+    "tarifs_adherents_desc": "Ou pé gadé katalòg-la lib. Sé sèlman manm abòné a koopérativ-la ki ka vwè tarif-la.",
+    "se_connecter": "Konèkté'w",
+    "devenir_adherent": "Vin adéran",
+    "voir_abonnements": "Gadé abònman-la",
+    "visiteur_connexion": "Konèkté'w pou komandé",
+    "tarif_adherent": "Tarif rézèvé pou adéran"
   }
 }

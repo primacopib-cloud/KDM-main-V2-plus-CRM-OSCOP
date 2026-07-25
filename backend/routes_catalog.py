@@ -67,6 +67,18 @@ async def get_current_user_catalog(request: Request):
     return user
 
 
+async def get_current_user_catalog_optional(request: Request):
+    """User if authenticated, None for visitors (public catalog browsing)"""
+    from auth import extract_user_id_from_request
+    try:
+        user_id = extract_user_id_from_request(request)
+        if not user_id:
+            return None
+        return await db.users.find_one({"id": user_id})
+    except Exception:
+        return None
+
+
 async def ensure_member_active(org_id: str):
     """Bloque catalogue/panier/commandes si le membre est suspendu ou radié du registre."""
     entry = await db.member_registry.find_one({"org_id": org_id}, {"_id": 0, "status": 1})
@@ -212,7 +224,7 @@ async def my_zones(current_user: dict = Depends(get_current_user_catalog)):
 
 @catalog_router.get("/products", response_model=List[ProductResponse])
 async def list_products(
-    current_user: dict = Depends(get_current_user_catalog),
+    current_user: Optional[dict] = Depends(get_current_user_catalog_optional),
     category_id: Optional[str] = None,
     search: Optional[str] = None,
     tags: Optional[str] = None,
@@ -220,13 +232,13 @@ async def list_products(
     skip: int = 0,
     limit: int = 50,
 ):
-    """List products with ABAC-controlled pricing"""
+    """List products with ABAC-controlled pricing (visitors see products without prices)"""
     # Zone demandée par l'UI, sinon zone sélectionnée côté serveur
-    zone_code = zone_code or await get_selected_zone(current_user)
+    zone_code = zone_code or (await get_selected_zone(current_user) if current_user else None)
     
     # Check price access (entitlement de la zone demandée obligatoire)
     price_visible = False
-    if zone_code:
+    if zone_code and current_user:
         if current_user.get("is_admin"):
             price_visible = True
         else:
@@ -249,7 +261,8 @@ async def list_products(
         ]
         try:
             from search_alerts import record_user_search
-            await record_user_search(db, current_user, search)
+            if current_user:
+                await record_user_search(db, current_user, search)
         except Exception:
             pass
     
@@ -279,7 +292,7 @@ async def list_products(
 async def suggest_products(
     q: str,
     lang: str = "fr",
-    current_user: dict = Depends(get_current_user_catalog),
+    current_user: Optional[dict] = Depends(get_current_user_catalog_optional),
 ):
     """Suggestions de recherche multilingues (nom du produit dans la langue de l'utilisateur)."""
     term = (q or "").strip()
@@ -303,7 +316,7 @@ async def suggest_products(
 @catalog_router.get("/products/{product_id}", response_model=ProductResponse)
 async def get_product(
     product_id: str,
-    current_user: dict = Depends(get_current_user_catalog),
+    current_user: Optional[dict] = Depends(get_current_user_catalog_optional),
     zone_code: Optional[str] = None,
 ):
     """Get product details with ABAC-controlled pricing"""
@@ -311,9 +324,9 @@ async def get_product(
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
     
-    zone_code = zone_code or await get_selected_zone(current_user)
+    zone_code = zone_code or (await get_selected_zone(current_user) if current_user else None)
     price_visible = False
-    if zone_code:
+    if zone_code and current_user:
         if current_user.get("is_admin"):
             price_visible = True
         else:
@@ -432,7 +445,7 @@ async def _init_sample_products():
 @catalog_router.get("/pickup-locations", response_model=List[PickupLocationResponse])
 async def list_pickup_locations(
     zone_code: Optional[str] = None,
-    current_user: dict = Depends(get_current_user_catalog),
+    current_user: Optional[dict] = Depends(get_current_user_catalog_optional),
 ):
     """List pickup locations"""
     query = {"is_active": True}
@@ -448,6 +461,10 @@ async def list_pickup_locations(
             await db.pickup_locations.insert_one(loc.dict())
         locations = await db.pickup_locations.find(query).to_list(100)
     
+    return [PickupLocationResponse(**loc) for loc in locations]
+
+
+   
     return [PickupLocationResponse(**loc) for loc in locations]
 
 

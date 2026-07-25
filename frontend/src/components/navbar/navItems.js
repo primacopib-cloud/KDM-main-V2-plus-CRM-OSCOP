@@ -25,13 +25,13 @@ export const getNavItems = (userRole, isAdmin) => {
   const baseItems = [
     { href: '/', label: 'nav.home', icon: Home, public: true },
     { href: '/kdmarche', label: 'KDMARCHÉ', icon: Store, public: true, accent: '#D9B35A' },
+    { href: '/catalogue', label: 'nav.catalog', icon: ShoppingCart, public: true },
     { href: '/tarifs', label: 'nav.pro_access', icon: CreditCard, public: true },
   ];
 
   // Member-only shortcuts kept in top bar (per product decision).
   const memberShortcuts = [
     { href: mySpace, label: 'nav.my_space', icon: LayoutDashboard },
-    { href: '/catalogue', label: 'nav.catalog', icon: ShoppingCart },
   ];
 
   // Espaces dédiés par rôle (COOPER / EXPERT)

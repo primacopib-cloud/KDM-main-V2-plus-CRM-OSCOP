@@ -82,7 +82,9 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                       )}
                     </>
                   ) : (
-                    <p className="text-sm text-white/40 italic">Prix sur demande</p>
+                    <p className="text-sm text-white/40 italic" data-testid={`price-locked-${product.sku}`}>
+                      {i18n.t('catalog.tarif_adherent', 'Tarif réservé aux adhérents')}
+                    </p>
                   )}
                 </div>
                 

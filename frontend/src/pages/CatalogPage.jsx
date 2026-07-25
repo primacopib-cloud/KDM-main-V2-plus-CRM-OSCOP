@@ -92,33 +92,32 @@ export default function CatalogPage() {
   // Load initial data
   useEffect(() => {
     const init = async () => {
-      if (!authAPI.isAuthenticated()) {
-        toast.error('Veuillez vous connecter');
-        navigate('/connexion?redirect=/catalogue');
-        return;
-      }
+      const isAuth = authAPI.isAuthenticated();
 
       try {
-        const userData = await authAPI.getMe();
-        setUser(userData);
+        let userData = null;
+        if (isAuth) {
+          userData = await authAPI.getMe();
+          setUser(userData);
+        }
 
         // Load zones, entitlements and categories in parallel
         const [zonesData, categoriesData, myZonesData] = await Promise.all([
           zonesAPIV2.list(),
           catalogAPI.getCategories(),
-          catalogAPI.myZones().catch(() => null),
+          isAuth ? catalogAPI.myZones().catch(() => null) : Promise.resolve(null),
         ]);
 
         setZones(zonesData);
         setCategories(categoriesData);
-        const entitled = myZonesData?.is_admin ? null : (myZonesData?.entitled || []);
+        const entitled = !isAuth ? [] : (myZonesData?.is_admin ? null : (myZonesData?.entitled || []));
         setEntitledZones(entitled);
 
         // Set default zone: priorité aux zones autorisées par l'abonnement
         if (zonesData.length > 0) {
           const allowedZone = entitled === null
             ? zonesData[0]
-            : (zonesData.find((z) => entitled.includes(z.code)) || zonesData[0]);
+            : (zonesData.find((z) => (entitled || []).includes(z.code)) || zonesData[0]);
           const defaultZone = allowedZone.code;
           setSelectedZone(defaultZone);
           
@@ -131,7 +130,8 @@ export default function CatalogPage() {
           setPickupLocations(locationsData);
         }
 
-        // Load cart
+        // Load cart (membres connectés uniquement)
+        if (isAuth) {
         try {
           const cartData = await catalogAPI.getCart();
           setCart(cartData);
@@ -147,6 +147,7 @@ export default function CatalogPage() {
         } catch (e) {
           // Cart may not exist yet
           console.log('No cart found');
+        }
         }
 
       } catch (error) {
@@ -219,6 +220,11 @@ export default function CatalogPage() {
 
   // Add to cart
   const handleAddToCart = async (product) => {
+    if (!user) {
+      toast.info(i18n.t('catalog.visiteur_connexion', 'Connectez-vous pour commander'));
+      navigate('/connexion?redirect=/catalogue');
+      return;
+    }
     if (!product.price_visible) {
       toast.error(i18n.t('catalog.toast_prix_indispo'));
       return;
@@ -444,14 +450,36 @@ export default function CatalogPage() {
 
         {/* Access Warning */}
         {products.length > 0 && !products[0].price_visible && (
-          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20" data-testid="catalog-price-locked-banner">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-amber-400">{i18n.t('catalog.acces_limite')}</p>
-                <p className="text-sm text-amber-400/80">
-                  {i18n.t('catalog.les_prix_ne_sont')}
+              <div className="flex-1">
+                <p className="font-medium text-amber-400">
+                  {user ? i18n.t('catalog.acces_limite') : i18n.t('catalog.tarifs_adherents', 'Tarifs réservés aux adhérents')}
                 </p>
+                <p className="text-sm text-amber-400/80">
+                  {user
+                    ? i18n.t('catalog.les_prix_ne_sont')
+                    : i18n.t('catalog.tarifs_adherents_desc', 'Consultez librement le catalogue. Les tarifs sont visibles uniquement par les membres abonnés de la coopérative.')}
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {!user && (
+                    <Button size="sm" variant="outline"
+                      className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10"
+                      onClick={() => navigate('/connexion?redirect=/catalogue')}
+                      data-testid="catalog-login-cta">
+                      {i18n.t('catalog.se_connecter', 'Se connecter')}
+                    </Button>
+                  )}
+                  <Button size="sm"
+                    className="bg-amber-500 hover:bg-amber-600 text-[#2A1045] font-semibold"
+                    onClick={() => navigate(user ? '/tarifs' : '/adhesion')}
+                    data-testid="catalog-subscribe-cta">
+                    {user
+                      ? i18n.t('catalog.voir_abonnements', 'Voir les abonnements')
+                      : i18n.t('catalog.devenir_adherent', 'Devenir adhérent')}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

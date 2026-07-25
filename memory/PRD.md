@@ -1603,3 +1603,12 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Recherche demandes admin** : barre de recherche (admin-app-search-input) filtrage client-side par raison sociale ou SIRET dans ApplicationsTab. Testé E2E : filtre par nom et par SIRET OK.
 - **Relance dossiers incomplets** : `run_adhesion_reminders(db)` (adhesion_emails.py) — DRAFT créés il y a 48 h+ sans reminder_sent_at → email 4 langues avec lien /adhesion, flag idempotent ; branché dans scheduler.py (toutes les 6 h) + endpoint manuel POST /api/v2/admin/adhesion-reminders/run (nouveau fichier routes_adhesion_reminders.py, admin only). Testé : 1 envoyée puis 0 au 2e run (idempotent).
 - Tous fichiers <500 lignes (routes_v2_applications.py 476, adhesion_emails.py ~290).
+
+## 2026-07-25 — Catalogue public : visiteurs sans tarifs, tarifs réservés aux abonnés (self-testé curl + screenshot E2E)
+- Backend (`routes_catalog.py`) : nouveau dep `get_current_user_catalog_optional` (None pour visiteur) sur GET /products, /products/{id}, /suggest, /pickup-locations → accès anonyme avec `price_visible=False` (prix jamais renvoyés). Panier/commandes restent protégés (401). Admin et abonnés actifs (org APPROVED + subscription ACTIVE + partner ACCESS_ENABLED + zone entitled) voient les prix — inchangé.
+- Frontend (`CatalogPage.jsx`) : plus de redirection forcée vers /connexion ; mode visiteur (pas de getMe/myZones/panier) ; bannière `catalog-price-locked-banner` : visiteur → « Tarifs réservés aux adhérents » + CTA « Se connecter » (`catalog-login-cta`) et « Devenir adhérent » (`catalog-subscribe-cta` → /adhesion) ; membre non abonné → texte accès limité + CTA « Voir les abonnements » (→ /tarifs). Ajout au panier par visiteur → redirection /connexion.
+- `ProductsGrid.jsx` : « Prix sur demande » remplacé par « Tarif réservé aux adhérents » (i18n `catalog.tarif_adherent`).
+- Navbar (`navItems.js`) : lien Catalogue devenu PUBLIC dans la top bar.
+- i18n : 7 nouvelles clés `catalog.*` dans fr-site/en-site/es-site/gcf.
+- ATTENTION : recharger le backend n'avait pas pris le 1er search_replace de list_products (édition silencieusement non appliquée) — re-vérifié par grep avant de conclure.
+- Testé : anonyme 200 sans prix, admin prix OK, membre non abonné sans prix, abonné actif (acheteur-pro, zone MARTINIQUE) prix OK, panier anonyme 401, UI visiteur avec bannière + CTA. Note seed : l'entitlement GUADELOUPE d'org-demo-achats pointe vers un zone_id obsolète (drift pré-existant, non bloquant).
