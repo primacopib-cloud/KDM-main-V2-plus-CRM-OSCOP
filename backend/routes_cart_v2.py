@@ -177,6 +177,7 @@ async def add_to_cart(
         "quantity": item.quantity,
         "price_ht_cents": zone_price["price_ht_cents"],
         "line_total_ht_cents": zone_price["price_ht_cents"] * item.quantity,
+        "incoterms": (product.get("incoterms") or {}).get(zone_code) or [],
     }
     
     # Check if product already in cart
@@ -346,6 +347,10 @@ async def _refresh_cart_items(cart: dict) -> list:
             it["unavailable"] = False
             changed = True
             alerts.append({"type": "AVAILABLE_AGAIN", "item_id": it["id"], "product_name": it["product_name"], "new": True})
+        # Sync silencieux des incoterms du produit pour la zone du panier
+        inco = (product.get("incoterms") or {}).get(cart["zone_code"]) or []
+        if inco != (it.get("incoterms") or []):
+            it["incoterms"], changed = inco, True
         if zone_price["price_ht_cents"] != it["price_ht_cents"]:
             alerts.append({
                 "type": "PRICE_CHANGED", "item_id": it["id"], "product_name": it["product_name"],
@@ -390,6 +395,7 @@ async def _build_cart_response(cart: dict, alerts: list = None) -> CartResponse:
             price_ht_cents=item["price_ht_cents"],
             line_total_ht_cents=item["line_total_ht_cents"],
             unavailable=bool(item.get("unavailable")),
+            incoterms=item.get("incoterms") or [],
         ))
     
     return CartResponse(

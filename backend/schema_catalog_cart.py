@@ -26,6 +26,7 @@ class CartItemResponse(BaseModel):
     price_ht_cents: int
     line_total_ht_cents: int
     unavailable: bool = False
+    incoterms: List[str] = []
 
     class Config:
         from_attributes = True
@@ -83,6 +84,7 @@ class OrderItemResponse(BaseModel):
     quantity: int
     price_ht_cents: int
     line_total_ht_cents: int
+    incoterms: List[str] = []
 
 
 class OrderResponse(BaseModel):

@@ -121,8 +121,8 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler adhesion reminders crashed: %s", exc)
         try:
-            from adhesion_archive import archive_stale_draft_applications
-            await archive_stale_draft_applications(_db)
+            from adhesion_archive import run_adhesion_archiving
+            await run_adhesion_archiving(_db)
         except Exception as exc:
             logger.exception("Scheduler adhesion auto-archive crashed: %s", exc)
         try:

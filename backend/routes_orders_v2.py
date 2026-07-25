@@ -302,6 +302,7 @@ async def _build_order_response(order: dict, pickup: dict = None) -> OrderRespon
             quantity=i["quantity"],
             price_ht_cents=i["price_ht_cents"],
             line_total_ht_cents=i["line_total_ht_cents"],
+            incoterms=i.get("incoterms") or [],
         )
         for i in order.get("items", [])
     ]

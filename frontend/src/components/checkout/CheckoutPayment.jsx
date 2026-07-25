@@ -260,7 +260,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
   </>
 );
 
-export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, submitting, setCurrentStep, handleSubmitOrder, nextStep }) => (
+export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, submitting, setCurrentStep, handleSubmitOrder, nextStep, cart = null }) => (
   <>
           {/* Sidebar - Order Summary */}
           <div className="lg:col-span-1">
@@ -302,10 +302,15 @@ export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, su
 
               {/* Status badges */}
               <div className="mt-6 space-y-2">
-                <Badge className="w-full justify-center bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                  <Truck className="w-3 h-3 mr-1" />
-                  {i18n.t('checkout.incoterm_exw_2')}
-                </Badge>
+                {(() => {
+                  const codes = [...new Set((cart?.items || []).flatMap((i) => i.incoterms || []))];
+                  return (
+                    <Badge className="w-full justify-center bg-emerald-500/20 text-emerald-400 border-emerald-500/30" data-testid="sidebar-incoterms-badge">
+                      <Truck className="w-3 h-3 mr-1" />
+                      {codes.length ? `Incoterm${codes.length > 1 ? 's' : ''} ${codes.join(' · ')}` : i18n.t('checkout.incoterm_exw_2')}
+                    </Badge>
+                  );
+                })()}
                 {signatureComplete && (
                   <Badge className="w-full justify-center bg-purple-500/20 text-purple-400 border-purple-500/30">
                     <Shield className="w-3 h-3 mr-1" />

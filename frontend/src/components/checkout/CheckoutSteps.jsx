@@ -37,6 +37,17 @@ export const ReviewStep = ({ currentStep, cart }) => (
                       <div>
                         <p className="text-white font-medium">{item.product_name}</p>
                         <p className="text-xs text-white/50">SKU: {item.product_sku}</p>
+                        {item.incoterms?.length > 0 && (
+                          <div className="flex gap-1 mt-1" data-testid={`review-incoterms-${item.product_sku}`}>
+                            {item.incoterms.map((code) => (
+                              <span key={code}
+                                title={`Incoterm ${code} — conditions de livraison`}
+                                className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wide bg-[#D9B35A]/15 text-[#D9B35A] border border-[#D9B35A]/30">
+                                {code}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="text-white">{item.quantity} x {formatCurrency(item.price_ht_cents)}</p>

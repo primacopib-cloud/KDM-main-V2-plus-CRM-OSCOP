@@ -451,7 +451,7 @@ export default function CheckoutPage() {
             <PaymentStep currentStep={currentStep} totals={totals} useInstallment={useInstallment} setUseInstallment={setUseInstallment} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} orderNotes={orderNotes} setOrderNotes={setOrderNotes} signatureComplete={signatureComplete} processingPayment={processingPayment} handlePayment={handlePayment} codEligible={codEligible} />
           </div>
 
-          <OrderSummarySidebar currentStep={currentStep} totals={totals} signatureComplete={signatureComplete} submitting={submitting} setCurrentStep={setCurrentStep} handleSubmitOrder={handleSubmitOrder} nextStep={nextStep} />
+          <OrderSummarySidebar currentStep={currentStep} totals={totals} signatureComplete={signatureComplete} submitting={submitting} setCurrentStep={setCurrentStep} handleSubmitOrder={handleSubmitOrder} nextStep={nextStep} cart={cart} />
         </div>
       </div>
 

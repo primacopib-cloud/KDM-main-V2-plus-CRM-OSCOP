@@ -34,7 +34,26 @@ export const CheckoutDialog = ({
             {/* Order summary */}
             <div className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.08]">
               <p className="text-sm text-white/60 mb-2">Récapitulatif</p>
-              <div className="flex justify-between items-center">
+              {(cart?.items || []).length > 0 && (
+                <div className="space-y-1.5 mb-3" data-testid="checkout-items-recap">
+                  {cart.items.map((it) => (
+                    <div key={it.id} className="flex items-center justify-between gap-2 text-xs text-white/70">
+                      <span className="truncate">{it.quantity}× {it.product_name}</span>
+                      <span className="flex gap-1 shrink-0">
+                        {(it.incoterms?.length ? it.incoterms : ['EXW']).map((code) => (
+                          <span key={code}
+                            data-testid={`checkout-incoterm-${it.product_sku}-${code}`}
+                            title={`Incoterm ${code} — conditions de livraison`}
+                            className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wide bg-[#D9B35A]/15 text-[#D9B35A] border border-[#D9B35A]/30">
+                            {code}
+                          </span>
+                        ))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex justify-between items-center border-t border-white/[0.08] pt-2">
                 <span>{cartItemCount} article{cartItemCount > 1 ? 's' : ''}</span>
                 <span className="font-bold text-[#D9B35A]">{formatPrice(cartTotal)} HT</span>
               </div>
