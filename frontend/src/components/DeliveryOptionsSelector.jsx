@@ -48,6 +48,7 @@ export default function DeliveryOptionsSelector({
     postal_code: '',
     contact_name: '',
     contact_phone: '',
+    phone_dial: '+590|GP',
     instructions: ''
   });
 
@@ -216,13 +217,20 @@ export default function DeliveryOptionsSelector({
       activeQuote = quote;
     }
     
+    const dialPart = (deliveryAddress.phone_dial || '+590|GP').split('|')[0];
+    const finalAddress = {
+      ...deliveryAddress,
+      contact_phone_full: deliveryAddress.contact_phone
+        ? `${dialPart} ${deliveryAddress.contact_phone}`.trim()
+        : '',
+    };
     const option = {
       type: deliveryType,
       label: optionLabel,
       description: optionDescription,
       delivery_mode: deliveryType === 'ESS_ROUTE' ? 'ESS_ROUTE' : 'DIRECT',
       pickup_location_id: deliveryType === 'EXW' ? selectedPickup : null,
-      delivery_address: deliveryType !== 'EXW' ? deliveryAddress : null,
+      delivery_address: deliveryType !== 'EXW' ? finalAddress : null,
       slot: deliveryType === 'DELIVERY' ? selectedSlot : null,
       tour_id: deliveryType === 'ESS_ROUTE' ? selectedTour : null,
       quote: activeQuote,

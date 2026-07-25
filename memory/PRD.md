@@ -1584,3 +1584,15 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - Bonus : crash React « documents is not defined » dans OnboardingStep3 (prop manquante) corrigé.
 - Import manquant `PHONE_COUNTRIES` dans OnboardingPage.jsx ajouté (ReferenceError à la création d'org).
 - Testé E2E : login → /adhesion (reprise session DRAFT) → 3 docs → Soumettre → toast « Dossier soumis pour validation ! » + étape 3 OK. Backend : submit → PENDING_REVIEW.
+
+## 2026-07-25 — Lot : Séparation des champs dans tous les formulaires + Vrais uploads + Email adhésion (self-testé curl + screenshots E2E)
+- **Liste mondiale des pays** (`onboarding/countries.js` : 206 pays FR + indicatifs, prioritaires Outre-mer/Caraïbes en tête, helpers `splitPhone`/`countryByDial` pour rétrocompatibilité) ; `contactFormData.js` PHONE_COUNTRIES ré-exporte cette liste → Onboarding, PartnerForm, VendorOnboarding utilisent tous la liste complète avec drapeaux (flagcdn).
+- **Onboarding /adhesion** : champs déjà séparés (Raison sociale/Statut juridique/Pays/Indicatif+Numéro/Adresse+CP+Ville) désormais PERSISTÉS : OrgCreate/OrgInDB/OrgResponse (schema_v2.py) ont legal_form, contact_*, phone_dial, phone_number, address, postal_code, city, description ; create_org (routes_v2.py) les stocke.
+- **PATCH /api/v2/orgs/{id}** (owner ou admin, OrgUpdate) + **modal « Mon entreprise »** (`OrgProfileModal.jsx`, bouton dashboard data-testid dashboard-org-profile-btn) : édition org avec champs séparés, rétrocompat tél combiné → splitPhone.
+- **PartnerForm** : champ Pays avec drapeau (partner-form-country), backend ApplicationBody.country stocké + affiché dans l'email admin ; labels 4 langues (partnerFormI18n).
+- **Checkout livraison** : indicatif+drapeau (PhoneInput réutilisé) dans l'adresse de livraison (StandardDeliverySection), delivery_address garde phone_dial + contact_phone_full combiné.
+- **Vrais uploads** : POST /api/v2/applications/{id}/upload-file (multipart, PDF/PNG/JPG/WEBP/HEIC, max 10 Mo, stocké /app/backend/uploads/applications/) + GET /api/v2/files/{doc_id} (admin ou membre org, 403 sinon) ; OnboardingPage envoie les vrais fichiers ; admin voit les documents CLIQUABLES « Consulter » (ApplicationsTab) avec nom de fichier.
+- **Email confirmation adhésion** (`adhesion_emails.py`, 4 langues fr/en/es/gcf via Brevo, tag adhesion-submitted) envoyé au contact à la soumission (fallback email du soumetteur si org sans contact_email).
+- **Bugfix admin « demande soumise invisible »** : les compteurs suivaient le filtre et le statut « Soumis » n'existe jamais (DRAFT→PENDING_REVIEW direct). Fix : listAdmin sans filtre serveur, stats globales, filtrage client-side, option « Soumis » retirée, PENDING_REVIEW inclut SUBMITTED.
+- Admin /admin-v2 affiche aussi : statut juridique, contact (nom·email·tél avec indicatif), adresse complète.
+- Testé E2E : onboarding complet (206 pays, drapeaux MQ +596), 3 vrais PDF uploadés, soumission, admin voit tout + liens Consulter (200), modal Mon entreprise pré-remplie + sauvegarde OK, partner form pays Haïti OK. Backend : 403 étranger sur fichier, 422 .exe, PATCH OK, email Brevo loggé envoyé.

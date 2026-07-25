@@ -10,6 +10,7 @@ import {
 } from '../ui/select';
 import { Checkbox } from '../ui/checkbox';
 import { formatCurrency } from './deliveryUtils';
+import { PhoneInput } from '../onboarding/CountryPhoneFields';
 
 export const StandardDeliverySection = ({
   deliveryType, quote, deliverySlots, selectedSlot, setSelectedSlot,
@@ -139,12 +140,15 @@ export const StandardDeliverySection = ({
               </div>
               <div>
                 <Label className="text-white/60 text-sm">Téléphone</Label>
-                <Input
-                  value={deliveryAddress.contact_phone}
-                  onChange={e => setDeliveryAddress({...deliveryAddress, contact_phone: e.target.value})}
-                  placeholder="06XX XX XX XX"
-                  className="mt-1 bg-white/[0.04] border-white/10 text-white"
-                />
+                <div className="mt-1">
+                  <PhoneInput
+                    dial={deliveryAddress.phone_dial || '+590|GP'}
+                    number={deliveryAddress.contact_phone}
+                    onDialChange={(v) => setDeliveryAddress({...deliveryAddress, phone_dial: v})}
+                    onNumberChange={(v) => setDeliveryAddress({...deliveryAddress, contact_phone: v})}
+                    testId="delivery-phone-input"
+                  />
+                </div>
               </div>
             </div>
             

@@ -1,6 +1,6 @@
 // V2 APIs (B2B Workflow): orgs, applications, plans, subscriptions, wallet,
 // zones, catalog, orders, installments, invoices, admin.
-import { apiCallV2 } from './http';
+import { apiCallV2, API_V2, getAuthHeaders } from './http';
 
 export const orgsAPIV2 = {
   create: async (orgData) => {
@@ -16,10 +16,20 @@ export const orgsAPIV2 = {
         contact_email: orgData.contactEmail,
         contact_name: orgData.contactName,
         contact_phone: orgData.contactPhone,
+        phone_dial: orgData.phoneDial || null,
+        phone_number: orgData.phoneNumber || null,
         address: orgData.address || null,
         postal_code: orgData.postalCode || null,
         city: orgData.city || null,
+        description: orgData.description || null,
       }),
+    });
+  },
+
+  update: async (orgId, fields) => {
+    return apiCallV2(`/orgs/${orgId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(fields),
     });
   },
 
@@ -52,6 +62,21 @@ export const applicationsAPIV2 = {
         checksum_sha256: checksum,
       }),
     });
+  },
+
+  uploadFile: async (appId, docType, file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('doc_type', docType);
+    const response = await fetch(`${API_V2}/applications/${appId}/upload-file`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: getAuthHeaders(),
+      body: fd,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || "Erreur lors de l'envoi du fichier");
+    return data;
   },
 
   submit: async (appId) => {

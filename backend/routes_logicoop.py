@@ -367,6 +367,7 @@ class ApplicationBody(BaseModel):
     email: EmailStr
     company: Optional[str] = None
     legal_status: Optional[str] = None
+    country: Optional[str] = None
     phone: Optional[str] = None
     message: Optional[str] = None
     lang: Optional[str] = "fr"
@@ -384,7 +385,7 @@ async def apply_partner(body: ApplicationBody):
     doc = {"id": str(uuid.uuid4()), "type": t["code"],
            "type_label": (t.get("labels") or {}).get(lang) or t["label"],
            "name": body.name.strip(), "email": body.email.lower(), "company": body.company,
-           "legal_status": body.legal_status, "phone": body.phone,
+           "legal_status": body.legal_status, "country": body.country, "phone": body.phone,
            "message": (body.message or "")[:2000], "lang": lang,
            "status": "NOUVELLE", "created_at": _now()}
     await db.partner_applications.insert_one({**doc})
@@ -405,6 +406,7 @@ async def apply_partner(body: ApplicationBody):
             <ul><li><strong>Nom :</strong> {doc['name']}</li>
             <li><strong>Raison sociale :</strong> {doc.get('company') or '—'}</li>
             <li><strong>Statut juridique :</strong> {doc.get('legal_status') or '—'}</li>
+            <li><strong>Pays :</strong> {doc.get('country') or '—'}</li>
             <li><strong>Email :</strong> {doc['email']}</li>
             <li><strong>Téléphone :</strong> {doc.get('phone') or '—'}</li>
             <li><strong>Message :</strong> {doc.get('message') or '—'}</li></ul>

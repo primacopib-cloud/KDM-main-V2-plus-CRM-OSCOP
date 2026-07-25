@@ -26,12 +26,14 @@ import { toast } from 'sonner';
 import { authAPI, downloadOffer } from '../services/api';
 import { isAdminUser } from '../components/navbar/navItems';
 import { BuyerCreditHistory } from '../components/BuyerCreditHistory';
+import { OrgProfileModal } from '../components/OrgProfileModal';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { plans: subscriptionPlans } = usePublicPlans();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [orgModalOpen, setOrgModalOpen] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -234,6 +236,18 @@ const DashboardPage = () => {
                   </div>
                 </button>
                 
+                <button
+                  className="h-auto p-4 rounded-xl text-left flex items-center gap-3 glass-panel-soft transition-all hover:-translate-y-0.5"
+                  onClick={() => setOrgModalOpen(true)}
+                  data-testid="dashboard-org-profile-btn"
+                >
+                  <MapPin className="w-5 h-5 text-white/70" />
+                  <div>
+                    <p className="font-medium text-white/90 text-sm">Mon entreprise</p>
+                    <p className="text-xs text-white/60">Coordonnées et adresse</p>
+                  </div>
+                </button>
+
                 <Link to="/changer-mot-de-passe" data-testid="dashboard-settings-btn" className="h-auto p-4 rounded-xl text-left flex items-center gap-3 glass-panel-soft transition-all hover:-translate-y-0.5">
                   <Settings className="w-5 h-5 text-white/70" />
                   <div>
@@ -333,6 +347,7 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+      <OrgProfileModal open={orgModalOpen} onOpenChange={setOrgModalOpen} />
     </div>
   );
 };

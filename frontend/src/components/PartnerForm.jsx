@@ -12,7 +12,7 @@ import { PARTNER_L10N, partnerLang } from './partnerFormI18n';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inputCls = 'h-12 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50 focus:ring-[#D9B35A]/20';
-const EMPTY = { type: '', name: '', company: '', legal_status: '', email: '', phoneCountry: 'GP', phone: '', message: '' };
+const EMPTY = { type: '', name: '', company: '', legal_status: '', country: 'GP', email: '', phoneCountry: 'GP', phone: '', message: '' };
 
 export const PartnerForm = () => {
   const { i18n } = useTranslation();
@@ -39,7 +39,7 @@ export const PartnerForm = () => {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: f.type, name: f.name, company: f.company, legal_status: f.legal_status,
-          email: f.email, phone: f.phone ? `${country.dial} ${f.phone}`.trim() : '',
+          country: f.country, email: f.email, phone: f.phone ? `${country.dial} ${f.phone}`.trim() : '',
           message: f.message, lang,
         }),
       });
@@ -108,10 +108,31 @@ export const PartnerForm = () => {
               placeholder={L.namePh} required className={inputCls} data-testid="partner-form-name" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="partner-email" className="text-white/80 text-sm">{L.email}</Label>
-            <Input id="partner-email" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })}
-              placeholder={L.emailPh} required className={inputCls} data-testid="partner-form-email" />
+            <Label className="text-white/80 text-sm">{L.country || 'Pays'}</Label>
+            <Select value={f.country} onValueChange={(v) => setF((p) => ({ ...p, country: v }))}>
+              <SelectTrigger className="h-12 bg-white/[0.04] border-white/10 text-white rounded-xl focus:border-[#D9B35A]/50" data-testid="partner-form-country">
+                <SelectValue>
+                  <span className="flex items-center gap-2">
+                    <Flag code={(PHONE_COUNTRIES.find((c) => c.code === f.country) || PHONE_COUNTRIES[0]).code} className="w-5 h-auto rounded-[2px]" />
+                    {(PHONE_COUNTRIES.find((c) => c.code === f.country) || PHONE_COUNTRIES[0]).name}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-[#0d1117] border-white/10 max-h-64">
+                {PHONE_COUNTRIES.map((c) => (
+                  <SelectItem key={c.code} value={c.code} className="text-white/80 focus:bg-white/10 focus:text-white">
+                    <span className="flex items-center gap-2"><Flag code={c.code} className="w-5 h-auto rounded-[2px]" />{c.name}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="partner-email" className="text-white/80 text-sm">{L.email}</Label>
+          <Input id="partner-email" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })}
+            placeholder={L.emailPh} required className={inputCls} data-testid="partner-form-email" />
         </div>
 
         <div className="space-y-2">

@@ -390,7 +390,17 @@ async def list_applications(
         query["status"] = status_filter
     
     apps = await db.b2b_applications.find(query).sort("created_at", -1).limit(limit).to_list(limit)
-    return [ApplicationResponse(**a) for a in apps]
+    result = []
+    for a in apps:
+        org = await db.orgs.find_one({"id": a["org_id"]}, {"_id": 0}) or None
+        docs = await db.application_documents.find(
+            {"application_id": a["id"]}, {"_id": 0, "file_path": 0}
+        ).to_list(20)
+        item = ApplicationResponse(**{k: v for k, v in a.items() if k != "_id"})
+        item.org = org
+        item.documents = docs
+        result.append(item)
+    return result
 
 
 @billing_v2_router.get("/admin/orgs", response_model=List[OrgResponse])

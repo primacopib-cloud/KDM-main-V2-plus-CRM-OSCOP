@@ -183,8 +183,6 @@ export default function OnboardingPage() {
     try {
       // Create organization
       const dial = (PHONE_COUNTRIES.find((c) => c.code === formData.phoneCountry) || {}).dial || '';
-      const fullAddress = [formData.address, [formData.postalCode, formData.city].filter(Boolean).join(' ')]
-        .filter(Boolean).join(', ');
       const org = await orgsAPIV2.create({
         legalName: formData.legalName,
         legalForm: formData.legalForm || null,
@@ -195,9 +193,12 @@ export default function OnboardingPage() {
         contactName: formData.contactName,
         contactEmail: formData.contactEmail,
         contactPhone: formData.contactPhone ? `${dial} ${formData.contactPhone}`.trim() : formData.contactPhone,
-        address: fullAddress || null,
+        phoneDial: dial || null,
+        phoneNumber: formData.contactPhone || null,
+        address: formData.address || null,
         postalCode: formData.postalCode || null,
         city: formData.city || null,
+        description: formData.description || null,
       });
       
       setCreatedOrg(org);
@@ -219,12 +220,9 @@ export default function OnboardingPage() {
   // Handle document selection
   const handleDocumentChange = (docType, file) => {
     if (file) {
-      // In production, this would upload to cloud storage
-      // For now, we'll use a placeholder URL
-      const fakeUrl = `https://storage.example.com/docs/${createdOrg?.id || 'temp'}/${docType}/${file.name}`;
       setDocuments(prev => ({
         ...prev,
-        [docType]: { file, url: fakeUrl, name: file.name }
+        [docType]: { file, name: file.name }
       }));
     }
   };
@@ -255,14 +253,9 @@ export default function OnboardingPage() {
         return;
       }
 
-      // Upload each document
+      // Upload each document (real file storage)
       for (const [docType, docData] of Object.entries(documents)) {
-        await applicationsAPIV2.uploadDocument(
-          app.id,
-          docType,
-          docData.url,
-          null // checksum
-        );
+        await applicationsAPIV2.uploadFile(app.id, docType, docData.file);
         setUploadedDocs(prev => [...prev, docType]);
       }
       

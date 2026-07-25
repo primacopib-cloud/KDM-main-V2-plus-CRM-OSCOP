@@ -46,18 +46,48 @@ class OrgCreate(BaseModel):
     contact_email: EmailStr
     contact_name: str
     contact_phone: str
+    phone_dial: Optional[str] = None
+    phone_number: Optional[str] = None
     address: Optional[str] = None
     postal_code: Optional[str] = None
     city: Optional[str] = None
+    description: Optional[str] = None
+
+
+class OrgUpdate(BaseModel):
+    """Update organization (owner or admin)"""
+    legal_name: Optional[str] = Field(default=None, min_length=2, max_length=255)
+    legal_form: Optional[str] = None
+    registration_country: Optional[str] = Field(default=None, max_length=2)
+    contact_email: Optional[EmailStr] = None
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    phone_dial: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+    postal_code: Optional[str] = None
+    city: Optional[str] = None
+    description: Optional[str] = None
 
 
 class OrgResponse(BaseModel):
     """Organization response"""
     id: str
     legal_name: str
+    legal_form: Optional[str] = None
     registration_country: str
     registration_id: str
     territory: str
+    member_type: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    phone_dial: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+    postal_code: Optional[str] = None
+    city: Optional[str] = None
+    description: Optional[str] = None
     status: str
     status_reason_code: Optional[str] = None
     status_comment: Optional[str] = None
@@ -72,9 +102,19 @@ class OrgInDB(BaseModel):
     """Organization in database"""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     legal_name: str
+    legal_form: Optional[str] = None
     registration_country: str = "FR"
     registration_id: str  # SIRET/SIREN
     territory: str
+    contact_email: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    phone_dial: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+    postal_code: Optional[str] = None
+    city: Optional[str] = None
+    description: Optional[str] = None
     status: str = OrgStatus.DRAFT.value
     status_reason_code: Optional[str] = None
     status_comment: Optional[str] = None
@@ -169,6 +209,8 @@ class ApplicationResponse(BaseModel):
     decision_comment: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    org: Optional[dict] = None
+    documents: Optional[List[dict]] = None
 
     class Config:
         from_attributes = True

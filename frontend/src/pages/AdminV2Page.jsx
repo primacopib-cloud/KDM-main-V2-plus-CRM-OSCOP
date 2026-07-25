@@ -109,7 +109,7 @@ export default function AdminV2Page() {
   const loadData = async () => {
     try {
       const [appsData, orgsData, exportData] = await Promise.all([
-        applicationsAPIV2.listAdmin(appStatusFilter === 'all' ? null : appStatusFilter),
+        applicationsAPIV2.listAdmin(null),
         adminAPIV2.listOrgs(orgStatusFilter === 'all' ? null : orgStatusFilter),
         exportAPI.getSummary().catch(() => null),
       ]);
@@ -121,13 +121,13 @@ export default function AdminV2Page() {
     }
   };
 
-  // Reload when filters change
+  // Reload when filters change (applications are filtered client-side)
   useEffect(() => {
     if (!loading) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appStatusFilter, orgStatusFilter]);
+  }, [orgStatusFilter]);
 
   // Handle decision
   const handleDecision = async () => {

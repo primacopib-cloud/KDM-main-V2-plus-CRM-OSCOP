@@ -4,24 +4,8 @@ export const LANGS = [
   { code: 'es', flag: '🇪🇸', label: 'Español' },
 ];
 
-export const PHONE_COUNTRIES = [
-  { code: 'GP', flag: '🇬🇵', dial: '+590', name: 'Guadeloupe' },
-  { code: 'MQ', flag: '🇲🇶', dial: '+596', name: 'Martinique' },
-  { code: 'GF', flag: '🇬🇫', dial: '+594', name: 'Guyane' },
-  { code: 'RE', flag: '🇷🇪', dial: '+262', name: 'La Réunion' },
-  { code: 'YT', flag: '🇾🇹', dial: '+262', name: 'Mayotte' },
-  { code: 'FR', flag: '🇫🇷', dial: '+33', name: 'France' },
-  { code: 'MF', flag: '🇲🇫', dial: '+590', name: 'Saint-Martin' },
-  { code: 'BE', flag: '🇧🇪', dial: '+32', name: 'Belgique' },
-  { code: 'CH', flag: '🇨🇭', dial: '+41', name: 'Suisse' },
-  { code: 'ES', flag: '🇪🇸', dial: '+34', name: 'España' },
-  { code: 'GB', flag: '🇬🇧', dial: '+44', name: 'United Kingdom' },
-  { code: 'US', flag: '🇺🇸', dial: '+1', name: 'USA' },
-  { code: 'CA', flag: '🇨🇦', dial: '+1', name: 'Canada' },
-  { code: 'HT', flag: '🇭🇹', dial: '+509', name: 'Haïti' },
-  { code: 'DO', flag: '🇩🇴', dial: '+1809', name: 'Rep. Dominicana' },
-  { code: 'BR', flag: '🇧🇷', dial: '+55', name: 'Brasil' },
-];
+// Liste mondiale complète (drapeaux via composant Flag)
+export { COUNTRIES as PHONE_COUNTRIES } from './onboarding/countries';
 
 export const LEGAL_STATUSES = ['SARL', 'SAS', 'SASU', 'EURL', 'SA', 'SCOP', 'SCIC', 'EI / Micro-entreprise', 'Association', 'GIE', 'Coopérative', 'Autre'];
 

@@ -17,7 +17,7 @@ from schema_v2 import (
     WalletStatus, LedgerStatus, LedgerDirection, CustomerRole,
     DocStatus, DocType, EntitlementSource, EntitlementStatus,
     # Phase 1 Models
-    OrgCreate, OrgResponse, OrgInDB,
+    OrgCreate, OrgUpdate, OrgResponse, OrgInDB,
     UserCreate, UserResponse, UserInDB,
     OrgMembershipCreate, OrgMembershipResponse, OrgMembershipInDB,
     ApplicationCreate, ApplicationDecision, ApplicationResponse, ApplicationInDB,
@@ -220,9 +220,19 @@ async def create_org(
     # Create org
     org = OrgInDB(
         legal_name=org_data.legal_name,
+        legal_form=org_data.legal_form,
         registration_country=org_data.registration_country,
         registration_id=org_data.registration_id,
         territory=org_data.territory,
+        contact_email=org_data.contact_email,
+        contact_name=org_data.contact_name,
+        contact_phone=org_data.contact_phone,
+        phone_dial=org_data.phone_dial,
+        phone_number=org_data.phone_number,
+        address=org_data.address,
+        postal_code=org_data.postal_code,
+        city=org_data.city,
+        description=org_data.description,
     )
     org_doc = org.dict()
     org_doc["member_type"] = org_data.member_type if org_data.member_type in ("BUYER_PRO", "VENDOR_PRO") else "BUYER_PRO"
@@ -259,8 +269,45 @@ async def create_org(
     return OrgResponse(**org.dict())
 
 
+@api_v2_router.patch("/orgs/{org_id}", response_model=OrgResponse)
+async def update_org(
+    org_id: str,
+    org_data: OrgUpdate,
+    current_user: dict = Depends(get_current_user_v2),
+    request: Request = None,
+):
+    """Update organization contact/address details (owner or admin)"""
+    org = await db.orgs.find_one({"id": org_id})
+    if not org:
+        raise HTTPException(status_code=404, detail="Organisation non trouvée")
+
+    membership = await get_user_membership(current_user["id"], org_id)
+    is_owner = membership and membership["role"] == CustomerRole.CUSTOMER_ORG_OWNER.value
+    if not is_owner and not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Seul le propriétaire ou un admin peut modifier")
+
+    updates = {k: v for k, v in org_data.dict(exclude_unset=True).items()}
+    if not updates:
+        return OrgResponse(**org)
+    updates["updated_at"] = datetime.utcnow()
+    await db.orgs.update_one({"id": org_id}, {"$set": updates})
+
+    await write_audit_log(
+        action="ORG_UPDATED",
+        target_type="ORG",
+        target_id=org_id,
+        org_id=org_id,
+        actor_user_id=current_user["id"],
+        request=request,
+    )
+
+    updated = await db.orgs.find_one({"id": org_id})
+    return OrgResponse(**updated)
+
+
 @api_v2_router.get("/orgs/{org_id}", response_model=OrgResponse)
 async def get_org(org_id: str, current_user: dict = Depends(get_current_user_v2)):
+    """Get organization details"""
     """Get organization details"""
     org = await db.orgs.find_one({"id": org_id})
     if not org:

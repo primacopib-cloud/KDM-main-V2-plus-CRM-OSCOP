@@ -16,18 +16,25 @@ import { APP_STATUSES, REJECTION_REASONS, formatDate } from './adminV2Constants'
 export const ApplicationsTab = ({
   applications, appStatusFilter, setAppStatusFilter,
   expandedApp, setExpandedApp, openDecisionDialog,
-}) => (
+}) => {
+  const filtered = appStatusFilter === 'all'
+    ? applications
+    : applications.filter((a) =>
+        appStatusFilter === 'PENDING_REVIEW'
+          ? ['PENDING_REVIEW', 'SUBMITTED'].includes(a.status)
+          : a.status === appStatusFilter
+      );
+  return (
           <TabsContent value="applications">
             {/* Filter */}
             <div className="flex gap-3 mb-4">
               <Select value={appStatusFilter} onValueChange={setAppStatusFilter}>
-                <SelectTrigger className="w-[200px] bg-white/[0.04] border-white/10 text-white">
+                <SelectTrigger className="w-[200px] bg-white/[0.04] border-white/10 text-white" data-testid="admin-app-status-filter">
                   <SelectValue placeholder={i18n.t('adm.filtrer_par_statut')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{i18n.t('adm.tous_les_statuts')}</SelectItem>
                   <SelectItem value="PENDING_REVIEW">{i18n.t('adm.en_revision')}</SelectItem>
-                  <SelectItem value="SUBMITTED">{i18n.t('adm.soumis')}</SelectItem>
                   <SelectItem value="APPROVED">{i18n.t('adm.approuve')}</SelectItem>
                   <SelectItem value="REJECTED">{i18n.t('adm.rejete')}</SelectItem>
                 </SelectContent>
@@ -36,13 +43,13 @@ export const ApplicationsTab = ({
 
             {/* Applications List */}
             <div className="space-y-3">
-              {applications.length === 0 ? (
+              {filtered.length === 0 ? (
                 <div className="text-center py-12 text-white/50">
                   <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>{i18n.t('adm.aucune_demande')}</p>
                 </div>
               ) : (
-                applications.map(app => {
+                filtered.map(app => {
                   const statusConfig = APP_STATUSES[app.status] || APP_STATUSES.SUBMITTED;
                   const StatusIcon = statusConfig.icon;
                   const isExpanded = expandedApp === app.id;
@@ -102,6 +109,29 @@ export const ApplicationsTab = ({
                                     <span className="text-white/60">{i18n.t('adm.territoire')}</span>
                                     <span className="text-white/90">{app.org?.territory}</span>
                                   </div>
+                                  {app.org?.legal_form && (
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="w-4 h-4 text-white/40" />
+                                      <span className="text-white/60">Statut juridique</span>
+                                      <span className="text-white/90">{app.org.legal_form}</span>
+                                    </div>
+                                  )}
+                                  {app.org?.contact_email && (
+                                    <div className="flex items-center gap-2">
+                                      <Building2 className="w-4 h-4 text-white/40" />
+                                      <span className="text-white/60">Contact</span>
+                                      <span className="text-white/90">{app.org.contact_name} · {app.org.contact_email}{app.org.contact_phone ? ` · ${app.org.contact_phone}` : ''}</span>
+                                    </div>
+                                  )}
+                                  {(app.org?.address || app.org?.city) && (
+                                    <div className="flex items-center gap-2">
+                                      <MapPin className="w-4 h-4 text-white/40" />
+                                      <span className="text-white/60">Adresse</span>
+                                      <span className="text-white/90">
+                                        {[app.org.address, [app.org.postal_code, app.org.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 
@@ -110,15 +140,31 @@ export const ApplicationsTab = ({
                                 <h4 className="text-sm font-semibold text-white/70 mb-3">{i18n.t('adm.documents_fournis')}</h4>
                                 {app.documents?.length > 0 ? (
                                   <div className="space-y-2">
-                                    {app.documents.map((doc, idx) => (
-                                      <div key={doc.id || `${doc.doc_type}-${idx}`} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
-                                        <FileText className="w-4 h-4 text-[#D4AF37]" />
-                                        <span className="text-sm text-white/80">{doc.doc_type}</span>
-                                        <Badge variant="outline" className="text-[10px] ml-auto">
-                                          {doc.verified ? i18n.t('adm.verifie') : i18n.t('adm.non_verifie')}
-                                        </Badge>
-                                      </div>
-                                    ))}
+                                    {app.documents.map((doc, idx) => {
+                                      const isRealFile = (doc.file_url || '').startsWith('/api');
+                                      const href = isRealFile ? `${process.env.REACT_APP_BACKEND_URL}${doc.file_url}` : null;
+                                      const inner = (
+                                        <>
+                                          <FileText className="w-4 h-4 text-[#D4AF37]" />
+                                          <span className="text-sm text-white/80">{doc.doc_type}</span>
+                                          {doc.file_name && <span className="text-xs text-white/50 truncate max-w-[140px]">{doc.file_name}</span>}
+                                          <Badge variant="outline" className="text-[10px] ml-auto">
+                                            {isRealFile ? i18n.t('adm.consulter', 'Consulter') : (doc.verified ? i18n.t('adm.verifie') : i18n.t('adm.non_verifie'))}
+                                          </Badge>
+                                        </>
+                                      );
+                                      return href ? (
+                                        <a key={doc.id || `${doc.doc_type}-${idx}`} href={href} target="_blank" rel="noreferrer"
+                                          data-testid={`admin-doc-link-${doc.doc_type}`}
+                                          className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] transition-colors cursor-pointer">
+                                          {inner}
+                                        </a>
+                                      ) : (
+                                        <div key={doc.id || `${doc.doc_type}-${idx}`} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
+                                          {inner}
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 ) : (
                                   <p className="text-sm text-white/50">{i18n.t('adm.aucun_document')}</p>
@@ -167,4 +213,5 @@ export const ApplicationsTab = ({
               )}
             </div>
           </TabsContent>
-);
+  );
+};

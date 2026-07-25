@@ -5,9 +5,11 @@ Phase 2: Billing (plans, subscriptions, invoices)
 Phase 3: Wallet (wallets, ledger)
 """
 
-from fastapi import APIRouter, HTTPException, Depends, status, Request
+from fastapi import APIRouter, HTTPException, Depends, status, Request, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from typing import List, Optional
 from datetime import datetime, timedelta
+import os
 import uuid
 import logging
 
@@ -147,6 +149,69 @@ async def upload_document(
     return DocumentResponse(**document.dict())
 
 
+UPLOAD_DIR = "/app/backend/uploads/applications"
+ALLOWED_UPLOAD_EXT = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".heic"}
+
+
+@applications_v2_router.post("/applications/{app_id}/upload-file", response_model=DocumentResponse)
+async def upload_document_file(
+    app_id: str,
+    file: UploadFile = File(...),
+    doc_type: str = Form(...),
+    current_user: dict = Depends(get_current_user_v2),
+):
+    """Upload a real document file (stored on server, viewable by admin)"""
+    app = await db.b2b_applications.find_one({"id": app_id})
+    if not app:
+        raise HTTPException(status_code=404, detail="Demande non trouvée")
+    if app["status"] != ApplicationStatus.DRAFT.value:
+        raise HTTPException(status_code=400, detail="La demande ne peut plus être modifiée")
+    try:
+        dt = DocType(doc_type).value
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Type de document invalide")
+
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_UPLOAD_EXT:
+        raise HTTPException(status_code=422, detail="Format accepté : PDF, PNG, JPG, WEBP, HEIC")
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 10 Mo)")
+
+    doc_id = str(uuid.uuid4())
+    os.makedirs(f"{UPLOAD_DIR}/{app_id}", exist_ok=True)
+    file_path = f"{UPLOAD_DIR}/{app_id}/{doc_id}{ext}"
+    with open(file_path, "wb") as fh:
+        fh.write(content)
+
+    document = DocumentInDB(
+        id=doc_id,
+        application_id=app_id,
+        org_id=app["org_id"],
+        doc_type=dt,
+        file_url=f"/api/v2/files/{doc_id}",
+    )
+    doc_dict = document.dict()
+    doc_dict["file_path"] = file_path
+    doc_dict["file_name"] = file.filename
+    await db.application_documents.insert_one(doc_dict)
+
+    return DocumentResponse(**document.dict())
+
+
+@applications_v2_router.get("/files/{doc_id}")
+async def get_document_file(doc_id: str, current_user: dict = Depends(get_current_user_v2)):
+    """Serve an uploaded application document (admin or org member)"""
+    doc = await db.application_documents.find_one({"id": doc_id})
+    if not doc or not doc.get("file_path") or not os.path.exists(doc["file_path"]):
+        raise HTTPException(status_code=404, detail="Fichier non trouvé")
+    if not current_user.get("is_admin"):
+        membership = await get_user_membership(current_user["id"], doc["org_id"])
+        if not membership:
+            raise HTTPException(status_code=403, detail="Accès refusé")
+    return FileResponse(doc["file_path"], filename=doc.get("file_name") or "document")
+
+
 @applications_v2_router.post("/applications/{app_id}/submit", response_model=ApplicationResponse)
 async def submit_application(
     app_id: str,
@@ -221,6 +286,18 @@ async def submit_application(
     }
     await db.notifications.insert_one(notification)
     
+    # Confirmation email to the member (multilingual)
+    try:
+        from adhesion_emails import send_adhesion_submitted_email
+        org_doc = await db.orgs.find_one({"id": app["org_id"]}) or {}
+        if not org_doc.get("contact_email"):
+            org_doc["contact_email"] = current_user.get("email")
+            org_doc.setdefault("contact_name", current_user.get("contact_name") or current_user.get("name"))
+        lang = current_user.get("preferred_language") or "fr"
+        await send_adhesion_submitted_email(org_doc, lang)
+    except Exception as exc:
+        logger.warning("Email confirmation adhésion : %s", exc)
+
     updated = await db.b2b_applications.find_one({"id": app_id})
     return ApplicationResponse(**updated)
 
