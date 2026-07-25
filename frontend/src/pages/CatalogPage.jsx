@@ -67,6 +67,7 @@ export default function CatalogPage() {
   
   // Filters
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedIncoterm, setSelectedIncoterm] = useState('all');
   const [selectedZone, setSelectedZone] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -211,13 +212,16 @@ export default function CatalogPage() {
       if (searchTerm) {
         params.search = searchTerm;
       }
+      if (selectedIncoterm && selectedIncoterm !== 'all') {
+        params.incoterm = selectedIncoterm;
+      }
       
       const data = await catalogAPI.getProducts(params);
       setProducts(data);
     } catch (error) {
       console.error('Error loading products:', error);
     }
-  }, [selectedZone, selectedCategory, searchTerm]);
+  }, [selectedZone, selectedCategory, searchTerm, selectedIncoterm]);
 
   useEffect(() => {
     if (selectedZone) {
@@ -429,6 +433,8 @@ export default function CatalogPage() {
           categories={categories}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
+          selectedIncoterm={selectedIncoterm}
+          setSelectedIncoterm={setSelectedIncoterm}
           products={products}
           user={user}
           navigate={navigate}

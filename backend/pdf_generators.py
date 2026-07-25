@@ -111,11 +111,13 @@ def generate_order_pdf(order: dict, org: dict = None, signature_data: dict = Non
     org_territory = org.get('territory', order.get('zone_code', 'N/A'))
     
     elements.append(Paragraph("INFORMATIONS CLIENT", section_style))
+    retained_incoterms = sorted({c for i in order.get('items', []) for c in (i.get('incoterms') or [])})
+    incoterm_label = ", ".join(retained_incoterms) if retained_incoterms else order.get('incoterm', 'EXW')
     client_data = [
         ['Raison sociale :', org_name],
         ['Territoire :', org_territory],
         ['Zone de livraison :', order.get('zone_code', 'N/A')],
-        ['Incoterm :', order.get('incoterm', 'EXW')],
+        ['Incoterm(s) :', incoterm_label],
     ]
     
     client_table = Table(client_data, colWidths=[4*cm, 12*cm])
@@ -143,21 +145,22 @@ def generate_order_pdf(order: dict, org: dict = None, signature_data: dict = Non
     elements.append(Paragraph("DÉTAIL DE LA COMMANDE", section_style))
     
     # Table header
-    table_data = [['Réf.', 'Désignation', 'Qté', 'Unité', 'P.U. HT', 'Total HT']]
+    table_data = [['Réf.', 'Désignation', 'Qté', 'Unité', 'Incoterms', 'P.U. HT', 'Total HT']]
     
     # Add items
     for item in order.get('items', []):
         table_data.append([
             item.get('product_sku', 'N/A'),
-            item.get('product_name', 'N/A')[:40],
+            item.get('product_name', 'N/A')[:32],
             str(item.get('quantity', 0)),
             item.get('unit', 'unité'),
+            ", ".join(item.get('incoterms') or []) or order.get('incoterm', 'EXW'),
             f"{item.get('price_ht_cents', 0) / 100:.2f} €",
             f"{item.get('line_total_ht_cents', 0) / 100:.2f} €",
         ])
     
     # Create table
-    col_widths = [2.5*cm, 7*cm, 1.5*cm, 1.5*cm, 2*cm, 2.5*cm]
+    col_widths = [2.3*cm, 5.5*cm, 1.2*cm, 1.5*cm, 2.2*cm, 2*cm, 2.3*cm]
     products_table = Table(table_data, colWidths=col_widths)
     products_table.setStyle(TableStyle([
         # Header

@@ -1,10 +1,11 @@
 import i18n from '@/i18n';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Ship } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 import { Button } from '../ui/button';
+import { INCOTERMS } from '../vendor/vendorConstants';
 
-// Rangée de catégories + bandeaux (COD, tarifs adhérents) du catalogue
-export const CatalogFiltersNotices = ({ categories, selectedCategory, setSelectedCategory, products, user, navigate }) => (
+// Rangée de catégories + filtre incoterm + bandeaux (COD, tarifs adhérents) du catalogue
+export const CatalogFiltersNotices = ({ categories, selectedCategory, setSelectedCategory, products, user, navigate, selectedIncoterm, setSelectedIncoterm }) => (
   <>
     {/* Categories */}
     <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -29,6 +30,40 @@ export const CatalogFiltersNotices = ({ categories, selectedCategory, setSelecte
           }`}
         >
           {tData(cat.name)}
+        </button>
+      ))}
+    </div>
+
+    {/* Filtre Incoterm */}
+    <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1" data-testid="incoterm-filter-row">
+      <span className="inline-flex items-center gap-1.5 text-xs text-white/50 shrink-0">
+        <Ship className="w-3.5 h-3.5" />
+        {i18n.t('catalog.livraison_incoterm', 'Livraison (incoterm)')} :
+      </span>
+      <button
+        onClick={() => setSelectedIncoterm('all')}
+        data-testid="incoterm-filter-all"
+        className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+          selectedIncoterm === 'all'
+            ? 'bg-[#D9B35A]/20 text-[#D9B35A] border border-[#D9B35A]/30'
+            : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
+        }`}
+      >
+        {i18n.t('lolodrive.tous')}
+      </button>
+      {INCOTERMS.map((inc) => (
+        <button
+          key={inc.code}
+          onClick={() => setSelectedIncoterm(selectedIncoterm === inc.code ? 'all' : inc.code)}
+          title={inc.label}
+          data-testid={`incoterm-filter-${inc.code}`}
+          className={`px-3 py-1 rounded-full text-xs font-bold tracking-wide whitespace-nowrap transition-all ${
+            selectedIncoterm === inc.code
+              ? 'bg-[#D9B35A]/20 text-[#D9B35A] border border-[#D9B35A]/30'
+              : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
+          }`}
+        >
+          {inc.code}
         </button>
       ))}
     </div>

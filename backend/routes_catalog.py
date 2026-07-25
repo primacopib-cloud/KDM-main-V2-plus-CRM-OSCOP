@@ -229,6 +229,7 @@ async def list_products(
     search: Optional[str] = None,
     tags: Optional[str] = None,
     zone_code: Optional[str] = None,
+    incoterm: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
 ):
@@ -269,12 +270,23 @@ async def list_products(
     if tags:
         tag_list = [t.strip() for t in tags.split(",")]
         query["tags"] = {"$in": tag_list}
+
+    # Filtre incoterm (par zone si connue, sinon toutes zones)
+    if incoterm:
+        incoterm = incoterm.upper()
+        if zone_code:
+            query[f"incoterms.{zone_code}"] = incoterm
+        else:
+            zone_codes = [z["code"] async for z in db.zones_v2.find({}, {"code": 1})]
+            if zone_codes:
+                query.setdefault("$and", []).append(
+                    {"$or": [{f"incoterms.{z}": incoterm} for z in zone_codes]})
     
     # Get products
     products = await db.products.find(query).skip(skip).limit(limit).to_list(limit)
     
     # Initialize sample products if empty
-    if not products and not category_id and not search:
+    if not products and not category_id and not search and not incoterm:
         await _init_sample_products()
         products = await db.products.find(query).skip(skip).limit(limit).to_list(limit)
     
