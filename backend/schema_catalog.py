@@ -129,6 +129,11 @@ class ProductResponse(BaseModel):
     # Stock
     in_stock: bool = True
     stock_quantity: Optional[int] = None
+    # Incoterms par zone : {"GUADELOUPE": ["EXW", "CIF"]}
+    incoterms: Optional[dict] = None
+    # Avis adhérents
+    rating_avg: Optional[float] = None
+    rating_count: int = 0
 
     class Config:
         from_attributes = True

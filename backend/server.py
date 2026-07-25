@@ -79,14 +79,17 @@ from routes_catalog import catalog_router, set_catalog_database
 from routes_cart_v2 import cart_router, set_cart_database
 from routes_cart_suggestions import suggestions_router, set_suggestions_database
 from routes_orders_v2 import orders_router, set_orders_database
+from routes_product_reviews import reviews_router, set_reviews_database
 set_catalog_database(db)
 set_cart_database(db)
 set_suggestions_database(db)
 set_orders_database(db)
+set_reviews_database(db)
 app.include_router(catalog_router)
 app.include_router(cart_router)
 app.include_router(suggestions_router)
 app.include_router(orders_router)
+app.include_router(reviews_router)
 
 # Import and include GED (Document Management) routes
 from routes_ged import ged_router, set_ged_database
@@ -144,10 +147,13 @@ app.include_router(b2b_router)
 
 # Import and include Vendor routes (admin endpoints split into routes_vendor_admin)
 from routes_vendor import vendor_router, set_vendor_database
+from routes_vendor_media import vendor_media_router, set_vendor_media_database
 from routes_vendor_admin import vendor_admin_router, set_vendor_admin_database
 set_vendor_database(db)
+set_vendor_media_database(db)
 set_vendor_admin_database(db)
 app.include_router(vendor_router)
+app.include_router(vendor_media_router)
 app.include_router(vendor_admin_router)
 
 # Import and include OPA Bundle routes

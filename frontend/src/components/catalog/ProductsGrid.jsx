@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X, Link2, MessageSquarePlus } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 import i18n from '@/i18n';
+import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { FavoriteButton } from '../FavoriteButton';
 import { formatPrice } from './catalogUtils';
 import { ProductVideoModal } from './ProductVideoModal';
+import { ProductReviewsModal, Stars } from './ProductReviewsModal';
 
 const ProductImageCarousel = ({ product, onZoom }) => {
   const [idx, setIdx] = useState(0);
@@ -105,8 +107,25 @@ const ProductLightbox = ({ zoom, onClose }) => {
 export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) => {
   const [videoProduct, setVideoProduct] = useState(null);
   const [zoom, setZoom] = useState(null);
+  const [reviewsProduct, setReviewsProduct] = useState(null);
   const lang = (i18n.language || 'fr').slice(0, 2);
   const tr = (p) => (lang !== 'fr' && p.translations?.[lang]) || {};
+  const copyLink = (product) => {
+    const url = `${window.location.origin}/catalogue?produit=${product.id}`;
+    const done = () => toast.success(i18n.t('catalog.lien_copie', 'Lien de la fiche produit copié !'));
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); }
+      catch { toast.error(i18n.t('catalog.lien_erreur', 'Impossible de copier le lien')); }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(fallback);
+    } else fallback();
+  };
   return (
   <>
         {/* Products Grid */}
@@ -151,7 +170,48 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                   {tr(product).short_description || tr(product).description || product.description}
                 </p>
               )}
-              <p className="text-xs text-white/50 mb-3">{product.sku} · {product.unit_quantity} {product.unit}</p>
+              <p className="text-xs text-white/50 mb-2">{product.sku} · {product.unit_quantity} {product.unit}</p>
+
+              {/* Avis + partage */}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <button type="button" onClick={() => setReviewsProduct(product)}
+                  data-testid={`product-reviews-btn-${product.sku}`}
+                  className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-[#D9B35A] transition-colors">
+                  {product.rating_count > 0 ? (
+                    <>
+                      <Stars value={product.rating_avg} size={12} />
+                      <span className="font-semibold text-[#D9B35A]">{product.rating_avg}</span>
+                      <span>({product.rating_count})</span>
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquarePlus className="w-3.5 h-3.5" />
+                      {i18n.t('catalog.donner_avis', 'Donner un avis')}
+                    </>
+                  )}
+                </button>
+                <button type="button" onClick={() => copyLink(product)}
+                  title={i18n.t('catalog.copier_lien', 'Copier le lien de la fiche')}
+                  data-testid={`product-share-btn-${product.sku}`}
+                  className="text-white/50 hover:text-[#D9B35A] transition-colors">
+                  <Link2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Incoterms badges */}
+              {product.incoterms && Object.keys(product.incoterms).length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3" data-testid={`product-incoterms-${product.sku}`}>
+                  {[...new Set(Object.values(product.incoterms).flat())].map((code) => (
+                    <span
+                      key={code}
+                      title={`Incoterm ${code} — ${Object.entries(product.incoterms).filter(([, c]) => (c || []).includes(code)).map(([z]) => z).join(', ')}`}
+                      className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wide bg-[#D9B35A]/15 text-[#D9B35A] border border-[#D9B35A]/30"
+                    >
+                      {code}
+                    </span>
+                  ))}
+                </div>
+              )}
               
               {/* Price & Add to cart */}
               <div className="mt-auto flex items-end justify-between">
@@ -212,6 +272,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
           </div>
         )}
         {videoProduct && <ProductVideoModal product={videoProduct} onClose={() => setVideoProduct(null)} />}
+        {reviewsProduct && <ProductReviewsModal product={reviewsProduct} onClose={() => setReviewsProduct(null)} />}
         {zoom && <ProductLightbox key={`${zoom.product.id}-${zoom.index}`} zoom={zoom} onClose={() => setZoom(null)} />}
   </>
   );

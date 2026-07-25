@@ -88,6 +88,7 @@ export const ApplicationsTab = ({
                   <SelectItem value="PENDING_REVIEW">{i18n.t('adm.en_revision')}</SelectItem>
                   <SelectItem value="APPROVED">{i18n.t('adm.approuve')}</SelectItem>
                   <SelectItem value="REJECTED">{i18n.t('adm.rejete')}</SelectItem>
+                  <SelectItem value="ARCHIVED">{i18n.t('adm.archive', 'Archivé (abandon)')}</SelectItem>
                 </SelectContent>
               </Select>
               <div className="relative flex-1 max-w-md">

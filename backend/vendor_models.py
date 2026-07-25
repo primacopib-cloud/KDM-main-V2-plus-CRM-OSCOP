@@ -102,6 +102,9 @@ class ProductSubmission(BaseModel):
     
     # Zones availability
     available_zones: List[str] = Field(default=["GUADELOUPE"])
+
+    # Incoterms par zone : {"GUADELOUPE": ["EXW", "CIF"], ...}
+    incoterms: Optional[Dict[str, List[str]]] = None
     
     # Additional info
     brand: Optional[str] = None
@@ -119,6 +122,24 @@ class ProductUpdate(BaseModel):
     min_order_quantity: Optional[int] = None
     available_zones: Optional[List[str]] = None
     dlc_days: Optional[int] = None
+    incoterms: Optional[Dict[str, List[str]]] = None
+
+
+ALLOWED_INCOTERMS = {"EXW", "FOB", "CIF", "DAP", "DDP"}
+
+
+def clean_incoterms(raw: Optional[Dict], zones: Optional[List[str]] = None) -> Dict:
+    """Filtre les incoterms aux codes autorisés (et aux zones du produit si fournies)."""
+    if not raw:
+        return {}
+    out = {}
+    for zone, codes in raw.items():
+        if zones is not None and zone not in zones:
+            continue
+        kept = [c for c in (codes or []) if c in ALLOWED_INCOTERMS]
+        if kept:
+            out[zone] = kept
+    return out
 
 
 class ProductDocument(BaseModel):

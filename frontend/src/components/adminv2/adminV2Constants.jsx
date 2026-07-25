@@ -1,5 +1,5 @@
 import i18n from '@/i18n';
-import { FileText, Clock, Eye, CheckCircle2, XCircle, AlertCircle, Shield } from 'lucide-react';
+import { FileText, Clock, Eye, CheckCircle2, XCircle, AlertCircle, Shield, Archive } from 'lucide-react';
 
 export const APP_STATUSES = {
   DRAFT: { label: i18n.t('adm.brouillon'), color: 'bg-gray-500/20 text-gray-400', icon: FileText },
@@ -7,6 +7,7 @@ export const APP_STATUSES = {
   PENDING_REVIEW: { label: i18n.t('adm.en_revision'), color: 'bg-blue-500/20 text-blue-400', icon: Eye },
   APPROVED: { label: i18n.t('adm.approuve'), color: 'bg-green-500/20 text-green-400', icon: CheckCircle2 },
   REJECTED: { label: i18n.t('adm.rejete'), color: 'bg-red-500/20 text-red-400', icon: XCircle },
+  ARCHIVED: { label: i18n.t('adm.archive', 'Archivé (abandon)'), color: 'bg-slate-500/20 text-slate-400', icon: Archive },
 };
 
 // Org status configuration

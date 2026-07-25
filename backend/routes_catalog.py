@@ -371,6 +371,9 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
         status=product["status"],
         price_visible=price_visible,
         in_stock=True,
+        incoterms=product.get("incoterms") or None,
+        rating_avg=product.get("rating_avg"),
+        rating_count=product.get("rating_count") or 0,
     )
     
     # Add pricing if authorized

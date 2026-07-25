@@ -21,6 +21,7 @@ class ApplicationStatus(str, Enum):
     PENDING_REVIEW = "PENDING_REVIEW"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
+    ARCHIVED = "ARCHIVED"  # Brouillon abandonné > 30 jours (archivage auto)
 
 
 class SubscriptionStatus(str, Enum):

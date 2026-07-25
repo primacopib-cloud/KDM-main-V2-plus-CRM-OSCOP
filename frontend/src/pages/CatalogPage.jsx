@@ -1,5 +1,4 @@
 import i18n from '@/i18n';
-import { tData } from '@/i18n/tData';
 import { SearchSuggest, addRecentSearch } from '../components/catalog/SearchSuggest';
 import { ZoneAddonDialog } from '../components/catalog/ZoneAddonDialog';
 import { useState, useEffect, useCallback } from 'react';
@@ -7,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   ShoppingCart, Search, Filter, Package, ArrowLeft, Plus, Minus, Trash2,
-  MapPin, ChevronDown, Loader2, Check, X, Tag, Building2, AlertCircle,
+  MapPin, ChevronDown, Loader2, Check, X, Tag, Building2,
   Calendar, CreditCard, Clock, Heart
 } from 'lucide-react';
 
@@ -36,6 +35,7 @@ import { FavoriteButton, useFavorites } from '../components/FavoriteButton';
 import { formatPrice, MIN_INSTALLMENT_CENTS } from '../components/catalog/catalogUtils';
 import { CatalogHeader } from '../components/catalog/CatalogHeader';
 import { ProductsGrid } from '../components/catalog/ProductsGrid';
+import { CatalogFiltersNotices } from '../components/catalog/CatalogFiltersNotices';
 import { CheckoutDialog } from '../components/catalog/CheckoutDialog';
 import { FloatingMiniCart } from '../components/catalog/FloatingMiniCart';
 
@@ -128,6 +128,15 @@ export default function CatalogPage() {
           ]);
           setProducts(productsData);
           setPickupLocations(locationsData);
+
+          // Deep-link fiche produit partagée : /catalogue?produit={id}
+          const sharedId = new URLSearchParams(window.location.search).get('produit');
+          if (sharedId) {
+            try {
+              const shared = await catalogAPI.getProduct(sharedId, defaultZone);
+              if (shared?.name) setSearchTerm(shared.name);
+            } catch { /* produit introuvable : catalogue complet */ }
+          }
         }
 
         // Load cart (membres connectés uniquement)
@@ -416,78 +425,14 @@ export default function CatalogPage() {
           </div>
         </div>
 
-        {/* Categories */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-              selectedCategory === 'all'
-                ? 'bg-[#D9B35A]/20 text-[#D9B35A] border border-[#D9B35A]/30'
-                : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
-            }`}
-          >
-            {i18n.t('lolodrive.tous')}
-          </button>
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                selectedCategory === cat.id
-                  ? 'bg-[#D9B35A]/20 text-[#D9B35A] border border-[#D9B35A]/30'
-                  : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
-              }`}
-            >
-              {tData(cat.name)}
-            </button>
-          ))}
-        </div>
-
-        {/* Paiement à la livraison — phrase de séduction */}
-        <div className="mb-6 p-4 rounded-xl border border-[#D9B35A]/30" style={{ background: 'linear-gradient(90deg, rgba(217,179,90,0.16), rgba(217,179,90,0.03))' }} data-testid="cod-banner">
-          <p className="text-sm text-white">
-            <strong className="text-[#D9B35A]">🛡️ Paiement à la livraison</strong> — Commandez en toute sérénité :
-            en tant qu'acheteur Pro abonné, vous ne réglez vos marchandises qu'à réception. Zéro avance de trésorerie,
-            100 % confiance coopérative.
-          </p>
-        </div>
-
-        {/* Access Warning */}
-        {products.length > 0 && !products[0].price_visible && (
-          <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20" data-testid="catalog-price-locked-banner">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-medium text-amber-400">
-                  {user ? i18n.t('catalog.acces_limite') : i18n.t('catalog.tarifs_adherents', 'Tarifs réservés aux adhérents')}
-                </p>
-                <p className="text-sm text-amber-400/80">
-                  {user
-                    ? i18n.t('catalog.les_prix_ne_sont')
-                    : i18n.t('catalog.tarifs_adherents_desc', 'Consultez librement le catalogue. Les tarifs sont visibles uniquement par les membres abonnés de la coopérative.')}
-                </p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {!user && (
-                    <Button size="sm" variant="outline"
-                      className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10"
-                      onClick={() => navigate('/connexion?redirect=/catalogue')}
-                      data-testid="catalog-login-cta">
-                      {i18n.t('catalog.se_connecter', 'Se connecter')}
-                    </Button>
-                  )}
-                  <Button size="sm"
-                    className="bg-amber-500 hover:bg-amber-600 text-[#2A1045] font-semibold"
-                    onClick={() => navigate(user ? '/tarifs' : '/adhesion')}
-                    data-testid="catalog-subscribe-cta">
-                    {user
-                      ? i18n.t('catalog.voir_abonnements', 'Voir les abonnements')
-                      : i18n.t('catalog.devenir_adherent', 'Devenir adhérent')}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <CatalogFiltersNotices
+          categories={categories}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          products={products}
+          user={user}
+          navigate={navigate}
+        />
 
         <ProductsGrid
           products={products}

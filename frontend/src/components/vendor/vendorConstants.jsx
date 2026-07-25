@@ -44,6 +44,15 @@ export const TVA_RATES = [
 // Zones
 export const ZONES = ['GUADELOUPE', 'MARTINIQUE', 'GUYANE', 'REUNION', 'MAYOTTE'];
 
+// Incoterms 2020 les plus courants
+export const INCOTERMS = [
+  { code: 'EXW', label: 'EXW — À l\u2019usine (Ex Works)' },
+  { code: 'FOB', label: 'FOB — Franco à bord (Free On Board)' },
+  { code: 'CIF', label: 'CIF — Coût, assurance et fret (Cost, Insurance & Freight)' },
+  { code: 'DAP', label: 'DAP — Rendu au lieu de destination (Delivered At Place)' },
+  { code: 'DDP', label: 'DDP — Rendu droits acquittés (Delivered Duty Paid)' },
+];
+
 // Status badge helper
 export const getStatusBadge = (status) => {
   switch (status) {

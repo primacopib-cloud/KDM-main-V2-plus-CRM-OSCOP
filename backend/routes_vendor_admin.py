@@ -199,6 +199,7 @@ async def admin_approve_product(product_id: str):
         "tags": [product.get("vendor_name")] if product.get("vendor_name") else [],
         "status": "ACTIVE",
         "zones": product.get("available_zones") or product.get("zones", []),
+        "incoterms": product.get("incoterms") or {},
         "created_at": now.isoformat(),
         "updated_at": now.isoformat(),
     }
