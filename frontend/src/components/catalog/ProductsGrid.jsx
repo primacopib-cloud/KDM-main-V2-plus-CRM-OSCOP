@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Package, Plus, Play } from 'lucide-react';
+import { Loader2, Package, Plus, Play, Lock } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 import i18n from '@/i18n';
 import { Button } from '../ui/button';
@@ -82,9 +82,15 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                       )}
                     </>
                   ) : (
-                    <p className="text-sm text-white/40 italic" data-testid={`price-locked-${product.sku}`}>
-                      {i18n.t('catalog.tarif_adherent', 'Tarif réservé aux adhérents')}
-                    </p>
+                    <div data-testid={`price-locked-${product.sku}`}>
+                      <p className="text-lg font-bold text-[#D9B35A] blur-[6px] select-none" aria-hidden="true">
+                        {(((product.sku || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 3200) / 100 + 6).toFixed(2).replace('.', ',')} € <span className="text-xs font-normal text-white/50">HT</span>
+                      </p>
+                      <p className="flex items-center gap-1 text-[10px] text-[#D9B35A]/90 mt-0.5">
+                        <Lock className="w-3 h-3" />
+                        {i18n.t('catalog.tarif_adherent', 'Tarif réservé aux adhérents')}
+                      </p>
+                    </div>
                   )}
                 </div>
                 

@@ -110,7 +110,7 @@ export default function CatalogPage() {
 
         setZones(zonesData);
         setCategories(categoriesData);
-        const entitled = !isAuth ? [] : (myZonesData?.is_admin ? null : (myZonesData?.entitled || []));
+        const entitled = !isAuth ? null : (myZonesData?.is_admin ? null : (myZonesData?.entitled || []));
         setEntitledZones(entitled);
 
         // Set default zone: priorité aux zones autorisées par l'abonnement

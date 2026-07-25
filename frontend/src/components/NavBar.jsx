@@ -14,6 +14,7 @@ import NavigationHistoryDropdown from './NavigationHistoryDropdown';
 import QuickShortcuts from './QuickShortcuts';
 import { useFavorites } from './FavoriteButton';
 import LanguageSwitcher from './LanguageSwitcher';
+import NotificationsDropdown from './NotificationsDropdown';
 import CommunityplaceBadge from './CommunityplaceBadge';
 import { CrediscopBadge } from './CrediscopBadge';
 import { MessagesNavLink } from './MessagesNavLink';
@@ -200,6 +201,9 @@ const NavBar = ({ variant = 'default' }) => {
 
                 {/* Favorites */}
                 <FavoritesNavButton />
+
+                {/* Notifications (décisions d'adhésion, etc.) */}
+                <NotificationsDropdown isAdmin={Boolean(user?.is_admin)} />
 
                 <UserMenu
                   user={user}

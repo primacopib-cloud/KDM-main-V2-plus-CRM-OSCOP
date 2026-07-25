@@ -79,6 +79,10 @@ export const applicationsAPIV2 = {
     return data;
   },
 
+  remindNow: async (appId) => {
+    return apiCallV2(`/admin/applications/${appId}/remind`, { method: 'POST' });
+  },
+
   submit: async (appId) => {
     return apiCallV2(`/applications/${appId}/submit`, {
       method: 'POST',

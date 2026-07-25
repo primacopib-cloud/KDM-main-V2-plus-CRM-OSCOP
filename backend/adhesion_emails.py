@@ -197,7 +197,8 @@ _REMINDER = {
         "subject": "Votre dossier d'adhésion attend vos documents — KDMARCHÉ × O'SCOP",
         "title": "Votre dossier est presque prêt !",
         "hello": "Bonjour",
-        "body": "Le dossier d'adhésion de <strong>{org}</strong> est en attente depuis plus de 48 h : il ne manque plus que vos documents (Kbis, pièce d'identité).",
+        "body": "Le dossier d'adhésion de <strong>{org}</strong> est en attente : il ne manque plus que vos documents.",
+        "missing": "Pièces manquantes à fournir :",
         "cta": "Reprenez votre dossier à l'adresse suivante et déposez vos pièces en quelques clics :",
         "footer": "La coopérative KDMARCHÉ × O'SCOP",
     },
@@ -205,7 +206,8 @@ _REMINDER = {
         "subject": "Your membership file is waiting for your documents — KDMARCHÉ × O'SCOP",
         "title": "Your file is almost ready!",
         "hello": "Hello",
-        "body": "The membership application for <strong>{org}</strong> has been pending for over 48 hours: only your documents are missing (registration doc, ID).",
+        "body": "The membership application for <strong>{org}</strong> is pending: only your documents are missing.",
+        "missing": "Missing documents to provide:",
         "cta": "Resume your application at the following address and upload your documents in a few clicks:",
         "footer": "The KDMARCHÉ × O'SCOP cooperative",
     },
@@ -213,7 +215,8 @@ _REMINDER = {
         "subject": "Su expediente de adhesión espera sus documentos — KDMARCHÉ × O'SCOP",
         "title": "¡Su expediente está casi listo!",
         "hello": "Hola",
-        "body": "La solicitud de adhesión de <strong>{org}</strong> está pendiente desde hace más de 48 h: solo faltan sus documentos (registro, identidad).",
+        "body": "La solicitud de adhesión de <strong>{org}</strong> está pendiente: solo faltan sus documentos.",
+        "missing": "Documentos que faltan:",
         "cta": "Reanude su solicitud en la siguiente dirección y suba sus documentos en unos clics:",
         "footer": "La cooperativa KDMARCHÉ × O'SCOP",
     },
@@ -221,24 +224,37 @@ _REMINDER = {
         "subject": "Dosyé adézyon a'w ka atann dokiman a'w — KDMARCHÉ × O'SCOP",
         "title": "Dosyé a'w prèské paré !",
         "hello": "Bonjou",
-        "body": "Dosyé adézyon a <strong>{org}</strong> ka atann dépi plis ki 48 è : sé dokiman a'w ki ka manké (Kbis, pyès idantité).",
+        "body": "Dosyé adézyon a <strong>{org}</strong> ka atann : sé dokiman a'w ki ka manké.",
+        "missing": "Dokiman ki ka manké :",
         "cta": "Rouvè dosyé a'w asi adrès-lasa é mèt dokiman a'w an dé klik :",
         "footer": "Koopérativ KDMARCHÉ × O'SCOP",
     },
 }
 
+_REQUIRED_DOC_TYPES = ["REGISTRATION_DOC", "ID_SIGNATORY"]
 
-async def run_adhesion_reminders(db, base_url: str = None) -> int:
-    """Relance les dossiers DRAFT bloqués depuis 48 h+ (idempotent via reminder_sent_at)."""
+_DOC_LABELS = {
+    "fr": {"REGISTRATION_DOC": "Extrait Kbis / Registre du commerce", "ID_SIGNATORY": "Pièce d'identité du signataire"},
+    "en": {"REGISTRATION_DOC": "Company registration extract (Kbis)", "ID_SIGNATORY": "Signatory ID document"},
+    "es": {"REGISTRATION_DOC": "Extracto del registro mercantil (Kbis)", "ID_SIGNATORY": "Documento de identidad del firmante"},
+    "gcf": {"REGISTRATION_DOC": "Ekstré Kbis / Rejis komès", "ID_SIGNATORY": "Pyès idantité a moun ki ka siyen"},
+}
+
+
+async def run_adhesion_reminders(db, base_url: str = None, only_app_id: str = None, force: bool = False) -> int:
+    """Relance les dossiers DRAFT bloqués 48 h+ (idempotent via reminder_sent_at, sauf force)."""
     from datetime import datetime, timedelta
     import os
     base = base_url or os.environ.get("PUBLIC_BASE_URL") or "https://kdmarche-oscop.fr"
     cutoff = datetime.utcnow() - timedelta(hours=48)
-    apps = await db.b2b_applications.find({
-        "status": "DRAFT",
-        "created_at": {"$lt": cutoff},
-        "$or": [{"reminder_sent_at": {"$exists": False}}, {"reminder_sent_at": None}],
-    }).to_list(200)
+    query = {"status": "DRAFT"}
+    if only_app_id:
+        query["id"] = only_app_id
+    else:
+        query["created_at"] = {"$lt": cutoff}
+    if not force:
+        query["$or"] = [{"reminder_sent_at": {"$exists": False}}, {"reminder_sent_at": None}]
+    apps = await db.b2b_applications.find(query).to_list(200)
     sent = 0
     for app in apps:
         org = await db.orgs.find_one({"id": app["org_id"]}) or {}
@@ -250,14 +266,25 @@ async def run_adhesion_reminders(db, base_url: str = None) -> int:
         if not email:
             continue
         lang = (user or {}).get("preferred_language") or "fr"
-        t = _REMINDER.get(lang if lang in _REMINDER else "fr", _REMINDER["fr"])
+        lang = lang if lang in _REMINDER else "fr"
+        t = _REMINDER[lang]
         name = org.get("contact_name") or (user or {}).get("contact_name") or ""
         link = f"{base}/adhesion"
+        # Pièces manquantes précises
+        docs = await db.application_documents.find(
+            {"application_id": app["id"]}, {"_id": 0, "doc_type": 1}).to_list(50)
+        provided = {d.get("doc_type") for d in docs}
+        missing = [dt for dt in _REQUIRED_DOC_TYPES if dt not in provided]
+        missing_html = ""
+        if missing:
+            items = "".join(f"<li>{_DOC_LABELS[lang].get(dt, dt)}</li>" for dt in missing)
+            missing_html = f"<p><strong>{t['missing']}</strong></p><ul>{items}</ul>"
         html = f"""
         <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
           <h2 style="color:#451F6B;">{t['title']}</h2>
           <p>{t['hello']} {name},</p>
           <p>{t['body'].format(org=org.get('legal_name') or '')}</p>
+          {missing_html}
           <p>{t['cta']}</p>
           <p><a href="{link}" style="display:inline-block;background:#D9B35A;color:#2A1045;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold;">{link}</a></p>
           <p style="color:#777;margin-top:24px;">{t['footer']}</p>
@@ -270,7 +297,7 @@ async def run_adhesion_reminders(db, base_url: str = None) -> int:
             await db.b2b_applications.update_one(
                 {"id": app["id"]}, {"$set": {"reminder_sent_at": datetime.utcnow()}})
             sent += 1
-            logger.info("Relance dossier incomplet envoyée à %s (app %s, %s)", email, app["id"], lang)
+            logger.info("Relance dossier incomplet envoyée à %s (app %s, %s, manquants=%s)", email, app["id"], lang, missing)
         except Exception as exc:
             logger.warning("Relance dossier %s : %s", app["id"], exc)
     return sent

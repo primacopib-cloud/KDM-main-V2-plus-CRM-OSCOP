@@ -1,7 +1,8 @@
 import i18n from '@/i18n';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import {
-  Building2, FileText, CheckCircle2, XCircle, ChevronDown, ChevronUp, MapPin, Search,
+  Building2, FileText, CheckCircle2, XCircle, ChevronDown, ChevronUp, MapPin, Search, Download, Send, Loader2, BellRing,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -15,6 +16,26 @@ import {
 } from '../ui/collapsible';
 import { APP_STATUSES, REJECTION_REASONS, formatDate } from './adminV2Constants';
 import { DocPreviewModal } from './DocPreviewModal';
+import { applicationsAPIV2 } from '../../services/api';
+
+const exportCsv = (apps) => {
+  const header = ['Raison sociale', 'SIRET', 'Territoire', 'Statut', 'Contact', 'Email', 'Créée le', 'Relancée le', 'Documents'];
+  const rows = apps.map((a) => [
+    a.org?.legal_name, a.org?.registration_id, a.org?.territory, a.status,
+    a.org?.contact_name, a.org?.contact_email,
+    formatDate(a.created_at), a.reminder_sent_at ? formatDate(a.reminder_sent_at) : '',
+    (a.documents || []).length,
+  ]);
+  const csv = [header, ...rows]
+    .map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';'))
+    .join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `demandes-adhesion-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
 
 export const ApplicationsTab = ({
   applications, appStatusFilter, setAppStatusFilter,
@@ -22,6 +43,26 @@ export const ApplicationsTab = ({
 }) => {
   const [search, setSearch] = useState('');
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [remindingId, setRemindingId] = useState(null);
+  const [remindedNow, setRemindedNow] = useState({});
+
+  const handleRemind = async (app) => {
+    setRemindingId(app.id);
+    try {
+      const r = await applicationsAPIV2.remindNow(app.id);
+      if (r.reminders_sent > 0) {
+        toast.success(i18n.t('adm.relance_envoyee', 'Relance envoyée par email'));
+        setRemindedNow((p) => ({ ...p, [app.id]: new Date().toISOString() }));
+      } else {
+        toast.info(i18n.t('adm.relance_aucun_email', "Aucun email envoyé (contact introuvable)"));
+      }
+    } catch (e) {
+      toast.error(e.message || 'Erreur');
+    } finally {
+      setRemindingId(null);
+    }
+  };
+
   const q = search.trim().toLowerCase();
   const filtered = (appStatusFilter === 'all'
     ? applications
@@ -43,6 +84,7 @@ export const ApplicationsTab = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{i18n.t('adm.tous_les_statuts')}</SelectItem>
+                  <SelectItem value="DRAFT">{i18n.t('adm.brouillon')}</SelectItem>
                   <SelectItem value="PENDING_REVIEW">{i18n.t('adm.en_revision')}</SelectItem>
                   <SelectItem value="APPROVED">{i18n.t('adm.approuve')}</SelectItem>
                   <SelectItem value="REJECTED">{i18n.t('adm.rejete')}</SelectItem>
@@ -58,6 +100,16 @@ export const ApplicationsTab = ({
                   data-testid="admin-app-search-input"
                 />
               </div>
+              <Button
+                variant="outline"
+                onClick={() => exportCsv(filtered)}
+                disabled={filtered.length === 0}
+                className="border-white/15 text-white/80 hover:bg-white/[0.06]"
+                data-testid="admin-app-export-csv"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {i18n.t('adm.exporter_csv', 'Exporter CSV')} ({filtered.length})
+              </Button>
             </div>
 
             {/* Applications List */}
@@ -73,6 +125,7 @@ export const ApplicationsTab = ({
                   const StatusIcon = statusConfig.icon;
                   const isExpanded = expandedApp === app.id;
                   const canDecide = ['SUBMITTED', 'PENDING_REVIEW'].includes(app.status);
+                  const remindedAt = remindedNow[app.id] || app.reminder_sent_at;
 
                   return (
                     <Collapsible 
@@ -95,6 +148,12 @@ export const ApplicationsTab = ({
                           </div>
                           
                           <div className="flex items-center gap-3">
+                            {remindedAt && (
+                              <Badge className="bg-orange-500/15 text-orange-300 border-0 hidden sm:inline-flex items-center gap-1" data-testid={`app-reminded-badge-${app.id}`}>
+                                <BellRing className="w-3 h-3" />
+                                {i18n.t('adm.relance_le', 'Relancé le')} {formatDate(remindedAt)}
+                              </Badge>
+                            )}
                             <Badge className={statusConfig.color}>
                               {statusConfig.label}
                             </Badge>
@@ -192,6 +251,27 @@ export const ApplicationsTab = ({
                             </div>
 
                             {/* Actions */}
+                            {app.status === 'DRAFT' && (
+                              <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between gap-3 flex-wrap">
+                                <p className="text-xs text-white/50">
+                                  {remindedAt
+                                    ? `${i18n.t('adm.relance_le', 'Relancé le')} ${formatDate(remindedAt)}`
+                                    : i18n.t('adm.jamais_relance', 'Jamais relancé')}
+                                </p>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => handleRemind(app)}
+                                  disabled={remindingId === app.id}
+                                  className="border-orange-500/30 text-orange-300 hover:bg-orange-500/10"
+                                  data-testid={`remind-now-btn-${app.id}`}
+                                >
+                                  {remindingId === app.id
+                                    ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    : <Send className="w-4 h-4 mr-2" />}
+                                  {i18n.t('adm.relancer_maintenant', 'Relancer maintenant')}
+                                </Button>
+                              </div>
+                            )}
                             {canDecide && (
                               <div className="mt-4 pt-4 border-t border-white/[0.06] flex gap-3 justify-end">
                                 <Button

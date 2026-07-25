@@ -471,6 +471,27 @@ async def decide_application(
     except Exception as exc:
         logger.warning("Email décision adhésion : %s", exc)
 
+    # Notification in-app pour le membre
+    if app.get("submitted_by_user_id"):
+        approved = decision.decision.upper() == "APPROVED"
+        org_doc2 = await db.orgs.find_one({"id": org_id}, {"_id": 0, "legal_name": 1}) or {}
+        org_name = org_doc2.get("legal_name") or "votre organisation"
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "type": "application_decision",
+            "title": "Adhésion approuvée 🎉" if approved else "Demande d'adhésion refusée",
+            "message": (
+                f"La demande d'adhésion de {org_name} a été approuvée. Bienvenue dans la coopérative !"
+                if approved else
+                f"La demande d'adhésion de {org_name} a été refusée." + (f" Motif : {decision.comment}" if decision.comment else "")
+            ),
+            "data": {"application_id": app_id, "org_id": org_id, "decision": decision.decision.upper()},
+            "target_user_id": app["submitted_by_user_id"],
+            "is_read": False,
+            "read_by": [],
+            "created_at": datetime.utcnow(),
+        })
+
     updated = await db.b2b_applications.find_one({"id": app_id})
     return ApplicationResponse(**updated)
 

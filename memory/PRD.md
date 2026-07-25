@@ -1612,3 +1612,13 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - i18n : 7 nouvelles clés `catalog.*` dans fr-site/en-site/es-site/gcf.
 - ATTENTION : recharger le backend n'avait pas pris le 1er search_replace de list_products (édition silencieusement non appliquée) — re-vérifié par grep avant de conclure.
 - Testé : anonyme 200 sans prix, admin prix OK, membre non abonné sans prix, abonné actif (acheteur-pro, zone MARTINIQUE) prix OK, panier anonyme 401, UI visiteur avec bannière + CTA. Note seed : l'entitlement GUADELOUPE d'org-demo-achats pointe vers un zone_id obsolète (drift pré-existant, non bloquant).
+
+## 2026-07-25 — Lot : Relances admin + Notifs décision + Export CSV + Docs manquants + Zone visiteur + Prix flouté + Images produits (self-testé curl + screenshots E2E)
+- **Historique relances admin** (ApplicationsTab) : badge « Relancé le {date} » (app-reminded-badge-*, reminder_sent_at exposé dans ApplicationResponse), filtre « Brouillon » ajouté, bouton « Relancer maintenant » (remind-now-btn-*) → POST /api/v2/admin/applications/{id}/remind (force=True, routes_adhesion_reminders.py) + applicationsAPIV2.remindNow.
+- **Notification in-app décision** : decide_application insère une notification target_user_id (approuvée 🎉 / refusée + motif) ; **cloche NotificationsDropdown montée dans la NavBar principale** pour tous les membres connectés (avant : admin uniquement). Testé E2E : approbation → GET /api/notifications du membre = 1 non lue.
+- **Export CSV filtré** (admin-app-export-csv) : export client-side des demandes actuellement filtrées/recherchées (raison sociale, SIRET, territoire, statut, contact, dates, relance, nb docs ; BOM UTF-8, séparateur ;).
+- **Docs manquants précis** : run_adhesion_reminders calcule les pièces manquantes (REGISTRATION_DOC, ID_SIGNATORY) et les liste dans l'email (labels 4 langues _DOC_LABELS). Log vérifié : manquants=['ID_SIGNATORY'].
+- **Zone visiteur** : CatalogPage entitledZones=null pour visiteurs → sélecteur de zones déverrouillé (testé changement Guadeloupe→Martinique, toujours sans tarifs).
+- **Teaser prix flouté** (ProductsGrid) : faux prix déterministe (hash SKU) flouté blur-[6px] + cadenas + « Tarif réservé aux adhérents » (price-locked-{sku}). Aucun vrai prix envoyé au navigateur.
+- **Images produits** : 8 photos e-commerce générées (Gemini image) hébergées static.prod-images.emergentagent.com, stockées dans products.image_url (SKUs ALI-RIZ/ALI-HUI/BOI-EAU/BOI-JUS/HYG-SAV/EPI-PAT/EPI-SUC/FRA-LAI).
+- NOTE : le compte test-ui-lot@example.com (UI Lot SARL) est désormais APPROVED (approuvé pendant le test des notifications).
