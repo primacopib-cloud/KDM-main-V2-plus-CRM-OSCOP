@@ -157,7 +157,8 @@ export default function CheckoutPage() {
 
   // Calculate final totals
   const calculateFinalTotals = () => {
-    const productsHT = cart?.subtotal_ht_cents || 0;
+    const promoDiscount = cart?.promo_discount_cents || 0;
+    const productsHT = Math.max((cart?.subtotal_ht_cents || 0) - promoDiscount, 0);
     const preparationHT = preparationTotals?.preparation_subtotal_ht_cents || 0;
     
     // Transport fees (if delivery selected)
@@ -178,6 +179,7 @@ export default function CheckoutPage() {
 
     return {
       productsHT,
+      promoDiscount,
       preparationHT,
       totalHT,
       tvaRate,

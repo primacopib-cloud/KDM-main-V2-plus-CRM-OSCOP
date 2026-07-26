@@ -183,10 +183,40 @@ async def send_promotion_campaign(promo_id: str, admin: dict = Depends(_admin)):
         try:
             await send_email(to_email=email, to_name=None,
                              subject=f"⚡ {promo['name']} — {promo['value_percent']:g} % pour vous",
-                             html_content=html, tags=["promo-campaign"])
+                             html_content=html, tags=["promo-campaign", f"promo-{promo_id}"])
             sent += 1
         except Exception:
             pass
     await db.credit_promotions.update_one({"id": promo_id}, {"$set": {
         "campaign_sent_at": datetime.now(timezone.utc).isoformat(), "campaign_sent_count": sent}})
     return {"status": "SUCCESS", "sent": sent, "total": len(emails)}
+
+@promotions_router.get("/{promo_id}/campaign-stats")
+async def campaign_stats(promo_id: str, admin: dict = Depends(_admin)):
+    """Statistiques Brevo (envois, ouvertures, clics) de la campagne de cette promotion."""
+    import os
+    import httpx
+    promo = await db.credit_promotions.find_one({"id": promo_id}, {"_id": 0})
+    if not promo:
+        raise HTTPException(status_code=404, detail="Promotion introuvable")
+    if not promo.get("campaign_sent_at"):
+        raise HTTPException(status_code=400, detail="Aucune campagne envoyée pour cette promotion")
+    api_key = os.environ.get("BREVO_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Clé Brevo absente")
+    start = promo["campaign_sent_at"][:10]
+    end = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.get(
+                "https://api.brevo.com/v3/smtp/statistics/aggregatedReport",
+                params={"tag": f"promo-{promo_id}", "startDate": start, "endDate": end},
+                headers={"api-key": api_key, "accept": "application/json"})
+        data = r.json() if r.status_code == 200 else {}
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Brevo injoignable : {exc}")
+    return {"sent": promo.get("campaign_sent_count", 0),
+            "delivered": data.get("delivered", 0),
+            "opens": data.get("uniqueOpens", data.get("opens", 0)),
+            "clicks": data.get("uniqueClicks", data.get("clicks", 0)),
+            "campaign_sent_at": promo["campaign_sent_at"]}

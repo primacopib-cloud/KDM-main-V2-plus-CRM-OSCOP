@@ -48,6 +48,14 @@ export const CreditPromotionsPanel = () => {
     else toast.error(typeof d.detail === 'string' ? d.detail : 'Erreur');
   };
 
+  const showStats = async (id) => {
+    const r = await fetch(`${API}/admin/credit-promotions/${id}/campaign-stats`, { credentials: 'include' });
+    const d = await r.json();
+    if (r.ok) {
+      toast.info(`📧 Campagne : ${d.sent} envoyé(s) · ${d.delivered} délivré(s) · ${d.opens} ouverture(s) · ${d.clicks} clic(s)`, { duration: 8000 });
+    } else toast.error(typeof d.detail === 'string' ? d.detail : 'Stats indisponibles');
+  };
+
   const sendCampaign = async (id) => {
     if (!window.confirm('Envoyer cette promotion par email aux destinataires édités ?')) return;
     const r = await fetch(`${API}/admin/credit-promotions/${id}/send-campaign`, { method: 'POST', credentials: 'include' });
@@ -173,6 +181,12 @@ export const CreditPromotionsPanel = () => {
               </p>
             </div>
             <div className="flex gap-1 shrink-0">
+              {!p.archived && p.audience === 'emails' && (p.audience_emails || []).length > 0 && p.campaign_sent_at && (
+                <button type="button" onClick={() => showStats(p.id)} data-testid={`promo-stats-${p.id}`}
+                  title="Statistiques de la campagne (ouvertures, clics)" className="p-1.5 rounded-lg opacity-40 hover:opacity-100 hover:bg-emerald-500/10 text-emerald-400">
+                  <BarChart3 size={13} />
+                </button>
+              )}
               {!p.archived && p.audience === 'emails' && (p.audience_emails || []).length > 0 && (
                 <button type="button" onClick={() => sendCampaign(p.id)} data-testid={`promo-send-${p.id}`}
                   title="Envoyer la campagne email" className="p-1.5 rounded-lg opacity-40 hover:opacity-100 hover:bg-blue-500/10 text-blue-400">

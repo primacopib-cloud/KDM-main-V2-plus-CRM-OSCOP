@@ -272,6 +272,12 @@ export const OrderSummarySidebar = ({ currentStep, totals, signatureComplete, su
                   <span className="text-white/60">{i18n.t('checkout.marchandises_ht')}</span>
                   <span className="font-medium text-white">{formatCurrency(totals.productsHT)}</span>
                 </div>
+                {totals.promoDiscount > 0 && (
+                  <div className="flex justify-between text-[#E9CF8E]" data-testid="checkout-promo-discount">
+                    <span>🎁 Remise promotion appliquée</span>
+                    <span className="font-medium">-{formatCurrency(totals.promoDiscount)}</span>
+                  </div>
+                )}
                 
                 {totals.preparationHT > 0 && (
                   <div className="flex justify-between text-emerald-400">

@@ -30,8 +30,17 @@ const RechargeCard = ({ plan }) => (
       </span>
     )}
     <p className="text-2xl font-bold text-[#E9CF8E]">{plan.price_eur} €</p>
-    <p className="text-sm text-white/75 mt-0.5">{plan.uc + (plan.bonus_uc || 0)} UC</p>
-    {plan.bonus_uc > 0 && <p className="text-[10.5px] text-white/40">{plan.uc} + {plan.bonus_uc} {i18n.t('passPage.offertes')}</p>}
+    <p className="text-sm text-white/75 mt-0.5">{plan.uc + (plan.bonus_uc || 0) + (plan.promo_extra_uc || 0)} UC</p>
+    {(plan.bonus_uc > 0 || plan.promo_extra_uc > 0) && (
+      <p className="text-[10.5px] text-white/40">
+        {plan.uc}{plan.bonus_uc > 0 && ` + ${plan.bonus_uc}`}{plan.promo_extra_uc > 0 && ` + ${plan.promo_extra_uc}`} {i18n.t('passPage.offertes')}
+      </p>
+    )}
+    {plan.promo_extra_uc > 0 && (
+      <p className="text-[10px] font-bold text-[#7BC94E] mt-1" data-testid={`pass-promo-boost-${plan.id}`}>
+        ⚡ {plan.promo_name}
+      </p>
+    )}
   </div>
 );
 

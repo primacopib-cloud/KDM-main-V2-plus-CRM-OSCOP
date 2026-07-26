@@ -256,22 +256,16 @@ export default function PassSpacePage() {
                   paiement en UC sur l'ensemble du catalogue. Sans renouvellement automatique : vous restez maître de votre engagement.
                 </p>
                 <div className="flex gap-2 flex-wrap">
-                  <Button onClick={activatePassDemo} size="lg" disabled={activating} data-testid="activate-pass-demo-btn"
-                    style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
-                    <Zap className="w-4 h-4 mr-2" />
-                    {activating ? 'Activation...' : 'Activer mon PASS (mode démo)'}
-                  </Button>
                   <StripeCheckoutButton
                     createSession={(origin) => lolodriveAPI.checkoutPass(origin)}
-                    label={i18n.t('pass.payer_60_par_cb')}
-                    variant="outline"
+                    label={`${i18n.t('pass.activer_mon_pass', 'Activer mon PASS')} — ${i18n.t('pass.payer_60_par_cb')}`}
                     size="lg"
                     testId="activate-pass-stripe-btn"
-                    icon={<ShoppingBag className="w-4 h-4 mr-2" />}
+                    icon={<Zap className="w-4 h-4 mr-2" />}
                   />
                 </div>
                 <p className="text-[11px] text-white/30 mt-3">
-                  {i18n.t('pass.mode_demo_active_le')}
+                  Paiement sécurisé Stripe — votre PASS est activé immédiatement après le paiement.
                 </p>
               </div>
             )}

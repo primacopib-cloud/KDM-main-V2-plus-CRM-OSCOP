@@ -27,6 +27,9 @@ class CartItemResponse(BaseModel):
     line_total_ht_cents: int
     unavailable: bool = False
     incoterms: List[str] = []
+    promo_percent: float = 0
+    promo_name: Optional[str] = None
+    promo_discount_cents: int = 0
 
     class Config:
         from_attributes = True
@@ -46,6 +49,8 @@ class CartResponse(BaseModel):
     alerts: List[Dict[str, Any]] = []
     created_at: datetime
     updated_at: datetime
+    promo_discount_cents: int = 0
+    total_after_promo_cents: Optional[int] = None
 
     class Config:
         from_attributes = True

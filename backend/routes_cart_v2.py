@@ -100,7 +100,8 @@ async def get_cart(
     price_alerts = [a for a in alerts if a["type"] == "PRICE_CHANGED" and a.get("new")]
     if price_alerts and current_user.get("email"):
         asyncio.create_task(_send_price_alert_email(current_user, price_alerts))
-    return await _build_cart_response(cart, alerts)
+    from promo_pricing import enrich_cart_response
+    return await enrich_cart_response(db, await _build_cart_response(cart, alerts), cart, current_user)
 
 
 @cart_router.post("/cart/items", response_model=CartResponse)

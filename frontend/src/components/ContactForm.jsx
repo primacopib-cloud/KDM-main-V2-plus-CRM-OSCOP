@@ -3,6 +3,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { SearchableCountryDropdown } from './onboarding/CountryPhoneFields';
 import { Send, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { quoteAPI } from '../services/api';
@@ -127,20 +128,11 @@ const ContactForm = () => {
           <div className="space-y-2">
             <Label htmlFor="phone" className="text-white/80 text-sm">{t.phone_label}</Label>
             <div className="flex gap-2">
-              <Select value={formData.phoneCountry} onValueChange={(v) => setFormData((p) => ({ ...p, phoneCountry: v }))}>
-                <SelectTrigger className="h-12 w-[130px] flex-shrink-0 bg-white/[0.04] border-white/10 text-white rounded-xl focus:border-[#D9B35A]/50" data-testid="quote-phone-country-select">
-                  <SelectValue>
-                    <span className="flex items-center gap-1.5"><Flag code={country.code} className="w-5 h-auto rounded-[2px]" /><span className="text-sm">{country.dial}</span></span>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="bg-[#0d1117] border-white/10 max-h-64">
-                  {PHONE_COUNTRIES.map((c) => (
-                    <SelectItem key={c.code} value={c.code} className="text-white/80 focus:bg-white/10 focus:text-white">
-                      <span className="flex items-center gap-2"><Flag code={c.code} className="w-5 h-auto rounded-[2px]" />{c.name} <span className="text-white/45">{c.dial}</span></span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="w-[130px] flex-shrink-0">
+                <SearchableCountryDropdown value={country.code} display={country.dial} mode="dial"
+                  countries={PHONE_COUNTRIES} testId="quote-phone-country-select" buttonClassName="h-12"
+                  onSelect={(c) => setFormData((p) => ({ ...p, phoneCountry: c.code }))} />
+              </div>
               <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange}
                 placeholder={t.phone_placeholder} required className={`${inputCls} flex-1`} data-testid="quote-phone-input" />
             </div>

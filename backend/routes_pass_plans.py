@@ -38,13 +38,34 @@ async def _ensure_seed():
         logger.info("Plans PASS LOLODRIVE initialisés (%d)", len(DEFAULT_PLANS))
 
 
+async def _active_recharge_boost():
+    """Meilleure promo bonus_purchase active applicable au PASS → % de boost des UC bonus."""
+    now = datetime.now(timezone.utc).isoformat()
+    promos = await db.credit_promotions.find({
+        "promo_type": "bonus_purchase", "active": True, "archived": {"$ne": True},
+        "scope_profile": {"$in": ["all", "pass"]},
+    }, {"_id": 0, "name": 1, "value_percent": 1, "starts_at": 1, "ends_at": 1, "audience": 1}).to_list(20)
+    promos = [p for p in promos
+              if (not p.get("starts_at") or p["starts_at"] <= now)
+              and (not p.get("ends_at") or p["ends_at"] >= now)
+              and p.get("audience", "all") != "emails"]
+    return max(promos, key=lambda p: p["value_percent"], default=None)
+
+
 @pass_plans_router.get("/public/pass-plans")
 async def public_pass_plans():
     await _ensure_seed()
     adhesion = await db.pass_plans.find_one({"kind": "adhesion", "active": True}, {"_id": 0})
     recharges = await db.pass_plans.find(
         {"kind": "recharge", "active": True}, {"_id": 0}).sort("sort", 1).to_list(20)
-    return {"adhesion": adhesion, "recharges": recharges}
+    boost = await _active_recharge_boost()
+    if boost:
+        for r in recharges:
+            r["promo_extra_uc"] = round(r["uc"] * boost["value_percent"] / 100)
+            r["promo_name"] = boost["name"]
+            r["promo_ends_at"] = boost.get("ends_at")
+    return {"adhesion": adhesion, "recharges": recharges,
+            "boost": {"name": boost["name"], "percent": boost["value_percent"], "ends_at": boost.get("ends_at")} if boost else None}
 
 
 class PlanBody(BaseModel):
