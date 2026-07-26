@@ -165,8 +165,15 @@ export default function LolodriveAdminDashboardPage() {
                   { label: i18n.t('adm.drive'), value: kpi.orders?.drive || 0, color: '#10b981' },
                   { label: i18n.t('adm.livraison'), value: kpi.orders?.delivery || 0, color: '#3b82f6' },
                   { label: i18n.t('adm.relais'), value: kpi.orders?.lolo_point || 0, color: '#7c3aed' },
+                  { label: 'Comptoir', value: kpi.orders?.counter || 0, color: '#D9B35A' },
                 ]}
               />
+              {(kpi.orders?.counter || 0) > 0 && (
+                <p className="text-[11px] text-white/50 mt-3" data-testid="counter-stats-line">
+                  🧾 Ventes au comptoir : <b className="text-white/80">{kpi.orders.counter}</b> — {fmtEUR(kpi.orders.counter_revenue_cents || 0)}
+                  <span className="text-white/40"> (💵 {fmtEUR(kpi.orders.counter_cash_cents || 0)} · 💳 {fmtEUR(kpi.orders.counter_card_cents || 0)})</span>
+                </p>
+              )}
             </SectionCard>
 
             <SectionCard>
