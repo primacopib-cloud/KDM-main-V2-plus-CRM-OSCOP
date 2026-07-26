@@ -36,6 +36,7 @@ import { formatPrice, MIN_INSTALLMENT_CENTS } from '../components/catalog/catalo
 import { CatalogHeader } from '../components/catalog/CatalogHeader';
 import { ProductsGrid } from '../components/catalog/ProductsGrid';
 import { CatalogFiltersNotices } from '../components/catalog/CatalogFiltersNotices';
+import { CatalogZoneMap } from '../components/catalog/CatalogZoneMap';
 import { CheckoutDialog } from '../components/catalog/CheckoutDialog';
 import { FloatingMiniCart } from '../components/catalog/FloatingMiniCart';
 
@@ -436,6 +437,9 @@ export default function CatalogPage() {
             </Button>
           </div>
         </div>
+
+        {/* Sélecteur de zone par carte */}
+        <CatalogZoneMap selectedZone={selectedZone} onZoneSelect={handleZoneChange} />
 
         <CatalogFiltersNotices
           categories={categories}

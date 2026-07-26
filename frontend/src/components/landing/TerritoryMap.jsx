@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react';
 import i18n from '@/i18n';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Positions équirectangulaires (viewBox 1000x420, lon -90..70, lat 30..-35)
 const T = [
@@ -15,8 +18,18 @@ const arc = (a, b) => {
   return `M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`;
 };
 
-// Carte interactive « réseau des Outre-mer » (accueil)
-export const TerritoryMap = ({ zone, onSelect }) => (
+// Carte interactive « réseau des Outre-mer » (accueil + catalogue)
+export const TerritoryMap = ({ zone, onSelect }) => {
+  const [stats, setStats] = useState({});
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/v2/catalog/zones-stats`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .then(setStats)
+      .catch(() => {});
+  }, []);
+
+  return (
   <div className="relative rounded-3xl overflow-hidden border border-white/[0.08] mb-6" data-testid="territory-map"
     style={{ background: 'radial-gradient(120% 140% at 50% -20%, rgba(217,179,90,0.10), rgba(20,8,38,0.4) 45%, rgba(12,4,24,0.6))' }}>
     <svg viewBox="0 0 1000 420" className="w-full h-auto block" role="img" aria-label="Carte des territoires d'Outre-mer">
@@ -77,6 +90,13 @@ export const TerritoryMap = ({ zone, onSelect }) => (
               style={{ transition: 'all .25s ease', userSelect: 'none' }}>
               {t.label}
             </text>
+            {stats[t.code] && (
+              <text x={t.x + t.dx} y={t.y + 22} fontSize="10.5" fontWeight="500"
+                fill={active ? 'rgba(217,179,90,0.95)' : 'rgba(217,179,90,0.6)'} textAnchor={t.anchor}
+                data-testid={`map-stats-${t.code}`} style={{ userSelect: 'none' }}>
+                {stats[t.code].products} {i18n.t('landing.map_produits', 'produits')} · {stats[t.code].members} {i18n.t('landing.map_adherents', 'adhérents')}
+              </text>
+            )}
           </g>
         );
       })}
@@ -85,4 +105,5 @@ export const TerritoryMap = ({ zone, onSelect }) => (
       {i18n.t('landing.map_hint', 'Cliquez sur un territoire pour découvrir ses produits')}
     </p>
   </div>
-);
+  );
+};

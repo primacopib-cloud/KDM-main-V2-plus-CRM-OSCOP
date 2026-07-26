@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X, Link2, MessageSquarePlus, Heart } from 'lucide-react';
+import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X, MessageSquarePlus, Heart } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 import i18n from '@/i18n';
-import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { FavoriteButton } from '../FavoriteButton';
 import { formatPrice } from './catalogUtils';
 import { ProductVideoModal } from './ProductVideoModal';
 import { ProductReviewsModal, Stars } from './ProductReviewsModal';
+import { ProductShareButtons } from './ProductShareButtons';
 
 const ProductImageCarousel = ({ product, onZoom }) => {
   const [idx, setIdx] = useState(0);
@@ -110,22 +110,6 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
   const [reviewsProduct, setReviewsProduct] = useState(null);
   const lang = (i18n.language || 'fr').slice(0, 2);
   const tr = (p) => (lang !== 'fr' && p.translations?.[lang]) || {};
-  const copyLink = (product) => {
-    const url = `${window.location.origin}/catalogue?produit=${product.id}`;
-    const done = () => toast.success(i18n.t('catalog.lien_copie', 'Lien de la fiche produit copié !'));
-    const fallback = () => {
-      const ta = document.createElement('textarea');
-      ta.value = url;
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand('copy'); done(); }
-      catch { toast.error(i18n.t('catalog.lien_erreur', 'Impossible de copier le lien')); }
-      document.body.removeChild(ta);
-    };
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(url).then(done).catch(fallback);
-    } else fallback();
-  };
   return (
   <>
         {/* Products Grid */}
@@ -201,12 +185,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                     </>
                   )}
                 </button>
-                <button type="button" onClick={() => copyLink(product)}
-                  title={i18n.t('catalog.copier_lien', 'Copier le lien de la fiche')}
-                  data-testid={`product-share-btn-${product.sku}`}
-                  className="text-white/50 hover:text-[#D9B35A] transition-colors">
-                  <Link2 className="w-3.5 h-3.5" />
-                </button>
+                <ProductShareButtons product={product} />
               </div>
 
               {/* Incoterms badges */}
