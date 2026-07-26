@@ -18,6 +18,7 @@ import { BasicTab, PricingTab } from './catalog-manager/BasicPricingTabs';
 import { FoodTab, TechnicalTab, LogisticsTab } from './catalog-manager/SpecializedTabs';
 import { AiProductAssistant } from './catalog-manager/AiProductAssistant';
 import { BulkEanImport } from './catalog-manager/BulkEanImport';
+import { PublishAllDraftsButton } from './PublishAllDraftsButton';
 import { MarginSettings } from './catalog-manager/MarginSettings';
 import { TranslateCatalogButton } from './catalog-manager/TranslateCatalogButton';
 
@@ -351,6 +352,7 @@ export default function ProductCatalogManager({ onProductSaved }) {
           )}
           <MarginSettings />
           <TranslateCatalogButton />
+          <PublishAllDraftsButton products={products} onDone={fetchProducts} />
           <BulkEanImport onDone={fetchProducts} />
           <Button onClick={openNewProduct} className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black">
             <Plus className="w-4 h-4 mr-2" />

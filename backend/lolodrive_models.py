@@ -106,6 +106,11 @@ class LoloPointCreate(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
     manager_user_id: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    opening_hours: Optional[str] = None
+    offers_drive: bool = True
+    offers_delivery: bool = False
     payout_cap_cents_monthly: int = 120000
     payout_cap_percent_bps: int = 600
 

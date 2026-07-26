@@ -4,7 +4,7 @@ from typing import Optional, Dict, Any
 import uuid
 import logging
 
-from brevo_service import notify_pass_activated, notify_recharge_confirmed
+from brevo_service import notify_pass_activated, notify_recharge_confirmed, send_sms
 
 logger = logging.getLogger(__name__)
 
@@ -104,14 +104,21 @@ async def _apply_payment_success(tx: dict):
         })
         try:
             fresh = await db.lolodrive_wallets.find_one({"id": wallet["id"]}, {"_id": 0, "balance_uc": 1})
-            user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "contact_name": 1})
+            user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
+            new_balance = (fresh or {}).get("balance_uc", 0)
             if user_doc and user_doc.get("email"):
                 await notify_recharge_confirmed(
                     to_email=user_doc["email"],
                     to_name=user_doc.get("contact_name"),
                     uc_credited=pack["uc"],
-                    new_balance=(fresh or {}).get("balance_uc", 0),
+                    new_balance=new_balance,
                     amount_eur=pack["amount_eur"],
+                )
+            if user_doc and user_doc.get("phone"):
+                await send_sms(
+                    user_doc["phone"],
+                    f"KDMARCHÉ — Recharge de {pack['amount_eur']:g} € confirmée : +{pack['uc']} UC. Nouveau solde : {new_balance} UC. Bonnes courses !",
+                    tag="recharge_confirmed",
                 )
         except Exception as exc:
             logger.warning(f"Brevo recharge notification failed: {exc}")

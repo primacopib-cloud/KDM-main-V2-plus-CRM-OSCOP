@@ -116,7 +116,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
         {/* Products Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {products.map(product => {
-            const { discount, bonus } = bestPromos(promos, product);
+            const { discount } = bestPromos(promos, product);
             return (
             <div 
               key={product.id}
@@ -210,7 +210,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               <div className="mt-auto flex items-end justify-between">
                 <div>
                   {product.price_visible ? (
-                    <PromoPriceBlock product={product} discount={discount} bonus={bonus} />
+                    <PromoPriceBlock product={product} discount={discount} />
                   ) : (
                     <div data-testid={`price-locked-${product.sku}`}>
                       <p className="text-lg font-bold text-[#D9B35A] blur-[6px] select-none" aria-hidden="true">

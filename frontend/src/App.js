@@ -7,7 +7,6 @@ import { Toaster } from "./components/ui/sonner";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 const RedirectInscription = () => <Navigate to={{ pathname: '/adhesion-vendeur', search: window.location.search }} replace />;
-import DashboardPage from "./pages/DashboardPage";
 import OffersPage from "./pages/OffersPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -114,7 +113,7 @@ function App() {
           <Route path="/logiscop" element={<LogiscopPage />} />
           <Route path="/logicoop" element={<LogicoopSpacePage />} />
           <Route path="/oscop" element={<OscopPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<Navigate to="/espace-pass" replace />} />
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
           <Route path="/reinitialiser-mot-de-passe" element={<ResetPasswordPage />} />
           <Route path="/statistiques" element={<StatsPage />} />
