@@ -58,6 +58,9 @@ export const lolodriveAPI = {
     apiCall(`/lolodrive/pos/orders/${orderId}/scan`, { method: 'POST' }),
   posRemindPickup: (orderId) =>
     apiCall(`/lolodrive/pos/orders/${orderId}/remind`, { method: 'POST' }),
+  favoritesGet: () => apiCall('/lolodrive/favorites'),
+  favoritesSave: (skus) =>
+    apiCall('/lolodrive/favorites', { method: 'POST', body: JSON.stringify({ skus }) }),
 
   // LOLO POINTS
   listLoloPoints: (cityOrOpts, territory) => {

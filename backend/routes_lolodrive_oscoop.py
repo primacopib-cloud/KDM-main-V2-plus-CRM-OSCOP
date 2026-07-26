@@ -34,6 +34,7 @@ from lolodrive_helpers import (
     set_lolodrive_helpers_database, distance_fee_rate,
 )
 from routes_relay_reviews import set_relay_reviews_database
+from routes_lolodrive_favorites import set_lolodrive_favorites_database
 from routes_lolodrive_pos import set_lolodrive_pos_database
 from routes_lolodrive_points import set_lolodrive_points_database
 from routes_lolodrive_manager import set_lolodrive_manager_database
@@ -54,6 +55,7 @@ def set_lolodrive_database(database):
     set_lolodrive_manager_database(database)
     set_lolodrive_admin_database(database)
     set_relay_reviews_database(database)
+    set_lolodrive_favorites_database(database)
 
 # =======================
 # Public / user routes

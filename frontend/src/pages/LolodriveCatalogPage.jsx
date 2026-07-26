@@ -57,7 +57,7 @@ export default function LolodriveCatalogPage() {
     (async () => {
       try {
         const [c, lp] = await Promise.all([
-          lolodriveAPI.catalogProducts(filter || undefined, territory || undefined),
+          lolodriveAPI.catalogProducts(filter && filter !== 'FAVS' ? filter : undefined, territory || undefined),
           lolodriveAPI.listLoloPoints({ territory: territory || undefined }),
         ]);
         if (cancelled) return;
@@ -89,8 +89,22 @@ export default function LolodriveCatalogPage() {
   const toggleFav = (sku) => setFavs((prev) => {
     const next = prev.includes(sku) ? prev.filter((s) => s !== sku) : [...prev, sku];
     try { localStorage.setItem('kdm_lolodrive_favs', JSON.stringify(next)); } catch { /* quota */ }
+    lolodriveAPI.favoritesSave(next).catch(() => {});
     return next;
   });
+
+  // Sync favoris avec le backend (alertes promo email + multi-appareils)
+  useEffect(() => {
+    lolodriveAPI.favoritesGet().then((d) => {
+      const remote = d.skus || [];
+      setFavs((prev) => {
+        const merged = [...new Set([...prev, ...remote])];
+        try { localStorage.setItem('kdm_lolodrive_favs', JSON.stringify(merged)); } catch { /* quota */ }
+        if (merged.length !== remote.length) lolodriveAPI.favoritesSave(merged).catch(() => {});
+        return merged;
+      });
+    }).catch(() => {});
+  }, []);
   const sub = (sku) => {
     const n = (cart[sku] || 0) - 1;
     const c = { ...cart };
@@ -272,14 +286,26 @@ export default function LolodriveCatalogPage() {
           <TabsTrigger value="" data-testid="tab-all">{i18n.t('lolodrive.tous')}</TabsTrigger>
           <TabsTrigger value="ESSENTIAL" data-testid="tab-essential">{i18n.t('lolodrive.essentiels_25')}</TabsTrigger>
           <TabsTrigger value="NORMAL" data-testid="tab-normal">{i18n.t('lolodrive.hors25')}</TabsTrigger>
+          <TabsTrigger value="FAVS" data-testid="tab-favs">
+            <Star className="w-3.5 h-3.5 mr-1 fill-[#D9B35A] text-[#D9B35A]" /> Mes favoris{favs.length > 0 ? ` (${favs.length})` : ''}
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
       {loading && <div className="text-center text-white/50 py-12">{i18n.t('lolodrive.chargement')}</div>}
 
+      {!loading && filter === 'FAVS' && favs.length === 0 && (
+        <div className="text-center text-white/40 py-12" data-testid="favs-empty">
+          <Star className="w-8 h-8 mx-auto mb-2 opacity-40" />
+          Aucun favori pour le moment — cliquez sur l'étoile d'un produit pour l'épingler ici.
+        </div>
+      )}
+
       {!loading && (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[...products].sort((a, b) => (favs.includes(b.sku) ? 1 : 0) - (favs.includes(a.sku) ? 1 : 0)).map((p) => (
+          {[...products]
+            .filter((p) => filter !== 'FAVS' || favs.includes(p.sku))
+            .sort((a, b) => (favs.includes(b.sku) ? 1 : 0) - (favs.includes(a.sku) ? 1 : 0)).map((p) => (
             <div key={p.sku} data-testid={`product-${p.sku}`}
               className={`relative rounded-2xl bg-white/[0.025] border overflow-hidden hover:border-white/[0.15] transition-all ${favs.includes(p.sku) ? 'border-[#D9B35A]/40' : 'border-white/[0.07]'}`}>
               <button type="button" onClick={() => toggleFav(p.sku)} data-testid={`fav-toggle-${p.sku}`}

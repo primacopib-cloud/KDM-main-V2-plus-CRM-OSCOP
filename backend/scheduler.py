@@ -141,6 +141,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler pickup reminders crashed: %s", exc)
         try:
+            from favorite_promo_alerts import run_favorite_promo_alerts
+            await run_favorite_promo_alerts(_db)
+        except Exception as exc:
+            logger.exception("Scheduler favorite promo alerts crashed: %s", exc)
+        try:
             from adhesion_archive import run_adhesion_archiving
             await run_adhesion_archiving(_db)
         except Exception as exc:
