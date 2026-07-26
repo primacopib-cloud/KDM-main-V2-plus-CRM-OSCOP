@@ -38,6 +38,7 @@ import { GuidiaStatsPanel } from '../components/superadmin/GuidiaStatsPanel';
 import { DemandesAdminTab } from '../components/superadmin/DemandesAdminTab';
 import { ShowcasePartnersPanel } from '../components/superadmin/ShowcasePartnersPanel';
 import { SharePreviewTester } from '../components/superadmin/SharePreviewTester';
+import { PassRegistrationsPanel } from '../components/superadmin/PassRegistrationsPanel';
 import { LicensesPanel } from '../components/superadmin/LicensesPanel';
 import { ApiKeysPanel } from '../components/superadmin/ApiKeysPanel';
 import { AIAgentsPanel } from '../components/superadmin/AIAgentsPanel';
@@ -275,6 +276,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="demandes">
             <DemandesAdminTab />
+            <PassRegistrationsPanel />
           </TabsContent>
 
           <TabsContent value="ecosystem">

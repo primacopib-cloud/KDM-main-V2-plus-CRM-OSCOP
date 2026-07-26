@@ -126,6 +126,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler referral filleul reminders crashed: %s", exc)
         try:
+            from acquisition_weekly_recap import run_acquisition_weekly_recap
+            await run_acquisition_weekly_recap(_db)
+        except Exception as exc:
+            logger.exception("Scheduler acquisition weekly recap crashed: %s", exc)
+        try:
             from adhesion_archive import run_adhesion_archiving
             await run_adhesion_archiving(_db)
         except Exception as exc:
