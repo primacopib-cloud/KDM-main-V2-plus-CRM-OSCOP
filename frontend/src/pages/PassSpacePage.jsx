@@ -94,6 +94,15 @@ export default function PassSpacePage() {
     }
   };
 
+  const reorder = (o) => {
+    const cart = {};
+    (o.items || []).forEach((it) => { if (it.sku && it.qty) cart[it.sku] = it.qty; });
+    if (!Object.keys(cart).length) return toast.error('Aucun article à recommander');
+    try { localStorage.setItem('kdm_lolodrive_cart', JSON.stringify(cart)); } catch { /* quota */ }
+    toast.success('Panier rempli avec les articles de votre commande ✓');
+    navigate('/catalogue-lolodrive');
+  };
+
   const claimReferral = async () => {
     if (!claimCode.trim()) return;
     try {
@@ -344,7 +353,7 @@ export default function PassSpacePage() {
               </div>
             )}
             <div className="space-y-2">
-              {orders.slice(0, 8).map((o) => (
+              {orders.slice(0, 8).map((o, idx) => (
                 <div key={o.id} data-testid={`order-${o.id}`}
                   className="flex items-center justify-between gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
                   <div className="flex items-center gap-3 min-w-0">
@@ -365,6 +374,12 @@ export default function PassSpacePage() {
                       {o.pay_with_uc && <Badge color="#D9B35A">UC</Badge>}
                       <Badge color={statusColor(o.status)}>{o.status}</Badge>
                     </div>
+                    {idx === 0 && (o.items?.length || 0) > 0 && (
+                      <Button size="sm" variant="outline" onClick={() => reorder(o)}
+                        data-testid="reorder-btn" className="mt-2 text-xs h-7">
+                        <RefreshCw className="w-3 h-3 mr-1.5" /> Recommander en 1 clic
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

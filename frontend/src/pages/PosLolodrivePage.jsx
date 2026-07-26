@@ -172,6 +172,15 @@ export default function PosLolodrivePage() {
     return acc;
   }, {});
   const toProcess = (counts.PAID || 0) + (counts.PREPARING || 0);
+  const LATE_MS = 48 * 3600 * 1000;
+  const isLate = (o) => o.status === 'READY' && o.ready_at && (Date.now() - new Date(o.ready_at).getTime()) > LATE_MS;
+  const [lateReady, setLateReady] = useState([]);
+  useEffect(() => {
+    lolodriveAPI.posOrders('READY', pointCode || null)
+      .then((r) => setLateReady((r.orders || []).filter(isLate)))
+      .catch(() => {});
+    // eslint-disable-next-line
+  }, [pointCode, tab]);
 
   return (
     <LolodriveLayout
@@ -208,6 +217,23 @@ export default function PosLolodrivePage() {
             <div className="font-semibold text-amber-300">{toProcess} commande(s) à traiter</div>
             <div className="text-xs text-white/50">
               {counts.PAID || 0} à préparer · {counts.PREPARING || 0} en préparation
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Commandes prêtes depuis +48h */}
+      {lateReady.length > 0 && (
+        <div className="mb-4 rounded-2xl border border-red-400/35 bg-red-400/[0.06] p-4 flex items-center gap-3"
+          data-testid="pos-late-banner">
+          <Clock className="w-5 h-5 text-red-400 shrink-0" />
+          <div className="flex-1">
+            <div className="font-semibold text-red-300">
+              {lateReady.length} commande(s) prête(s) depuis plus de 48 h
+            </div>
+            <div className="text-xs text-white/50">
+              {lateReady.slice(0, 4).map((o) => o.order_number).join(' · ')}
+              {lateReady.length > 4 ? ' · …' : ''} — le client a été relancé automatiquement, un contact direct peut aider.
             </div>
           </div>
         </div>
@@ -284,6 +310,7 @@ export default function PosLolodrivePage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono font-semibold">{o.order_number}</span>
                       <Badge color={statusColor(o.status)}>{o.status}</Badge>
+                      {isLate(o) && <Badge color="#ef4444">⏰ +48H</Badge>}
                       <Badge color="#7c3aed">{o.fulfillment_type}</Badge>
                       {o.pay_with_uc && <Badge color="#D9B35A">PAYÉ UC</Badge>}
                     </div>
