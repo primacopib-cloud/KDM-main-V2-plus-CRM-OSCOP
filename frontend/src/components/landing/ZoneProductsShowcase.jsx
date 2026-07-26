@@ -3,15 +3,9 @@ import { Link } from 'react-router-dom';
 import { MapPin, ArrowRight, Heart, Package } from 'lucide-react';
 import i18n from '@/i18n';
 import { tData } from '@/i18n/tData';
+import { TerritoryMap } from './TerritoryMap';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
-const ZONES = [
-  { code: 'GUADELOUPE', label: 'Guadeloupe' },
-  { code: 'MARTINIQUE', label: 'Martinique' },
-  { code: 'GUYANE', label: 'Guyane' },
-  { code: 'REUNION', label: 'Réunion' },
-  { code: 'MAYOTTE', label: 'Mayotte' },
-];
 
 // Aperçu des produits phares par territoire sur la page d'accueil (visiteurs)
 export const ZoneProductsShowcase = () => {
@@ -41,22 +35,8 @@ export const ZoneProductsShowcase = () => {
           {i18n.t('landing.zone_showcase_sub', 'Un aperçu des produits phares déjà référencés dans chaque zone de la coopérative.')}
         </p>
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          {ZONES.map((z) => (
-            <button
-              key={z.code}
-              onClick={() => setZone(z.code)}
-              data-testid={`showcase-zone-${z.code}`}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
-                zone === z.code
-                  ? 'bg-[#D9B35A]/20 text-[#D9B35A] border border-[#D9B35A]/40'
-                  : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
-              }`}
-            >
-              {z.label}
-            </button>
-          ))}
-        </div>
+        {/* Carte interactive des Outre-mer */}
+        <TerritoryMap zone={zone} onSelect={setZone} />
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -98,17 +98,18 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(31,77,135,0.30);
-  color: #1F4D87;
+  color: #A9C6E8;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(31,77,135,0.10);
-  transition: background-color .15s ease, transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  transition: background-color .15s ease, color .15s ease, transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
 
 .back-office-back-btn:hover {
   background: #FFFFFF;
+  color: #1F4D87;
   border-color: rgba(31,77,135,0.55);
   transform: translateY(-1px);
   box-shadow: 0 8px 18px rgba(31,77,135,0.18);
