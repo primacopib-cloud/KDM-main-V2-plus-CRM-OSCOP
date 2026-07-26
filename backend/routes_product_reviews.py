@@ -180,6 +180,34 @@ async def vendor_reviews_stats(vendor_id: str):
     }
 
 
+@reviews_router.get("/admin/reviews/export")
+async def export_reviews_csv(request: Request):
+    """Export CSV de tous les avis produits (admin uniquement)."""
+    import csv
+    import io
+    from fastapi.responses import Response
+    user = await _optional_user(request)
+    if not user or not _is_admin(user):
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    reviews = await db.product_reviews.find({}, {"_id": 0}).sort("created_at", -1).to_list(5000)
+    pids = list({r["product_id"] for r in reviews})
+    products = {p["id"]: p for p in await db.products.find(
+        {"id": {"$in": pids}}, {"_id": 0, "id": 1, "name": 1, "sku": 1, "vendor_id": 1}).to_list(1000)}
+    out = io.StringIO()
+    w = csv.writer(out, delimiter=";")
+    w.writerow(["Date", "Produit", "SKU", "Vendeur", "Adhérent", "Note", "Commentaire"])
+    for r in reviews:
+        p = products.get(r["product_id"], {})
+        w.writerow([
+            (r.get("created_at") or "")[:10], p.get("name", r["product_id"]), p.get("sku", ""),
+            p.get("vendor_id", ""), r.get("user_name", ""), r.get("rating", ""), r.get("comment") or "",
+        ])
+    return Response(
+        content="\ufeff" + out.getvalue(), media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="avis-produits.csv"'},
+    )
+
+
 @reviews_router.delete("/reviews/{review_id}")
 async def delete_review(review_id: str, request: Request):
     """Supprime un avis (auteur ou admin)."""

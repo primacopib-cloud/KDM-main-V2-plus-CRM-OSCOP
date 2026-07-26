@@ -75,10 +75,11 @@
 }
 
 .btn-ghost:hover {
-  background: #FFFFFF;
-  border-color: rgba(212,175,55,0.55);
+  background: rgba(212,175,55,0.16);
+  border-color: rgba(212,175,55,0.75);
+  color: #E9CF8E;
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(212,175,55,0.18);
+  box-shadow: 0 8px 20px rgba(212,175,55,0.25);
 }
 
 /* Floating Back Button — back-office only (mounted globally in App.js) */

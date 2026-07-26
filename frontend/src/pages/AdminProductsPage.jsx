@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Package, CheckCircle2, XCircle, Clock, Eye, Search, Filter,
   RefreshCw, Building2, AlertTriangle, Flag, ChevronDown,
-  ThumbsUp, ThumbsDown, MessageSquare
+  ThumbsUp, ThumbsDown, MessageSquare, Download
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -213,6 +213,20 @@ const AdminProductsPage = () => {
               <Button variant="outline" className="border-white/15 bg-white/[0.05] text-white/70 hover:bg-white/10 hover:text-white"
                 onClick={() => fetchProducts(activeTab === 'pending' ? 'pending_approval' : activeTab)}>
                 <RefreshCw className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" className="border-white/15 bg-white/[0.05] text-white/70 hover:bg-white/10 hover:text-white"
+                data-testid="export-reviews-csv-btn"
+                onClick={async () => {
+                  const r = await fetch(`${API_URL}/api/v2/catalog/admin/reviews/export`, { credentials: 'include' });
+                  if (!r.ok) return;
+                  const blob = await r.blob();
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = 'avis-produits.csv';
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                }}>
+                <Download className="w-4 h-4 mr-1" /> {i18n.t('adm.export_avis_csv', 'Avis (CSV)')}
               </Button>
             </div>
           </div>

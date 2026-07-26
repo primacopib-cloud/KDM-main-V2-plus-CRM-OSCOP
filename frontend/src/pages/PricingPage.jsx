@@ -211,7 +211,7 @@ const PricingPage = () => {
           </div>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              to="/adhesion"
+              to="/adhesion-vendeur"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold"
               style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}
               data-testid="cta-adhesion"

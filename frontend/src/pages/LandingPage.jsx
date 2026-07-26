@@ -27,6 +27,7 @@ import Footer from '../components/Footer';
 import LoloPointsMap from '../components/LoloPointsMap';
 import TerritorySelector from '../components/TerritorySelector';
 import WhyCommunityplaceSection from '../components/WhyCommunityplaceSection';
+import { ZoneProductsShowcase } from '../components/landing/ZoneProductsShowcase';
 import PartnerCarousel from '../components/PartnerCarousel';
 import { TestimonialsSection } from '../components/TestimonialsSection';
 import { ReferralChallengeBanner } from '../components/ReferralChallengeBanner';
@@ -132,6 +133,9 @@ const LandingPage = () => {
 
       {/* Pourquoi Communityplace ? */}
       <WhyCommunityplaceSection />
+
+      {/* Produits phares par territoire */}
+      <ZoneProductsShowcase />
 
       {/* Partners Section */}
       <PartnersSection />

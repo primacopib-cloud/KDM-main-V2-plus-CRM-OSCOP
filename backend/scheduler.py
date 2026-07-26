@@ -126,6 +126,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler adhesion auto-archive crashed: %s", exc)
         try:
+            from weekly_digest import run_weekly_digest
+            await run_weekly_digest(_db)
+        except Exception as exc:
+            logger.exception("Scheduler weekly digest crashed: %s", exc)
+        try:
             from vendor_weekly_report import send_weekly_unpaid_report
             await send_weekly_unpaid_report(_db)
         except Exception as exc:
