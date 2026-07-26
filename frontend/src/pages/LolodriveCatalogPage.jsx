@@ -1,7 +1,7 @@
 import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus, Sparkles, Tag, Trash2, Wallet, CreditCard } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Plus, Minus, Sparkles, Tag, Trash2, Wallet, CreditCard, ArrowLeft } from 'lucide-react';
 import LolodriveLayout, { SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -140,6 +140,12 @@ export default function LolodriveCatalogPage() {
         ? "PASS actif — prix PASS visibles sur les ESSENTIELS, paiement en UC autorisé."
         : "PASS inactif — activez votre PASS pour bénéficier des prix réduits."}
       actions={
+        <>
+        <Button asChild variant="outline" data-testid="back-to-orders-btn">
+          <Link to="/pass">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Retour à mes commandes
+          </Link>
+        </Button>
         <Sheet>
           <SheetTrigger asChild>
             <Button data-testid="open-cart-btn"
@@ -232,6 +238,7 @@ export default function LolodriveCatalogPage() {
             )}
           </SheetContent>
         </Sheet>
+        </>
       }
     >
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">

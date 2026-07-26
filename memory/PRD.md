@@ -1828,3 +1828,12 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Partage Relais D'Or WhatsApp** : `PosRelayReviews.jsx` — bouton vert wa.me (testid pos-gold-share-whatsapp) dans la bannière gold, message avec nom relais + note + lien /?relay=CODE. Vérifié Playwright gérant LP-CAP.
 - **Photo sur fiche carte** : `PublicLolodriveMapSection.jsx` — `selected.photo_url` affichée dans le modal relais (testid relay-detail-photo, /api/uploads/relays/...). Vérifié via /?relay=LP-CAP.
 - **Nav catalogue titulaire PASS** : `navItems.js` — item Catalogue pointe vers /catalogue-lolodrive si role TITULAIRE_PASS (sinon /catalogue). `OrdersPage.jsx` — `catalogHref` role-aware pour "Nouvelle commande" et "Voir le catalogue". Vérifié Playwright avec marie@example.com : navbar + 2 liens /catalogue-lolodrive.
+
+## 2026-07-26 — Lot 14 : Retour commandes PASS + Espace LOLODRIVE épuré (self-testé Playwright)
+- **Retour à mes commandes** : `LolodriveCatalogPage.jsx` — bouton outline (testid back-to-orders-btn) dans le header, à côté du Panier → /pass (section "Mes commandes récentes"). Vérifié : clic → /pass.
+- **Espace LOLODRIVE sans éléments Acheteur Pro** (role TITULAIRE_PASS uniquement) :
+  - `navItems.js` : flag `isPass` — topBar sans "Accès Pro" (/tarifs), Catalogue → /catalogue-lolodrive ; dropdown.buyer réduit à [Mon Espace /pass, Catalogue LOLODRIVE] (supprimés : Mon CREDI'SCOP /wallet, Documents, Listes d'achats, Alertes favoris, Mes commandes B2B /commandes).
+  - `NavBar.jsx` : `isPassHolder` — CrediscopBadge (desktop + mobile) et FavoritesNavButton masqués pour les titulaires PASS.
+  - Vérifié Marie (PASS) : topBar ['/','kdmarche','/catalogue-lolodrive','/#contact','/pass'], dropdown [My Space, Catalog, Notifications, Logout], pas de CREDI'SCOP ni cœur favoris.
+  - Régression Acheteur Pro (Sophie) OK : Accès Pro, /catalogue, CREDI'SCOP 500, favoris tous présents.
+- ⚠️ Incident corrigé : un artefact "default NavBar;" en fin de NavBar.jsx cassait la compilation — supprimé.

@@ -22,13 +22,14 @@ export const getMySpace = (user) =>
 export const getNavItems = (userRole, isAdmin) => {
   const mySpace = isAdmin ? '/superadmin' : SPACE_BY_ROLE[userRole] || '/espace-acheteur';
   // Top bar: keep it lean — 4 public + 2 member shortcuts.
+  const isPass = userRole === 'TITULAIRE_PASS';
   const baseItems = [
     { href: '/', label: 'nav.home', icon: Home, public: true },
     { href: '/kdmarche', label: 'KDMARCHÉ', icon: Store, public: true, accent: '#D9B35A' },
-    { href: userRole === 'TITULAIRE_PASS' ? '/catalogue-lolodrive' : '/catalogue', label: 'nav.catalog', icon: ShoppingCart, public: true },
+    { href: isPass ? '/catalogue-lolodrive' : '/catalogue', label: 'nav.catalog', icon: ShoppingCart, public: true },
     { href: '/tarifs', label: 'nav.pro_access', icon: CreditCard, public: true },
     { href: '/#contact', label: 'footer.contact', icon: Mail, public: true },
-  ];
+  ].filter((it) => !(isPass && it.href === '/tarifs'));
 
   // Member-only shortcuts kept in top bar (per product decision).
   const memberShortcuts = [
@@ -44,7 +45,10 @@ export const getNavItems = (userRole, isAdmin) => {
   return {
     topBar: baseItems.concat(userRole || isAdmin ? memberShortcuts : []),
     dropdown: {
-      buyer: [
+      buyer: isPass ? [
+        { href: mySpace, label: 'nav.my_space', icon: LayoutDashboard },
+        { href: '/catalogue-lolodrive', label: 'nav.catalog', icon: ShoppingCart },
+      ] : [
         { href: mySpace, label: 'nav.my_space', icon: LayoutDashboard },
         { href: '/commandes', label: 'nav.my_orders', icon: Package },
         { href: '/wallet', label: 'nav.wallet', icon: Wallet },

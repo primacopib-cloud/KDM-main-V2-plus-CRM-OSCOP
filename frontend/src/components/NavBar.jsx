@@ -96,6 +96,7 @@ const NavBar = ({ variant = 'default' }) => {
 
   const nav = getNavItems(user?.role, isAdmin);
   const navItems = nav.topBar;
+  const isPassHolder = user?.role === 'TITULAIRE_PASS';
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
@@ -143,8 +144,8 @@ const NavBar = ({ variant = 'default' }) => {
             <LanguageSwitcher className="hidden md:flex" />
             {isAuthenticated ? (
               <>
-                {/* Solde CREDI'SCOP */}
-                <CrediscopBadge className="hidden sm:inline-flex" />
+                {/* Solde CREDI'SCOP (non pertinent pour les titulaires PASS) */}
+                {!isPassHolder && <CrediscopBadge className="hidden sm:inline-flex" />}
 
                 {/* Notifications in-app (tous rôles) */}
                 {!isAdmin && <NotificationsBell />}
@@ -199,7 +200,7 @@ const NavBar = ({ variant = 'default' }) => {
                 </Link>
 
                 {/* Favorites */}
-                <FavoritesNavButton />
+                {!isPassHolder && <FavoritesNavButton />}
 
                 <UserMenu
                   user={user}
@@ -259,7 +260,7 @@ const NavBar = ({ variant = 'default' }) => {
                     <p className="text-sm font-medium text-white">{user.contact_name || t('nav.user')}</p>
                     <p className="text-xs text-white/50">{user.email}</p>
                   </div>
-                  <CrediscopBadge />
+                  {!isPassHolder && <CrediscopBadge />}
                 </div>
               </div>
             )}
