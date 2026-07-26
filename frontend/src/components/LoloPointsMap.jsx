@@ -19,9 +19,10 @@ const TERRITORY_DEFAULTS = {
  *   - points: [{id, name, code, lat, lng, city, territory, status}, ...]
  *   - territory: 'GP' | 'MQ' | 'GF' | 'RE' | null  → recadre la vue
  *   - onSelect(point): callback clic marqueur
+ *   - focusCode: code d'un relais à cibler (flyTo + popup ouverte)
  *   - height: '420px' (par défaut)
  */
-export default function LoloPointsMap({ points = [], territory = null, onSelect, height = '460px' }) {
+export default function LoloPointsMap({ points = [], territory = null, onSelect, focusCode = null, height = '460px' }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -58,7 +59,7 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
   useEffect(() => {
     if (!mapRef.current) return;
     // Clear previous markers
-    markersRef.current.forEach((m) => m.remove());
+    markersRef.current.forEach((m) => m.marker.remove());
     markersRef.current = [];
 
     const filtered = points.filter((p) => typeof p.lat === 'number' && typeof p.lng === 'number');
@@ -90,8 +91,18 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
 
       const marker = new mapboxgl.Marker({ element: el }).setLngLat([p.lng, p.lat]).setPopup(popup).addTo(mapRef.current);
       el.addEventListener('click', () => onSelect?.(p));
-      markersRef.current.push(marker);
+      markersRef.current.push({ code: p.code, marker });
     });
+
+    // Focus direct sur un relais ciblé (icône localisation de l'espace PASS)
+    const focused = focusCode ? filtered.find((p) => p.code === focusCode) : null;
+    if (focused) {
+      mapRef.current.flyTo({ center: [focused.lng, focused.lat], zoom: 13, speed: 1.6 });
+      const entry = markersRef.current.find((m) => m.code === focusCode);
+      if (entry && !entry.marker.getPopup().isOpen()) entry.marker.togglePopup();
+      onSelect?.(focused);
+      return;
+    }
 
     // Auto-fit bounds when no territory filter or several points
     if (!territory && filtered.length > 1) {
@@ -99,7 +110,7 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
       filtered.forEach((p) => bounds.extend([p.lng, p.lat]));
       mapRef.current.fitBounds(bounds, { padding: 60, maxZoom: 8, duration: 800 });
     }
-  }, [points, territory, onSelect]);
+  }, [points, territory, onSelect, focusCode]);
 
   if (!TOKEN) {
     return (

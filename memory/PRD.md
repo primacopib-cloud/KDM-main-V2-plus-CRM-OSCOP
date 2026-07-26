@@ -1790,3 +1790,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Photo du relais** : POST /api/lolodrive/manager/my-point/photo (gérant, upload → /api/uploads/relays/, champ photo_url ; aussi éditable admin via ALLOWED_POINT_FIELDS). Nouveau `components/pos/RelayPhotoUpload.jsx` (bouton « Photo du relais » dans les actions du POS). PassRelayHeader affiche la photo (remplace le logo, data-testid pass-relay-photo). ⚠️ LP-CAP porte une photo de test (party.jpg) uploadée pendant les tests — remplaçable par le gérant.
 - **Avis relais** : nouveau `routes_relay_reviews.py` (set via set_lolodrive_database) : GET /relay-reviews/pending (retraits FULFILLED en relais non notés), POST /relay-reviews (note 1-5 + commentaire, anti-doublon par commande), GET /relay-reviews/stats (moyenne+count par point_code, public). Collection `relay_reviews`. Frontend : `components/pass/RelayReviewPrompt.jsx` (5 étoiles hover + commentaire + envoi) monté sous PassRelayHeader ; note moyenne ⭐ affichée à côté du nom du relais dans l'entête. Testé E2E : avis 5★ de Marie sur LP-PAP soumis (donnée réelle conservée), prompt disparaît, ⭐ 5 (1) affiché.
 - API front ajoutées : relayReviewsPending, submitRelayReview, relayReviewStats (api.lolodrive.js).
+
+## 2026-07-26 — Lot 8 : focus direct du relais sur la Mapbox de l'accueil (self-testé Playwright)
+- L'icône de localisation de l'entête relais (PassRelayHeader) pointe vers `/?relay={code}#reseau-lolodrive`.
+- LoloPointsMap : nouvelle prop `focusCode` → flyTo(zoom 13) sur le relais ciblé + popup Mapbox ouverte + onSelect déclenché (fiche relais affichée) ; fitBounds désactivé quand focus ; markersRef stocke désormais {code, marker}.
+- LandingPage (PublicLolodriveMapSection) : lit `?relay=` au mount et passe focusCode à la carte.
+- Testé E2E : clic icône depuis l'espace PASS → carte centrée sur LP-PAP, popup « Lolo Point Pointe-à-Pitre » ouverte + modale fiche relais.

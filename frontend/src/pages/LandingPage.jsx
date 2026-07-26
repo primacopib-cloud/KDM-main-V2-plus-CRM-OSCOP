@@ -268,6 +268,9 @@ export const PublicLolodriveMapSection = () => {
   const [territories, setTerritories] = useState([]);
   const [territory, setTerritory] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [focusCode] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get('relay'); } catch { return null; }
+  });
 
   // Load territories once on mount
   useEffect(() => {
@@ -325,7 +328,7 @@ export const PublicLolodriveMapSection = () => {
           </div>
         </div>
 
-        <LoloPointsMap points={points} territory={territory} height="460px" onSelect={(p) => setSelected(p)} />
+        <LoloPointsMap points={points} territory={territory} focusCode={focusCode} height="460px" onSelect={(p) => setSelected(p)} />
 
         <div className="mt-3 text-center">
           <Link to="/adhesion-vendeur?type=acheteur_pro">

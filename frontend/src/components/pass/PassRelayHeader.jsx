@@ -66,8 +66,8 @@ export const PassRelayHeader = () => {
           </p>
           <p className="text-[11px] text-white/40 font-mono flex items-center gap-1.5">
             {point.code}{point.territory ? ` · ${point.territory}` : ''}
-            <Link to="/#reseau-lolodrive" data-testid="pass-relay-map-link"
-              title="Voir sur la carte des relais LOLODRIVE"
+            <Link to={`/?relay=${point.code}#reseau-lolodrive`} data-testid="pass-relay-map-link"
+              title="Voir mon relais sur la carte LOLODRIVE"
               className="text-[#D9B35A] hover:text-[#E9CF8E] transition-transform hover:scale-125">
               <MapPin className="w-3.5 h-3.5" />
             </Link>
