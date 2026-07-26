@@ -5,7 +5,7 @@ import { Percent, Plus, Archive, Trash2, BarChart3, Send } from 'lucide-react';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inputCls = 'h-9 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35';
 
-const EMPTY = { name: '', promo_type: 'bonus_purchase', value_percent: '', scope_profile: 'all', scope_territory: 'ALL', scope_category: 'all', scope_action: 'all', scope_product_type: '', scope_brand: '', scope_relay: 'all', min_quantity: '', audience: 'all', audience_emails: '', countdown_enabled: false, countdown_pages: [], starts_at: '', ends_at: '' };
+const EMPTY = { name: '', promo_type: 'bonus_purchase', value_percent: '', scope_profile: 'all', scope_territory: 'ALL', scope_category: 'all', scope_action: 'all', scope_product_type: '', scope_brand: '', scope_relay: 'all', min_quantity: '', audience: 'all', audience_emails: '', countdown_enabled: false, countdown_pages: [], countdown_labels: '', countdown_alert_days: 10, starts_at: '', ends_at: '' };
 const COUNTDOWN_PAGES = [['landing', 'Accueil'], ['catalog', 'Catalogue'], ['pass', 'Page PASS'], ['kdmarche', 'KDMARCHÉ']];
 const TERRITORIES = ['ALL', 'GUADELOUPE', 'MARTINIQUE', 'GUYANE', 'REUNION', 'MAYOTTE', 'SAINT-MARTIN'];
 
@@ -35,6 +35,8 @@ export const CreditPromotionsPanel = () => {
         value_percent: parseFloat(form.value_percent),
         scope_product_type: form.scope_product_type.trim() || 'all',
         min_quantity: parseInt(form.min_quantity, 10) || 0,
+        countdown_labels: form.countdown_labels.split(/[\n,;]+/).map((l) => l.trim()).filter(Boolean),
+        countdown_alert_days: parseInt(form.countdown_alert_days, 10) || 10,
         audience_emails: form.audience === 'emails'
           ? form.audience_emails.split(/[\n,;]+/).map((e) => e.trim()).filter(Boolean)
           : [],
@@ -149,6 +151,15 @@ export const CreditPromotionsPanel = () => {
               {label}
             </label>
           ))}
+          <input value={form.countdown_labels} onChange={(e) => setForm({ ...form, countdown_labels: e.target.value })}
+            placeholder="Mentions clignotantes (ex: EXCLUSIVITÉ, SPÉCIAL NOËL)" data-testid="promo-labels"
+            className="flex-1 min-w-[220px] h-8 rounded-lg px-2 bg-white/[0.06] border border-white/15 text-xs text-white placeholder:text-white/35" />
+          <label className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase opacity-50">Alerte rouge à J-</span>
+            <input type="number" min="1" value={form.countdown_alert_days}
+              onChange={(e) => setForm({ ...form, countdown_alert_days: e.target.value })} data-testid="promo-alert-days"
+              className="w-14 h-8 rounded-lg px-2 bg-white/[0.06] border border-white/15 text-xs text-white text-right" />
+          </label>
         </div>
       )}
       <button type="button" onClick={create} disabled={!form.name || !form.value_percent}

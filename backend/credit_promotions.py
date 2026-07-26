@@ -41,6 +41,8 @@ class PromotionPayload(BaseModel):
     audience_emails: list[str] = []  # destinataires de la campagne
     countdown_enabled: bool = False
     countdown_pages: list[str] = []  # landing | catalog | pass | kdmarche | member_spaces
+    countdown_labels: list[str] = []  # mentions clignotantes (EXCLUSIVITÉ, SPÉCIAL NOËL...)
+    countdown_alert_days: int = 10   # alerte rouge à J-x du terme
     starts_at: str | None = None    # ISO — début de l'offre flash
     ends_at: str | None = None      # ISO — fin de l'offre flash
     active: bool = True

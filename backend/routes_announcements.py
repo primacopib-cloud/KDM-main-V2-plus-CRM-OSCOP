@@ -129,7 +129,9 @@ async def public_flash_promos(placement: str = "landing"):
             continue
         kind = "bonus de crédits" if p.get("promo_type") == "bonus_purchase" else "réduction"
         result.append({"title": p["name"], "discount_pct": p.get("value_percent"),
-                       "description": f"{p.get('value_percent'):g} % de {kind}", "ends_at": p["ends_at"]})
+                       "description": f"{p.get('value_percent'):g} % de {kind}", "ends_at": p["ends_at"],
+                       "labels": p.get("countdown_labels") or [],
+                       "alert_days": p.get("countdown_alert_days", 10)})
     result.sort(key=lambda x: x.get("ends_at") or "")
     return {"items": result[:5]}
 
