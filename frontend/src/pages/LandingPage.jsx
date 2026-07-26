@@ -326,7 +326,7 @@ export const PublicLolodriveMapSection = () => {
         <LoloPointsMap points={points} territory={territory} height="460px" onSelect={(p) => setSelected(p)} />
 
         <div className="mt-3 text-center">
-          <Link to="/inscription">
+          <Link to="/adhesion-vendeur?type=acheteur_pro">
             <button className="btn-gold inline-flex items-center justify-center gap-2.5 rounded-[14px] px-5 py-3 text-sm font-semibold" data-testid="join-network-btn">
               {i18n.t('landing.devenir_relais_lolodrive')}
               <ArrowRight className="w-4 h-4" />

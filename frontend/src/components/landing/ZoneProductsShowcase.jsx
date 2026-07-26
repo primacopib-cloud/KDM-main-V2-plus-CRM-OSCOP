@@ -84,7 +84,7 @@ export const ZoneProductsShowcase = () => {
             className="btn-ghost h-10 px-5 rounded-lg inline-flex items-center gap-2 text-sm">
             {i18n.t('landing.voir_catalogue', 'Voir tout le catalogue')} <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link to="/adhesion-vendeur" data-testid="showcase-join-cta"
+          <Link to="/tarifs" data-testid="showcase-join-cta"
             className="inline-flex items-center gap-2 h-10 px-5 rounded-lg text-sm font-bold"
             style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}>
             {i18n.t('landing.adherer_a_la_centrale', 'Adhérer à la Centrale')}

@@ -41,7 +41,8 @@ export default function VendorOnboardingPage() {
   const [goalZone, setGoalZone] = useState('GUADELOUPE');
   const [busy, setBusy] = useState(false);
   const [, setOb] = useState(null);
-  const [start, setStart] = useState({ company: '', legal_form: '', first_name: '', last_name: '', email: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro', member_type: 'vendor', country: 'GP' });
+  const buyerOnly = params.get('type') === 'acheteur_pro';
+  const [start, setStart] = useState({ company: '', legal_form: '', first_name: '', last_name: '', email: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro', member_type: buyerOnly ? 'buyer' : 'vendor', country: 'GP' });
   const [dial, setDial] = useState('+590|GP');
   const [phoneNum, setPhoneNum] = useState('');
   const [profiles, setProfiles] = useState([]);
@@ -129,7 +130,7 @@ export default function VendorOnboardingPage() {
       <NavBar />
       <div className="max-w-3xl mx-auto px-4 pt-28 pb-16">
         <h1 className="text-3xl font-bold text-white text-center mb-2" style={{ fontFamily: '"Playfair Display", serif' }}>
-          {t('vendorOnboarding.title')} <span className="text-[#D9B35A]">{t('vendorOnboarding.titleAccent')}</span>
+          {t('vendorOnboarding.title')} <span className="text-[#D9B35A]">{buyerOnly ? t('vendorOnboarding.buyerTitle') : t('vendorOnboarding.titleAccent')}</span>
         </h1>
         <p className="text-white/60 text-sm text-center mb-8">{t('vendorOnboarding.subtitle')}</p>
         <Stepper current={step} />
@@ -149,7 +150,7 @@ export default function VendorOnboardingPage() {
                 {(profiles.length ? profiles : [
                   { slug: 'vendor', titles: { fr: t('vendorOnboarding.vendorTitle') }, descriptions: { fr: t('vendorOnboarding.vendorDesc') } },
                   { slug: 'buyer', titles: { fr: t('vendorOnboarding.buyerTitle') }, descriptions: { fr: t('vendorOnboarding.buyerDesc') } },
-                ]).map((tp) => {
+                ]).filter((tp) => !buyerOnly || tp.slug === 'buyer').map((tp) => {
                   const lang = i18n.language?.startsWith('gcf') ? 'gcf' : (i18n.language || 'fr').slice(0, 2);
                   return (
                     <button type="button" key={tp.slug} data-testid={`member-type-${tp.slug}`}
