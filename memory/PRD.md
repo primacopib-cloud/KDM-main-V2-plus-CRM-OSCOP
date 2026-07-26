@@ -1837,3 +1837,7 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
   - Vérifié Marie (PASS) : topBar ['/','kdmarche','/catalogue-lolodrive','/#contact','/pass'], dropdown [My Space, Catalog, Notifications, Logout], pas de CREDI'SCOP ni cœur favoris.
   - Régression Acheteur Pro (Sophie) OK : Accès Pro, /catalogue, CREDI'SCOP 500, favoris tous présents.
 - ⚠️ Incident corrigé : un artefact "default NavBar;" en fin de NavBar.jsx cassait la compilation — supprimé.
+
+## 2026-07-26 — Lot 15 : Panier sauvegardé + SMS "Prête à retirer" (self-testé Playwright + curl E2E)
+- **Panier sauvegardé** : `LolodriveCatalogPage.jsx` — cart initialisé depuis localStorage `kdm_lolodrive_cart`, persisté via useEffect à chaque modif, vidé dès la création de commande (UC et Stripe). Testé : ajout 2× Achards → reload → "Panier (1)" avec 2 unités, sous-total 6,40 € conservé.
+- **SMS Prête à retirer** : déjà câblé dans `routes_lolodrive_pos.py` (transition READY → `notify_order_ready` email+SMS Brevo si user.phone). Vérifié E2E : commande LD-20260716-0686A3 liée à LP-CAP, POST /pos/orders/{id}/status READY par le gérant → logs Brevo : email 201 + SMS 201 vers +590 690 11 11 11 (Marie). AUCUN code ajouté (fonctionnalité existante, prouvée fonctionnelle).

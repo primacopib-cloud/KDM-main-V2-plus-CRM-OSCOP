@@ -18,7 +18,9 @@ export default function LolodriveCatalogPage() {
   const [products, setProducts] = useState([]);
   const [filter, setFilter] = useState('');
   const [passActive, setPassActive] = useState(false);
-  const [cart, setCart] = useState({});
+  const [cart, setCart] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('kdm_lolodrive_cart') || '{}') || {}; } catch { return {}; }
+  });
   const [fulfillment, setFulfillment] = useState('DRIVE');
   const [loloPoints, setLoloPoints] = useState([]);
   const [relayRatings, setRelayRatings] = useState({});
@@ -74,6 +76,11 @@ export default function LolodriveCatalogPage() {
   }, [navigate, filter, territory]);
 
   const add = (sku) => setCart({ ...cart, [sku]: (cart[sku] || 0) + 1 });
+
+  // Panier sauvegardé : persiste entre les sessions
+  useEffect(() => {
+    try { localStorage.setItem('kdm_lolodrive_cart', JSON.stringify(cart)); } catch { /* quota */ }
+  }, [cart]);
   const sub = (sku) => {
     const n = (cart[sku] || 0) - 1;
     const c = { ...cart };
@@ -114,10 +121,10 @@ export default function LolodriveCatalogPage() {
         reference_point_code: refCode || undefined,
       });
       toast.success(`Commande ${order.order_number} créée`);
+      setCart({});
       if (payInUC) {
         await lolodriveAPI.payOrderUC(order.id);
         toast.success('Payée en UC ✅');
-        setCart({});
         navigate('/pass');
       } else {
         // Stripe Checkout hosted (real test flow)
