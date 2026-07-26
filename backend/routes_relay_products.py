@@ -182,6 +182,10 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
         "created_at": now, "updated_at": now, "paid_at": now, "fulfilled_at": now,
     }
     await db.lolodrive_orders.insert_one(order)
+    for l in lines:
+        await db.lolodrive_products.update_one(
+            {"sku": l["sku"], "stock_qty": {"$ne": None}},
+            [{"$set": {"stock_qty": {"$max": [0, {"$subtract": [{"$ifNull": ["$stock_qty", 0]}, l["qty"]]}]}}}])
     order.pop("_id", None)
     order["point_name"] = point.get("name")
     return {"ok": True, "order_number": order["order_number"],

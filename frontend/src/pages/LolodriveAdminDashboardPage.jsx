@@ -7,6 +7,7 @@ import {
   TrendingUp, Clock, CheckCircle2, Package, AlertCircle, Download,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
+import { CounterRankingPodium } from '../components/admin/CounterRankingPodium';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { lolodriveAPI, crmAPI } from '../services/api';
@@ -197,6 +198,7 @@ export default function LolodriveAdminDashboardPage() {
                   </button>
                 </div>
               )}
+              <CounterRankingPodium />
             </SectionCard>
 
             <SectionCard>

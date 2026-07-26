@@ -81,6 +81,55 @@ async def pos_stock_alerts(days: int = 30, user: dict = Depends(get_current_user
     return {"days": days, "alerts": alerts}
 
 
+@pos_insights_router.patch("/pos/products/{sku}/stock")
+async def pos_set_stock(sku: str, payload: dict, user: dict = Depends(get_current_user)):
+    """Le gérant ajuste le stock d'un produit de son catalogue après un réassort."""
+    point = await _manager_point(user["id"])
+    try:
+        qty = int((payload or {}).get("stock_qty"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="stock_qty entier requis")
+    if qty < 0 or qty > 100000:
+        raise HTTPException(status_code=400, detail="stock_qty doit être entre 0 et 100000")
+    product = await db.lolodrive_products.find_one(
+        {"sku": sku, "$or": [{"point_code": {"$exists": False}}, {"point_code": None},
+                             {"point_code": point["code"]}]}, {"_id": 0, "sku": 1, "name": 1})
+    if not product:
+        raise HTTPException(status_code=404, detail="Produit introuvable au catalogue du relais")
+    await db.lolodrive_products.update_one(
+        {"sku": sku}, {"$set": {"stock_qty": qty, "updated_at": datetime.utcnow()}})
+    return {"ok": True, "sku": sku, "name": product["name"], "stock_qty": qty}
+
+
+@pos_insights_router.get("/admin/counter-ranking")
+async def admin_counter_ranking(month: Optional[str] = None, admin: dict = Depends(require_admin)):
+    """Classement des relais par chiffre d'affaires comptoir du mois (podium super admin)."""
+    now = datetime.utcnow()
+    try:
+        y, m = map(int, (month or now.strftime("%Y-%m")).split("-"))
+        start = datetime(y, m, 1)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Format mois invalide (attendu : YYYY-MM)")
+    end = datetime(y + 1, 1, 1) if m == 12 else datetime(y, m + 1, 1)
+    agg = {}
+    async for o in db.lolodrive_orders.find(
+            {"channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
+            {"_id": 0, "lolo_point_id": 1, "total_cents": 1}):
+        e = agg.setdefault(o.get("lolo_point_id"), {"count": 0, "total_cents": 0})
+        e["count"] += 1
+        e["total_cents"] += o.get("total_cents", 0)
+    points = {p["id"]: p async for p in db.lolodrive_points.find(
+        {}, {"_id": 0, "id": 1, "code": 1, "name": 1, "city": 1})}
+    ranking = [{"point_id": pid, "code": points.get(pid, {}).get("code", pid),
+                "name": points.get(pid, {}).get("name", "Relais inconnu"),
+                "city": points.get(pid, {}).get("city"), **vals}
+               for pid, vals in agg.items()]
+    ranking.sort(key=lambda r: r["total_cents"], reverse=True)
+    for i, r in enumerate(ranking):
+        r["rank"] = i + 1
+    return {"month": start.strftime("%Y-%m"), "ranking": ranking}
+
+
 @pos_insights_router.get("/admin/counter-journal/export")
 async def admin_counter_journal_export(month: Optional[str] = None, admin: dict = Depends(require_admin)):
     """Export CSV consolidé des caisses comptoir de tous les relais du réseau (mois donné)."""

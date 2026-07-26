@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Minus, Loader2, Camera, Banknote, CreditCard, Pencil } from 'lucide-react';
+import { Package, Plus, Minus, Loader2, Camera, Banknote, CreditCard, Pencil, Boxes } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -28,7 +28,20 @@ export const PosCatalogPanel = () => {
   const [selling, setSelling] = useState(false);
   const [ticket, setTicket] = useState(null);
   const [journalKey, setJournalKey] = useState(0);
+  const [stockEdit, setStockEdit] = useState(null);
   const fileRef = useRef(null);
+
+  const saveStock = async () => {
+    const qty = parseInt(stockEdit.value, 10);
+    if (Number.isNaN(qty) || qty < 0) return toast.error('Quantité invalide');
+    try {
+      const r = await lolodriveAPI.posSetStock(stockEdit.sku, qty);
+      toast.success(`Stock de "${r.name}" mis à jour : ${r.stock_qty} unités ✓`);
+      setStockEdit(null);
+      load();
+      setJournalKey((k) => k + 1);
+    } catch (e) { toast.error(e.message); }
+  };
 
   const uploadPhoto = async (file) => {
     setUploading(true);
@@ -96,6 +109,7 @@ export const PosCatalogPanel = () => {
       setSale({});
       setTicket(r.order);
       setJournalKey((k) => k + 1);
+      load();
     } catch (e) { toast.error(e.message); } finally { setSelling(false); }
   };
 
@@ -185,6 +199,27 @@ export const PosCatalogPanel = () => {
             <span className="font-mono shrink-0 ml-3 flex items-center gap-2">
               {(p.price_public_cents / 100).toFixed(2)} € <span className="text-[#D9B35A]">· {p.uc_public} UC</span>
               {p.price_pass_cents != null && <span className="text-white/40"> (PASS {(p.price_pass_cents / 100).toFixed(2)} € · {p.uc_pass} UC)</span>}
+              {stockEdit?.sku === p.sku ? (
+                <span className="flex items-center gap-1">
+                  <input type="number" min="0" autoFocus value={stockEdit.value} data-testid={`stock-input-${p.sku}`}
+                    onChange={(e) => setStockEdit({ ...stockEdit, value: e.target.value })}
+                    onKeyDown={(e) => { if (e.key === 'Enter') saveStock(); if (e.key === 'Escape') setStockEdit(null); }}
+                    className="w-16 px-1.5 py-0.5 rounded bg-white/10 border border-[#D9B35A]/50 text-white text-xs font-mono" />
+                  <button type="button" onClick={saveStock} data-testid={`stock-save-${p.sku}`}
+                    className="px-1.5 py-0.5 rounded text-[10px] font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a]">OK</button>
+                </span>
+              ) : (
+                <button type="button" title="Ajuster le stock (réassort)" data-testid={`stock-badge-${p.sku}`}
+                  onClick={() => setStockEdit({ sku: p.sku, value: p.stock_qty ?? '' })}
+                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                    p.stock_qty == null ? 'text-white/40 bg-white/[0.04] border-white/10'
+                      : p.stock_qty <= 5 ? 'text-red-300 bg-red-500/10 border-red-400/35'
+                        : p.stock_qty <= 15 ? 'text-amber-300 bg-amber-400/10 border-amber-400/35'
+                          : 'text-emerald-300 bg-emerald-400/10 border-emerald-400/30'
+                  } hover:brightness-125`}>
+                  <Boxes className="w-3 h-3" /> {p.stock_qty == null ? 'Stock ?' : `Stock ${p.stock_qty}`}
+                </button>
+              )}
               <button type="button" onClick={() => addSale(p.sku)} data-testid={`sale-add-${p.sku}`}
                 title="Ajouter à la vente au comptoir"
                 className="w-6 h-6 rounded-full flex items-center justify-center bg-[#D9B35A]/15 border border-[#D9B35A]/40 text-[#D9B35A] hover:bg-[#D9B35A]/30">

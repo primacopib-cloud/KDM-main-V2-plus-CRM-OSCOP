@@ -76,6 +76,10 @@ export const lolodriveAPI = {
   posTopProducts: (days = 30) => apiCall(`/lolodrive/pos/top-products?days=${days}`),
   posMonthlyCompare: () => apiCall('/lolodrive/pos/monthly-compare'),
   posStockAlerts: (days = 30) => apiCall(`/lolodrive/pos/stock-alerts?days=${days}`),
+  posSetStock: (sku, stockQty) =>
+    apiCall(`/lolodrive/pos/products/${sku}/stock`, { method: 'PATCH', body: JSON.stringify({ stock_qty: stockQty }) }),
+  adminCounterRanking: (month) =>
+    apiCall(`/lolodrive/admin/counter-ranking${month ? `?month=${month}` : ''}`),
   posEmailTicket: (orderId, email) =>
     apiCall(`/lolodrive/pos/counter-sale/${orderId}/email-ticket`, { method: 'POST', body: JSON.stringify({ email }) }),
   adminRelayProducts: (status = 'PENDING') =>
