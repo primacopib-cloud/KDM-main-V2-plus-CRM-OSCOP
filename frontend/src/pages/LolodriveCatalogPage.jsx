@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Plus, Minus, Sparkles, Tag, Trash2, Wallet, CreditCard, ArrowLeft, Star } from 'lucide-react';
 import LolodriveLayout, { SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
+import { useCatalogPromos, bestPromos } from '../components/catalog/ProductPromoBadges';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -74,6 +75,10 @@ export default function LolodriveCatalogPage() {
     })();
     return () => { cancelled = true; };
   }, [navigate, filter, territory]);
+
+  // Promos actives (bandeau sur les favoris en promo)
+  const promos = useCatalogPromos();
+  const favPromo = (p) => (favs.includes(p.sku) ? bestPromos(promos, p).discount : null);
 
   const add = (sku) => setCart({ ...cart, [sku]: (cart[sku] || 0) + 1 });
 
@@ -313,6 +318,13 @@ export default function LolodriveCatalogPage() {
                 className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm border border-white/15 hover:border-[#D9B35A]/60 transition-colors">
                 <Star className={`w-4 h-4 ${favs.includes(p.sku) ? 'fill-[#D9B35A] text-[#D9B35A]' : 'text-white/50'}`} />
               </button>
+              {favPromo(p) && (
+                <span data-testid={`fav-promo-band-${p.sku}`} title={favPromo(p).name}
+                  className="absolute top-2 left-2 z-10 px-2 py-1 rounded-lg text-[11px] font-black text-black shadow-lg"
+                  style={{ background: 'linear-gradient(90deg, #FF4D4D, #D9B35A)' }}>
+                  ⚡ -{favPromo(p).value_percent}%
+                </span>
+              )}
               {p.image_url && (
                 <div className="aspect-square bg-white/[0.02] overflow-hidden">
                   <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
