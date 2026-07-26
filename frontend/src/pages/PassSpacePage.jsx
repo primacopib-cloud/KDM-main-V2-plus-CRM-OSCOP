@@ -15,6 +15,7 @@ import { Label } from '../components/ui/label';
 import { lolodriveAPI, authAPI } from '../services/api';
 import { PassRelayHeader } from '../components/pass/PassRelayHeader';
 import { RelayReviewPrompt } from '../components/pass/RelayReviewPrompt';
+import { SavedCartReminder } from '../components/pass/SavedCartReminder';
 import QuickRechargeCards from '../components/pass/QuickRechargeCards';
 import { toast } from 'sonner';
 
@@ -131,6 +132,7 @@ export default function PassSpacePage() {
         <>
           <PassRelayHeader />
           <RelayReviewPrompt />
+          <SavedCartReminder />
           {/* Hero PASS state */}
           <SectionCard className="mb-6 relative overflow-hidden">
             <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full blur-3xl opacity-30"

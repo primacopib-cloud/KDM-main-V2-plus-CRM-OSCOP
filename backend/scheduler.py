@@ -136,6 +136,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler relay weekly recap crashed: %s", exc)
         try:
+            from pickup_reminders import run_pickup_reminders
+            await run_pickup_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler pickup reminders crashed: %s", exc)
+        try:
             from adhesion_archive import run_adhesion_archiving
             await run_adhesion_archiving(_db)
         except Exception as exc:
