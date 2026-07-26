@@ -1,10 +1,39 @@
 import { useEffect, useState } from 'react';
-import { Trophy, Medal } from 'lucide-react';
+import { Trophy, Medal, MessageCircle, Linkedin, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const MEDALS = ['🥇', '🥈', '🥉'];
 
-export const ChallengePodium = () => {
+const MedalShare = ({ rank, referralCode, month }) => {
+  const shareUrl = `${window.location.origin}/api/share/challenge?rank=${rank}&code=${referralCode}&month=${month}`;
+  const shareText = `${MEDALS[rank - 1]} Je suis #${rank} du défi parrainage KDMARCHÉ × O'SCOP ce mois-ci ! Rejoignez la coopérative avec mon code parrain ${referralCode} : ${shareUrl}`;
+  const copy = () => {
+    navigator.clipboard.writeText(shareText);
+    toast.success('Lien de partage de votre médaille copié');
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10" data-testid="medal-share">
+      <span className="text-[11px] text-white/60 font-semibold">{MEDALS[rank - 1]} Partagez votre médaille :</span>
+      <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer" data-testid="medal-share-whatsapp"
+        className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold inline-flex items-center gap-1 transition-all hover:brightness-110"
+        style={{ background: '#25D366', color: '#0b3d22' }}>
+        <MessageCircle className="w-3 h-3" /> WhatsApp
+      </a>
+      <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noreferrer" data-testid="medal-share-linkedin"
+        className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold inline-flex items-center gap-1 transition-all hover:brightness-110"
+        style={{ background: '#0A66C2', color: '#fff' }}>
+        <Linkedin className="w-3 h-3" /> LinkedIn
+      </a>
+      <button type="button" onClick={copy} data-testid="medal-share-copy"
+        className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-white/10 text-white/70 hover:text-white inline-flex items-center gap-1 transition-colors">
+        <Copy className="w-3 h-3" /> Copier
+      </button>
+    </div>
+  );
+};
+
+export const ChallengePodium = ({ referralCode }) => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -65,6 +94,9 @@ export const ChallengePodium = () => {
           ? <>Votre position : <b className="text-[#E9CF8E]">#{data.my_rank}</b> sur {data.participants} participant(s) — {data.my_count} filleul(s) ce mois-ci</>
           : <>Vous n'êtes pas encore classé ce mois-ci — parrainez un membre pour entrer au classement !</>}
       </p>
+      {data.my_rank >= 1 && data.my_rank <= 3 && referralCode && (
+        <MedalShare rank={data.my_rank} referralCode={referralCode} month={data.month} />
+      )}
     </div>
   );
 };

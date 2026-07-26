@@ -101,7 +101,7 @@ export const ReferralPanel = () => {
         </div>
       )}
       {data.my_sponsor_code && <p className="text-[11px] text-white/40">Parrainé avec le code {data.my_sponsor_code}.</p>}
-      <ChallengePodium />
+      <ChallengePodium referralCode={data.code} />
       <p className="text-[11px] text-white/40">
         Votre filleul saisit votre code dans son espace (avant sa première consultation) — vous recevez le bonus
         dès sa première inscription, et votre filleul reçoit aussi un bonus de bienvenue. Le tout est tracé au registre.
