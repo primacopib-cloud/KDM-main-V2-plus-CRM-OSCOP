@@ -60,6 +60,23 @@ async def create_lolo_point(request: LoloPointCreate, admin: dict = Depends(requ
     await emit_crm_event("lolo_point.created", doc)
     return doc
 
+ALLOWED_POINT_FIELDS = {"name", "address", "city", "contact_email", "contact_phone",
+                        "opening_hours", "offers_drive", "offers_delivery"}
+
+
+@lolodrive_points_router.patch("/admin/lolo-points/{point_id}")
+async def update_lolo_point(point_id: str, payload: dict, admin: dict = Depends(require_admin)):
+    """Mise à jour des coordonnées/services d'un relais (fiche relais admin)."""
+    updates = {k: v for k, v in (payload or {}).items() if k in ALLOWED_POINT_FIELDS}
+    if not updates:
+        raise HTTPException(status_code=400, detail="Aucun champ modifiable fourni")
+    updates["updated_at"] = datetime.utcnow()
+    res = await db.lolodrive_points.update_one({"id": point_id}, {"$set": updates})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Point introuvable")
+    return await db.lolodrive_points.find_one({"id": point_id}, {"_id": 0})
+
+
 @lolodrive_points_router.post("/admin/lolo-points/{point_id}/contributions")
 async def create_contribution(point_id: str, request: CoopContributionCreate, admin: dict = Depends(require_admin)):
     doc = request.dict()

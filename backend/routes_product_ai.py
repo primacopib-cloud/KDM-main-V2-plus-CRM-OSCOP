@@ -260,6 +260,31 @@ async def suggest_price(product_id: str, admin: dict = Depends(require_admin)):
     p = await db.catalog_products.find_one({"id": product_id}, {"_id": 0})
     if not p:
         raise HTTPException(status_code=404, detail="Produit introuvable")
+    return await _ai_price_product(p)
+
+
+@product_ai_router.post("/ai-price-bulk")
+async def suggest_price_bulk(payload: dict = None, admin: dict = Depends(require_admin)):
+    """Prix IA en lot : applique la suggestion IA à plusieurs fiches (défaut : tous les brouillons, max 10)."""
+    ids = list((payload or {}).get("ids") or [])[:10]
+    if not ids:
+        drafts = await db.catalog_products.find({"status": "draft"}, {"_id": 0, "id": 1}).to_list(10)
+        ids = [d["id"] for d in drafts]
+    results = []
+    for pid in ids:
+        p = await db.catalog_products.find_one({"id": pid}, {"_id": 0})
+        if not p:
+            results.append({"id": pid, "ok": False, "detail": "Produit introuvable"})
+            continue
+        try:
+            r = await _ai_price_product(p)
+            results.append({"id": pid, "ok": True, "name": p.get("name"), "price_ht_cents": r["price_ht_cents"]})
+        except HTTPException as exc:
+            results.append({"id": pid, "ok": False, "name": p.get("name"), "detail": exc.detail})
+    return {"count": len(results), "priced": sum(1 for r in results if r["ok"]), "results": results}
+
+
+async def _ai_price_product(p: dict) -> dict:
     margins_doc = await db.pricing_margins.find_one({"id": "default"}, {"_id": 0}) or {}
     margin = margins_doc.get("margins", {}).get(p.get("category"), DEFAULT_MARGIN)
     from emergentintegrations.llm.chat import LlmChat, UserMessage
@@ -285,10 +310,10 @@ async def suggest_price(product_id: str, admin: dict = Depends(require_admin)):
         data = json.loads(raw)
         price = max(1, int(data["price_ht_cents"]))
     except Exception as exc:
-        logger.error("Prix IA échoué %s : %s", product_id, exc)
+        logger.error("Prix IA échoué %s : %s", p.get("id"), exc)
         raise HTTPException(status_code=502, detail="Suggestion de prix échouée — réessayez")
     await db.catalog_products.update_one(
-        {"id": product_id}, {"$set": {"pricing.price_ht_cents": price}})
+        {"id": p["id"]}, {"$set": {"pricing.price_ht_cents": price}})
     await log_ai_usage(db, "product_scan", f"prix {p.get('name')}")
     return {"price_ht_cents": price, "reason": data.get("reason", ""),
             "cost_estimate_cents": data.get("cost_estimate_cents"), "margin_target": margin}

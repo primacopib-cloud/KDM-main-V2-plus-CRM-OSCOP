@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Clock, Truck, Car, Edit3 } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Truck, Car, Edit3, Navigation } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
 
 export const PassRelayHeader = () => {
@@ -40,7 +40,14 @@ export const PassRelayHeader = () => {
         <div className="min-w-[180px]">
           <p className="text-[10px] uppercase tracking-[0.18em] text-[#D9B35A] font-bold">Mon relais LOLODRIVE</p>
           <p className="text-base font-bold text-white" data-testid="pass-relay-name">{point.name}</p>
-          <p className="text-[11px] text-white/40 font-mono">{point.code}{point.territory ? ` · ${point.territory}` : ''}</p>
+          <p className="text-[11px] text-white/40 font-mono flex items-center gap-1.5">
+            {point.code}{point.territory ? ` · ${point.territory}` : ''}
+            <Link to="/#reseau-lolodrive" data-testid="pass-relay-map-link"
+              title="Voir sur la carte des relais LOLODRIVE"
+              className="text-[#D9B35A] hover:text-[#E9CF8E] transition-transform hover:scale-125">
+              <MapPin className="w-3.5 h-3.5" />
+            </Link>
+          </p>
         </div>
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-white/75 min-w-[240px]">
           {(point.address || point.city) && (
@@ -66,6 +73,15 @@ export const PassRelayHeader = () => {
           )}
         </div>
         <div className="flex flex-col items-end gap-2">
+          <a
+            href={point.lat && point.lng
+              ? `https://www.google.com/maps/dir/?api=1&destination=${point.lat},${point.lng}`
+              : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent([point.name, point.address, point.city].filter(Boolean).join(', '))}`}
+            target="_blank" rel="noreferrer" data-testid="pass-relay-directions-btn"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-black transition-transform hover:scale-105"
+            style={{ background: 'linear-gradient(135deg, #D9B35A, #c9a34a)' }}>
+            <Navigation className="w-3.5 h-3.5" /> Y aller
+          </a>
           <div className="flex gap-1.5">
             {point.offers_drive && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase text-emerald-300 border border-emerald-400/40 bg-emerald-500/10" data-testid="pass-relay-drive-badge">
