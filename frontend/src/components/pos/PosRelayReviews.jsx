@@ -66,9 +66,17 @@ export const PosRelayReviews = () => {
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} data-testid="pos-reviews-btn"
+        title={data.gold ? "Relais D'Or décroché (note ≥ 4.5)" : `Plus que ${data.gold_missing} avis 5★ pour le badge Relais D'Or`}
         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-xs text-white/80 hover:border-[#D9B35A]/50 transition-colors">
         <MessageSquare className="w-3 h-3 text-[#D9B35A]" />
         Avis clients ({data.count}){data.avg ? ` · ★ ${data.avg}` : ''}
+        <span data-testid="pos-gold-pill"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+          style={data.gold
+            ? { background: 'linear-gradient(135deg,#FFD700,#D9B35A)', color: '#1F0A33' }
+            : { background: 'rgba(255,215,0,0.10)', color: '#E9CF8E', border: '1px solid rgba(255,215,0,0.30)' }}>
+          🏆 {data.gold ? "Relais D'Or" : `−${data.gold_missing} avis 5★`}
+        </span>
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-[#1A092D] border-white/15 text-white max-w-lg max-h-[80vh] overflow-y-auto" data-testid="pos-reviews-dialog">
@@ -78,6 +86,15 @@ export const PosRelayReviews = () => {
               Avis reçus — {data.point?.name}{data.avg ? ` · ★ ${data.avg} (${data.count})` : ''}
             </DialogTitle>
           </DialogHeader>
+          <div data-testid="pos-gold-objective"
+            className="p-3 rounded-xl border text-xs"
+            style={data.gold
+              ? { background: 'rgba(255,215,0,0.10)', borderColor: 'rgba(255,215,0,0.45)', color: '#FFE9A8' }
+              : { background: 'rgba(217,179,90,0.07)', borderColor: 'rgba(217,179,90,0.30)', color: '#E9CF8E' }}>
+            {data.gold
+              ? <>🏆 <strong>Relais D'Or décroché !</strong> Votre note moyenne est ≥ 4.5 — continuez à soigner l'accueil pour le conserver.</>
+              : <>🏆 <strong>Objectif Relais D'Or</strong> : plus que <strong>{data.gold_missing} avis 5★</strong> pour atteindre la note moyenne de 4.5 et décrocher le badge sur la carte.</>}
+          </div>
           <div className="space-y-3">
             {data.reviews.length === 0 && <p className="text-sm text-white/40">Aucun avis reçu pour le moment.</p>}
             {data.reviews.map((r) => <ReviewRow key={r.id} review={r} onReplied={load} />)}

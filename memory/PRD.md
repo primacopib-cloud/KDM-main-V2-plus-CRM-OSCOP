@@ -1816,3 +1816,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Avis vitrine PASS** : `VitrineReviews.jsx` sur /pass-lolodrive — 3 derniers avis avec étoiles + relais, vérifié visuellement.
 - **Podium relais accueil** : `RelayPodium.jsx` sur LandingPage — "Podium du mois — relais les mieux notés" (1er Pointe-à-Pitre 5★, 2e Capesterre 4.5★) + CTA "Devenir relais", vérifié visuellement.
 - **Récap hebdo gérant** : `relay_weekly_recap.py` (ventes, avis, note moyenne) — testé backend au lot précédent (mock lundi + send_email).
+
+## 2026-07-26 — Lot 12 : Objectif Relais D'Or + Récap réseau admin + Podium → avis (self-testé curl/python/Playwright)
+- **Objectif Relais D'Or (POS)** : `manager/my-reviews` renvoie `gold` + `gold_missing` (formule max(0, 9n−2S) avis 5★ pour atteindre avg ≥ 4.5 ; 1 si aucun avis). `PosRelayReviews.jsx` : pill 🏆 sur le bouton (testid pos-gold-pill) + bannière objectif dans le dialog (testid pos-gold-objective). Testé gérant LP-CAP : avg 4.5 → "Relais D'Or décroché".
+- **Récap réseau admin (lundi)** : `relay_weekly_recap.py` réécrit — itère TOUS les relais, envoie le récap gérant comme avant + email global aux admins (QUOTE_NOTIFY_EMAIL + users is_admin, tag relay_network_recap) : tableau par relais (cmd, volume €, nouveaux avis, note, 🏆), totaux réseau, tri par volume. Testé mock send_email : 1 gérant + 2 admins, contenu vérifié.
+- **Podium → avis sur la carte** : `RelayPodium` accepte `onView(code)` (cartes cliquables, hint "Voir les avis →"). Clic = scroll vers la carte + focusCode (flyTo/popup) + fiche relais + RelayReviewsDialog ouvert avec les avis du relais. Fiche relais enrichie : bouton "★ avg · Voir les N avis" (testid relay-detail-reviews-btn).
+- **Refactor 500 lignes** : `PublicLolodriveMapSection` extraite de LandingPage (534→388 lignes) vers `/app/frontend/src/components/landing/PublicLolodriveMapSection.jsx` (189 l.), ré-exportée depuis LandingPage pour compat.

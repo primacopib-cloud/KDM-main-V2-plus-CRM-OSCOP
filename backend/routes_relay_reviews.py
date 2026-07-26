@@ -56,8 +56,11 @@ async def manager_my_reviews(user: dict = Depends(get_current_user)):
     if not point:
         raise HTTPException(status_code=403, detail="Aucun relais géré par ce compte")
     reviews = await _serialize_reviews(point["code"])
-    avg = round(sum(r["rating"] for r in reviews) / len(reviews), 1) if reviews else None
-    return {"point": point, "reviews": reviews, "avg": avg, "count": len(reviews)}
+    n, total = len(reviews), sum(r["rating"] for r in reviews)
+    avg = round(total / n, 1) if n else None
+    gold_missing = max(0, 9 * n - 2 * total) if n else 1
+    return {"point": point, "reviews": reviews, "avg": avg, "count": n,
+            "gold": gold_missing == 0 and n > 0, "gold_missing": gold_missing}
 
 
 @relay_reviews_router.post("/manager/my-reviews/{review_id}/reply")

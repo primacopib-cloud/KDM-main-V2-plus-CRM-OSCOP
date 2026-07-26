@@ -8,7 +8,7 @@ const MEDALS = [
   { ring: '#CD7F32', bg: 'rgba(205,127,50,0.10)', label: '3e' },
 ];
 
-export const RelayPodium = () => {
+export const RelayPodium = ({ onView }) => {
   const [podium, setPodium] = useState([]);
 
   useEffect(() => {
@@ -27,8 +27,9 @@ export const RelayPodium = () => {
         {podium.map((p, i) => {
           const m = MEDALS[i] || MEDALS[2];
           return (
-            <div key={p.code} data-testid={`podium-${i + 1}`}
-              className="flex items-center gap-3 rounded-2xl p-3.5 border"
+            <button key={p.code} type="button" data-testid={`podium-${i + 1}`}
+              onClick={() => onView?.(p.code)}
+              className={`flex items-center gap-3 rounded-2xl p-3.5 border text-left w-full transition-transform ${onView ? 'cursor-pointer hover:scale-[1.02]' : 'cursor-default'}`}
               style={{ borderColor: m.ring, background: m.bg }}>
               <span className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm text-black shrink-0"
                 style={{ background: m.ring }}>
@@ -41,8 +42,11 @@ export const RelayPodium = () => {
                   <Star className="w-3.5 h-3.5 fill-[#D9B35A] text-[#D9B35A]" /> {p.avg}
                   <span className="text-white/40 font-normal">({p.count} avis ce mois-ci)</span>
                 </p>
+                {onView && (
+                  <p className="text-[10px] font-semibold text-[#D9B35A] mt-0.5">Voir les avis →</p>
+                )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
