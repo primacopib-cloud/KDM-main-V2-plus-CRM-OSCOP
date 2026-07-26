@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Loader2 } from 'lucide-react';
+import { Package, Plus, Loader2, Camera } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -19,6 +19,24 @@ export const PosCatalogPanel = () => {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: '', category: '', brand: '', description: '', price: '' });
+  const [photo, setPhoto] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  const uploadPhoto = async (file) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/manager/products/photo`, {
+        method: 'POST', credentials: 'include', body: fd,
+      });
+      const d = await r.json();
+      if (!r.ok) { toast.error(d.detail || 'Upload échoué'); return; }
+      setPhoto(d.image_url);
+      toast.success('Photo ajoutée à la fiche ✓');
+    } catch { toast.error('Erreur de connexion'); } finally { setUploading(false); }
+  };
 
   const load = () => {
     lolodriveAPI.posCatalog().then(setCatalog).catch(() => {});
@@ -35,11 +53,12 @@ export const PosCatalogPanel = () => {
     try {
       await lolodriveAPI.managerSubmitProduct({
         name: form.name, category: form.category, brand: form.brand || undefined,
-        description: form.description, price_public_cents: cents,
+        description: form.description, price_public_cents: cents, image_url: photo || undefined,
       });
       toast.success('Fiche soumise au super admin pour validation ✓');
       setOpen(false);
       setForm({ name: '', category: '', brand: '', description: '', price: '' });
+      setPhoto(null);
       load();
     } catch (e) { toast.error(e.message); } finally { setSaving(false); }
   };
@@ -73,6 +92,18 @@ export const PosCatalogPanel = () => {
                 onChange={(e) => setForm({ ...form, description: e.target.value })} className="bg-white/5 border-white/10" />
               <Input placeholder="Prix public en € * (ex: 4.50)" value={form.price} data-testid="product-price-input"
                 onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-white/5 border-white/10" />
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" data-testid="product-photo-input"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }} />
+              <div className="flex items-center gap-3">
+                <Button type="button" variant="outline" size="sm" disabled={uploading}
+                  onClick={() => fileRef.current?.click()} data-testid="product-photo-btn"
+                  className="border-white/15 text-white/80">
+                  {uploading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Camera className="w-3 h-3 mr-1 text-[#D9B35A]" />}
+                  {photo ? 'Changer la photo' : 'Ajouter une photo'}
+                </Button>
+                {photo && <img src={photo} alt="Aperçu produit" data-testid="product-photo-preview"
+                  className="w-12 h-12 rounded-lg object-cover border border-[#D9B35A]/40" />}
+              </div>
               <Button onClick={submit} disabled={saving} className="w-full bg-[#D9B35A] hover:bg-[#c9a34a] text-black" data-testid="product-submit-btn">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Soumettre pour validation'}
               </Button>

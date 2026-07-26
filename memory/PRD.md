@@ -1890,3 +1890,7 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Contrôle admin gérants** : GET /admin/lolo-points/pro-status + badges dans LoloPointsAdminPage (vue Liste) : "PRO ACTIF ✓ → date" (vert) / "Pro requis ✗" (rouge) / "Aucun gérant" (gris). Vérifié : LP-CAP vert 26/07/2027.
 - ⚠️ Bug corrigé : `useEffect(load, [])` avec load retournant une Promise → "destroy is not a function" (crash admin page). Toujours envelopper : `useEffect(() => { load(); }, [])`.
 - Données démo : 2 produits relais LP-CAP approuvés (Confiture de goyave 6.50€, Miel de forêt 12€).
+
+## 2026-07-26 — Lot 25 : Photo fiche produit + Alerte admin nouvelle fiche (self-testé curl E2E + Playwright)
+- **Photo fiche produit** : POST /api/lolodrive/manager/products/photo (routes_relay_products.py, pattern upload relais : jpg/png/webp 4 Mo, stocké /api/uploads/products/product-{code}-{hex}.ext). PosCatalogPanel : bouton "Ajouter une photo" (testid product-photo-btn, upload multipart credentials:'include') + aperçu (product-photo-preview), image_url inclus à la soumission. Vignette dans la file admin (testid pending-photo-{sku}). Testé E2E : upload 200, fiche "Piment végétarien confit" avec photo visible dans la file admin.
+- **Alerte nouvelle fiche** : `_notify_admins_new_product` appelé à chaque soumission — email Brevo (tag relay_product_pending) à QUOTE_NOTIFY_EMAIL + tous les users is_admin avec récap fiche (nom, prix, catégorie, description) et pointeur vers Admin → Réseau LOLODRIVE. Testé : 2 emails Brevo 201 lors de la soumission.

@@ -35,6 +35,10 @@ export const RelayProductsQueue = () => {
         {pending.map((p) => (
           <div key={p.sku} className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-black/25 border border-white/[0.06]"
             data-testid={`pending-product-${p.sku}`}>
+            {p.image_url && (
+              <img src={p.image_url} alt={p.name} data-testid={`pending-photo-${p.sku}`}
+                className="w-14 h-14 rounded-lg object-cover border border-white/10 shrink-0" />
+            )}
             <div className="flex-1 min-w-[220px]">
               <div className="text-sm font-semibold">{p.name} <span className="text-white/40 font-normal">— {(p.price_public_cents / 100).toFixed(2)} €</span></div>
               <div className="text-[11px] text-white/50">

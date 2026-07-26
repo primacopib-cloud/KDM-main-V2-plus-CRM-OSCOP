@@ -1,16 +1,18 @@
 """Catalogue relais LOLODRIVE : soumission gérant + validation super admin + catalogue POS."""
+import os
 import re
 import uuid
 import logging
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 
 from lolodrive_helpers import get_current_user, require_admin, cents_to_uc
 
 logger = logging.getLogger(__name__)
+TEAM_EMAIL = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
 relay_products_router = APIRouter(prefix="/api/lolodrive", tags=["Relay Products"])
 db = None
 
@@ -36,6 +38,50 @@ async def _manager_point(user_id: str) -> dict:
     if not point:
         raise HTTPException(status_code=404, detail="Aucun relais LOLODRIVE assigné à ce compte")
     return point
+
+
+@relay_products_router.post("/manager/products/photo")
+async def upload_product_photo(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Photo de la fiche produit du gérant (jpg/png/webp, 4 Mo max)."""
+    point = await _manager_point(user["id"])
+    ext = (file.filename or "img.jpg").rsplit(".", 1)[-1].lower()
+    if ext not in ("jpg", "jpeg", "png", "webp"):
+        raise HTTPException(status_code=400, detail="Format non supporté (jpg, png, webp)")
+    data = await file.read()
+    if len(data) > 4 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image trop lourde (max 4 Mo)")
+    up_dir = os.path.join(os.path.dirname(__file__), "uploads", "products")
+    os.makedirs(up_dir, exist_ok=True)
+    fname = f"product-{point['code'].lower()}-{uuid.uuid4().hex[:8]}.{ext}"
+    with open(os.path.join(up_dir, fname), "wb") as f:
+        f.write(data)
+    return {"ok": True, "image_url": f"/api/uploads/products/{fname}"}
+
+
+async def _notify_admins_new_product(product: dict):
+    from brevo_service import send_email, _wrap_html
+    recipients = {TEAM_EMAIL}
+    async for u in db.users.find({"is_admin": True}, {"_id": 0, "email": 1}):
+        if u.get("email"):
+            recipients.add(u["email"].lower())
+    subject = f"🗂️ Fiche produit relais à valider — {product['name']} ({product['point_code']})"
+    body = f"""
+      <p>Une nouvelle fiche produit vient d'être soumise par le relais <strong>{product['point_code']}</strong> :</p>
+      <div style='background:rgba(217,179,90,0.10);border:1px solid rgba(217,179,90,0.25);border-radius:12px;padding:14px;margin:12px 0;'>
+        <p style='margin:0;font-weight:bold'>{product['name']} — {product['price_public_cents'] / 100:.2f} €</p>
+        <p style='margin:6px 0 0;font-size:13px'>{product['category']}{' · ' + product['brand'] if product.get('brand') else ''}</p>
+        <p style='margin:6px 0 0;font-size:13px;color:#555'>{product['description']}</p>
+      </div>
+      <p>Rendez-vous dans <strong>Admin → Réseau LOLODRIVE</strong> pour l'approuver ou la refuser.</p>
+    """
+    for email in recipients:
+        try:
+            await send_email(to_email=email, to_name=None, subject=subject,
+                             html_content=_wrap_html(subject, body),
+                             text_content=f"Fiche produit relais à valider : {product['name']} ({product['point_code']}).",
+                             tags=["relay_product_pending"])
+        except Exception as exc:
+            logger.warning("Alerte nouvelle fiche à %s : %s", email, exc)
 
 
 @relay_products_router.post("/manager/products")
@@ -68,6 +114,10 @@ async def submit_relay_product(body: RelayProductSubmit, user: dict = Depends(ge
     }
     await db.lolodrive_products.insert_one(doc)
     doc.pop("_id", None)
+    try:
+        await _notify_admins_new_product(doc)
+    except Exception as exc:
+        logger.warning("Notification admins nouvelle fiche : %s", exc)
     return doc
 
 
