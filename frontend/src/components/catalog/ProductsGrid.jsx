@@ -8,7 +8,7 @@ import { FavoriteButton } from '../FavoriteButton';
 import { ProductVideoModal } from './ProductVideoModal';
 import { ProductReviewsModal, Stars } from './ProductReviewsModal';
 import { ProductShareButtons } from './ProductShareButtons';
-import { useCatalogPromos, bestPromos, PassLolodriveBadge, PromoPriceBlock } from './ProductPromoBadges';
+import { useCatalogPromos, bestPromos, PromoPriceBlock } from './ProductPromoBadges';
 
 const ProductImageCarousel = ({ product, onZoom }) => {
   const [idx, setIdx] = useState(0);
@@ -156,13 +156,10 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                 )}
               </div>
               
-              {/* Category badge + PASS LOLODRIVE */}
-              <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                <Badge variant="outline" className="w-fit text-[10px] text-white/60 border-white/20">
-                  {tData(product.category_name) || tData('Produit')}
-                </Badge>
-                <PassLolodriveBadge sku={product.sku} />
-              </div>
+              {/* Category badge */}
+              <Badge variant="outline" className="w-fit mb-2 text-[10px] text-white/60 border-white/20">
+                {tData(product.category_name) || tData('Produit')}
+              </Badge>
               
               {/* Product info */}
               <h3 className="font-medium text-white/90 mb-1 line-clamp-2">{tr(product).name || product.name}</h3>

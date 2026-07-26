@@ -24,6 +24,7 @@ import { BuyerConsultationsTab } from '../components/buyer/BuyerConsultationsTab
 import { BuyerToolsTab } from '../components/buyer/BuyerToolsTab';
 import { BuyerTransportTab } from '../components/buyer/transport/BuyerTransportTab';
 import { BuyerTabsNav } from '../components/buyer/BuyerTabsNav';
+import { BuyerProBadge } from '../components/buyer/BuyerProBadge';
 import { BrandLogos } from '../components/BrandLogos';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
@@ -312,7 +313,10 @@ export default function BuyerSpacePage() {
                 <ShoppingBag className="w-5 h-5 text-[#D9B35A]" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-white">{i18n.t('buyer.espace_acheteur_pro')}</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-lg font-bold text-white">{i18n.t('buyer.espace_acheteur_pro')}</h1>
+                  <BuyerProBadge />
+                </div>
                 <p className="text-xs text-white/50">{user?.company_name || i18n.t('buyer.mon_compte_b2b')}</p>
               </div>
             </div>

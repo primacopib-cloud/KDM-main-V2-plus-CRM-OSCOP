@@ -1760,3 +1760,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Email recharge confirmée** : `notify_recharge_confirmed` (brevo_service) appelé dans lolodrive_checkout_apply (branche RECHARGE) après crédit : +UC, nouveau solde, montant €. NON TESTÉ E2E (nécessite un vrai paiement Stripe webhook) — code path importé/validé.
 - **SCOOPY** : COOP'IA renommé partout (routes_ai_chat.py DEFAULT_SETTINGS + doc Mongo ai_chat_settings assistant_name/system_prompt + NavBar, SupplyRisk, CoopiaProcedureHint, VendorProductAssistant). Vérifié via GET /api/ai-chat/settings.
 - **Mode démo PASS supprimé** : route POST /api/lolodrive/demo/simulate-pass-activation retirée, `simulatePassActivation` retiré de api.lolodrive.js, fonction morte activatePassDemo/état activating retirés de PassSpacePage.
+
+## 2026-07-26 — Lot 3 : badges Acheteur PRO / Relais + repositionnement badge PASS LOLODRIVE (self-testé Playwright)
+- **Badge espace acheteur** : nouveau `components/buyer/BuyerProBadge.jsx` monté dans le header de BuyerSpacePage. Appelle GET /api/lolodrive/manager/my-point : si l'utilisateur gère un Lolo Point → badge or « Acheteur PRO · Relais LOLODRIVE » (logo + tooltip nom du relais), sinon badge « Acheteur PRO ». Testé : acheteur-pro@kdmarche.fr → PRO ; gerant@lolopoint.fr (LP-CAP) → Relais.
+- **Badge PASS LOLODRIVE retiré du catalogue acheteurs** (ProductsGrid) — les badges promo flash (-X%, +X% UC, prix barré) restent.
+- **Badge PASS LOLODRIVE déplacé sur le catalogue PASS** (`/catalogue-lolodrive`, LolodriveCatalogPage) : affiché sur chaque carte à côté d'ESSENTIEL/NON-25 (réutilise PassLolodriveBadge de ProductPromoBadges.jsx). Le catalogue dédié PASS est celui des relais/POS LOLODRIVE.

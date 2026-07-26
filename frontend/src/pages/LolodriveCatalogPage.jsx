@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../c
 import { lolodriveAPI, authAPI } from '../services/api';
 import { toast } from 'sonner';
 import TerritorySelector, { getInitialTerritory } from '../components/TerritorySelector';
+import { PassLolodriveBadge } from '../components/catalog/ProductPromoBadges';
 
 export default function LolodriveCatalogPage() {
   const navigate = useNavigate();
@@ -225,10 +226,11 @@ export default function LolodriveCatalogPage() {
                 </div>
               )}
               <div className="p-3">
-                <div className="flex gap-1 mb-2">
+                <div className="flex flex-wrap gap-1 mb-2">
                   {p.catalog_type === 'ESSENTIAL'
                     ? <Badge color="#D9B35A"><Sparkles className="w-3 h-3 mr-1 inline" />ESSENTIEL</Badge>
                     : <Badge color="#7c3aed">{i18n.t('lolodrive.hors25')}</Badge>}
+                  <PassLolodriveBadge sku={p.sku} />
                 </div>
                 <div className="font-medium text-sm leading-tight mb-1">{p.name}</div>
                 <div className="text-xs text-white/40 mb-3">{p.brand} · {p.sku}</div>
