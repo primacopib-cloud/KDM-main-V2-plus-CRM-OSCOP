@@ -1,4 +1,6 @@
 """Suivi de conversion des CTA d'adhésion : clics publics + tableau admin."""
+import asyncio
+import logging
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,6 +8,8 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from lolodrive_helpers import require_admin
+
+logger = logging.getLogger(__name__)
 
 cta_stats_router = APIRouter(prefix="/api", tags=["cta-stats"])
 
@@ -21,6 +25,7 @@ CTA_LABELS = {
     "hero_acces_pro": "Découvrir l'Accès Pro Mutualisé (hero accueil)",
     "devenir_relais": "Devenir relais LOLODRIVE (accueil)",
     "adherer_centrale": "Adhérer à la Centrale (vitrine zones)",
+    "adherer_centrale_api": "Adhérer à la Centrale (section API accueil)",
     "voir_catalogue": "Voir tout le catalogue (vitrine zones)",
     "tarifs_ess-acces-pro": "S'inscrire — ESS Accès Pro (/tarifs)",
     "tarifs_ess-volume-pro": "S'inscrire — ESS Volume Pro (/tarifs)",
@@ -60,7 +65,38 @@ async def record_cta_click(body: CtaClickBody):
         "cta_id": body.cta_id,
         "at": datetime.now(timezone.utc).isoformat(),
     })
+    asyncio.create_task(_check_click_record())
     return {"ok": True}
+
+
+async def _check_click_record():
+    """Alerte les admins quand la semaine en cours bat le record hebdomadaire de clics."""
+    try:
+        weekly = {}
+        async for d in db.cta_clicks.find({}, {"_id": 0, "at": 1}):
+            key = datetime.fromisoformat(d["at"]).isocalendar()[:2]
+            weekly[key] = weekly.get(key, 0) + 1
+        cur_key = datetime.now(timezone.utc).isocalendar()[:2]
+        current = weekly.pop(cur_key, 0)
+        prev_record = max(weekly.values(), default=0)
+        if prev_record == 0 or current <= prev_record:
+            return
+        week_tag = f"{cur_key[0]}-W{cur_key[1]:02d}"
+        flag = await db.system_flags.find_one({"key": "cta_click_record_week"}, {"_id": 0, "value": 1})
+        if flag and flag.get("value") == week_tag:
+            return
+        await db.system_flags.update_one(
+            {"key": "cta_click_record_week"}, {"$set": {"value": week_tag}}, upsert=True)
+        from core_deps import create_notification
+        await create_notification(
+            "cta_click_record", "📈 Record de clics d'adhésion battu !",
+            f"La semaine en cours totalise {current} clics sur les boutons d'adhésion — le précédent record "
+            f"hebdomadaire ({prev_record}) est dépassé. Une campagne fonctionne : consultez le suivi de conversion.",
+            target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+            data={"link": "/superadmin"})
+        logger.info("Record clics CTA battu : %s clics (précédent %s)", current, prev_record)
+    except Exception as exc:
+        logger.warning("Vérification record clics CTA : %s", exc)
 
 
 @cta_stats_router.get("/admin/cta-stats")

@@ -27,8 +27,9 @@ export const ChallengePodium = () => {
         </span>
       </div>
       {data.top?.length > 0 ? (
+        <>
         <div className="grid grid-cols-3 gap-2" data-testid="challenge-top3">
-          {data.top.map((r, i) => (
+          {data.top.slice(0, 3).map((r, i) => (
             <div key={i} data-testid={`challenge-podium-rank-${i + 1}`}
               className={`rounded-lg px-2 py-2.5 text-center border ${r.me
                 ? 'bg-[#D9B35A]/15 border-[#D9B35A]/50'
@@ -41,6 +42,18 @@ export const ChallengePodium = () => {
             </div>
           ))}
         </div>
+        {data.top.length > 3 && (
+          <div className="space-y-1" data-testid="challenge-runners-up">
+            {data.top.slice(3).map((r, i) => (
+              <div key={i} className={`flex items-center gap-2 text-[11px] px-2 py-1 rounded-md ${r.me ? 'bg-[#D9B35A]/12 text-[#E9CF8E]' : 'text-white/60'}`}>
+                <span className="font-bold w-6">#{i + 4}</span>
+                <span className="flex-1 truncate">{r.me ? 'Vous' : r.name}</span>
+                <span className="text-white/40">{r.referred} filleul(s)</span>
+              </div>
+            ))}
+          </div>
+        )}
+        </>
       ) : (
         <p className="text-xs text-white/50" data-testid="challenge-empty">
           Aucun parrainage ce mois-ci — soyez le premier à prendre la tête du podium !

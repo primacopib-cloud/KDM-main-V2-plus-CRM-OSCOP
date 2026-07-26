@@ -96,7 +96,7 @@ async def my_challenge_standing(request: Request):
         "month": month, "my_rank": my_rank, "my_count": my_count,
         "participants": len(board),
         "top": [{"name": _mask(r["sponsor"]), "referred": r["referred"], "me": r["sponsor_id"] == user_id}
-                for r in board[:3]],
+                for r in board[:5]],
     }
 
 

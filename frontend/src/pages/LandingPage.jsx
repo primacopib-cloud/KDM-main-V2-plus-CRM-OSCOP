@@ -445,9 +445,10 @@ export const CooperativeApiSection = () => {
                 {i18n.t('landing.acceder_api')} <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                to="/adhesion"
+                to="/adhesion-vendeur"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white border border-white/25 hover:bg-white/5"
                 data-testid="coop-cta-adhesion"
+                onClick={() => trackCta('adherer_centrale_api')}
               >
                 {i18n.t('landing.adherer_a_la_centrale')}
               </Link>
