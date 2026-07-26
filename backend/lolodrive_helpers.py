@@ -77,8 +77,12 @@ async def quote_cart(user_id: str, items: List[QuoteLine]) -> dict:
     products = await db.lolodrive_products.find({"sku": {"$in": skus}, "is_active": {"$ne": False}}).to_list(200)
     products_by_sku = {p["sku"]: p for p in products}
 
+    from favorite_promo_alerts import _active_discount_promos, _matches_product
+    promos = await _active_discount_promos(db)
+
     subtotal_cents = 0
     subtotal_uc = 0
+    promo_discount_cents = 0
     lines = []
 
     for item in items:
@@ -90,13 +94,21 @@ async def quote_cart(user_id: str, items: List[QuoteLine]) -> dict:
         if is_essential and pass_active and p.get("price_pass_cents") is not None:
             unit_cents = p["price_pass_cents"]
 
+        base_public = p.get("price_public_cents", unit_cents)
+        promo_pct = max((pr.get("value_percent") or 0 for pr in promos if _matches_product(pr, p)), default=0) if promos else 0
+        if promo_pct:
+            discounted = round(unit_cents * (1 - promo_pct / 100))
+            promo_discount_cents += (unit_cents - discounted) * item.qty
+            unit_cents = discounted
+            base_public = round(base_public * (1 - promo_pct / 100))
+
         unit_uc = None
         if pass_active:
             if is_essential:
                 unit_uc = cents_to_uc(unit_cents)
             elif allow_normal_uc:
                 # Hors25 payable en UC sans avantage : UC sur prix normal
-                unit_uc = cents_to_uc(p.get("price_public_cents", unit_cents))
+                unit_uc = cents_to_uc(base_public)
 
         subtotal_cents += unit_cents * item.qty
         subtotal_uc += (unit_uc or 0) * item.qty
@@ -107,9 +119,11 @@ async def quote_cart(user_id: str, items: List[QuoteLine]) -> dict:
             "catalog_type": p.get("catalog_type"),
             "unit_cents": unit_cents,
             "unit_uc": unit_uc,
+            "promo_percent": promo_pct or None,
         })
 
-    return {"pass_active": pass_active, "subtotal_cents": subtotal_cents, "subtotal_uc": subtotal_uc, "lines": lines}
+    return {"pass_active": pass_active, "subtotal_cents": subtotal_cents, "subtotal_uc": subtotal_uc,
+            "promo_discount_cents": promo_discount_cents, "lines": lines}
 
 async def ensure_customer(user: dict) -> str:
     if user.get("stripe_customer_id"):

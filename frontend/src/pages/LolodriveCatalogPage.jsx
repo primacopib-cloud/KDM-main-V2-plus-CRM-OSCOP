@@ -76,9 +76,14 @@ export default function LolodriveCatalogPage() {
     return () => { cancelled = true; };
   }, [navigate, filter, territory]);
 
-  // Promos actives (bandeau sur les favoris en promo)
+  // Promos actives (bandeau favoris + prix barrés + remise panier)
   const promos = useCatalogPromos();
-  const favPromo = (p) => (favs.includes(p.sku) ? bestPromos(promos, p).discount : null);
+  const promoOf = (p) => bestPromos(promos, p).discount;
+  const favPromo = (p) => (favs.includes(p.sku) ? promoOf(p) : null);
+  const discountedUnit = (p) => {
+    const d = promoOf(p);
+    return d ? Math.round((p.display_price_cents || 0) * (1 - d.value_percent / 100)) : (p.display_price_cents || 0);
+  };
 
   const add = (sku) => setCart({ ...cart, [sku]: (cart[sku] || 0) + 1 });
 
@@ -136,7 +141,11 @@ export default function LolodriveCatalogPage() {
   const distanceFeeUc = Math.round(distanceRate * qtyTotal * 100) / 100;
   const cartTotal = cartItems.reduce((acc, { sku, qty }) => {
     const p = products.find((x) => x.sku === sku);
-    return acc + (p?.display_price_cents || 0) * qty;
+    return acc + (p ? discountedUnit(p) : 0) * qty;
+  }, 0);
+  const cartPromoDiscount = cartItems.reduce((acc, { sku, qty }) => {
+    const p = products.find((x) => x.sku === sku);
+    return acc + (p ? (p.display_price_cents || 0) - discountedUnit(p) : 0) * qty;
   }, 0);
 
   const checkout = async (payInUC) => {
@@ -205,7 +214,7 @@ export default function LolodriveCatalogPage() {
                   <div key={sku} className="flex items-center gap-2 p-2 rounded bg-white/[0.03]">
                     <div className="flex-1 text-sm">
                       <div className="font-medium">{p.name}</div>
-                      <div className="text-xs text-white/40">{fmtEUR(p.display_price_cents)} × {qty}</div>
+                      <div className="text-xs text-white/40">{fmtEUR(discountedUnit(p))} × {qty}</div>
                     </div>
                     <Button size="icon" variant="ghost" onClick={() => sub(sku)} data-testid={`cart-sub-${sku}`}>
                       <Minus className="w-3 h-3" />
@@ -220,6 +229,12 @@ export default function LolodriveCatalogPage() {
             </div>
             {cartItems.length > 0 && (
               <div className="mt-4 space-y-3">
+                {cartPromoDiscount > 0 && (
+                  <div className="flex justify-between text-xs font-semibold text-[#FF9E7A]" data-testid="cart-promo-discount-line">
+                    <span>⚡ Remise promo appliquée</span>
+                    <span>−{fmtEUR(cartPromoDiscount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold">
                   <span>{i18n.t('lolodrive.sous_total')}</span>
                   <span>{fmtEUR(cartTotal)}</span>
@@ -341,7 +356,18 @@ export default function LolodriveCatalogPage() {
                 <div className="text-xs text-white/40 mb-3">{p.brand} · {p.sku}</div>
                 <div className="flex items-end justify-between mb-3">
                   <div>
-                    <div className="text-lg font-bold">{fmtEUR(p.display_price_cents)}</div>
+                    {promoOf(p) ? (
+                      <>
+                        <div className="text-lg font-bold text-[#FF9E7A]" data-testid={`promo-price-${p.sku}`}>
+                          {fmtEUR(discountedUnit(p))}
+                        </div>
+                        <div className="text-xs text-white/40 line-through" data-testid={`promo-old-price-${p.sku}`}>
+                          {fmtEUR(p.display_price_cents)}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-lg font-bold">{fmtEUR(p.display_price_cents)}</div>
+                    )}
                     {p.display_uc != null && (
                       <div className="text-xs text-[#D9B35A]">{p.display_uc} UC</div>
                     )}

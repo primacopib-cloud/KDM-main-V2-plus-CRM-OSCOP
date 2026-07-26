@@ -146,6 +146,7 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
         "status": OrderStatus.DRAFT.value,
         "items": q["lines"],
         "subtotal_cents": q["subtotal_cents"],
+        "promo_discount_cents": q.get("promo_discount_cents", 0),
         "fees_cents": fees_cents,
         "total_cents": q["subtotal_cents"] + fees_cents,
         "subtotal_uc": q["subtotal_uc"],
