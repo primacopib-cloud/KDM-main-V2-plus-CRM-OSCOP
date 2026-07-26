@@ -138,6 +138,12 @@ export const lolodriveAPI = {
     return apiCall(`/lolodrive/admin/kpi/overview${q.toString() ? `?${q.toString()}` : ''}`);
   },
 
+  // Relay reviews (avis relais)
+  relayReviewsPending: () => apiCall('/lolodrive/relay-reviews/pending'),
+  submitRelayReview: (payload) =>
+    apiCall('/lolodrive/relay-reviews', { method: 'POST', body: JSON.stringify(payload) }),
+  relayReviewStats: () => apiCall('/lolodrive/relay-reviews/stats'),
+
   // Demo simulators (no Stripe webhook required)
   simulateOrderPayment: (orderId) =>
     apiCall(`/lolodrive/demo/simulate-order-payment/${orderId}`, { method: 'POST' }),

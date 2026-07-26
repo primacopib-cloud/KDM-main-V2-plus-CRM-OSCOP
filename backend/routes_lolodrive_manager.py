@@ -1,5 +1,7 @@
 """LOLODRIVE by O'SCOP — Gérant LOLO POINT routes (split from routes_lolodrive_oscoop.py)."""
-from fastapi import APIRouter, Depends, HTTPException
+import os
+import uuid
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 import logging
@@ -28,6 +30,28 @@ async def manager_my_point(user: dict = Depends(get_current_user)):
     if not point:
         raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
     return point
+
+
+@lolodrive_manager_router.post("/manager/my-point/photo")
+async def upload_my_point_photo(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Le gérant téléverse la photo de devanture de son relais (jpg/png/webp, 4 Mo max)."""
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]})
+    if not point:
+        raise HTTPException(status_code=403, detail="Aucun relais géré par ce compte")
+    ext = (file.filename or "img.jpg").rsplit(".", 1)[-1].lower()
+    if ext not in ("jpg", "jpeg", "png", "webp"):
+        raise HTTPException(status_code=400, detail="Format non supporté (jpg, png, webp)")
+    data = await file.read()
+    if len(data) > 4 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image trop lourde (max 4 Mo)")
+    up_dir = os.path.join(os.path.dirname(__file__), "uploads", "relays")
+    os.makedirs(up_dir, exist_ok=True)
+    fname = f"relay-{point['code'].lower()}-{uuid.uuid4().hex[:8]}.{ext}"
+    with open(os.path.join(up_dir, fname), "wb") as f:
+        f.write(data)
+    url = f"/api/uploads/relays/{fname}"
+    await db.lolodrive_points.update_one({"id": point["id"]}, {"$set": {"photo_url": url, "updated_at": datetime.utcnow()}})
+    return {"ok": True, "photo_url": url}
 
 
 @lolodrive_manager_router.get("/manager/my-orders")

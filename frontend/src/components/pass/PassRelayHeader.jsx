@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, Mail, Clock, Truck, Car, Navigation, Info } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Truck, Car, Navigation, Info, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { lolodriveAPI } from '../../services/api';
 
@@ -8,6 +8,14 @@ export const PassRelayHeader = () => {
   const [point, setPoint] = useState(null);
   const [noRelay, setNoRelay] = useState(false);
   const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [rating, setRating] = useState(null);
+
+  useEffect(() => {
+    if (!point?.code) return;
+    lolodriveAPI.relayReviewStats()
+      .then((d) => setRating((d.stats || {})[point.code] || null))
+      .catch(() => {});
+  }, [point?.code]);
 
   useEffect(() => {
     let pre = null;
@@ -37,11 +45,25 @@ export const PassRelayHeader = () => {
       style={{ background: 'linear-gradient(90deg, rgba(217,179,90,0.09), rgba(124,58,237,0.08))' }}
       data-testid="pass-relay-header">
       <div className="flex flex-wrap items-start gap-4">
-        <img src="/lolodrive-logo.jpg" alt="LOLODRIVE"
-          className="w-12 h-12 rounded-xl bg-white object-contain p-0.5 border border-[#D9B35A]/50 shrink-0" />
+        {point.photo_url ? (
+          <img src={point.photo_url} alt={point.name} data-testid="pass-relay-photo"
+            className="w-20 h-14 rounded-xl object-cover border border-[#D9B35A]/50 shrink-0" />
+        ) : (
+          <img src="/lolodrive-logo.jpg" alt="LOLODRIVE"
+            className="w-12 h-12 rounded-xl bg-white object-contain p-0.5 border border-[#D9B35A]/50 shrink-0" />
+        )}
         <div className="min-w-[180px]">
           <p className="text-[10px] uppercase tracking-[0.18em] text-[#D9B35A] font-bold">Mon relais LOLODRIVE</p>
-          <p className="text-base font-bold text-white" data-testid="pass-relay-name">{point.name}</p>
+          <p className="text-base font-bold text-white flex items-center gap-2" data-testid="pass-relay-name">
+            {point.name}
+            {rating && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#E9CF8E]" data-testid="pass-relay-rating"
+                title={`${rating.count} avis de titulaires PASS`}>
+                <Star className="w-3.5 h-3.5 fill-[#D9B35A] text-[#D9B35A]" /> {rating.avg}
+                <span className="text-white/40 font-normal">({rating.count})</span>
+              </span>
+            )}
+          </p>
           <p className="text-[11px] text-white/40 font-mono flex items-center gap-1.5">
             {point.code}{point.territory ? ` · ${point.territory}` : ''}
             <Link to="/#reseau-lolodrive" data-testid="pass-relay-map-link"

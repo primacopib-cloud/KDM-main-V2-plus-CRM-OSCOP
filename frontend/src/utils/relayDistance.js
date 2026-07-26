@@ -17,6 +17,12 @@ export const distanceFeeRate = (refPoint, point) => {
     ? DISTANCE_FEE_NEAR_UC : DISTANCE_FEE_FAR_UC;
 };
 
+export const kmBetween = (refPoint, point) => {
+  if (!refPoint || !point || refPoint.code === point.code) return null;
+  if ([refPoint.lat, refPoint.lng, point.lat, point.lng].some((c) => c == null)) return null;
+  return Math.round(haversineKm(refPoint.lat, refPoint.lng, point.lat, point.lng));
+};
+
 export const getReferencePointCode = () => {
   try { return JSON.parse(localStorage.getItem('kdm_preselected_point') || 'null')?.code || null; } catch { return null; }
 };

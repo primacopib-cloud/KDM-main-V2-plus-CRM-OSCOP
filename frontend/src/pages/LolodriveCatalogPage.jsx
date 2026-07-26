@@ -11,7 +11,7 @@ import { lolodriveAPI, authAPI } from '../services/api';
 import { toast } from 'sonner';
 import TerritorySelector, { getInitialTerritory } from '../components/TerritorySelector';
 import { PassLolodriveBadge } from '../components/catalog/ProductPromoBadges';
-import { distanceFeeRate, getReferencePointCode } from '../utils/relayDistance';
+import { distanceFeeRate, getReferencePointCode, kmBetween } from '../utils/relayDistance';
 
 export default function LolodriveCatalogPage() {
   const navigate = useNavigate();
@@ -186,7 +186,9 @@ export default function LolodriveCatalogPage() {
                     <SelectContent>
                       {loloPoints.map((p) => {
                         const r = distanceFeeRate(refPoint, p);
-                        const tag = !refPoint ? '' : r === 0 ? ' · ★ Mon relais' : ` · +${r.toFixed(2)} UC/produit`;
+                        const km = kmBetween(refPoint, p);
+                        const tag = !refPoint ? '' : r === 0 ? ' · ★ Mon relais'
+                          : ` ·${km != null ? ` ${km} km ·` : ''} +${r.toFixed(2)} UC/produit`;
                         return <SelectItem key={p.code} value={p.code}>{p.name} — {p.city}{tag}</SelectItem>;
                       })}
                     </SelectContent>
