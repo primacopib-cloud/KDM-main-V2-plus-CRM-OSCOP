@@ -63,6 +63,8 @@ import BackButton from "./components/BackButton";
 // LOLODRIVE by O'SCOP - 7 nouvelles pages
 import LolodriveAdminDashboardPage from "./pages/LolodriveAdminDashboardPage";
 import PassSpacePage from "./pages/PassSpacePage";
+import PassRegistrationPage from "./pages/PassRegistrationPage";
+import PassLolodrivePage from "./pages/PassLolodrivePage";
 import PosLolodrivePage from "./pages/PosLolodrivePage";
 import LoloPointsAdminPage from "./pages/LoloPointsAdminPage";
 import LoloHourAdminPage from "./pages/LoloHourAdminPage";
@@ -195,6 +197,8 @@ function App() {
           <Route path="/lolodrive" element={<LolodriveAdminDashboardPage />} />
           <Route path="/lolodrive/dashboard" element={<LolodriveAdminDashboardPage />} />
           <Route path="/pass" element={<PassSpacePage />} />
+          <Route path="/pass-lolodrive/inscription" element={<PassRegistrationPage />} />
+          <Route path="/pass-lolodrive" element={<PassLolodrivePage />} />
           <Route path="/espace-pass" element={<PassSpacePage />} />
           <Route path="/pos" element={<PosLolodrivePage />} />
           <Route path="/pos-lolodrive" element={<PosLolodrivePage />} />

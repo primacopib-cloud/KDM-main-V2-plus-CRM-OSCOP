@@ -414,5 +414,35 @@
     "act_password": "Password (min. 8 characters)",
     "act_confirm": "Confirm password",
     "act_btn": "Activate my space"
+  },
+  "passReg": {
+    "title": "PASS Registration",
+    "subtitle": "Fill in your details to get your LOLODRIVE PASS and access everyday essentials at a pooled cost.",
+    "relais_choisi": "Selected relay:",
+    "prenom": "First name",
+    "nom": "Last name",
+    "adresse": "Address",
+    "code_postal": "Postal code",
+    "ville": "City",
+    "telephone": "Phone",
+    "pays": "Country",
+    "email": "Email",
+    "obtenir_mon_pass": "Get my PASS",
+    "success": "Your PASS registration has been recorded",
+    "error": "An error occurred, please try again"
+  },
+  "passPage": {
+    "kicker": "Your everyday access",
+    "confirmation": "Welcome {{name}}, your PASS request has been recorded!",
+    "explainer": "The LOLODRIVE relay gives you access to everyday essential products at a pooled cost: the cooperative groups its members’ purchases to negotiate the best prices, and you pick them up near you.",
+    "card_essentiels_title": "Essential products",
+    "card_essentiels_desc": "Food, hygiene, household: everyday must-haves selected by the cooperative.",
+    "card_mutualise_title": "Pooled cost",
+    "card_mutualise_desc": "The central’s grouped purchasing volumes lower prices for every PASS holder.",
+    "card_relais_title": "Your local relay",
+    "card_relais_desc": "Cooperative drive pick-up or local delivery from the nearest LOLODRIVE relay.",
+    "votre_relais": "Your relay:",
+    "cta_catalogue": "Discover LOLODRIVE products",
+    "cta_accueil": "Back to home"
   }
 }

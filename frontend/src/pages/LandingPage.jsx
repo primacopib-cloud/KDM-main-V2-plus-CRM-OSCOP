@@ -371,7 +371,7 @@ export const PublicLolodriveMapSection = () => {
                   <div className="text-xs text-white/80">{i18n.t('landing.livraison_locale')}</div>
                 </div>
               </div>
-              <Link to="/inscription" onClick={() => activateHere(selected)} data-testid="activate-pass-here-btn">
+              <Link to="/pass-lolodrive/inscription" onClick={() => activateHere(selected)} data-testid="activate-pass-here-btn">
                 <button className="btn-gold w-full inline-flex items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-semibold">
                   {i18n.t('landing.activer_mon_pass_ici')}
                   <ArrowRight className="w-4 h-4" />

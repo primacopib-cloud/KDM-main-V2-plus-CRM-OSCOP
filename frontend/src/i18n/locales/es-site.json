@@ -414,5 +414,35 @@
     "act_password": "Contraseña (mín. 8 caracteres)",
     "act_confirm": "Confirme la contraseña",
     "act_btn": "Activar mi espacio"
+  },
+  "passReg": {
+    "title": "Inscripción PASS",
+    "subtitle": "Complete sus datos para obtener su PASS LOLODRIVE y acceder a los productos cotidianos a un costo mutualizado.",
+    "relais_choisi": "Punto elegido:",
+    "prenom": "Nombre",
+    "nom": "Apellido",
+    "adresse": "Dirección",
+    "code_postal": "Código postal",
+    "ville": "Ciudad",
+    "telephone": "Teléfono",
+    "pays": "País",
+    "email": "Email",
+    "obtenir_mon_pass": "Obtener mi PASS",
+    "success": "Su inscripción PASS ha sido registrada",
+    "error": "Se produjo un error, inténtelo de nuevo"
+  },
+  "passPage": {
+    "kicker": "Su acceso cotidiano",
+    "confirmation": "¡Bienvenido {{name}}, su solicitud de PASS ha sido registrada!",
+    "explainer": "El punto LOLODRIVE es el acceso a productos de primera necesidad a un costo mutualizado: la cooperativa agrupa las compras de sus miembros para negociar los mejores precios, y usted los retira cerca de su casa.",
+    "card_essentiels_title": "Productos esenciales",
+    "card_essentiels_desc": "Alimentación, higiene, hogar: los imprescindibles del día a día seleccionados por la cooperativa.",
+    "card_mutualise_title": "Costo mutualizado",
+    "card_mutualise_desc": "Los volúmenes de compras agrupadas de la central bajan los precios para todos los titulares del PASS.",
+    "card_relais_title": "Su punto de cercanía",
+    "card_relais_desc": "Retiro cooperativo en drive o entrega local desde el punto LOLODRIVE más cercano.",
+    "votre_relais": "Su punto:",
+    "cta_catalogue": "Descubrir los productos LOLODRIVE",
+    "cta_accueil": "Volver al inicio"
   }
 }

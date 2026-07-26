@@ -414,5 +414,35 @@
     "act_password": "Mot de passe (8 caractères min.)",
     "act_confirm": "Confirmez le mot de passe",
     "act_btn": "Activer mon espace"
+  },
+  "passReg": {
+    "title": "Inscription PASS",
+    "subtitle": "Renseignez vos coordonnées pour obtenir votre PASS LOLODRIVE et accéder aux produits du quotidien à coût mutualisé.",
+    "relais_choisi": "Relais choisi :",
+    "prenom": "Prénom",
+    "nom": "Nom",
+    "adresse": "Adresse",
+    "code_postal": "Code postal",
+    "ville": "Ville",
+    "telephone": "Téléphone",
+    "pays": "Pays",
+    "email": "Email",
+    "obtenir_mon_pass": "Obtenir mon PASS",
+    "success": "Votre inscription PASS a bien été enregistrée",
+    "error": "Une erreur s'est produite, réessayez"
+  },
+  "passPage": {
+    "kicker": "Votre accès au quotidien",
+    "confirmation": "Bienvenue {{name}}, votre demande de PASS est enregistrée !",
+    "explainer": "Le relais LOLODRIVE, c'est l'accès à des produits de nécessité du quotidien à un coût mutualisé : la coopérative regroupe les achats de ses adhérents pour négocier les meilleurs prix, et vous les retirez près de chez vous.",
+    "card_essentiels_title": "Produits essentiels",
+    "card_essentiels_desc": "Alimentaire, hygiène, entretien : les indispensables du quotidien sélectionnés par la coopérative.",
+    "card_mutualise_title": "Coût mutualisé",
+    "card_mutualise_desc": "Les volumes d’achats groupés de la centrale font baisser les prix pour tous les porteurs du PASS.",
+    "card_relais_title": "Votre relais de proximité",
+    "card_relais_desc": "Retrait coopératif en drive ou livraison locale depuis le relais LOLODRIVE le plus proche.",
+    "votre_relais": "Votre relais :",
+    "cta_catalogue": "Découvrir les produits LOLODRIVE",
+    "cta_accueil": "Retour à l'accueil"
   }
 }
