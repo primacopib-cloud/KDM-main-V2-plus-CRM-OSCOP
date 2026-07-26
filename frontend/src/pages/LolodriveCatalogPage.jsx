@@ -59,7 +59,7 @@ export default function LolodriveCatalogPage() {
     (async () => {
       try {
         const [c, lp] = await Promise.all([
-          lolodriveAPI.catalogProducts(filter && filter !== 'FAVS' ? filter : undefined, territory || undefined),
+          lolodriveAPI.catalogProducts(filter && filter !== 'FAVS' ? filter : undefined, territory || undefined, getReferencePointCode() || undefined),
           lolodriveAPI.listLoloPoints({ territory: territory || undefined }),
         ]);
         if (cancelled) return;
@@ -352,6 +352,7 @@ export default function LolodriveCatalogPage() {
                   {p.catalog_type === 'ESSENTIAL'
                     ? <Badge color="#D9B35A"><Sparkles className="w-3 h-3 mr-1 inline" />ESSENTIEL</Badge>
                     : <Badge color="#7c3aed">{i18n.t('lolodrive.hors25')}</Badge>}
+                  {p.point_code && <Badge color="#10b981">Relais {p.point_code}</Badge>}
                   <PassLolodriveBadge sku={p.sku} />
                 </div>
                 <div className="font-medium text-sm leading-tight mb-1">{p.name}</div>

@@ -291,6 +291,7 @@ from routes_lolodrive_points import lolodrive_points_router
 from routes_lolodrive_manager import lolodrive_manager_router
 from routes_relay_reviews import relay_reviews_router, set_relay_reviews_database
 from routes_lolodrive_favorites import lolodrive_favorites_router
+from routes_relay_products import relay_products_router
 from routes_lolodrive_admin import lolodrive_admin_router, ensure_lolodrive_indexes
 set_lolodrive_database(db)
 app.include_router(lolodrive_router)
@@ -299,6 +300,7 @@ app.include_router(lolodrive_points_router)
 app.include_router(lolodrive_manager_router)
 app.include_router(relay_reviews_router)
 app.include_router(lolodrive_favorites_router)
+app.include_router(relay_products_router)
 app.include_router(lolodrive_admin_router)
 
 # Import and include LOLODRIVE Stripe Checkout (hosted page) for PASS/Recharge/Order

@@ -8,10 +8,11 @@ export const lolodriveAPI = {
 
   // Catalogue
   catalogTeaser: () => apiCall('/lolodrive/catalog/teaser'),
-  catalogProducts: (catalogType, territory) => {
+  catalogProducts: (catalogType, territory, pointCode) => {
     const q = new URLSearchParams();
     if (catalogType) q.append('catalog_type', catalogType);
     if (territory) q.append('territory', territory);
+    if (pointCode) q.append('point_code', pointCode);
     return apiCall(`/lolodrive/catalog/products${q.toString() ? `?${q.toString()}` : ''}`);
   },
   quote: (items) =>
@@ -62,6 +63,16 @@ export const lolodriveAPI = {
   favoritesSave: (skus) =>
     apiCall('/lolodrive/favorites', { method: 'POST', body: JSON.stringify({ skus }) }),
   managerProStatus: () => apiCall('/lolodrive/manager/pro-status'),
+  posCatalog: (pointCode) =>
+    apiCall(`/lolodrive/pos/catalog${pointCode ? `?point_code=${pointCode}` : ''}`),
+  managerProducts: () => apiCall('/lolodrive/manager/products'),
+  managerSubmitProduct: (payload) =>
+    apiCall('/lolodrive/manager/products', { method: 'POST', body: JSON.stringify(payload) }),
+  adminRelayProducts: (status = 'PENDING') =>
+    apiCall(`/lolodrive/admin/relay-products?status=${status}`),
+  adminReviewRelayProduct: (sku, action, reason) =>
+    apiCall(`/lolodrive/admin/relay-products/${sku}/review`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
+  adminPointsProStatus: () => apiCall('/lolodrive/admin/lolo-points/pro-status'),
 
   // LOLO POINTS
   listLoloPoints: (cityOrOpts, territory) => {

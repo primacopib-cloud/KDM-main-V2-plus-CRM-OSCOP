@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { RelayPhotoUpload } from '../components/pos/RelayPhotoUpload';
 import { PosRelayReviews } from '../components/pos/PosRelayReviews';
 import { ProSubscriptionBanner } from '../components/pos/ProSubscriptionBanner';
+import { PosCatalogPanel } from '../components/pos/PosCatalogPanel';
 import {
   Truck, Package, CheckCircle2, Clock, RefreshCw, ScanLine, AlertCircle,
   Bell, BellOff, User, Calendar, XCircle, Wifi, WifiOff, BellRing,
@@ -459,6 +460,8 @@ export default function PosLolodrivePage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <PosCatalogPanel />
     </LolodriveLayout>
   );
 }

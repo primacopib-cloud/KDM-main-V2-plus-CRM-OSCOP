@@ -146,6 +146,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler favorite promo alerts crashed: %s", exc)
         try:
+            from pro_expiry_alerts import run_pro_expiry_alerts
+            await run_pro_expiry_alerts(_db)
+        except Exception as exc:
+            logger.exception("Scheduler pro expiry alerts crashed: %s", exc)
+        try:
             from adhesion_archive import run_adhesion_archiving
             await run_adhesion_archiving(_db)
         except Exception as exc:

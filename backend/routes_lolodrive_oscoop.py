@@ -35,6 +35,7 @@ from lolodrive_helpers import (
 )
 from routes_relay_reviews import set_relay_reviews_database
 from routes_lolodrive_favorites import set_lolodrive_favorites_database
+from routes_relay_products import set_relay_products_database
 from routes_lolodrive_pos import set_lolodrive_pos_database
 from routes_lolodrive_points import set_lolodrive_points_database
 from routes_lolodrive_manager import set_lolodrive_manager_database
@@ -56,6 +57,7 @@ def set_lolodrive_database(database):
     set_lolodrive_admin_database(database)
     set_relay_reviews_database(database)
     set_lolodrive_favorites_database(database)
+    set_relay_products_database(database)
 
 # =======================
 # Public / user routes
@@ -79,23 +81,31 @@ async def my_wallet(user: dict = Depends(get_current_user)):
 
 @lolodrive_router.get("/catalog/teaser")
 async def catalog_teaser():
-    products = await db.lolodrive_products.find({"is_active": {"$ne": False}}, {"_id": 0, "price_pass_cents": 0}).limit(7).to_list(7)
+    products = await db.lolodrive_products.find({"is_active": {"$ne": False}, "$or": [{"point_code": {"$exists": False}}, {"point_code": None}]}, {"_id": 0, "price_pass_cents": 0}).limit(7).to_list(7)
     return {"products": products, "note": "Catalogue teaser public : prix PASS détaillés masqués."}
 
 @lolodrive_router.get("/catalog/products")
-async def catalog_products(catalog_type: Optional[CatalogType] = None, territory: Optional[str] = None, user: dict = Depends(get_current_user)):
+async def catalog_products(catalog_type: Optional[CatalogType] = None, territory: Optional[str] = None,
+                           point_code: Optional[str] = None, user: dict = Depends(get_current_user)):
     pass_active = await is_pass_active(user["id"])
     query = {"is_active": {"$ne": False}}
     if catalog_type:
         query["catalog_type"] = catalog_type.value
+    ands = []
     if territory:
         # Product is available in territory if `territories` is missing/empty (=all) OR contains the requested code.
         territory = territory.upper()
-        query["$or"] = [
+        ands.append({"$or": [
             {"territories": {"$exists": False}},
             {"territories": {"$size": 0}},
             {"territories": territory},
-        ]
+        ]})
+    # Produits relais : visibles uniquement pour le relais identifié du client, et si approuvés.
+    point_or = [{"point_code": {"$exists": False}}, {"point_code": None}]
+    if point_code:
+        point_or.append({"point_code": point_code.upper(), "status": "APPROVED"})
+    ands.append({"$or": point_or})
+    query["$and"] = ands
     products = await db.lolodrive_products.find(query, {"_id": 0}).sort("name", 1).limit(200).to_list(200)
 
     out = []

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Store, Plus, MapPin, RefreshCw, Calculator, TrendingUp, Map as MapIcon, List } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
+import { RelayProductsQueue } from '../components/admin/RelayProductsQueue';
 import Phase2Banner from '../components/Phase2Banner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -22,6 +23,11 @@ export default function LoloPointsAdminPage() {
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [payoutPoint, setPayoutPoint] = useState(null);
   const [payoutResult, setPayoutResult] = useState(null);
+  const [proStatuses, setProStatuses] = useState({});
+
+  useEffect(() => {
+    lolodriveAPI.adminPointsProStatus().then((d) => setProStatuses(d.statuses || {})).catch(() => {});
+  }, []);
 
   // Load points whenever territory changes
   const loadPoints = useCallback(async () => {
@@ -193,6 +199,8 @@ export default function LoloPointsAdminPage() {
         <KpiCard testId="kpi-cap-monthly" label="Plafond mensuel" value="1 200 €" sub="par point" icon={Calculator} accent="#D9B35A" />
       </div>
 
+      <RelayProductsQueue />
+
       {loading && <div className="text-center text-white/50 py-12">Chargement…</div>}
 
       {!loading && view === 'map' && (
@@ -211,7 +219,17 @@ export default function LoloPointsAdminPage() {
                   <div className="font-semibold">{p.name}</div>
                   <div className="text-xs text-white/40 font-mono">{p.code} · {p.territory || '—'}</div>
                 </div>
-                <Badge color="#10b981">{p.status}</Badge>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge color="#10b981">{p.status}</Badge>
+                  {(() => {
+                    const ps = proStatuses[p.code];
+                    if (!ps) return null;
+                    if (!ps.has_manager) return <Badge color="#6b7280">Aucun gérant</Badge>;
+                    return ps.pro_active
+                      ? <span data-testid={`pro-badge-${p.code}`}><Badge color="#10b981">Pro actif ✓{ps.period_end ? ` → ${new Date(ps.period_end).toLocaleDateString('fr-FR')}` : ''}</Badge></span>
+                      : <span data-testid={`pro-badge-${p.code}`}><Badge color="#ef4444">Pro requis ✗</Badge></span>;
+                  })()}
+                </div>
               </div>
               <div className="text-xs text-white/60 space-y-1 mb-3">
                 <div><MapPin className="w-3 h-3 inline mr-1" />{p.address || '—'}, {p.city || '—'}</div>
