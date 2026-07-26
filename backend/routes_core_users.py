@@ -50,8 +50,8 @@ async def create_quote_request(quote_data: QuoteRequestCreate):
     notification = {
         "id": str(uuid.uuid4()),
         "type": "new_quote",
-        "title": "Nouvelle demande de devis",
-        "message": f"{quote_data.company} - {contact_name} demande un devis",
+        "title": "Nouvelle demande de contact",
+        "message": f"{quote_data.company} - {contact_name} vous a envoyé une demande de contact",
         "data": {
             "quote_id": quote_in_db.id,
             "company": quote_data.company,

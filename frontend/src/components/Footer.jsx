@@ -198,7 +198,7 @@ const Footer = () => {
             aria-expanded={quoteOpen}
           >
             <span className="flex items-center gap-2.5 text-sm font-bold text-[#E9CF8E] uppercase tracking-wider">
-              <FileSpreadsheet className="w-4 h-4 text-[#D4AF37]" /> Demande de devis
+              <FileSpreadsheet className="w-4 h-4 text-[#D4AF37]" /> Demande de contact
             </span>
             <ChevronDown className={`w-4 h-4 text-[#D4AF37] transition-transform duration-300 ${quoteOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -209,7 +209,7 @@ const Footer = () => {
                   <span className="dot"></span>
                   Formulaire de contact
                 </span>
-                <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2 text-white">Demande de Devis</h3>
+                <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2 text-white">Demande de contact</h3>
                 <p className="text-white/70 text-sm">
                   Contactez-nous pour rejoindre la Communityplace ESS — votre demande est transmise à notre équipe commerciale.
                 </p>

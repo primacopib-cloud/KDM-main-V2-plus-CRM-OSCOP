@@ -211,14 +211,14 @@ async def send_quote_notification_email(q: dict) -> None:
         )
         html = f"""
         <div style='font-family:Arial,sans-serif;max-width:600px'>
-          <h2 style='color:#5B2E8C'>Nouvelle demande de devis — Communityplace</h2>
+          <h2 style='color:#5B2E8C'>Nouvelle demande de contact — Communityplace</h2>
           <table style='border-collapse:collapse;background:#f8f6fb;border-radius:8px;width:100%'>{rows_html}</table>
           <p style='color:#999;font-size:11px;margin-top:16px'>Demande n° {q.get('id')} — à traiter dans le Super Admin (onglet Demandes).</p>
         </div>"""
         await send_email(
             to_email=QUOTE_NOTIFY_EMAIL,
             to_name="Équipe commerciale O'SCOP",
-            subject=f"Devis — {q.get('company')} ({q.get('email')})",
+            subject=f"Demande de contact — {q.get('company')} ({q.get('email')})",
             html_content=html,
             tags=["quote-request"],
         )
