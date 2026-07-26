@@ -11,6 +11,15 @@ export const ReferralAdminPanel = () => {
   }, []);
 
   if (!data) return null;
+
+  const srcBadge = (l) => {
+    const ev = (l.bonus_event || '').toLowerCase();
+    if (ev.includes('adhésion') || l.source === 'adhesion') return { label: 'Adhésion', color: '#D9B35A' };
+    if (ev.includes('commande')) return { label: '1ère commande', color: '#60A5FA' };
+    if (l.bonus_paid) return { label: 'Consultation', color: '#A78BFA' };
+    return { label: 'Code saisi', color: '#9CA3AF' };
+  };
+
   return (
     <div className="glass-panel-soft rounded-[14px] p-4" data-testid="referral-admin-panel">
       <h3 className="text-xs font-bold text-white/70 uppercase mb-3 flex items-center gap-1.5">
@@ -37,15 +46,21 @@ export const ReferralAdminPanel = () => {
       {data.links?.length > 0 && (
         <div>
           <p className="text-[10px] text-white/50 uppercase font-bold mb-1">Derniers parrainages</p>
-          {data.links.slice(0, 15).map((l, i) => (
-            <div key={i} className="flex items-center gap-2 text-[11px] py-1 border-b border-white/5 last:border-0">
-              <span className="flex-1 text-white/75 truncate">{l.sponsor} → {l.filleul}</span>
-              {l.bonus_paid
-                ? <span className="text-emerald-400 font-bold">+{l.bonus_amount} versé</span>
-                : <span className="text-white/40">en attente 1ère inscription</span>}
-              <span className="text-white/35">{String(l.created_at || '').slice(0, 10)}</span>
-            </div>
-          ))}
+          {data.links.slice(0, 15).map((l, i) => {
+            const badge = srcBadge(l);
+            return (
+              <div key={i} className="flex items-center gap-2 text-[11px] py-1 border-b border-white/5 last:border-0">
+                <span className="flex-1 text-white/75 truncate">{l.sponsor} → {l.filleul}</span>
+                <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase tracking-wide"
+                  style={{ color: badge.color, background: `${badge.color}22`, border: `1px solid ${badge.color}55` }}
+                  data-testid={`referral-source-${i}`}>{badge.label}</span>
+                {l.bonus_paid
+                  ? <span className="text-emerald-400 font-bold">+{l.bonus_amount} versé</span>
+                  : <span className="text-white/40">en attente</span>}
+                <span className="text-white/35">{String(l.created_at || '').slice(0, 10)}</span>
+              </div>
+            );
+          })}
         </div>
       )}
       {!data.total_links && <p className="text-xs text-white/40">Aucun parrainage pour l'instant.</p>}

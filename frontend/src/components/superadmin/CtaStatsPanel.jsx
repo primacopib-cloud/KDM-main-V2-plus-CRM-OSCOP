@@ -20,7 +20,7 @@ export const CtaStatsPanel = () => {
         <h3 className="text-sm font-semibold text-[#D9B35A] flex items-center gap-2">
           <MousePointerClick className="w-4 h-4" /> Clics sur les boutons d'adhésion
         </h3>
-        <span className="text-[11px] text-white/45" data-testid="cta-total-clicks">{data.total_clicks} clics au total</span>
+        <span className="text-[11px] text-white/45" data-testid="cta-total-clicks">{data.total_clicks} clics · {data.total_paid} adhésion(s) payée(s)</span>
       </div>
       {data.total_clicks === 0 ? (
         <p className="text-xs text-white/45">Aucun clic enregistré pour le moment.</p>
@@ -28,9 +28,11 @@ export const CtaStatsPanel = () => {
         <div className="space-y-2">
           <div className="flex items-center gap-3 text-[10px] uppercase tracking-wider text-white/35">
             <span className="flex-1">Bouton</span>
-            <span className="w-12 text-right">7 j</span>
-            <span className="w-12 text-right">30 j</span>
-            <span className="w-14 text-right">Total</span>
+            <span className="w-10 text-right">7 j</span>
+            <span className="w-10 text-right">30 j</span>
+            <span className="w-12 text-right">Clics</span>
+            <span className="w-14 text-right">Payées</span>
+            <span className="w-12 text-right">Taux</span>
           </div>
           {data.stats.map((s) => (
             <div key={s.cta_id} className="flex items-center gap-3" data-testid={`cta-stat-${s.cta_id}`}>
@@ -40,11 +42,16 @@ export const CtaStatsPanel = () => {
                   <div className="h-full rounded" style={{ width: `${Math.max((s.total / max) * 100, 2)}%`, background: 'linear-gradient(90deg,#D9B35A,#b8933e)' }} />
                 </div>
               </div>
-              <span className="w-12 text-right text-[11px] text-white/55">{s.last7}</span>
-              <span className="w-12 text-right text-[11px] text-white/55">{s.last30}</span>
-              <span className="w-14 text-right text-[12px] font-bold text-[#E9CF8E]">{s.total}</span>
+              <span className="w-10 text-right text-[11px] text-white/55">{s.last7}</span>
+              <span className="w-10 text-right text-[11px] text-white/55">{s.last30}</span>
+              <span className="w-12 text-right text-[12px] font-bold text-[#E9CF8E]">{s.total}</span>
+              <span className="w-14 text-right text-[12px] font-bold text-[#7BC94E]" data-testid={`cta-paid-${s.cta_id}`}>{s.paid}</span>
+              <span className="w-12 text-right text-[11px] text-white/70">{s.rate === null ? '—' : `${s.rate} %`}</span>
             </div>
           ))}
+          <p className="text-[10px] text-white/35 pt-1">
+            « Payées » = adhésions au paiement confirmé attribuées au dernier bouton cliqué (fenêtre de 24 h).
+          </p>
         </div>
       )}
     </div>

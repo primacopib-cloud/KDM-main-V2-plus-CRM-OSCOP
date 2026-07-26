@@ -47,6 +47,7 @@ class StartBody(BaseModel):
     first_name: str = ""
     last_name: str = ""
     referral_code: str = ""
+    source_cta: str = ""
 
 
 class ConventionFieldsBody(BaseModel):
@@ -112,6 +113,7 @@ async def start_onboarding(body: StartBody):
         "legal_form": body.legal_form.strip(),
         "first_name": body.first_name.strip(), "last_name": body.last_name.strip(),
         "referral_code": body.referral_code.strip().upper()[:20],
+        "source_cta": body.source_cta.strip()[:40],
         "amount_ht_cents": vat["ht_cents"], "vat_rate": vat["rate"], "vat_cents": vat["vat_cents"],
         "plan_slug": body.plan_slug, "plan_name": plan["name"],
         "amount_cents": vat["ttc_cents"], "stripe_session_id": session.id,

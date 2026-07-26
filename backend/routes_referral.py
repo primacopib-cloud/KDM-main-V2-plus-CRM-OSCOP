@@ -157,7 +157,9 @@ async def referral_admin_overview(admin: dict = Depends(require_admin)):
         "links": [{"sponsor": sponsors.get(l["sponsor_id"], l["sponsor_id"]),
                    "filleul": l.get("filleul_email"), "bonus_paid": l.get("bonus_paid", False),
                    "bonus_amount": l.get("bonus_amount"), "created_at": l.get("created_at"),
-                   "bonus_paid_at": l.get("bonus_paid_at")} for l in links[:100]],
+                   "bonus_paid_at": l.get("bonus_paid_at"),
+                   "source": l.get("source") or "code",
+                   "bonus_event": l.get("bonus_event")} for l in links[:100]],
     }
 
 
@@ -205,7 +207,7 @@ async def maybe_pay_referral_bonus(filleul_id: str, event_label: str = "premièr
         logger.warning("Notif bonus parrain %s : %s", link["sponsor_id"], exc)
     now = datetime.now(timezone.utc).isoformat()
     await db.referral_links.update_one({"filleul_id": filleul_id}, {"$set": {
-        "bonus_paid": True, "bonus_amount": bonus, "bonus_paid_at": now}})
+        "bonus_paid": True, "bonus_amount": bonus, "bonus_paid_at": now, "bonus_event": event_label}})
     await audit("REFERRAL_BONUS_PAID", "system", None,
                 {"sponsor_id": link["sponsor_id"], "filleul_id": filleul_id, "bonus": bonus})
     sponsor = await db.users.find_one({"id": link["sponsor_id"]}, {"_id": 0, "email": 1, "full_name": 1, "name": 1})

@@ -37,6 +37,7 @@ import { AiChatAdminTab } from '../components/superadmin/AiChatAdminTab';
 import { GuidiaStatsPanel } from '../components/superadmin/GuidiaStatsPanel';
 import { DemandesAdminTab } from '../components/superadmin/DemandesAdminTab';
 import { ShowcasePartnersPanel } from '../components/superadmin/ShowcasePartnersPanel';
+import { SharePreviewTester } from '../components/superadmin/SharePreviewTester';
 import { LicensesPanel } from '../components/superadmin/LicensesPanel';
 import { ApiKeysPanel } from '../components/superadmin/ApiKeysPanel';
 import { AIAgentsPanel } from '../components/superadmin/AIAgentsPanel';
@@ -227,6 +228,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="showcase" className="space-y-6">
             <ShowcasePartnersPanel />
+            <SharePreviewTester />
             <LicensesPanel />
           </TabsContent>
 

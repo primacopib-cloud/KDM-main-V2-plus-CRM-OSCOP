@@ -8,6 +8,7 @@ import { PlanPicker } from '../components/onboarding/PlanPicker';
 import { CountrySelect, PhoneInput } from '../components/onboarding/CountryPhoneFields';
 import { vatRateFor } from '../components/onboarding/countries';
 import { API } from '../services/http';
+import { getLastCta } from '../services/ctaTracking';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { TerritoryMap } from '../components/landing/TerritoryMap';
 import { TerritoryGoals } from '../components/landing/TerritoryGoals';
@@ -88,7 +89,7 @@ export default function VendorOnboardingPage() {
     try {
       const r = await fetch(`${API}/vendor-onboarding/start`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...start, referral_code: (sponsorCode || '').trim().toUpperCase(), contact_name: `${start.first_name} ${start.last_name}`.trim(), phone: `${dial.split('|')[0]} ${phoneNum}`.trim(), origin_url: window.location.origin, locale: i18n.language?.startsWith('gcf') ? 'gcf' : (i18n.language || 'fr').slice(0, 2) }),
+        body: JSON.stringify({ ...start, referral_code: (sponsorCode || '').trim().toUpperCase(), source_cta: getLastCta(), contact_name: `${start.first_name} ${start.last_name}`.trim(), phone: `${dial.split('|')[0]} ${phoneNum}`.trim(), origin_url: window.location.origin, locale: i18n.language?.startsWith('gcf') ? 'gcf' : (i18n.language || 'fr').slice(0, 2) }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Erreur');

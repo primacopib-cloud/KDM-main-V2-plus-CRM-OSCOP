@@ -52,6 +52,12 @@ async def cta_stats(admin: dict = Depends(require_admin)):
         total = await db.cta_clicks.count_documents({"cta_id": cta_id})
         last7 = await db.cta_clicks.count_documents({"cta_id": cta_id, "at": {"$gte": d7}})
         last30 = await db.cta_clicks.count_documents({"cta_id": cta_id, "at": {"$gte": d30}})
-        stats.append({"cta_id": cta_id, "label": label, "total": total, "last7": last7, "last30": last30})
+        conv_q = {"source_cta": cta_id, "status": {"$ne": "PAYMENT_PENDING"}}
+        paid = await db.vendor_onboarding.count_documents(conv_q)
+        paid30 = await db.vendor_onboarding.count_documents({**conv_q, "created_at": {"$gte": d30}})
+        rate = round(paid / total * 100) if total else None
+        stats.append({"cta_id": cta_id, "label": label, "total": total, "last7": last7,
+                      "last30": last30, "paid": paid, "paid30": paid30, "rate": rate})
     stats.sort(key=lambda s: s["total"], reverse=True)
-    return {"stats": stats, "total_clicks": sum(s["total"] for s in stats)}
+    return {"stats": stats, "total_clicks": sum(s["total"] for s in stats),
+            "total_paid": sum(s["paid"] for s in stats)}
