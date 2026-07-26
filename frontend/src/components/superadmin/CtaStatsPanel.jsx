@@ -1,14 +1,46 @@
 import { useEffect, useState } from 'react';
-import { MousePointerClick } from 'lucide-react';
+import { MousePointerClick, Download } from 'lucide-react';
+import { toast } from 'sonner';
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { API, getAuthHeaders } from '../../services/http';
+
+const TrendChart = ({ points }) => {
+  if (!points || points.every((p) => !p.clicks && !p.paid)) return null;
+  return (
+    <div className="mb-4" data-testid="cta-trend-chart">
+      <p className="text-[10px] uppercase tracking-wider text-white/35 mb-1.5">Tendance hebdomadaire (12 dernières semaines)</p>
+      <ResponsiveContainer width="100%" height={160}>
+        <ComposedChart data={points} margin={{ top: 4, right: 8, left: -22, bottom: 0 }}>
+          <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+          <XAxis dataKey="week" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} axisLine={false} tickLine={false} />
+          <Tooltip
+            contentStyle={{ background: '#1F0A33', border: '1px solid rgba(217,179,90,0.35)', borderRadius: 10, fontSize: 11 }}
+            labelStyle={{ color: '#E9CF8E' }} itemStyle={{ color: '#fff' }}
+            labelFormatter={(w, payload) => `${w} — semaine du ${payload?.[0]?.payload?.start || ''}`}
+            formatter={(v, name) => [v, name === 'clicks' ? 'Clics adhésion' : 'Adhésions payées']}
+          />
+          <Bar dataKey="clicks" fill="#D9B35A" radius={[3, 3, 0, 0]} maxBarSize={22} />
+          <Line type="monotone" dataKey="paid" stroke="#7BC94E" strokeWidth={2} dot={{ r: 2.5, fill: '#7BC94E' }} />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
 
 export const CtaStatsPanel = () => {
   const [data, setData] = useState(null);
+  const [trend, setTrend] = useState(null);
 
   useEffect(() => {
-    fetch(`${API}/admin/cta-stats`, { headers: getAuthHeaders(), credentials: 'include' })
+    const opts = { headers: getAuthHeaders(), credentials: 'include' };
+    fetch(`${API}/admin/cta-stats`, opts)
       .then((r) => (r.ok ? r.json() : null))
       .then(setData)
+      .catch(() => {});
+    fetch(`${API}/admin/cta-stats/trend?weeks=12`, opts)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setTrend(d?.points || null))
       .catch(() => {});
   }, []);
 
@@ -46,6 +78,8 @@ export const CtaStatsPanel = () => {
       {data.total_clicks === 0 ? (
         <p className="text-xs text-white/45">Aucun clic enregistré pour le moment.</p>
       ) : (
+        <>
+        <TrendChart points={trend} />
         <div className="space-y-2">
           <div className="flex items-center gap-3 text-[10px] uppercase tracking-wider text-white/35">
             <span className="flex-1">Bouton</span>
@@ -74,6 +108,7 @@ export const CtaStatsPanel = () => {
             « Payées » = adhésions au paiement confirmé attribuées au dernier bouton cliqué (fenêtre de 24 h).
           </p>
         </div>
+        </>
       )}
     </div>
   );

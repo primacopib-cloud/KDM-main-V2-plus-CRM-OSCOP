@@ -70,6 +70,25 @@ async def cta_stats(admin: dict = Depends(require_admin)):
             "total_paid": sum(s["paid"] for s in stats)}
 
 
+@cta_stats_router.get("/admin/cta-stats/trend")
+async def cta_stats_trend(weeks: int = 12, admin: dict = Depends(require_admin)):
+    """Clics et adhésions payées par semaine ISO (du lundi), semaines les plus anciennes d'abord."""
+    weeks = min(max(weeks, 4), 26)
+    now = datetime.now(timezone.utc)
+    monday = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    points = []
+    for i in range(weeks - 1, -1, -1):
+        start = monday - timedelta(weeks=i)
+        end = start + timedelta(weeks=1)
+        s_iso, e_iso = start.isoformat(), end.isoformat()
+        clicks = await db.cta_clicks.count_documents({"at": {"$gte": s_iso, "$lt": e_iso}})
+        paid = await db.vendor_onboarding.count_documents(
+            {"status": {"$ne": "PAYMENT_PENDING"}, "created_at": {"$gte": s_iso, "$lt": e_iso}})
+        points.append({"week": f"S{start.isocalendar()[1]}", "start": start.strftime("%d/%m"),
+                       "clicks": clicks, "paid": paid})
+    return {"weeks": weeks, "points": points}
+
+
 @cta_stats_router.get("/admin/cta-stats/export")
 async def cta_stats_export(admin: dict = Depends(require_admin)):
     stats = await _collect_stats()
