@@ -124,3 +124,30 @@ async def ensure_customer(user: dict) -> str:
     await db.users.update_one({"id": user["id"]}, {"$set": {"stripe_customer_id": customer.id}})
     return customer.id
 
+
+
+# --- Frais de distance UC (achat hors relais de référence) ---
+DISTANCE_FEE_NEAR_UC = 0.05   # autre relais <= 50 km
+DISTANCE_FEE_FAR_UC = 0.08    # autre relais > 50 km (même territoire)
+DISTANCE_FEE_OUT_UC = 0.13    # hors territoire
+
+
+def haversine_km(lat1, lng1, lat2, lng2) -> float:
+    import math
+    r = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = math.radians(lat2 - lat1), math.radians(lng2 - lng1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
+
+
+def distance_fee_rate(ref_point: dict | None, point: dict | None) -> float:
+    """UC/produit facturés quand on achète sur un relais différent de son relais de référence."""
+    if not ref_point or not point or ref_point.get("code") == point.get("code"):
+        return 0.0
+    if (ref_point.get("territory") or "").upper() != (point.get("territory") or "").upper():
+        return DISTANCE_FEE_OUT_UC
+    coords = (ref_point.get("lat"), ref_point.get("lng"), point.get("lat"), point.get("lng"))
+    if any(c is None for c in coords):
+        return DISTANCE_FEE_NEAR_UC
+    return DISTANCE_FEE_NEAR_UC if haversine_km(*coords) <= 50 else DISTANCE_FEE_FAR_UC

@@ -13,6 +13,7 @@ const PointRow = ({ point }) => {
     opening_hours: point.opening_hours || '',
     offers_drive: !!point.offers_drive,
     offers_delivery: !!point.offers_delivery,
+    delivery_conditions: point.delivery_conditions || '',
   });
   const [busy, setBusy] = useState(false);
 
@@ -31,8 +32,9 @@ const PointRow = ({ point }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_1fr_1fr_auto_auto] gap-2 items-center p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.07]"
+    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.07] space-y-2"
       data-testid={`relay-admin-row-${point.code}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_1fr_1fr_auto_auto] gap-2 items-center">
       <div className="min-w-0">
         <p className="text-xs font-semibold text-white truncate">{point.name}</p>
         <p className="text-[10px] text-white/40 font-mono">{point.code} · {point.territory}</p>
@@ -58,6 +60,10 @@ const PointRow = ({ point }) => {
         style={{ background: '#D9B35A' }}>
         {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Enregistrer
       </button>
+      </div>
+      <input value={f.delivery_conditions} onChange={(e) => setF({ ...f, delivery_conditions: e.target.value })}
+        placeholder="Conditions de livraison (délais, frais, zone couverte…)"
+        className={inputCls} data-testid={`relay-conditions-${point.code}`} />
     </div>
   );
 };

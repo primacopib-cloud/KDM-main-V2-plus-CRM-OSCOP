@@ -87,6 +87,7 @@ class OrderCreate(BaseModel):
     fulfillment_type: FulfillmentType
     items: List[QuoteLine]
     lolo_point_code: Optional[str] = None
+    reference_point_code: Optional[str] = None
     delivery_zone: Optional[str] = None
     delivery_slot_id: Optional[str] = None
 
@@ -111,6 +112,7 @@ class LoloPointCreate(BaseModel):
     opening_hours: Optional[str] = None
     offers_drive: bool = True
     offers_delivery: bool = False
+    delivery_conditions: Optional[str] = None
     payout_cap_cents_monthly: int = 120000
     payout_cap_percent_bps: int = 600
 

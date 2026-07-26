@@ -11,6 +11,7 @@ import { lolodriveAPI, authAPI } from '../services/api';
 import { toast } from 'sonner';
 import TerritorySelector, { getInitialTerritory } from '../components/TerritorySelector';
 import { PassLolodriveBadge } from '../components/catalog/ProductPromoBadges';
+import { distanceFeeRate, getReferencePointCode } from '../utils/relayDistance';
 
 export default function LolodriveCatalogPage() {
   const navigate = useNavigate();
@@ -74,6 +75,12 @@ export default function LolodriveCatalogPage() {
   };
 
   const cartItems = Object.entries(cart).map(([sku, qty]) => ({ sku, qty }));
+  const refCode = getReferencePointCode();
+  const refPoint = loloPoints.find((p) => p.code === refCode) || null;
+  const pickedPoint = loloPoints.find((p) => p.code === selectedPoint) || null;
+  const qtyTotal = cartItems.reduce((acc, { qty }) => acc + qty, 0);
+  const distanceRate = fulfillment === 'LOLO_POINT' ? distanceFeeRate(refPoint, pickedPoint) : 0;
+  const distanceFeeUc = Math.round(distanceRate * qtyTotal * 100) / 100;
   const cartTotal = cartItems.reduce((acc, { sku, qty }) => {
     const p = products.find((x) => x.sku === sku);
     return acc + (p?.display_price_cents || 0) * qty;
@@ -87,6 +94,7 @@ export default function LolodriveCatalogPage() {
         fulfillment_type: fulfillment,
         items: cartItems,
         lolo_point_code: fulfillment === 'LOLO_POINT' ? selectedPoint : undefined,
+        reference_point_code: refCode || undefined,
       });
       toast.success(`Commande ${order.order_number} créée`);
       if (payInUC) {
@@ -176,11 +184,19 @@ export default function LolodriveCatalogPage() {
                       <SelectValue placeholder={i18n.t('lolodrive.choisir_un_relais_lolodrive')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {loloPoints.map((p) => (
-                        <SelectItem key={p.code} value={p.code}>{p.name} — {p.city}</SelectItem>
-                      ))}
+                      {loloPoints.map((p) => {
+                        const r = distanceFeeRate(refPoint, p);
+                        const tag = !refPoint ? '' : r === 0 ? ' · ★ Mon relais' : ` · +${r.toFixed(2)} UC/produit`;
+                        return <SelectItem key={p.code} value={p.code}>{p.name} — {p.city}{tag}</SelectItem>;
+                      })}
                     </SelectContent>
                   </Select>
+                )}
+                {distanceRate > 0 && qtyTotal > 0 && (
+                  <div className="flex justify-between text-xs text-amber-300 px-0.5" data-testid="distance-fee-line">
+                    <span>Frais hors relais de référence ({distanceRate.toFixed(2)} UC × {qtyTotal} produit{qtyTotal > 1 ? 's' : ''})</span>
+                    <span className="font-bold">+{distanceFeeUc.toFixed(2)} UC</span>
+                  </div>
                 )}
                 <Button onClick={() => checkout(false)} className="w-full" data-testid="checkout-card-btn">
                   <CreditCard className="w-4 h-4 mr-2" /> Payer par CB (Stripe)

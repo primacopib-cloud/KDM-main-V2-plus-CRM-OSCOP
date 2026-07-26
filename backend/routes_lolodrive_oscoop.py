@@ -31,7 +31,7 @@ from lolodrive_models import (
 from lolodrive_helpers import (
     get_current_user, require_admin, get_or_create_wallet, is_pass_active,
     cents_to_uc, logistics_config, quote_cart, ensure_customer, emit_crm_event,
-    set_lolodrive_helpers_database,
+    set_lolodrive_helpers_database, distance_fee_rate,
 )
 from routes_lolodrive_pos import set_lolodrive_pos_database
 from routes_lolodrive_points import set_lolodrive_points_database
@@ -124,6 +124,13 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
     if request.lolo_point_code:
         point = await db.lolodrive_points.find_one({"code": request.lolo_point_code})
 
+    ref_point = None
+    if request.reference_point_code:
+        ref_point = await db.lolodrive_points.find_one({"code": request.reference_point_code})
+    qty_total = sum(l.get("qty", 0) for l in q["lines"])
+    rate = distance_fee_rate(ref_point, point) if request.fulfillment_type == FulfillmentType.LOLO_POINT else 0.0
+    distance_fee_uc = round(rate * qty_total, 2)
+
     order = {
         "id": str(uuid.uuid4()),
         "order_number": f"LD-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}",
@@ -139,7 +146,10 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
         "total_cents": q["subtotal_cents"] + fees_cents,
         "subtotal_uc": q["subtotal_uc"],
         "fees_uc": fees_uc,
-        "total_uc": q["subtotal_uc"] + fees_uc if q["pass_active"] else 0,
+        "reference_point_code": request.reference_point_code,
+        "distance_fee_rate": rate,
+        "distance_fee_uc": distance_fee_uc,
+        "total_uc": q["subtotal_uc"] + fees_uc + distance_fee_uc if q["pass_active"] else 0,
         "pay_with_uc": False,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
@@ -166,7 +176,7 @@ async def pay_uc(order_id: str, user: dict = Depends(get_current_user)):
     # Requote server-side (anti-fraude)
     items = [QuoteLine(sku=i["sku"], qty=i["qty"]) for i in order.get("items", [])]
     q = await quote_cart(user["id"], items)
-    required_uc = q["subtotal_uc"] + order.get("fees_uc", 0)
+    required_uc = q["subtotal_uc"] + order.get("fees_uc", 0) + order.get("distance_fee_uc", 0)
 
     wallet = await get_or_create_wallet(user["id"])
     if wallet.get("balance_uc", 0) < required_uc:
