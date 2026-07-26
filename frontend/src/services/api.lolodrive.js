@@ -143,6 +143,10 @@ export const lolodriveAPI = {
   submitRelayReview: (payload) =>
     apiCall('/lolodrive/relay-reviews', { method: 'POST', body: JSON.stringify(payload) }),
   relayReviewStats: () => apiCall('/lolodrive/relay-reviews/stats'),
+  relayReviewsList: (pointCode) => apiCall(`/lolodrive/relay-reviews/list/${pointCode}`),
+  managerMyReviews: () => apiCall('/lolodrive/manager/my-reviews'),
+  replyRelayReview: (reviewId, reply) =>
+    apiCall(`/lolodrive/manager/my-reviews/${reviewId}/reply`, { method: 'POST', body: JSON.stringify({ reply }) }),
 
   // Demo simulators (no Stripe webhook required)
   simulateOrderPayment: (orderId) =>

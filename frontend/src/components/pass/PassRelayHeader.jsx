@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, Clock, Truck, Car, Navigation, Info, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { RelayReviewsDialog } from './RelayReviewsDialog';
 import { lolodriveAPI } from '../../services/api';
 
 export const PassRelayHeader = () => {
@@ -9,6 +10,15 @@ export const PassRelayHeader = () => {
   const [noRelay, setNoRelay] = useState(false);
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [rating, setRating] = useState(null);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [reviews, setReviews] = useState([]);
+
+  const openReviews = () => {
+    setReviewsOpen(true);
+    lolodriveAPI.relayReviewsList(point.code)
+      .then((d) => setReviews(d.reviews || []))
+      .catch(() => {});
+  };
 
   useEffect(() => {
     if (!point?.code) return;
@@ -57,11 +67,13 @@ export const PassRelayHeader = () => {
           <p className="text-base font-bold text-white flex items-center gap-2" data-testid="pass-relay-name">
             {point.name}
             {rating && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#E9CF8E]" data-testid="pass-relay-rating"
-                title={`${rating.count} avis de titulaires PASS`}>
+              <button type="button" onClick={openReviews}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#E9CF8E] hover:scale-105 transition-transform"
+                data-testid="pass-relay-rating"
+                title="Voir les avis des titulaires PASS">
                 <Star className="w-3.5 h-3.5 fill-[#D9B35A] text-[#D9B35A]" /> {rating.avg}
-                <span className="text-white/40 font-normal">({rating.count})</span>
-              </span>
+                <span className="text-white/40 font-normal underline decoration-dotted">({rating.count} avis)</span>
+              </button>
             )}
           </p>
           <p className="text-[11px] text-white/40 font-mono flex items-center gap-1.5">
@@ -177,6 +189,9 @@ export const PassRelayHeader = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <RelayReviewsDialog open={reviewsOpen} onOpenChange={setReviewsOpen}
+        pointName={point.name} reviews={reviews} />
     </div>
   );
 };

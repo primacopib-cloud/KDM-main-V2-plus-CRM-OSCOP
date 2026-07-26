@@ -20,9 +20,10 @@ const TERRITORY_DEFAULTS = {
  *   - territory: 'GP' | 'MQ' | 'GF' | 'RE' | null  → recadre la vue
  *   - onSelect(point): callback clic marqueur
  *   - focusCode: code d'un relais à cibler (flyTo + popup ouverte)
+ *   - ratings: { [code]: { avg, count } } → note ⭐ dans les popups
  *   - height: '420px' (par défaut)
  */
-export default function LoloPointsMap({ points = [], territory = null, onSelect, focusCode = null, height = '460px' }) {
+export default function LoloPointsMap({ points = [], territory = null, onSelect, focusCode = null, ratings = null, height = '460px' }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -66,6 +67,7 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
     if (filtered.length === 0) return;
 
     filtered.forEach((p) => {
+      const rating = ratings?.[p.code];
       const el = document.createElement('div');
       el.className = 'kdm-lolo-marker';
       el.setAttribute('data-testid', `map-marker-${p.code}`);
@@ -82,6 +84,7 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
       const popup = new mapboxgl.Popup({ offset: 18, closeButton: false }).setHTML(`
         <div style="font-family: system-ui; min-width: 200px; padding: 4px 0;">
           <div style="font-weight: 700; font-size: 14px; color: #0f172a;">${escapeHtml(p.name)}</div>
+          ${rating ? `<div data-testid="popup-rating-${escapeHtml(p.code)}" style="font-size: 12px; color: #b45309; font-weight: 700; margin-top: 2px;">★ ${escapeHtml(String(rating.avg))} <span style="color:#94a3b8; font-weight:400;">(${escapeHtml(String(rating.count))} avis)</span></div>` : ''}
           <div style="font-size: 11px; color: #64748b; margin: 4px 0; font-family: monospace;">${escapeHtml(p.code)} · ${escapeHtml(p.territory || '?')}</div>
           <div style="font-size: 12px; color: #1e293b;">${escapeHtml(p.address || '')}</div>
           <div style="font-size: 12px; color: #1e293b;">${escapeHtml(p.city || '')}</div>
@@ -110,7 +113,7 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
       filtered.forEach((p) => bounds.extend([p.lng, p.lat]));
       mapRef.current.fitBounds(bounds, { padding: 60, maxZoom: 8, duration: 800 });
     }
-  }, [points, territory, onSelect, focusCode]);
+  }, [points, territory, onSelect, focusCode, ratings]);
 
   if (!TOKEN) {
     return (

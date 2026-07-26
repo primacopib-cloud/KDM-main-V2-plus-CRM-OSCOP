@@ -23,6 +23,58 @@ class ReviewBody(BaseModel):
     comment: Optional[str] = None
 
 
+class ReplyBody(BaseModel):
+    reply: str
+
+
+async def _serialize_reviews(point_code: str) -> list:
+    reviews = await db.relay_reviews.find(
+        {"point_code": point_code},
+        {"_id": 0, "id": 1, "user_id": 1, "rating": 1, "comment": 1, "reply": 1, "created_at": 1},
+    ).sort("created_at", -1).to_list(50)
+    out = []
+    for r in reviews:
+        u = await db.users.find_one({"id": r["user_id"]}, {"_id": 0, "contact_name": 1})
+        first = (((u or {}).get("contact_name") or "Titulaire PASS").split() or ["Titulaire"])[0]
+        out.append({"id": r["id"], "author": first, "rating": r["rating"],
+                    "comment": r.get("comment") or "", "reply": r.get("reply"),
+                    "date": str(r.get("created_at", ""))[:10]})
+    return out
+
+
+@relay_reviews_router.get("/relay-reviews/list/{point_code}")
+async def list_reviews(point_code: str):
+    """Avis publics d'un relais (avec réponses du gérant)."""
+    return {"reviews": await _serialize_reviews(point_code)}
+
+
+@relay_reviews_router.get("/manager/my-reviews")
+async def manager_my_reviews(user: dict = Depends(get_current_user)):
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0, "code": 1, "name": 1})
+    if not point:
+        raise HTTPException(status_code=403, detail="Aucun relais géré par ce compte")
+    reviews = await _serialize_reviews(point["code"])
+    avg = round(sum(r["rating"] for r in reviews) / len(reviews), 1) if reviews else None
+    return {"point": point, "reviews": reviews, "avg": avg, "count": len(reviews)}
+
+
+@relay_reviews_router.post("/manager/my-reviews/{review_id}/reply")
+async def reply_review(review_id: str, body: ReplyBody, user: dict = Depends(get_current_user)):
+    """Réponse publique du gérant à un avis de son relais."""
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0, "code": 1})
+    if not point:
+        raise HTTPException(status_code=403, detail="Aucun relais géré par ce compte")
+    reply = (body.reply or "").strip()[:500]
+    if not reply:
+        raise HTTPException(status_code=400, detail="Réponse vide")
+    res = await db.relay_reviews.update_one(
+        {"id": review_id, "point_code": point["code"]},
+        {"$set": {"reply": reply, "replied_at": datetime.utcnow()}})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Avis introuvable pour ce relais")
+    return {"ok": True}
+
+
 @relay_reviews_router.get("/relay-reviews/pending")
 async def pending_reviews(user: dict = Depends(get_current_user)):
     """Retraits effectués en relais pas encore notés par l'utilisateur."""

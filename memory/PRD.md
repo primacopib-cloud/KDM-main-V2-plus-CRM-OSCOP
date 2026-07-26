@@ -1796,3 +1796,11 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - LoloPointsMap : nouvelle prop `focusCode` → flyTo(zoom 13) sur le relais ciblé + popup Mapbox ouverte + onSelect déclenché (fiche relais affichée) ; fitBounds désactivé quand focus ; markersRef stocke désormais {code, marker}.
 - LandingPage (PublicLolodriveMapSection) : lit `?relay=` au mount et passe focusCode à la carte.
 - Testé E2E : clic icône depuis l'espace PASS → carte centrée sur LP-PAP, popup « Lolo Point Pointe-à-Pitre » ouverte + modale fiche relais.
+
+## 2026-07-26 — Lot 9 : note sur la carte, avis gérant POS, réponses publiques (self-testé curl + Playwright)
+- **Note sur la carte** : LoloPointsMap prop `ratings` → ligne « ★ X (N avis) » dans les popups Mapbox (data-testid popup-rating-{code}) ; LandingPage fetch relayReviewStats. Testé : popup LP-PAP « ★ 5 (1 avis) ».
+- **Backend avis étendus** (routes_relay_reviews.py) : GET /relay-reviews/list/{point_code} (public, avec prénom auteur + réponse), GET /manager/my-reviews (gérant : avis de son relais + moyenne), POST /manager/my-reviews/{id}/reply (réponse publique, max 500 car.).
+- **Avis visibles gérant** : `components/pos/PosRelayReviews.jsx` — bouton « Avis clients (N) · ★ X » dans les actions du POS → dialog listant les avis avec champ de réponse par avis (masqué une fois répondu). Testé E2E : avis Sophie 4★ sur LP-CAP + réponse publiée via UI backend curl.
+- **Réponses publiques côté client** : la note ⭐ de l'entête PASS devient cliquable → `components/pass/RelayReviewsDialog.jsx` (avis + « Réponse du relais »).
+- APIs front : relayReviewsList, managerMyReviews, replyRelayReview.
+- Données démo : avis 5★ Marie sur LP-PAP ; avis 4★ Sophie (acheteur-pro) sur LP-CAP avec réponse du gérant.

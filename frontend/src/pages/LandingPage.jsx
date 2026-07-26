@@ -271,6 +271,14 @@ export const PublicLolodriveMapSection = () => {
   const [focusCode] = useState(() => {
     try { return new URLSearchParams(window.location.search).get('relay'); } catch { return null; }
   });
+  const [ratings, setRatings] = useState(null);
+
+  // Notes moyennes des relais (popups carte)
+  useEffect(() => {
+    lolodriveAPI.relayReviewStats()
+      .then((d) => setRatings(d.stats || {}))
+      .catch(() => {});
+  }, []);
 
   // Load territories once on mount
   useEffect(() => {
@@ -328,7 +336,7 @@ export const PublicLolodriveMapSection = () => {
           </div>
         </div>
 
-        <LoloPointsMap points={points} territory={territory} focusCode={focusCode} height="460px" onSelect={(p) => setSelected(p)} />
+        <LoloPointsMap points={points} territory={territory} focusCode={focusCode} ratings={ratings} height="460px" onSelect={(p) => setSelected(p)} />
 
         <div className="mt-3 text-center">
           <Link to="/adhesion-vendeur?type=acheteur_pro">
