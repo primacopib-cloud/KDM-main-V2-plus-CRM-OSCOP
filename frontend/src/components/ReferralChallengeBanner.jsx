@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Trophy, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { trackCta } from '../services/ctaTracking';
 
 export const ReferralChallengeBanner = () => {
   const [data, setData] = useState(null);
@@ -28,7 +29,7 @@ export const ReferralChallengeBanner = () => {
             </p>
           )}
         </div>
-        <Link to="/adhesion" data-testid="challenge-cta"
+        <Link to="/tarifs" data-testid="challenge-cta" onClick={() => trackCta('rejoindre_parrainer')}
           className="h-10 px-4 rounded-lg text-xs font-semibold text-[#1A092D] inline-flex items-center gap-1.5"
           style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
           <Gift size={13} /> Rejoindre et parrainer

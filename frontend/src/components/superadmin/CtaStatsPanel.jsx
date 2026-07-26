@@ -14,13 +14,34 @@ export const CtaStatsPanel = () => {
 
   if (!data) return null;
   const max = Math.max(...data.stats.map((s) => s.total), 1);
+
+  const exportCsv = async () => {
+    try {
+      const r = await fetch(`${API}/admin/cta-stats/export`, { headers: getAuthHeaders(), credentials: 'include' });
+      if (!r.ok) throw new Error('Export impossible');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `conversion-cta-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { toast.error(e.message); }
+  };
+
   return (
     <div className="glass-panel-soft rounded-[18px] p-4 mb-4" data-testid="cta-stats-panel">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-[#D9B35A] flex items-center gap-2">
           <MousePointerClick className="w-4 h-4" /> Clics sur les boutons d'adhésion
         </h3>
-        <span className="text-[11px] text-white/45" data-testid="cta-total-clicks">{data.total_clicks} clics · {data.total_paid} adhésion(s) payée(s)</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-white/45" data-testid="cta-total-clicks">{data.total_clicks} clics · {data.total_paid} adhésion(s) payée(s)</span>
+          <button type="button" onClick={exportCsv} data-testid="export-cta-csv-btn"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-white/10 text-[#E9CF8E] hover:bg-white/15 transition-colors">
+            <Download className="w-3 h-3" /> Export CSV
+          </button>
+        </div>
       </div>
       {data.total_clicks === 0 ? (
         <p className="text-xs text-white/45">Aucun clic enregistré pour le moment.</p>
