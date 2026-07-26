@@ -16,7 +16,7 @@ const LinkedInIcon = (props) => (
 
 // Boutons de partage d'une fiche produit : copier le lien, WhatsApp, LinkedIn
 export const ProductShareButtons = ({ product }) => {
-  const url = `${window.location.origin}/catalogue?produit=${product.id}`;
+  const url = `${window.location.origin}/api/share/product/${product.id}`;
   const text = `${product.name} — ${i18n.t('catalog.share_text', 'découvert sur la centrale coopérative KDMARCHÉ × O\u2019SCOP')}`;
 
   const copyLink = () => {

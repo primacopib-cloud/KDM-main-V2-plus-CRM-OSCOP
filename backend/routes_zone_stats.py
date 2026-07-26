@@ -15,10 +15,11 @@ def set_zone_stats_database(database):
 
 @zone_stats_router.get("/zones-stats")
 async def zones_stats():
-    """Nombre de produits disponibles et d'adhérents approuvés par territoire (public)."""
+    """Nombre de produits disponibles, adhérents approuvés et objectif par territoire (public)."""
     out = {}
     for z in ZONES:
         pids = await db.zone_prices.distinct("product_id", {"zone_code": z, "is_active": True})
         members = await db.orgs.count_documents({"status": "APPROVED", "territory": z})
-        out[z] = {"products": len(pids), "members": members}
+        zone_doc = await db.zones_v2.find_one({"code": z}, {"_id": 0, "member_target": 1}) or {}
+        out[z] = {"products": len(pids), "members": members, "target": zone_doc.get("member_target") or 20}
     return out

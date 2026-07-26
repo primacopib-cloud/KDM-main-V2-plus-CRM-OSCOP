@@ -9,6 +9,8 @@ import { CountrySelect, PhoneInput } from '../components/onboarding/CountryPhone
 import { vatRateFor } from '../components/onboarding/countries';
 import { API } from '../services/http';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { TerritoryMap } from '../components/landing/TerritoryMap';
+import { TerritoryGoals } from '../components/landing/TerritoryGoals';
 
 const TERRITOIRES = ['Guadeloupe', 'Martinique', 'Guyane', 'La Réunion', 'Mayotte', 'Saint-Martin'];
 const inputCls = 'w-full h-11 rounded-xl px-3.5 text-sm text-white placeholder-white/35 bg-white/[0.05] border border-[#D9B35A]/25 focus:outline-none focus:ring-1 focus:ring-[#D9B35A]/60';
@@ -36,6 +38,7 @@ export default function VendorOnboardingPage() {
   const [params] = useSearchParams();
   const { t, i18n } = useTranslation();
   const [step, setStep] = useState(0);
+  const [goalZone, setGoalZone] = useState('GUADELOUPE');
   const [busy, setBusy] = useState(false);
   const [, setOb] = useState(null);
   const [start, setStart] = useState({ company: '', legal_form: '', first_name: '', last_name: '', email: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro', member_type: 'vendor', country: 'GP' });
@@ -219,6 +222,16 @@ export default function VendorOnboardingPage() {
             </button>
             <p className="text-[11px] text-white/45 text-center">{t('vendorOnboarding.payNote')}</p>
           </form>
+        )}
+
+        {step === 0 && (
+          <div className="mt-10 space-y-4" data-testid="adhesion-territories-block">
+            <h2 className="text-base md:text-lg font-bold text-center" style={{ color: '#F7F2E9' }}>
+              {t('vendorOnboarding.territoriesTitle', 'La coopérative grandit sur chaque territoire')}
+            </h2>
+            <TerritoryMap zone={goalZone} onSelect={setGoalZone} />
+            <TerritoryGoals />
+          </div>
         )}
 
         {step === 1 && (

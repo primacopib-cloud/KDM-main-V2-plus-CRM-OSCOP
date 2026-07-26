@@ -82,6 +82,7 @@ from routes_orders_v2 import orders_router, set_orders_database
 from routes_product_reviews import reviews_router, set_reviews_database
 from routes_incoterm_alerts import incoterm_alerts_router, set_incoterm_alerts_database
 from routes_zone_stats import zone_stats_router, set_zone_stats_database
+from routes_share import share_router, set_share_database
 set_catalog_database(db)
 set_cart_database(db)
 set_suggestions_database(db)
@@ -89,6 +90,7 @@ set_orders_database(db)
 set_reviews_database(db)
 set_incoterm_alerts_database(db)
 set_zone_stats_database(db)
+set_share_database(db)
 app.include_router(catalog_router)
 app.include_router(cart_router)
 app.include_router(suggestions_router)
@@ -96,6 +98,7 @@ app.include_router(orders_router)
 app.include_router(reviews_router)
 app.include_router(incoterm_alerts_router)
 app.include_router(zone_stats_router)
+app.include_router(share_router)
 
 # Import and include GED (Document Management) routes
 from routes_ged import ged_router, set_ged_database
