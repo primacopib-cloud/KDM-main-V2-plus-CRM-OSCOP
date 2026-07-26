@@ -1,17 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Percent, Plus, Archive, Trash2, BarChart3 } from 'lucide-react';
+import { Percent, Plus, Archive, Trash2, BarChart3, Send } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inputCls = 'h-9 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35';
 
-const EMPTY = { name: '', promo_type: 'bonus_purchase', value_percent: '', scope_profile: 'all', scope_territory: 'ALL', scope_category: 'all', scope_action: 'all', starts_at: '', ends_at: '' };
+const EMPTY = { name: '', promo_type: 'bonus_purchase', value_percent: '', scope_profile: 'all', scope_territory: 'ALL', scope_category: 'all', scope_action: 'all', scope_product_type: '', scope_brand: '', scope_relay: 'all', min_quantity: '', audience: 'all', audience_emails: '', countdown_enabled: false, countdown_pages: [], starts_at: '', ends_at: '' };
+const COUNTDOWN_PAGES = [['landing', 'Accueil'], ['catalog', 'Catalogue'], ['pass', 'Page PASS'], ['kdmarche', 'KDMARCHÉ']];
 const TERRITORIES = ['ALL', 'GUADELOUPE', 'MARTINIQUE', 'GUYANE', 'REUNION', 'MAYOTTE', 'SAINT-MARTIN'];
 
 export const CreditPromotionsPanel = () => {
   const [promos, setPromos] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [categories, setCategories] = useState([]);
+  const [relays, setRelays] = useState([]);
 
   const refresh = useCallback(async () => {
     const r = await fetch(`${API}/admin/credit-promotions?include_archived=true`, { credentials: 'include' });
@@ -21,6 +23,7 @@ export const CreditPromotionsPanel = () => {
   useEffect(() => {
     refresh();
     fetch(`${API}/taxonomy/categories`).then((r) => r.ok && r.json()).then((d) => d && setCategories(d.categories || []));
+    fetch(`${API}/lolodrive/lolo-points`).then((r) => r.ok && r.json()).then((d) => d && setRelays(d.points || []));
   }, [refresh]);
 
   const create = async () => {
@@ -30,6 +33,11 @@ export const CreditPromotionsPanel = () => {
       body: JSON.stringify({
         ...form,
         value_percent: parseFloat(form.value_percent),
+        scope_product_type: form.scope_product_type.trim() || 'all',
+        min_quantity: parseInt(form.min_quantity, 10) || 0,
+        audience_emails: form.audience === 'emails'
+          ? form.audience_emails.split(/[\n,;]+/).map((e) => e.trim()).filter(Boolean)
+          : [],
         starts_at: form.starts_at ? `${form.starts_at}T00:00:00+00:00` : null,
         ends_at: form.ends_at ? `${form.ends_at}T23:59:59+00:00` : null,
         active: true,
@@ -38,6 +46,14 @@ export const CreditPromotionsPanel = () => {
     const d = await r.json();
     if (r.ok) { toast.success('Promotion créée'); setForm(EMPTY); refresh(); }
     else toast.error(typeof d.detail === 'string' ? d.detail : 'Erreur');
+  };
+
+  const sendCampaign = async (id) => {
+    if (!window.confirm('Envoyer cette promotion par email aux destinataires édités ?')) return;
+    const r = await fetch(`${API}/admin/credit-promotions/${id}/send-campaign`, { method: 'POST', credentials: 'include' });
+    const d = await r.json();
+    if (r.ok) { toast.success(`Campagne envoyée à ${d.sent}/${d.total} destinataire(s)`); refresh(); }
+    else toast.error(typeof d.detail === 'string' ? d.detail : 'Envoi impossible');
   };
 
   const act = async (id, method, path = '') => {
@@ -63,8 +79,9 @@ export const CreditPromotionsPanel = () => {
           placeholder="%" data-testid="promo-value" className={inputCls} />
         <select value={form.scope_profile} onChange={(e) => setForm({ ...form, scope_profile: e.target.value })} data-testid="promo-profile" className={inputCls}>
           <option value="all">Tous profils</option>
-          <option value="vendor">Vendeurs</option>
-          <option value="buyer">Acheteurs</option>
+          <option value="vendor">Vendeur Pro</option>
+          <option value="buyer">Acheteur Pro</option>
+          <option value="pass">Bénéficiaire PASS LOLODRIVE</option>
         </select>
         <select value={form.scope_territory} onChange={(e) => setForm({ ...form, scope_territory: e.target.value })} data-testid="promo-territory" className={inputCls}>
           {TERRITORIES.map((t) => <option key={t} value={t}>{t === 'ALL' ? 'Tous territoires' : t}</option>)}
@@ -83,7 +100,49 @@ export const CreditPromotionsPanel = () => {
           <input type="date" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })}
             data-testid="promo-ends-at" className={`${inputCls} flex-1 min-w-0`} title="Fin de l'offre flash (optionnel)" />
         </div>
+        <input value={form.scope_product_type} onChange={(e) => setForm({ ...form, scope_product_type: e.target.value })}
+          placeholder="Type de produit (optionnel)" data-testid="promo-product-type" className={inputCls} />
+        <input value={form.scope_brand} onChange={(e) => setForm({ ...form, scope_brand: e.target.value })}
+          placeholder="Marque (optionnel)" data-testid="promo-brand" className={inputCls} />
+        <input type="number" min="0" value={form.min_quantity} onChange={(e) => setForm({ ...form, min_quantity: e.target.value })}
+          placeholder="Quantité min. (optionnel)" data-testid="promo-min-qty" className={inputCls} />
+        <select value={form.scope_relay} onChange={(e) => setForm({ ...form, scope_relay: e.target.value })} data-testid="promo-relay" className={inputCls}>
+          <option value="all">Tous relais LOLODRIVE</option>
+          {relays.map((r) => <option key={r.id || r.name} value={r.name}>{r.name}</option>)}
+        </select>
+        <select value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })} data-testid="promo-audience" className={inputCls}>
+          <option value="all">Destinée à tous</option>
+          <option value="emails">Emails ciblés (campagne)</option>
+        </select>
+        <label className="flex items-center gap-2 text-xs text-white/70">
+          <input type="checkbox" checked={form.countdown_enabled}
+            onChange={(e) => setForm({ ...form, countdown_enabled: e.target.checked })} data-testid="promo-countdown-toggle" />
+          Compte à rebours affiché
+        </label>
       </div>
+      {form.audience === 'emails' && (
+        <textarea value={form.audience_emails} onChange={(e) => setForm({ ...form, audience_emails: e.target.value })}
+          placeholder="Emails destinataires (un par ligne ou séparés par des virgules)"
+          data-testid="promo-emails" rows={2}
+          className="w-full mb-3 px-2 py-1.5 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35" />
+      )}
+      {form.countdown_enabled && (
+        <div className="flex flex-wrap items-center gap-3 mb-3 text-xs text-white/70" data-testid="promo-countdown-pages">
+          <span className="text-[10px] uppercase opacity-50">Bannière sur :</span>
+          {COUNTDOWN_PAGES.map(([value, label]) => (
+            <label key={value} className="flex items-center gap-1.5">
+              <input type="checkbox" checked={form.countdown_pages.includes(value)}
+                onChange={(e) => setForm({
+                  ...form,
+                  countdown_pages: e.target.checked
+                    ? [...form.countdown_pages, value]
+                    : form.countdown_pages.filter((p) => p !== value),
+                })} data-testid={`promo-page-${value}`} />
+              {label}
+            </label>
+          ))}
+        </div>
+      )}
       <button type="button" onClick={create} disabled={!form.name || !form.value_percent}
         data-testid="promo-create-btn"
         className="btn-gold h-9 px-4 rounded-lg text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-40 mb-4">
@@ -99,7 +158,13 @@ export const CreditPromotionsPanel = () => {
                 {p.archived && <span className="text-[9px] uppercase ml-2 px-1.5 py-0.5 rounded bg-white/10 text-white/60">archivée</span>}
               </p>
               <p className="text-[11px] opacity-50">
-                {p.promo_type === 'bonus_purchase' ? 'Bonus achat' : 'Réduction conso'} · {p.scope_profile} · {p.scope_territory} · {p.scope_category}
+                {p.promo_type === 'bonus_purchase' ? 'Bonus achat' : 'Réduction conso'} · {{ all: 'Tous profils', vendor: 'Vendeur Pro', buyer: 'Acheteur Pro', pass: 'PASS LOLODRIVE' }[p.scope_profile] || p.scope_profile} · {p.scope_territory} · {p.scope_category}
+                {p.scope_product_type && p.scope_product_type !== 'all' && ` · type: ${p.scope_product_type}`}
+                {p.scope_brand && ` · marque: ${p.scope_brand}`}
+                {p.scope_relay && p.scope_relay !== 'all' && ` · relais: ${p.scope_relay}`}
+                {p.min_quantity > 0 && ` · qté min: ${p.min_quantity}`}
+                {p.audience === 'emails' && ` · 📧 ${(p.audience_emails || []).length} destinataire(s)${p.campaign_sent_at ? ` (envoyée ${p.campaign_sent_at.slice(0, 10)})` : ''}`}
+                {p.countdown_enabled && ` · ⏱ countdown: ${(p.countdown_pages || []).join(', ')}`}
                 {(p.starts_at || p.ends_at) && (
                   <span className="ml-1.5 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 text-[10px]" data-testid={`promo-window-${p.id}`}>
                     ⏱ {p.starts_at ? p.starts_at.slice(0, 10) : '…'} → {p.ends_at ? p.ends_at.slice(0, 10) : '…'}
@@ -108,6 +173,12 @@ export const CreditPromotionsPanel = () => {
               </p>
             </div>
             <div className="flex gap-1 shrink-0">
+              {!p.archived && p.audience === 'emails' && (p.audience_emails || []).length > 0 && (
+                <button type="button" onClick={() => sendCampaign(p.id)} data-testid={`promo-send-${p.id}`}
+                  title="Envoyer la campagne email" className="p-1.5 rounded-lg opacity-40 hover:opacity-100 hover:bg-blue-500/10 text-blue-400">
+                  <Send size={13} />
+                </button>
+              )}
               {!p.archived && (
                 <button type="button" onClick={() => act(p.id, 'POST', '/archive')} data-testid={`promo-archive-${p.id}`}
                   title="Archiver" className="p-1.5 rounded-lg opacity-40 hover:opacity-100 hover:bg-amber-500/10 text-amber-600">

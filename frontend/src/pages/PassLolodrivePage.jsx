@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { ShoppingBasket, Users, MapPin, ArrowRight, BadgeCheck, Ticket, BatteryCharging } from 'lucide-react';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { ShoppingBasket, Users, MapPin, ArrowRight, BadgeCheck, Ticket, BatteryCharging, Sparkles, CreditCard } from 'lucide-react';
 import NavBar from '../components/NavBar';
+import { FlashPromoBanner } from '../components/FlashPromoBanner';
 import i18n from '@/i18n';
+import { authAPI } from '../services/api';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -13,11 +15,18 @@ const CARDS = [
 ];
 
 const RechargeCard = ({ plan }) => (
-  <div className="relative rounded-xl p-4 text-center bg-white/[0.05] border border-[#D9B35A]/20" data-testid={`pass-recharge-${plan.id}`}>
+  <div className={`relative rounded-xl p-4 pt-5 text-center bg-white/[0.05] border ${plan.bonus_uc > 0 ? 'border-[#D9B35A]/60 shadow-[0_0_24px_rgba(217,179,90,0.12)]' : 'border-[#D9B35A]/20'}`}
+    style={plan.bonus_uc > 0 ? { background: 'linear-gradient(180deg, rgba(217,179,90,0.10), rgba(255,255,255,0.04))' } : undefined}
+    data-testid={`pass-recharge-${plan.id}`}>
     {plan.bonus_uc > 0 && (
-      <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wide"
-        style={{ background: 'linear-gradient(135deg,#D9B35A,#b8933e)', color: '#1F0A33' }}>
-        +{plan.bonus_uc} UC {i18n.t('passPage.bonus')}
+      <span className="absolute -top-[13px] left-1/2 -translate-x-1/2 whitespace-nowrap inline-flex items-center gap-1 px-3 py-[4px] rounded-full text-[9px] font-bold uppercase tracking-[0.14em]"
+        style={{
+          background: 'linear-gradient(135deg, #F5E2A5 0%, #D9B35A 45%, #A67C2E 100%)',
+          color: '#2A1045',
+          border: '1px solid rgba(255,255,255,0.4)',
+          boxShadow: '0 6px 16px rgba(217,179,90,0.45), inset 0 1px 0 rgba(255,255,255,0.55)',
+        }}>
+        <Sparkles className="w-2.5 h-2.5" /> +{plan.bonus_uc} UC {i18n.t('passPage.bonus')}
       </span>
     )}
     <p className="text-2xl font-bold text-[#E9CF8E]">{plan.price_eur} €</p>
@@ -28,6 +37,7 @@ const RechargeCard = ({ plan }) => (
 
 export default function PassLolodrivePage() {
   const { state } = useLocation();
+  const navigate = useNavigate();
   const firstName = state?.firstName;
   const relay = state?.relay || (() => { try { return JSON.parse(localStorage.getItem('kdm_preselected_point') || 'null'); } catch { return null; } })();
   const [plans, setPlans] = useState(null);
@@ -39,6 +49,7 @@ export default function PassLolodrivePage() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #1F0A33 0%, #2A1045 100%)' }}>
       <NavBar />
+      <div className="pt-20 -mb-16"><FlashPromoBanner placement="pass" /></div>
       <main className="max-w-3xl mx-auto px-4 pt-28 pb-20" data-testid="pass-lolodrive-page">
         {firstName && (
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5 text-sm bg-[#7BC94E]/15 border border-[#7BC94E]/40 text-[#B9E89A]" data-testid="pass-confirmation">
@@ -73,6 +84,14 @@ export default function PassLolodrivePage() {
               <p className="text-3xl font-bold text-[#E9CF8E]" data-testid="pass-adhesion-price">
                 {plans.adhesion.price_eur} € <span className="text-base text-white/70">/ {plans.adhesion.uc + (plans.adhesion.bonus_uc || 0)} UC</span>
               </p>
+            </div>
+            <div className="mt-4 pt-4 border-t border-[#D9B35A]/20">
+              <button type="button" data-testid="pass-pay-adhesion-btn"
+                onClick={() => navigate(authAPI.isAuthenticated() ? '/espace-pass' : '/connexion')}
+                className="btn-gold inline-flex items-center gap-2 rounded-[14px] px-6 py-3 text-sm font-semibold">
+                <CreditCard className="w-4 h-4" /> {i18n.t('passPage.payer_adhesion', { price: plans.adhesion.price_eur })}
+              </button>
+              <p className="text-[11px] text-white/45 mt-2">{i18n.t('passPage.paiement_note')}</p>
             </div>
           </div>
         )}

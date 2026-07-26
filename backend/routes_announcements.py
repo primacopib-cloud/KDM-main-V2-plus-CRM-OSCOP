@@ -118,7 +118,20 @@ async def public_flash_promos(placement: str = "landing"):
     items = await db.flash_promos.find(
         {"active": True, "starts_at": {"$lte": now}, "ends_at": {"$gte": now}},
         {"_id": 0}).sort("ends_at", 1).limit(5).to_list(5)
-    return {"items": [p for p in items if placement in (p.get("placements") or PLACEMENTS)]}
+    result = [p for p in items if placement in (p.get("placements") or PLACEMENTS)]
+    promos = await db.credit_promotions.find(
+        {"active": True, "archived": {"$ne": True}, "countdown_enabled": True,
+         "ends_at": {"$gte": now}}, {"_id": 0}).to_list(10)
+    for p in promos:
+        if placement not in (p.get("countdown_pages") or []):
+            continue
+        if p.get("starts_at") and now < p["starts_at"]:
+            continue
+        kind = "bonus de crédits" if p.get("promo_type") == "bonus_purchase" else "réduction"
+        result.append({"title": p["name"], "discount_pct": p.get("value_percent"),
+                       "description": f"{p.get('value_percent'):g} % de {kind}", "ends_at": p["ends_at"]})
+    result.sort(key=lambda x: x.get("ends_at") or "")
+    return {"items": result[:5]}
 
 
 @announcements_router.get("/admin/flash-promos")

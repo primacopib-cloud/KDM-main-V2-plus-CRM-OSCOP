@@ -449,6 +449,8 @@
     "recharge_title": "Recargable a voluntad",
     "recharge_desc": "Recargue su PASS cuando quiera con los planes propuestos — algunos incluyen UC de bonificación.",
     "bonus": "bono",
-    "offertes": "gratis"
+    "offertes": "gratis",
+    "payer_adhesion": "Pagar mi adhesión de {{price}} € en línea",
+    "paiement_note": "Pago seguro con Stripe — inicie sesión o cree su cuenta, luego se abre su Espacio PASS."
   }
 }

@@ -449,6 +449,8 @@
     "recharge_title": "Top up anytime",
     "recharge_desc": "Reload your PASS whenever you want with the available plans — some include bonus UC.",
     "bonus": "bonus",
-    "offertes": "free"
+    "offertes": "free",
+    "payer_adhesion": "Pay my {{price}} € membership online",
+    "paiement_note": "Secure Stripe payment — log in or create your account, then your PASS Space opens."
   }
 }

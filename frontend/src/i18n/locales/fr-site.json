@@ -449,6 +449,8 @@
     "recharge_title": "Rechargeable à volonté",
     "recharge_desc": "Rechargez votre PASS quand vous voulez avec les plans proposés — certains offrent des UC bonus.",
     "bonus": "bonus",
-    "offertes": "offertes"
+    "offertes": "offertes",
+    "payer_adhesion": "Payer mon adhésion {{price}} € en ligne",
+    "paiement_note": "Paiement sécurisé Stripe — connectez-vous ou créez votre compte, votre Espace PASS s'ouvre ensuite."
   }
 }

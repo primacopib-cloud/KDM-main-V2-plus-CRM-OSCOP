@@ -118,6 +118,68 @@ async def update_pass_registration(reg_id: str, body: PassStatusBody, admin: dic
     return {"ok": True}
 
 
+@pass_admin_router.post("/{reg_id}/convert")
+async def convert_pass_registration(reg_id: str, admin: dict = Depends(require_admin)):
+    """Transforme une inscription PASS en compte acheteur + email de choix du mot de passe."""
+    from datetime import timedelta
+    reg = await db.pass_registrations.find_one({"id": reg_id}, {"_id": 0})
+    if not reg:
+        raise HTTPException(status_code=404, detail="Inscription introuvable")
+    if reg.get("converted_user_id"):
+        raise HTTPException(status_code=400, detail="Cette inscription a déjà un compte")
+    existing = await db.users.find_one({"email": reg["email"]}, {"_id": 0, "id": 1})
+    if existing:
+        user_id = existing["id"]
+    else:
+        from auth import get_password_hash
+        user_id = str(uuid.uuid4())
+        full_name = f"{reg.get('first_name', '')} {reg.get('last_name', '')}".strip()
+        await db.users.insert_one({
+            "id": user_id, "email": reg["email"], "full_name": full_name,
+            "contact_name": full_name, "company_name": full_name,
+            "first_name": reg.get("first_name"), "last_name": reg.get("last_name"),
+            "siret": "", "phone": reg.get("phone") or "",
+            "address": reg.get("address"), "postal_code": reg.get("postal_code"),
+            "city": reg.get("city"), "country": reg.get("country"),
+            "role": "buyer", "account_type": "buyer", "member_type": "pass",
+            "pass_relay": reg.get("relay") or None, "is_admin": False,
+            "subscription": "pass-lolodrive", "credits": 0, "is_active": True,
+            "password_hash": get_password_hash(uuid.uuid4().hex),
+            "preferred_language": "fr",
+            "created_at": datetime.now(timezone.utc),
+        })
+    from datetime import datetime as dt
+    token = str(uuid.uuid4())
+    await db.password_resets.insert_one({
+        "id": str(uuid.uuid4()), "user_id": user_id, "email": reg["email"],
+        "token": token, "expires_at": dt.utcnow() + timedelta(hours=72),
+        "used": False, "created_at": dt.utcnow()})
+    try:
+        import os
+        from brevo_service import send_email
+        base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+        link = f"{base}/reinitialiser-mot-de-passe?token={token}"
+        await send_email(
+            to_email=reg["email"], to_name=f"{reg.get('first_name', '')} {reg.get('last_name', '')}".strip(),
+            subject="🎫 Activez votre Espace PASS LOLODRIVE",
+            html_content=(
+                "<div style='font-family:Arial,sans-serif;max-width:560px'>"
+                f"<h2 style='color:#451F6B'>Votre compte PASS est prêt, {reg.get('first_name', '')} !</h2>"
+                "<p>Choisissez votre mot de passe pour accéder à votre <b>Espace PASS LOLODRIVE</b> : "
+                "suivi de votre solde d'UC (Unités de consommation), recharges en ligne et historique.</p>"
+                f"<p><a href='{link}' style='background:#5B2E8C;color:#fff;padding:11px 20px;border-radius:8px;"
+                "text-decoration:none'>Choisir mon mot de passe</a></p>"
+                "<p style='color:#777;font-size:12px'>Ce lien est valable 72 h.</p>"
+                "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP — LOLODRIVE</p></div>"),
+            tags=["pass-account-activation"])
+    except Exception as exc:
+        logger.warning("Email activation compte PASS %s : %s", reg["email"], exc)
+    await db.pass_registrations.update_one({"id": reg_id}, {"$set": {
+        "converted_user_id": user_id, "converted_at": datetime.now(timezone.utc).isoformat(),
+        "status": "ACTIVATED"}})
+    return {"ok": True, "user_id": user_id, "linked_existing": bool(existing)}
+
+
 @pass_admin_router.get("/export")
 async def export_pass_registrations(admin: dict = Depends(require_admin)):
     regs = await db.pass_registrations.find({}, {"_id": 0}).sort("created_at", -1).to_list(2000)

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Ticket, Download, MapPin } from 'lucide-react';
+import { Ticket, Download, MapPin, UserPlus, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
@@ -25,6 +25,15 @@ export const PassRegistrationsPanel = () => {
       body: JSON.stringify({ status }),
     });
     if (r.ok) { toast.success('Statut mis à jour'); load(); } else { toast.error('Mise à jour impossible'); }
+  };
+
+  const convert = async (id) => {
+    const r = await fetch(`${API}/admin/pass-registrations/${id}/convert`, { ...opts, method: 'POST' });
+    const d = await r.json();
+    if (r.ok) {
+      toast.success(d.linked_existing ? 'Compte existant lié à cette inscription' : "Compte acheteur créé — email d'activation envoyé");
+      load();
+    } else { toast.error(d.detail || 'Conversion impossible'); }
   };
 
   const exportCsv = async () => {
@@ -66,6 +75,16 @@ export const PassRegistrationsPanel = () => {
               <span className="text-white/45">{r.postal_code} {r.city}</span>
               {r.relay?.name && (
                 <span className="inline-flex items-center gap-1 text-[#E9CF8E]"><MapPin className="w-3 h-3" />{r.relay.name}</span>
+              )}
+              {r.converted_user_id ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#7BC94E]" data-testid={`pass-converted-${r.id}`}>
+                  <BadgeCheck className="w-3 h-3" /> Compte créé
+                </span>
+              ) : (
+                <button type="button" onClick={() => convert(r.id)} data-testid={`pass-convert-${r.id}`}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/10 text-[#E9CF8E] hover:bg-white/15 transition-colors">
+                  <UserPlus className="w-3 h-3" /> Convertir en compte
+                </button>
               )}
               <select value={r.status} onChange={(e) => setStatus(r.id, e.target.value)} data-testid={`pass-status-${r.id}`}
                 className="ml-auto h-7 rounded-md px-1.5 text-[10.5px] font-bold bg-white/[0.06] border focus:outline-none"

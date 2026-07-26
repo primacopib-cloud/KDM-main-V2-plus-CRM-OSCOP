@@ -29,10 +29,18 @@ class PromotionPayload(BaseModel):
     name: str
     promo_type: str  # bonus_purchase | discount_action
     value_percent: float
-    scope_profile: str = "all"      # all | vendor | buyer
+    scope_profile: str = "all"      # all | vendor | buyer | pass
     scope_territory: str = "ALL"    # ALL | GUADELOUPE | MARTINIQUE | ...
     scope_category: str = "all"     # all | slug catégorie produit
     scope_action: str = "all"       # all | action du barème
+    scope_product_type: str = "all"  # all | type de produit (texte)
+    scope_brand: str = ""            # marque ciblée (texte, vide = toutes)
+    scope_relay: str = "all"         # all | nom du relais LOLODRIVE
+    min_quantity: int = 0            # quantité minimale de produits
+    audience: str = "all"            # all | emails
+    audience_emails: list[str] = []  # destinataires de la campagne
+    countdown_enabled: bool = False
+    countdown_pages: list[str] = []  # landing | catalog | pass | kdmarche | member_spaces
     starts_at: str | None = None    # ISO — début de l'offre flash
     ends_at: str | None = None      # ISO — fin de l'offre flash
     active: bool = True
@@ -55,6 +63,20 @@ def _matches(promo: dict, profile: str, territory: str | None, category: str | N
     if promo.get("scope_category", "all") != "all" and promo["scope_category"] != (category or ""):
         return False
     if promo.get("scope_action", "all") != "all" and promo["scope_action"] != (action or ""):
+        return False
+    return True
+
+
+def matches_product(promo: dict, product_type: str | None = None, brand: str | None = None,
+                    relay: str | None = None, quantity: int | None = None) -> bool:
+    """Critères produit additionnels (type, marque, relais, quantité minimale)."""
+    if promo.get("scope_product_type", "all") != "all" and promo["scope_product_type"].lower() != (product_type or "").lower():
+        return False
+    if promo.get("scope_brand") and promo["scope_brand"].lower() != (brand or "").lower():
+        return False
+    if promo.get("scope_relay", "all") != "all" and promo["scope_relay"] != (relay or ""):
+        return False
+    if promo.get("min_quantity", 0) and (quantity or 0) < promo["min_quantity"]:
         return False
     return True
 
@@ -131,3 +153,40 @@ async def delete_promotion(promo_id: str, _: dict = Depends(_admin)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Promotion introuvable")
     return {"status": "SUCCESS"}
+
+@promotions_router.post("/{promo_id}/send-campaign")
+async def send_promotion_campaign(promo_id: str, admin: dict = Depends(_admin)):
+    """Envoie la promotion par email aux destinataires édités (campagne Brevo)."""
+    import os
+    promo = await db.credit_promotions.find_one({"id": promo_id}, {"_id": 0})
+    if not promo:
+        raise HTTPException(status_code=404, detail="Promotion introuvable")
+    emails = [e.strip().lower() for e in (promo.get("audience_emails") or []) if e.strip()]
+    if not emails:
+        raise HTTPException(status_code=400, detail="Aucun email édité sur cette promotion (audience « emails »)")
+    from brevo_service import send_email
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    kind = "bonus de crédits à l'achat" if promo["promo_type"] == "bonus_purchase" else "réduction"
+    window = ""
+    if promo.get("ends_at"):
+        window = f"<p>⏱ Offre valable jusqu'au <b>{promo['ends_at'][:10]}</b> — ne tardez pas !</p>"
+    html = (
+        "<div style='font-family:Arial,sans-serif;max-width:560px'>"
+        f"<h2 style='color:#451F6B'>⚡ {promo['name']}</h2>"
+        f"<p>Profitez de <b>{promo['value_percent']:g} % de {kind}</b> sur la coopérative KDMARCHÉ × O'SCOP.</p>"
+        f"{window}"
+        f"<p><a href='{base}' style='background:#5B2E8C;color:#fff;padding:11px 20px;border-radius:8px;"
+        "text-decoration:none'>J'en profite</a></p>"
+        "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP — offre réservée, ne pas transférer</p></div>")
+    sent = 0
+    for email in emails:
+        try:
+            await send_email(to_email=email, to_name=None,
+                             subject=f"⚡ {promo['name']} — {promo['value_percent']:g} % pour vous",
+                             html_content=html, tags=["promo-campaign"])
+            sent += 1
+        except Exception:
+            pass
+    await db.credit_promotions.update_one({"id": promo_id}, {"$set": {
+        "campaign_sent_at": datetime.now(timezone.utc).isoformat(), "campaign_sent_count": sent}})
+    return {"status": "SUCCESS", "sent": sent, "total": len(emails)}
