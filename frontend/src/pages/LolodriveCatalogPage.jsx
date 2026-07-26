@@ -21,6 +21,13 @@ export default function LolodriveCatalogPage() {
   const [cart, setCart] = useState({});
   const [fulfillment, setFulfillment] = useState('DRIVE');
   const [loloPoints, setLoloPoints] = useState([]);
+  const [relayRatings, setRelayRatings] = useState({});
+
+  useEffect(() => {
+    lolodriveAPI.relayReviewStats()
+      .then((d) => setRelayRatings(d.stats || {}))
+      .catch(() => {});
+  }, []);
   const [selectedPoint, setSelectedPoint] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('kdm_preselected_point') || 'null');
@@ -78,6 +85,16 @@ export default function LolodriveCatalogPage() {
   const refCode = getReferencePointCode();
   const refPoint = loloPoints.find((p) => p.code === refCode) || null;
   const pickedPoint = loloPoints.find((p) => p.code === selectedPoint) || null;
+  const sortedPoints = [...loloPoints].sort((a, b) => {
+    if (refPoint) {
+      if (a.code === refPoint.code) return -1;
+      if (b.code === refPoint.code) return 1;
+    }
+    const ra = relayRatings[a.code]?.avg ?? -1;
+    const rb = relayRatings[b.code]?.avg ?? -1;
+    if (rb !== ra) return rb - ra;
+    return (a.name || '').localeCompare(b.name || '');
+  });
   const qtyTotal = cartItems.reduce((acc, { qty }) => acc + qty, 0);
   const distanceRate = fulfillment === 'LOLO_POINT' ? distanceFeeRate(refPoint, pickedPoint) : 0;
   const distanceFeeUc = Math.round(distanceRate * qtyTotal * 100) / 100;
@@ -184,11 +201,14 @@ export default function LolodriveCatalogPage() {
                       <SelectValue placeholder={i18n.t('lolodrive.choisir_un_relais_lolodrive')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {loloPoints.map((p) => {
+                      {sortedPoints.map((p) => {
                         const r = distanceFeeRate(refPoint, p);
                         const km = kmBetween(refPoint, p);
-                        const tag = !refPoint ? '' : r === 0 ? ' · ★ Mon relais'
-                          : ` ·${km != null ? ` ${km} km ·` : ''} +${r.toFixed(2)} UC/produit`;
+                        const note = relayRatings[p.code];
+                        const gold = note && note.avg >= 4.5 ? " · 🏆 Relais d'Or" : '';
+                        const noteTag = note ? ` · ★ ${note.avg}` : '';
+                        const tag = !refPoint ? `${noteTag}${gold}` : r === 0 ? ` · ★ Mon relais${noteTag}${gold}`
+                          : `${noteTag}${gold} ·${km != null ? ` ${km} km ·` : ''} +${r.toFixed(2)} UC/produit`;
                         return <SelectItem key={p.code} value={p.code}>{p.name} — {p.city}{tag}</SelectItem>;
                       })}
                     </SelectContent>

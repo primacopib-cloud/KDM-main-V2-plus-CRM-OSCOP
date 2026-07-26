@@ -68,14 +68,15 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
 
     filtered.forEach((p) => {
       const rating = ratings?.[p.code];
+      const gold = !!(rating && rating.avg >= 4.5);
       const el = document.createElement('div');
       el.className = 'kdm-lolo-marker';
       el.setAttribute('data-testid', `map-marker-${p.code}`);
       el.style.cssText = `
         width: 28px; height: 28px; border-radius: 50%;
-        background: linear-gradient(135deg, #D9B35A, #7c3aed);
-        border: 2px solid rgba(255,255,255,0.9);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        background: ${gold ? 'linear-gradient(135deg, #FFD700, #D9B35A)' : 'linear-gradient(135deg, #D9B35A, #7c3aed)'};
+        border: 2px solid ${gold ? '#FFD700' : 'rgba(255,255,255,0.9)'};
+        box-shadow: ${gold ? '0 0 16px rgba(255,215,0,0.85)' : '0 2px 8px rgba(0,0,0,0.6)'};
         cursor: pointer; display: flex; align-items: center; justify-content: center;
         color: #000; font-weight: 700; font-size: 11px;
       `;
@@ -85,6 +86,7 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
         <div style="font-family: system-ui; min-width: 200px; padding: 4px 0;">
           <div style="font-weight: 700; font-size: 14px; color: #0f172a;">${escapeHtml(p.name)}</div>
           ${rating ? `<div data-testid="popup-rating-${escapeHtml(p.code)}" style="font-size: 12px; color: #b45309; font-weight: 700; margin-top: 2px;">★ ${escapeHtml(String(rating.avg))} <span style="color:#94a3b8; font-weight:400;">(${escapeHtml(String(rating.count))} avis)</span></div>` : ''}
+          ${gold ? `<div data-testid="popup-gold-${escapeHtml(p.code)}" style="display:inline-block;background:linear-gradient(135deg,#FFD700,#D9B35A);color:#1F0A33;font-size:10px;font-weight:800;padding:2px 10px;border-radius:999px;margin-top:4px;letter-spacing:0.5px;">🏆 RELAIS D'OR</div>` : ''}
           <div style="font-size: 11px; color: #64748b; margin: 4px 0; font-family: monospace;">${escapeHtml(p.code)} · ${escapeHtml(p.territory || '?')}</div>
           <div style="font-size: 12px; color: #1e293b;">${escapeHtml(p.address || '')}</div>
           <div style="font-size: 12px; color: #1e293b;">${escapeHtml(p.city || '')}</div>

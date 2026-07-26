@@ -1804,3 +1804,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Réponses publiques côté client** : la note ⭐ de l'entête PASS devient cliquable → `components/pass/RelayReviewsDialog.jsx` (avis + « Réponse du relais »).
 - APIs front : relayReviewsList, managerMyReviews, replyRelayReview.
 - Données démo : avis 5★ Marie sur LP-PAP ; avis 4★ Sophie (acheteur-pro) sur LP-CAP avec réponse du gérant.
+
+## 2026-07-26 — Lot 10 : tri par note, Relais d'Or, alerte email nouvel avis (self-testé curl + Playwright)
+- **Tri par note** : LolodriveCatalogPage fetch relayReviewStats → sélecteur trié (Mon relais d'abord, puis note desc, puis alphabétique) avec « ★ X.X » et « 🏆 Relais d'Or » dans les libellés. Testé : PAP (★5 🏆) > Capesterre (★4.5 🏆 · 22 km) > autres.
+- **Badge Relais d'Or (carte)** : LoloPointsMap — avg ≥ 4.5 → marqueur doré (gradient or + halo) + pill « 🏆 RELAIS D'OR » dans la popup (data-testid popup-gold-{code}). Testé sur LP-PAP.
+- **Alerte email nouvel avis** : `_notify_manager_new_review` dans routes_relay_reviews.py (appelée après insert, non bloquante) → email Brevo au gérant (manager_user_id → users.email, sinon contact_email du point) avec étoiles + commentaire + rappel réponse via POS. Testé E2E : POST avis → Brevo 201 Created. ⚠️ Piège corrigé : pas de backslash dans les expressions f-string (SyntaxError py3.11).
+- Données démo : LP-CAP passe à ★4.5 (2 avis dont « Relais impeccable… » 5★ de Marie) → aussi Relais d'Or. Commande synthétique de test supprimée.

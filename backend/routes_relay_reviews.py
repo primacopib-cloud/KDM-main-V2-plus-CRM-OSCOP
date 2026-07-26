@@ -1,4 +1,5 @@
 """Avis relais LOLODRIVE (notation post-retrait par les titulaires du PASS)."""
+import logging
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -8,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from lolodrive_helpers import get_current_user
 
+logger = logging.getLogger(__name__)
 relay_reviews_router = APIRouter(prefix="/api/lolodrive", tags=["Relay Reviews"])
 db = None
 
@@ -104,14 +106,55 @@ async def submit_review(body: ReviewBody, user: dict = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Seuls les retraits effectués en relais peuvent être notés")
     if await db.relay_reviews.find_one({"order_id": body.order_id}):
         raise HTTPException(status_code=409, detail="Ce retrait a déjà été noté")
-    point = await db.lolodrive_points.find_one({"id": order["lolo_point_id"]}, {"_id": 0, "code": 1})
+    point = await db.lolodrive_points.find_one({"id": order["lolo_point_id"]}, {"_id": 0})
     await db.relay_reviews.insert_one({
         "id": str(uuid.uuid4()), "order_id": body.order_id, "user_id": user["id"],
         "point_id": order["lolo_point_id"], "point_code": point["code"] if point else None,
         "rating": body.rating, "comment": (body.comment or "").strip()[:500],
         "created_at": datetime.utcnow(),
     })
+    try:
+        await _notify_manager_new_review(point, user["id"], body.rating, (body.comment or "").strip()[:500])
+    except Exception as exc:
+        logger.warning("Notification nouvel avis échouée : %s", exc)
     return {"ok": True}
+
+
+async def _notify_manager_new_review(point: Optional[dict], reviewer_id: str, rating: int, comment: str):
+    """Email Brevo au gérant du relais dès qu'un avis est déposé."""
+    if not point:
+        return
+    from brevo_service import send_email, _wrap_html
+    to_email, to_name = None, None
+    if point.get("manager_user_id"):
+        mgr = await db.users.find_one({"id": point["manager_user_id"]}, {"_id": 0, "email": 1, "contact_name": 1})
+        if mgr and mgr.get("email"):
+            to_email, to_name = mgr["email"], mgr.get("contact_name")
+    if not to_email:
+        to_email = point.get("contact_email")
+    if not to_email:
+        return
+    reviewer = await db.users.find_one({"id": reviewer_id}, {"_id": 0, "contact_name": 1})
+    first = (((reviewer or {}).get("contact_name") or "Un titulaire PASS").split() or ["Un titulaire"])[0]
+    stars = "★" * rating + "☆" * (5 - rating)
+    subject = f"Nouvel avis {rating}/5 sur votre relais {point.get('name', '')}"
+    hello = f" {to_name.split()[0]}" if to_name else ""
+    comment_html = f"<p style='margin:8px 0 0;'>&laquo; {comment} &raquo;</p>" if comment else ""
+    body_html = f"""
+      <p>Bonjour{hello},</p>
+      <p><strong>{first}</strong> vient de laisser un avis sur votre relais <strong>{point.get('name')}</strong> :</p>
+      <div style='background:rgba(217,179,90,0.10);border:1px solid rgba(217,179,90,0.25);border-radius:12px;padding:16px;margin:16px 0;'>
+        <p style='margin:0;font-size:18px;color:#D9B35A;letter-spacing:2px;'>{stars} <strong>{rating}/5</strong></p>
+        {comment_html}
+      </div>
+      <p>Vous pouvez y répondre publiquement depuis votre interface POS LOLODRIVE (bouton « Avis clients »).</p>
+    """
+    await send_email(
+        to_email=to_email, to_name=to_name, subject=subject,
+        html_content=_wrap_html(subject, body_html),
+        text_content=f"{first} a laissé un avis {rating}/5 sur {point.get('name')} : {comment}",
+        tags=["relay_review"],
+    )
 
 
 @relay_reviews_router.get("/relay-reviews/stats")
