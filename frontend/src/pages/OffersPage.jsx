@@ -182,9 +182,10 @@ const OffersPage = () => {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
-            <Link to="/#contact">
-              <button className="btn-ghost inline-flex items-center justify-center gap-2 rounded-[14px] px-6 py-3.5 text-sm font-semibold">
-                {i18n.t('offers.demander_un_devis')}
+            <Link to="/catalogue">
+              <button className="btn-ghost inline-flex items-center justify-center gap-2 rounded-[14px] px-6 py-3.5 text-sm font-semibold" data-testid="offers-discover-btn">
+                {i18n.t('offers.decouvrir', 'Découvrir')}
+                <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
           </div>
