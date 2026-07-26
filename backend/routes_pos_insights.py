@@ -1,0 +1,126 @@
+"""Insights POS LOLODRIVE : comparatif mensuel gérant, alertes stock bas, export caisse consolidé admin."""
+import logging
+from datetime import datetime, timedelta
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import PlainTextResponse
+
+from lolodrive_helpers import get_current_user, require_admin
+from routes_relay_products import _manager_point
+
+logger = logging.getLogger(__name__)
+pos_insights_router = APIRouter(prefix="/api/lolodrive", tags=["POS Insights"])
+db = None
+
+
+def set_pos_insights_database(database):
+    global db
+    db = database
+
+
+async def _counter_totals(point_id: str, start: datetime, end: datetime) -> dict:
+    orders = await db.lolodrive_orders.find(
+        {"lolo_point_id": point_id, "channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
+        {"_id": 0, "total_cents": 1}).to_list(3000)
+    return {"count": len(orders), "total_cents": sum(o.get("total_cents", 0) for o in orders)}
+
+
+@pos_insights_router.get("/pos/monthly-compare")
+async def pos_monthly_compare(user: dict = Depends(get_current_user)):
+    """Caisse du mois en cours vs même période du mois précédent (tendance)."""
+    point = await _manager_point(user["id"])
+    now = datetime.utcnow()
+    cur_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    prev_start = (cur_start - timedelta(days=1)).replace(day=1)
+    elapsed = now - cur_start
+    prev_end = min(prev_start + elapsed, cur_start)
+    current = await _counter_totals(point["id"], cur_start, now + timedelta(minutes=1))
+    previous = await _counter_totals(point["id"], prev_start, prev_end)
+    prev_full = await _counter_totals(point["id"], prev_start, cur_start)
+    delta = None
+    if previous["total_cents"] > 0:
+        delta = round((current["total_cents"] - previous["total_cents"]) / previous["total_cents"] * 100, 1)
+    trend = "flat"
+    if delta is not None:
+        trend = "up" if delta > 2 else ("down" if delta < -2 else "flat")
+    elif current["total_cents"] > 0:
+        trend, delta = "up", None
+    return {"current_month": cur_start.strftime("%Y-%m"), "previous_month": prev_start.strftime("%Y-%m"),
+            "day_of_month": now.day, "current": current, "previous_same_period": previous,
+            "previous_full": prev_full, "delta_percent": delta, "trend": trend}
+
+
+@pos_insights_router.get("/pos/stock-alerts")
+async def pos_stock_alerts(days: int = 30, user: dict = Depends(get_current_user)):
+    """Produits du top ventes comptoir dont le stock risque la rupture (< 14 jours de couverture)."""
+    point = await _manager_point(user["id"])
+    days = max(1, min(days, 365))
+    since = datetime.utcnow() - timedelta(days=days)
+    sold = {}
+    async for o in db.lolodrive_orders.find(
+            {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": since}},
+            {"_id": 0, "items": 1}):
+        for l in o.get("items", []):
+            sold[l["sku"]] = sold.get(l["sku"], 0) + l.get("qty", 0)
+    if not sold:
+        return {"days": days, "alerts": []}
+    prods = await db.lolodrive_products.find(
+        {"sku": {"$in": list(sold)}, "stock_qty": {"$ne": None}},
+        {"_id": 0, "sku": 1, "name": 1, "stock_qty": 1}).to_list(100)
+    alerts = []
+    for p in prods:
+        stock = p.get("stock_qty") or 0
+        daily = sold[p["sku"]] / days
+        days_left = round(stock / daily) if daily > 0 else None
+        if stock <= 5 or (days_left is not None and days_left <= 14):
+            alerts.append({"sku": p["sku"], "name": p["name"], "stock_qty": stock,
+                           "sold_qty": sold[p["sku"]], "days_left": days_left,
+                           "critical": stock <= 5 or (days_left is not None and days_left <= 5)})
+    alerts.sort(key=lambda a: (a["days_left"] if a["days_left"] is not None else 999, a["stock_qty"]))
+    return {"days": days, "alerts": alerts}
+
+
+@pos_insights_router.get("/admin/counter-journal/export")
+async def admin_counter_journal_export(month: Optional[str] = None, admin: dict = Depends(require_admin)):
+    """Export CSV consolidé des caisses comptoir de tous les relais du réseau (mois donné)."""
+    now = datetime.utcnow()
+    try:
+        y, m = map(int, (month or now.strftime("%Y-%m")).split("-"))
+        start = datetime(y, m, 1)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Format mois invalide (attendu : YYYY-MM)")
+    end = datetime(y + 1, 1, 1) if m == 12 else datetime(y, m + 1, 1)
+    orders = await db.lolodrive_orders.find(
+        {"channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
+        {"_id": 0}).sort([("lolo_point_id", 1), ("created_at", 1)]).to_list(10000)
+    points = {p["id"]: p async for p in db.lolodrive_points.find({}, {"_id": 0, "id": 1, "code": 1, "name": 1})}
+    rows = ["relais;date;heure;numero;paiement;articles;remise_promo_eur;total_eur"]
+    g_cash = g_card = 0
+    by_point = {}
+    for o in orders:
+        by_point.setdefault(o.get("lolo_point_id"), []).append(o)
+    for pid, plist in by_point.items():
+        pt = points.get(pid, {})
+        label = f"{pt.get('code', pid)} — {pt.get('name', '')}".strip(" —")
+        p_cash = p_card = 0
+        for o in plist:
+            items = " + ".join(f"{l['name']} x{l['qty']}" for l in o.get("items", []))
+            pay = "CB" if o.get("payment_method") == "CARD" else "Especes"
+            total = o.get("total_cents", 0)
+            if o.get("payment_method") == "CARD":
+                p_card += total
+            else:
+                p_cash += total
+            rows.append(f"{label};{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};{pay};"
+                        f"\"{items}\";{(o.get('promo_discount_cents') or 0) / 100:.2f};{total / 100:.2f}")
+        rows.append(f"SOUS-TOTAL {label};;;;{len(plist)} vente(s);Especes {p_cash / 100:.2f};CB {p_card / 100:.2f};{(p_cash + p_card) / 100:.2f}")
+        rows.append("")
+        g_cash += p_cash
+        g_card += p_card
+    rows += [f"TOTAL RESEAU ESPECES;;;;;;;{g_cash / 100:.2f}", f"TOTAL RESEAU CB;;;;;;;{g_card / 100:.2f}",
+             f"TOTAL RESEAU CAISSES;;;;;;;{(g_cash + g_card) / 100:.2f}",
+             f"NB RELAIS ACTIFS;;;;;;;{len(by_point)}", f"NB VENTES;;;;;;;{len(orders)}"]
+    return PlainTextResponse(
+        "\ufeff" + "\n".join(rows), media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename=caisses-reseau-{y}-{m:02d}.csv"})

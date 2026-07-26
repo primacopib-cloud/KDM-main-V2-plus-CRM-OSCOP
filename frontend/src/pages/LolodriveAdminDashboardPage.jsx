@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   Ticket, Wallet, Truck, Store, Sparkles, ShoppingBag, BarChart3, Activity,
   Building2, HeartHandshake, Leaf, ArrowRight, RefreshCw, AlertTriangle,
-  TrendingUp, Clock, CheckCircle2, Package, AlertCircle,
+  TrendingUp, Clock, CheckCircle2, Package, AlertCircle, Download,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { Button } from '../components/ui/button';
@@ -25,6 +25,23 @@ export default function LolodriveAdminDashboardPage() {
   const [posOrders, setPosOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30d');
+
+  const exportNetworkCounters = async () => {
+    try {
+      const month = new Date().toISOString().slice(0, 7);
+      const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/admin/counter-journal/export?month=${month}`,
+        { credentials: 'include' });
+      if (!r.ok) { toast.error('Export impossible'); return; }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `caisses-reseau-${month}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Export consolidé des caisses téléchargé ✓');
+    } catch { toast.error('Erreur de connexion'); }
+  };
 
   const load = async (p = period) => {
     try {
@@ -169,10 +186,16 @@ export default function LolodriveAdminDashboardPage() {
                 ]}
               />
               {(kpi.orders?.counter || 0) > 0 && (
-                <p className="text-[11px] text-white/50 mt-3" data-testid="counter-stats-line">
-                  🧾 Ventes au comptoir : <b className="text-white/80">{kpi.orders.counter}</b> — {fmtEUR(kpi.orders.counter_revenue_cents || 0)}
-                  <span className="text-white/40"> (💵 {fmtEUR(kpi.orders.counter_cash_cents || 0)} · 💳 {fmtEUR(kpi.orders.counter_card_cents || 0)})</span>
-                </p>
+                <div className="flex items-center gap-2 mt-3">
+                  <p className="text-[11px] text-white/50" data-testid="counter-stats-line">
+                    🧾 Ventes au comptoir : <b className="text-white/80">{kpi.orders.counter}</b> — {fmtEUR(kpi.orders.counter_revenue_cents || 0)}
+                    <span className="text-white/40"> (💵 {fmtEUR(kpi.orders.counter_cash_cents || 0)} · 💳 {fmtEUR(kpi.orders.counter_card_cents || 0)})</span>
+                  </p>
+                  <button type="button" onClick={exportNetworkCounters} data-testid="admin-export-counters-btn"
+                    className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/35 hover:bg-[#D9B35A]/20 shrink-0">
+                    <Download className="w-3 h-3" /> Export caisses réseau
+                  </button>
+                </div>
               )}
             </SectionCard>
 

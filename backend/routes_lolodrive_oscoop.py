@@ -58,6 +58,8 @@ def set_lolodrive_database(database):
     set_relay_reviews_database(database)
     set_lolodrive_favorites_database(database)
     set_relay_products_database(database)
+    from routes_pos_insights import set_pos_insights_database
+    set_pos_insights_database(database)
 
 # =======================
 # Public / user routes
