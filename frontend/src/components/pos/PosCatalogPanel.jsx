@@ -6,6 +6,8 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { lolodriveAPI } from '../../services/api';
+import { PosCounterJournal } from './PosCounterJournal';
+import { CounterTicketDialog } from './CounterTicketDialog';
 
 const STATUS_STYLE = {
   PENDING: { label: 'En attente de validation', color: '#f59e0b' },
@@ -24,6 +26,8 @@ export const PosCatalogPanel = () => {
   const [editSku, setEditSku] = useState(null);
   const [sale, setSale] = useState({});
   const [selling, setSelling] = useState(false);
+  const [ticket, setTicket] = useState(null);
+  const [journalKey, setJournalKey] = useState(0);
   const fileRef = useRef(null);
 
   const uploadPhoto = async (file) => {
@@ -90,6 +94,8 @@ export const PosCatalogPanel = () => {
       const r = await lolodriveAPI.posCounterSale(saleItems.map(([sku, qty]) => ({ sku, qty })), method);
       toast.success(`Vente ${r.order_number} encaissée — ${(r.total_cents / 100).toFixed(2)} € (${method === 'CARD' ? 'CB' : 'espèces'})${r.promo_discount_cents > 0 ? ` · promo −${(r.promo_discount_cents / 100).toFixed(2)} €` : ''}`);
       setSale({});
+      setTicket(r.order);
+      setJournalKey((k) => k + 1);
     } catch (e) { toast.error(e.message); } finally { setSelling(false); }
   };
 
@@ -141,6 +147,9 @@ export const PosCatalogPanel = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      <PosCounterJournal refreshKey={journalKey} />
+      {ticket && <CounterTicketDialog sale={ticket} onClose={() => setTicket(null)} />}
 
       {mine.length > 0 && (
         <div className="mb-4 space-y-1.5" data-testid="pos-my-submissions">

@@ -182,9 +182,62 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
     }
     await db.lolodrive_orders.insert_one(order)
     order.pop("_id", None)
+    order["point_name"] = point.get("name")
     return {"ok": True, "order_number": order["order_number"],
             "total_cents": total, "promo_discount_cents": discount,
-            "payment_method": order["payment_method"]}
+            "payment_method": order["payment_method"], "order": order}
+
+
+@relay_products_router.get("/pos/counter-journal")
+async def pos_counter_journal(user: dict = Depends(get_current_user)):
+    """Journal de caisse du jour : totaux espèces / CB des ventes au comptoir."""
+    point = await _manager_point(user["id"])
+    start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    orders = await db.lolodrive_orders.find(
+        {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": start}},
+        {"_id": 0, "order_number": 1, "total_cents": 1, "payment_method": 1, "created_at": 1}
+    ).sort("created_at", -1).to_list(300)
+    cash = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CASH")
+    card = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CARD")
+    return {"date": start.strftime("%d/%m/%Y"), "count": len(orders),
+            "cash_cents": cash, "card_cents": card, "total_cents": cash + card, "sales": orders}
+
+
+@relay_products_router.post("/pos/counter-sale/{order_id}/email-ticket")
+async def email_counter_ticket(order_id: str, payload: dict, user: dict = Depends(get_current_user)):
+    """Envoie le ticket de caisse d'une vente au comptoir par email."""
+    email = ((payload or {}).get("email") or "").strip()
+    if "@" not in email:
+        raise HTTPException(status_code=400, detail="Email invalide")
+    point = await _manager_point(user["id"])
+    order = await db.lolodrive_orders.find_one(
+        {"id": order_id, "channel": "COUNTER", "lolo_point_id": point["id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Vente introuvable pour ce relais")
+    from brevo_service import send_email, _wrap_html
+
+    def _row(l):
+        promo = f" <span style='color:#b45309;font-size:11px'>-{l['promo_percent']:g}%</span>" if l.get("promo_percent") else ""
+        return (f"<tr><td style='padding:4px 8px'>{l['name']}{promo}</td>"
+                f"<td style='padding:4px 8px;text-align:center'>× {l['qty']}</td>"
+                f"<td style='padding:4px 8px;text-align:right'>{l['unit_cents'] * l['qty'] / 100:.2f} €</td></tr>")
+
+    rows = "".join(_row(l) for l in order.get("items", []))
+    discount = order.get("promo_discount_cents") or 0
+    subject = f"🧾 Ticket de caisse — {order['order_number']} ({point['name']})"
+    body = f"""
+      <p><strong>{point['name']}</strong> — vente au comptoir du {order['created_at'].strftime('%d/%m/%Y %H:%M')}</p>
+      <table style='width:100%;border-collapse:collapse;font-size:13px;border-top:1px dashed #ccc;border-bottom:1px dashed #ccc'>{rows}</table>
+      {f"<p style='margin:8px 0 0;color:#b45309'>⚡ Remise promo : −{discount / 100:.2f} €</p>" if discount else ''}
+      <p style='margin:10px 0 0;font-size:15px'>Total encaissé : <strong>{order['total_cents'] / 100:.2f} €</strong>
+      ({'carte bancaire' if order.get('payment_method') == 'CARD' else 'espèces'})</p>
+      <p style='color:#999;font-size:11px;margin-top:12px'>Merci de votre visite — Réseau LOLODRIVE by O'SCOP.</p>
+    """
+    await send_email(to_email=email, to_name=None, subject=subject,
+                     html_content=_wrap_html(subject, body),
+                     text_content=f"Ticket {order['order_number']} — total {order['total_cents'] / 100:.2f} €.",
+                     tags=["counter_ticket"])
+    return {"ok": True, "sent_to": email}
 
 
 @relay_products_router.put("/manager/products/{sku}")

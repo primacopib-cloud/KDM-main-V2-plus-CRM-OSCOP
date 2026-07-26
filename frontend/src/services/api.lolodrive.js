@@ -72,6 +72,9 @@ export const lolodriveAPI = {
     apiCall(`/lolodrive/manager/products/${sku}`, { method: 'PUT', body: JSON.stringify(payload) }),
   posCounterSale: (items, paymentMethod) =>
     apiCall('/lolodrive/pos/counter-sale', { method: 'POST', body: JSON.stringify({ items, payment_method: paymentMethod }) }),
+  posCounterJournal: () => apiCall('/lolodrive/pos/counter-journal'),
+  posEmailTicket: (orderId, email) =>
+    apiCall(`/lolodrive/pos/counter-sale/${orderId}/email-ticket`, { method: 'POST', body: JSON.stringify({ email }) }),
   adminRelayProducts: (status = 'PENDING') =>
     apiCall(`/lolodrive/admin/relay-products?status=${status}`),
   adminReviewRelayProduct: (sku, action, reason) =>
