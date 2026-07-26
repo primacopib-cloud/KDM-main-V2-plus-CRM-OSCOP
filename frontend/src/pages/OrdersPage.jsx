@@ -57,6 +57,7 @@ const formatDate = (dateStr) => {
 
 export default function OrdersPage() {
   const navigate = useNavigate();
+  const catalogHref = authAPI.getCurrentUser()?.role === 'TITULAIRE_PASS' ? '/catalogue-lolodrive' : '/catalogue';
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -186,7 +187,7 @@ export default function OrdersPage() {
             <p className="text-white/60 text-sm">{i18n.t('orders.historique_et_suivi_de')}</p>
           </div>
           
-          <Link to="/catalogue">
+          <Link to={catalogHref}>
             <Button className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black">
               <Package className="w-4 h-4 mr-2" />
               {i18n.t('orders.nouvelle_commande')}
@@ -249,7 +250,7 @@ export default function OrdersPage() {
               <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p className="text-lg">{i18n.t('orders.aucune_commande')}</p>
               <p className="text-sm mb-4">{i18n.t('orders.commencez_par_parcourir_le')}</p>
-              <Link to="/catalogue">
+              <Link to={catalogHref}>
                 <Button className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black">
                   {i18n.t('orders.voir_le_catalogue')}
                 </Button>

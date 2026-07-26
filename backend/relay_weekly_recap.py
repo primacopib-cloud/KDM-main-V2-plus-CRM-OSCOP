@@ -51,6 +51,41 @@ async def _send_manager_recap(db, point: dict, s: dict) -> bool:
     return True
 
 
+async def _weekly_volume_history(db, now, weeks: int = 8) -> list:
+    """Volume réseau (€) par semaine ISO sur les N dernières semaines."""
+    start = (now - timedelta(days=7 * weeks)).replace(tzinfo=None)
+    orders = await db.lolodrive_orders.find(
+        {"created_at": {"$gte": start}, "lolo_point_id": {"$ne": None},
+         "status": {"$in": ["PAID_UC", "PAID", "READY", "FULFILLED"]}},
+        {"_id": 0, "created_at": 1, "total_cents": 1}).to_list(5000)
+    buckets = {}
+    for o in orders:
+        c = o.get("created_at")
+        if not isinstance(c, datetime):
+            continue
+        iso = c.isocalendar()
+        tag = f"{iso[0]}-W{iso[1]:02d}"
+        buckets[tag] = buckets.get(tag, 0) + o.get("total_cents", 0)
+    out = []
+    for i in range(weeks, 0, -1):
+        iso = (now - timedelta(days=7 * i)).isocalendar()
+        tag = f"{iso[0]}-W{iso[1]:02d}"
+        out.append((tag, buckets.get(tag, 0) / 100))
+    return out
+
+
+def _history_chart_html(hist: list) -> str:
+    maxv = max((v for _, v in hist), default=0) or 1
+    bars = "".join(
+        f"<tr><td style='padding:3px 8px;font-size:11px;color:#888;white-space:nowrap'>{tag}</td>"
+        f"<td style='width:100%;padding:3px 8px'><div style='background:linear-gradient(90deg,#D9B35A,#F5A623);"
+        f"height:12px;border-radius:6px;width:{max(2, round(v / maxv * 100))}%'></div></td>"
+        f"<td style='padding:3px 8px;font-size:11px;text-align:right;white-space:nowrap'><b>{v:.0f} €</b></td></tr>"
+        for tag, v in hist)
+    return ("<p style='margin:18px 0 6px;font-weight:bold'>📈 Évolution du volume réseau (8 dernières semaines)</p>"
+            f"<table style='width:100%;border-collapse:collapse'>{bars}</table>")
+
+
 async def _send_admin_network_recap(db, rows: list, now) -> int:
     """Récap global du réseau de relais envoyé aux admins."""
     if not rows:
@@ -86,6 +121,7 @@ async def _send_admin_network_recap(db, rows: list, now) -> int:
         </tr>
         {rows_html}
       </table>
+      {_history_chart_html(await _weekly_volume_history(db, now))}
       <p style='color:#999;font-size:11px;margin-top:14px'>🏆 = Relais d'Or (note ≥ 4.5) — récap automatique du lundi.</p>
     """
     recipients = {TEAM_EMAIL}

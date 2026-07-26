@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Star, Loader2, Reply, MessageSquare } from 'lucide-react';
+import { Star, Loader2, Reply, MessageSquare, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { lolodriveAPI } from '../../services/api';
@@ -94,6 +94,18 @@ export const PosRelayReviews = () => {
             {data.gold
               ? <>🏆 <strong>Relais D'Or décroché !</strong> Votre note moyenne est ≥ 4.5 — continuez à soigner l'accueil pour le conserver.</>
               : <>🏆 <strong>Objectif Relais D'Or</strong> : plus que <strong>{data.gold_missing} avis 5★</strong> pour atteindre la note moyenne de 4.5 et décrocher le badge sur la carte.</>}
+            {data.gold && (
+              <button type="button" data-testid="pos-gold-share-whatsapp"
+                onClick={() => {
+                  const url = `${window.location.origin}/?relay=${data.point?.code}`;
+                  const text = `🏆 Notre relais ${data.point?.name} a décroché le badge Relais D'Or LOLODRIVE avec une note de ${data.avg}/5 ! Merci à nos clients — retrouvez-nous ici : ${url}`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+                }}
+                className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold text-white"
+                style={{ background: '#25D366' }}>
+                <Share2 className="w-3 h-3" /> Partager mon badge sur WhatsApp
+              </button>
+            )}
           </div>
           <div className="space-y-3">
             {data.reviews.length === 0 && <p className="text-sm text-white/40">Aucun avis reçu pour le moment.</p>}

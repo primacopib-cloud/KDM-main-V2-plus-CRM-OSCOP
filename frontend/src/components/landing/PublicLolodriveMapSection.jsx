@@ -146,6 +146,10 @@ export const PublicLolodriveMapSection = () => {
                 <button onClick={() => setSelected(null)} className="text-white/40 hover:text-white text-xl leading-none px-2" data-testid="close-relay-detail">×</button>
               </div>
               <div className="separator-premium"><span className="dot"></span></div>
+              {selected.photo_url && (
+                <img src={selected.photo_url} alt={selected.name} data-testid="relay-detail-photo"
+                  className="w-full h-36 object-cover rounded-xl border border-[#D9B35A]/30 mb-4" />
+              )}
               <div className="space-y-2 text-sm mb-5">
                 <div className="flex items-start gap-2"><MapPin className="w-4 h-4 mt-0.5 text-violet-premium flex-shrink-0" /><span>{selected.address || '—'}, {selected.city || '—'}</span></div>
                 {selected.zone_name && <div className="text-xs text-white/50 ml-6">{i18n.t('landing.zone_label')} {selected.zone_name}</div>}
