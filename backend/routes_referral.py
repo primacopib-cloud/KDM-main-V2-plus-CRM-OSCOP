@@ -127,6 +127,8 @@ async def handle_adhesion_referral(user_id: str, email: str, code: str):
             await audit("REFERRAL_CLAIMED", user_id, None,
                         {"code": code, "sponsor_id": sponsor["user_id"], "source": "adhesion"})
         await maybe_pay_referral_bonus(user_id, event_label="adhésion validée à la coopérative")
+        from referral_challenge import notify_overtaken
+        await notify_overtaken(db, sponsor["user_id"])
     except Exception as exc:
         logger.warning("Parrainage adhésion %s : %s", user_id, exc)
 

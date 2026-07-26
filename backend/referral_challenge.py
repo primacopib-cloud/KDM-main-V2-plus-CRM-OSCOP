@@ -180,7 +180,7 @@ async def process_referral_challenge(database) -> None:
 
 
 async def notify_overtaken(database, new_sponsor_id: str) -> None:
-    """Après un nouveau parrainage : notifie les parrains dont le rang s'est dégradé."""
+    """Après un nouveau parrainage : félicite les entrées au top 3 et notifie les parrains dépassés."""
     try:
         settings = await _get_settings(database)
         if not settings.get("enabled"):
@@ -190,8 +190,20 @@ async def notify_overtaken(database, new_sponsor_id: str) -> None:
         ranks = {r["sponsor_id"]: i + 1 for i, r in enumerate(board)}
         cache = await database.referral_rank_cache.find_one({"month": month}) or {}
         old = cache.get("ranks", {})
+        medals = ["🥇", "🥈", "🥉"]
         for uid, rank in ranks.items():
             prev = old.get(uid)
+            if rank <= 3 and (prev is None or prev > 3):
+                try:
+                    from core_deps import create_notification
+                    await create_notification(
+                        "referral_podium", f"{medals[rank - 1]} Félicitations — vous entrez dans le top 3 du défi parrainage !",
+                        f"Vous êtes maintenant #{rank} du défi du mois. Restez sur le podium jusqu'à la fin du mois "
+                        f"pour remporter votre récompense CREDI'SCOP — partagez votre médaille depuis votre espace !",
+                        target_roles=["direct"], target_user_id=uid, data={"link": "/vendor?tab=cpc"})
+                except Exception as exc:
+                    logger.warning("Notif podium défi %s : %s", uid, exc)
+                continue
             if uid == new_sponsor_id or prev is None or rank <= prev:
                 continue
             try:
