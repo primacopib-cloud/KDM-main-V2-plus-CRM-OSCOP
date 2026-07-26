@@ -193,7 +193,7 @@ const NavBar = ({ variant = 'default' }) => {
                   to="/assistant-ia"
                   className="relative p-2 rounded-lg hover:bg-white/[0.06] transition-colors"
                   data-testid="ai-chat-nav-link"
-                  title="Assistant IA (COOP'IA)"
+                  title="Assistant IA (SCOOPY)"
                 >
                   <Sparkles className="w-4 h-4 text-[#D9B35A]" />
                 </Link>

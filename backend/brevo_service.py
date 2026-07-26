@@ -231,6 +231,36 @@ async def notify_pass_activated(
     return {"email": email_res, "sms": sms_res}
 
 
+async def notify_recharge_confirmed(
+    *,
+    to_email: str,
+    to_name: Optional[str],
+    uc_credited: int,
+    new_balance: int,
+    amount_eur: float,
+) -> Optional[Dict[str, Any]]:
+    first = (to_name or "").split()[0] if to_name else ""
+    subject = "Recharge UC confirmée — vos UC sont disponibles"
+    body = f"""
+      <p>Bonjour {first or 'cher coopérateur'},</p>
+      <p>Votre recharge de <strong>{amount_eur:g} €</strong> a bien été confirmée. Merci !</p>
+      <div style=\"background:rgba(217,179,90,0.10);border:1px solid rgba(217,179,90,0.25);border-radius:12px;padding:16px;margin:16px 0;\">
+        <p style=\"margin:0 0 6px;color:#D9B35A;font-size:12px;text-transform:uppercase;letter-spacing:1px;\">Wallet UC</p>
+        <p style=\"margin:0;\">UC crédités : <strong style=\"color:#57D19A;\">+{uc_credited} UC</strong></p>
+        <p style=\"margin:6px 0 0;\">Nouveau solde : <strong>{new_balance} UC</strong></p>
+      </div>
+      <p>Vos UC sont utilisables immédiatement sur le catalogue LOLODRIVE depuis votre Espace PASS.</p>
+    """
+    return await send_email(
+        to_email=to_email,
+        to_name=to_name,
+        subject=subject,
+        html_content=_wrap_html(subject, body),
+        text_content=f"Bonjour {first}, recharge de {amount_eur:g} € confirmée : +{uc_credited} UC. Nouveau solde : {new_balance} UC.",
+        tags=["recharge_confirmed"],
+    )
+
+
 async def notify_order_ready(
     *,
     to_email: str,

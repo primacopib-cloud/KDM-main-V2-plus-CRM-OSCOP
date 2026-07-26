@@ -61,27 +61,6 @@ async def admin_create_product(request: RegisterProduct, admin: dict = Depends(r
 # DEMO simulators (no Stripe webhook required)
 # =======================
 
-@lolodrive_admin_router.post("/demo/simulate-pass-activation")
-async def demo_simulate_pass_activation(user: dict = Depends(get_current_user)):
-    """DEMO ONLY: simulate webhook payment_intent.succeeded for PASS activation.
-    Active le PASS pour l'utilisateur courant + crédite 600 UC sans passer par Stripe.
-    Aucune valeur fiscale. À utiliser uniquement en mode démo/test.
-    """
-    user_id = user["id"]
-    starts_at = datetime.utcnow()
-    ends_at = starts_at + timedelta(days=PASS_DAYS)
-    await db.lolodrive_passes.update_one(
-        {"user_id": user_id},
-        {"$set": {"status": "ACTIVE", "starts_at": starts_at, "ends_at": ends_at, "price_cents": PASS_PRICE_CENTS, "uc_granted": PASS_UC, "is_auto_renew": False, "demo_activation": True, "updated_at": datetime.utcnow()}, "$setOnInsert": {"id": str(uuid.uuid4()), "created_at": datetime.utcnow()}},
-        upsert=True,
-    )
-    wallet = await get_or_create_wallet(user_id)
-    await db.lolodrive_wallets.update_one({"id": wallet["id"]}, {"$inc": {"balance_uc": PASS_UC}, "$set": {"updated_at": datetime.utcnow()}})
-    await db.lolodrive_wallet_ledger.insert_one({"id": str(uuid.uuid4()), "wallet_id": wallet["id"], "type": "CREDIT", "amount_uc": PASS_UC, "reason": "PASS_ACTIVATION_DEMO", "created_at": datetime.utcnow()})
-    await emit_crm_event("pass.activated", {"user_id": user_id, "pass_price_cents": PASS_PRICE_CENTS, "uc_granted": PASS_UC, "ends_at": ends_at, "demo": True})
-    return {"ok": True, "ends_at": ends_at, "uc_granted": PASS_UC, "demo": True}
-
-
 @lolodrive_admin_router.post("/demo/simulate-order-payment/{order_id}")
 async def demo_simulate_order_payment(order_id: str, user: dict = Depends(get_current_user)):
     """DEMO ONLY: passe une commande à PAID sans déclencher Stripe webhook."""

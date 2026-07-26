@@ -81,14 +81,14 @@ export const SupplyRisk = () => {
                 {ai[c.category] ? (
                   <div className="p-2 rounded-lg bg-[#C9A8F0]/10 border border-[#C9A8F0]/25" data-testid={`coopia-result-${c.category}`}>
                     <p className="text-[10px] font-bold text-[#C9A8F0] flex items-center gap-1 mb-0.5">
-                      <Sparkles className="w-3 h-3" /> COOP'IA recommande : {ai[c.category].procedure === 'ENCHERE_INVERSEE' ? 'Enchère inversée' : 'Offres scellées'}
+                      <Sparkles className="w-3 h-3" /> SCOOPY recommande : {ai[c.category].procedure === 'ENCHERE_INVERSEE' ? 'Enchère inversée' : 'Offres scellées'}
                     </p>
                     <p className="text-[10.5px] text-white/65">{ai[c.category].rationale}</p>
                   </div>
                 ) : (
                   <button type="button" onClick={() => askCoopia(c.category)} disabled={loadingAi === c.category} data-testid={`coopia-btn-${c.category}`}
                     className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-[#C9A8F0]/15 text-[#C9A8F0] border border-[#C9A8F0]/30 hover:bg-[#C9A8F0]/25 transition-colors disabled:opacity-50">
-                    <Sparkles className="w-3 h-3" /> {loadingAi === c.category ? "COOP'IA réfléchit…" : "Suggestion COOP'IA (procédure)"}
+                    <Sparkles className="w-3 h-3" /> {loadingAi === c.category ? "SCOOPY réfléchit…" : "Suggestion SCOOPY (procédure)"}
                   </button>
                 )}
               </div>

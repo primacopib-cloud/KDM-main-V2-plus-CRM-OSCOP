@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BatteryCharging, Plus, Trash2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
+import { PassRechargeStats } from './PassRechargeStats';
 
 const numCls = 'w-20 h-8 rounded-md px-2 text-[11.5px] text-white bg-white/[0.06] border border-white/15 focus:outline-none text-right';
 
@@ -74,6 +75,7 @@ export const PassPlansPanel = () => {
       </div>
       <p className="text-[10.5px] text-white/40 mb-3">UC = Unités de consommation. Les plans actifs sont affichés sur la page publique PASS LOLODRIVE.</p>
       {plans.map((p) => <PlanRow key={p.id + String(p.updated_at || '')} plan={p} onSave={save} onDelete={del} />)}
+      <PassRechargeStats />
     </div>
   );
 };

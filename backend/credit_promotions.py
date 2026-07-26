@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import math
+import os
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from admin_guard import require_admin
@@ -43,6 +44,7 @@ class PromotionPayload(BaseModel):
     countdown_enabled: bool = False
     countdown_pages: list[str] = []  # landing | catalog | pass | kdmarche | member_spaces
     countdown_labels: list[str] = []  # mentions clignotantes (EXCLUSIVITÉ, SPÉCIAL NOËL...)
+    countdown_images: list[dict] = []  # visuels téléversés [{url, size: s|m|l, shape: round|square|banner}]
     countdown_alert_days: int = 10   # alerte rouge à J-x du terme
     starts_at: str | None = None    # ISO — début de l'offre flash
     ends_at: str | None = None      # ISO — fin de l'offre flash
@@ -123,6 +125,23 @@ async def public_catalog_promos():
     for p in docs:
         p.pop("audience", None)
     return {"promotions": docs}
+
+
+@promotions_router.post("/upload-image")
+async def upload_promo_image(file: UploadFile = File(...), _: dict = Depends(_admin)):
+    """Téléverse un visuel de countdown (jpg/png/webp/gif, max 4 Mo)."""
+    ext = (file.filename or "img.jpg").rsplit(".", 1)[-1].lower()
+    if ext not in ("jpg", "jpeg", "png", "webp", "gif"):
+        raise HTTPException(status_code=400, detail="Format non supporté (jpg, png, webp, gif)")
+    data = await file.read()
+    if len(data) > 4 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image trop lourde (max 4 Mo)")
+    up_dir = os.path.join(os.path.dirname(__file__), "uploads", "promos")
+    os.makedirs(up_dir, exist_ok=True)
+    fname = f"promo-{uuid.uuid4().hex[:10]}.{ext}"
+    with open(os.path.join(up_dir, fname), "wb") as f:
+        f.write(data)
+    return {"url": f"/api/uploads/promos/{fname}"}
 
 
 @promotions_router.get("")

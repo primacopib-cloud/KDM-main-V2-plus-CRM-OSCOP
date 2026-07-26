@@ -29,7 +29,6 @@ export default function PassSpacePage() {
   const [loading, setLoading] = useState(true);
   const [rechargeOpen, setRechargeOpen] = useState(false);
   const [selectedPack, setSelectedPack] = useState('STANDARD');
-  const [activating, setActivating] = useState(false);
 
   useEffect(() => {
     if (!authAPI.isAuthenticated()) {
@@ -58,19 +57,6 @@ export default function PassSpacePage() {
       toast.error(e.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const activatePassDemo = async () => {
-    setActivating(true);
-    try {
-      const r = await lolodriveAPI.simulatePassActivation();
-      toast.success(`PASS activé ! ${r.uc_granted} UC crédités. Valable jusqu'au ${new Date(r.ends_at).toLocaleDateString(i18n.language)}.`);
-      load();
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setActivating(false);
     }
   };
 

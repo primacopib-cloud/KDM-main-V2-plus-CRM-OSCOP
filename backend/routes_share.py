@@ -20,6 +20,62 @@ RANK_LABELS = {
 }
 
 CHALLENGE_OG_IMAGE = "https://static.prod-images.emergentagent.com/jobs/b6ab8bd3-fe62-4bdc-97dc-0a13cc7b27ca/images/0031ec9b89797c708246888faf7d604ada604de340d20cd6b2f7f7f1070b63f2.jpeg"
+PROMO_OG_IMAGE = "https://static.prod-images.emergentagent.com/jobs/b6ab8bd3-fe62-4bdc-97dc-0a13cc7b27ca/images/9491e59eb8c9bb7aa716560ea4a7509b9d851a1d53e058083f47471d25f729d1.jpeg"
+
+
+@share_router.get("/promo/{promo_id}")
+async def share_promo(promo_id: str, request: Request):
+    """Carte OG « promo flash » (WhatsApp/LinkedIn) + redirection vers l'accueil."""
+    from datetime import datetime, timezone
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or ""
+    proto = request.headers.get("x-forwarded-proto", "https")
+    base = f"{proto}://{host}"
+    promo = await db.credit_promotions.find_one({"id": promo_id}, {"_id": 0})
+    if promo:
+        name, pct, ends = promo.get("name"), promo.get("value_percent"), promo.get("ends_at")
+        is_bonus = promo.get("promo_type") == "bonus_purchase"
+        imgs = promo.get("countdown_images") or []
+        img = (imgs[0].get("url") or "") if imgs else ""
+    else:
+        promo = await db.flash_promos.find_one({"id": promo_id}, {"_id": 0})
+        if not promo:
+            return RedirectResponse(url=f"{base}/")
+        name, pct, ends, is_bonus, img = promo.get("title"), promo.get("discount_pct"), promo.get("ends_at"), False, ""
+    if img.startswith("/"):
+        img = base + img
+    if not img:
+        img = PROMO_OG_IMAGE
+    days = None
+    try:
+        days = max(0, (datetime.fromisoformat(str(ends).replace("Z", "+00:00")) - datetime.now(timezone.utc)).days)
+    except Exception:
+        pass
+    offer = ((f"+{pct:g} % de BONUS UC / CREDI'SCOP" if is_bonus else f"-{pct:g} % de réduction") if pct else "Offre flash")
+    title = html_mod.escape(f"⚡ {name} — {offer}")
+    desc = html_mod.escape(
+        f"Offre flash KDMARCHÉ × O'SCOP : {offer}."
+        + (f" Plus que {days} jour(s), profitez-en vite !" if days is not None else ""))
+    target = f"{base}/"
+    page = f"""<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8" />
+<title>{title}</title>
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="KDMARCHÉ × O'SCOP" />
+<meta property="og:title" content="{title}" />
+<meta property="og:description" content="{desc}" />
+<meta property="og:url" content="{html_mod.escape(target)}" />
+<meta property="og:image" content="{html_mod.escape(img)}" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{title}" />
+<meta name="twitter:description" content="{desc}" />
+<meta http-equiv="refresh" content="0;url={html_mod.escape(target)}" />
+</head><body style="background:#1F0A33;color:#F7F2E9;font-family:Arial,sans-serif;text-align:center;padding-top:80px;">
+<p>Redirection vers l'offre…</p>
+<a href="{html_mod.escape(target)}" style="color:#D9B35A;">{title}</a>
+<script>window.location.replace({target!r});</script>
+</body></html>"""
+    return HTMLResponse(content=page)
 
 
 @share_router.get("/challenge")

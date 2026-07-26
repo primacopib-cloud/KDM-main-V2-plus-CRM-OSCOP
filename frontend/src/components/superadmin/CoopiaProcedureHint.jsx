@@ -25,7 +25,7 @@ export const CoopiaProcedureHint = ({ category, onApply }) => {
     <div className="p-2.5 rounded-xl bg-[#C9A8F0]/[0.06] border border-[#C9A8F0]/20 space-y-1.5" data-testid="coopia-hint">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-[10px] font-bold text-[#C9A8F0] flex items-center gap-1.5 flex-1">
-          <Sparkles className="w-3 h-3" /> COOP'IA — quelle procédure choisir ?
+          <Sparkles className="w-3 h-3" /> SCOOPY — quelle procédure choisir ?
         </p>
         <button type="button" onClick={ask} disabled={loading} data-testid="coopia-hint-btn"
           className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#C9A8F0]/15 text-[#C9A8F0] border border-[#C9A8F0]/30 hover:bg-[#C9A8F0]/25 transition-colors disabled:opacity-50">

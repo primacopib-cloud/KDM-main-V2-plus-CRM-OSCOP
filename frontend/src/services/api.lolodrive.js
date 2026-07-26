@@ -139,8 +139,6 @@ export const lolodriveAPI = {
   },
 
   // Demo simulators (no Stripe webhook required)
-  simulatePassActivation: () =>
-    apiCall('/lolodrive/demo/simulate-pass-activation', { method: 'POST' }),
   simulateOrderPayment: (orderId) =>
     apiCall(`/lolodrive/demo/simulate-order-payment/${orderId}`, { method: 'POST' }),
   mySavings: () => apiCall('/lolodrive/me/savings'),

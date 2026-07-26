@@ -68,6 +68,29 @@ async def public_pass_plans():
             "boost": {"name": boost["name"], "percent": boost["value_percent"], "ends_at": boost.get("ends_at")} if boost else None}
 
 
+@pass_plans_router.get("/admin/pass-recharges/stats")
+async def pass_recharge_stats(admin: dict = Depends(require_admin)):
+    """Total des recharges UC payées, groupées par pack (1 clic + dialog)."""
+    from lolodrive_checkout_apply import RECHARGE_PACKS
+    labels = {"P10": "10 € — 1 clic", "P25": "25 € — 1 clic", "P100": "100 € — 1 clic",
+              "MINI": "MINI 20 €", "STANDARD": "STANDARD 40 €", "MAXI": "MAXI 70 €"}
+    rows = await db.payment_transactions.aggregate([
+        {"$match": {"kind": "RECHARGE", "payment_status": "paid"}},
+        {"$group": {"_id": "$metadata.pack", "count": {"$sum": 1}, "amount_cents": {"$sum": "$amount_cents"}}},
+    ]).to_list(20)
+    packs = []
+    for r in rows:
+        pack = r["_id"] or "?"
+        packs.append({"pack": pack, "label": labels.get(pack, pack), "count": r["count"],
+                      "amount_cents": r["amount_cents"],
+                      "uc_total": RECHARGE_PACKS.get(pack, {}).get("uc", 0) * r["count"]})
+    packs.sort(key=lambda x: -x["amount_cents"])
+    return {"packs": packs,
+            "total_count": sum(p["count"] for p in packs),
+            "total_amount_cents": sum(p["amount_cents"] for p in packs),
+            "total_uc": sum(p["uc_total"] for p in packs)}
+
+
 class PlanBody(BaseModel):
     label: str = ""
     price_eur: float

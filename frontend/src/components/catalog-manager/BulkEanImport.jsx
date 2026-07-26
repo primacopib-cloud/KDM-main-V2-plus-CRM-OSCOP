@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Layers, Loader2, Sparkles } from 'lucide-react';
+import { Layers, Loader2, Sparkles, ScanBarcode } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { MultiBarcodeScanner } from './MultiBarcodeScanner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const STATUS = { cree: ['Créé ✓', 'text-emerald-400'], existant: ['Déjà présent', 'text-amber-300'], introuvable: ['EAN introuvable', 'text-red-400'], erreur: ['Erreur', 'text-red-400'] };
@@ -12,6 +13,14 @@ export const BulkEanImport = ({ onDone }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const addScanned = (codes) => {
+    const existing = text.split(/[\s,;]+/).filter(Boolean);
+    const merged = [...new Set([...existing, ...codes])].slice(0, 10);
+    setText(merged.join('\n'));
+    toast.success(`${merged.length} code(s) dans la liste`);
+  };
 
   const run = async () => {
     const eans = text.split(/[\s,;]+/).filter((e) => e.trim());
@@ -44,7 +53,11 @@ export const BulkEanImport = ({ onDone }) => {
               <Layers className="w-4 h-4 text-[#D9B35A]" /> Fiches produit en série par codes-barres
             </DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-white/50">Collez jusqu'à 10 codes EAN (un par ligne) — l'IA crée les fiches en brouillon avec descriptions, tags et image officielle.</p>
+          <p className="text-xs text-white/50">Collez jusqu'à 10 codes EAN (un par ligne) ou scannez-les en série — l'IA crée les fiches en brouillon avec descriptions, tags et image officielle.</p>
+          <Button variant="outline" onClick={() => setScannerOpen(true)} data-testid="bulk-ean-scan-btn"
+            className="w-fit border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/10">
+            <ScanBarcode className="w-4 h-4 mr-2" /> Scanner en série (caméra ou lecteur)
+          </Button>
           <textarea rows={6} value={text} onChange={(e) => setText(e.target.value)} data-testid="bulk-ean-textarea"
             placeholder={'3017620422003\n3175680011480\n...'}
             className="w-full px-3 py-2 rounded-lg text-sm font-mono text-white bg-white/[0.05] border border-white/15" />
@@ -69,6 +82,7 @@ export const BulkEanImport = ({ onDone }) => {
               {loading ? 'Création en cours…' : 'Créer les fiches par IA'}
             </Button>
           </DialogFooter>
+          <MultiBarcodeScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onDone={addScanned} max={10} />
         </DialogContent>
       </Dialog>
     </>

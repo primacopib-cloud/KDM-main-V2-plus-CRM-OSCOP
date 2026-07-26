@@ -4,7 +4,7 @@ from typing import Optional, Dict, Any
 import uuid
 import logging
 
-from brevo_service import notify_pass_activated
+from brevo_service import notify_pass_activated, notify_recharge_confirmed
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +102,19 @@ async def _apply_payment_success(tx: dict):
             "amount_uc": pack["uc"], "reason": "RECHARGE",
             "stripe_session_id": tx["session_id"], "created_at": now,
         })
+        try:
+            fresh = await db.lolodrive_wallets.find_one({"id": wallet["id"]}, {"_id": 0, "balance_uc": 1})
+            user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "contact_name": 1})
+            if user_doc and user_doc.get("email"):
+                await notify_recharge_confirmed(
+                    to_email=user_doc["email"],
+                    to_name=user_doc.get("contact_name"),
+                    uc_credited=pack["uc"],
+                    new_balance=(fresh or {}).get("balance_uc", 0),
+                    amount_eur=pack["amount_eur"],
+                )
+        except Exception as exc:
+            logger.warning(f"Brevo recharge notification failed: {exc}")
 
     elif kind == "ORDER":
         order_id = tx["metadata"].get("order_id")

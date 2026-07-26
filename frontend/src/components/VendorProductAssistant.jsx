@@ -44,7 +44,7 @@ export const VendorProductAssistant = () => {
         <div className="fixed bottom-20 right-5 z-40 w-[360px] max-w-[92vw] rounded-2xl overflow-hidden shadow-2xl border border-[#D9B35A]/35 flex flex-col"
           style={{ background: 'linear-gradient(180deg, #2A1045, #1F0A33)', height: 460 }} data-testid="product-assistant-panel">
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-            <span className="flex items-center gap-2 text-sm font-bold text-white"><Sparkles className="w-4 h-4 text-[#D9B35A]" /> COOP'IA — Soumettre vos produits</span>
+            <span className="flex items-center gap-2 text-sm font-bold text-white"><Sparkles className="w-4 h-4 text-[#D9B35A]" /> SCOOPY — Soumettre vos produits</span>
             <button type="button" onClick={() => setOpen(false)} className="text-white/50 hover:text-white" data-testid="product-assistant-close"><X className="w-4 h-4" /></button>
           </div>
           <div className="flex-1 overflow-y-auto px-3.5 py-3 space-y-2.5">
