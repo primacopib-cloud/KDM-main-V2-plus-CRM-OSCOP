@@ -3,10 +3,11 @@ import os
 import re
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 from lolodrive_helpers import get_current_user, require_admin, cents_to_uc
@@ -201,6 +202,52 @@ async def pos_counter_journal(user: dict = Depends(get_current_user)):
     card = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CARD")
     return {"date": start.strftime("%d/%m/%Y"), "count": len(orders),
             "cash_cents": cash, "card_cents": card, "total_cents": cash + card, "sales": orders}
+
+
+@relay_products_router.get("/pos/counter-journal/export")
+async def export_counter_journal(month: Optional[str] = None, user: dict = Depends(get_current_user)):
+    """Export CSV du journal de caisse du mois (comptabilité)."""
+    point = await _manager_point(user["id"])
+    now = datetime.utcnow()
+    try:
+        y, m = map(int, (month or now.strftime("%Y-%m")).split("-"))
+        start = datetime(y, m, 1)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Format mois invalide (attendu : YYYY-MM)")
+    end = datetime(y + 1, 1, 1) if m == 12 else datetime(y, m + 1, 1)
+    orders = await db.lolodrive_orders.find(
+        {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
+        {"_id": 0}).sort("created_at", 1).to_list(3000)
+    rows = ["date;heure;numero;paiement;articles;remise_promo_eur;total_eur"]
+    for o in orders:
+        items = " + ".join(f"{l['name']} x{l['qty']}" for l in o.get("items", []))
+        pay = "CB" if o.get("payment_method") == "CARD" else "Especes"
+        rows.append(f"{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};{pay};"
+                    f"\"{items}\";{(o.get('promo_discount_cents') or 0) / 100:.2f};{o.get('total_cents', 0) / 100:.2f}")
+    cash = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CASH")
+    card = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CARD")
+    rows += ["", f"TOTAL ESPECES;;;;;;{cash / 100:.2f}", f"TOTAL CB;;;;;;{card / 100:.2f}",
+             f"TOTAL CAISSE;;;;;;{(cash + card) / 100:.2f}"]
+    return PlainTextResponse(
+        "\ufeff" + "\n".join(rows), media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename=caisse-{point['code']}-{y}-{m:02d}.csv"})
+
+
+@relay_products_router.get("/pos/top-products")
+async def pos_top_products(days: int = 30, user: dict = Depends(get_current_user)):
+    """Top des produits les plus vendus au comptoir du relais."""
+    point = await _manager_point(user["id"])
+    since = datetime.utcnow() - timedelta(days=max(1, min(days, 365)))
+    agg = {}
+    async for o in db.lolodrive_orders.find(
+            {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": since}},
+            {"_id": 0, "items": 1}):
+        for l in o.get("items", []):
+            e = agg.setdefault(l["sku"], {"sku": l["sku"], "name": l["name"], "qty": 0, "revenue_cents": 0})
+            e["qty"] += l.get("qty", 0)
+            e["revenue_cents"] += l.get("unit_cents", 0) * l.get("qty", 0)
+    top = sorted(agg.values(), key=lambda x: (x["qty"], x["revenue_cents"]), reverse=True)[:5]
+    return {"days": days, "top": top}
 
 
 @relay_products_router.post("/pos/counter-sale/{order_id}/email-ticket")
