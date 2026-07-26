@@ -81,13 +81,32 @@ async def list_reviews(product_id: str, request: Request):
     }
 
 
+async def _notify_vendor_of_review(product: dict, reviewer_name: str, rating: int, created: bool):
+    """Notifie le(s) compte(s) vendeur qu'un avis a été déposé sur son produit."""
+    vendor_id = product.get("vendor_id")
+    if not vendor_id:
+        return
+    from core_deps import create_notification
+    vendor_users = await db.users.find({"vendor_id": vendor_id}, {"_id": 0, "id": 1}).to_list(10)
+    stars = "★" * rating + "☆" * (5 - rating)
+    for vu in vendor_users:
+        await create_notification(
+            notification_type="product_review_received",
+            title=f"{'Nouvel avis' if created else 'Avis mis à jour'} {rating}/5 sur « {product.get('name')} »",
+            message=f"{reviewer_name} a {'déposé' if created else 'modifié'} un avis {stars} sur votre produit.",
+            target_roles=[],
+            target_user_id=vu["id"],
+            data={"link": "/vendor", "product_id": product.get("id"), "rating": rating},
+        )
+
+
 @reviews_router.post("/products/{product_id}/reviews")
 async def upsert_review(product_id: str, body: ReviewBody, request: Request):
     """Crée ou met à jour l'avis de l'adhérent connecté (1 avis par produit)."""
     user = await _optional_user(request)
     if not user:
         raise HTTPException(status_code=401, detail="Connectez-vous pour donner votre avis")
-    product = await db.products.find_one({"id": product_id}, {"_id": 0, "id": 1})
+    product = await db.products.find_one({"id": product_id}, {"_id": 0, "id": 1, "name": 1, "vendor_id": 1})
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
     now = datetime.now(timezone.utc).isoformat()
@@ -114,6 +133,10 @@ async def upsert_review(product_id: str, body: ReviewBody, request: Request):
         })
         created = True
     avg, count = await _recompute_product_rating(product_id)
+    try:
+        await _notify_vendor_of_review(product, user_name, body.rating, created)
+    except Exception as exc:
+        logger.warning("Notification vendeur avis non créée (%s) : %s", product_id, exc)
     return {"success": True, "review_id": review_id, "created": created, "avg": avg, "count": count}
 
 

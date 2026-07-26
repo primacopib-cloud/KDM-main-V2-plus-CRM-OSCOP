@@ -9,6 +9,7 @@ import { IncotermAlertBell } from './IncotermAlertBell';
 export const CatalogFiltersNotices = ({
   categories, selectedCategory, setSelectedCategory, products, user, navigate,
   selectedIncoterm, setSelectedIncoterm, minRating, setMinRating, sortByRating, setSortByRating,
+  zoneName,
 }) => (
   <>
     {/* Categories */}
@@ -124,6 +125,11 @@ export const CatalogFiltersNotices = ({
             <p className="font-medium text-amber-400">
               {user ? i18n.t('catalog.acces_limite') : i18n.t('catalog.tarifs_adherents', 'Tarifs réservés aux adhérents')}
             </p>
+            {!user && zoneName && (
+              <p className="text-sm text-white font-semibold mt-0.5" data-testid="visitor-zone-count">
+                {products.length} {i18n.t('catalog.produits_dispo_zone', 'produit(s) disponible(s) en')} {zoneName} — {i18n.t('catalog.rejoignez_coop', 'rejoignez la coopérative pour les commander au tarif adhérent.')}
+              </p>
+            )}
             <p className="text-sm text-amber-400/80">
               {user
                 ? i18n.t('catalog.les_prix_ne_sont')

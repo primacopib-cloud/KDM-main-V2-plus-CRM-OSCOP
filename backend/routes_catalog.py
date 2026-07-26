@@ -288,16 +288,24 @@ async def list_products(
     if min_rating is not None:
         query["rating_avg"] = {"$gte": min_rating}
 
-    # Get products
-    cursor = db.products.find(query)
-    if sort == "rating":
-        cursor = cursor.sort([("rating_avg", -1), ("rating_count", -1)])
-    products = await cursor.skip(skip).limit(limit).to_list(limit)
+    # Disponibilité par zone : uniquement les produits avec un prix actif dans la zone demandée
+    if zone_code:
+        zone_product_ids = await db.zone_prices.distinct(
+            "product_id", {"zone_code": zone_code, "is_active": True})
+        query["id"] = {"$in": zone_product_ids}
+
+    def _build_cursor():
+        c = db.products.find(query)
+        if sort == "rating":
+            c = c.sort([("rating_avg", -1), ("rating_count", -1)])
+        return c
+
+    products = await _build_cursor().skip(skip).limit(limit).to_list(limit)
     
-    # Initialize sample products if empty
-    if not products and not category_id and not search and not incoterm and min_rating is None:
+    # Initialize sample products only if the whole catalog is empty
+    if not products and await db.products.count_documents({"status": ProductStatus.ACTIVE.value}) == 0:
         await _init_sample_products()
-        products = await db.products.find(query).skip(skip).limit(limit).to_list(limit)
+        products = await _build_cursor().skip(skip).limit(limit).to_list(limit)
     
     # Build response with pricing
     categories_cache = {c["id"]: c async for c in db.categories.find({})}

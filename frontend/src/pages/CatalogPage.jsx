@@ -447,6 +447,7 @@ export default function CatalogPage() {
           setMinRating={setMinRating}
           sortByRating={sortByRating}
           setSortByRating={setSortByRating}
+          zoneName={zones.find((z) => z.code === selectedZone)?.name || selectedZone}
           products={products}
           user={user}
           navigate={navigate}
