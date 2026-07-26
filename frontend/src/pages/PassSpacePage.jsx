@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { Label } from '../components/ui/label';
 import { lolodriveAPI, authAPI } from '../services/api';
 import PreselectedRelayBadge from '../components/PreselectedRelayBadge';
+import QuickRechargeCards from '../components/pass/QuickRechargeCards';
 import { toast } from 'sonner';
 
 export default function PassSpacePage() {
@@ -270,6 +271,9 @@ export default function PassSpacePage() {
               </div>
             )}
           </SectionCard>
+
+          {/* Recharge express 1 clic */}
+          {data.active && <QuickRechargeCards />}
 
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

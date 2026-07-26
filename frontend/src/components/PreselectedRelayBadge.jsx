@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, X, Edit3 } from 'lucide-react';
+import { X, Edit3 } from 'lucide-react';
 
 /**
  * Badge "Relais sélectionné" — preuve de conversion visible.
@@ -41,9 +41,12 @@ export default function PreselectedRelayBadge({ className = '', testId = 'presel
       className={`flex items-center gap-3 rounded-[14px] px-4 py-3 border border-or-metallise/30 ${className}`}
       style={{ background: 'linear-gradient(90deg, rgba(212,175,55,0.10), rgba(108,76,142,0.10))' }}
     >
-      <div className="rounded-full p-2 flex-shrink-0" style={{ background: 'rgba(212,175,55,0.18)' }}>
-        <MapPin className="w-4 h-4 text-or-metallise" />
-      </div>
+      <img
+        src="/lolodrive-logo.jpg"
+        alt="LOLODRIVE"
+        data-testid={`${testId}-logo`}
+        className="w-9 h-9 rounded-full bg-white object-contain flex-shrink-0 border border-or-metallise/40"
+      />
       <div className="flex-1 min-w-0">
         <div className="text-[10px] uppercase tracking-wider text-or-metallise font-semibold">Relais sélectionné</div>
         <div className="text-sm font-medium truncate" data-testid={`${testId}-name`}>{point.name || point.code}</div>

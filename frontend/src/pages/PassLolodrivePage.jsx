@@ -66,7 +66,11 @@ export default function PassLolodrivePage() {
           </div>
         )}
         <p className="text-[11px] uppercase tracking-[0.2em] text-[#D9B35A] font-bold mb-2">{i18n.t('passPage.kicker')}</p>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">PASS <span className="text-[#D9B35A]">LOLODRIVE</span></h1>
+        <div className="flex items-center gap-4 mb-4">
+          <img src="/lolodrive-logo.jpg" alt="LOLODRIVE" data-testid="pass-lolodrive-logo"
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white object-contain p-1 border-2 border-[#D9B35A]/50 shadow-[0_0_30px_rgba(217,179,90,0.25)]" />
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold">PASS <span className="text-[#D9B35A]">LOLODRIVE</span></h1>
+        </div>
         <p className="text-base text-white/75 max-w-2xl mb-10" data-testid="pass-explainer">
           {i18n.t('passPage.explainer')}
         </p>
@@ -119,6 +123,7 @@ export default function PassLolodrivePage() {
 
         {relay && (
           <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 mb-8 text-sm bg-white/[0.05] border border-[#D9B35A]/25" data-testid="pass-page-relay">
+            <img src="/lolodrive-logo.jpg" alt="" className="w-7 h-7 rounded-full bg-white object-contain shrink-0" />
             <MapPin className="w-4 h-4 text-[#D9B35A]" />
             <span className="text-white/75">{i18n.t('passPage.votre_relais')} <b className="text-[#E9CF8E]">{relay.name}</b>{relay.code ? ` (${relay.code})` : ''}</span>
           </div>

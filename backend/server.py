@@ -404,9 +404,10 @@ app.include_router(vendor_ai_router)
 from routes_public_stats import public_stats_router, set_public_stats_database
 set_public_stats_database(db)
 app.include_router(public_stats_router)
-from credit_promotions import promotions_router, set_promotions_database
+from credit_promotions import promotions_router, public_promotions_router, set_promotions_database
 set_promotions_database(db)
 app.include_router(promotions_router)
+app.include_router(public_promotions_router)
 from routes_credit_packs import credit_packs_router, credit_analytics_router, set_credit_packs_database, seed_credit_packs
 set_credit_packs_database(db)
 app.include_router(credit_packs_router)

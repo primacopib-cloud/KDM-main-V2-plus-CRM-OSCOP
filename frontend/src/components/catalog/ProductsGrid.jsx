@@ -5,10 +5,10 @@ import i18n from '@/i18n';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { FavoriteButton } from '../FavoriteButton';
-import { formatPrice } from './catalogUtils';
 import { ProductVideoModal } from './ProductVideoModal';
 import { ProductReviewsModal, Stars } from './ProductReviewsModal';
 import { ProductShareButtons } from './ProductShareButtons';
+import { useCatalogPromos, bestPromos, PassLolodriveBadge, PromoPriceBlock } from './ProductPromoBadges';
 
 const ProductImageCarousel = ({ product, onZoom }) => {
   const [idx, setIdx] = useState(0);
@@ -108,13 +108,16 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
   const [videoProduct, setVideoProduct] = useState(null);
   const [zoom, setZoom] = useState(null);
   const [reviewsProduct, setReviewsProduct] = useState(null);
+  const promos = useCatalogPromos();
   const lang = (i18n.language || 'fr').slice(0, 2);
   const tr = (p) => (lang !== 'fr' && p.translations?.[lang]) || {};
   return (
   <>
         {/* Products Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {products.map(product => (
+          {products.map(product => {
+            const { discount, bonus } = bestPromos(promos, product);
+            return (
             <div 
               key={product.id}
               className="glass-panel-soft rounded-[18px] p-4 flex flex-col group"
@@ -153,10 +156,13 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                 )}
               </div>
               
-              {/* Category badge */}
-              <Badge variant="outline" className="w-fit mb-2 text-[10px] text-white/60 border-white/20">
-                {tData(product.category_name) || tData('Produit')}
-              </Badge>
+              {/* Category badge + PASS LOLODRIVE */}
+              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                <Badge variant="outline" className="w-fit text-[10px] text-white/60 border-white/20">
+                  {tData(product.category_name) || tData('Produit')}
+                </Badge>
+                <PassLolodriveBadge sku={product.sku} />
+              </div>
               
               {/* Product info */}
               <h3 className="font-medium text-white/90 mb-1 line-clamp-2">{tr(product).name || product.name}</h3>
@@ -207,21 +213,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               <div className="mt-auto flex items-end justify-between">
                 <div>
                   {product.price_visible ? (
-                    <>
-                      {product.savings_percent && (
-                        <Badge className="mb-1 bg-[#D4AF37]/20 text-[#D4AF37] border-0 text-[10px]">
-                          -{product.savings_percent}%
-                        </Badge>
-                      )}
-                      <p className="text-lg font-bold text-[#D9B35A]">
-                        {formatPrice(product.price_ht_cents)} <span className="text-xs font-normal text-white/50">HT</span>
-                      </p>
-                      {product.original_price_ht_cents && (
-                        <p className="text-xs text-white/40 line-through">
-                          {formatPrice(product.original_price_ht_cents)}
-                        </p>
-                      )}
-                    </>
+                    <PromoPriceBlock product={product} discount={discount} bonus={bonus} />
                   ) : (
                     <div data-testid={`price-locked-${product.sku}`}>
                       <p className="text-lg font-bold text-[#D9B35A] blur-[6px] select-none" aria-hidden="true">
@@ -251,7 +243,8 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                 <p className="text-xs text-red-400 mt-2">Rupture de stock</p>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {products.length === 0 && (

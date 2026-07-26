@@ -21,6 +21,9 @@ RECHARGE_PACKS = {
     "MINI": {"amount_eur": 20.0, "uc": 200},
     "STANDARD": {"amount_eur": 40.0, "uc": 400},
     "MAXI": {"amount_eur": 70.0, "uc": 720},
+    "P10": {"amount_eur": 10.0, "uc": 100},
+    "P25": {"amount_eur": 25.0, "uc": 250},
+    "P100": {"amount_eur": 100.0, "uc": 1200},
 }
 
 # Webhook signing secrets (configure when configuring webhooks in each Stripe

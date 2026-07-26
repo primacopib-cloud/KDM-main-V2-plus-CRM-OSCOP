@@ -12,6 +12,7 @@ from admin_guard import require_admin
 from auth import get_current_user_id
 
 promotions_router = APIRouter(prefix="/api/admin/credit-promotions", tags=["Credit Promotions"])
+public_promotions_router = APIRouter(prefix="/api/public", tags=["Credit Promotions"])
 
 db = None
 
@@ -104,6 +105,24 @@ async def get_purchase_bonus_percent(profile: str = "vendor", territory: str | N
 
 def apply_discount(cost: int, percent: float) -> int:
     return max(0, math.ceil(cost * (1 - percent / 100)))
+
+
+@public_promotions_router.get("/catalog-promos")
+async def public_catalog_promos():
+    """Promos actives (hors campagnes email) exposées pour les badges du catalogue."""
+    now = datetime.now(timezone.utc).isoformat()
+    docs = await db.credit_promotions.find(
+        {"active": True, "archived": {"$ne": True}},
+        {"_id": 0, "id": 1, "name": 1, "promo_type": 1, "value_percent": 1,
+         "scope_category": 1, "scope_product_type": 1, "scope_brand": 1,
+         "starts_at": 1, "ends_at": 1, "audience": 1}).to_list(50)
+    docs = [p for p in docs
+            if (not p.get("starts_at") or p["starts_at"] <= now)
+            and (not p.get("ends_at") or p["ends_at"] >= now)
+            and p.get("audience", "all") != "emails"]
+    for p in docs:
+        p.pop("audience", None)
+    return {"promotions": docs}
 
 
 @promotions_router.get("")

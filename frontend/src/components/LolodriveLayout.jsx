@@ -1,7 +1,7 @@
 import i18n from '@/i18n';
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, Home, LogOut } from 'lucide-react';
+import { Home, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { authAPI } from '../services/api';
 
@@ -24,12 +24,12 @@ export default function LolodriveLayout({ title, subtitle, children, actions }) 
       <header className="border-b sticky top-0 z-30 backdrop-blur-xl" style={{ background: 'rgba(30,12,52,0.92)', borderColor: 'rgba(212,175,55,0.32)' }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #7c3aed 100%)' }}
-            >
-              <Sparkles className="w-5 h-5 text-black" />
-            </div>
+            <img
+              src="/lolodrive-logo.jpg"
+              alt="LOLODRIVE"
+              data-testid="layout-lolodrive-logo"
+              className="w-10 h-10 rounded-xl bg-white object-contain border border-[#D9B35A]/50"
+            />
             <div>
               <div className="font-bold tracking-tight text-base leading-tight">KDMARCHÉ</div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-white/40">

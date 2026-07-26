@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Zap } from 'lucide-react';
+import { Zap, TreePine, Cake, Gift, PartyPopper } from 'lucide-react';
 import { API } from '../services/http';
 
 const pad = (n) => String(n).padStart(2, '0');
+
+const labelVisual = (label) => {
+  const l = (label || '').toLowerCase();
+  if (/no[eë]l|christmas|f[eê]te|hiver/.test(l)) return { img: '/promo-icons/christmas.jpg', Icon: TreePine };
+  if (/anniversaire|birthday|\bans\b/.test(l)) return { img: '/promo-icons/birthday.jpg', Icon: Cake };
+  if (/cadeau|exclu|flash|solde|promo|offre|remise/.test(l)) return { img: '/promo-icons/gift.jpg', Icon: Gift };
+  return { img: '/promo-icons/party.jpg', Icon: PartyPopper };
+};
 
 const DigitRing = ({ value, max, label, alert }) => {
   const R = 26;
@@ -38,13 +46,23 @@ const BlinkLabels = ({ labels, alert }) => {
     return () => clearInterval(id);
   }, [labels.length]);
   if (!labels.length) return null;
+  const { img, Icon } = labelVisual(labels[idx]);
   return (
-    <span data-testid="promo-blink-label"
-      className="px-3 py-1 rounded-md text-[11px] font-black uppercase tracking-[0.18em] promo-blink"
-      style={alert
-        ? { background: 'rgba(255,77,77,0.15)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.6)', textShadow: '0 0 10px rgba(255,77,77,0.8)' }
-        : { background: 'rgba(217,179,90,0.15)', color: '#E9CF8E', border: '1px solid rgba(217,179,90,0.55)', textShadow: '0 0 10px rgba(233,207,142,0.7)' }}>
-      {labels[idx]}
+    <span className="flex items-center gap-2">
+      <img src={img} alt="" data-testid="promo-blink-visual"
+        className="w-8 h-8 rounded-full object-cover shrink-0"
+        style={{
+          border: alert ? '1.5px solid rgba(255,77,77,0.7)' : '1.5px solid rgba(217,179,90,0.7)',
+          boxShadow: alert ? '0 0 12px rgba(255,77,77,0.5)' : '0 0 12px rgba(217,179,90,0.45)',
+        }} />
+      <span data-testid="promo-blink-label"
+        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-black uppercase tracking-[0.18em] promo-blink"
+        style={alert
+          ? { background: 'rgba(255,77,77,0.15)', color: '#FF4D4D', border: '1px solid rgba(255,77,77,0.6)', textShadow: '0 0 10px rgba(255,77,77,0.8)' }
+          : { background: 'rgba(217,179,90,0.15)', color: '#E9CF8E', border: '1px solid rgba(217,179,90,0.55)', textShadow: '0 0 10px rgba(233,207,142,0.7)' }}>
+        <Icon className="w-3.5 h-3.5 shrink-0" />
+        {labels[idx]}
+      </span>
     </span>
   );
 };
