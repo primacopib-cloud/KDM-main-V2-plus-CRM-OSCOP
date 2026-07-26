@@ -121,6 +121,106 @@ async def submit_relay_product(body: RelayProductSubmit, user: dict = Depends(ge
     return doc
 
 
+class CounterSaleItem(BaseModel):
+    sku: str
+    qty: int = 1
+
+
+class CounterSaleBody(BaseModel):
+    items: list
+    payment_method: str = "CASH"
+
+
+@relay_products_router.post("/pos/counter-sale")
+async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_current_user)):
+    """Vente au comptoir : le gérant encaisse directement les produits de son relais."""
+    point = await _manager_point(user["id"])
+    items = [CounterSaleItem(**i) for i in (body.items or []) if i.get("sku") and int(i.get("qty", 0)) > 0]
+    if not items:
+        raise HTTPException(status_code=400, detail="Aucun article à encaisser")
+    skus = [i.sku for i in items]
+    prods = await db.lolodrive_products.find(
+        {"sku": {"$in": skus}, "is_active": {"$ne": False},
+         "$or": [{"point_code": {"$exists": False}}, {"point_code": None},
+                 {"point_code": point["code"], "status": "APPROVED"}]},
+        {"_id": 0}).to_list(100)
+    by_sku = {p["sku"]: p for p in prods}
+    from favorite_promo_alerts import _active_discount_promos, _matches_product
+    promos = await _active_discount_promos(db)
+    lines, total, discount = [], 0, 0
+    for it in items:
+        p = by_sku.get(it.sku)
+        if not p:
+            continue
+        unit = p.get("price_public_cents", 0)
+        pct = max((pr.get("value_percent") or 0 for pr in promos if _matches_product(pr, p)), default=0) if promos else 0
+        if pct:
+            disc_unit = round(unit * (1 - pct / 100))
+            discount += (unit - disc_unit) * it.qty
+            unit = disc_unit
+        total += unit * it.qty
+        lines.append({"sku": p["sku"], "name": p["name"], "qty": it.qty,
+                      "unit_cents": unit, "promo_percent": pct or None})
+    if not lines:
+        raise HTTPException(status_code=400, detail="Articles introuvables au catalogue du relais")
+    now = datetime.utcnow()
+    order = {
+        "id": str(uuid.uuid4()),
+        "order_number": f"LC-{now:%Y%m%d}-{str(uuid.uuid4())[:6].upper()}",
+        "channel": "COUNTER",
+        "fulfillment_type": "COUNTER",
+        "lolo_point_id": point["id"],
+        "user_id": None,
+        "items": lines,
+        "subtotal_cents": total,
+        "promo_discount_cents": discount,
+        "fees_cents": 0,
+        "total_cents": total,
+        "payment_method": "CARD" if body.payment_method.upper() == "CARD" else "CASH",
+        "status": "FULFILLED",
+        "created_at": now, "updated_at": now, "paid_at": now, "fulfilled_at": now,
+    }
+    await db.lolodrive_orders.insert_one(order)
+    order.pop("_id", None)
+    return {"ok": True, "order_number": order["order_number"],
+            "total_cents": total, "promo_discount_cents": discount,
+            "payment_method": order["payment_method"]}
+
+
+@relay_products_router.put("/manager/products/{sku}")
+async def update_relay_product(sku: str, body: RelayProductSubmit, user: dict = Depends(get_current_user)):
+    """Le gérant corrige une fiche refusée et la re-soumet pour validation."""
+    point = await _manager_point(user["id"])
+    product = await db.lolodrive_products.find_one({"sku": sku, "point_code": point["code"]})
+    if not product:
+        raise HTTPException(status_code=404, detail="Fiche produit introuvable pour ce relais")
+    if product.get("status") != "REJECTED":
+        raise HTTPException(status_code=400, detail="Seules les fiches refusées peuvent être corrigées et re-soumises")
+    if not body.name.strip() or not body.description.strip() or body.price_public_cents <= 0:
+        raise HTTPException(status_code=400, detail="Fiche incomplète : nom, description et prix requis")
+    updates = {
+        "name": body.name.strip(),
+        "category": body.category.strip(),
+        "brand": (body.brand or product.get("brand") or point["name"]).strip(),
+        "description": body.description.strip(),
+        "price_public_cents": body.price_public_cents,
+        "price_pass_cents": body.price_pass_cents,
+        "image_url": body.image_url or product.get("image_url"),
+        "status": "PENDING",
+        "is_active": False,
+        "reject_reason": None,
+        "submitted_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
+    }
+    await db.lolodrive_products.update_one({"sku": sku}, {"$set": updates})
+    fresh = await db.lolodrive_products.find_one({"sku": sku}, {"_id": 0})
+    try:
+        await _notify_admins_new_product(fresh)
+    except Exception as exc:
+        logger.warning("Notification admins fiche corrigée : %s", exc)
+    return fresh
+
+
 @relay_products_router.get("/manager/products")
 async def my_relay_products(user: dict = Depends(get_current_user)):
     point = await _manager_point(user["id"])

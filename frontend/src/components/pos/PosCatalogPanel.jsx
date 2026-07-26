@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Loader2, Camera } from 'lucide-react';
+import { Package, Plus, Minus, Loader2, Camera, Banknote, CreditCard, Pencil } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -21,6 +21,9 @@ export const PosCatalogPanel = () => {
   const [form, setForm] = useState({ name: '', category: '', brand: '', description: '', price: '' });
   const [photo, setPhoto] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [editSku, setEditSku] = useState(null);
+  const [sale, setSale] = useState({});
+  const [selling, setSelling] = useState(false);
   const fileRef = useRef(null);
 
   const uploadPhoto = async (file) => {
@@ -51,16 +54,43 @@ export const PosCatalogPanel = () => {
     }
     setSaving(true);
     try {
-      await lolodriveAPI.managerSubmitProduct({
+      const payload = {
         name: form.name, category: form.category, brand: form.brand || undefined,
         description: form.description, price_public_cents: cents, image_url: photo || undefined,
-      });
-      toast.success('Fiche soumise au super admin pour validation ✓');
+      };
+      if (editSku) await lolodriveAPI.managerUpdateProduct(editSku, payload);
+      else await lolodriveAPI.managerSubmitProduct(payload);
+      toast.success(editSku ? 'Fiche corrigée et re-soumise pour validation ✓' : 'Fiche soumise au super admin pour validation ✓');
       setOpen(false);
       setForm({ name: '', category: '', brand: '', description: '', price: '' });
       setPhoto(null);
+      setEditSku(null);
       load();
     } catch (e) { toast.error(e.message); } finally { setSaving(false); }
+  };
+
+  const startEdit = (p) => {
+    setForm({ name: p.name, category: p.category || '', brand: p.brand || '', description: p.description || '', price: (p.price_public_cents / 100).toFixed(2) });
+    setPhoto(p.image_url || null);
+    setEditSku(p.sku);
+    setOpen(true);
+  };
+
+  const saleItems = Object.entries(sale).filter(([, q]) => q > 0);
+  const saleTotal = saleItems.reduce((acc, [sku, qty]) => {
+    const p = catalog?.products.find((x) => x.sku === sku);
+    return acc + (p?.price_public_cents || 0) * qty;
+  }, 0);
+  const addSale = (sku) => setSale((s) => ({ ...s, [sku]: (s[sku] || 0) + 1 }));
+  const decSale = (sku) => setSale((s) => ({ ...s, [sku]: Math.max(0, (s[sku] || 0) - 1) }));
+
+  const checkout = async (method) => {
+    setSelling(true);
+    try {
+      const r = await lolodriveAPI.posCounterSale(saleItems.map(([sku, qty]) => ({ sku, qty })), method);
+      toast.success(`Vente ${r.order_number} encaissée — ${(r.total_cents / 100).toFixed(2)} € (${method === 'CARD' ? 'CB' : 'espèces'})${r.promo_discount_cents > 0 ? ` · promo −${(r.promo_discount_cents / 100).toFixed(2)} €` : ''}`);
+      setSale({});
+    } catch (e) { toast.error(e.message); } finally { setSelling(false); }
   };
 
   if (!catalog) return null;
@@ -71,14 +101,14 @@ export const PosCatalogPanel = () => {
           <Package className="w-4 h-4 text-[#D9B35A]" />
           Catalogue du relais {catalog.point_code || ''} ({catalog.products.length} produits)
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditSku(null); }}>
           <DialogTrigger asChild>
             <Button size="sm" className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black" data-testid="pos-submit-product-btn">
               <Plus className="w-3 h-3 mr-1" /> Proposer un produit
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-[#15151c] border-white/10 text-white max-w-md">
-            <DialogHeader><DialogTitle>Nouvelle fiche produit — soumise au super admin</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editSku ? 'Corriger la fiche refusée — re-soumission' : 'Nouvelle fiche produit — soumise au super admin'}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <Input placeholder="Nom du produit *" value={form.name} data-testid="product-name-input"
                 onChange={(e) => setForm({ ...form, name: e.target.value })} className="bg-white/5 border-white/10" />
@@ -118,10 +148,18 @@ export const PosCatalogPanel = () => {
           {mine.map((p) => (
             <div key={p.sku} className="flex items-center justify-between text-xs p-2 rounded-lg bg-white/[0.03] border border-white/[0.06]">
               <span className="truncate">{p.name} — {(p.price_public_cents / 100).toFixed(2)} €</span>
-              <span className="px-2 py-0.5 rounded-full font-semibold shrink-0"
-                style={{ color: STATUS_STYLE[p.status]?.color, background: `${STATUS_STYLE[p.status]?.color}1a` }}
-                data-testid={`submission-status-${p.sku}`}>
-                {STATUS_STYLE[p.status]?.label || p.status}{p.status === 'REJECTED' && p.reject_reason ? ` · ${p.reject_reason}` : ''}
+              <span className="flex items-center gap-2 shrink-0">
+                <span className="px-2 py-0.5 rounded-full font-semibold"
+                  style={{ color: STATUS_STYLE[p.status]?.color, background: `${STATUS_STYLE[p.status]?.color}1a` }}
+                  data-testid={`submission-status-${p.sku}`}>
+                  {STATUS_STYLE[p.status]?.label || p.status}{p.status === 'REJECTED' && p.reject_reason ? ` · ${p.reject_reason}` : ''}
+                </span>
+                {p.status === 'REJECTED' && (
+                  <button type="button" onClick={() => startEdit(p)} data-testid={`edit-rejected-${p.sku}`}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/30 hover:bg-[#D9B35A]/20">
+                    <Pencil className="w-3 h-3" /> Corriger
+                  </button>
+                )}
               </span>
             </div>
           ))}
@@ -135,13 +173,53 @@ export const PosCatalogPanel = () => {
               {p.name}
               {p.point_code && <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/30">Relais</span>}
             </span>
-            <span className="font-mono shrink-0 ml-3">
+            <span className="font-mono shrink-0 ml-3 flex items-center gap-2">
               {(p.price_public_cents / 100).toFixed(2)} € <span className="text-[#D9B35A]">· {p.uc_public} UC</span>
               {p.price_pass_cents != null && <span className="text-white/40"> (PASS {(p.price_pass_cents / 100).toFixed(2)} € · {p.uc_pass} UC)</span>}
+              <button type="button" onClick={() => addSale(p.sku)} data-testid={`sale-add-${p.sku}`}
+                title="Ajouter à la vente au comptoir"
+                className="w-6 h-6 rounded-full flex items-center justify-center bg-[#D9B35A]/15 border border-[#D9B35A]/40 text-[#D9B35A] hover:bg-[#D9B35A]/30">
+                <Plus className="w-3 h-3" />
+              </button>
             </span>
           </div>
         ))}
       </div>
+
+      {saleItems.length > 0 && (
+        <div className="mt-4 rounded-xl border border-[#D9B35A]/35 bg-[#D9B35A]/[0.06] p-3" data-testid="counter-sale-cart">
+          <p className="text-[11px] uppercase tracking-wider text-[#D9B35A] mb-2 font-bold">Vente au comptoir</p>
+          <div className="space-y-1.5 mb-3">
+            {saleItems.map(([sku, qty]) => {
+              const p = catalog.products.find((x) => x.sku === sku);
+              return (
+                <div key={sku} className="flex items-center justify-between text-xs">
+                  <span className="truncate">{p?.name || sku}</span>
+                  <span className="flex items-center gap-2 shrink-0 ml-3">
+                    <button type="button" onClick={() => decSale(sku)} className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                    <span className="font-mono w-5 text-center">{qty}</span>
+                    <button type="button" onClick={() => addSale(sku)} className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                    <span className="font-mono w-16 text-right">{(((p?.price_public_cents || 0) * qty) / 100).toFixed(2)} €</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="font-bold" data-testid="counter-sale-total">Total : {(saleTotal / 100).toFixed(2)} €<span className="text-[11px] text-white/40 font-normal"> (promos appliquées à l'encaissement)</span></span>
+            <span className="flex gap-2">
+              <Button size="sm" disabled={selling} onClick={() => checkout('CASH')} data-testid="checkout-cash-btn"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white">
+                <Banknote className="w-3 h-3 mr-1" /> Encaisser espèces
+              </Button>
+              <Button size="sm" disabled={selling} onClick={() => checkout('CARD')} data-testid="checkout-card-btn"
+                className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white">
+                <CreditCard className="w-3 h-3 mr-1" /> Encaisser CB
+              </Button>
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
