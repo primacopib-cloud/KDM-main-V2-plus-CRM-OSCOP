@@ -2,6 +2,7 @@ import i18n from '@/i18n';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { MySpotsWidget } from './MySpotsWidget';
 import { VendorShowcasePanel } from './VendorShowcasePanel';
+import { VendorReviewsCard } from './VendorReviewsCard';
 import { getStatusBadge } from './vendorConstants';
 
 export const VendorDashboardTab = ({ dashboard, vendorId, formatCurrency }) => (
@@ -46,6 +47,8 @@ export const VendorDashboardTab = ({ dashboard, vendorId, formatCurrency }) => (
     </div>
 
     <MySpotsWidget vendorId={vendorId} />
+
+    <VendorReviewsCard vendorId={vendorId} />
 
     <VendorShowcasePanel vendorId={vendorId} />
 

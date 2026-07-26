@@ -117,6 +117,46 @@ async def upsert_review(product_id: str, body: ReviewBody, request: Request):
     return {"success": True, "review_id": review_id, "created": created, "avg": avg, "count": count}
 
 
+@reviews_router.get("/vendors/{vendor_id}/reviews-stats")
+async def vendor_reviews_stats(vendor_id: str):
+    """Stats des avis pour les produits d'un vendeur (note moyenne, tendance 30j, détail par produit)."""
+    from datetime import timedelta
+    products = await db.products.find(
+        {"vendor_id": vendor_id},
+        {"_id": 0, "id": 1, "name": 1, "sku": 1, "rating_avg": 1, "rating_count": 1},
+    ).to_list(200)
+    ids = [p["id"] for p in products]
+    reviews = await db.product_reviews.find(
+        {"product_id": {"$in": ids}}, {"_id": 0, "user_id": 0}
+    ).sort("created_at", -1).to_list(500)
+
+    total = len(reviews)
+    overall_avg = round(sum(r["rating"] for r in reviews) / total, 1) if total else None
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    recent = [r for r in reviews if (r.get("created_at") or "") >= cutoff]
+    older = [r for r in reviews if (r.get("created_at") or "") < cutoff]
+    recent_avg = round(sum(r["rating"] for r in recent) / len(recent), 1) if recent else None
+    older_avg = round(sum(r["rating"] for r in older) / len(older), 1) if older else None
+
+    names = {p["id"]: p for p in products}
+    latest = [{
+        "id": r["id"], "product_name": names.get(r["product_id"], {}).get("name"),
+        "user_name": r.get("user_name"), "rating": r["rating"],
+        "comment": r.get("comment"), "created_at": r.get("created_at"),
+    } for r in reviews[:5]]
+
+    return {
+        "overall_avg": overall_avg,
+        "total_reviews": total,
+        "recent_count": len(recent),
+        "recent_avg": recent_avg,
+        "previous_avg": older_avg,
+        "trend": (round(recent_avg - older_avg, 1) if recent_avg is not None and older_avg is not None else None),
+        "products": [p for p in products if p.get("rating_count")],
+        "latest_reviews": latest,
+    }
+
+
 @reviews_router.delete("/reviews/{review_id}")
 async def delete_review(review_id: str, request: Request):
     """Supprime un avis (auteur ou admin)."""

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Bell, BellRing } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Bell, BellRing, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// Cloche « M'alerter » sur l'incoterm sélectionné dans le filtre catalogue
+// Cloche « M'alerter » sur l'incoterm sélectionné + raccourci vers le centre d'alertes
 export const IncotermAlertBell = ({ selectedIncoterm, user }) => {
   const [codes, setCodes] = useState([]);
 
@@ -17,7 +18,7 @@ export const IncotermAlertBell = ({ selectedIncoterm, user }) => {
       .catch(() => {});
   }, [user]);
 
-  if (!user || selectedIncoterm === 'all') return null;
+  if (!user) return null;
   const active = codes.includes(selectedIncoterm);
 
   const toggle = async () => {
@@ -38,23 +39,41 @@ export const IncotermAlertBell = ({ selectedIncoterm, user }) => {
   };
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      data-testid={`incoterm-alert-bell-${selectedIncoterm}`}
-      title={active
-        ? i18n.t('catalog.alerte_active_tip', 'Alerte active — cliquez pour la désactiver')
-        : i18n.t('catalog.alerte_tip', 'Être prévenu des nouveaux produits avec cet incoterm')}
-      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap border transition-all ${
-        active
-          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-          : 'bg-white/[0.04] text-white/60 hover:text-white border-white/[0.08]'
-      }`}
-    >
-      {active ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
-      {active
-        ? i18n.t('catalog.alerte_active', 'Alerte activée')
-        : i18n.t('catalog.malerter', `M'alerter (${selectedIncoterm})`)}
-    </button>
+    <>
+      {selectedIncoterm !== 'all' && (
+        <button
+          type="button"
+          onClick={toggle}
+          data-testid={`incoterm-alert-bell-${selectedIncoterm}`}
+          title={active
+            ? i18n.t('catalog.alerte_active_tip', 'Alerte active — cliquez pour la désactiver')
+            : i18n.t('catalog.alerte_tip', 'Être prévenu des nouveaux produits avec cet incoterm')}
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap border transition-all ${
+            active
+              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+              : 'bg-white/[0.04] text-white/60 hover:text-white border-white/[0.08]'
+          }`}
+        >
+          {active ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+          {active
+            ? i18n.t('catalog.alerte_active', 'Alerte activée')
+            : i18n.t('catalog.malerter', `M'alerter (${selectedIncoterm})`)}
+        </button>
+      )}
+      <Link
+        to="/alertes-favoris"
+        data-testid="alerts-center-link"
+        title={i18n.t('catalog.gerer_alertes_tip', 'Ouvrir le centre de préférences des alertes')}
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap border transition-all bg-white/[0.04] hover:text-white border-white/[0.08] ${
+          codes.length ? 'text-emerald-400/90' : 'text-white/60'
+        }`}
+      >
+        <SlidersHorizontal className="w-3.5 h-3.5" />
+        {i18n.t('catalog.gerer_alertes', 'Gérer mes alertes')}
+        {codes.length > 0 && (
+          <span className="px-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">{codes.length}</span>
+        )}
+      </Link>
+    </>
   );
 };
