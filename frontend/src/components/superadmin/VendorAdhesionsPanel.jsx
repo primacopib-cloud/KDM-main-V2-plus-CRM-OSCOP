@@ -3,6 +3,7 @@ import { FileSignature, Loader2, Download, BellRing, RefreshCw } from 'lucide-re
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { AdhesionFunnel } from './AdhesionFunnel';
+import { CtaStatsPanel } from './CtaStatsPanel';
 import { AdhesionReminders } from './AdhesionReminders';
 
 const STATUS = {
@@ -49,6 +50,7 @@ export const VendorAdhesionsPanel = () => {
   return (
     <>
       <AdhesionFunnel />
+      <CtaStatsPanel />
       <div className="glass-panel-soft rounded-[18px] p-4 mb-5" data-testid="vendor-adhesions-panel">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-[#D9B35A] flex items-center gap-2">

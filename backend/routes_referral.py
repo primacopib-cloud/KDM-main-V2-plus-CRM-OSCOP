@@ -110,6 +110,27 @@ async def _notify_sponsor_new_filleul(sponsor_id: str, filleul_email: str):
         logging.getLogger(__name__).warning("Email nouveau filleul échoué : %s", exc)
 
 
+async def handle_adhesion_referral(user_id: str, email: str, code: str):
+    """Adhésion validée avec un code parrain : crée le lien puis verse le bonus au parrain."""
+    try:
+        code = (code or "").strip().upper()
+        if not code or code == _code_for(user_id):
+            return
+        sponsor = await db.referral_codes.find_one({"code": code}, {"_id": 0})
+        if not sponsor or sponsor["user_id"] == user_id:
+            return
+        if not await db.referral_links.find_one({"filleul_id": user_id}, {"_id": 0, "code": 1}):
+            await db.referral_links.insert_one({
+                "filleul_id": user_id, "filleul_email": email,
+                "sponsor_id": sponsor["user_id"], "code": code, "bonus_paid": False,
+                "source": "adhesion", "created_at": datetime.now(timezone.utc).isoformat()})
+            await audit("REFERRAL_CLAIMED", user_id, None,
+                        {"code": code, "sponsor_id": sponsor["user_id"], "source": "adhesion"})
+        await maybe_pay_referral_bonus(user_id, event_label="adhésion validée à la coopérative")
+    except Exception as exc:
+        logger.warning("Parrainage adhésion %s : %s", user_id, exc)
+
+
 @referral_router.get("/admin/overview")
 async def referral_admin_overview(admin: dict = Depends(require_admin)):
     """Tableau parrainage admin : liens, bonus versés, meilleurs ambassadeurs."""
@@ -177,7 +198,7 @@ async def maybe_pay_referral_bonus(filleul_id: str, event_label: str = "premièr
         if await channel_allowed(link["sponsor_id"], "referral_bonus", "inapp"):
             from core_deps import create_notification
             await create_notification("referral_bonus", f"Parrainage réussi : +{bonus} CREDI'SCOP",
-                                  f"Votre filleul {link.get('filleul_email')} s'est inscrit à sa première consultation (solde : {entry['balance_after']}).",
+                                  f"Votre filleul {link.get('filleul_email')} — {event_label} (solde : {entry['balance_after']}).",
                                   target_roles=["direct"], target_user_id=link["sponsor_id"],
                                   data={"link": "/vendor?tab=cpc"})
     except Exception as exc:
@@ -195,8 +216,8 @@ async def maybe_pay_referral_bonus(filleul_id: str, event_label: str = "premièr
                 to_email=sponsor["email"], to_name=sponsor.get("full_name") or sponsor.get("name"),
                 subject=f"Parrainage réussi — +{bonus} CREDI'SCOP crédités",
                 html_content=f"""<h2 style="color:#451F6B;">Félicitations, votre parrainage a porté ses fruits !</h2>
-                <p>Votre filleul <strong>{link.get('filleul_email')}</strong> vient de s'inscrire à sa première
-                consultation compétitive. <strong>+{bonus} CREDI'SCOP</strong> ont été crédités sur votre compte
+                <p>Votre filleul <strong>{link.get('filleul_email')}</strong> — {event_label}.
+                <strong>+{bonus} CREDI'SCOP</strong> ont été crédités sur votre compte
                 (solde : {entry['balance_after']}).</p>
                 <p style="color:#777;font-size:12px;">Bonus tracé au registre CREDI'SCOP — programme de parrainage KDMARCHÉ × O'SCOP.</p>""",
                 tags=["referral-bonus"])

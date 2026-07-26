@@ -4,6 +4,7 @@ import { MapPin, ArrowRight, Heart, Package } from 'lucide-react';
 import i18n from '@/i18n';
 import { tData } from '@/i18n/tData';
 import { TerritoryMap } from './TerritoryMap';
+import { trackCta } from '../../services/ctaTracking';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -80,11 +81,11 @@ export const ZoneProductsShowcase = () => {
         )}
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link to="/catalogue" data-testid="showcase-catalog-cta"
+          <Link to="/catalogue" data-testid="showcase-catalog-cta" onClick={() => trackCta('voir_catalogue')}
             className="btn-ghost h-10 px-5 rounded-lg inline-flex items-center gap-2 text-sm">
             {i18n.t('landing.voir_catalogue', 'Voir tout le catalogue')} <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link to="/tarifs" data-testid="showcase-join-cta"
+          <Link to="/tarifs" data-testid="showcase-join-cta" onClick={() => trackCta('adherer_centrale')}
             className="inline-flex items-center gap-2 h-10 px-5 rounded-lg text-sm font-bold"
             style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}>
             {i18n.t('landing.adherer_a_la_centrale', 'Adhérer à la Centrale')}

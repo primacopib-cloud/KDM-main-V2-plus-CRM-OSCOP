@@ -3,6 +3,7 @@ import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import NavBar from '../components/NavBar';
+import { trackCta } from '../services/ctaTracking';
 import {
   Check, Sparkles, ShieldCheck, Handshake, TrendingUp, Users,
   MapPin, Package, Wallet, LineChart, HeartHandshake,
@@ -293,6 +294,7 @@ const PricingCard = ({ tier }) => {
         <Link
           to={tier.ctaLink}
           data-testid={`pricing-cta-${tier.id}`}
+          onClick={() => trackCta(`tarifs_${tier.id}`)}
           className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all hover:brightness-110"
           style={
             isRecommended

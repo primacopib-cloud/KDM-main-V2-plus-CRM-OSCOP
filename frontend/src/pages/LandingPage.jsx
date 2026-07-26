@@ -17,6 +17,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { partners, logisticsSteps } from '../data/mock';
+import { trackCta } from '../services/ctaTracking';
 import PricingSection from '../components/PricingSection';
 import PartnersSection from '../components/PartnersSection';
 import LogisticsSection from '../components/LogisticsSection';
@@ -73,6 +74,7 @@ const LandingPage = () => {
                     className="force-white inline-flex items-center justify-center gap-2.5 rounded-[14px] px-4 py-3 text-sm font-semibold text-white shadow-lg"
                     style={{ background: 'linear-gradient(135deg, #5B2E8C 0%, #2A1045 100%)' }}
                     data-testid="hero-cta-acces-pro"
+                    onClick={() => trackCta('hero_acces_pro')}
                   >
                     {i18n.t('landing.decouvrir_l_acces_pro')}
                     <ArrowRight className="w-4 h-4" />
@@ -327,7 +329,7 @@ export const PublicLolodriveMapSection = () => {
 
         <div className="mt-3 text-center">
           <Link to="/adhesion-vendeur?type=acheteur_pro">
-            <button className="btn-gold inline-flex items-center justify-center gap-2.5 rounded-[14px] px-5 py-3 text-sm font-semibold" data-testid="join-network-btn">
+            <button className="btn-gold inline-flex items-center justify-center gap-2.5 rounded-[14px] px-5 py-3 text-sm font-semibold" data-testid="join-network-btn" onClick={() => trackCta('devenir_relais')}>
               {i18n.t('landing.devenir_relais_lolodrive')}
               <ArrowRight className="w-4 h-4" />
             </button>

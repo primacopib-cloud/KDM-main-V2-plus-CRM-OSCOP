@@ -46,6 +46,7 @@ class StartBody(BaseModel):
     legal_form: str = ""
     first_name: str = ""
     last_name: str = ""
+    referral_code: str = ""
 
 
 class ConventionFieldsBody(BaseModel):
@@ -110,6 +111,7 @@ async def start_onboarding(body: StartBody):
         "country": (body.country or "GP").upper(),
         "legal_form": body.legal_form.strip(),
         "first_name": body.first_name.strip(), "last_name": body.last_name.strip(),
+        "referral_code": body.referral_code.strip().upper()[:20],
         "amount_ht_cents": vat["ht_cents"], "vat_rate": vat["rate"], "vat_cents": vat["vat_cents"],
         "plan_slug": body.plan_slug, "plan_name": plan["name"],
         "amount_cents": vat["ttc_cents"], "stripe_session_id": session.id,
@@ -289,6 +291,9 @@ async def activate_account(body: ActivateBody, response: Response):
     await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
         "status": "ACTIVATED", "activated_at": datetime.now(timezone.utc).isoformat(),
     }})
+    if ob.get("referral_code"):
+        from routes_referral import handle_adhesion_referral
+        asyncio.create_task(handle_adhesion_referral(ob["user_id"], ob["email"], ob["referral_code"]))
     token = create_access_token(data={"sub": ob["user_id"]})
     set_auth_cookie(response, token)
     return {"access_token": token, "token_type": "bearer",
