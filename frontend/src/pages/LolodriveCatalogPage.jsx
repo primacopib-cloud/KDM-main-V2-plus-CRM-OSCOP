@@ -1,7 +1,7 @@
 import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus, Sparkles, Tag, Trash2, Wallet, CreditCard, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Sparkles, Tag, Trash2, Wallet, CreditCard, ArrowLeft, Star } from 'lucide-react';
 import LolodriveLayout, { SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -81,6 +81,16 @@ export default function LolodriveCatalogPage() {
   useEffect(() => {
     try { localStorage.setItem('kdm_lolodrive_cart', JSON.stringify(cart)); } catch { /* quota */ }
   }, [cart]);
+
+  // Produits favoris épinglés en haut du catalogue
+  const [favs, setFavs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('kdm_lolodrive_favs') || '[]') || []; } catch { return []; }
+  });
+  const toggleFav = (sku) => setFavs((prev) => {
+    const next = prev.includes(sku) ? prev.filter((s) => s !== sku) : [...prev, sku];
+    try { localStorage.setItem('kdm_lolodrive_favs', JSON.stringify(next)); } catch { /* quota */ }
+    return next;
+  });
   const sub = (sku) => {
     const n = (cart[sku] || 0) - 1;
     const c = { ...cart };
@@ -269,9 +279,14 @@ export default function LolodriveCatalogPage() {
 
       {!loading && (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {products.map((p) => (
+          {[...products].sort((a, b) => (favs.includes(b.sku) ? 1 : 0) - (favs.includes(a.sku) ? 1 : 0)).map((p) => (
             <div key={p.sku} data-testid={`product-${p.sku}`}
-              className="rounded-2xl bg-white/[0.025] border border-white/[0.07] overflow-hidden hover:border-white/[0.15] transition-all">
+              className={`relative rounded-2xl bg-white/[0.025] border overflow-hidden hover:border-white/[0.15] transition-all ${favs.includes(p.sku) ? 'border-[#D9B35A]/40' : 'border-white/[0.07]'}`}>
+              <button type="button" onClick={() => toggleFav(p.sku)} data-testid={`fav-toggle-${p.sku}`}
+                title={favs.includes(p.sku) ? 'Retirer des favoris' : 'Épingler en haut du catalogue'}
+                className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm border border-white/15 hover:border-[#D9B35A]/60 transition-colors">
+                <Star className={`w-4 h-4 ${favs.includes(p.sku) ? 'fill-[#D9B35A] text-[#D9B35A]' : 'text-white/50'}`} />
+              </button>
               {p.image_url && (
                 <div className="aspect-square bg-white/[0.02] overflow-hidden">
                   <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />

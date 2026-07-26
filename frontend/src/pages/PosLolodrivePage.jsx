@@ -4,7 +4,7 @@ import { RelayPhotoUpload } from '../components/pos/RelayPhotoUpload';
 import { PosRelayReviews } from '../components/pos/PosRelayReviews';
 import {
   Truck, Package, CheckCircle2, Clock, RefreshCw, ScanLine, AlertCircle,
-  Bell, BellOff, User, Calendar, XCircle, Wifi, WifiOff,
+  Bell, BellOff, User, Calendar, XCircle, Wifi, WifiOff, BellRing,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { Button } from '../components/ui/button';
@@ -120,6 +120,18 @@ export default function PosLolodrivePage() {
     return () => clearInterval(id);
     // eslint-disable-next-line
   }, [autoRefresh, wsConnected, tab, pointCode]);
+
+  const remind = async (orderId) => {
+    setActing(orderId);
+    try {
+      await lolodriveAPI.posRemindPickup(orderId);
+      toast.success('SMS de rappel envoyé au client ✓');
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setActing(null);
+    }
+  };
 
   const transitionTo = async (orderId, status) => {
     setActing(orderId);
@@ -332,6 +344,13 @@ export default function PosLolodrivePage() {
                       <Button size="sm" variant="outline" onClick={() => transitionTo(o.id, 'READY')}
                         disabled={acting === o.id} data-testid={`btn-ready-${o.id}`}>
                         <CheckCircle2 className="w-3 h-3 mr-1" /> Marquer prête
+                      </Button>
+                    )}
+                    {o.status === 'READY' && isLate(o) && (
+                      <Button size="sm" variant="outline" onClick={() => remind(o.id)}
+                        disabled={acting === o.id} data-testid={`btn-remind-${o.id}`}
+                        className="border-red-400/40 text-red-300 hover:bg-red-500/10">
+                        <BellRing className="w-3 h-3 mr-1" /> Relancer SMS
                       </Button>
                     )}
                     {o.status === 'READY' && (

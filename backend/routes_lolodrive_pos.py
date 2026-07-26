@@ -89,6 +89,35 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
             logger.warning(f"Brevo order-ready notification failed: {exc}")
     return {"ok": True, "order_id": order_id, "status": request.status.value}
 
+@lolodrive_pos_router.post("/pos/orders/{order_id}/remind")
+async def pos_remind_pickup(order_id: str, user: dict = Depends(get_current_user)):
+    """Relance manuelle SMS d'une commande prête non retirée."""
+    order = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande introuvable")
+    if order.get("status") != OrderStatus.READY.value:
+        raise HTTPException(status_code=400, detail="Seules les commandes prêtes peuvent être relancées")
+    client = await db.users.find_one(
+        {"id": order.get("user_id")}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
+    if not client or not client.get("phone"):
+        raise HTTPException(status_code=400, detail="Client sans numéro de téléphone")
+    point_name = "votre relais LOLODRIVE"
+    if order.get("lolo_point_id"):
+        pt = await db.lolodrive_points.find_one({"id": order["lolo_point_id"]}, {"_id": 0, "name": 1, "code": 1})
+        if pt:
+            point_name = pt.get("name") or pt.get("code") or point_name
+    num = str(order.get("order_number") or order_id)[:32]
+    from brevo_service import send_sms
+    await send_sms(
+        client["phone"],
+        f"KDMARCHE x O'SCOP : rappel de votre relais, la commande #{num} vous attend "
+        f"({point_name}). Munissez-vous de votre QR-code.",
+        tag="pickup_reminder_manual")
+    await db.lolodrive_orders.update_one(
+        {"id": order_id}, {"$set": {"manual_remind_at": datetime.utcnow()}})
+    return {"ok": True, "order_id": order_id, "sms": True}
+
+
 @lolodrive_pos_router.post("/pos/orders/{order_id}/scan")
 async def pos_scan(order_id: str, user: dict = Depends(get_current_user)):
     order = await db.lolodrive_orders.find_one({"id": order_id})
