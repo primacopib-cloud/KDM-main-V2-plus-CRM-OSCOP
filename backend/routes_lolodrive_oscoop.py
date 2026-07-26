@@ -204,6 +204,12 @@ async def pay_uc(order_id: str, user: dict = Depends(get_current_user)):
         {"id": order_id},
         {"$set": {"status": OrderStatus.PAID.value, "pay_with_uc": True, "total_uc": required_uc, "updated_at": datetime.utcnow()}},
     )
+    try:
+        from order_confirmation import notify_order_confirmed
+        fresh = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
+        await notify_order_confirmed(db, fresh, "UC")
+    except Exception:
+        pass
     return {"ok": True, "order_id": order_id, "paid_with": "UC", "total_uc": required_uc}
 
 # =======================

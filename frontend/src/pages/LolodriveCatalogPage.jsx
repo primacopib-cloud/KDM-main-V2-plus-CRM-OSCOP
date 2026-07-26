@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../c
 import { lolodriveAPI, authAPI } from '../services/api';
 import { toast } from 'sonner';
 import TerritorySelector, { getInitialTerritory } from '../components/TerritorySelector';
+import { PromoCountdownStrip } from '../components/lolodrive/PromoCountdownStrip';
 import { PassLolodriveBadge } from '../components/catalog/ProductPromoBadges';
 import { distanceFeeRate, getReferencePointCode, kmBetween } from '../utils/relayDistance';
 
@@ -301,6 +302,7 @@ export default function LolodriveCatalogPage() {
         />
       </div>
 
+      <PromoCountdownStrip promos={promos} />
       <Tabs value={filter} onValueChange={setFilter} className="mb-6">
         <TabsList className="bg-white/[0.04] border border-white/10">
           <TabsTrigger value="" data-testid="tab-all">{i18n.t('lolodrive.tous')}</TabsTrigger>

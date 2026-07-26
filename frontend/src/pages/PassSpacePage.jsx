@@ -370,6 +370,11 @@ export default function PassSpacePage() {
                   </div>
                   <div className="text-right shrink-0">
                     <div className="font-bold text-sm">{fmtEUR(o.total_cents)}</div>
+                    {(o.promo_discount_cents || 0) > 0 && (
+                      <div className="text-[10px] font-semibold text-[#FF9E7A]" data-testid={`order-promo-discount-${o.id}`}>
+                        ⚡ promo −{fmtEUR(o.promo_discount_cents)}
+                      </div>
+                    )}
                     <div className="flex gap-1 justify-end mt-0.5">
                       {o.pay_with_uc && <Badge color="#D9B35A">UC</Badge>}
                       <Badge color={statusColor(o.status)}>{o.status}</Badge>

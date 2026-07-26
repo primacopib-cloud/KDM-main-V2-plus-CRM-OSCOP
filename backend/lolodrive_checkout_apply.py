@@ -133,6 +133,13 @@ async def _apply_payment_success(tx: dict):
         )
         await _emit_crm_event("order.paid", {"user_id": user_id, "order_id": order_id})
         try:
+            from order_confirmation import notify_order_confirmed
+            fresh = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
+            if fresh:
+                await notify_order_confirmed(db, fresh, "CB")
+        except Exception as exc:
+            logger.warning("Email confirmation commande CB %s : %s", order_id, exc)
+        try:
             from routes_websockets import manager
             await manager.broadcast_to_admins({
                 "type": "lolodrive_pos_event",
