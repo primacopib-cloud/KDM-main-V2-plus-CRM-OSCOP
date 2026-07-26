@@ -2,9 +2,10 @@ import i18n from '@/i18n';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { BellRing, RefreshCw, Package, Tag, ArrowUpRight, Heart } from 'lucide-react';
+import { BellRing, RefreshCw, Package, Tag, ArrowUpRight, Heart, Ship } from 'lucide-react';
 import NavBar from '../components/NavBar';
 import { Switch } from '../components/ui/switch';
+import { INCOTERMS } from '../components/vendor/vendorConstants';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -22,22 +23,30 @@ const fmtDate = (iso) => {
 const ALERT_ICON = {
   favorite_restock: { icon: Package, color: '#6FA82E' },
   favorite_promo: { icon: Tag, color: '#D9B35A' },
+  product_incoterm_match: { icon: Ship, color: '#3498DB' },
 };
 
 export default function FavoriteAlertsPage() {
   const [products, setProducts] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [incotermCodes, setIncotermCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch(`${API}/user-prefs/favorites/alerts-center`, { credentials: 'include' });
+      const [r, ri] = await Promise.all([
+        fetch(`${API}/user-prefs/favorites/alerts-center`, { credentials: 'include' }),
+        fetch(`${API}/v2/catalog/incoterm-alerts`, { credentials: 'include' }),
+      ]);
       if (r.ok) {
         const data = await r.json();
         setProducts(data.products || []);
         setAlerts(data.alerts || []);
+      }
+      if (ri.ok) {
+        setIncotermCodes((await ri.json()).codes || []);
       }
     } finally {
       setLoading(false);
@@ -45,6 +54,25 @@ export default function FavoriteAlertsPage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const toggleIncoterm = async (code) => {
+    const next = incotermCodes.includes(code)
+      ? incotermCodes.filter((c) => c !== code)
+      : [...incotermCodes, code];
+    try {
+      const r = await fetch(`${API}/v2/catalog/incoterm-alerts`, {
+        method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codes: next }),
+      });
+      if (!r.ok) throw new Error();
+      setIncotermCodes(next);
+      toast.success(next.includes(code)
+        ? i18n.t('fav_alerts.incoterm_on', `Alerte ${code} activée`)
+        : i18n.t('fav_alerts.incoterm_off', `Alerte ${code} désactivée`));
+    } catch {
+      toast.error(i18n.t('fav_alerts.incoterm_error', "Impossible de mettre à jour l'alerte"));
+    }
+  };
 
   const toggleAlerts = async (productId, enabled) => {
     setTogglingId(productId);
@@ -84,6 +112,39 @@ export default function FavoriteAlertsPage() {
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> {i18n.t('fav_alerts.refresh')}
           </button>
+        </div>
+
+        {/* Incoterms suivis */}
+        <h2 className="font-display text-lg mb-3" style={{ color: '#F7F2E9' }}>
+          <Ship size={16} className="inline mr-2" style={{ color: '#3498DB' }} />
+          {i18n.t('fav_alerts.incoterms_title', 'Incoterms suivis')}
+        </h2>
+        <div className="glass-panel rounded-2xl p-5 mb-8" data-testid="incoterm-prefs-section">
+          <p className="text-sm opacity-70 mb-4">
+            {i18n.t('fav_alerts.incoterms_desc', "Soyez prévenu (notification + email) dès qu'un nouveau produit livrable avec ces incoterms arrive au catalogue.")}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {INCOTERMS.map((inc) => {
+              const active = incotermCodes.includes(inc.code);
+              return (
+                <button
+                  key={inc.code}
+                  type="button"
+                  onClick={() => toggleIncoterm(inc.code)}
+                  title={inc.label}
+                  data-testid={`incoterm-pref-${inc.code}`}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-all ${
+                    active
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      : 'bg-white/[0.04] text-white/60 hover:text-white border-white/[0.08]'
+                  }`}
+                >
+                  <BellRing size={13} className={active ? '' : 'opacity-40'} />
+                  {inc.code}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Préférences par produit */}

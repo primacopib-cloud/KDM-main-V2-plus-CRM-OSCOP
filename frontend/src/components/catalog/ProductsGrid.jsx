@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X, Link2, MessageSquarePlus } from 'lucide-react';
+import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X, Link2, MessageSquarePlus, Heart } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 import i18n from '@/i18n';
 import { toast } from 'sonner';
@@ -139,6 +139,17 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               {/* Product Image gallery (carousel jusqu'à 3 photos) */}
               <div className="aspect-square rounded-xl bg-white/[0.04] mb-4 flex items-center justify-center relative overflow-hidden">
                 <ProductImageCarousel product={product} onZoom={(p, index) => setZoom({ product: p, index })} />
+                {/* Badge coup de cœur (note >= 4.5) */}
+                {product.rating_avg >= 4.5 && (
+                  <span
+                    data-testid={`product-top-badge-${product.sku}`}
+                    className="absolute top-2 left-2 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold text-white shadow-lg"
+                    style={{ background: 'linear-gradient(90deg, #C0392B, #E74C3C)' }}
+                  >
+                    <Heart size={11} fill="currentColor" />
+                    {i18n.t('catalog.coup_de_coeur', 'Coup de cœur des adhérents')}
+                  </span>
+                )}
                 {/* Favorite button - positioned top right */}
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <FavoriteButton 

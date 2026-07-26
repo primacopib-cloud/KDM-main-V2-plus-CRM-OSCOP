@@ -48,7 +48,7 @@ async def get_alerts_center(request: Request):
         })
 
     alerts = await db.notifications.find(
-        {"target_user_id": user_id, "type": {"$regex": "^favorite_"}},
+        {"target_user_id": user_id, "type": {"$regex": "^favorite_|^product_incoterm"}},
         {"_id": 0, "id": 1, "type": 1, "title": 1, "message": 1, "created_at": 1, "data": 1, "read_by": 1},
     ).sort("created_at", -1).limit(50).to_list(50)
     for a in alerts:
