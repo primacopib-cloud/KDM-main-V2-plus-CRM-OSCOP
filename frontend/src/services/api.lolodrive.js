@@ -61,6 +61,7 @@ export const lolodriveAPI = {
   favoritesGet: () => apiCall('/lolodrive/favorites'),
   favoritesSave: (skus) =>
     apiCall('/lolodrive/favorites', { method: 'POST', body: JSON.stringify({ skus }) }),
+  managerProStatus: () => apiCall('/lolodrive/manager/pro-status'),
 
   // LOLO POINTS
   listLoloPoints: (cityOrOpts, territory) => {

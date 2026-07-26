@@ -2,6 +2,7 @@ import i18n from '@/i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import { RelayPhotoUpload } from '../components/pos/RelayPhotoUpload';
 import { PosRelayReviews } from '../components/pos/PosRelayReviews';
+import { ProSubscriptionBanner } from '../components/pos/ProSubscriptionBanner';
 import {
   Truck, Package, CheckCircle2, Clock, RefreshCw, ScanLine, AlertCircle,
   Bell, BellOff, User, Calendar, XCircle, Wifi, WifiOff, BellRing,
@@ -220,6 +221,8 @@ export default function PosLolodrivePage() {
         </>
       }
     >
+      <ProSubscriptionBanner />
+
       {/* À traiter highlight */}
       {toProcess > 0 && (
         <div className="mb-4 rounded-2xl border border-amber-400/30 bg-amber-400/[0.05] p-4 flex items-center gap-3"

@@ -23,6 +23,21 @@ def set_lolodrive_manager_database(database):
 # Gérant LOLO POINT — vue dédiée
 # =======================
 
+@lolodrive_manager_router.get("/manager/pro-status")
+async def manager_pro_status(user: dict = Depends(get_current_user)):
+    """Statut de l'abonnement Acheteur Pro du gérant (règle métier obligatoire)."""
+    membership = await db.org_memberships.find_one({"user_id": user["id"]})
+    org = await db.orgs.find_one({"id": membership["org_id"]}, {"_id": 0, "status": 1, "legal_name": 1}) if membership else None
+    sub = await db.subscriptions.find_one(
+        {"org_id": membership["org_id"], "status": "ACTIVE"},
+        {"_id": 0, "current_period_end": 1}) if membership else None
+    active = bool(org and org.get("status") == "APPROVED" and sub)
+    return {"pro_active": active,
+            "org_name": (org or {}).get("legal_name"),
+            "org_status": (org or {}).get("status"),
+            "period_end": (sub or {}).get("current_period_end")}
+
+
 @lolodrive_manager_router.get("/manager/my-point")
 async def manager_my_point(user: dict = Depends(get_current_user)):
     """Retourne le LOLO POINT du gérant connecté (via manager_user_id)."""

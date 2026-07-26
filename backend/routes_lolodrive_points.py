@@ -51,9 +51,22 @@ async def list_lolo_points(city: Optional[str] = None, territory: Optional[str] 
     points = await db.lolodrive_points.find(query, {"_id": 0}).sort("name", 1).to_list(200)
     return {"points": points}
 
+async def _require_pro_subscription(user_id: str):
+    """Règle métier : tout gérant de relais doit avoir un abonnement Acheteur Pro actif."""
+    membership = await db.org_memberships.find_one({"user_id": user_id})
+    org = await db.orgs.find_one({"id": membership["org_id"]}) if membership else None
+    sub = await db.subscriptions.find_one({"org_id": org["id"], "status": "ACTIVE"}) if org else None
+    if not (org and org.get("status") == "APPROVED" and sub):
+        raise HTTPException(
+            status_code=400,
+            detail="Attribution refusée : ce compte doit d'abord souscrire un abonnement Acheteur Pro actif (organisation approuvée) pour devenir gérant de relais LOLODRIVE.")
+
+
 @lolodrive_points_router.post("/admin/lolo-points")
 async def create_lolo_point(request: LoloPointCreate, admin: dict = Depends(require_admin)):
     doc = request.dict()
+    if doc.get("manager_user_id"):
+        await _require_pro_subscription(doc["manager_user_id"])
     doc.update({"id": str(uuid.uuid4()), "status": "ACTIVE", "created_at": datetime.utcnow(), "updated_at": datetime.utcnow()})
     await db.lolodrive_points.insert_one(doc)
     doc.pop("_id", None)
@@ -61,7 +74,8 @@ async def create_lolo_point(request: LoloPointCreate, admin: dict = Depends(requ
     return doc
 
 ALLOWED_POINT_FIELDS = {"name", "address", "city", "contact_email", "contact_phone",
-                        "opening_hours", "offers_drive", "offers_delivery", "delivery_conditions", "photo_url"}
+                        "opening_hours", "offers_drive", "offers_delivery", "delivery_conditions",
+                        "photo_url", "manager_user_id"}
 
 
 @lolodrive_points_router.patch("/admin/lolo-points/{point_id}")
@@ -70,6 +84,8 @@ async def update_lolo_point(point_id: str, payload: dict, admin: dict = Depends(
     updates = {k: v for k, v in (payload or {}).items() if k in ALLOWED_POINT_FIELDS}
     if not updates:
         raise HTTPException(status_code=400, detail="Aucun champ modifiable fourni")
+    if updates.get("manager_user_id"):
+        await _require_pro_subscription(updates["manager_user_id"])
     updates["updated_at"] = datetime.utcnow()
     res = await db.lolodrive_points.update_one({"id": point_id}, {"$set": updates})
     if not res.matched_count:
