@@ -39,6 +39,7 @@ import { DemandesAdminTab } from '../components/superadmin/DemandesAdminTab';
 import { ShowcasePartnersPanel } from '../components/superadmin/ShowcasePartnersPanel';
 import { SharePreviewTester } from '../components/superadmin/SharePreviewTester';
 import { PassRegistrationsPanel } from '../components/superadmin/PassRegistrationsPanel';
+import { PassPlansPanel } from '../components/superadmin/PassPlansPanel';
 import { LicensesPanel } from '../components/superadmin/LicensesPanel';
 import { ApiKeysPanel } from '../components/superadmin/ApiKeysPanel';
 import { AIAgentsPanel } from '../components/superadmin/AIAgentsPanel';
@@ -193,6 +194,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="credits">
             <VendorCreditsTab />
+            <PassPlansPanel />
           </TabsContent>
 
           <TabsContent value="logicoop" className="space-y-6">

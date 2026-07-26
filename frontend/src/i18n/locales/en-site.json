@@ -443,6 +443,12 @@
     "card_relais_desc": "Cooperative drive pick-up or local delivery from the nearest LOLODRIVE relay.",
     "votre_relais": "Your relay:",
     "cta_catalogue": "Discover LOLODRIVE products",
-    "cta_accueil": "Back to home"
+    "cta_accueil": "Back to home",
+    "adhesion_title": "LOLODRIVE PASS membership",
+    "uc_note": "UC = Consumption Units, to spend on everyday products at your relay.",
+    "recharge_title": "Top up anytime",
+    "recharge_desc": "Reload your PASS whenever you want with the available plans — some include bonus UC.",
+    "bonus": "bonus",
+    "offertes": "free"
   }
 }

@@ -443,6 +443,12 @@
     "card_relais_desc": "Retrait coopératif en drive ou livraison locale depuis le relais LOLODRIVE le plus proche.",
     "votre_relais": "Votre relais :",
     "cta_catalogue": "Découvrir les produits LOLODRIVE",
-    "cta_accueil": "Retour à l'accueil"
+    "cta_accueil": "Retour à l'accueil",
+    "adhesion_title": "Adhésion PASS LOLODRIVE",
+    "uc_note": "UC = Unités de consommation, à dépenser sur les produits du quotidien de votre relais.",
+    "recharge_title": "Rechargeable à volonté",
+    "recharge_desc": "Rechargez votre PASS quand vous voulez avec les plans proposés — certains offrent des UC bonus.",
+    "bonus": "bonus",
+    "offertes": "offertes"
   }
 }

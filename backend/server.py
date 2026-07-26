@@ -86,6 +86,7 @@ from routes_share import share_router, set_share_database
 from routes_cta_stats import cta_stats_router, set_cta_stats_database
 from routes_share_preview import share_preview_router, set_share_preview_database
 from routes_pass_registration import pass_registration_router, pass_admin_router, set_pass_registration_database
+from routes_pass_plans import pass_plans_router, set_pass_plans_database
 set_catalog_database(db)
 set_cart_database(db)
 set_suggestions_database(db)
@@ -97,6 +98,7 @@ set_share_database(db)
 set_cta_stats_database(db)
 set_share_preview_database(db)
 set_pass_registration_database(db)
+set_pass_plans_database(db)
 app.include_router(catalog_router)
 app.include_router(cart_router)
 app.include_router(suggestions_router)
@@ -109,6 +111,7 @@ app.include_router(cta_stats_router)
 app.include_router(share_preview_router)
 app.include_router(pass_registration_router)
 app.include_router(pass_admin_router)
+app.include_router(pass_plans_router)
 
 # Import and include GED (Document Management) routes
 from routes_ged import ged_router, set_ged_database
