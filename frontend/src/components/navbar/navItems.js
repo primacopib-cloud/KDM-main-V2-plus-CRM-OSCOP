@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ShoppingCart, Package, FileText,
   Wallet, Users, Shield, BarChart3,
-  Store, Building2, MapPin, CreditCard, Home, Truck, HeartHandshake, Server, Settings, Plug, Heart,
+  Store, Building2, MapPin, CreditCard, Home, Truck, HeartHandshake, Server, Settings, Plug, Heart, Mail,
 } from 'lucide-react';
 
 // « Mon Espace » mène à l'espace du rôle de l'utilisateur.
@@ -27,6 +27,7 @@ export const getNavItems = (userRole, isAdmin) => {
     { href: '/kdmarche', label: 'KDMARCHÉ', icon: Store, public: true, accent: '#D9B35A' },
     { href: '/catalogue', label: 'nav.catalog', icon: ShoppingCart, public: true },
     { href: '/tarifs', label: 'nav.pro_access', icon: CreditCard, public: true },
+    { href: '/#contact', label: 'footer.contact', icon: Mail, public: true },
   ];
 
   // Member-only shortcuts kept in top bar (per product decision).

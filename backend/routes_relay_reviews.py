@@ -1,7 +1,7 @@
 """Avis relais LOLODRIVE (notation post-retrait par les titulaires du PASS)."""
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -155,6 +155,45 @@ async def _notify_manager_new_review(point: Optional[dict], reviewer_id: str, ra
         text_content=f"{first} a laissé un avis {rating}/5 sur {point.get('name')} : {comment}",
         tags=["relay_review"],
     )
+
+
+@relay_reviews_router.get("/relay-reviews/latest")
+async def latest_reviews(limit: int = 6):
+    """Derniers avis (toutes relais confondus) — vitrine PASS."""
+    limit = max(1, min(limit, 12))
+    reviews = await db.relay_reviews.find(
+        {}, {"_id": 0, "id": 1, "user_id": 1, "point_code": 1, "rating": 1, "comment": 1, "created_at": 1},
+    ).sort("created_at", -1).to_list(limit)
+    out = []
+    for r in reviews:
+        u = await db.users.find_one({"id": r["user_id"]}, {"_id": 0, "contact_name": 1})
+        p = await db.lolodrive_points.find_one({"code": r.get("point_code")}, {"_id": 0, "name": 1, "city": 1})
+        out.append({"id": r["id"],
+                    "author": (((u or {}).get("contact_name") or "Titulaire PASS").split() or ["Titulaire"])[0],
+                    "point_name": (p or {}).get("name") or r.get("point_code"),
+                    "city": (p or {}).get("city"),
+                    "rating": r["rating"], "comment": r.get("comment") or "",
+                    "date": str(r.get("created_at", ""))[:10]})
+    return {"reviews": out}
+
+
+@relay_reviews_router.get("/relay-reviews/podium")
+async def relay_podium():
+    """Podium mensuel des relais les mieux notés (avis des 30 derniers jours)."""
+    since = datetime.utcnow() - timedelta(days=30)
+    rows = await db.relay_reviews.aggregate([
+        {"$match": {"created_at": {"$gte": since}}},
+        {"$group": {"_id": "$point_code", "avg": {"$avg": "$rating"}, "count": {"$sum": 1}}},
+        {"$sort": {"avg": -1, "count": -1}},
+        {"$limit": 3},
+    ]).to_list(3)
+    podium = []
+    for r in rows:
+        p = await db.lolodrive_points.find_one({"code": r["_id"]}, {"_id": 0, "name": 1, "city": 1, "territory": 1})
+        if p:
+            podium.append({"code": r["_id"], "name": p["name"], "city": p.get("city"),
+                           "territory": p.get("territory"), "avg": round(r["avg"], 1), "count": r["count"]})
+    return {"podium": podium}
 
 
 @relay_reviews_router.get("/relay-reviews/stats")

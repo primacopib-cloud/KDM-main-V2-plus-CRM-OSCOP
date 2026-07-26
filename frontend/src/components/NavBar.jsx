@@ -132,7 +132,7 @@ const NavBar = ({ variant = 'default' }) => {
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {item.label.startsWith('nav.') ? t(item.label) : item.label}
+                  {item.label.includes('.') ? t(item.label) : item.label}
                 </Link>
               );
             })}
@@ -280,7 +280,7 @@ const NavBar = ({ variant = 'default' }) => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Icon className="w-4 h-4" />
-                    {item.label.startsWith('nav.') ? t(item.label) : item.label}
+                    {item.label.includes('.') ? t(item.label) : item.label}
                   </Link>
                 );
               })}
@@ -300,7 +300,7 @@ const NavBar = ({ variant = 'default' }) => {
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         <Icon className="w-4 h-4" />
-                        {item.label.startsWith('nav.') ? t(item.label) : item.label}
+                        {item.label.includes('.') ? t(item.label) : item.label}
                       </Link>
                     );
                   })}
@@ -318,7 +318,7 @@ const NavBar = ({ variant = 'default' }) => {
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
                           <Icon className="w-4 h-4" />
-                          {item.label.startsWith('nav.') ? t(item.label) : item.label}
+                          {item.label.includes('.') ? t(item.label) : item.label}
                         </Link>
                       );
                     })}
@@ -337,7 +337,7 @@ const NavBar = ({ variant = 'default' }) => {
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
                           <Icon className="w-4 h-4" />
-                          {item.label.startsWith('nav.') ? t(item.label) : item.label}
+                          {item.label.includes('.') ? t(item.label) : item.label}
                         </Link>
                       );
                     })}

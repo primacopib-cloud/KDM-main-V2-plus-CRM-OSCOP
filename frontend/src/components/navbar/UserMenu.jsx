@@ -73,7 +73,7 @@ export const UserMenu = ({ user, nav, showUserMenu, setShowUserMenu, handleLogou
                               data-testid={`user-menu-${item.href.replace(/\//g, '-')}`}
                             >
                               <Icon className="w-4 h-4" />
-                              {item.label.startsWith('nav.') ? t(item.label) : item.label}
+                              {item.label.includes('.') ? t(item.label) : item.label}
                               {item.href === '/wallet' && (
                                 <span className="ml-auto text-xs text-[#D9B35A]">{user?.credits || 0} cr</span>
                               )}
@@ -108,7 +108,7 @@ export const UserMenu = ({ user, nav, showUserMenu, setShowUserMenu, handleLogou
                                 onClick={() => setShowUserMenu(false)}
                               >
                                 <Icon className="w-4 h-4" />
-                                {item.label.startsWith('nav.') ? t(item.label) : item.label}
+                                {item.label.includes('.') ? t(item.label) : item.label}
                               </Link>
                             );
                           })}
@@ -132,7 +132,7 @@ export const UserMenu = ({ user, nav, showUserMenu, setShowUserMenu, handleLogou
                                 data-testid={`admin-menu-${item.href.replace(/\//g, '-')}`}
                               >
                                 <Icon className="w-4 h-4" />
-                                {item.label.startsWith('nav.') ? t(item.label) : item.label}
+                                {item.label.includes('.') ? t(item.label) : item.label}
                               </Link>
                             );
                           })}

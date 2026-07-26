@@ -131,6 +131,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler acquisition weekly recap crashed: %s", exc)
         try:
+            from relay_weekly_recap import run_relay_weekly_recap
+            await run_relay_weekly_recap(_db)
+        except Exception as exc:
+            logger.exception("Scheduler relay weekly recap crashed: %s", exc)
+        try:
             from adhesion_archive import run_adhesion_archiving
             await run_adhesion_archiving(_db)
         except Exception as exc:

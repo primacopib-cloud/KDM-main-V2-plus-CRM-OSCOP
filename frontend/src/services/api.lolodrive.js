@@ -144,6 +144,8 @@ export const lolodriveAPI = {
     apiCall('/lolodrive/relay-reviews', { method: 'POST', body: JSON.stringify(payload) }),
   relayReviewStats: () => apiCall('/lolodrive/relay-reviews/stats'),
   relayReviewsList: (pointCode) => apiCall(`/lolodrive/relay-reviews/list/${pointCode}`),
+  relayReviewsLatest: (limit = 6) => apiCall(`/lolodrive/relay-reviews/latest?limit=${limit}`),
+  relayPodium: () => apiCall('/lolodrive/relay-reviews/podium'),
   managerMyReviews: () => apiCall('/lolodrive/manager/my-reviews'),
   replyRelayReview: (reviewId, reply) =>
     apiCall(`/lolodrive/manager/my-reviews/${reviewId}/reply`, { method: 'POST', body: JSON.stringify({ reply }) }),

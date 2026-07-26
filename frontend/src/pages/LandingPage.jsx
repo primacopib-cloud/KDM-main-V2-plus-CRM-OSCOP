@@ -3,6 +3,7 @@ import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { downloadOffer, lolodriveAPI } from '../services/api';
+import { RelayPodium } from '../components/RelayPodium';
 import { 
   Download, 
   ArrowRight, 
@@ -337,6 +338,7 @@ export const PublicLolodriveMapSection = () => {
         </div>
 
         <LoloPointsMap points={points} territory={territory} focusCode={focusCode} ratings={ratings} height="460px" onSelect={(p) => setSelected(p)} />
+        <RelayPodium />
 
         <div className="mt-3 text-center">
           <Link to="/adhesion-vendeur?type=acheteur_pro">

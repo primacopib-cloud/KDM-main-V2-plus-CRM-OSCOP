@@ -1810,3 +1810,9 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Badge Relais d'Or (carte)** : LoloPointsMap — avg ≥ 4.5 → marqueur doré (gradient or + halo) + pill « 🏆 RELAIS D'OR » dans la popup (data-testid popup-gold-{code}). Testé sur LP-PAP.
 - **Alerte email nouvel avis** : `_notify_manager_new_review` dans routes_relay_reviews.py (appelée après insert, non bloquante) → email Brevo au gérant (manager_user_id → users.email, sinon contact_email du point) avec étoiles + commentaire + rappel réponse via POS. Testé E2E : POST avis → Brevo 201 Created. ⚠️ Piège corrigé : pas de backslash dans les expressions f-string (SyntaxError py3.11).
 - Données démo : LP-CAP passe à ★4.5 (2 avis dont « Relais impeccable… » 5★ de Marie) → aussi Relais d'Or. Commande synthétique de test supprimée.
+
+## 2026-07-26 — Lot 11 finalisé (self-testé Playwright + curl)
+- **Ancre Contact header** : lien `/#contact` ajouté dans `navbar/navItems.js` (baseItems, icône Mail, public) — le NavBar de la LandingPage (et non Header.jsx). Correction i18n : NavBar/UserMenu traduisent maintenant tout label contenant un point (`includes('.')` au lieu de `startsWith('nav.')`). Scroll fluide vérifié via ScrollToHash (App.js) : section #contact IN_VIEWPORT après clic.
+- **Avis vitrine PASS** : `VitrineReviews.jsx` sur /pass-lolodrive — 3 derniers avis avec étoiles + relais, vérifié visuellement.
+- **Podium relais accueil** : `RelayPodium.jsx` sur LandingPage — "Podium du mois — relais les mieux notés" (1er Pointe-à-Pitre 5★, 2e Capesterre 4.5★) + CTA "Devenir relais", vérifié visuellement.
+- **Récap hebdo gérant** : `relay_weekly_recap.py` (ventes, avis, note moyenne) — testé backend au lot précédent (mock lundi + send_email).

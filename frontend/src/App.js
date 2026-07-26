@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
 
 // Pages
@@ -88,11 +88,33 @@ const isCustomDomain = !PLATFORM_HOST_SUFFIXES.some(
   (h) => window.location.hostname === h || window.location.hostname.endsWith(`.${h}`) || window.location.hostname.endsWith(h)
 );
 
+const ScrollToHash = () => {
+  const location = useLocation();
+  useEffect(() => {
+    if (!location.hash) return undefined;
+    const id = location.hash.slice(1);
+    let tries = 0;
+    const t = setInterval(() => {
+      const el = document.getElementById(id);
+      tries += 1;
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        clearInterval(t);
+      } else if (tries > 20) {
+        clearInterval(t);
+      }
+    }, 200);
+    return () => clearInterval(t);
+  }, [location]);
+  return null;
+};
+
 function App() {
   return (
     <FavoritesProvider>
     <div className="App">
       <BrowserRouter>
+        <ScrollToHash />
         <BackButton />
         <Routes>
           <Route path="/" element={isCustomDomain ? <TenantPage domainMode /> : <LandingPage />} />
