@@ -126,6 +126,8 @@ DEFAULT_FEES = {
     # UC par article, par catégorie ("*" = tarif par défaut toutes catégories) et par créneau
     "pickup_rates": {"*": {"AM": 0.6, "PM": 19}},
     "delivery_rates": {"*": {"AM": 0.6, "PM": 19}},
+    # Pénalité de non-retrait après le créneau : UC par article, par catégorie (1 UC = 0,10 €)
+    "penalty_rates": {"*": 1},
 }
 
 
@@ -135,7 +137,10 @@ async def get_fees_config_doc() -> dict:
         await db.lolodrive_settings.update_one(
             {"key": "drive_fees"}, {"$setOnInsert": {"key": "drive_fees", "value": DEFAULT_FEES}}, upsert=True)
         return DEFAULT_FEES
-    return doc.get("value", DEFAULT_FEES)
+    cfg = doc.get("value", DEFAULT_FEES)
+    if "penalty_rates" not in cfg:
+        cfg["penalty_rates"] = DEFAULT_FEES["penalty_rates"]
+    return cfg
 
 
 def compute_slot_fee_uc(cfg: dict, kind: str, slot_id: str, lines: list, cat_by_sku: dict) -> float:
@@ -162,6 +167,21 @@ async def slot_fee_for_order(kind: str, slot_id: Optional[str], lines: list):
     prods = await db.lolodrive_products.find({"sku": {"$in": skus}}, {"_id": 0, "sku": 1, "category": 1}).to_list(300)
     cat_by_sku = {p["sku"]: p.get("category") for p in prods}
     return compute_slot_fee_uc(cfg, kind, slot_id, lines, cat_by_sku), slot.get("label")
+
+
+async def compute_penalty_uc(lines: list) -> float:
+    """Pénalité de non-retrait : Σ (qty × tarif_pénalité[catégorie]), fallback '*'."""
+    cfg = await get_fees_config_doc()
+    rates = cfg.get("penalty_rates", {}) or {}
+    default = rates.get("*", 1)
+    skus = [l["sku"] for l in lines]
+    prods = await db.lolodrive_products.find({"sku": {"$in": skus}}, {"_id": 0, "sku": 1, "category": 1}).to_list(300)
+    cat_by_sku = {p["sku"]: p.get("category") for p in prods}
+    fee = 0.0
+    for l in lines:
+        rate = rates.get(cat_by_sku.get(l.get("sku")) or "*", default) or 0
+        fee += float(rate) * l.get("qty", 0)
+    return round(fee, 2)
 
 
 @taxonomy_router.get("/fees-config")
@@ -197,5 +217,17 @@ async def update_fees_config(payload: dict, admin: dict = Depends(require_admin)
             if "*" not in clean:
                 raise HTTPException(status_code=400, detail=f"{key} : le tarif par défaut '*' est requis")
             cfg[key] = clean
+    if "penalty_rates" in payload:
+        clean = {}
+        for cat, rate in (payload["penalty_rates"] or {}).items():
+            try:
+                r = float(rate)
+            except (TypeError, ValueError):
+                continue
+            if 0 <= r <= 100000:
+                clean[cat] = r
+        if "*" not in clean:
+            raise HTTPException(status_code=400, detail="penalty_rates : le tarif par défaut '*' est requis")
+        cfg["penalty_rates"] = clean
     await db.lolodrive_settings.update_one({"key": "drive_fees"}, {"$set": {"value": cfg}}, upsert=True)
     return {"ok": True, "config": cfg}

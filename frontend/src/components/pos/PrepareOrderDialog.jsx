@@ -58,6 +58,11 @@ export const PrepareOrderDialog = ({ orderId, onClose, onStart, acting }) => {
               <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 space-y-1" data-testid="prepare-slot">
                 <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1"><Clock className="w-3 h-3" /> Retrait</p>
                 <p className="font-semibold">{o.pickup_date ? `${new Date(o.pickup_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} — ` : ''}{o.pickup_slot_label || 'Créneau non précisé'}</p>
+                {o.no_pickup_penalty_uc > 0 && (
+                  <p className="text-red-300 font-bold" data-testid="prepare-penalty">
+                    ⚠️ Pénalité non-retrait : {o.no_pickup_penalty_uc} UC ({(o.no_pickup_penalty_uc / 10).toFixed(2)} €)
+                  </p>
+                )}
                 <p className="text-white/60">{o.fulfillment_type}{data.point ? <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {data.point}</span> : ''}</p>
               </div>
             </div>

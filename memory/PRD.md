@@ -2011,3 +2011,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Recherche + filtre catégorie** : toolbar (pos-catalog-toolbar) avec recherche nom/SKU/marque (catalog-search-input) et select catégories dynamiques (catalog-category-select : Boissons/Cuisine/Frais/Épicerie…). Testé : "sucre" → 2 cartes, filtre Boissons → 3 cartes.
 - **Relais du mois vitrine publique** : GET /api/lolodrive/public/relay-of-month (SANS auth, routes_pos_insights.py) — meilleur relais comptoir du mois précédent (fallback mois courant), renvoie name/code/city/photo_url/sales_count SANS montants. UI : `components/pass/RelayOfMonth.jsx` (testid relay-of-month) avec photo + 🏆 sur /pass-lolodrive au-dessus des avis. Vérifié : "Relais du mois — juillet 2026 : Lolo Point Capesterre (LP-CAP)".
 - Fix : onError sur les images produits cassées (fallback masquage).
+
+## 2026-07-27 — Lot 54 (clôture) : Relance non-retirée + pénalité UC configurable (re-vérifié E2E fork)
+- **Cron** `run_no_pickup_reminders` (slot_pickup_reminder.py, boucle 10 min via scheduler.py) : commande READY dont le créneau de retrait est dépassé → email + SMS Brevo au client avec le montant de la pénalité, flags `no_pickup_reminder_sent_at` + `no_pickup_penalty_uc` (idempotent, 1 relance max).
+- **Pénalité configurable super admin** : `penalty_rates` (UC/article par catégorie, "*" = défaut, 1 UC = 0,10 €) dans /api/lolodrive/admin/fees-config (PUT, require_admin). UI : bloc "⚠️ Pénalité de non-retrait" (testid penalty-default / penalty-{cat}) dans DriveFeesPanel sur /lolodrive.
+- Re-testé au fork : config Frais=2/défaut=1 → commande test 2 art. Frais + 3 art. Épicerie = 7 UC exacts, relance envoyée, idempotence OK, config remise à {"*":1}, UI vérifiée par screenshot.

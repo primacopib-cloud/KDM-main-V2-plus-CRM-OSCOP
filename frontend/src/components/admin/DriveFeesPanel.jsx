@@ -42,7 +42,14 @@ export const DriveFeesPanel = () => {
         }
         if (Object.keys(entry).length) clean[cat] = entry;
       }
-      await lolodriveAPI.adminUpdateFeesConfig({ [`${kind}_slots`]: slots, [`${kind}_rates`]: clean });
+      await lolodriveAPI.adminUpdateFeesConfig({
+        [`${kind}_slots`]: slots,
+        [`${kind}_rates`]: clean,
+        penalty_rates: Object.fromEntries(
+          Object.entries(cfg.penalty_rates || { '*': 1 })
+            .map(([c, r]) => [c, parseFloat(String(r).replace(',', '.'))])
+            .filter(([, r]) => !Number.isNaN(r) && r >= 0)),
+      });
       toast.success('Tarifs de créneaux enregistrés ✓');
       setCfg(await lolodriveAPI.feesConfig());
     } catch (e) { toast.error(e.message); } finally { setSaving(false); }
@@ -111,6 +118,24 @@ export const DriveFeesPanel = () => {
         Frais facturés au client à la commande : tarif UC × nombre d'articles, selon la catégorie du produit et le créneau choisi.
         Laissez vide pour utiliser le tarif par défaut ★.
       </p>
+      <div className="mt-4 pt-4 border-t border-white/[0.06]">
+        <div className="text-sm font-semibold mb-2">⚠️ Pénalité de non-retrait <span className="text-white/40 font-normal text-xs">(UC / article, après la fin du créneau — 1 UC = 0,10 €)</span></div>
+        <div className="flex flex-wrap gap-3">
+          {['*', ...cats].map((cat) => (
+            <label key={cat} className="flex items-center gap-1.5 text-xs">
+              <span className={cat === '*' ? 'font-bold text-[#D9B35A]' : 'text-white/60'}>{cat === '*' ? '★ Défaut' : cat}</span>
+              <input type="text" data-testid={`penalty-${cat === '*' ? 'default' : cat}`}
+                value={cfg.penalty_rates?.[cat] ?? ''}
+                placeholder={cat === '*' ? '1' : `déf. ${cfg.penalty_rates?.['*'] ?? 1}`}
+                onChange={(e) => setCfg({ ...cfg, penalty_rates: { ...(cfg.penalty_rates || {}), [cat]: e.target.value } })}
+                className="w-16 bg-white/5 border border-white/10 rounded px-2 py-1 text-white font-mono" />
+            </label>
+          ))}
+        </div>
+        <p className="text-[11px] text-white/40 mt-1.5">
+          Le client est relancé automatiquement par email + SMS après son créneau, avec le montant de sa pénalité.
+        </p>
+      </div>
     </div>
   );
 };
