@@ -303,7 +303,17 @@ export default function PassSpacePage() {
           {/* Wallet ledger */}
           <SectionCard
             title={i18n.t('pass.historique_du_wallet_uc')}
-            action={<span className="text-xs text-white/40">{ledger.length} mouvement(s)</span>}
+            action={
+              <span className="flex items-center gap-2">
+                {ledger.some((l) => l.reason === 'RELIABLE_CLIENT_BONUS') && (
+                  <span data-testid="reliable-client-badge"
+                    className="text-[11px] font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/35 rounded-full px-2.5 py-0.5">
+                    🏅 Client fiable
+                  </span>
+                )}
+                <span className="text-xs text-white/40">{ledger.length} mouvement(s)</span>
+              </span>
+            }
             className="mb-6"
           >
             {ledger.length === 0 && (
@@ -454,6 +464,7 @@ const reasonLabel = (r) => ({
   ORDER_PAY_UC: 'Paiement commande en UC',
   NO_PICKUP_PENALTY: 'Pénalité non-retrait',
   NO_PICKUP_PENALTY_REFUND: 'Remboursement pénalité (retrait effectué)',
+  RELIABLE_CLIENT_BONUS: '🏅 Bonus Client Fiable',
 }[r] || r);
 
 const statusColor = (s) => {

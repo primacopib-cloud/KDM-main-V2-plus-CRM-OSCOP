@@ -170,6 +170,40 @@ async def run_no_pickup_reminders(db, now=None) -> int:
             sent += 1
         except Exception as exc:
             logger.warning("Relance non-retrait %s : %s", num, exc)
+        try:
+            await _maybe_send_block_alert(db, user, o["user_id"], now)
+        except Exception as exc:
+            logger.warning("Alerte blocage %s : %s", num, exc)
     if sent:
         logger.info("Relances non-retrait envoyées : %d", sent)
     return sent
+
+
+async def _maybe_send_block_alert(db, user, user_id, now):
+    """Email au client dès qu'il atteint le seuil de non-retraits, avec la date de fin de suspension."""
+    from routes_lolodrive_taxonomy import check_no_pickup_block
+    blocked = await check_no_pickup_block(user_id)
+    if not blocked or not user.get("email"):
+        return
+    until, count = blocked
+    key = {"user_id": user_id, "blocked_until": until}
+    if await db.no_pickup_block_alerts.find_one(key):
+        return
+    await db.no_pickup_block_alerts.insert_one({**key, "sent_at": now})
+    from brevo_service import send_email, _wrap_html
+    first = ((user.get("contact_name") or "").split() or [""])[0]
+    until_str = until.strftime("%d/%m/%Y")
+    subject = f"🚫 Commande Drive suspendue jusqu'au {until_str}"
+    body = f"""
+      <p>Bonjour{f' {first}' if first else ''},</p>
+      <p>Vous avez atteint <strong>{count} commande(s) non retirée(s)</strong> récemment.
+      Votre accès à la commande Drive est donc <strong style='color:#dc2626'>temporairement suspendu
+      jusqu'au {until_str}</strong>.</p>
+      <p>Il se réactivera automatiquement à cette date. Si vous retirez finalement vos commandes en attente
+      auprès de votre relais, les pénalités correspondantes vous seront remboursées et pourront lever la suspension.</p>
+      <p style='color:#999;font-size:11px;margin-top:12px'>Réseau LOLODRIVE by O'SCOP.</p>
+    """
+    await send_email(to_email=user["email"], to_name=user.get("contact_name"), subject=subject,
+                     html_content=_wrap_html(subject, body),
+                     text_content=f"Commande Drive suspendue jusqu'au {until_str} : {count} commande(s) non retiree(s).",
+                     tags=["no_pickup_block_alert"])

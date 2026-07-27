@@ -131,6 +131,8 @@ DEFAULT_FEES = {
     "penalty_rates": {"*": 1},
     # Blocage temporaire de la commande Drive après trop de non-retraits (threshold 0 = désactivé)
     "no_pickup_block": {"threshold": 3, "window_days": 30, "block_days": 15},
+    # Bonus fidélité 'Client fiable' : UC offerts si aucun non-retrait sur 6 mois (bonus_uc 0 = désactivé)
+    "reliable_bonus": {"bonus_uc": 10, "min_orders": 5},
 }
 
 
@@ -145,6 +147,8 @@ async def get_fees_config_doc() -> dict:
         cfg["penalty_rates"] = DEFAULT_FEES["penalty_rates"]
     if "no_pickup_block" not in cfg:
         cfg["no_pickup_block"] = DEFAULT_FEES["no_pickup_block"]
+    if "reliable_bonus" not in cfg:
+        cfg["reliable_bonus"] = DEFAULT_FEES["reliable_bonus"]
     return cfg
 
 
@@ -364,5 +368,15 @@ async def update_fees_config(payload: dict, admin: dict = Depends(require_admin)
                 raise HTTPException(status_code=400, detail=f"no_pickup_block.{key} : valeur hors limites")
             clean[key] = v
         cfg["no_pickup_block"] = clean
+    if "reliable_bonus" in payload:
+        b = payload["reliable_bonus"] or {}
+        try:
+            bonus = float(b.get("bonus_uc", 10))
+            min_orders = int(b.get("min_orders", 5))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="reliable_bonus : valeurs numériques attendues")
+        if not (0 <= bonus <= 100000) or not (0 <= min_orders <= 1000):
+            raise HTTPException(status_code=400, detail="reliable_bonus : valeurs hors limites")
+        cfg["reliable_bonus"] = {"bonus_uc": bonus, "min_orders": min_orders}
     await db.lolodrive_settings.update_one({"key": "drive_fees"}, {"$set": {"value": cfg}}, upsert=True)
     return {"ok": True, "config": cfg}

@@ -50,6 +50,7 @@ export const DriveFeesPanel = () => {
             .map(([c, r]) => [c, parseFloat(String(r).replace(',', '.'))])
             .filter(([, r]) => !Number.isNaN(r) && r >= 0)),
         no_pickup_block: cfg.no_pickup_block || { threshold: 3, window_days: 30, block_days: 15 },
+        reliable_bonus: cfg.reliable_bonus || { bonus_uc: 10, min_orders: 5 },
       });
       toast.success('Tarifs de créneaux enregistrés ✓');
       setCfg(await lolodriveAPI.feesConfig());
@@ -158,6 +159,25 @@ export const DriveFeesPanel = () => {
           </div>
           <p className="text-[11px] text-white/40 mt-1.5">
             Les pénalités remboursées (retrait tardif confirmé) ne comptent pas. Le blocage se lève automatiquement à l'échéance.
+          </p>
+        </div>
+        <div className="mt-4 pt-4 border-t border-white/[0.06]">
+          <div className="text-sm font-semibold mb-2">🏅 Bonus Client Fiable <span className="text-white/40 font-normal text-xs">(0 UC = désactivé — renouvelable tous les 6 mois)</span></div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
+            Offrir
+            <input type="text" data-testid="reliable-bonus-input"
+              value={cfg.reliable_bonus?.bonus_uc ?? 10}
+              onChange={(e) => setCfg({ ...cfg, reliable_bonus: { ...(cfg.reliable_bonus || {}), bonus_uc: e.target.value } })}
+              className="w-16 bg-white/5 border border-white/10 rounded px-2 py-1 text-white font-mono" />
+            UC aux clients ayant retiré au moins
+            <input type="text" data-testid="reliable-min-orders-input"
+              value={cfg.reliable_bonus?.min_orders ?? 5}
+              onChange={(e) => setCfg({ ...cfg, reliable_bonus: { ...(cfg.reliable_bonus || {}), min_orders: e.target.value } })}
+              className="w-14 bg-white/5 border border-white/10 rounded px-2 py-1 text-white font-mono" />
+            commande(s) sur 6 mois sans aucun non-retrait.
+          </div>
+          <p className="text-[11px] text-white/40 mt-1.5">
+            Le bonus est crédité automatiquement sur le CREDI'SCOP avec un email 🏅, et le badge s'affiche dans l'espace PASS du client.
           </p>
         </div>
       </div>
