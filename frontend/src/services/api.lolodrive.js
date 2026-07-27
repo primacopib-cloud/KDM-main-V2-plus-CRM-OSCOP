@@ -96,6 +96,10 @@ export const lolodriveAPI = {
     apiCall(`/lolodrive/manager/operators/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   managerArchiveOperator: (id, archived) =>
     apiCall(`/lolodrive/manager/operators/${id}/archive`, { method: 'POST', body: JSON.stringify({ archived }) }),
+  posBreakStart: () => apiCall('/lolodrive/pos/break/start', { method: 'POST' }),
+  posBreakEnd: () => apiCall('/lolodrive/pos/break/end', { method: 'POST' }),
+  posBreakStatus: () => apiCall('/lolodrive/pos/break/status'),
+  managerOperatorBreaks: (days = 7) => apiCall(`/lolodrive/manager/operator-breaks?days=${days}`),
   adminUcFeesSummary: (months = 6) =>
     apiCall(`/lolodrive/admin/uc-fees-summary?months=${months}`),
   adminGetRelayFee: () => apiCall('/lolodrive/admin/settings/relay-fee'),

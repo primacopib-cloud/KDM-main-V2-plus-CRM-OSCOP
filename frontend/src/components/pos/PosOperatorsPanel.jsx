@@ -8,12 +8,18 @@ import { lolodriveAPI } from '../../services/api';
 
 export const PosOperatorsPanel = () => {
   const [operators, setOperators] = useState(null);
+  const [breaks, setBreaks] = useState({});
   const [dialog, setDialog] = useState(null);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [saving, setSaving] = useState(false);
 
   const load = () => {
     lolodriveAPI.managerOperators().then((d) => setOperators(d.operators || [])).catch(() => setOperators(null));
+    lolodriveAPI.managerOperatorBreaks(7).then((d) => {
+      const map = {};
+      (d.operators || []).forEach((o) => { map[o.operator_name] = o; });
+      setBreaks(map);
+    }).catch(() => {});
   };
   useEffect(() => { load(); }, []);
   if (operators === null) return null;
@@ -67,6 +73,12 @@ export const PosOperatorsPanel = () => {
               {op.last_login_at && (
                 <span className="block text-[10px] text-white/35">
                   Dernière connexion : {new Date(op.last_login_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+              {breaks[op.contact_name] && (
+                <span className="block text-[10px] text-amber-200/70" data-testid={`operator-breaks-${op.id}`}>
+                  Pauses 7 j : {breaks[op.contact_name].count} ({breaks[op.contact_name].total_min} min)
+                  {breaks[op.contact_name].on_break && <b className="ml-1 text-amber-300">· En pause actuellement ☕</b>}
                 </span>
               )}
             </span>
