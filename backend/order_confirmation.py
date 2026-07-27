@@ -38,10 +38,16 @@ async def notify_order_confirmed(db, order: dict, paid_with: str):
     mode = {"DRIVE": "Drive", "DELIVERY": "Livraison", "LOLO_POINT": f"Relais {point_name or 'LOLODRIVE'}"}.get(
         order.get("fulfillment_type"), order.get("fulfillment_type") or "")
     subject = f"Reçu — commande {num} confirmée ✅"
+    slot_html = ""
+    if order.get("pickup_slot_label"):
+        fee = order.get("slot_fee_uc") or 0
+        slot_html = (f"<p style='margin:8px 0 0'>🕐 Créneau de retrait : <strong>{order['pickup_slot_label']}</strong>"
+                     + (f" — frais de créneau : <strong>{fee:g} UC</strong>" if fee else "") + "</p>")
     body = f"""
       <p>Bonjour{f' {first}' if first else ''},</p>
       <p>Votre commande <strong>{num}</strong> est confirmée et payée
       {'en UC' if in_uc else 'par carte'} — mode de retrait : <strong>{mode}</strong>.</p>
+      {slot_html}
       <table style='width:100%;border-collapse:collapse;font-size:13px'>{rows}</table>
       {discount_html}
       <p style='margin:12px 0 0;font-size:15px'>Total payé : <strong>{total}</strong></p>
@@ -52,6 +58,7 @@ async def notify_order_confirmed(db, order: dict, paid_with: str):
             to_email=user["email"], to_name=user.get("contact_name"), subject=subject,
             html_content=_wrap_html(subject, body),
             text_content=f"Commande {num} confirmée — total {total}."
+                         + (f" Créneau : {order.get('pickup_slot_label')}." if order.get("pickup_slot_label") else "")
                          + (f" Remise promo : -{discount / 100:.2f} €." if discount > 0 else ""),
             tags=["order_confirmed"])
     except Exception as exc:

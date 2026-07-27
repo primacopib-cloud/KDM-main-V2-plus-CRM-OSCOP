@@ -368,6 +368,11 @@ export default function PassSpacePage() {
                         {o.fulfillment_type} · {i18n.t('orders.articles_count', { count: o.items?.length || 0 })} ·{' '}
                         {new Date(o.created_at).toLocaleDateString(i18n.language)}
                       </div>
+                      {o.pickup_slot_label && (
+                        <div className="text-[10px] text-[#D9B35A]" data-testid={`order-slot-${o.id}`}>
+                          🕐 {o.pickup_slot_label}{(o.slot_fee_uc || 0) > 0 ? ` · frais ${o.slot_fee_uc} UC` : ''}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="text-right shrink-0">

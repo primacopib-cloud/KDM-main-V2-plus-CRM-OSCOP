@@ -96,6 +96,19 @@ async def send_network_report(db, start, end, month_tag) -> int:
         e["total"] += total
         g_total += total
     rows += ["", f"TOTAL RESEAU;;;;;{sum(e['count'] for e in by_point.values())} vente(s);;;{g_total / 100:.2f}"]
+    rech_by_point, rech_uc_total = {}, 0
+    async for r in db.counter_recharges.find({"created_at": {"$gte": start, "$lt": end}}, {"_id": 0}):
+        pt = points.get(r.get("point_id"), {})
+        label = f"{pt.get('code', '?')} — {pt.get('name', '')}".strip(" —")
+        e = rech_by_point.setdefault(label, {"count": 0, "uc": 0})
+        e["count"] += 1
+        e["uc"] += r.get("amount_uc", 0)
+        rech_uc_total += r.get("amount_uc", 0)
+    if rech_by_point:
+        rows += ["", "RECHARGES CREDI'SCOP AU COMPTOIR;relais;nombre;uc;eur_encaisses"]
+        for label, e in sorted(rech_by_point.items(), key=lambda x: -x[1]["uc"]):
+            rows.append(f"RECHARGE;{label};{e['count']};{e['uc']:g};{e['uc'] / 10:.2f}")
+        rows.append(f"TOTAL RECHARGES;;{sum(e['count'] for e in rech_by_point.values())};{rech_uc_total:g};{rech_uc_total / 10:.2f}")
     csv = "\ufeff" + "\n".join(rows)
     table = "".join(
         f"<tr><td style='padding:5px 8px;border-bottom:1px solid #eee'>{label}</td>"
@@ -115,6 +128,17 @@ async def send_network_report(db, start, end, month_tag) -> int:
         <tr><td style='padding:6px 8px;font-weight:bold'>TOTAL RÉSEAU</td><td></td>
         <td style='padding:6px 8px;text-align:right;font-weight:bold'>{g_total / 100:.2f} €</td></tr>
       </table>
+      {(lambda: f'''
+      <p style='margin:14px 0 4px'><strong>🔋 Recharges CREDI'SCOP encaissées au comptoir : +{rech_uc_total:g} UC ({rech_uc_total / 10:.2f} €)</strong></p>
+      <table style='width:100%;border-collapse:collapse;font-size:13px;margin:4px 0'>
+        <tr style='color:#888;font-size:11px;text-transform:uppercase'>
+          <td style='padding:4px 8px'>Relais</td><td style='padding:4px 8px;text-align:center'>Recharges</td>
+          <td style='padding:4px 8px;text-align:right'>UC créditées</td></tr>
+        {"".join(f"<tr><td style='padding:5px 8px;border-bottom:1px solid #eee'>{label}</td>"
+                 f"<td style='padding:5px 8px;border-bottom:1px solid #eee;text-align:center'>{e['count']}</td>"
+                 f"<td style='padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:bold'>+{e['uc']:g} UC ({e['uc'] / 10:.2f} €)</td></tr>"
+                 for label, e in sorted(rech_by_point.items(), key=lambda x: -x[1]['uc']))}
+      </table>''')() if rech_by_point else ''}
       <p style='font-size:12px'>Le détail complet vente par vente est joint en CSV.</p>
     """
     recipients = {TEAM_EMAIL.lower()}

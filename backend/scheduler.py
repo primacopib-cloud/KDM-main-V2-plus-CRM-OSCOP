@@ -20,6 +20,7 @@ AUTO_RENEW_INTERVAL_SECONDS = 6 * 60 * 60
 _task: asyncio.Task | None = None
 _iabois_task: asyncio.Task | None = None
 _health_task: asyncio.Task | None = None
+_slot_task: asyncio.Task | None = None
 _db = None
 
 
@@ -353,12 +354,27 @@ async def _scheduler_loop():
         await asyncio.sleep(PASS_J3_INTERVAL_SECONDS)
 
 
+async def _slot_reminder_loop():
+    """Rappel client 1h avant son créneau de retrait — vérification toutes les 10 min."""
+    await asyncio.sleep(90)
+    while True:
+        try:
+            from slot_pickup_reminder import run_slot_reminders
+            await run_slot_reminders(_db)
+        except Exception as exc:
+            logger.exception("Slot reminder loop crashed: %s", exc)
+        await asyncio.sleep(600)
+
+
 def start_scheduler():
-    global _task, _iabois_task, _health_task
+    global _task, _iabois_task, _health_task, _slot_task
     if _task is None or _task.done():
         loop = asyncio.get_event_loop()
         _task = loop.create_task(_scheduler_loop())
         logger.info("Scheduler started (PASS J-3 + auto-renew every %.1fh)", PASS_J3_INTERVAL_SECONDS / 3600)
+    if _slot_task is None or _slot_task.done():
+        _slot_task = asyncio.get_event_loop().create_task(_slot_reminder_loop())
+        logger.info("Slot pickup reminder loop started (every 10 min)")
     if _iabois_task is None or _iabois_task.done():
         from connectors.iabois_sync import iabois_sync_loop
         _iabois_task = asyncio.get_event_loop().create_task(iabois_sync_loop())

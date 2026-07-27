@@ -152,7 +152,7 @@ export const PosCatalogPanel = () => {
         UC: `${r.uc_paid} UC — CREDI'SCOP client`,
         MIXED: `combiné ${r.uc_paid} UC + ${extra.rest_method === 'CARD' ? 'CB' : 'espèces'}`,
       };
-      toast.success(`Vente ${r.order_number} encaissée — ${(r.total_cents / 100).toFixed(2)} € (${payLabels[r.payment_method] || r.payment_method})${r.promo_discount_cents > 0 ? ` · promo −${(r.promo_discount_cents / 100).toFixed(2)} €` : ''}${r.client_balance_uc != null ? ` · solde client : ${r.client_balance_uc} UC` : ''}${r.relay_fee_uc > 0 ? ` · ${r.relay_fee_uc} UC débités du CREDI'SCOP` : ''}`);
+      toast.success(`Vente ${r.order_number} encaissée — ${(r.total_cents / 100).toFixed(2)} € (${payLabels[r.payment_method] || r.payment_method})${r.promo_discount_cents > 0 ? ` · promo −${(r.promo_discount_cents / 100).toFixed(2)} €` : ''}${r.client_balance_uc != null ? ` · solde client : ${r.client_balance_uc} UC` : ''}${r.loyalty_bonus_uc ? ` · 🎁 Fidélité : +${r.loyalty_bonus_uc} UC offerts au client !` : ''}${r.relay_fee_uc > 0 ? ` · ${r.relay_fee_uc} UC débités du CREDI'SCOP` : ''}`);
       setSale({});
       setPayOpen(false);
       setTicket(r.order);

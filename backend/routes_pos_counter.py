@@ -213,6 +213,20 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
             "order_number": order["order_number"], "created_at": now})
         fresh = await db.lolodrive_wallets.find_one({"id": client_wallet["id"]}, {"_id": 0, "balance_uc": 1})
         client_balance_uc = (fresh or {}).get("balance_uc")
+        from uc_receipt_email import send_uc_receipt
+        await send_uc_receipt(db, customer["id"], uc_paid, client_balance_uc, kind="DEBIT",
+                              order_number=order["order_number"], point_name=point.get("name"),
+                              context="Achat au comptoir payé en UC")
+    # Fidélité : bonus UC automatique tous les 10 achats au comptoir du relais
+    loyalty_bonus_uc = 0
+    if customer:
+        try:
+            from loyalty_bonus import check_loyalty_bonus
+            loyalty_bonus_uc = await check_loyalty_bonus(db, customer, point, order["order_number"])
+            if loyalty_bonus_uc and client_balance_uc is not None:
+                client_balance_uc = round(client_balance_uc + loyalty_bonus_uc, 2)
+        except Exception as exc:
+            logger.warning("Bonus fidélité : %s", exc)
     from pymongo import ReturnDocument
     for l in lines:
         res = await db.lolodrive_products.find_one_and_update(
@@ -251,6 +265,7 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
             "relay_fee_uc": relay_fee_uc, "credi_scop_balance_uc": balance_uc,
             "payment_method": method, "uc_paid": uc_paid or None,
             "client_balance_uc": client_balance_uc,
+            "loyalty_bonus_uc": loyalty_bonus_uc or None,
             "customer_name": (customer or {}).get("contact_name"), "order": order}
 
 
