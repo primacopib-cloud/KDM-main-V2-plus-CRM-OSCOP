@@ -78,6 +78,8 @@ export const lolodriveAPI = {
   posStockAlerts: (days = 30) => apiCall(`/lolodrive/pos/stock-alerts?days=${days}`),
   posSetStock: (sku, stockQty) =>
     apiCall(`/lolodrive/pos/products/${sku}/stock`, { method: 'PATCH', body: JSON.stringify({ stock_qty: stockQty }) }),
+  posStockHistory: (sku, limit = 50) =>
+    apiCall(`/lolodrive/pos/stock-history?sku=${encodeURIComponent(sku)}&limit=${limit}`),
   adminCounterRanking: (month) =>
     apiCall(`/lolodrive/admin/counter-ranking${month ? `?month=${month}` : ''}`),
   posEmailTicket: (orderId, email) =>

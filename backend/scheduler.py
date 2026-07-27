@@ -156,6 +156,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler cash closeout crashed: %s", exc)
         try:
+            from podium_email import run_podium_email
+            await run_podium_email(_db)
+        except Exception as exc:
+            logger.exception("Scheduler podium email crashed: %s", exc)
+        try:
             from adhesion_archive import run_adhesion_archiving
             await run_adhesion_archiving(_db)
         except Exception as exc:

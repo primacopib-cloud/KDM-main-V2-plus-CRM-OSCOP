@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 
 from lolodrive_helpers import get_current_user, require_admin
-from routes_relay_products import _manager_point
+from routes_relay_products import _manager_point, log_stock_movement
 
 logger = logging.getLogger(__name__)
 pos_insights_router = APIRouter(prefix="/api/lolodrive", tags=["POS Insights"])
@@ -93,12 +93,23 @@ async def pos_set_stock(sku: str, payload: dict, user: dict = Depends(get_curren
         raise HTTPException(status_code=400, detail="stock_qty doit être entre 0 et 100000")
     product = await db.lolodrive_products.find_one(
         {"sku": sku, "$or": [{"point_code": {"$exists": False}}, {"point_code": None},
-                             {"point_code": point["code"]}]}, {"_id": 0, "sku": 1, "name": 1})
+                             {"point_code": point["code"]}]}, {"_id": 0, "sku": 1, "name": 1, "stock_qty": 1})
     if not product:
         raise HTTPException(status_code=404, detail="Produit introuvable au catalogue du relais")
+    old = product.get("stock_qty") or 0
     await db.lolodrive_products.update_one(
         {"sku": sku}, {"$set": {"stock_qty": qty, "updated_at": datetime.utcnow()}})
+    await log_stock_movement(sku, product["name"], "RESTOCK", qty - old, qty, point["code"])
     return {"ok": True, "sku": sku, "name": product["name"], "stock_qty": qty}
+
+
+@pos_insights_router.get("/pos/stock-history")
+async def pos_stock_history(sku: str, limit: int = 50, user: dict = Depends(get_current_user)):
+    """Historique des mouvements de stock d'un produit (réassorts, ventes, stock initial)."""
+    await _manager_point(user["id"])
+    movements = await db.stock_movements.find(
+        {"sku": sku}, {"_id": 0}).sort("created_at", -1).to_list(max(1, min(limit, 200)))
+    return {"sku": sku, "movements": movements}
 
 
 @pos_insights_router.get("/admin/counter-ranking")

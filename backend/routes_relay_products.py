@@ -32,6 +32,14 @@ class RelayProductSubmit(BaseModel):
     price_pass_cents: Optional[int] = None
     catalog_type: str = "NORMAL"
     image_url: Optional[str] = None
+    stock_qty: Optional[int] = None
+
+
+async def log_stock_movement(sku, name, mtype, delta, stock_after, point_code=None, ref=None):
+    await db.stock_movements.insert_one({
+        "id": str(uuid.uuid4()), "sku": sku, "name": name, "type": mtype,
+        "delta": delta, "stock_after": stock_after, "point_code": point_code,
+        "ref": ref, "created_at": datetime.utcnow()})
 
 
 async def _manager_point(user_id: str) -> dict:
@@ -103,6 +111,7 @@ async def submit_relay_product(body: RelayProductSubmit, user: dict = Depends(ge
         "price_pass_cents": body.price_pass_cents,
         "catalog_type": body.catalog_type if body.catalog_type in ("ESSENTIAL", "NORMAL") else "NORMAL",
         "image_url": body.image_url,
+        "stock_qty": body.stock_qty if body.stock_qty is not None and body.stock_qty >= 0 else None,
         "territories": [point["territory"]] if point.get("territory") else [],
         "point_id": point["id"],
         "point_code": point["code"],
@@ -115,6 +124,9 @@ async def submit_relay_product(body: RelayProductSubmit, user: dict = Depends(ge
     }
     await db.lolodrive_products.insert_one(doc)
     doc.pop("_id", None)
+    if doc.get("stock_qty") is not None:
+        await log_stock_movement(doc["sku"], doc["name"], "INITIAL", doc["stock_qty"],
+                                 doc["stock_qty"], point["code"])
     try:
         await _notify_admins_new_product(doc)
     except Exception as exc:
@@ -182,10 +194,15 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
         "created_at": now, "updated_at": now, "paid_at": now, "fulfilled_at": now,
     }
     await db.lolodrive_orders.insert_one(order)
+    from pymongo import ReturnDocument
     for l in lines:
-        await db.lolodrive_products.update_one(
+        res = await db.lolodrive_products.find_one_and_update(
             {"sku": l["sku"], "stock_qty": {"$ne": None}},
-            [{"$set": {"stock_qty": {"$max": [0, {"$subtract": [{"$ifNull": ["$stock_qty", 0]}, l["qty"]]}]}}}])
+            [{"$set": {"stock_qty": {"$max": [0, {"$subtract": [{"$ifNull": ["$stock_qty", 0]}, l["qty"]]}]}}}],
+            return_document=ReturnDocument.AFTER, projection={"_id": 0, "stock_qty": 1})
+        if res is not None:
+            await log_stock_movement(l["sku"], l["name"], "SALE", -l["qty"],
+                                     res["stock_qty"], point["code"], order["order_number"])
     order.pop("_id", None)
     order["point_name"] = point.get("name")
     return {"ok": True, "order_number": order["order_number"],
@@ -310,6 +327,7 @@ async def update_relay_product(sku: str, body: RelayProductSubmit, user: dict = 
         "price_public_cents": body.price_public_cents,
         "price_pass_cents": body.price_pass_cents,
         "image_url": body.image_url or product.get("image_url"),
+        "stock_qty": body.stock_qty if body.stock_qty is not None and body.stock_qty >= 0 else product.get("stock_qty"),
         "status": "PENDING",
         "is_active": False,
         "reject_reason": None,

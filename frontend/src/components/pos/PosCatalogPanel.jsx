@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Minus, Loader2, Camera, Banknote, CreditCard, Pencil, Boxes } from 'lucide-react';
+import { Package, Plus, Minus, Loader2, Camera, Banknote, CreditCard, Pencil, Boxes, History } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { lolodriveAPI } from '../../services/api';
 import { PosCounterJournal } from './PosCounterJournal';
 import { CounterTicketDialog } from './CounterTicketDialog';
+import { StockHistoryDialog } from './StockHistoryDialog';
 
 const STATUS_STYLE = {
   PENDING: { label: 'En attente de validation', color: '#f59e0b' },
@@ -20,7 +21,7 @@ export const PosCatalogPanel = () => {
   const [mine, setMine] = useState([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', category: '', brand: '', description: '', price: '' });
+  const [form, setForm] = useState({ name: '', category: '', brand: '', description: '', price: '', stock: '' });
   const [photo, setPhoto] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [editSku, setEditSku] = useState(null);
@@ -29,6 +30,7 @@ export const PosCatalogPanel = () => {
   const [ticket, setTicket] = useState(null);
   const [journalKey, setJournalKey] = useState(0);
   const [stockEdit, setStockEdit] = useState(null);
+  const [historyOf, setHistoryOf] = useState(null);
   const fileRef = useRef(null);
 
   const saveStock = async () => {
@@ -71,15 +73,17 @@ export const PosCatalogPanel = () => {
     }
     setSaving(true);
     try {
+      const stockQty = form.stock !== '' ? parseInt(form.stock, 10) : undefined;
       const payload = {
         name: form.name, category: form.category, brand: form.brand || undefined,
         description: form.description, price_public_cents: cents, image_url: photo || undefined,
+        stock_qty: Number.isNaN(stockQty) ? undefined : stockQty,
       };
       if (editSku) await lolodriveAPI.managerUpdateProduct(editSku, payload);
       else await lolodriveAPI.managerSubmitProduct(payload);
       toast.success(editSku ? 'Fiche corrigée et re-soumise pour validation ✓' : 'Fiche soumise au super admin pour validation ✓');
       setOpen(false);
-      setForm({ name: '', category: '', brand: '', description: '', price: '' });
+      setForm({ name: '', category: '', brand: '', description: '', price: '', stock: '' });
       setPhoto(null);
       setEditSku(null);
       load();
@@ -87,7 +91,7 @@ export const PosCatalogPanel = () => {
   };
 
   const startEdit = (p) => {
-    setForm({ name: p.name, category: p.category || '', brand: p.brand || '', description: p.description || '', price: (p.price_public_cents / 100).toFixed(2) });
+    setForm({ name: p.name, category: p.category || '', brand: p.brand || '', description: p.description || '', price: (p.price_public_cents / 100).toFixed(2), stock: p.stock_qty != null ? String(p.stock_qty) : '' });
     setPhoto(p.image_url || null);
     setEditSku(p.sku);
     setOpen(true);
@@ -140,8 +144,12 @@ export const PosCatalogPanel = () => {
               </div>
               <Textarea placeholder="Description complète *" value={form.description} rows={3} data-testid="product-description-input"
                 onChange={(e) => setForm({ ...form, description: e.target.value })} className="bg-white/5 border-white/10" />
-              <Input placeholder="Prix public en € * (ex: 4.50)" value={form.price} data-testid="product-price-input"
-                onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-white/5 border-white/10" />
+              <div className="grid grid-cols-2 gap-3">
+                <Input placeholder="Prix public en € * (ex: 4.50)" value={form.price} data-testid="product-price-input"
+                  onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-white/5 border-white/10" />
+                <Input type="number" min="0" placeholder="Stock initial (ex: 20)" value={form.stock} data-testid="product-stock-input"
+                  onChange={(e) => setForm({ ...form, stock: e.target.value })} className="bg-white/5 border-white/10" />
+              </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" data-testid="product-photo-input"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }} />
               <div className="flex items-center gap-3">
@@ -164,6 +172,7 @@ export const PosCatalogPanel = () => {
 
       <PosCounterJournal refreshKey={journalKey} />
       {ticket && <CounterTicketDialog sale={ticket} onClose={() => setTicket(null)} />}
+      {historyOf && <StockHistoryDialog product={historyOf} onClose={() => setHistoryOf(null)} />}
 
       {mine.length > 0 && (
         <div className="mb-4 space-y-1.5" data-testid="pos-my-submissions">
@@ -220,6 +229,11 @@ export const PosCatalogPanel = () => {
                   <Boxes className="w-3 h-3" /> {p.stock_qty == null ? 'Stock ?' : `Stock ${p.stock_qty}`}
                 </button>
               )}
+              <button type="button" title="Historique du stock" data-testid={`stock-history-btn-${p.sku}`}
+                onClick={() => setHistoryOf({ sku: p.sku, name: p.name })}
+                className="w-6 h-6 rounded-full flex items-center justify-center bg-white/[0.05] border border-white/10 text-white/50 hover:text-[#D9B35A] hover:border-[#D9B35A]/40">
+                <History className="w-3 h-3" />
+              </button>
               <button type="button" onClick={() => addSale(p.sku)} data-testid={`sale-add-${p.sku}`}
                 title="Ajouter à la vente au comptoir"
                 className="w-6 h-6 rounded-full flex items-center justify-center bg-[#D9B35A]/15 border border-[#D9B35A]/40 text-[#D9B35A] hover:bg-[#D9B35A]/30">
