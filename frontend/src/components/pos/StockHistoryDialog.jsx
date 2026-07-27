@@ -7,6 +7,7 @@ const TYPE_STYLE = {
   RESTOCK: { label: 'Réassort / ajustement', color: '#10b981', Icon: PackagePlus },
   SALE: { label: 'Vente comptoir', color: '#f59e0b', Icon: TrendingDown },
   INITIAL: { label: 'Stock initial fiche', color: '#D9B35A', Icon: TrendingUp },
+  INVENTORY: { label: 'Inventaire', color: '#22d3ee', Icon: PackagePlus },
 };
 
 export const StockHistoryDialog = ({ product, onClose }) => {

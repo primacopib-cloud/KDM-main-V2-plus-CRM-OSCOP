@@ -198,6 +198,11 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
         p = by_sku.get(it.sku)
         if not p:
             continue
+        stock = p.get("stock_qty")
+        if stock is not None and stock < it.qty:
+            raise HTTPException(status_code=400, detail=(
+                f"Rupture de stock : \"{p['name']}\" — {stock} restant(s), impossible d'encaisser {it.qty}. "
+                "Réassortissez le stock avant la vente."))
         unit = p.get("price_public_cents", 0)
         pct = max((pr.get("value_percent") or 0 for pr in promos if _matches_product(pr, p)), default=0) if promos else 0
         if pct:

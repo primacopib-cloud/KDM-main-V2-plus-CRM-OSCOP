@@ -136,6 +136,69 @@ async def credi_scop_recharge(payload: dict, user: dict = Depends(get_current_us
             "uc": pack["uc"], "amount_eur": pack["amount_eur"]}
 
 
+@pos_insights_router.post("/pos/inventory")
+async def pos_inventory(payload: dict, user: dict = Depends(get_current_user)):
+    """Mode inventaire : le gérant recompte et corrige tous ses stocks en une fois."""
+    point = await _manager_point(user["id"])
+    items = (payload or {}).get("items") or []
+    if not items:
+        raise HTTPException(status_code=400, detail="Aucun stock à mettre à jour")
+    updated = []
+    for it in items[:300]:
+        sku = it.get("sku")
+        try:
+            qty = int(it.get("stock_qty"))
+        except (TypeError, ValueError):
+            continue
+        if not sku or qty < 0 or qty > 100000:
+            continue
+        product = await db.lolodrive_products.find_one(
+            {"sku": sku, "$or": [{"point_code": {"$exists": False}}, {"point_code": None},
+                                 {"point_code": point["code"]}]},
+            {"_id": 0, "sku": 1, "name": 1, "stock_qty": 1})
+        if not product or (product.get("stock_qty") is not None and product["stock_qty"] == qty):
+            continue
+        old = product.get("stock_qty") or 0
+        await db.lolodrive_products.update_one(
+            {"sku": sku}, {"$set": {"stock_qty": qty, "updated_at": datetime.utcnow()}})
+        await log_stock_movement(sku, product["name"], "INVENTORY", qty - old, qty, point["code"])
+        updated.append({"sku": sku, "name": product["name"], "stock_qty": qty, "delta": qty - old})
+    return {"ok": True, "updated_count": len(updated), "updated": updated}
+
+
+@pos_insights_router.get("/admin/uc-fees-summary")
+async def admin_uc_fees_summary(months: int = 6, admin: dict = Depends(require_admin)):
+    """Revenus UC collectés via les frais produits relais, par mois et par relais."""
+    months = max(1, min(months, 24))
+    now = datetime.utcnow()
+    y, m = now.year, now.month - (months - 1)
+    while m <= 0:
+        y, m = y - 1, m + 12
+    since = datetime(y, m, 1)
+    debits = await db.lolodrive_wallet_ledger.find(
+        {"type": "DEBIT", "reason": "RELAY_PRODUCT_FEE", "created_at": {"$gte": since}},
+        {"_id": 0, "amount_uc": 1, "order_number": 1, "created_at": 1}).to_list(5000)
+    order_nums = [d["order_number"] for d in debits if d.get("order_number")]
+    orders = {o["order_number"]: o.get("lolo_point_id") async for o in db.lolodrive_orders.find(
+        {"order_number": {"$in": order_nums}}, {"_id": 0, "order_number": 1, "lolo_point_id": 1})}
+    points = {p["id"]: p async for p in db.lolodrive_points.find(
+        {}, {"_id": 0, "id": 1, "code": 1, "name": 1})}
+    agg = {}
+    total_uc = 0
+    for d in debits:
+        month = d["created_at"].strftime("%Y-%m")
+        pid = orders.get(d.get("order_number"))
+        pt = points.get(pid, {})
+        key = (month, pt.get("code", "?"))
+        e = agg.setdefault(key, {"month": month, "point_code": pt.get("code", "?"),
+                                 "point_name": pt.get("name", "Relais inconnu"), "count": 0, "total_uc": 0})
+        e["count"] += 1
+        e["total_uc"] += d.get("amount_uc", 0)
+        total_uc += d.get("amount_uc", 0)
+    rows = sorted(agg.values(), key=lambda r: (r["month"], -r["total_uc"]), reverse=True)
+    return {"months": months, "total_uc": total_uc, "rows": rows}
+
+
 @pos_insights_router.get("/admin/settings/relay-fee")
 async def admin_get_relay_fee(admin: dict = Depends(require_admin)):
     return {"fee_uc": await get_relay_fee_uc()}

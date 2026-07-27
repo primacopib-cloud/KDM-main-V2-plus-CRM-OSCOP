@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Minus, Loader2, Camera, Banknote, CreditCard, Pencil, Boxes, History } from 'lucide-react';
+import { Package, Plus, Minus, Loader2, Camera, Banknote, CreditCard, Pencil, Boxes, History, ClipboardList } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -10,6 +10,7 @@ import { PosCounterJournal } from './PosCounterJournal';
 import { CounterTicketDialog } from './CounterTicketDialog';
 import { StockHistoryDialog } from './StockHistoryDialog';
 import { RelayFeeBanner } from './RelayFeeBanner';
+import { InventoryDialog } from './InventoryDialog';
 
 const STATUS_STYLE = {
   PENDING: { label: 'En attente de validation', color: '#f59e0b' },
@@ -32,6 +33,7 @@ export const PosCatalogPanel = () => {
   const [journalKey, setJournalKey] = useState(0);
   const [stockEdit, setStockEdit] = useState(null);
   const [historyOf, setHistoryOf] = useState(null);
+  const [showInventory, setShowInventory] = useState(false);
   const fileRef = useRef(null);
 
   const saveStock = async () => {
@@ -126,7 +128,12 @@ export const PosCatalogPanel = () => {
           <Package className="w-4 h-4 text-[#D9B35A]" />
           Catalogue du relais {catalog.point_code || ''} ({catalog.products.length} produits)
         </div>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditSku(null); }}>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowInventory(true)} data-testid="inventory-btn"
+            className="border-[#22d3ee]/40 text-[#22d3ee] hover:bg-[#22d3ee]/10">
+            <ClipboardList className="w-3 h-3 mr-1" /> Inventaire
+          </Button>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditSku(null); }}>
           <DialogTrigger asChild>
             <Button size="sm" className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black" data-testid="pos-submit-product-btn">
               <Plus className="w-3 h-3 mr-1" /> Proposer un produit
@@ -169,12 +176,15 @@ export const PosCatalogPanel = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <RelayFeeBanner refreshKey={journalKey} />
       <PosCounterJournal refreshKey={journalKey} />
       {ticket && <CounterTicketDialog sale={ticket} onClose={() => setTicket(null)} />}
       {historyOf && <StockHistoryDialog product={historyOf} onClose={() => setHistoryOf(null)} />}
+      {showInventory && <InventoryDialog products={catalog.products} onClose={() => setShowInventory(false)}
+        onSaved={() => { load(); setJournalKey((k) => k + 1); }} />}
 
       {mine.length > 0 && (
         <div className="mb-4 space-y-1.5" data-testid="pos-my-submissions">
@@ -237,8 +247,13 @@ export const PosCatalogPanel = () => {
                 <History className="w-3 h-3" />
               </button>
               <button type="button" onClick={() => addSale(p.sku)} data-testid={`sale-add-${p.sku}`}
-                title="Ajouter à la vente au comptoir"
-                className="w-6 h-6 rounded-full flex items-center justify-center bg-[#D9B35A]/15 border border-[#D9B35A]/40 text-[#D9B35A] hover:bg-[#D9B35A]/30">
+                disabled={p.stock_qty === 0}
+                title={p.stock_qty === 0 ? 'Rupture de stock — vente impossible' : 'Ajouter à la vente au comptoir'}
+                className={`w-6 h-6 rounded-full flex items-center justify-center border ${
+                  p.stock_qty === 0
+                    ? 'bg-white/[0.03] border-white/10 text-white/20 cursor-not-allowed'
+                    : 'bg-[#D9B35A]/15 border-[#D9B35A]/40 text-[#D9B35A] hover:bg-[#D9B35A]/30'
+                }`}>
                 <Plus className="w-3 h-3" />
               </button>
             </span>

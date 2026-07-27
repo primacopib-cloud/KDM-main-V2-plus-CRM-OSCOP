@@ -86,6 +86,10 @@ export const lolodriveAPI = {
     apiCall('/lolodrive/pos/credi-scop/recharge-session', {
       method: 'POST', body: JSON.stringify({ pack, origin_url: window.location.origin }),
     }),
+  posInventory: (items) =>
+    apiCall('/lolodrive/pos/inventory', { method: 'POST', body: JSON.stringify({ items }) }),
+  adminUcFeesSummary: (months = 6) =>
+    apiCall(`/lolodrive/admin/uc-fees-summary?months=${months}`),
   adminGetRelayFee: () => apiCall('/lolodrive/admin/settings/relay-fee'),
   adminSetRelayFee: (feeUc) =>
     apiCall('/lolodrive/admin/settings/relay-fee', { method: 'PUT', body: JSON.stringify({ fee_uc: feeUc }) }),

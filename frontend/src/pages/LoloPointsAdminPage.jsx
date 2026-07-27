@@ -3,6 +3,7 @@ import { Store, Plus, MapPin, RefreshCw, Calculator, TrendingUp, Map as MapIcon,
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { RelayProductsQueue } from '../components/admin/RelayProductsQueue';
 import { RelayFeeSetting } from '../components/admin/RelayFeeSetting';
+import { UcFeesSummary } from '../components/admin/UcFeesSummary';
 import Phase2Banner from '../components/Phase2Banner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -201,6 +202,7 @@ export default function LoloPointsAdminPage() {
       </div>
 
       <RelayFeeSetting />
+      <UcFeesSummary />
       <RelayProductsQueue />
 
       {loading && <div className="text-center text-white/50 py-12">Chargement…</div>}
