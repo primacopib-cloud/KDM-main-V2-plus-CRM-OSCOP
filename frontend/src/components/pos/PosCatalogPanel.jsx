@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Minus, Loader2, Camera, Banknote, CreditCard, Pencil, Boxes, History, ClipboardList } from 'lucide-react';
+import { Package, Plus, Minus, Loader2, Camera, Banknote, CreditCard, Pencil, Boxes, History, ClipboardList, ScanBarcode, Search } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -34,6 +34,22 @@ export const PosCatalogPanel = () => {
   const [journalKey, setJournalKey] = useState(0);
   const [stockEdit, setStockEdit] = useState(null);
   const [historyOf, setHistoryOf] = useState(null);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [scanValue, setScanValue] = useState('');
+
+  const handleScan = () => {
+    const q = scanValue.trim().toLowerCase();
+    if (!q) return;
+    const products = catalog?.products || [];
+    const found = products.find((p) => p.sku.toLowerCase() === q)
+      || products.find((p) => p.sku.toLowerCase().includes(q) || p.name.toLowerCase().includes(q));
+    if (!found) { toast.error(`Référence "${scanValue}" introuvable au catalogue`); return; }
+    if (found.stock_qty === 0) { toast.error(`"${found.name}" est en rupture de stock`); setScanValue(''); return; }
+    addSale(found.sku);
+    toast.success(`${found.name} ajouté à la vente ✓`);
+    setScanValue('');
+  };
   const [showInventory, setShowInventory] = useState(false);
   const fileRef = useRef(null);
 
@@ -212,13 +228,47 @@ export const PosCatalogPanel = () => {
         </div>
       )}
 
+      <div className="mb-3 flex flex-wrap gap-2" data-testid="pos-catalog-toolbar">
+        <div className="flex items-center gap-1.5 flex-1 min-w-[220px] px-3 rounded-lg bg-[#D9B35A]/[0.06] border border-[#D9B35A]/30">
+          <ScanBarcode className="w-4 h-4 text-[#D9B35A] shrink-0" />
+          <input value={scanValue} data-testid="product-scan-input"
+            onChange={(e) => setScanValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleScan(); }}
+            placeholder="Scanner / taper une référence + Entrée (ex: BANANE-1KG)"
+            className="w-full bg-transparent py-2 text-xs text-white outline-none placeholder:text-white/30" />
+        </div>
+        <div className="flex items-center gap-1.5 flex-1 min-w-[180px] px-3 rounded-lg bg-white/[0.04] border border-white/10">
+          <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
+          <input value={search} data-testid="catalog-search-input"
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un produit…"
+            className="w-full bg-transparent py-2 text-xs text-white outline-none placeholder:text-white/30" />
+        </div>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} data-testid="catalog-category-select"
+          className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-xs text-white outline-none">
+          <option value="" className="bg-[#15151c]">Toutes catégories</option>
+          {[...new Set(catalog.products.map((p) => p.category).filter(Boolean))].sort().map((c) => (
+            <option key={c} value={c} className="bg-[#15151c]">{c}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="max-h-[520px] overflow-y-auto grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pr-1" data-testid="pos-catalog-list">
-        {catalog.products.map((p) => (
+        {catalog.products
+          .filter((p) => !category || p.category === category)
+          .filter((p) => {
+            const q = search.trim().toLowerCase();
+            if (!q) return true;
+            return p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
+              || (p.brand || '').toLowerCase().includes(q);
+          })
+          .map((p) => (
           <div key={p.sku} data-testid={`pos-product-${p.sku}`}
             className="relative rounded-2xl bg-white/[0.025] border border-white/[0.07] overflow-hidden hover:border-white/[0.15] transition-colors">
             {p.image_url ? (
               <div className="aspect-square bg-white/[0.02] overflow-hidden">
-                <img src={p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
+                <img src={p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }} />
               </div>
             ) : (
               <div className="aspect-square bg-white/[0.03] flex items-center justify-center">

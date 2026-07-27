@@ -105,6 +105,7 @@ export const lolodriveAPI = {
     apiCall(`/lolodrive/manager/operator-hours-sheet?operator_id=${operatorId}${month ? `&month=${month}` : ''}`),
   posBestSeller: () => apiCall('/lolodrive/pos/best-seller'),
   posSalesGoal: () => apiCall('/lolodrive/pos/sales-goal'),
+  publicRelayOfMonth: () => apiCall('/lolodrive/public/relay-of-month'),
   managerSetSalesGoal: (goalCents) =>
     apiCall('/lolodrive/manager/sales-goal', { method: 'PUT', body: JSON.stringify({ goal_cents: goalCents }) }),
   managerRewardBestSeller: (amountUc) =>

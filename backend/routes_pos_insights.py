@@ -43,6 +43,31 @@ async def _seller_ranking(point_id, start, end):
     return sorted(agg.values(), key=lambda x: (x["count"], x["total_cents"]), reverse=True)
 
 
+@pos_insights_router.get("/public/relay-of-month")
+async def public_relay_of_month():
+    """Relais du mois (vitrine publique) : meilleur relais comptoir du mois précédent."""
+    now = datetime.utcnow()
+    cur_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    prev_start = (cur_start - timedelta(days=1)).replace(day=1)
+    for start, end in ((prev_start, cur_start), (cur_start, now + timedelta(minutes=1))):
+        agg = {}
+        async for o in db.lolodrive_orders.find(
+                {"channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
+                {"_id": 0, "lolo_point_id": 1, "total_cents": 1}):
+            e = agg.setdefault(o.get("lolo_point_id"), {"count": 0, "total_cents": 0})
+            e["count"] += 1
+            e["total_cents"] += o.get("total_cents", 0)
+        if agg:
+            winner_id = max(agg, key=lambda k: agg[k]["total_cents"])
+            pt = await db.lolodrive_points.find_one(
+                {"id": winner_id}, {"_id": 0, "name": 1, "code": 1, "city": 1, "photo_url": 1})
+            if pt:
+                return {"month": start.strftime("%Y-%m"), "name": pt["name"], "code": pt["code"],
+                        "city": pt.get("city"), "photo_url": pt.get("photo_url"),
+                        "sales_count": agg[winner_id]["count"]}
+    return {"month": None}
+
+
 @pos_insights_router.get("/pos/best-seller")
 async def pos_best_seller(user: dict = Depends(get_current_user)):
     """Meilleur vendeur comptoir : gagnant de la semaine passée + course de la semaine en cours."""

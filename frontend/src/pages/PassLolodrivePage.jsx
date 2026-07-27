@@ -5,6 +5,7 @@ import NavBar from '../components/NavBar';
 import { FlashPromoBanner } from '../components/FlashPromoBanner';
 import i18n from '@/i18n';
 import { VitrineReviews } from '../components/pass/VitrineReviews';
+import { RelayOfMonth } from '../components/pass/RelayOfMonth';
 import { authAPI } from '../services/api';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -141,6 +142,7 @@ export default function PassLolodrivePage() {
             </button>
           </Link>
         </div>
+        <RelayOfMonth />
         <VitrineReviews />
       </main>
     </div>
