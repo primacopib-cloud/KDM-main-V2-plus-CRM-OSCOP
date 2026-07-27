@@ -206,6 +206,55 @@ async def operator_hours(days: int = 7, user: dict = Depends(get_current_user)):
     return {"days": days, "operators": result}
 
 
+@pos_operators_router.get("/manager/operator-hours-sheet")
+async def operator_hours_sheet(operator_id: str, month: Optional[str] = None,
+                               user: dict = Depends(get_current_user)):
+    """Relevé d'heures mensuel détaillé d'un opérateur (pour la paie)."""
+    point = await _owned_point(user["id"])
+    op = await db.users.find_one(
+        {"id": operator_id, "role": "OPERATEUR_POS", "pos_point_id": point["id"]},
+        {"_id": 0, "id": 1, "contact_name": 1, "email": 1})
+    if not op:
+        raise HTTPException(status_code=404, detail="Opérateur introuvable pour ce relais")
+    now = datetime.utcnow()
+    try:
+        y, m = map(int, (month or now.strftime("%Y-%m")).split("-"))
+        start = datetime(y, m, 1)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Format mois invalide (attendu : YYYY-MM)")
+    end = datetime(y + 1, 1, 1) if m == 12 else datetime(y, m + 1, 1)
+    events = {}
+    async for l in db.pos_logins.find({"user_id": operator_id, "at": {"$gte": start, "$lt": end}},
+                                      {"_id": 0, "at": 1}):
+        events.setdefault(l["at"].strftime("%Y-%m-%d"), []).append(l["at"])
+    async for o in db.lolodrive_orders.find(
+            {"operator_id": operator_id, "created_at": {"$gte": start, "$lt": end}},
+            {"_id": 0, "created_at": 1}):
+        events.setdefault(o["created_at"].strftime("%Y-%m-%d"), []).append(o["created_at"])
+    breaks_by_day = {}
+    async for b in db.pos_breaks.find({"user_id": operator_id, "started_at": {"$gte": start, "$lt": end}},
+                                      {"_id": 0}):
+        d = b["started_at"].strftime("%Y-%m-%d")
+        events.setdefault(d, []).append(b["started_at"])
+        if b.get("ended_at"):
+            events[d].append(b["ended_at"])
+            breaks_by_day[d] = breaks_by_day.get(d, 0) + (b.get("duration_min") or 0)
+    days, total_min, total_break = [], 0, 0
+    for d in sorted(events):
+        first, last = min(events[d]), max(events[d])
+        span = max(0, round((last - first).total_seconds() / 60))
+        bmin = breaks_by_day.get(d, 0)
+        presence = max(0, span - bmin)
+        total_min += presence
+        total_break += bmin
+        days.append({"date": d, "first": first.strftime("%H:%M"), "last": last.strftime("%H:%M"),
+                     "break_min": bmin, "presence_min": presence})
+    return {"operator": op, "point": {"name": point["name"], "code": point["code"],
+                                      "address": point.get("address"), "city": point.get("city")},
+            "month": start.strftime("%Y-%m"), "days": days,
+            "total_presence_min": total_min, "total_break_min": total_break}
+
+
 @pos_operators_router.get("/pos/session-info")
 async def pos_session_info(user: dict = Depends(get_current_user)):
     """Nom + horodatage de connexion de la session en cours (affiché jusqu'à déconnexion)."""

@@ -101,6 +101,8 @@ export const lolodriveAPI = {
   posBreakStatus: () => apiCall('/lolodrive/pos/break/status'),
   managerOperatorBreaks: (days = 7) => apiCall(`/lolodrive/manager/operator-breaks?days=${days}`),
   managerOperatorHours: (days = 7) => apiCall(`/lolodrive/manager/operator-hours?days=${days}`),
+  managerOperatorHoursSheet: (operatorId, month) =>
+    apiCall(`/lolodrive/manager/operator-hours-sheet?operator_id=${operatorId}${month ? `&month=${month}` : ''}`),
   posBestSeller: () => apiCall('/lolodrive/pos/best-seller'),
   posSalesGoal: () => apiCall('/lolodrive/pos/sales-goal'),
   managerSetSalesGoal: (goalCents) =>

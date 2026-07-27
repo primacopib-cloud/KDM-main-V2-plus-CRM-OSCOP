@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Users, Plus, Pencil, Archive, ArchiveRestore, Loader2 } from 'lucide-react';
+import { Users, Plus, Pencil, Archive, ArchiveRestore, Loader2, FileClock } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { lolodriveAPI } from '../../services/api';
+import { printHoursSheet } from './hoursSheetPrint';
 
 export const PosOperatorsPanel = () => {
   const [operators, setOperators] = useState(null);
@@ -46,6 +47,13 @@ export const PosOperatorsPanel = () => {
       setDialog(null);
       load();
     } catch (e) { toast.error(e.message); } finally { setSaving(false); }
+  };
+
+  const hoursSheet = async (op) => {
+    try {
+      const data = await lolodriveAPI.managerOperatorHoursSheet(op.id, new Date().toISOString().slice(0, 7));
+      printHoursSheet(data);
+    } catch (e) { toast.error(e.message); }
   };
 
   const toggleArchive = async (op) => {
@@ -98,6 +106,11 @@ export const PosOperatorsPanel = () => {
               {op.is_archived ? 'Archivé' : 'Actif'}
             </span>
             <span className="flex gap-1.5 shrink-0">
+              <button type="button" onClick={() => hoursSheet(op)} data-testid={`hours-sheet-${op.id}`}
+                title="Relevé d'heures mensuel imprimable (paie)"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg font-bold text-[#22d3ee] bg-[#22d3ee]/10 border border-[#22d3ee]/30 hover:bg-[#22d3ee]/20">
+                <FileClock className="w-3 h-3" /> Relevé d'heures
+              </button>
               <button type="button" onClick={() => openEdit(op)} data-testid={`edit-operator-${op.id}`}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/30 hover:bg-[#D9B35A]/20">
                 <Pencil className="w-3 h-3" /> Modifier
