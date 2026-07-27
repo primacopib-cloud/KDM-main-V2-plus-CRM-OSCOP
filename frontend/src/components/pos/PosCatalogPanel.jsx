@@ -212,53 +212,75 @@ export const PosCatalogPanel = () => {
         </div>
       )}
 
-      <div className="max-h-72 overflow-y-auto space-y-1.5" data-testid="pos-catalog-list">
+      <div className="max-h-[520px] overflow-y-auto grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pr-1" data-testid="pos-catalog-list">
         {catalog.products.map((p) => (
-          <div key={p.sku} className="flex items-center justify-between text-xs p-2 rounded-lg bg-white/[0.02]">
-            <span className="truncate">
-              {p.name}
-              {p.point_code && <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/30">Relais</span>}
-            </span>
-            <span className="font-mono shrink-0 ml-3 flex items-center gap-2">
-              {(p.price_public_cents / 100).toFixed(2)} € <span className="text-[#D9B35A]">· {p.uc_public} UC</span>
-              {p.price_pass_cents != null && <span className="text-white/40"> (PASS {(p.price_pass_cents / 100).toFixed(2)} € · {p.uc_pass} UC)</span>}
-              {stockEdit?.sku === p.sku ? (
-                <span className="flex items-center gap-1">
-                  <input type="number" min="0" autoFocus value={stockEdit.value} data-testid={`stock-input-${p.sku}`}
-                    onChange={(e) => setStockEdit({ ...stockEdit, value: e.target.value })}
-                    onKeyDown={(e) => { if (e.key === 'Enter') saveStock(); if (e.key === 'Escape') setStockEdit(null); }}
-                    className="w-16 px-1.5 py-0.5 rounded bg-white/10 border border-[#D9B35A]/50 text-white text-xs font-mono" />
-                  <button type="button" onClick={saveStock} data-testid={`stock-save-${p.sku}`}
-                    className="px-1.5 py-0.5 rounded text-[10px] font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a]">OK</button>
-                </span>
-              ) : (
-                <button type="button" title="Ajuster le stock (réassort)" data-testid={`stock-badge-${p.sku}`}
-                  onClick={() => setStockEdit({ sku: p.sku, value: p.stock_qty ?? '' })}
-                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${
-                    p.stock_qty == null ? 'text-white/40 bg-white/[0.04] border-white/10'
-                      : p.stock_qty <= 5 ? 'text-red-300 bg-red-500/10 border-red-400/35'
-                        : p.stock_qty <= 15 ? 'text-amber-300 bg-amber-400/10 border-amber-400/35'
-                          : 'text-emerald-300 bg-emerald-400/10 border-emerald-400/30'
-                  } hover:brightness-125`}>
-                  <Boxes className="w-3 h-3" /> {p.stock_qty == null ? 'Stock ?' : `Stock ${p.stock_qty}`}
+          <div key={p.sku} data-testid={`pos-product-${p.sku}`}
+            className="relative rounded-2xl bg-white/[0.025] border border-white/[0.07] overflow-hidden hover:border-white/[0.15] transition-colors">
+            {p.image_url ? (
+              <div className="aspect-square bg-white/[0.02] overflow-hidden">
+                <img src={p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className="aspect-square bg-white/[0.03] flex items-center justify-center">
+                <Package className="w-10 h-10 text-white/15" />
+              </div>
+            )}
+            <div className="p-3">
+              <div className="flex flex-wrap gap-1 mb-1.5 text-[9px] font-bold">
+                {p.catalog_type === 'ESSENTIAL'
+                  ? <span className="px-1.5 py-0.5 rounded text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/30">ESSENTIEL</span>
+                  : <span className="px-1.5 py-0.5 rounded text-[#c4b5fd] bg-[#7c3aed]/10 border border-[#7c3aed]/30">HORS-25</span>}
+                {p.point_code && <span className="px-1.5 py-0.5 rounded text-emerald-300 bg-emerald-400/10 border border-emerald-400/30">Relais {p.point_code}</span>}
+              </div>
+              <div className="font-medium text-xs leading-tight mb-0.5 line-clamp-2">{p.name}</div>
+              <div className="text-[10px] text-white/35 mb-1.5 truncate">{p.brand ? `${p.brand} · ` : ''}{p.category || p.sku}</div>
+              <div className="mb-2">
+                <span className="text-sm font-bold font-mono">{(p.price_public_cents / 100).toFixed(2)} €</span>
+                <span className="text-[10px] text-[#D9B35A] font-mono"> · {p.uc_public} UC</span>
+                {p.price_pass_cents != null && (
+                  <span className="block text-[10px] text-white/40 font-mono">PASS {(p.price_pass_cents / 100).toFixed(2)} € · {p.uc_pass} UC</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mb-2">
+                {stockEdit?.sku === p.sku ? (
+                  <span className="flex items-center gap-1">
+                    <input type="number" min="0" autoFocus value={stockEdit.value} data-testid={`stock-input-${p.sku}`}
+                      onChange={(e) => setStockEdit({ ...stockEdit, value: e.target.value })}
+                      onKeyDown={(e) => { if (e.key === 'Enter') saveStock(); if (e.key === 'Escape') setStockEdit(null); }}
+                      className="w-16 px-1.5 py-0.5 rounded bg-white/10 border border-[#D9B35A]/50 text-white text-xs font-mono" />
+                    <button type="button" onClick={saveStock} data-testid={`stock-save-${p.sku}`}
+                      className="px-1.5 py-0.5 rounded text-[10px] font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a]">OK</button>
+                  </span>
+                ) : (
+                  <button type="button" title="Ajuster le stock (réassort)" data-testid={`stock-badge-${p.sku}`}
+                    onClick={() => setStockEdit({ sku: p.sku, value: p.stock_qty ?? '' })}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                      p.stock_qty == null ? 'text-white/40 bg-white/[0.04] border-white/10'
+                        : p.stock_qty <= 5 ? 'text-red-300 bg-red-500/10 border-red-400/35'
+                          : p.stock_qty <= 15 ? 'text-amber-300 bg-amber-400/10 border-amber-400/35'
+                            : 'text-emerald-300 bg-emerald-400/10 border-emerald-400/30'
+                    } hover:brightness-125`}>
+                    <Boxes className="w-3 h-3" /> {p.stock_qty == null ? 'Stock ?' : `Stock ${p.stock_qty}`}
+                  </button>
+                )}
+                <button type="button" title="Historique du stock" data-testid={`stock-history-btn-${p.sku}`}
+                  onClick={() => setHistoryOf({ sku: p.sku, name: p.name })}
+                  className="w-6 h-6 rounded-full flex items-center justify-center bg-white/[0.05] border border-white/10 text-white/50 hover:text-[#D9B35A] hover:border-[#D9B35A]/40 shrink-0">
+                  <History className="w-3 h-3" />
                 </button>
-              )}
-              <button type="button" title="Historique du stock" data-testid={`stock-history-btn-${p.sku}`}
-                onClick={() => setHistoryOf({ sku: p.sku, name: p.name })}
-                className="w-6 h-6 rounded-full flex items-center justify-center bg-white/[0.05] border border-white/10 text-white/50 hover:text-[#D9B35A] hover:border-[#D9B35A]/40">
-                <History className="w-3 h-3" />
-              </button>
+              </div>
               <button type="button" onClick={() => addSale(p.sku)} data-testid={`sale-add-${p.sku}`}
                 disabled={p.stock_qty === 0}
                 title={p.stock_qty === 0 ? 'Rupture de stock — vente impossible' : 'Ajouter à la vente au comptoir'}
-                className={`w-6 h-6 rounded-full flex items-center justify-center border ${
+                className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold border ${
                   p.stock_qty === 0
-                    ? 'bg-white/[0.03] border-white/10 text-white/20 cursor-not-allowed'
+                    ? 'bg-white/[0.03] border-white/10 text-white/25 cursor-not-allowed'
                     : 'bg-[#D9B35A]/15 border-[#D9B35A]/40 text-[#D9B35A] hover:bg-[#D9B35A]/30'
                 }`}>
-                <Plus className="w-3 h-3" />
+                <Plus className="w-3 h-3" /> {p.stock_qty === 0 ? 'Rupture' : 'Vendre'}
+                {sale[p.sku] ? <span className="ml-1 px-1.5 rounded-full bg-[#D9B35A] text-black">{sale[p.sku]}</span> : null}
               </button>
-            </span>
+            </div>
           </div>
         ))}
       </div>
