@@ -42,16 +42,53 @@ async def _hours_csv(db, point, start, end):
     return "\ufeff" + "\n".join(rows)
 
 
+async def _penalties_csv(db, point, start, end):
+    """CSV des pénalités de non-retrait du relais pour le mois : (csv, nb, total_uc, net_uc)."""
+    orders = await db.lolodrive_orders.find(
+        {"lolo_point_id": point["id"], "no_pickup_penalty_uc": {"$gt": 0},
+         "no_pickup_reminder_sent_at": {"$gte": start, "$lt": end}},
+        {"_id": 0, "order_number": 1, "user_id": 1, "status": 1, "items": 1,
+         "no_pickup_penalty_uc": 1, "no_pickup_reminder_sent_at": 1,
+         "auto_cancelled": 1, "no_pickup_penalty_refunded": 1}
+    ).sort("no_pickup_reminder_sent_at", 1).to_list(2000)
+    users = {u["id"]: u async for u in db.users.find(
+        {"id": {"$in": list({o["user_id"] for o in orders if o.get("user_id")})}},
+        {"_id": 0, "id": 1, "contact_name": 1, "email": 1})}
+    rows = ["date;numero;client;articles;penalite_uc;penalite_eur;statut"]
+    total = refunded = 0.0
+    for o in orders:
+        u = users.get(o.get("user_id"), {})
+        pen = o["no_pickup_penalty_uc"]
+        statut = ("Remboursee (retrait tardif)" if o.get("no_pickup_penalty_refunded")
+                  else "Annulee auto" if o.get("auto_cancelled")
+                  else "Retiree" if o.get("status") == "FULFILLED" else "En attente")
+        rows.append(f"{o['no_pickup_reminder_sent_at']:%d/%m/%Y %H:%M};{o.get('order_number')};"
+                    f"{u.get('contact_name') or u.get('email') or '-'};"
+                    f"{sum(l.get('qty', 0) for l in o.get('items', []))};{pen:g};{pen / 10:.2f};{statut}")
+        total += pen
+        if o.get("no_pickup_penalty_refunded"):
+            refunded += pen
+    net = total - refunded
+    rows += ["", f"TOTAL PENALITES;;;{len(orders)} cde(s);{total:g};{total / 10:.2f};",
+             f"DONT REMBOURSEES;;;;{refunded:g};{refunded / 10:.2f};",
+             f"NET FACTURE;;;;{net:g};{net / 10:.2f};"]
+    return "\ufeff" + "\n".join(rows), len(orders), net
+
+
 async def send_accountant_report(db, point, start, end, month_tag) -> bool:
-    """Construit et envoie les 2 CSV (caisse + heures) au comptable du relais."""
+    """Construit et envoie les CSV (caisse + heures + pénalités) au comptable du relais."""
     from brevo_service import send_email, _wrap_html
     email = point.get("accountant_email")
     if not email:
         return False
     cash_csv, nb_sales, total = await _cash_csv(db, point, start, end)
     hours_csv = await _hours_csv(db, point, start, end)
+    pen_csv, nb_pen, pen_net = await _penalties_csv(db, point, start, end)
     month_label = start.strftime("%m/%Y")
     subject = f"📊 Rapport mensuel {month_label} — {point['name']} ({point['code']})"
+    pen_line = (f"<li><strong>Pénalités de non-retrait</strong> : {nb_pen} commande(s) — "
+                f"net facturé {pen_net:g} UC ({pen_net / 10:.2f} €) (CSV joint)</li>"
+                if nb_pen else "<li><strong>Pénalités de non-retrait</strong> : aucune ce mois-ci</li>")
     body = f"""
       <p>Bonjour,</p>
       <p>Veuillez trouver ci-joint le rapport comptable du relais <strong>{point['name']} ({point['code']})</strong>
@@ -59,18 +96,23 @@ async def send_accountant_report(db, point, start, end, month_tag) -> bool:
       <ul style='font-size:13px'>
         <li><strong>Caisse comptoir</strong> : {nb_sales} vente(s) — total {total / 100:.2f} € (CSV joint)</li>
         <li><strong>Relevés d'heures des opérateurs</strong> (CSV joint, présence nette pauses déduites)</li>
+        {pen_line}
       </ul>
       <p style='color:#999;font-size:11px;margin-top:12px'>Rapport automatique mensuel — Réseau LOLODRIVE by O'SCOP.</p>
     """
+    attachments = [
+        {"content": base64.b64encode(cash_csv.encode("utf-8")).decode(), "name": f"caisse-{point['code']}-{month_tag}.csv"},
+        {"content": base64.b64encode(hours_csv.encode("utf-8")).decode(), "name": f"heures-{point['code']}-{month_tag}.csv"},
+    ]
+    if nb_pen:
+        attachments.append({"content": base64.b64encode(pen_csv.encode("utf-8")).decode(),
+                            "name": f"penalites-{point['code']}-{month_tag}.csv"})
     await send_email(
         to_email=email, to_name=None, subject=subject,
         html_content=_wrap_html(subject, body),
         text_content=f"Rapport {month_label} {point['code']} : {nb_sales} ventes, {total / 100:.2f} €.",
         tags=["rapport_comptable"],
-        attachments=[
-            {"content": base64.b64encode(cash_csv.encode("utf-8")).decode(), "name": f"caisse-{point['code']}-{month_tag}.csv"},
-            {"content": base64.b64encode(hours_csv.encode("utf-8")).decode(), "name": f"heures-{point['code']}-{month_tag}.csv"},
-        ])
+        attachments=attachments)
     return True
 
 

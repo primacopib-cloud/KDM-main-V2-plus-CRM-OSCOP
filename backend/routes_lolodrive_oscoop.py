@@ -138,6 +138,15 @@ async def catalog_quote(request: QuoteRequest, user: dict = Depends(get_current_
 
 @lolodrive_router.post("/orders")
 async def create_order(request: OrderCreate, user: dict = Depends(get_current_user)):
+    # Blocage temporaire des clients cumulant trop de non-retraits (configurable super admin)
+    from routes_lolodrive_taxonomy import check_no_pickup_block
+    blocked = await check_no_pickup_block(user["id"])
+    if blocked:
+        until, count = blocked
+        raise HTTPException(
+            status_code=403,
+            detail=f"Commande Drive temporairement suspendue jusqu'au {until.strftime('%d/%m/%Y')} : "
+                   f"{count} commande(s) non retirée(s) récemment. Contactez votre relais pour toute question.")
     q = await quote_cart(user["id"], request.items)
     cfg = await logistics_config()
     is_drive = request.fulfillment_type in [FulfillmentType.DRIVE, FulfillmentType.LOLO_POINT]

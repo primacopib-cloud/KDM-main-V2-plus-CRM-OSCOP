@@ -129,6 +129,8 @@ DEFAULT_FEES = {
     "delivery_rates": {"*": {"AM": 0.6, "PM": 19}},
     # Pénalité de non-retrait après le créneau : UC par article, par catégorie (1 UC = 0,10 €)
     "penalty_rates": {"*": 1},
+    # Blocage temporaire de la commande Drive après trop de non-retraits (threshold 0 = désactivé)
+    "no_pickup_block": {"threshold": 3, "window_days": 30, "block_days": 15},
 }
 
 
@@ -141,6 +143,8 @@ async def get_fees_config_doc() -> dict:
     cfg = doc.get("value", DEFAULT_FEES)
     if "penalty_rates" not in cfg:
         cfg["penalty_rates"] = DEFAULT_FEES["penalty_rates"]
+    if "no_pickup_block" not in cfg:
+        cfg["no_pickup_block"] = DEFAULT_FEES["no_pickup_block"]
     return cfg
 
 
@@ -183,6 +187,30 @@ async def compute_penalty_uc(lines: list) -> float:
         rate = rates.get(cat_by_sku.get(l.get("sku")) or "*", default) or 0
         fee += float(rate) * l.get("qty", 0)
     return round(fee, 2)
+
+
+async def check_no_pickup_block(user_id: str):
+    """Retourne (blocked_until: datetime, count) si le client est suspendu de commande Drive, sinon None."""
+    from datetime import datetime as dt, timedelta as td
+    cfg = await get_fees_config_doc()
+    block = cfg.get("no_pickup_block") or {}
+    threshold = int(block.get("threshold") or 0)
+    if threshold <= 0:
+        return None
+    now = dt.utcnow()
+    window_start = now - td(days=int(block.get("window_days") or 30))
+    offenders = await db.lolodrive_orders.find(
+        {"user_id": user_id, "no_pickup_penalty_uc": {"$gt": 0},
+         "no_pickup_penalty_refunded": {"$ne": True},
+         "no_pickup_reminder_sent_at": {"$gte": window_start}},
+        {"_id": 0, "no_pickup_reminder_sent_at": 1}).to_list(100)
+    if len(offenders) < threshold:
+        return None
+    last = max(o["no_pickup_reminder_sent_at"] for o in offenders)
+    blocked_until = last + td(days=int(block.get("block_days") or 15))
+    if now >= blocked_until:
+        return None
+    return blocked_until, len(offenders)
 
 
 @taxonomy_router.get("/admin/penalties")
@@ -324,5 +352,17 @@ async def update_fees_config(payload: dict, admin: dict = Depends(require_admin)
         if "*" not in clean:
             raise HTTPException(status_code=400, detail="penalty_rates : le tarif par défaut '*' est requis")
         cfg["penalty_rates"] = clean
+    if "no_pickup_block" in payload:
+        b = payload["no_pickup_block"] or {}
+        clean = {}
+        for key, default in (("threshold", 3), ("window_days", 30), ("block_days", 15)):
+            try:
+                v = int(b.get(key, default))
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail=f"no_pickup_block.{key} : entier attendu")
+            if not (0 <= v <= 3650):
+                raise HTTPException(status_code=400, detail=f"no_pickup_block.{key} : valeur hors limites")
+            clean[key] = v
+        cfg["no_pickup_block"] = clean
     await db.lolodrive_settings.update_one({"key": "drive_fees"}, {"$set": {"value": cfg}}, upsert=True)
     return {"ok": True, "config": cfg}

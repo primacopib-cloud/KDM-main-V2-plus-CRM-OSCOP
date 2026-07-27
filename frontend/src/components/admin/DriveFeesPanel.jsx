@@ -49,6 +49,7 @@ export const DriveFeesPanel = () => {
           Object.entries(cfg.penalty_rates || { '*': 1 })
             .map(([c, r]) => [c, parseFloat(String(r).replace(',', '.'))])
             .filter(([, r]) => !Number.isNaN(r) && r >= 0)),
+        no_pickup_block: cfg.no_pickup_block || { threshold: 3, window_days: 30, block_days: 15 },
       });
       toast.success('Tarifs de créneaux enregistrés ✓');
       setCfg(await lolodriveAPI.feesConfig());
@@ -135,6 +136,30 @@ export const DriveFeesPanel = () => {
         <p className="text-[11px] text-white/40 mt-1.5">
           Le client est relancé automatiquement par email + SMS après son créneau, avec le montant de sa pénalité.
         </p>
+        <div className="mt-4 pt-4 border-t border-white/[0.06]">
+          <div className="text-sm font-semibold mb-2">🚫 Blocage des mauvais payeurs <span className="text-white/40 font-normal text-xs">(0 non-retraits = désactivé)</span></div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
+            Suspendre la commande Drive après
+            <input type="text" data-testid="block-threshold-input"
+              value={cfg.no_pickup_block?.threshold ?? 3}
+              onChange={(e) => setCfg({ ...cfg, no_pickup_block: { ...(cfg.no_pickup_block || {}), threshold: e.target.value } })}
+              className="w-14 bg-white/5 border border-white/10 rounded px-2 py-1 text-white font-mono" />
+            non-retrait(s) sur
+            <input type="text" data-testid="block-window-input"
+              value={cfg.no_pickup_block?.window_days ?? 30}
+              onChange={(e) => setCfg({ ...cfg, no_pickup_block: { ...(cfg.no_pickup_block || {}), window_days: e.target.value } })}
+              className="w-14 bg-white/5 border border-white/10 rounded px-2 py-1 text-white font-mono" />
+            jours, pendant
+            <input type="text" data-testid="block-days-input"
+              value={cfg.no_pickup_block?.block_days ?? 15}
+              onChange={(e) => setCfg({ ...cfg, no_pickup_block: { ...(cfg.no_pickup_block || {}), block_days: e.target.value } })}
+              className="w-14 bg-white/5 border border-white/10 rounded px-2 py-1 text-white font-mono" />
+            jours.
+          </div>
+          <p className="text-[11px] text-white/40 mt-1.5">
+            Les pénalités remboursées (retrait tardif confirmé) ne comptent pas. Le blocage se lève automatiquement à l'échéance.
+          </p>
+        </div>
       </div>
     </div>
   );
