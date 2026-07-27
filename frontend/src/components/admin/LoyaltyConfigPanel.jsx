@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Gift, Save, Loader2 } from 'lucide-react';
+import { Gift, Save, Loader2, Trophy } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { lolodriveAPI } from '../../services/api';
@@ -11,6 +11,12 @@ export const LoyaltyConfigPanel = () => {
   const [bonus, setBonus] = useState('');
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    lolodriveAPI.adminLoyaltyStats(month).then(setStats).catch(() => {});
+  }, [month]);
 
   useEffect(() => {
     lolodriveAPI.adminLoyaltyConfig().then((c) => {
@@ -53,6 +59,31 @@ export const LoyaltyConfigPanel = () => {
       <p className="text-[11px] text-white/40 mt-2">
         Le bonus est crédité automatiquement sur le CREDI'SCOP du client identifié à la caisse, avec un reçu email 🎁.
       </p>
+      <div className="mt-4 pt-4 border-t border-white/[0.06]">
+        <div className="flex flex-wrap items-center gap-3 mb-2">
+          <span className="text-sm font-semibold flex items-center gap-2">
+            <Trophy className="w-3.5 h-3.5 text-[#D9B35A]" /> Bonus offerts par relais
+          </span>
+          <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} data-testid="loyalty-stats-month"
+            className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-white outline-none" />
+          {stats && (
+            <span className="ml-auto text-xs font-bold text-[#D9B35A]" data-testid="loyalty-stats-total">
+              {stats.total_count} bonus · +{stats.total_uc} UC offerts
+            </span>
+          )}
+        </div>
+        {stats && stats.relays.length === 0 && (
+          <p className="text-xs text-white/40" data-testid="loyalty-stats-empty">Aucun bonus fidélité offert sur ce mois.</p>
+        )}
+        {stats && stats.relays.map((r) => (
+          <div key={r.point_code} className="flex items-center justify-between text-xs py-1.5 border-b border-white/[0.05]" data-testid={`loyalty-stats-${r.point_code}`}>
+            <span>{r.point_name} <span className="text-white/35">({r.point_code})</span></span>
+            <span className="font-mono">{r.count} bonus · <b className="text-[#D9B35A]">+{r.total_uc} UC</b>
+              <span className="text-white/35"> ({(r.total_uc / 10).toFixed(2)} €)</span>
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

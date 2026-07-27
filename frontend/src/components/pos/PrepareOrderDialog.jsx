@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, User, Clock, Phone, Mail, Loader2, MapPin } from 'lucide-react';
+import { Package, User, Clock, Phone, Mail, Loader2, MapPin, Printer } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { fmtEUR } from '../LolodriveLayout';
@@ -15,6 +15,28 @@ export const PrepareOrderDialog = ({ orderId, onClose, onStart, acting }) => {
   }, [orderId]);
 
   const o = data?.order;
+
+  const printSlip = () => {
+    const dateFr = o.pickup_date ? new Date(o.pickup_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
+    const w = window.open('', '_blank', 'width=420,height=640');
+    w.document.write(`<html><head><title>Bon de préparation ${o.order_number}</title>
+      <style>body{font-family:monospace;font-size:13px;padding:14px;color:#111}
+      h2{font-size:15px;margin:0 0 4px}.m{color:#555;font-size:11px;margin:2px 0}
+      .line{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #ccc}
+      .qty{font-size:16px;font-weight:bold;margin-right:8px}.t{margin-top:10px;font-weight:bold}</style></head><body>
+      <h2>BON DE PRÉPARATION</h2>
+      <div class="m">Commande ${o.order_number} · ${data.point || ''}</div>
+      <div class="m">Client : ${data.customer?.name || 'Client'}${data.customer?.phone ? ` · ${data.customer.phone}` : ''}</div>
+      <div class="m">🕐 Retrait : ${dateFr ? `${dateFr} — ` : ''}${o.pickup_slot_label || 'créneau non précisé'} (${o.fulfillment_type})</div>
+      <hr/>
+      ${(o.items || []).map((it) => `<div class="line"><span><span class="qty">${it.qty}×</span>${it.name}</span></div>`).join('')}
+      <div class="t">${o.items?.length || 0} article(s) — Total : ${((o.total_cents || 0) / 100).toFixed(2)} €${o.pay_with_uc ? ` · ${o.total_uc} UC (payé UC)` : ''}</div>
+      ${o.slot_fee_uc > 0 ? `<div class="m">dont frais de créneau : ${o.slot_fee_uc} UC</div>` : ''}
+      </body></html>`);
+    w.document.close();
+    w.print();
+  };
+
   return (
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="bg-[#15151c] border-white/10 text-white max-w-lg" data-testid="prepare-order-dialog">
@@ -65,6 +87,10 @@ export const PrepareOrderDialog = ({ orderId, onClose, onStart, acting }) => {
               </span>
               <span className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={onClose} className="border-white/15">Fermer</Button>
+                <Button variant="outline" size="sm" onClick={printSlip} data-testid="prepare-print-btn"
+                  className="border-[#D9B35A]/40 text-[#D9B35A] hover:bg-[#D9B35A]/10">
+                  <Printer className="w-3 h-3 mr-1" /> Imprimer le bon
+                </Button>
                 {o.status === 'PAID' && (
                   <Button size="sm" disabled={acting} onClick={() => onStart(o.id)} data-testid="prepare-start-btn"
                     className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black font-bold">

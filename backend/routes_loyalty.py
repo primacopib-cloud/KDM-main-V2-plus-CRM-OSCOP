@@ -41,6 +41,36 @@ async def my_loyalty(user: dict = Depends(get_current_user)):
     return {"threshold": cfg["threshold"], "bonus_uc": cfg["bonus_uc"], "relays": relays}
 
 
+@loyalty_router.get("/admin/loyalty-stats")
+async def admin_loyalty_stats(month: str = None, admin: dict = Depends(require_admin)):
+    """Total des bonus fidélité offerts par relais pour un mois donné (défaut : mois courant)."""
+    from datetime import datetime
+    now = datetime.utcnow()
+    try:
+        y, m = map(int, (month or now.strftime("%Y-%m")).split("-"))
+        start = datetime(y, m, 1)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Format mois invalide (attendu : YYYY-MM)")
+    end = datetime(y + 1, 1, 1) if m == 12 else datetime(y, m + 1, 1)
+    agg = {}
+    async for row in db.lolodrive_wallet_ledger.aggregate([
+            {"$match": {"reason": "LOYALTY_BONUS", "created_at": {"$gte": start, "$lt": end}}},
+            {"$group": {"_id": "$point_id", "count": {"$sum": 1}, "total_uc": {"$sum": "$amount_uc"}}}]):
+        agg[row["_id"]] = row
+    relays = []
+    if agg:
+        async for pt in db.lolodrive_points.find({"id": {"$in": [k for k in agg if k]}},
+                                                 {"_id": 0, "id": 1, "name": 1, "code": 1}):
+            e = agg[pt["id"]]
+            relays.append({"point_code": pt.get("code"), "point_name": pt.get("name"),
+                           "count": e["count"], "total_uc": e["total_uc"]})
+        relays.sort(key=lambda r: -r["total_uc"])
+    return {"month": f"{y}-{m:02d}",
+            "total_uc": sum(r["total_uc"] for r in relays),
+            "total_count": sum(r["count"] for r in relays),
+            "relays": relays}
+
+
 @loyalty_router.get("/admin/loyalty-config")
 async def admin_loyalty_config(admin: dict = Depends(require_admin)):
     return await get_loyalty_config(db)
