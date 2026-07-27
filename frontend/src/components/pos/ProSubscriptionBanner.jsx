@@ -9,6 +9,7 @@ export const ProSubscriptionBanner = () => {
     lolodriveAPI.managerProStatus().then(setStatus).catch(() => {});
   }, []);
   if (!status) return null;
+  if (status.operator_exempt) return null;
   if (status.pro_active) {
     return (
       <div className="mb-4 flex items-center gap-2 text-[11px] text-emerald-300/80" data-testid="pro-status-ok">

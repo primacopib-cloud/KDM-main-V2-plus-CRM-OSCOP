@@ -4,6 +4,8 @@ import { RelayPhotoUpload } from '../components/pos/RelayPhotoUpload';
 import { PosRelayReviews } from '../components/pos/PosRelayReviews';
 import { ProSubscriptionBanner } from '../components/pos/ProSubscriptionBanner';
 import { PosCatalogPanel } from '../components/pos/PosCatalogPanel';
+import { PosSessionBanner } from '../components/pos/PosSessionBanner';
+import { PosOperatorsPanel } from '../components/pos/PosOperatorsPanel';
 import {
   Truck, Package, CheckCircle2, Clock, RefreshCw, ScanLine, AlertCircle,
   Bell, BellOff, User, Calendar, XCircle, Wifi, WifiOff, BellRing,
@@ -222,6 +224,7 @@ export default function PosLolodrivePage() {
         </>
       }
     >
+      <PosSessionBanner />
       <ProSubscriptionBanner />
 
       {/* À traiter highlight */}
@@ -462,6 +465,7 @@ export default function PosLolodrivePage() {
       </Dialog>
 
       <PosCatalogPanel />
+      <PosOperatorsPanel />
     </LolodriveLayout>
   );
 }

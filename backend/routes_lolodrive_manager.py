@@ -26,6 +26,8 @@ def set_lolodrive_manager_database(database):
 @lolodrive_manager_router.get("/manager/pro-status")
 async def manager_pro_status(user: dict = Depends(get_current_user)):
     """Statut de l'abonnement Acheteur Pro du gérant (règle métier obligatoire)."""
+    if user.get("role") == "OPERATEUR_POS":
+        return {"pro_active": True, "org_name": None, "operator_exempt": True}
     membership = await db.org_memberships.find_one({"user_id": user["id"]})
     org = await db.orgs.find_one({"id": membership["org_id"]}, {"_id": 0, "status": 1, "legal_name": 1}) if membership else None
     sub = await db.subscriptions.find_one(

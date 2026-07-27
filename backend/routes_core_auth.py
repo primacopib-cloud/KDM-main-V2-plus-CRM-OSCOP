@@ -106,6 +106,12 @@ async def login(credentials: UserLogin, response: Response):
             detail="Email ou mot de passe incorrect"
         )
 
+    if user.get("is_archived"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Compte archivé : contactez le gérant de votre relais."
+        )
+
     is_admin_account = bool(user.get("is_admin")) or str(user.get("role", "")).upper() in ("ADMIN", "SUPER_ADMIN")
     if is_admin_account and credentials.portal != "admin":
         raise HTTPException(
@@ -120,6 +126,9 @@ async def login(credentials: UserLogin, response: Response):
 
     access_token = create_access_token(data={"sub": user["id"]})
     set_auth_cookie(response, access_token)
+
+    from db import get_database
+    await get_database().users.update_one({"id": user["id"]}, {"$set": {"last_login_at": datetime.utcnow()}})
 
     logger.info(f"User logged in: {credentials.email}")
 

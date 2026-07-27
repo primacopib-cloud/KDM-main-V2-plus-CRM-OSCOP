@@ -78,6 +78,12 @@ async def get_relay_fee_uc() -> float:
 async def _manager_point(user_id: str) -> dict:
     point = await db.lolodrive_points.find_one({"manager_user_id": user_id}, {"_id": 0})
     if not point:
+        u = await db.users.find_one(
+            {"id": user_id, "role": "OPERATEUR_POS", "is_archived": {"$ne": True}},
+            {"_id": 0, "pos_point_id": 1})
+        if u and u.get("pos_point_id"):
+            point = await db.lolodrive_points.find_one({"id": u["pos_point_id"]}, {"_id": 0})
+    if not point:
         raise HTTPException(status_code=404, detail="Aucun relais LOLODRIVE assigné à ce compte")
     return point
 
@@ -233,6 +239,9 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
         "fees_cents": 0,
         "total_cents": total,
         "payment_method": "CARD" if body.payment_method.upper() == "CARD" else "CASH",
+        "relay_fee_uc": relay_fee_uc,
+        "operator_id": user["id"],
+        "operator_name": user.get("contact_name") or user.get("email"),
         "status": "FULFILLED",
         "created_at": now, "updated_at": now, "paid_at": now, "fulfilled_at": now,
     }
@@ -251,7 +260,8 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
     balance_uc = None
     if relay_fee_uc > 0:
         from lolodrive_helpers import get_or_create_wallet
-        wallet = await get_or_create_wallet(user["id"])
+        owner_id = point.get("manager_user_id") or user["id"]
+        wallet = await get_or_create_wallet(owner_id)
         old_balance = wallet.get("balance_uc", 0)
         await db.lolodrive_wallets.update_one(
             {"id": wallet["id"]}, {"$inc": {"balance_uc": -relay_fee_uc}, "$set": {"updated_at": now}})
@@ -263,7 +273,7 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
         balance_uc = (fresh or {}).get("balance_uc")
         if old_balance >= 0 and balance_uc is not None and balance_uc < 0:
             try:
-                await _notify_negative_balance(user["id"], point, balance_uc, relay_fee_uc, order["order_number"])
+                await _notify_negative_balance(owner_id, point, balance_uc, relay_fee_uc, order["order_number"])
             except Exception as exc:
                 logger.warning("Alerte CREDI'SCOP négatif : %s", exc)
     return {"ok": True, "order_number": order["order_number"],

@@ -88,6 +88,14 @@ export const lolodriveAPI = {
     }),
   posInventory: (items) =>
     apiCall('/lolodrive/pos/inventory', { method: 'POST', body: JSON.stringify({ items }) }),
+  posSessionInfo: () => apiCall('/lolodrive/pos/session-info'),
+  managerOperators: () => apiCall('/lolodrive/manager/operators'),
+  managerCreateOperator: (payload) =>
+    apiCall('/lolodrive/manager/operators', { method: 'POST', body: JSON.stringify(payload) }),
+  managerUpdateOperator: (id, payload) =>
+    apiCall(`/lolodrive/manager/operators/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  managerArchiveOperator: (id, archived) =>
+    apiCall(`/lolodrive/manager/operators/${id}/archive`, { method: 'POST', body: JSON.stringify({ archived }) }),
   adminUcFeesSummary: (months = 6) =>
     apiCall(`/lolodrive/admin/uc-fees-summary?months=${months}`),
   adminGetRelayFee: () => apiCall('/lolodrive/admin/settings/relay-fee'),

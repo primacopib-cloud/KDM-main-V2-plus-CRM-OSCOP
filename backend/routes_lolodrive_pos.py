@@ -54,6 +54,28 @@ async def pos_orders(status_filter: Optional[OrderStatus] = Query(None, alias="s
     orders = await db.lolodrive_orders.find(query, {"_id": 0}).sort("created_at", -1).limit(200).to_list(200)
     return {"orders": orders}
 
+async def _apply_drive_stock(order_id: str):
+    """Décrémente le stock des produits d'une commande Drive au retrait (une seule fois)."""
+    order = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order or order.get("channel") == "COUNTER" or order.get("stock_applied"):
+        return
+    from pymongo import ReturnDocument
+    from routes_relay_products import log_stock_movement
+    point_code = None
+    if order.get("lolo_point_id"):
+        pt = await db.lolodrive_points.find_one({"id": order["lolo_point_id"]}, {"_id": 0, "code": 1})
+        point_code = (pt or {}).get("code")
+    for l in order.get("items", []):
+        res = await db.lolodrive_products.find_one_and_update(
+            {"sku": l["sku"], "stock_qty": {"$ne": None}},
+            [{"$set": {"stock_qty": {"$max": [0, {"$subtract": [{"$ifNull": ["$stock_qty", 0]}, l.get("qty", 0)]}]}}}],
+            return_document=ReturnDocument.AFTER, projection={"_id": 0, "stock_qty": 1})
+        if res is not None:
+            await log_stock_movement(l["sku"], l.get("name", l["sku"]), "DRIVE", -l.get("qty", 0),
+                                     res["stock_qty"], point_code, order.get("order_number"))
+    await db.lolodrive_orders.update_one({"id": order_id}, {"$set": {"stock_applied": True}})
+
+
 @lolodrive_pos_router.post("/pos/orders/{order_id}/status")
 async def pos_update_order_status(order_id: str, request: StatusUpdate, user: dict = Depends(get_current_user)):
     now = datetime.utcnow()
@@ -126,6 +148,10 @@ async def pos_scan(order_id: str, user: dict = Depends(get_current_user)):
     if order["status"] not in [OrderStatus.READY.value, OrderStatus.PAID.value]:
         raise HTTPException(status_code=400, detail="Commande non prête")
     await db.lolodrive_orders.update_one({"id": order_id}, {"$set": {"status": OrderStatus.FULFILLED.value, "fulfilled_at": datetime.utcnow(), "updated_at": datetime.utcnow()}})
+    try:
+        await _apply_drive_stock(order_id)
+    except Exception as exc:
+        logger.warning(f"Stock drive {order_id}: {exc}")
     await _broadcast_pos_event("order.fulfilled", {"order_id": order_id})
     return {"ok": True, "order_id": order_id, "status": OrderStatus.FULFILLED.value}
 

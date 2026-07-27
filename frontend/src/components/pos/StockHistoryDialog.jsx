@@ -8,6 +8,7 @@ const TYPE_STYLE = {
   SALE: { label: 'Vente comptoir', color: '#f59e0b', Icon: TrendingDown },
   INITIAL: { label: 'Stock initial fiche', color: '#D9B35A', Icon: TrendingUp },
   INVENTORY: { label: 'Inventaire', color: '#22d3ee', Icon: PackagePlus },
+  DRIVE: { label: 'Retrait Drive', color: '#7c3aed', Icon: TrendingDown },
 };
 
 export const StockHistoryDialog = ({ product, onClose }) => {
