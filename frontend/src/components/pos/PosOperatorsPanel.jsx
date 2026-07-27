@@ -9,6 +9,7 @@ import { lolodriveAPI } from '../../services/api';
 export const PosOperatorsPanel = () => {
   const [operators, setOperators] = useState(null);
   const [breaks, setBreaks] = useState({});
+  const [hours, setHours] = useState({});
   const [dialog, setDialog] = useState(null);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [saving, setSaving] = useState(false);
@@ -19,6 +20,11 @@ export const PosOperatorsPanel = () => {
       const map = {};
       (d.operators || []).forEach((o) => { map[o.operator_name] = o; });
       setBreaks(map);
+    }).catch(() => {});
+    lolodriveAPI.managerOperatorHours(7).then((d) => {
+      const map = {};
+      (d.operators || []).forEach((o) => { map[o.operator_id] = o; });
+      setHours(map);
     }).catch(() => {});
   };
   useEffect(() => { load(); }, []);
@@ -79,6 +85,11 @@ export const PosOperatorsPanel = () => {
                 <span className="block text-[10px] text-amber-200/70" data-testid={`operator-breaks-${op.id}`}>
                   Pauses 7 j : {breaks[op.contact_name].count} ({breaks[op.contact_name].total_min} min)
                   {breaks[op.contact_name].on_break && <b className="ml-1 text-amber-300">· En pause actuellement ☕</b>}
+                </span>
+              )}
+              {hours[op.id] && hours[op.id].total_presence_min > 0 && (
+                <span className="block text-[10px] text-emerald-200/70" data-testid={`operator-hours-${op.id}`}>
+                  Présence en caisse 7 j : ~{Math.floor(hours[op.id].total_presence_min / 60)}h{String(hours[op.id].total_presence_min % 60).padStart(2, '0')} (pauses déduites)
                 </span>
               )}
             </span>

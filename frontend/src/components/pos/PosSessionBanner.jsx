@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { UserCheck, Clock, Coffee, Play } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
+import { PosPointInfoCard } from './PosPointInfoCard';
 
 export const PosSessionBanner = () => {
   const [session, setSession] = useState(null);
@@ -36,6 +37,7 @@ export const PosSessionBanner = () => {
   };
 
   return (
+    <>
     <div className={`mb-4 rounded-xl border px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${
       onBreak ? 'border-amber-400/40 bg-amber-400/[0.07]' : 'border-emerald-400/30 bg-emerald-400/[0.05]'}`}
       data-testid="pos-session-banner">
@@ -69,5 +71,7 @@ export const PosSessionBanner = () => {
         </button>
       </span>
     </div>
+    <PosPointInfoCard point={session.point} />
+    </>
   );
 };

@@ -10,6 +10,7 @@ import { PosCounterJournal } from './PosCounterJournal';
 import { CounterTicketDialog } from './CounterTicketDialog';
 import { StockHistoryDialog } from './StockHistoryDialog';
 import { RelayFeeBanner } from './RelayFeeBanner';
+import { SalesGoalBar } from './SalesGoalBar';
 import { InventoryDialog } from './InventoryDialog';
 
 const STATUS_STYLE = {
@@ -179,6 +180,7 @@ export const PosCatalogPanel = () => {
         </div>
       </div>
 
+      <SalesGoalBar refreshKey={journalKey} />
       <RelayFeeBanner refreshKey={journalKey} />
       <PosCounterJournal refreshKey={journalKey} />
       {ticket && <CounterTicketDialog sale={ticket} onClose={() => setTicket(null)} />}

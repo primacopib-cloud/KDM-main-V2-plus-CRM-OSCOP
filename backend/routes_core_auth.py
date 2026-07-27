@@ -129,6 +129,8 @@ async def login(credentials: UserLogin, response: Response):
 
     from db import get_database
     await get_database().users.update_one({"id": user["id"]}, {"$set": {"last_login_at": datetime.utcnow()}})
+    if user.get("role") == "OPERATEUR_POS":
+        await get_database().pos_logins.insert_one({"user_id": user["id"], "at": datetime.utcnow()})
 
     logger.info(f"User logged in: {credentials.email}")
 

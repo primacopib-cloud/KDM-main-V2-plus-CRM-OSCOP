@@ -100,6 +100,11 @@ export const lolodriveAPI = {
   posBreakEnd: () => apiCall('/lolodrive/pos/break/end', { method: 'POST' }),
   posBreakStatus: () => apiCall('/lolodrive/pos/break/status'),
   managerOperatorBreaks: (days = 7) => apiCall(`/lolodrive/manager/operator-breaks?days=${days}`),
+  managerOperatorHours: (days = 7) => apiCall(`/lolodrive/manager/operator-hours?days=${days}`),
+  posBestSeller: () => apiCall('/lolodrive/pos/best-seller'),
+  posSalesGoal: () => apiCall('/lolodrive/pos/sales-goal'),
+  managerSetSalesGoal: (goalCents) =>
+    apiCall('/lolodrive/manager/sales-goal', { method: 'PUT', body: JSON.stringify({ goal_cents: goalCents }) }),
   adminUcFeesSummary: (months = 6) =>
     apiCall(`/lolodrive/admin/uc-fees-summary?months=${months}`),
   adminGetRelayFee: () => apiCall('/lolodrive/admin/settings/relay-fee'),

@@ -13,11 +13,13 @@ export const PosCounterJournal = ({ refreshKey }) => {
   const [top, setTop] = useState([]);
   const [compare, setCompare] = useState(null);
   const [alerts, setAlerts] = useState([]);
+  const [seller, setSeller] = useState(null);
   useEffect(() => {
     lolodriveAPI.posCounterJournal().then(setJournal).catch(() => {});
     lolodriveAPI.posTopProducts(30).then((d) => setTop(d.top || [])).catch(() => {});
     lolodriveAPI.posMonthlyCompare().then(setCompare).catch(() => {});
     lolodriveAPI.posStockAlerts(30).then((d) => setAlerts(d.alerts || [])).catch(() => {});
+    lolodriveAPI.posBestSeller().then(setSeller).catch(() => {});
   }, [refreshKey]);
 
   const exportCsv = async () => {
@@ -91,6 +93,24 @@ export const PosCounterJournal = ({ refreshKey }) => {
             className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/35 hover:bg-emerald-400/20">
             <Download className="w-3 h-3" /> Export CSV du mois
           </button>
+        </div>
+      )}
+      {seller && (seller.last_week_winner || seller.current_week.length > 0) && (
+        <div className="rounded-xl border border-[#D9B35A]/30 bg-[#D9B35A]/[0.05] px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs"
+          data-testid="best-seller-badge">
+          {seller.last_week_winner && (
+            <span data-testid="best-seller-winner">
+              <span className="font-bold text-[#D9B35A]">🏆 Meilleur vendeur de la semaine passée :</span>{' '}
+              <b>{seller.last_week_winner.name}</b>
+              <span className="text-white/50"> ({seller.last_week_winner.count} vente{seller.last_week_winner.count > 1 ? 's' : ''} · {(seller.last_week_winner.total_cents / 100).toFixed(2)} €) — Félicitations ! 🎉</span>
+            </span>
+          )}
+          {seller.current_week.length > 0 && (
+            <span className="text-white/50" data-testid="best-seller-race">
+              Course de la semaine : {seller.current_week.slice(0, 3).map((s, i) =>
+                `${i + 1}. ${s.name} (${s.count})`).join(' · ')}
+            </span>
+          )}
         </div>
       )}
       {journal && journal.by_operator?.length > 0 && (

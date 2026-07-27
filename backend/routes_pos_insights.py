@@ -26,6 +26,63 @@ async def _counter_totals(point_id: str, start: datetime, end: datetime) -> dict
     return {"count": len(orders), "total_cents": sum(o.get("total_cents", 0) for o in orders)}
 
 
+def _week_ranges(now):
+    week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    return week_start, week_start - timedelta(days=7)
+
+
+async def _seller_ranking(point_id, start, end):
+    agg = {}
+    async for o in db.lolodrive_orders.find(
+            {"lolo_point_id": point_id, "channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
+            {"_id": 0, "operator_name": 1, "total_cents": 1}):
+        name = o.get("operator_name") or "Gérant"
+        e = agg.setdefault(name, {"name": name, "count": 0, "total_cents": 0})
+        e["count"] += 1
+        e["total_cents"] += o.get("total_cents", 0)
+    return sorted(agg.values(), key=lambda x: (x["count"], x["total_cents"]), reverse=True)
+
+
+@pos_insights_router.get("/pos/best-seller")
+async def pos_best_seller(user: dict = Depends(get_current_user)):
+    """Meilleur vendeur comptoir : gagnant de la semaine passée + course de la semaine en cours."""
+    point = await _manager_point(user["id"])
+    now = datetime.utcnow()
+    week_start, prev_start = _week_ranges(now)
+    current = await _seller_ranking(point["id"], week_start, now + timedelta(minutes=1))
+    previous = await _seller_ranking(point["id"], prev_start, week_start)
+    return {"current_week": current, "last_week_winner": previous[0] if previous else None}
+
+
+@pos_insights_router.get("/pos/sales-goal")
+async def pos_sales_goal(user: dict = Depends(get_current_user)):
+    """Objectif mensuel de caisse du relais + progression en temps réel."""
+    point = await _manager_point(user["id"])
+    now = datetime.utcnow()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    totals = await _counter_totals(point["id"], month_start, now + timedelta(minutes=1))
+    goal = point.get("monthly_goal_cents") or 0
+    percent = round(totals["total_cents"] / goal * 100, 1) if goal > 0 else None
+    return {"month": month_start.strftime("%Y-%m"), "goal_cents": goal,
+            "month_total_cents": totals["total_cents"], "count": totals["count"], "percent": percent}
+
+
+@pos_insights_router.put("/manager/sales-goal")
+async def set_sales_goal(payload: dict, user: dict = Depends(get_current_user)):
+    """Le gérant fixe son objectif mensuel de caisse (en centimes)."""
+    from routes_pos_operators import _owned_point
+    point = await _owned_point(user["id"])
+    try:
+        goal = int((payload or {}).get("goal_cents"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="goal_cents entier requis")
+    if goal < 0 or goal > 100000000:
+        raise HTTPException(status_code=400, detail="Objectif invalide")
+    await db.lolodrive_points.update_one(
+        {"id": point["id"]}, {"$set": {"monthly_goal_cents": goal, "updated_at": datetime.utcnow()}})
+    return {"ok": True, "goal_cents": goal}
+
+
 @pos_insights_router.get("/pos/monthly-compare")
 async def pos_monthly_compare(user: dict = Depends(get_current_user)):
     """Caisse du mois en cours vs même période du mois précédent (tendance)."""

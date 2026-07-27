@@ -169,6 +169,43 @@ async def operator_breaks(days: int = 7, user: dict = Depends(get_current_user))
     return {"days": days, "operators": list(by_user.values())}
 
 
+@pos_operators_router.get("/manager/operator-hours")
+async def operator_hours(days: int = 7, user: dict = Depends(get_current_user)):
+    """Temps de présence estimé par opérateur : (première → dernière activité du jour) − pauses."""
+    point = await _owned_point(user["id"])
+    days = max(1, min(days, 31))
+    since = datetime.utcnow() - timedelta(days=days)
+    ops = await db.users.find({"role": "OPERATEUR_POS", "pos_point_id": point["id"]},
+                              {"_id": 0, "id": 1, "contact_name": 1}).to_list(100)
+    result = []
+    for op in ops:
+        events = {}
+        async for l in db.pos_logins.find({"user_id": op["id"], "at": {"$gte": since}}, {"_id": 0, "at": 1}):
+            events.setdefault(l["at"].strftime("%Y-%m-%d"), []).append(l["at"])
+        async for o in db.lolodrive_orders.find(
+                {"operator_id": op["id"], "created_at": {"$gte": since}}, {"_id": 0, "created_at": 1}):
+            events.setdefault(o["created_at"].strftime("%Y-%m-%d"), []).append(o["created_at"])
+        breaks_by_day = {}
+        async for b in db.pos_breaks.find({"user_id": op["id"], "started_at": {"$gte": since}}, {"_id": 0}):
+            d = b["started_at"].strftime("%Y-%m-%d")
+            events.setdefault(d, []).append(b["started_at"])
+            if b.get("ended_at"):
+                events[d].append(b["ended_at"])
+                breaks_by_day[d] = breaks_by_day.get(d, 0) + (b.get("duration_min") or 0)
+        days_detail, total_min, total_break_min = [], 0, 0
+        for d in sorted(events, reverse=True):
+            span = max(0, round((max(events[d]) - min(events[d])).total_seconds() / 60))
+            bmin = breaks_by_day.get(d, 0)
+            presence = max(0, span - bmin)
+            total_min += presence
+            total_break_min += bmin
+            days_detail.append({"date": d, "presence_min": presence, "break_min": bmin})
+        result.append({"operator_id": op["id"], "operator_name": op.get("contact_name"),
+                       "total_presence_min": total_min, "total_break_min": total_break_min,
+                       "days": days_detail[:10]})
+    return {"days": days, "operators": result}
+
+
 @pos_operators_router.get("/pos/session-info")
 async def pos_session_info(user: dict = Depends(get_current_user)):
     """Nom + horodatage de connexion de la session en cours (affiché jusqu'à déconnexion)."""
@@ -176,11 +213,17 @@ async def pos_session_info(user: dict = Depends(get_current_user)):
                                 {"_id": 0, "contact_name": 1, "email": 1, "role": 1,
                                  "last_login_at": 1, "pos_point_id": 1})
     point_code = None
+    point_details = None
+    pt_fields = {"_id": 0, "code": 1, "name": 1, "address": 1, "city": 1, "zone_name": 1,
+                 "territory": 1, "contact_phone": 1, "contact_email": 1, "opening_hours": 1}
     if u.get("pos_point_id"):
-        pt = await db.lolodrive_points.find_one({"id": u["pos_point_id"]}, {"_id": 0, "code": 1})
+        pt = await db.lolodrive_points.find_one({"id": u["pos_point_id"]}, pt_fields)
         point_code = (pt or {}).get("code")
+        point_details = pt
     else:
-        pt = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0, "code": 1})
+        pt = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, pt_fields)
         point_code = (pt or {}).get("code")
+        point_details = pt
     return {"name": u.get("contact_name") or u.get("email"), "email": u.get("email"),
-            "role": u.get("role"), "last_login_at": u.get("last_login_at"), "point_code": point_code}
+            "role": u.get("role"), "last_login_at": u.get("last_login_at"),
+            "point_code": point_code, "point": point_details}
