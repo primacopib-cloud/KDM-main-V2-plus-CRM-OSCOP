@@ -91,6 +91,51 @@ async def pos_relay_fee(user: dict = Depends(get_current_user)):
             "point_code": point["code"]}
 
 
+@pos_insights_router.get("/pos/uc-debits")
+async def pos_uc_debits(limit: int = 100, user: dict = Depends(get_current_user)):
+    """Détail des débits UC produits relais du gérant (vente par vente)."""
+    await _manager_point(user["id"])
+    from lolodrive_helpers import get_or_create_wallet
+    wallet = await get_or_create_wallet(user["id"])
+    debits = await db.lolodrive_wallet_ledger.find(
+        {"wallet_id": wallet["id"], "type": "DEBIT", "reason": "RELAY_PRODUCT_FEE"},
+        {"_id": 0, "amount_uc": 1, "order_number": 1, "created_at": 1}
+    ).sort("created_at", -1).to_list(max(1, min(limit, 500)))
+    return {"balance_uc": wallet.get("balance_uc", 0),
+            "total_debited_uc": sum(d.get("amount_uc", 0) for d in debits), "debits": debits}
+
+
+@pos_insights_router.post("/pos/credi-scop/recharge-session")
+async def credi_scop_recharge(payload: dict, user: dict = Depends(get_current_user)):
+    """Recharge CREDI'SCOP du gérant via Stripe (sans exigence de PASS actif)."""
+    point = await _manager_point(user["id"])
+    from lolodrive_checkout_apply import RECHARGE_PACKS
+    from routes_lolodrive_checkout import _build_urls, _create_checkout_session
+    from stripe_accounts import get_account_for_checkout_kind
+    import uuid
+    pack_key = (payload or {}).get("pack")
+    origin_url = (payload or {}).get("origin_url") or ""
+    pack = RECHARGE_PACKS.get(pack_key)
+    if not pack or not origin_url.startswith("http"):
+        raise HTTPException(status_code=400, detail="Pack ou origin_url invalide")
+    account = get_account_for_checkout_kind("RECHARGE")
+    urls = _build_urls(origin_url, "RECHARGE", user["id"])
+    metadata = {"kind": "RECHARGE", "user_id": user["id"], "pack": pack_key,
+                "uc": str(pack["uc"]), "stripe_account": account, "context": "CREDI_SCOP_MANAGER"}
+    session = _create_checkout_session(
+        account=account, amount_eur=pack["amount_eur"],
+        success_url=urls["success_url"], cancel_url=urls["cancel_url"],
+        metadata=metadata, product_name=f"Recharge CREDI'SCOP — Pack {pack_key} ({point['code']})")
+    await db.payment_transactions.insert_one({
+        "id": str(uuid.uuid4()), "session_id": session["id"], "user_id": user["id"],
+        "kind": "RECHARGE", "stripe_account": account,
+        "amount_cents": int(pack["amount_eur"] * 100), "currency": "eur",
+        "payment_status": "initiated", "metadata": metadata, "applied": False,
+        "created_at": datetime.utcnow(), "updated_at": datetime.utcnow()})
+    return {"url": session["url"], "session_id": session["id"], "pack": pack_key,
+            "uc": pack["uc"], "amount_eur": pack["amount_eur"]}
+
+
 @pos_insights_router.get("/admin/settings/relay-fee")
 async def admin_get_relay_fee(admin: dict = Depends(require_admin)):
     return {"fee_uc": await get_relay_fee_uc()}

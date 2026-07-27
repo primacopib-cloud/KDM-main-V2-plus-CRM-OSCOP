@@ -81,6 +81,11 @@ export const lolodriveAPI = {
   posStockHistory: (sku, limit = 50) =>
     apiCall(`/lolodrive/pos/stock-history?sku=${encodeURIComponent(sku)}&limit=${limit}`),
   posRelayFee: () => apiCall('/lolodrive/pos/relay-fee'),
+  posUcDebits: () => apiCall('/lolodrive/pos/uc-debits'),
+  posCrediScopRecharge: (pack) =>
+    apiCall('/lolodrive/pos/credi-scop/recharge-session', {
+      method: 'POST', body: JSON.stringify({ pack, origin_url: window.location.origin }),
+    }),
   adminGetRelayFee: () => apiCall('/lolodrive/admin/settings/relay-fee'),
   adminSetRelayFee: (feeUc) =>
     apiCall('/lolodrive/admin/settings/relay-fee', { method: 'PUT', body: JSON.stringify({ fee_uc: feeUc }) }),

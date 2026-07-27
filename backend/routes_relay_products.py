@@ -42,6 +42,34 @@ async def log_stock_movement(sku, name, mtype, delta, stock_after, point_code=No
         "ref": ref, "created_at": datetime.utcnow()})
 
 
+async def _notify_negative_balance(user_id: str, point: dict, new_balance, fee_uc, order_number: str):
+    from brevo_service import send_email, _wrap_html
+    mgr = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "contact_name": 1})
+    recipients = {TEAM_EMAIL}
+    async for u in db.users.find({"is_admin": True}, {"_id": 0, "email": 1}):
+        if u.get("email"):
+            recipients.add(u["email"].lower())
+    if mgr and mgr.get("email"):
+        recipients.add(mgr["email"].lower())
+    subject = f"⚠️ CREDI'SCOP négatif — {point['name']} ({new_balance} UC)"
+    body = f"""
+      <p>Le CREDI'SCOP du gérant du relais <strong>{point['name']} ({point['code']})</strong> vient de passer en négatif :</p>
+      <div style='background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px;margin:12px 0;'>
+        <p style='margin:0;font-size:15px'>Solde actuel : <strong style='color:#dc2626'>{new_balance} UC</strong></p>
+        <p style='margin:6px 0 0;font-size:13px'>Dernier débit : {fee_uc} UC (frais produits relais — vente {order_number}).</p>
+      </div>
+      <p>Le gérant est invité à recharger son CREDI'SCOP depuis son espace POS (bandeau "Règle réseau" → Recharger).</p>
+    """
+    for email in recipients:
+        try:
+            await send_email(to_email=email, to_name=None, subject=subject,
+                             html_content=_wrap_html(subject, body),
+                             text_content=f"CREDI'SCOP négatif : {new_balance} UC ({point['code']}).",
+                             tags=["credi_scop_negative"])
+        except Exception as exc:
+            logger.warning("Alerte solde négatif à %s : %s", email, exc)
+
+
 async def get_relay_fee_uc() -> float:
     doc = await db.lolodrive_settings.find_one({"key": "relay_product_fee_uc"}, {"_id": 0})
     return doc.get("value_uc", 3) if doc else 3
@@ -219,6 +247,7 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
     if relay_fee_uc > 0:
         from lolodrive_helpers import get_or_create_wallet
         wallet = await get_or_create_wallet(user["id"])
+        old_balance = wallet.get("balance_uc", 0)
         await db.lolodrive_wallets.update_one(
             {"id": wallet["id"]}, {"$inc": {"balance_uc": -relay_fee_uc}, "$set": {"updated_at": now}})
         await db.lolodrive_wallet_ledger.insert_one({
@@ -227,6 +256,11 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
             "order_number": order["order_number"], "created_at": now})
         fresh = await db.lolodrive_wallets.find_one({"id": wallet["id"]}, {"_id": 0, "balance_uc": 1})
         balance_uc = (fresh or {}).get("balance_uc")
+        if old_balance >= 0 and balance_uc is not None and balance_uc < 0:
+            try:
+                await _notify_negative_balance(user["id"], point, balance_uc, relay_fee_uc, order["order_number"])
+            except Exception as exc:
+                logger.warning("Alerte CREDI'SCOP négatif : %s", exc)
     return {"ok": True, "order_number": order["order_number"],
             "total_cents": total, "promo_discount_cents": discount,
             "relay_fee_uc": relay_fee_uc, "credi_scop_balance_uc": balance_uc,
