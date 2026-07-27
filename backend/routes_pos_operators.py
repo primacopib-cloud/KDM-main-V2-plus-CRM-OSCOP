@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 from lolodrive_helpers import get_current_user
@@ -253,6 +254,71 @@ async def operator_hours_sheet(operator_id: str, month: Optional[str] = None,
                                       "address": point.get("address"), "city": point.get("city")},
             "month": start.strftime("%Y-%m"), "days": days,
             "total_presence_min": total_min, "total_break_min": total_break}
+
+
+async def _hours_days(user_id: str, start: datetime, end: datetime):
+    """Jours travaillés : première/dernière activité (logins, ventes, pauses), pauses et présence nette."""
+    events, breaks_by_day = {}, {}
+    async for l in db.pos_logins.find({"user_id": user_id, "at": {"$gte": start, "$lt": end}},
+                                      {"_id": 0, "at": 1}):
+        events.setdefault(l["at"].strftime("%Y-%m-%d"), []).append(l["at"])
+    async for o in db.lolodrive_orders.find(
+            {"operator_id": user_id, "created_at": {"$gte": start, "$lt": end}},
+            {"_id": 0, "created_at": 1}):
+        events.setdefault(o["created_at"].strftime("%Y-%m-%d"), []).append(o["created_at"])
+    async for b in db.pos_breaks.find({"user_id": user_id, "started_at": {"$gte": start, "$lt": end}},
+                                      {"_id": 0}):
+        d = b["started_at"].strftime("%Y-%m-%d")
+        events.setdefault(d, []).append(b["started_at"])
+        if b.get("ended_at"):
+            events[d].append(b["ended_at"])
+            breaks_by_day[d] = breaks_by_day.get(d, 0) + (b.get("duration_min") or 0)
+    days = []
+    for d in sorted(events):
+        first, last = min(events[d]), max(events[d])
+        span = max(0, round((last - first).total_seconds() / 60))
+        bmin = breaks_by_day.get(d, 0)
+        days.append({"date": d, "first": first.strftime("%H:%M"), "last": last.strftime("%H:%M"),
+                     "break_min": bmin, "presence_min": max(0, span - bmin)})
+    return days
+
+
+def _hhmm(minutes: int) -> str:
+    return f"{minutes // 60}h{minutes % 60:02d}"
+
+
+@pos_operators_router.get("/manager/operator-hours-export")
+async def operator_hours_export(month: Optional[str] = None, user: dict = Depends(get_current_user)):
+    """Export CSV des relevés d'heures de tous les opérateurs du relais (pour le comptable)."""
+    point = await _owned_point(user["id"])
+    now = datetime.utcnow()
+    try:
+        y, m = map(int, (month or now.strftime("%Y-%m")).split("-"))
+        start = datetime(y, m, 1)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Format mois invalide (attendu : YYYY-MM)")
+    end = datetime(y + 1, 1, 1) if m == 12 else datetime(y, m + 1, 1)
+    ops = await db.users.find({"role": "OPERATEUR_POS", "pos_point_id": point["id"]},
+                              {"_id": 0, "id": 1, "contact_name": 1, "email": 1}).sort("contact_name", 1).to_list(100)
+    rows = ["operateur;email;date;premiere_activite;derniere_activite;pauses_min;presence_min;presence_hhmm"]
+    g_presence = g_break = 0
+    for op in ops:
+        days = await _hours_days(op["id"], start, end)
+        t_presence = t_break = 0
+        for d in days:
+            rows.append(f"{op['contact_name']};{op['email']};{d['date']};{d['first']};{d['last']};"
+                        f"{d['break_min']};{d['presence_min']};{_hhmm(d['presence_min'])}")
+            t_presence += d["presence_min"]
+            t_break += d["break_min"]
+        rows.append(f"SOUS-TOTAL {op['contact_name']};;{len(days)} jour(s);;;{t_break};{t_presence};{_hhmm(t_presence)}")
+        rows.append("")
+        g_presence += t_presence
+        g_break += t_break
+    rows += [f"TOTAL RELAIS {point['code']};;;;;{g_break};{g_presence};{_hhmm(g_presence)}",
+             f"NB OPERATEURS;;;;;;;{len(ops)}"]
+    return PlainTextResponse(
+        "\ufeff" + "\n".join(rows), media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename=heures-{point['code']}-{y}-{m:02d}.csv"})
 
 
 @pos_operators_router.get("/pos/session-info")

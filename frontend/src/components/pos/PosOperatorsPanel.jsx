@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Users, Plus, Pencil, Archive, ArchiveRestore, Loader2, FileClock } from 'lucide-react';
+import { Users, Plus, Pencil, Archive, ArchiveRestore, Loader2, FileClock, Download } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -49,6 +49,23 @@ export const PosOperatorsPanel = () => {
     } catch (e) { toast.error(e.message); } finally { setSaving(false); }
   };
 
+  const exportHoursCsv = async () => {
+    try {
+      const month = new Date().toISOString().slice(0, 7);
+      const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/manager/operator-hours-export?month=${month}`,
+        { credentials: 'include' });
+      if (!r.ok) { toast.error('Export impossible'); return; }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `heures-${month}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relevés d\'heures exportés en CSV ✓');
+    } catch { toast.error('Erreur de connexion'); }
+  };
+
   const hoursSheet = async (op) => {
     try {
       const data = await lolodriveAPI.managerOperatorHoursSheet(op.id, new Date().toISOString().slice(0, 7));
@@ -70,10 +87,17 @@ export const PosOperatorsPanel = () => {
         <div className="font-semibold flex items-center gap-2">
           <Users className="w-4 h-4 text-emerald-400" /> Opérateurs POS ({operators.length})
         </div>
-        <Button size="sm" onClick={openCreate} data-testid="create-operator-btn"
-          className="bg-emerald-600 hover:bg-emerald-500 text-white">
-          <Plus className="w-3 h-3 mr-1" /> Créer un opérateur
-        </Button>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={exportHoursCsv} data-testid="export-hours-csv-btn"
+            title="Export CSV des relevés d'heures du mois (comptable)"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-[#22d3ee] bg-[#22d3ee]/10 border border-[#22d3ee]/30 hover:bg-[#22d3ee]/20">
+            <Download className="w-3 h-3" /> Export heures CSV
+          </button>
+          <Button size="sm" onClick={openCreate} data-testid="create-operator-btn"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white">
+            <Plus className="w-3 h-3 mr-1" /> Créer un opérateur
+          </Button>
+        </div>
       </div>
       <p className="text-[11px] text-white/40 mb-3">Vos employés se connectent sur /connexion avec leurs identifiants et accèdent au POS de votre relais. Leur nom et l'horodatage de connexion s'affichent en caisse.</p>
       {operators.length === 0 && <p className="text-xs text-white/40" data-testid="no-operators">Aucun opérateur pour le moment.</p>}
