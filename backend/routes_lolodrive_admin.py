@@ -154,6 +154,8 @@ async def kpi_overview(from_date: Optional[datetime] = None, to_date: Optional[d
         {"$match": {"created_at": {"$gte": f, "$lte": t}, "type": "DEBIT"}},
         {"$group": {"_id": None, "total_uc": {"$sum": "$amount_uc"}}},
     ]).to_list(1)
+    from routes_pos_counter import split_totals
+    counter_split = split_totals([o for o in orders if o.get("channel") == "COUNTER"])
 
     return {
         "period": {"from": f, "to": t},
@@ -166,8 +168,9 @@ async def kpi_overview(from_date: Optional[datetime] = None, to_date: Optional[d
             "lolo_point": sum(1 for o in orders if o.get("fulfillment_type") == "LOLO_POINT"),
             "counter": sum(1 for o in orders if o.get("channel") == "COUNTER"),
             "counter_revenue_cents": sum(o.get("total_cents", 0) for o in orders if o.get("channel") == "COUNTER"),
-            "counter_cash_cents": sum(o.get("total_cents", 0) for o in orders if o.get("channel") == "COUNTER" and o.get("payment_method") == "CASH"),
-            "counter_card_cents": sum(o.get("total_cents", 0) for o in orders if o.get("channel") == "COUNTER" and o.get("payment_method") == "CARD"),
+            "counter_cash_cents": counter_split[0],
+            "counter_card_cents": counter_split[1],
+            "counter_uc_cents": counter_split[2],
             "paid_uc": sum(1 for o in orders if o.get("pay_with_uc")),
         },
         "wallet": {"debited_uc": wallet_debits[0]["total_uc"] if wallet_debits else 0},

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   Ticket, Wallet, Truck, Store, Sparkles, ShoppingBag, BarChart3, Activity,
   Building2, HeartHandshake, Leaf, ArrowRight, RefreshCw, AlertTriangle,
-  TrendingUp, Clock, CheckCircle2, Package, AlertCircle, Download,
+  TrendingUp, Clock, CheckCircle2, Package, AlertCircle, Download, Mail,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { CounterRankingPodium } from '../components/admin/CounterRankingPodium';
@@ -42,6 +42,16 @@ export default function LolodriveAdminDashboardPage() {
       URL.revokeObjectURL(url);
       toast.success('Export consolidé des caisses téléchargé ✓');
     } catch { toast.error('Erreur de connexion'); }
+  };
+
+  const [sendingReport, setSendingReport] = useState(false);
+  const sendNetworkReport = async () => {
+    setSendingReport(true);
+    try {
+      const month = new Date().toISOString().slice(0, 7);
+      const r = await lolodriveAPI.adminSendNetworkReport(month);
+      toast.success(`Rapport comptable réseau ${r.month} envoyé à ${r.sent} destinataire(s) ✓`);
+    } catch (e) { toast.error(e.message); } finally { setSendingReport(false); }
   };
 
   const load = async (p = period) => {
@@ -190,11 +200,15 @@ export default function LolodriveAdminDashboardPage() {
                 <div className="flex items-center gap-2 mt-3">
                   <p className="text-[11px] text-white/50" data-testid="counter-stats-line">
                     🧾 Ventes au comptoir : <b className="text-white/80">{kpi.orders.counter}</b> — {fmtEUR(kpi.orders.counter_revenue_cents || 0)}
-                    <span className="text-white/40"> (💵 {fmtEUR(kpi.orders.counter_cash_cents || 0)} · 💳 {fmtEUR(kpi.orders.counter_card_cents || 0)})</span>
+                    <span className="text-white/40"> (💵 {fmtEUR(kpi.orders.counter_cash_cents || 0)} · 💳 {fmtEUR(kpi.orders.counter_card_cents || 0)}{(kpi.orders.counter_uc_cents || 0) > 0 ? <> · 🪙 {fmtEUR(kpi.orders.counter_uc_cents)}</> : null})</span>
                   </p>
                   <button type="button" onClick={exportNetworkCounters} data-testid="admin-export-counters-btn"
                     className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/35 hover:bg-[#D9B35A]/20 shrink-0">
                     <Download className="w-3 h-3" /> Export caisses réseau
+                  </button>
+                  <button type="button" onClick={sendNetworkReport} disabled={sendingReport} data-testid="admin-send-network-report-btn"
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/35 hover:bg-emerald-400/20 shrink-0 disabled:opacity-50">
+                    <Mail className="w-3 h-3" /> Rapport comptable email
                   </button>
                 </div>
               )}

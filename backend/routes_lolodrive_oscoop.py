@@ -62,6 +62,8 @@ def set_lolodrive_database(database):
     set_pos_insights_database(database)
     from routes_pos_operators import set_pos_operators_database
     set_pos_operators_database(database)
+    from routes_pos_counter import set_pos_counter_database
+    set_pos_counter_database(database)
 
 # =======================
 # Public / user routes

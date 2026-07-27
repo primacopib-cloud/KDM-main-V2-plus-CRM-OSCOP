@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Minus, Loader2, Camera, Banknote, CreditCard, Pencil, Boxes, History, ClipboardList, ScanBarcode, Search } from 'lucide-react';
+import { Package, Plus, Minus, Loader2, Camera, CreditCard, Pencil, Boxes, History, ClipboardList, ScanBarcode, Search } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -12,6 +12,7 @@ import { StockHistoryDialog } from './StockHistoryDialog';
 import { RelayFeeBanner } from './RelayFeeBanner';
 import { SalesGoalBar } from './SalesGoalBar';
 import { InventoryDialog } from './InventoryDialog';
+import { CounterPaymentDialog } from './CounterPaymentDialog';
 
 const STATUS_STYLE = {
   PENDING: { label: 'En attente de validation', color: '#f59e0b' },
@@ -24,12 +25,13 @@ export const PosCatalogPanel = () => {
   const [mine, setMine] = useState([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', category: '', brand: '', description: '', price: '', stock: '' });
+  const [form, setForm] = useState({ name: '', category: '', brand: '', description: '', price: '', stock: '', barcode: '' });
   const [photo, setPhoto] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [editSku, setEditSku] = useState(null);
   const [sale, setSale] = useState({});
   const [selling, setSelling] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
   const [ticket, setTicket] = useState(null);
   const [journalKey, setJournalKey] = useState(0);
   const [stockEdit, setStockEdit] = useState(null);
@@ -42,7 +44,7 @@ export const PosCatalogPanel = () => {
     const q = scanValue.trim().toLowerCase();
     if (!q) return;
     const products = catalog?.products || [];
-    const found = products.find((p) => p.sku.toLowerCase() === q)
+    const found = products.find((p) => (p.barcode || '').toLowerCase() === q || p.sku.toLowerCase() === q)
       || products.find((p) => p.sku.toLowerCase().includes(q) || p.name.toLowerCase().includes(q));
     if (!found) { toast.error(`Référence "${scanValue}" introuvable au catalogue`); return; }
     if (found.stock_qty === 0) { toast.error(`"${found.name}" est en rupture de stock`); setScanValue(''); return; }
@@ -98,12 +100,13 @@ export const PosCatalogPanel = () => {
         name: form.name, category: form.category, brand: form.brand || undefined,
         description: form.description, price_public_cents: cents, image_url: photo || undefined,
         stock_qty: Number.isNaN(stockQty) ? undefined : stockQty,
+        barcode: form.barcode || undefined,
       };
       if (editSku) await lolodriveAPI.managerUpdateProduct(editSku, payload);
       else await lolodriveAPI.managerSubmitProduct(payload);
       toast.success(editSku ? 'Fiche corrigée et re-soumise pour validation ✓' : 'Fiche soumise au super admin pour validation ✓');
       setOpen(false);
-      setForm({ name: '', category: '', brand: '', description: '', price: '', stock: '' });
+      setForm({ name: '', category: '', brand: '', description: '', price: '', stock: '', barcode: '' });
       setPhoto(null);
       setEditSku(null);
       load();
@@ -111,7 +114,7 @@ export const PosCatalogPanel = () => {
   };
 
   const startEdit = (p) => {
-    setForm({ name: p.name, category: p.category || '', brand: p.brand || '', description: p.description || '', price: (p.price_public_cents / 100).toFixed(2), stock: p.stock_qty != null ? String(p.stock_qty) : '' });
+    setForm({ name: p.name, category: p.category || '', brand: p.brand || '', description: p.description || '', price: (p.price_public_cents / 100).toFixed(2), stock: p.stock_qty != null ? String(p.stock_qty) : '', barcode: p.barcode || '' });
     setPhoto(p.image_url || null);
     setEditSku(p.sku);
     setOpen(true);
@@ -125,12 +128,18 @@ export const PosCatalogPanel = () => {
   const addSale = (sku) => setSale((s) => ({ ...s, [sku]: (s[sku] || 0) + 1 }));
   const decSale = (sku) => setSale((s) => ({ ...s, [sku]: Math.max(0, (s[sku] || 0) - 1) }));
 
-  const checkout = async (method) => {
+  const checkout = async (method, extra = {}) => {
     setSelling(true);
     try {
-      const r = await lolodriveAPI.posCounterSale(saleItems.map(([sku, qty]) => ({ sku, qty })), method);
-      toast.success(`Vente ${r.order_number} encaissée — ${(r.total_cents / 100).toFixed(2)} € (${method === 'CARD' ? 'CB' : 'espèces'})${r.promo_discount_cents > 0 ? ` · promo −${(r.promo_discount_cents / 100).toFixed(2)} €` : ''}${r.relay_fee_uc > 0 ? ` · ${r.relay_fee_uc} UC débités du CREDI'SCOP` : ''}`);
+      const r = await lolodriveAPI.posCounterSale(saleItems.map(([sku, qty]) => ({ sku, qty })), method, extra);
+      const payLabels = {
+        CASH: 'espèces', CARD: 'CB',
+        UC: `${r.uc_paid} UC — CREDI'SCOP client`,
+        MIXED: `combiné ${r.uc_paid} UC + ${extra.rest_method === 'CARD' ? 'CB' : 'espèces'}`,
+      };
+      toast.success(`Vente ${r.order_number} encaissée — ${(r.total_cents / 100).toFixed(2)} € (${payLabels[r.payment_method] || r.payment_method})${r.promo_discount_cents > 0 ? ` · promo −${(r.promo_discount_cents / 100).toFixed(2)} €` : ''}${r.client_balance_uc != null ? ` · solde client : ${r.client_balance_uc} UC` : ''}${r.relay_fee_uc > 0 ? ` · ${r.relay_fee_uc} UC débités du CREDI'SCOP` : ''}`);
       setSale({});
+      setPayOpen(false);
       setTicket(r.order);
       setJournalKey((k) => k + 1);
       load();
@@ -175,6 +184,8 @@ export const PosCatalogPanel = () => {
                 <Input type="number" min="0" placeholder="Stock initial (ex: 20)" value={form.stock} data-testid="product-stock-input"
                   onChange={(e) => setForm({ ...form, stock: e.target.value })} className="bg-white/5 border-white/10" />
               </div>
+              <Input placeholder="Code-barres EAN (ex: 3760001234567)" value={form.barcode} data-testid="product-barcode-input"
+                onChange={(e) => setForm({ ...form, barcode: e.target.value })} className="bg-white/5 border-white/10 font-mono" />
               <input ref={fileRef} type="file" accept="image/*" className="hidden" data-testid="product-photo-input"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }} />
               <div className="flex items-center gap-3">
@@ -234,7 +245,7 @@ export const PosCatalogPanel = () => {
           <input value={scanValue} data-testid="product-scan-input"
             onChange={(e) => setScanValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleScan(); }}
-            placeholder="Scanner / taper une référence + Entrée (ex: BANANE-1KG)"
+            placeholder="Scanner code-barres EAN / référence + Entrée"
             className="w-full bg-transparent py-2 text-xs text-white outline-none placeholder:text-white/30" />
         </div>
         <div className="flex items-center gap-1.5 flex-1 min-w-[180px] px-3 rounded-lg bg-white/[0.04] border border-white/10">
@@ -283,7 +294,7 @@ export const PosCatalogPanel = () => {
                 {p.point_code && <span className="px-1.5 py-0.5 rounded text-emerald-300 bg-emerald-400/10 border border-emerald-400/30">Relais {p.point_code}</span>}
               </div>
               <div className="font-medium text-xs leading-tight mb-0.5 line-clamp-2">{p.name}</div>
-              <div className="text-[10px] text-white/35 mb-1.5 truncate">{p.brand ? `${p.brand} · ` : ''}{p.category || p.sku}</div>
+              <div className="text-[10px] text-white/35 mb-1.5 truncate">{p.brand ? `${p.brand} · ` : ''}{p.category || p.sku}{p.barcode ? ` · ${p.barcode}` : ''}</div>
               <div className="mb-2">
                 <span className="text-sm font-bold font-mono">{(p.price_public_cents / 100).toFixed(2)} €</span>
                 <span className="text-[10px] text-[#D9B35A] font-mono"> · {p.uc_public} UC</span>
@@ -357,16 +368,16 @@ export const PosCatalogPanel = () => {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="font-bold" data-testid="counter-sale-total">Total : {(saleTotal / 100).toFixed(2)} €<span className="text-[11px] text-white/40 font-normal"> (promos appliquées à l'encaissement)</span></span>
             <span className="flex gap-2">
-              <Button size="sm" disabled={selling} onClick={() => checkout('CASH')} data-testid="checkout-cash-btn"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white">
-                <Banknote className="w-3 h-3 mr-1" /> Encaisser espèces
-              </Button>
-              <Button size="sm" disabled={selling} onClick={() => checkout('CARD')} data-testid="checkout-card-btn"
-                className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white">
-                <CreditCard className="w-3 h-3 mr-1" /> Encaisser CB
+              <Button size="sm" disabled={selling} onClick={() => setPayOpen(true)} data-testid="checkout-open-btn"
+                className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black font-bold">
+                <CreditCard className="w-3 h-3 mr-1" /> Encaisser (espèces · CB · UC)
               </Button>
             </span>
           </div>
+          {payOpen && (
+            <CounterPaymentDialog total={saleTotal} selling={selling}
+              onClose={() => setPayOpen(false)} onCheckout={checkout} />
+          )}
         </div>
       )}
     </div>

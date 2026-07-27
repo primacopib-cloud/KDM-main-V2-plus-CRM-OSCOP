@@ -1,31 +1,29 @@
 """Rapport comptable mensuel : relevés d'heures + caisse du mois envoyés au comptable de chaque relais."""
 import base64
 import logging
+import os
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 SEND_UNTIL_DAY = 3
+TEAM_EMAIL = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
 
 
 async def _cash_csv(db, point, start, end):
     orders = await db.lolodrive_orders.find(
         {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
         {"_id": 0}).sort("created_at", 1).to_list(3000)
+    from routes_pos_counter import _pay_label, split_totals
     rows = ["date;heure;numero;operateur;paiement;articles;remise_promo_eur;total_eur"]
-    cash = card = 0
     for o in orders:
         items = " + ".join(f"{l['name']} x{l['qty']}" for l in o.get("items", []))
-        pay = "CB" if o.get("payment_method") == "CARD" else "Especes"
-        if o.get("payment_method") == "CARD":
-            card += o.get("total_cents", 0)
-        else:
-            cash += o.get("total_cents", 0)
         rows.append(f"{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};"
-                    f"{o.get('operator_name') or 'Gerant'};{pay};\"{items}\";"
+                    f"{o.get('operator_name') or 'Gerant'};{_pay_label(o)};\"{items}\";"
                     f"{(o.get('promo_discount_cents') or 0) / 100:.2f};{o.get('total_cents', 0) / 100:.2f}")
+    cash, card, uc = split_totals(orders)
     rows += ["", f"TOTAL ESPECES;;;;;;;{cash / 100:.2f}", f"TOTAL CB;;;;;;;{card / 100:.2f}",
-             f"TOTAL CAISSE;;;;;;;{(cash + card) / 100:.2f}"]
-    return "\ufeff" + "\n".join(rows), len(orders), cash + card
+             f"TOTAL UC;;;;;;;{uc / 100:.2f}", f"TOTAL CAISSE;;;;;;;{(cash + card + uc) / 100:.2f}"]
+    return "\ufeff" + "\n".join(rows), len(orders), cash + card + uc
 
 
 async def _hours_csv(db, point, start, end):
@@ -79,6 +77,7 @@ async def send_accountant_report(db, point, start, end, month_tag) -> bool:
 async def send_network_report(db, start, end, month_tag) -> int:
     """Rapport consolidé réseau (toutes caisses comptoir) envoyé aux super admins."""
     from brevo_service import send_email, _wrap_html
+    from routes_pos_counter import _pay_label
     points = {p["id"]: p async for p in db.lolodrive_points.find({}, {"_id": 0})}
     rows = ["relais;date;heure;numero;operateur;paiement;articles;remise_promo_eur;total_eur"]
     by_point, g_total = {}, 0
@@ -88,10 +87,9 @@ async def send_network_report(db, start, end, month_tag) -> int:
         pt = points.get(o.get("lolo_point_id"), {})
         label = f"{pt.get('code', '?')} — {pt.get('name', '')}".strip(" —")
         items = " + ".join(f"{l['name']} x{l['qty']}" for l in o.get("items", []))
-        pay = "CB" if o.get("payment_method") == "CARD" else "Especes"
         total = o.get("total_cents", 0)
         rows.append(f"{label};{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};"
-                    f"{o.get('operator_name') or 'Gerant'};{pay};\"{items}\";"
+                    f"{o.get('operator_name') or 'Gerant'};{_pay_label(o)};\"{items}\";"
                     f"{(o.get('promo_discount_cents') or 0) / 100:.2f};{total / 100:.2f}")
         e = by_point.setdefault(label, {"count": 0, "total": 0})
         e["count"] += 1
@@ -119,7 +117,7 @@ async def send_network_report(db, start, end, month_tag) -> int:
       </table>
       <p style='font-size:12px'>Le détail complet vente par vente est joint en CSV.</p>
     """
-    recipients = {TEAM_EMAIL} if (TEAM_EMAIL := None) else set()
+    recipients = {TEAM_EMAIL.lower()}
     async for u in db.users.find({"is_admin": True}, {"_id": 0, "email": 1}):
         if u.get("email"):
             recipients.add(u["email"].lower())
@@ -153,6 +151,15 @@ async def run_accountant_reports(db, force: bool = False, ref_date=None) -> int:
                 sent += 1
         except Exception as exc:
             logger.warning("Rapport comptable %s : %s", point.get("code"), exc)
+    if not await db.accountant_report_sent.find_one({"month": month_tag, "point_id": "__NETWORK__"}):
+        try:
+            n = await send_network_report(db, prev_start, cur_start, month_tag)
+            if n:
+                await db.accountant_report_sent.insert_one(
+                    {"month": month_tag, "point_id": "__NETWORK__", "sent_at": now, "recipients": n})
+                sent += 1
+        except Exception as exc:
+            logger.warning("Rapport réseau %s : %s", month_tag, exc)
     if sent:
         logger.info("Rapports comptables envoyés : %s", sent)
     return sent

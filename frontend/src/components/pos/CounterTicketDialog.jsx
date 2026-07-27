@@ -11,6 +11,10 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
   const [sending, setSending] = useState(false);
   if (!sale) return null;
   const discount = sale.promo_discount_cents || 0;
+  const payLabel = sale.payment_method === 'CARD' ? 'CB'
+    : sale.payment_method === 'UC' ? "UC — CREDI'SCOP"
+      : sale.payment_method === 'MIXED' ? `UC + ${sale.rest_method === 'CARD' ? 'CB' : 'espèces'}`
+        : 'espèces';
 
   const printTicket = () => {
     const rows = (sale.items || []).map((l) =>
@@ -53,9 +57,15 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
           ))}
           {discount > 0 && <div className="flex justify-between text-[#FF9E7A]"><span>⚡ Remise promo</span><span>−{(discount / 100).toFixed(2)} €</span></div>}
           <div className="flex justify-between font-bold border-t border-dashed border-white/20 pt-1 mt-1">
-            <span>TOTAL ({sale.payment_method === 'CARD' ? 'CB' : 'espèces'})</span>
+            <span>TOTAL ({payLabel})</span>
             <span data-testid="ticket-total">{(sale.total_cents / 100).toFixed(2)} €</span>
           </div>
+          {sale.uc_paid > 0 && (
+            <div className="flex justify-between text-[#D9B35A]" data-testid="ticket-uc-paid">
+              <span>🪙 Payé en UC{sale.customer_name ? ` (${sale.customer_name})` : ''}</span>
+              <span>{sale.uc_paid} UC</span>
+            </div>
+          )}
           {sale.operator_name && (
             <div className="text-white/45 pt-1" data-testid="ticket-operator">Encaissé par : {sale.operator_name}</div>
           )}

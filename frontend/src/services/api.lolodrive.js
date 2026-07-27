@@ -70,8 +70,12 @@ export const lolodriveAPI = {
     apiCall('/lolodrive/manager/products', { method: 'POST', body: JSON.stringify(payload) }),
   managerUpdateProduct: (sku, payload) =>
     apiCall(`/lolodrive/manager/products/${sku}`, { method: 'PUT', body: JSON.stringify(payload) }),
-  posCounterSale: (items, paymentMethod) =>
-    apiCall('/lolodrive/pos/counter-sale', { method: 'POST', body: JSON.stringify({ items, payment_method: paymentMethod }) }),
+  posCounterSale: (items, paymentMethod, extra = {}) =>
+    apiCall('/lolodrive/pos/counter-sale', { method: 'POST', body: JSON.stringify({ items, payment_method: paymentMethod, ...extra }) }),
+  posCustomerLookup: (q) => apiCall(`/lolodrive/pos/customer-lookup?q=${encodeURIComponent(q)}`),
+  managerBonusHistory: () => apiCall('/lolodrive/manager/bonus-history'),
+  adminSendNetworkReport: (month) =>
+    apiCall('/lolodrive/admin/network-report/send', { method: 'POST', body: JSON.stringify({ month }) }),
   posCounterJournal: () => apiCall('/lolodrive/pos/counter-journal'),
   posTopProducts: (days = 30) => apiCall(`/lolodrive/pos/top-products?days=${days}`),
   posMonthlyCompare: () => apiCall('/lolodrive/pos/monthly-compare'),

@@ -3,11 +3,10 @@ import os
 import re
 import uuid
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 from lolodrive_helpers import get_current_user, require_admin, cents_to_uc
@@ -33,6 +32,7 @@ class RelayProductSubmit(BaseModel):
     catalog_type: str = "NORMAL"
     image_url: Optional[str] = None
     stock_qty: Optional[int] = None
+    barcode: Optional[str] = None
 
 
 async def log_stock_movement(sku, name, mtype, delta, stock_after, point_code=None, ref=None):
@@ -189,6 +189,7 @@ async def submit_relay_product(body: RelayProductSubmit, user: dict = Depends(ge
         "price_pass_cents": body.price_pass_cents,
         "catalog_type": body.catalog_type if body.catalog_type in ("ESSENTIAL", "NORMAL") else "NORMAL",
         "image_url": body.image_url,
+        "barcode": (body.barcode or "").strip() or None,
         "stock_qty": body.stock_qty if body.stock_qty is not None and body.stock_qty >= 0 else None,
         "territories": [point["territory"]] if point.get("territory") else [],
         "point_id": point["id"],
@@ -212,231 +213,6 @@ async def submit_relay_product(body: RelayProductSubmit, user: dict = Depends(ge
     return doc
 
 
-class CounterSaleItem(BaseModel):
-    sku: str
-    qty: int = 1
-
-
-class CounterSaleBody(BaseModel):
-    items: list
-    payment_method: str = "CASH"
-
-
-@relay_products_router.post("/pos/counter-sale")
-async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_current_user)):
-    """Vente au comptoir : le gérant encaisse directement les produits de son relais."""
-    point = await _manager_point(user["id"])
-    items = [CounterSaleItem(**i) for i in (body.items or []) if i.get("sku") and int(i.get("qty", 0)) > 0]
-    if not items:
-        raise HTTPException(status_code=400, detail="Aucun article à encaisser")
-    skus = [i.sku for i in items]
-    prods = await db.lolodrive_products.find(
-        {"sku": {"$in": skus}, "is_active": {"$ne": False},
-         "$or": [{"point_code": {"$exists": False}}, {"point_code": None},
-                 {"point_code": point["code"], "status": "APPROVED"}]},
-        {"_id": 0}).to_list(100)
-    by_sku = {p["sku"]: p for p in prods}
-    from favorite_promo_alerts import _active_discount_promos, _matches_product
-    promos = await _active_discount_promos(db)
-    lines, total, discount = [], 0, 0
-    for it in items:
-        p = by_sku.get(it.sku)
-        if not p:
-            continue
-        stock = p.get("stock_qty")
-        if stock is not None and stock < it.qty:
-            raise HTTPException(status_code=400, detail=(
-                f"Rupture de stock : \"{p['name']}\" — {stock} restant(s), impossible d'encaisser {it.qty}. "
-                "Réassortissez le stock avant la vente."))
-        unit = p.get("price_public_cents", 0)
-        pct = max((pr.get("value_percent") or 0 for pr in promos if _matches_product(pr, p)), default=0) if promos else 0
-        if pct:
-            disc_unit = round(unit * (1 - pct / 100))
-            discount += (unit - disc_unit) * it.qty
-            unit = disc_unit
-        total += unit * it.qty
-        lines.append({"sku": p["sku"], "name": p["name"], "qty": it.qty,
-                      "unit_cents": unit, "promo_percent": pct or None})
-    if not lines:
-        raise HTTPException(status_code=400, detail="Articles introuvables au catalogue du relais")
-    now = datetime.utcnow()
-    relay_qty = sum(l["qty"] for l in lines if by_sku.get(l["sku"], {}).get("point_code"))
-    fee_rate = await get_relay_fee_uc() if relay_qty else 0
-    relay_fee_uc = round(fee_rate * relay_qty, 2)
-    if relay_fee_uc == int(relay_fee_uc):
-        relay_fee_uc = int(relay_fee_uc)
-    order = {
-        "id": str(uuid.uuid4()),
-        "order_number": f"LC-{now:%Y%m%d}-{str(uuid.uuid4())[:6].upper()}",
-        "channel": "COUNTER",
-        "fulfillment_type": "COUNTER",
-        "lolo_point_id": point["id"],
-        "user_id": None,
-        "items": lines,
-        "subtotal_cents": total,
-        "promo_discount_cents": discount,
-        "fees_cents": 0,
-        "total_cents": total,
-        "payment_method": "CARD" if body.payment_method.upper() == "CARD" else "CASH",
-        "relay_fee_uc": relay_fee_uc,
-        "operator_id": user["id"],
-        "operator_name": user.get("contact_name") or user.get("email"),
-        "status": "FULFILLED",
-        "created_at": now, "updated_at": now, "paid_at": now, "fulfilled_at": now,
-    }
-    await db.lolodrive_orders.insert_one(order)
-    from pymongo import ReturnDocument
-    for l in lines:
-        res = await db.lolodrive_products.find_one_and_update(
-            {"sku": l["sku"], "stock_qty": {"$ne": None}},
-            [{"$set": {"stock_qty": {"$max": [0, {"$subtract": [{"$ifNull": ["$stock_qty", 0]}, l["qty"]]}]}}}],
-            return_document=ReturnDocument.AFTER, projection={"_id": 0, "stock_qty": 1})
-        if res is not None:
-            await log_stock_movement(l["sku"], l["name"], "SALE", -l["qty"],
-                                     res["stock_qty"], point["code"], order["order_number"])
-    order.pop("_id", None)
-    order["point_name"] = point.get("name")
-    balance_uc = None
-    if relay_fee_uc > 0:
-        from lolodrive_helpers import get_or_create_wallet
-        owner_id = point.get("manager_user_id") or user["id"]
-        wallet = await get_or_create_wallet(owner_id)
-        old_balance = wallet.get("balance_uc", 0)
-        await db.lolodrive_wallets.update_one(
-            {"id": wallet["id"]}, {"$inc": {"balance_uc": -relay_fee_uc}, "$set": {"updated_at": now}})
-        await db.lolodrive_wallet_ledger.insert_one({
-            "id": str(uuid.uuid4()), "wallet_id": wallet["id"], "type": "DEBIT",
-            "amount_uc": relay_fee_uc, "reason": "RELAY_PRODUCT_FEE",
-            "order_number": order["order_number"], "created_at": now})
-        fresh = await db.lolodrive_wallets.find_one({"id": wallet["id"]}, {"_id": 0, "balance_uc": 1})
-        balance_uc = (fresh or {}).get("balance_uc")
-        if old_balance >= 0 and balance_uc is not None and balance_uc < 0:
-            try:
-                await _notify_negative_balance(owner_id, point, balance_uc, relay_fee_uc, order["order_number"])
-            except Exception as exc:
-                logger.warning("Alerte CREDI'SCOP négatif : %s", exc)
-    try:
-        await _check_goal_reached(point)
-    except Exception as exc:
-        logger.warning("Vérif objectif atteint : %s", exc)
-    return {"ok": True, "order_number": order["order_number"],
-            "total_cents": total, "promo_discount_cents": discount,
-            "relay_fee_uc": relay_fee_uc, "credi_scop_balance_uc": balance_uc,
-            "payment_method": order["payment_method"], "order": order}
-
-
-@relay_products_router.get("/pos/counter-journal")
-async def pos_counter_journal(user: dict = Depends(get_current_user)):
-    """Journal de caisse du jour : totaux espèces / CB des ventes au comptoir."""
-    point = await _manager_point(user["id"])
-    start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    orders = await db.lolodrive_orders.find(
-        {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": start}},
-        {"_id": 0, "order_number": 1, "total_cents": 1, "payment_method": 1, "created_at": 1, "operator_name": 1}
-    ).sort("created_at", -1).to_list(300)
-    cash = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CASH")
-    card = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CARD")
-    by_op = {}
-    for o in orders:
-        name = o.get("operator_name") or "Gérant"
-        e = by_op.setdefault(name, {"name": name, "count": 0, "cash_cents": 0, "card_cents": 0})
-        e["count"] += 1
-        if o.get("payment_method") == "CARD":
-            e["card_cents"] += o.get("total_cents", 0)
-        else:
-            e["cash_cents"] += o.get("total_cents", 0)
-    for e in by_op.values():
-        e["total_cents"] = e["cash_cents"] + e["card_cents"]
-    return {"date": start.strftime("%d/%m/%Y"), "count": len(orders),
-            "cash_cents": cash, "card_cents": card, "total_cents": cash + card, "sales": orders,
-            "by_operator": sorted(by_op.values(), key=lambda x: x["total_cents"], reverse=True)}
-
-
-@relay_products_router.get("/pos/counter-journal/export")
-async def export_counter_journal(month: Optional[str] = None, user: dict = Depends(get_current_user)):
-    """Export CSV du journal de caisse du mois (comptabilité)."""
-    point = await _manager_point(user["id"])
-    now = datetime.utcnow()
-    try:
-        y, m = map(int, (month or now.strftime("%Y-%m")).split("-"))
-        start = datetime(y, m, 1)
-    except (ValueError, TypeError):
-        raise HTTPException(status_code=400, detail="Format mois invalide (attendu : YYYY-MM)")
-    end = datetime(y + 1, 1, 1) if m == 12 else datetime(y, m + 1, 1)
-    orders = await db.lolodrive_orders.find(
-        {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
-        {"_id": 0}).sort("created_at", 1).to_list(3000)
-    rows = ["date;heure;numero;operateur;paiement;articles;remise_promo_eur;total_eur"]
-    for o in orders:
-        items = " + ".join(f"{l['name']} x{l['qty']}" for l in o.get("items", []))
-        pay = "CB" if o.get("payment_method") == "CARD" else "Especes"
-        operator = o.get("operator_name") or "Gerant"
-        rows.append(f"{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};{operator};{pay};"
-                    f"\"{items}\";{(o.get('promo_discount_cents') or 0) / 100:.2f};{o.get('total_cents', 0) / 100:.2f}")
-    cash = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CASH")
-    card = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CARD")
-    rows += ["", f"TOTAL ESPECES;;;;;;;{cash / 100:.2f}", f"TOTAL CB;;;;;;;{card / 100:.2f}",
-             f"TOTAL CAISSE;;;;;;;{(cash + card) / 100:.2f}"]
-    return PlainTextResponse(
-        "\ufeff" + "\n".join(rows), media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f"attachment; filename=caisse-{point['code']}-{y}-{m:02d}.csv"})
-
-
-@relay_products_router.get("/pos/top-products")
-async def pos_top_products(days: int = 30, user: dict = Depends(get_current_user)):
-    """Top des produits les plus vendus au comptoir du relais."""
-    point = await _manager_point(user["id"])
-    since = datetime.utcnow() - timedelta(days=max(1, min(days, 365)))
-    agg = {}
-    async for o in db.lolodrive_orders.find(
-            {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": since}},
-            {"_id": 0, "items": 1}):
-        for l in o.get("items", []):
-            e = agg.setdefault(l["sku"], {"sku": l["sku"], "name": l["name"], "qty": 0, "revenue_cents": 0})
-            e["qty"] += l.get("qty", 0)
-            e["revenue_cents"] += l.get("unit_cents", 0) * l.get("qty", 0)
-    top = sorted(agg.values(), key=lambda x: (x["qty"], x["revenue_cents"]), reverse=True)[:5]
-    return {"days": days, "top": top}
-
-
-@relay_products_router.post("/pos/counter-sale/{order_id}/email-ticket")
-async def email_counter_ticket(order_id: str, payload: dict, user: dict = Depends(get_current_user)):
-    """Envoie le ticket de caisse d'une vente au comptoir par email."""
-    email = ((payload or {}).get("email") or "").strip()
-    if "@" not in email:
-        raise HTTPException(status_code=400, detail="Email invalide")
-    point = await _manager_point(user["id"])
-    order = await db.lolodrive_orders.find_one(
-        {"id": order_id, "channel": "COUNTER", "lolo_point_id": point["id"]}, {"_id": 0})
-    if not order:
-        raise HTTPException(status_code=404, detail="Vente introuvable pour ce relais")
-    from brevo_service import send_email, _wrap_html
-
-    def _row(l):
-        promo = f" <span style='color:#b45309;font-size:11px'>-{l['promo_percent']:g}%</span>" if l.get("promo_percent") else ""
-        return (f"<tr><td style='padding:4px 8px'>{l['name']}{promo}</td>"
-                f"<td style='padding:4px 8px;text-align:center'>× {l['qty']}</td>"
-                f"<td style='padding:4px 8px;text-align:right'>{l['unit_cents'] * l['qty'] / 100:.2f} €</td></tr>")
-
-    rows = "".join(_row(l) for l in order.get("items", []))
-    discount = order.get("promo_discount_cents") or 0
-    subject = f"🧾 Ticket de caisse — {order['order_number']} ({point['name']})"
-    body = f"""
-      <p><strong>{point['name']}</strong> — vente au comptoir du {order['created_at'].strftime('%d/%m/%Y %H:%M')}</p>
-      <table style='width:100%;border-collapse:collapse;font-size:13px;border-top:1px dashed #ccc;border-bottom:1px dashed #ccc'>{rows}</table>
-      {f"<p style='margin:8px 0 0;color:#b45309'>⚡ Remise promo : −{discount / 100:.2f} €</p>" if discount else ''}
-      <p style='margin:10px 0 0;font-size:15px'>Total encaissé : <strong>{order['total_cents'] / 100:.2f} €</strong>
-      ({'carte bancaire' if order.get('payment_method') == 'CARD' else 'espèces'})</p>
-      {f"<p style='margin:6px 0 0;font-size:12px;color:#777'>Encaissé par : <strong>{order['operator_name']}</strong></p>" if order.get('operator_name') else ''}
-      <p style='color:#999;font-size:11px;margin-top:12px'>Merci de votre visite — Réseau LOLODRIVE by O'SCOP.</p>
-    """
-    await send_email(to_email=email, to_name=None, subject=subject,
-                     html_content=_wrap_html(subject, body),
-                     text_content=f"Ticket {order['order_number']} — total {order['total_cents'] / 100:.2f} €.",
-                     tags=["counter_ticket"])
-    return {"ok": True, "sent_to": email}
-
-
 @relay_products_router.put("/manager/products/{sku}")
 async def update_relay_product(sku: str, body: RelayProductSubmit, user: dict = Depends(get_current_user)):
     """Le gérant corrige une fiche refusée et la re-soumet pour validation."""
@@ -456,6 +232,7 @@ async def update_relay_product(sku: str, body: RelayProductSubmit, user: dict = 
         "price_public_cents": body.price_public_cents,
         "price_pass_cents": body.price_pass_cents,
         "image_url": body.image_url or product.get("image_url"),
+        "barcode": (body.barcode or "").strip() or product.get("barcode"),
         "stock_qty": body.stock_qty if body.stock_qty is not None and body.stock_qty >= 0 else product.get("stock_qty"),
         "status": "PENDING",
         "is_active": False,

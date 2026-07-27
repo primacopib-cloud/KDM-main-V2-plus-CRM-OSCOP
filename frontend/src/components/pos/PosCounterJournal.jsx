@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Receipt, Download, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
+import { BonusHistoryDialog } from './BonusHistoryDialog';
 
 const monthLabel = (ym) => {
   const [y, m] = ym.split('-');
@@ -93,6 +94,9 @@ export const PosCounterJournal = ({ refreshKey }) => {
           <span data-testid="journal-count">{journal.count} vente{journal.count > 1 ? 's' : ''}</span>
           <span className="font-mono" data-testid="journal-cash">💵 Espèces : <b>{(journal.cash_cents / 100).toFixed(2)} €</b></span>
           <span className="font-mono" data-testid="journal-card">💳 CB : <b>{(journal.card_cents / 100).toFixed(2)} €</b></span>
+          {journal.uc_cents > 0 && (
+            <span className="font-mono text-[#D9B35A]" data-testid="journal-uc">🪙 UC : <b>{(journal.uc_cents / 100).toFixed(2)} €</b></span>
+          )}
           <span className="font-mono text-emerald-300" data-testid="journal-total">Total : <b>{(journal.total_cents / 100).toFixed(2)} €</b></span>
           <button type="button" onClick={exportCsv} data-testid="export-csv-btn"
             className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/35 hover:bg-emerald-400/20">
@@ -133,6 +137,11 @@ export const PosCounterJournal = ({ refreshKey }) => {
               🎁 Offrir une prime UC
             </button>
           )}
+        </div>
+      )}
+      {isManager && (
+        <div className="flex justify-end">
+          <BonusHistoryDialog />
         </div>
       )}
       {journal && journal.by_operator?.length > 0 && (
