@@ -452,6 +452,7 @@ const reasonLabel = (r) => ({
   PASS_ACTIVATION_DEMO: 'Activation PASS (démo)',
   RECHARGE: 'Recharge wallet',
   ORDER_PAY_UC: 'Paiement commande en UC',
+  NO_PICKUP_PENALTY: 'Pénalité non-retrait',
 }[r] || r);
 
 const statusColor = (s) => {
