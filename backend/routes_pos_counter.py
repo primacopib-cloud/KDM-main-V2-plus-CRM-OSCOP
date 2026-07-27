@@ -69,8 +69,8 @@ class CounterSaleBody(BaseModel):
 
 @pos_counter_router.get("/pos/customer-lookup")
 async def pos_customer_lookup(q: str, user: dict = Depends(get_current_user)):
-    """Recherche d'un client par code PASS LOLODRIVE, email ou nom → solde CREDI'SCOP et statut PASS."""
-    await _manager_point(user["id"])
+    """Recherche d'un client par code PASS LOLODRIVE, email ou nom → solde CREDI'SCOP, statut PASS et fidélité."""
+    point = await _manager_point(user["id"])
     q = (q or "").strip()
     if len(q) < 2:
         raise HTTPException(status_code=400, detail="Saisissez au moins 2 caractères")
@@ -94,11 +94,20 @@ async def pos_customer_lookup(q: str, user: dict = Depends(get_current_user)):
                        and best_pass.get("ends_at") and best_pass["ends_at"] > now)
     from lolodrive_helpers import get_or_create_wallet
     wallet = await get_or_create_wallet(target["id"])
+    from loyalty_bonus import get_loyalty_config
+    loy_cfg = await get_loyalty_config(db)
+    loy_count = await db.lolodrive_orders.count_documents(
+        {"channel": "COUNTER", "user_id": target["id"], "lolo_point_id": point["id"]})
+    loy_progress = loy_count % loy_cfg["threshold"]
     return {
         "user_id": target["id"], "name": target.get("contact_name"), "email": target.get("email"),
         "pass_id": (best_pass or {}).get("id"), "pass_active": pass_active,
         "pass_ends_at": (best_pass or {}).get("ends_at"),
         "balance_uc": wallet.get("balance_uc", 0),
+        "loyalty": {"count": loy_count, "progress": loy_progress,
+                    "threshold": loy_cfg["threshold"],
+                    "remaining": loy_cfg["threshold"] - loy_progress,
+                    "bonus_uc": loy_cfg["bonus_uc"]},
     }
 
 

@@ -7,6 +7,7 @@ import { PosCatalogPanel } from '../components/pos/PosCatalogPanel';
 import { PosSessionBanner } from '../components/pos/PosSessionBanner';
 import { PosOperatorsPanel } from '../components/pos/PosOperatorsPanel';
 import { PrepareOrderDialog } from '../components/pos/PrepareOrderDialog';
+import { PosSlotGroups } from '../components/pos/PosSlotGroups';
 import {
   Truck, Package, CheckCircle2, Clock, RefreshCw, ScanLine, AlertCircle,
   Bell, BellOff, User, Calendar, XCircle, Wifi, WifiOff, BellRing,
@@ -333,8 +334,7 @@ export default function PosLolodrivePage() {
               Aucune commande dans cet état.
             </div>
           )}
-          <div className="space-y-2">
-            {orders.map((o) => (
+          <PosSlotGroups orders={orders} renderOrder={(o) => (
               <div key={o.id} data-testid={`pos-order-${o.id}`}
                 className={`rounded-lg bg-white/[0.025] border border-white/[0.06] hover:border-white/[0.12] transition-all ${compact ? 'p-3' : 'p-4'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -414,8 +414,7 @@ export default function PosLolodrivePage() {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
+            )} />
         </SectionCard>
       )}
 

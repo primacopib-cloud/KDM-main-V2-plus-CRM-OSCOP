@@ -91,6 +91,16 @@ export const CounterPaymentDialog = ({ total, onClose, onCheckout, selling, item
                 CREDI'SCOP : <b className={balance > 0 ? 'text-[#D9B35A]' : 'text-red-300'}>{balance} UC</b>
                 <span className="text-white/40"> (≈ {(balance / 10).toFixed(2)} €)</span>
               </div>
+              {client.loyalty && (
+                <div data-testid="customer-loyalty">
+                  {client.loyalty.remaining === 1
+                    ? <span className="text-emerald-300 font-bold">🎁 Annoncez-lui : son prochain achat = +{client.loyalty.bonus_uc} UC offerts !</span>
+                    : <span className="text-white/50">Fidélité : {client.loyalty.progress}/{client.loyalty.threshold} achats — plus que {client.loyalty.remaining} avant +{client.loyalty.bonus_uc} UC</span>}
+                  <div className="h-1 rounded-full bg-white/10 mt-1 overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${Math.round((client.loyalty.progress / client.loyalty.threshold) * 100)}%`, background: 'linear-gradient(90deg, #D9B35A, #7c3aed)' }} />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

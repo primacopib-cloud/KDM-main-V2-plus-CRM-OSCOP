@@ -55,6 +55,12 @@ export const CounterRechargeDialog = ({ onClose }) => {
           <div className="rounded-lg border border-[#D9B35A]/30 bg-[#D9B35A]/[0.06] p-2.5 text-xs" data-testid="recharge-client-card">
             <span className="flex items-center gap-2"><User className="w-3.5 h-3.5 text-[#D9B35A]" /><b>{client.name || client.email}</b></span>
             <span className="font-mono block mt-1">Solde actuel : <b className="text-[#D9B35A]">{client.balance_uc} UC</b></span>
+            {client.loyalty && (
+              <span className="block mt-1 text-[10px] text-white/50" data-testid="recharge-loyalty">
+                Fidélité : {client.loyalty.progress}/{client.loyalty.threshold} achats
+                {client.loyalty.remaining === 1 ? <b className="text-emerald-300"> — 🎁 prochain achat = +{client.loyalty.bonus_uc} UC !</b> : ''}
+              </span>
+            )}
           </div>
         )}
         <div className="flex items-center gap-2">
