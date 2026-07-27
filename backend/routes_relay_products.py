@@ -25,6 +25,7 @@ def set_relay_products_database(database):
 class RelayProductSubmit(BaseModel):
     name: str
     category: str
+    subcategory: Optional[str] = None
     brand: Optional[str] = None
     description: str
     price_public_cents: int
@@ -33,6 +34,7 @@ class RelayProductSubmit(BaseModel):
     image_url: Optional[str] = None
     stock_qty: Optional[int] = None
     barcode: Optional[str] = None
+    tva_rate: Optional[float] = None
 
 
 async def log_stock_movement(sku, name, mtype, delta, stock_after, point_code=None, ref=None):
@@ -183,6 +185,7 @@ async def submit_relay_product(body: RelayProductSubmit, user: dict = Depends(ge
         "sku": f"{point['code']}-{slug}-{str(uuid.uuid4())[:4].upper()}",
         "name": body.name.strip(),
         "category": body.category.strip(),
+        "subcategory": (body.subcategory or "").strip() or None,
         "brand": (body.brand or point["name"]).strip(),
         "description": body.description.strip(),
         "price_public_cents": body.price_public_cents,
@@ -190,6 +193,7 @@ async def submit_relay_product(body: RelayProductSubmit, user: dict = Depends(ge
         "catalog_type": body.catalog_type if body.catalog_type in ("ESSENTIAL", "NORMAL") else "NORMAL",
         "image_url": body.image_url,
         "barcode": (body.barcode or "").strip() or None,
+        "tva_rate": min(max(float(body.tva_rate), 0), 30) if body.tva_rate is not None else 8.5,
         "stock_qty": body.stock_qty if body.stock_qty is not None and body.stock_qty >= 0 else None,
         "territories": [point["territory"]] if point.get("territory") else [],
         "point_id": point["id"],
@@ -227,12 +231,14 @@ async def update_relay_product(sku: str, body: RelayProductSubmit, user: dict = 
     updates = {
         "name": body.name.strip(),
         "category": body.category.strip(),
+        "subcategory": (body.subcategory or "").strip() or product.get("subcategory"),
         "brand": (body.brand or product.get("brand") or point["name"]).strip(),
         "description": body.description.strip(),
         "price_public_cents": body.price_public_cents,
         "price_pass_cents": body.price_pass_cents,
         "image_url": body.image_url or product.get("image_url"),
         "barcode": (body.barcode or "").strip() or product.get("barcode"),
+        "tva_rate": min(max(float(body.tva_rate), 0), 30) if body.tva_rate is not None else product.get("tva_rate", 8.5),
         "stock_qty": body.stock_qty if body.stock_qty is not None and body.stock_qty >= 0 else product.get("stock_qty"),
         "status": "PENDING",
         "is_active": False,

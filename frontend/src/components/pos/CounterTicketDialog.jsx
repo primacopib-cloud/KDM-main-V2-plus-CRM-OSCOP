@@ -25,7 +25,9 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
       <div style="text-align:center"><b>${sale.point_name || 'Relais LOLODRIVE'}</b><br/>Vente au comptoir<br/>${sale.order_number}</div>
       <div class="t"><table>${rows}</table></div>
       <div class="t">${discount ? `Remise promo : -${(discount / 100).toFixed(2)} €<br/>` : ''}
-      <b>TOTAL : ${(sale.total_cents / 100).toFixed(2)} €</b> (${sale.payment_method === 'CARD' ? 'CB' : 'espèces'})</div>
+      ${sale.tva_total_cents ? `dont TVA : ${(sale.tva_total_cents / 100).toFixed(2)} €<br/>` : ''}
+      <b>TOTAL TTC : ${(sale.total_cents / 100).toFixed(2)} €</b> (${payLabel})
+      ${sale.uc_paid ? `<br/>Payé en UC : ${sale.uc_paid} UC (CREDI'SCOP mis à jour)` : ''}</div>
       ${sale.operator_name ? `<div style="margin-top:4px">Encaissé par : ${sale.operator_name}</div>` : ''}
       <div class="t" style="text-align:center">Merci de votre visite !<br/>LOLODRIVE by O'SCOP</div>
       </body></html>`);
@@ -56,8 +58,14 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
             </div>
           ))}
           {discount > 0 && <div className="flex justify-between text-[#FF9E7A]"><span>⚡ Remise promo</span><span>−{(discount / 100).toFixed(2)} €</span></div>}
+          {sale.tva_total_cents > 0 && (
+            <div className="flex justify-between text-white/45" data-testid="ticket-tva">
+              <span>dont TVA</span>
+              <span>{(sale.tva_total_cents / 100).toFixed(2)} €</span>
+            </div>
+          )}
           <div className="flex justify-between font-bold border-t border-dashed border-white/20 pt-1 mt-1">
-            <span>TOTAL ({payLabel})</span>
+            <span>TOTAL TTC ({payLabel})</span>
             <span data-testid="ticket-total">{(sale.total_cents / 100).toFixed(2)} €</span>
           </div>
           {sale.uc_paid > 0 && (

@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { lolodriveAPI } from '../../services/api';
+import { QrPassScanner } from './QrPassScanner';
 
 const MODES = [
   { id: 'CASH', label: 'Espèces', icon: Banknote, color: '#10b981' },
@@ -13,7 +14,7 @@ const MODES = [
   { id: 'MIXED', label: 'Combiné', icon: Coins, color: '#22d3ee' },
 ];
 
-export const CounterPaymentDialog = ({ total, onClose, onCheckout, selling }) => {
+export const CounterPaymentDialog = ({ total, onClose, onCheckout, selling, items = [] }) => {
   const [mode, setMode] = useState('CASH');
   const [query, setQuery] = useState('');
   const [client, setClient] = useState(null);
@@ -29,8 +30,8 @@ export const CounterPaymentDialog = ({ total, onClose, onCheckout, selling }) =>
   const insufficient = needsClient && client && balance < ucPart;
   const canConfirm = !selling && (!needsClient || (client && !insufficient && ucPart > 0));
 
-  const lookup = async () => {
-    const q = query.trim();
+  const lookup = async (qv = query) => {
+    const q = (qv || '').trim();
     if (q.length < 2) return toast.error('Saisissez un code PASS, un email ou un nom');
     setSearching(true);
     try {
@@ -47,6 +48,9 @@ export const CounterPaymentDialog = ({ total, onClose, onCheckout, selling }) =>
     onCheckout(mode, extra);
   };
 
+  const ucItemsTotal = items.reduce((acc, it) => acc + it.uc * it.qty, 0);
+  const tvaTotal = items.reduce((acc, it) => acc + (it.unit_cents * it.qty * it.tva_rate) / (100 + it.tva_rate), 0);
+
   return (
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="bg-[#15151c] border-white/10 text-white max-w-md" data-testid="counter-payment-dialog">
@@ -62,7 +66,8 @@ export const CounterPaymentDialog = ({ total, onClose, onCheckout, selling }) =>
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') lookup(); }}
               className="bg-white/5 border-white/10 text-xs" data-testid="customer-lookup-input" />
-            <Button size="sm" onClick={lookup} disabled={searching} data-testid="customer-lookup-btn"
+            <QrPassScanner onScan={(code) => { setQuery(code); lookup(code); }} />
+            <Button size="sm" onClick={() => lookup()} disabled={searching} data-testid="customer-lookup-btn"
               className="bg-white/10 hover:bg-white/20 text-white shrink-0 h-9">
               {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
             </Button>
@@ -89,6 +94,32 @@ export const CounterPaymentDialog = ({ total, onClose, onCheckout, selling }) =>
             </div>
           )}
         </div>
+
+        {/* Récapitulatif articles : € + UC + TVA */}
+        {items.length > 0 && (
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs space-y-1.5 max-h-44 overflow-y-auto" data-testid="payment-cart-recap">
+            <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold">
+              Récapitulatif — {items.reduce((a, it) => a + it.qty, 0)} article(s)
+            </p>
+            {items.map((it) => {
+              const line = it.unit_cents * it.qty;
+              const tva = (line * it.tva_rate) / (100 + it.tva_rate);
+              return (
+                <div key={it.sku} className="flex justify-between gap-2" data-testid={`recap-line-${it.sku}`}>
+                  <span className="truncate">{it.qty} × {it.name} <span className="text-white/35">· TVA {it.tva_rate}%</span></span>
+                  <span className="font-mono shrink-0 text-right">
+                    {(line / 100).toFixed(2)} € · <span className="text-[#D9B35A]">{it.uc * it.qty} UC</span>
+                    <span className="block text-[10px] text-white/35">dont TVA {(tva / 100).toFixed(2)} €</span>
+                  </span>
+                </div>
+              );
+            })}
+            <div className="border-t border-dashed border-white/15 pt-1.5 flex justify-between font-bold" data-testid="recap-totals">
+              <span>Total TTC <span className="text-white/40 font-normal">(dont TVA {(tvaTotal / 100).toFixed(2)} €)</span></span>
+              <span className="font-mono">{(total / 100).toFixed(2)} € · <span className="text-[#D9B35A]">{ucItemsTotal} UC</span></span>
+            </div>
+          </div>
+        )}
 
         {/* Mode de paiement */}
         <div className="grid grid-cols-4 gap-2">

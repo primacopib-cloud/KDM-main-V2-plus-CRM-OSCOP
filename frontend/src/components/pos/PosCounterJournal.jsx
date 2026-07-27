@@ -97,6 +97,11 @@ export const PosCounterJournal = ({ refreshKey }) => {
           {journal.uc_cents > 0 && (
             <span className="font-mono text-[#D9B35A]" data-testid="journal-uc">🪙 UC : <b>{(journal.uc_cents / 100).toFixed(2)} €</b></span>
           )}
+          {journal.recharges?.count > 0 && (
+            <span className="font-mono text-emerald-300" data-testid="journal-recharges">
+              🔋 Recharges : <b>+{journal.recharges.total_uc} UC</b> ({((journal.recharges.cash_cents + journal.recharges.card_cents) / 100).toFixed(2)} € encaissés)
+            </span>
+          )}
           <span className="font-mono text-emerald-300" data-testid="journal-total">Total : <b>{(journal.total_cents / 100).toFixed(2)} €</b></span>
           <button type="button" onClick={exportCsv} data-testid="export-csv-btn"
             className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/35 hover:bg-emerald-400/20">

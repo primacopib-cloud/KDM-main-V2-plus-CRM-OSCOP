@@ -17,6 +17,7 @@ import { PassRelayHeader } from '../components/pass/PassRelayHeader';
 import { RelayReviewPrompt } from '../components/pass/RelayReviewPrompt';
 import { SavedCartReminder } from '../components/pass/SavedCartReminder';
 import QuickRechargeCards from '../components/pass/QuickRechargeCards';
+import { PassQrCard } from '../components/lolodrive/PassQrCard';
 import { toast } from 'sonner';
 
 export default function PassSpacePage() {
@@ -196,6 +197,7 @@ export default function PassSpacePage() {
                     </Button>
                   </div>
                 </div>
+                <PassQrCard passId={data.pass.id} />
                 <div className="flex gap-2 flex-wrap">
                   <Button asChild variant="outline" data-testid="goto-catalogue-btn">
                     <Link to="/catalogue-lolodrive">

@@ -6,6 +6,7 @@ import { ProSubscriptionBanner } from '../components/pos/ProSubscriptionBanner';
 import { PosCatalogPanel } from '../components/pos/PosCatalogPanel';
 import { PosSessionBanner } from '../components/pos/PosSessionBanner';
 import { PosOperatorsPanel } from '../components/pos/PosOperatorsPanel';
+import { PrepareOrderDialog } from '../components/pos/PrepareOrderDialog';
 import {
   Truck, Package, CheckCircle2, Clock, RefreshCw, ScanLine, AlertCircle,
   Bell, BellOff, User, Calendar, XCircle, Wifi, WifiOff, BellRing,
@@ -33,6 +34,7 @@ export default function PosLolodrivePage() {
   const [scanInput, setScanInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(null);
+  const [prepareId, setPrepareId] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [soundOn, setSoundOn] = useState(true);
   const [compact, setCompact] = useState(false);
@@ -353,7 +355,7 @@ export default function PosLolodrivePage() {
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {o.status === 'PAID' && (
-                      <Button size="sm" variant="outline" onClick={() => transitionTo(o.id, 'PREPARING')}
+                      <Button size="sm" variant="outline" onClick={() => setPrepareId(o.id)}
                         disabled={acting === o.id} data-testid={`btn-prepare-${o.id}`}>
                         <Package className="w-3 h-3 mr-1" /> Préparer
                       </Button>
@@ -425,6 +427,11 @@ export default function PosLolodrivePage() {
       </div>
 
       {/* Cancel dialog */}
+      {prepareId && (
+        <PrepareOrderDialog orderId={prepareId} acting={!!acting}
+          onClose={() => setPrepareId(null)}
+          onStart={async (id) => { await transitionTo(id, 'PREPARING'); setPrepareId(null); }} />
+      )}
       <Dialog open={cancelDialog.open} onOpenChange={(o) => setCancelDialog({ ...cancelDialog, open: o })}>
         <DialogContent className="bg-[#15151c] border-white/10 text-white">
           <DialogHeader>

@@ -1,3 +1,5 @@
+import { DriveFeesPanel } from '../components/admin/DriveFeesPanel';
+import { LolodriveCategoriesPanel } from '../components/admin/LolodriveCategoriesPanel';
 import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -325,6 +327,8 @@ export default function LolodriveAdminDashboardPage() {
           </div>
         </>
       )}
+      <LolodriveCategoriesPanel />
+      <DriveFeesPanel />
     </LolodriveLayout>
   );
 }

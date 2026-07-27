@@ -136,9 +136,12 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
             unit = disc_unit
         total += unit * it.qty
         lines.append({"sku": p["sku"], "name": p["name"], "qty": it.qty,
-                      "unit_cents": unit, "promo_percent": pct or None})
+                      "unit_cents": unit, "promo_percent": pct or None,
+                      "tva_rate": float(p.get("tva_rate") or 8.5)})
     if not lines:
         raise HTTPException(status_code=400, detail="Articles introuvables au catalogue du relais")
+    tva_total_cents = round(sum(
+        l["unit_cents"] * l["qty"] * l["tva_rate"] / (100 + l["tva_rate"]) for l in lines))
     now = datetime.utcnow()
     # ----- Résolution du mode de paiement (CASH / CARD / UC / MIXED) -----
     method = (body.payment_method or "CASH").upper()
@@ -184,6 +187,7 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
         "items": lines,
         "subtotal_cents": total,
         "promo_discount_cents": discount,
+        "tva_total_cents": tva_total_cents,
         "fees_cents": 0,
         "total_cents": total,
         "payment_method": method,
@@ -272,9 +276,15 @@ async def pos_counter_journal(user: dict = Depends(get_current_user)):
         e["uc_cents"] += u
     for e in by_op.values():
         e["total_cents"] = e["cash_cents"] + e["card_cents"] + e["uc_cents"]
+    recharges = await db.counter_recharges.find(
+        {"point_id": point["id"], "created_at": {"$gte": start}}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    rech = {"count": len(recharges),
+            "cash_cents": sum(r["amount_cents"] for r in recharges if r.get("payment_method") == "CASH"),
+            "card_cents": sum(r["amount_cents"] for r in recharges if r.get("payment_method") == "CARD"),
+            "total_uc": sum(r.get("amount_uc", 0) for r in recharges)}
     return {"date": start.strftime("%d/%m/%Y"), "count": len(orders),
             "cash_cents": cash, "card_cents": card, "uc_cents": uc,
-            "total_cents": cash + card + uc, "sales": orders,
+            "total_cents": cash + card + uc, "sales": orders, "recharges": rech,
             "by_operator": sorted(by_op.values(), key=lambda x: x["total_cents"], reverse=True)}
 
 
@@ -364,6 +374,49 @@ async def email_counter_ticket(order_id: str, payload: dict, user: dict = Depend
                      text_content=f"Ticket {order['order_number']} — total {order['total_cents'] / 100:.2f} €.",
                      tags=["counter_ticket"])
     return {"ok": True, "sent_to": email}
+
+
+class CounterRechargeBody(BaseModel):
+    customer_user_id: str
+    amount_uc: int
+    payment_method: str = "CASH"
+
+
+@pos_counter_router.post("/pos/counter-recharge")
+async def pos_counter_recharge(body: CounterRechargeBody, user: dict = Depends(get_current_user)):
+    """Recharge du CREDI'SCOP d'un client au comptoir (espèces ou CB encaissés par l'opérateur)."""
+    point = await _manager_point(user["id"])
+    if body.amount_uc < 1 or body.amount_uc > 100000:
+        raise HTTPException(status_code=400, detail="Montant UC invalide (1 à 100000)")
+    method = "CARD" if (body.payment_method or "").upper() == "CARD" else "CASH"
+    customer = await db.users.find_one({"id": body.customer_user_id},
+                                       {"_id": 0, "id": 1, "contact_name": 1, "email": 1})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Client introuvable")
+    from lolodrive_helpers import get_or_create_wallet
+    wallet = await get_or_create_wallet(customer["id"])
+    now = datetime.utcnow()
+    ref = f"RC-{now:%Y%m%d}-{str(uuid.uuid4())[:6].upper()}"
+    await db.lolodrive_wallets.update_one(
+        {"id": wallet["id"]}, {"$inc": {"balance_uc": body.amount_uc}, "$set": {"updated_at": now}})
+    await db.lolodrive_wallet_ledger.insert_one({
+        "id": str(uuid.uuid4()), "wallet_id": wallet["id"], "type": "CREDIT",
+        "amount_uc": body.amount_uc, "reason": "COUNTER_RECHARGE",
+        "order_number": ref, "point_id": point["id"], "created_at": now})
+    await db.counter_recharges.insert_one({
+        "id": str(uuid.uuid4()), "ref": ref, "point_id": point["id"], "point_code": point["code"],
+        "customer_user_id": customer["id"], "customer_name": customer.get("contact_name"),
+        "amount_uc": body.amount_uc, "amount_cents": body.amount_uc * 10, "payment_method": method,
+        "operator_id": user["id"], "operator_name": user.get("contact_name") or user.get("email"),
+        "created_at": now})
+    fresh = await db.lolodrive_wallets.find_one({"id": wallet["id"]}, {"_id": 0, "balance_uc": 1})
+    new_balance = (fresh or {}).get("balance_uc")
+    from uc_receipt_email import send_uc_receipt
+    await send_uc_receipt(db, customer["id"], body.amount_uc, new_balance, kind="CREDIT",
+                          order_number=ref, point_name=point.get("name"),
+                          context=f"Recharge au comptoir ({'CB' if method == 'CARD' else 'espèces'})")
+    return {"ok": True, "ref": ref, "amount_uc": body.amount_uc, "payment_method": method,
+            "customer_name": customer.get("contact_name"), "client_balance_uc": new_balance}
 
 
 @pos_counter_router.get("/manager/bonus-history")

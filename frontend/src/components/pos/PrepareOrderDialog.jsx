@@ -1,0 +1,81 @@
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { Package, User, Clock, Phone, Mail, Loader2, MapPin } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { fmtEUR } from '../LolodriveLayout';
+import { lolodriveAPI } from '../../services/api';
+
+// Fenêtre de préparation : détail complet de la commande (articles, client, créneau)
+export const PrepareOrderDialog = ({ orderId, onClose, onStart, acting }) => {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    lolodriveAPI.posOrderDetail(orderId).then(setData).catch((e) => { toast.error(e.message); onClose(); });
+    // eslint-disable-next-line
+  }, [orderId]);
+
+  const o = data?.order;
+  return (
+    <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="bg-[#15151c] border-white/10 text-white max-w-lg" data-testid="prepare-order-dialog">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="w-4 h-4 text-[#D9B35A]" /> Préparation — {o?.order_number || '…'}
+          </DialogTitle>
+        </DialogHeader>
+        {!data && <div className="py-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-[#D9B35A]" /></div>}
+        {o && (
+          <div className="space-y-3">
+            <div className="grid sm:grid-cols-2 gap-2 text-xs">
+              <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 space-y-1" data-testid="prepare-customer">
+                <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1"><User className="w-3 h-3" /> Client</p>
+                <p className="font-semibold">{data.customer?.name || 'Client'}</p>
+                {data.customer?.phone && <p className="text-white/60 flex items-center gap-1"><Phone className="w-3 h-3" /> {data.customer.phone}</p>}
+                {data.customer?.email && <p className="text-white/60 flex items-center gap-1 truncate"><Mail className="w-3 h-3" /> {data.customer.email}</p>}
+              </div>
+              <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 space-y-1" data-testid="prepare-slot">
+                <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold flex items-center gap-1"><Clock className="w-3 h-3" /> Retrait</p>
+                <p className="font-semibold">{o.pickup_slot_label || 'Créneau non précisé'}</p>
+                <p className="text-white/60">{o.fulfillment_type}{data.point ? <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {data.point}</span> : ''}</p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-[#D9B35A]/25 bg-[#D9B35A]/[0.04] p-3" data-testid="prepare-items">
+              <p className="text-[10px] uppercase tracking-wider text-[#D9B35A] font-bold mb-2">
+                {o.items?.length || 0} article(s) à préparer
+              </p>
+              <div className="max-h-64 overflow-y-auto space-y-1.5">
+                {(o.items || []).map((it, i) => (
+                  <div key={`${it.sku}-${i}`} className="flex items-center justify-between text-sm p-2 rounded-lg bg-black/20">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="w-8 h-8 rounded-lg bg-[#D9B35A]/15 border border-[#D9B35A]/40 flex items-center justify-center font-black text-[#D9B35A] shrink-0">
+                        {it.qty}
+                      </span>
+                      <span className="truncate">{it.name}</span>
+                    </span>
+                    <span className="text-xs text-white/40 shrink-0 ml-2 font-mono">{fmtEUR((it.unit_cents || 0) * it.qty)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span className="text-white/60">
+                Total : <b className="text-white">{fmtEUR(o.total_cents)}</b>
+                {o.pay_with_uc && <span className="text-[#D9B35A]"> · {o.total_uc} UC</span>}
+                {o.slot_fee_uc > 0 && <span className="text-white/40 text-xs"> (dont frais créneau {o.slot_fee_uc} UC)</span>}
+              </span>
+              <span className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={onClose} className="border-white/15">Fermer</Button>
+                {o.status === 'PAID' && (
+                  <Button size="sm" disabled={acting} onClick={() => onStart(o.id)} data-testid="prepare-start-btn"
+                    className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black font-bold">
+                    <Package className="w-3 h-3 mr-1" /> Commencer la préparation
+                  </Button>
+                )}
+              </span>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};

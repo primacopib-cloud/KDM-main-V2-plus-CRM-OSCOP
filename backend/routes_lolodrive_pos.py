@@ -86,6 +86,26 @@ async def _apply_drive_stock(order_id: str):
     await db.lolodrive_orders.update_one({"id": order_id}, {"$set": {"stock_applied": True}})
 
 
+@lolodrive_pos_router.get("/pos/orders/{order_id}/detail")
+async def pos_order_detail(order_id: str, user: dict = Depends(get_current_user)):
+    """Détail complet d'une commande pour la fenêtre de préparation (articles, client, créneau)."""
+    order = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande introuvable")
+    customer = None
+    if order.get("user_id"):
+        u = await db.users.find_one({"id": order["user_id"]},
+                                    {"_id": 0, "contact_name": 1, "email": 1, "phone": 1})
+        if u:
+            customer = {"name": u.get("contact_name"), "email": u.get("email"), "phone": u.get("phone")}
+    point = None
+    if order.get("lolo_point_id"):
+        pt = await db.lolodrive_points.find_one({"id": order["lolo_point_id"]}, {"_id": 0, "name": 1, "code": 1})
+        if pt:
+            point = f"{pt.get('name')} ({pt.get('code')})"
+    return {"order": order, "customer": customer, "point": point}
+
+
 @lolodrive_pos_router.post("/pos/orders/{order_id}/status")
 async def pos_update_order_status(order_id: str, request: StatusUpdate, user: dict = Depends(get_current_user)):
     now = datetime.utcnow()

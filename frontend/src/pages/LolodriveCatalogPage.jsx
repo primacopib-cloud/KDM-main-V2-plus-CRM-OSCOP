@@ -1,8 +1,8 @@
 import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus, Sparkles, Tag, Trash2, Wallet, CreditCard, ArrowLeft, Star } from 'lucide-react';
-import LolodriveLayout, { SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
+import { ShoppingCart, Plus, Minus, Wallet, CreditCard, ArrowLeft, Star } from 'lucide-react';
+import LolodriveLayout, { fmtEUR } from '../components/LolodriveLayout';
 import { useCatalogPromos, bestPromos } from '../components/catalog/ProductPromoBadges';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -12,6 +12,10 @@ import { lolodriveAPI, authAPI } from '../services/api';
 import { toast } from 'sonner';
 import TerritorySelector, { getInitialTerritory } from '../components/TerritorySelector';
 import { PromoCountdownStrip } from '../components/lolodrive/PromoCountdownStrip';
+import { CatalogFiltersBar, applyCatalogFilters } from '../components/lolodrive/CatalogFiltersBar';
+import { groupByCategory } from '../components/lolodrive/groupByCategory';
+import { CartSlotPicker } from '../components/lolodrive/CartSlotPicker';
+import { LolodriveProductCard } from '../components/lolodrive/LolodriveProductCard';
 import { PassLolodriveBadge } from '../components/catalog/ProductPromoBadges';
 import { distanceFeeRate, getReferencePointCode, kmBetween } from '../utils/relayDistance';
 
@@ -24,6 +28,10 @@ export default function LolodriveCatalogPage() {
     try { return JSON.parse(localStorage.getItem('kdm_lolodrive_cart') || '{}') || {}; } catch { return {}; }
   });
   const [fulfillment, setFulfillment] = useState('DRIVE');
+  const [pickupSlot, setPickupSlot] = useState('');
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
   const [loloPoints, setLoloPoints] = useState([]);
   const [relayRatings, setRelayRatings] = useState({});
 
@@ -158,6 +166,8 @@ export default function LolodriveCatalogPage() {
         items: cartItems,
         lolo_point_code: fulfillment === 'LOLO_POINT' ? selectedPoint : undefined,
         reference_point_code: refCode || undefined,
+        pickup_slot_id: fulfillment !== 'DELIVERY' ? pickupSlot || undefined : undefined,
+        delivery_slot_id: fulfillment === 'DELIVERY' ? pickupSlot || undefined : undefined,
       });
       toast.success(`Commande ${order.order_number} créée`);
       setCart({});
@@ -253,6 +263,8 @@ export default function LolodriveCatalogPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <CartSlotPicker fulfillment={fulfillment} cartItems={cartItems} products={products}
+                  slotId={pickupSlot} setSlotId={setPickupSlot} />
                 {fulfillment === 'LOLO_POINT' && (
                   <Select value={selectedPoint} onValueChange={setSelectedPoint}>
                     <SelectTrigger className="bg-white/[0.04] border-white/10" data-testid="lolo-point-select">
@@ -314,6 +326,10 @@ export default function LolodriveCatalogPage() {
         </TabsList>
       </Tabs>
 
+      <CatalogFiltersBar search={search} setSearch={setSearch}
+        category={category} setCategory={setCategory}
+        subcategory={subcategory} setSubcategory={setSubcategory} />
+
       {loading && <div className="text-center text-white/50 py-12">{i18n.t('lolodrive.chargement')}</div>}
 
       {!loading && filter === 'FAVS' && favs.length === 0 && (
@@ -323,80 +339,37 @@ export default function LolodriveCatalogPage() {
         </div>
       )}
 
-      {!loading && (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[...products]
-            .filter((p) => filter !== 'FAVS' || favs.includes(p.sku))
-            .sort((a, b) => (favs.includes(b.sku) ? 1 : 0) - (favs.includes(a.sku) ? 1 : 0)).map((p) => (
-            <div key={p.sku} data-testid={`product-${p.sku}`}
-              className={`relative rounded-2xl bg-white/[0.025] border overflow-hidden hover:border-white/[0.15] transition-all ${favs.includes(p.sku) ? 'border-[#D9B35A]/40' : 'border-white/[0.07]'}`}>
-              <button type="button" onClick={() => toggleFav(p.sku)} data-testid={`fav-toggle-${p.sku}`}
-                title={favs.includes(p.sku) ? 'Retirer des favoris' : 'Épingler en haut du catalogue'}
-                className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm border border-white/15 hover:border-[#D9B35A]/60 transition-colors">
-                <Star className={`w-4 h-4 ${favs.includes(p.sku) ? 'fill-[#D9B35A] text-[#D9B35A]' : 'text-white/50'}`} />
-              </button>
-              {favPromo(p) && (
-                <span data-testid={`fav-promo-band-${p.sku}`} title={favPromo(p).name}
-                  className="absolute top-2 left-2 z-10 px-2 py-1 rounded-lg text-[11px] font-black text-black shadow-lg"
-                  style={{ background: 'linear-gradient(90deg, #FF4D4D, #D9B35A)' }}>
-                  ⚡ -{favPromo(p).value_percent}%
-                </span>
-              )}
-              {p.image_url && (
-                <div className="aspect-square bg-white/[0.02] overflow-hidden">
-                  <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-                </div>
-              )}
-              <div className="p-3">
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {p.catalog_type === 'ESSENTIAL'
-                    ? <Badge color="#D9B35A"><Sparkles className="w-3 h-3 mr-1 inline" />ESSENTIEL</Badge>
-                    : <Badge color="#7c3aed">{i18n.t('lolodrive.hors25')}</Badge>}
-                  {p.point_code && <Badge color="#10b981">Relais {p.point_code}</Badge>}
-                  <PassLolodriveBadge sku={p.sku} />
-                </div>
-                <div className="font-medium text-sm leading-tight mb-1">{p.name}</div>
-                <div className="text-xs text-white/40 mb-3">{p.brand} · {p.sku}</div>
-                <div className="flex items-end justify-between mb-3">
-                  <div>
-                    {promoOf(p) ? (
-                      <>
-                        <div className="text-lg font-bold text-[#FF9E7A]" data-testid={`promo-price-${p.sku}`}>
-                          {fmtEUR(discountedUnit(p))}
-                        </div>
-                        <div className="text-xs text-white/40 line-through" data-testid={`promo-old-price-${p.sku}`}>
-                          {fmtEUR(p.display_price_cents)}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-lg font-bold">{fmtEUR(p.display_price_cents)}</div>
-                    )}
-                    {p.display_uc != null && (
-                      <div className="text-xs text-[#D9B35A]">{p.display_uc} UC</div>
-                    )}
-                  </div>
-                  {p.catalog_type === 'ESSENTIAL' && p.price_pass_cents && p.price_public_cents > p.price_pass_cents && (
-                    <Badge color="#10b981">
-                      -{Math.round(((p.price_public_cents - p.price_pass_cents) / p.price_public_cents) * 100)}%
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={() => sub(p.sku)}
-                    disabled={!cart[p.sku]} data-testid={`btn-sub-${p.sku}`}>
-                    <Minus className="w-3 h-3" />
-                  </Button>
-                  <span className="flex-1 text-center text-sm">{cart[p.sku] || 0}</span>
-                  <Button size="sm" onClick={() => add(p.sku)} data-testid={`btn-add-${p.sku}`}
-                    style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
-                    <Plus className="w-3 h-3" />
-                  </Button>
+      {!loading && (() => {
+        const visible = applyCatalogFilters(products, { search, category, subcategory })
+          .filter((p) => filter !== 'FAVS' || favs.includes(p.sku));
+        if (visible.length === 0 && filter !== 'FAVS') {
+          return <div className="text-center text-white/40 py-12" data-testid="catalog-no-result">Aucun produit ne correspond à ces filtres.</div>;
+        }
+        return groupByCategory(visible).map((g) => (
+          <div key={g.category} className="mb-8" data-testid={`catalog-group-${g.category}`}>
+            <h2 className="text-lg font-bold text-[#D9B35A] mb-2 flex items-baseline gap-2">
+              {g.category}
+              <span className="text-xs font-normal text-white/35">
+                {g.subs.reduce((a, s) => a + s.items.length, 0)} produit(s)
+              </span>
+            </h2>
+            {g.subs.map((s) => (
+              <div key={s.name} className="mb-5">
+                <h3 className="text-sm font-semibold text-white/60 mb-2 border-l-2 border-[#D9B35A]/50 pl-2" data-testid={`catalog-sub-${s.name}`}>{s.name}</h3>
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {[...s.items]
+                    .sort((a, b) => (favs.includes(b.sku) ? 1 : 0) - (favs.includes(a.sku) ? 1 : 0))
+                    .map((p) => (
+                      <LolodriveProductCard key={p.sku} p={p} qty={cart[p.sku] || 0} add={add} sub={sub}
+                        isFav={favs.includes(p.sku)} toggleFav={toggleFav}
+                        promo={promoOf(p)} favPromo={favPromo(p)} discounted={discountedUnit(p)} />
+                    ))}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ));
+      })()}
     </LolodriveLayout>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Minus, Loader2, Camera, CreditCard, Pencil, Boxes, History, ClipboardList, ScanBarcode, Search } from 'lucide-react';
+import { Package, Plus, Minus, Loader2, Camera, CreditCard, Coins, Pencil, Boxes, History, ClipboardList, ScanBarcode, Search } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -13,6 +13,8 @@ import { RelayFeeBanner } from './RelayFeeBanner';
 import { SalesGoalBar } from './SalesGoalBar';
 import { InventoryDialog } from './InventoryDialog';
 import { CounterPaymentDialog } from './CounterPaymentDialog';
+import { CounterRechargeDialog } from './CounterRechargeDialog';
+import { groupByCategory } from '../lolodrive/groupByCategory';
 
 const STATUS_STYLE = {
   PENDING: { label: 'En attente de validation', color: '#f59e0b' },
@@ -25,7 +27,7 @@ export const PosCatalogPanel = () => {
   const [mine, setMine] = useState([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', category: '', brand: '', description: '', price: '', stock: '', barcode: '' });
+  const [form, setForm] = useState({ name: '', category: '', subcategory: '', brand: '', description: '', price: '', stock: '', barcode: '', tva: '8.5' });
   const [photo, setPhoto] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [editSku, setEditSku] = useState(null);
@@ -38,6 +40,9 @@ export const PosCatalogPanel = () => {
   const [historyOf, setHistoryOf] = useState(null);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
+  const [cats, setCats] = useState([]);
+  const [rechargeOpen, setRechargeOpen] = useState(false);
   const [scanValue, setScanValue] = useState('');
 
   const handleScan = () => {
@@ -97,16 +102,18 @@ export const PosCatalogPanel = () => {
     try {
       const stockQty = form.stock !== '' ? parseInt(form.stock, 10) : undefined;
       const payload = {
-        name: form.name, category: form.category, brand: form.brand || undefined,
+        name: form.name, category: form.category, subcategory: form.subcategory || undefined,
+        brand: form.brand || undefined,
         description: form.description, price_public_cents: cents, image_url: photo || undefined,
         stock_qty: Number.isNaN(stockQty) ? undefined : stockQty,
         barcode: form.barcode || undefined,
+        tva_rate: form.tva !== '' ? parseFloat(String(form.tva).replace(',', '.')) : undefined,
       };
       if (editSku) await lolodriveAPI.managerUpdateProduct(editSku, payload);
       else await lolodriveAPI.managerSubmitProduct(payload);
       toast.success(editSku ? 'Fiche corrigée et re-soumise pour validation ✓' : 'Fiche soumise au super admin pour validation ✓');
       setOpen(false);
-      setForm({ name: '', category: '', brand: '', description: '', price: '', stock: '', barcode: '' });
+      setForm({ name: '', category: '', subcategory: '', brand: '', description: '', price: '', stock: '', barcode: '', tva: '8.5' });
       setPhoto(null);
       setEditSku(null);
       load();
@@ -114,17 +121,25 @@ export const PosCatalogPanel = () => {
   };
 
   const startEdit = (p) => {
-    setForm({ name: p.name, category: p.category || '', brand: p.brand || '', description: p.description || '', price: (p.price_public_cents / 100).toFixed(2), stock: p.stock_qty != null ? String(p.stock_qty) : '', barcode: p.barcode || '' });
+    setForm({ name: p.name, category: p.category || '', subcategory: p.subcategory || '', brand: p.brand || '', description: p.description || '', price: (p.price_public_cents / 100).toFixed(2), stock: p.stock_qty != null ? String(p.stock_qty) : '', barcode: p.barcode || '', tva: p.tva_rate != null ? String(p.tva_rate) : '8.5' });
     setPhoto(p.image_url || null);
     setEditSku(p.sku);
     setOpen(true);
   };
 
   const saleItems = Object.entries(sale).filter(([, q]) => q > 0);
-  const saleTotal = saleItems.reduce((acc, [sku, qty]) => {
+  const saleDetail = saleItems.map(([sku, qty]) => {
     const p = catalog?.products.find((x) => x.sku === sku);
-    return acc + (p?.price_public_cents || 0) * qty;
-  }, 0);
+    return {
+      sku, qty, name: p?.name || sku,
+      unit_cents: p?.price_public_cents || 0,
+      uc: p?.uc_public ?? Math.round((p?.price_public_cents || 0) / 10),
+      tva_rate: p?.tva_rate ?? 8.5,
+    };
+  });
+  const saleTotal = saleDetail.reduce((acc, it) => acc + it.unit_cents * it.qty, 0);
+  const saleUcTotal = saleDetail.reduce((acc, it) => acc + it.uc * it.qty, 0);
+  const saleTvaTotal = saleDetail.reduce((acc, it) => acc + (it.unit_cents * it.qty * it.tva_rate) / (100 + it.tva_rate), 0);
   const addSale = (sku) => setSale((s) => ({ ...s, [sku]: (s[sku] || 0) + 1 }));
   const decSale = (sku) => setSale((s) => ({ ...s, [sku]: Math.max(0, (s[sku] || 0) - 1) }));
 
@@ -171,11 +186,24 @@ export const PosCatalogPanel = () => {
               <Input placeholder="Nom du produit *" value={form.name} data-testid="product-name-input"
                 onChange={(e) => setForm({ ...form, name: e.target.value })} className="bg-white/5 border-white/10" />
               <div className="grid grid-cols-2 gap-3">
-                <Input placeholder="Catégorie *" value={form.category} data-testid="product-category-input"
-                  onChange={(e) => setForm({ ...form, category: e.target.value })} className="bg-white/5 border-white/10" />
-                <Input placeholder="Marque / producteur" value={form.brand} data-testid="product-brand-input"
-                  onChange={(e) => setForm({ ...form, brand: e.target.value })} className="bg-white/5 border-white/10" />
+                <select value={form.category} data-testid="product-category-input"
+                  onChange={(e) => setForm({ ...form, category: e.target.value, subcategory: '' })}
+                  className="px-3 py-2 rounded-md bg-white/5 border border-white/10 text-sm text-white outline-none">
+                  <option value="" className="bg-[#15151c]">Catégorie *</option>
+                  {cats.map((c) => <option key={c.id} value={c.name} className="bg-[#15151c]">{c.name}</option>)}
+                </select>
+                <select value={form.subcategory} data-testid="product-subcategory-input"
+                  onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
+                  disabled={!form.category}
+                  className="px-3 py-2 rounded-md bg-white/5 border border-white/10 text-sm text-white outline-none disabled:opacity-40">
+                  <option value="" className="bg-[#15151c]">Sous-catégorie</option>
+                  {(cats.find((c) => c.name === form.category)?.subcategories || []).map((s) => (
+                    <option key={s} value={s} className="bg-[#15151c]">{s}</option>
+                  ))}
+                </select>
               </div>
+              <Input placeholder="Marque / producteur" value={form.brand} data-testid="product-brand-input"
+                onChange={(e) => setForm({ ...form, brand: e.target.value })} className="bg-white/5 border-white/10" />
               <Textarea placeholder="Description complète *" value={form.description} rows={3} data-testid="product-description-input"
                 onChange={(e) => setForm({ ...form, description: e.target.value })} className="bg-white/5 border-white/10" />
               <div className="grid grid-cols-2 gap-3">
@@ -186,6 +214,15 @@ export const PosCatalogPanel = () => {
               </div>
               <Input placeholder="Code-barres EAN (ex: 3760001234567)" value={form.barcode} data-testid="product-barcode-input"
                 onChange={(e) => setForm({ ...form, barcode: e.target.value })} className="bg-white/5 border-white/10 font-mono" />
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/60 shrink-0">Taux de TVA :</span>
+                <select value={form.tva} data-testid="product-tva-input"
+                  onChange={(e) => setForm({ ...form, tva: e.target.value })}
+                  className="px-3 py-1.5 rounded-md bg-white/5 border border-white/10 text-sm text-white outline-none">
+                  {['0', '2.1', '8.5', '20'].map((r) => <option key={r} value={r} className="bg-[#15151c]">{r} %</option>)}
+                </select>
+                <span className="text-[10px] text-white/35">appliqué au prix TTC en €</span>
+              </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" data-testid="product-photo-input"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }} />
               <div className="flex items-center gap-3">
@@ -214,6 +251,7 @@ export const PosCatalogPanel = () => {
       {historyOf && <StockHistoryDialog product={historyOf} onClose={() => setHistoryOf(null)} />}
       {showInventory && <InventoryDialog products={catalog.products} onClose={() => setShowInventory(false)}
         onSaved={() => { load(); setJournalKey((k) => k + 1); }} />}
+      {rechargeOpen && <CounterRechargeDialog onClose={() => { setRechargeOpen(false); setJournalKey((k) => k + 1); }} />}
 
       {mine.length > 0 && (
         <div className="mb-4 space-y-1.5" data-testid="pos-my-submissions">
@@ -255,25 +293,45 @@ export const PosCatalogPanel = () => {
             placeholder="Rechercher un produit…"
             className="w-full bg-transparent py-2 text-xs text-white outline-none placeholder:text-white/30" />
         </div>
-        <select value={category} onChange={(e) => setCategory(e.target.value)} data-testid="catalog-category-select"
+        <select value={category} onChange={(e) => { setCategory(e.target.value); setSubcategory(''); }} data-testid="catalog-category-select"
           className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-xs text-white outline-none">
           <option value="" className="bg-[#15151c]">Toutes catégories</option>
           {[...new Set(catalog.products.map((p) => p.category).filter(Boolean))].sort().map((c) => (
             <option key={c} value={c} className="bg-[#15151c]">{c}</option>
           ))}
         </select>
+        {category && (
+          <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)} data-testid="catalog-subcategory-select"
+            className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-xs text-white outline-none">
+            <option value="" className="bg-[#15151c]">Toutes sous-catégories</option>
+            {[...new Set(catalog.products.filter((p) => p.category === category).map((p) => p.subcategory).filter(Boolean))].sort().map((s) => (
+              <option key={s} value={s} className="bg-[#15151c]">{s}</option>
+            ))}
+          </select>
+        )}
+        <button type="button" onClick={() => setRechargeOpen(true)} data-testid="counter-recharge-btn"
+          className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25">
+          <Coins className="w-3.5 h-3.5" /> Recharge UC
+        </button>
       </div>
 
-      <div className="max-h-[520px] overflow-y-auto grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pr-1" data-testid="pos-catalog-list">
-        {catalog.products
+      <div className="max-h-[520px] overflow-y-auto pr-1" data-testid="pos-catalog-list">
+        {groupByCategory(catalog.products
           .filter((p) => !category || p.category === category)
+          .filter((p) => !subcategory || p.subcategory === subcategory)
           .filter((p) => {
             const q = search.trim().toLowerCase();
             if (!q) return true;
             return p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
-              || (p.brand || '').toLowerCase().includes(q);
-          })
-          .map((p) => (
+              || (p.brand || '').toLowerCase().includes(q) || (p.barcode || '').toLowerCase() === q;
+          })).map((g) => (
+          <div key={g.category} className="mb-4">
+            <h4 className="text-sm font-bold text-[#D9B35A] mb-1.5" data-testid={`pos-group-${g.category}`}>{g.category}</h4>
+            {g.subs.map((sc) => (
+              <div key={sc.name} className="mb-3">
+                <p className="text-[11px] font-semibold text-white/50 border-l-2 border-[#D9B35A]/50 pl-1.5 mb-1.5" data-testid={`pos-sub-${sc.name}`}>{sc.name}</p>
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {sc.items.map((p) => (
           <div key={p.sku} data-testid={`pos-product-${p.sku}`}
             className="relative rounded-2xl bg-white/[0.025] border border-white/[0.07] overflow-hidden hover:border-white/[0.15] transition-colors">
             {p.image_url ? (
@@ -343,6 +401,11 @@ export const PosCatalogPanel = () => {
               </button>
             </div>
           </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         ))}
       </div>
 
@@ -350,23 +413,31 @@ export const PosCatalogPanel = () => {
         <div className="mt-4 rounded-xl border border-[#D9B35A]/35 bg-[#D9B35A]/[0.06] p-3" data-testid="counter-sale-cart">
           <p className="text-[11px] uppercase tracking-wider text-[#D9B35A] mb-2 font-bold">Vente au comptoir</p>
           <div className="space-y-1.5 mb-3">
-            {saleItems.map(([sku, qty]) => {
-              const p = catalog.products.find((x) => x.sku === sku);
-              return (
-                <div key={sku} className="flex items-center justify-between text-xs">
-                  <span className="truncate">{p?.name || sku}</span>
-                  <span className="flex items-center gap-2 shrink-0 ml-3">
-                    <button type="button" onClick={() => decSale(sku)} className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center"><Minus className="w-3 h-3" /></button>
-                    <span className="font-mono w-5 text-center">{qty}</span>
-                    <button type="button" onClick={() => addSale(sku)} className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center"><Plus className="w-3 h-3" /></button>
-                    <span className="font-mono w-16 text-right">{(((p?.price_public_cents || 0) * qty) / 100).toFixed(2)} €</span>
+            {saleDetail.map((it) => (
+              <div key={it.sku} className="flex items-center justify-between text-xs" data-testid={`cart-line-${it.sku}`}>
+                <span className="truncate">{it.name}
+                  <span className="block text-[10px] text-white/40 font-mono">
+                    {(it.unit_cents / 100).toFixed(2)} € · <span className="text-[#D9B35A]">{it.uc} UC</span> l'unité · TVA {it.tva_rate}%
                   </span>
-                </div>
-              );
-            })}
+                </span>
+                <span className="flex items-center gap-2 shrink-0 ml-3">
+                  <button type="button" onClick={() => decSale(it.sku)} className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                  <span className="font-mono w-5 text-center">{it.qty}</span>
+                  <button type="button" onClick={() => addSale(it.sku)} className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                  <span className="font-mono w-20 text-right">{((it.unit_cents * it.qty) / 100).toFixed(2)} €
+                    <span className="block text-[10px] text-[#D9B35A]">{it.uc * it.qty} UC</span>
+                  </span>
+                </span>
+              </div>
+            ))}
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="font-bold" data-testid="counter-sale-total">Total : {(saleTotal / 100).toFixed(2)} €<span className="text-[11px] text-white/40 font-normal"> (promos appliquées à l'encaissement)</span></span>
+            <span className="font-bold" data-testid="counter-sale-total">
+              Total TTC : {(saleTotal / 100).toFixed(2)} € · <span className="text-[#D9B35A]">{saleUcTotal} UC</span>
+              <span className="block text-[11px] text-white/40 font-normal">
+                dont TVA {(saleTvaTotal / 100).toFixed(2)} € — promos appliquées à l'encaissement
+              </span>
+            </span>
             <span className="flex gap-2">
               <Button size="sm" disabled={selling} onClick={() => setPayOpen(true)} data-testid="checkout-open-btn"
                 className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black font-bold">
@@ -375,7 +446,7 @@ export const PosCatalogPanel = () => {
             </span>
           </div>
           {payOpen && (
-            <CounterPaymentDialog total={saleTotal} selling={selling}
+            <CounterPaymentDialog total={saleTotal} selling={selling} items={saleDetail}
               onClose={() => setPayOpen(false)} onCheckout={checkout} />
           )}
         </div>

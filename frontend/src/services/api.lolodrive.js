@@ -73,6 +73,19 @@ export const lolodriveAPI = {
   posCounterSale: (items, paymentMethod, extra = {}) =>
     apiCall('/lolodrive/pos/counter-sale', { method: 'POST', body: JSON.stringify({ items, payment_method: paymentMethod, ...extra }) }),
   posCustomerLookup: (q) => apiCall(`/lolodrive/pos/customer-lookup?q=${encodeURIComponent(q)}`),
+  posCounterRecharge: (payload) =>
+    apiCall('/lolodrive/pos/counter-recharge', { method: 'POST', body: JSON.stringify(payload) }),
+  posOrderDetail: (orderId) => apiCall(`/lolodrive/pos/orders/${orderId}/detail`),
+  lolodriveCategories: () => apiCall('/lolodrive/categories'),
+  adminCreateCategory: (payload) =>
+    apiCall('/lolodrive/admin/categories', { method: 'POST', body: JSON.stringify(payload) }),
+  adminUpdateCategory: (id, payload) =>
+    apiCall(`/lolodrive/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  adminDeleteCategory: (id) =>
+    apiCall(`/lolodrive/admin/categories/${id}`, { method: 'DELETE' }),
+  feesConfig: () => apiCall('/lolodrive/fees-config'),
+  adminUpdateFeesConfig: (payload) =>
+    apiCall('/lolodrive/admin/fees-config', { method: 'PUT', body: JSON.stringify(payload) }),
   managerBonusHistory: () => apiCall('/lolodrive/manager/bonus-history'),
   adminSendNetworkReport: (month) =>
     apiCall('/lolodrive/admin/network-report/send', { method: 'POST', body: JSON.stringify({ month }) }),

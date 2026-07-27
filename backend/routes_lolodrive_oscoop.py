@@ -64,6 +64,8 @@ def set_lolodrive_database(database):
     set_pos_operators_database(database)
     from routes_pos_counter import set_pos_counter_database
     set_pos_counter_database(database)
+    from routes_lolodrive_taxonomy import set_taxonomy_database
+    set_taxonomy_database(database)
 
 # =======================
 # Public / user routes
@@ -151,6 +153,15 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
     rate = distance_fee_rate(ref_point, point) if request.fulfillment_type == FulfillmentType.LOLO_POINT else 0.0
     distance_fee_uc = round(rate * qty_total, 2)
 
+    # Frais de créneau (retrait Drive/relais ou livraison) — configurables super admin
+    from routes_lolodrive_taxonomy import slot_fee_for_order
+    slot_kind = "pickup" if is_drive else "delivery"
+    slot_id = request.pickup_slot_id if is_drive else request.delivery_slot_id
+    slot_fee_uc, slot_label = await slot_fee_for_order(slot_kind, slot_id, q["lines"])
+    slot_fee_cents = round(slot_fee_uc * 10)
+    fees_cents += slot_fee_cents
+    fees_uc = round(fees_uc + slot_fee_uc, 2)
+
     order = {
         "id": str(uuid.uuid4()),
         "order_number": f"LD-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}",
@@ -159,6 +170,10 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
         "fulfillment_type": request.fulfillment_type.value,
         "delivery_zone": request.delivery_zone,
         "delivery_slot_id": request.delivery_slot_id,
+        "pickup_slot_id": slot_id,
+        "pickup_slot_label": slot_label,
+        "slot_fee_uc": slot_fee_uc,
+        "slot_fee_cents": slot_fee_cents,
         "status": OrderStatus.DRAFT.value,
         "items": q["lines"],
         "subtotal_cents": q["subtotal_cents"],
@@ -224,6 +239,14 @@ async def pay_uc(order_id: str, user: dict = Depends(get_current_user)):
         from order_confirmation import notify_order_confirmed
         fresh = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
         await notify_order_confirmed(db, fresh, "UC")
+    except Exception:
+        pass
+    try:
+        from uc_receipt_email import send_uc_receipt
+        w = await db.lolodrive_wallets.find_one({"id": wallet["id"]}, {"_id": 0, "balance_uc": 1})
+        await send_uc_receipt(db, user["id"], required_uc, (w or {}).get("balance_uc"),
+                              kind="DEBIT", order_number=order.get("order_number"),
+                              context="Paiement de votre commande Drive en UC")
     except Exception:
         pass
     return {"ok": True, "order_id": order_id, "paid_with": "UC", "total_uc": required_uc}
