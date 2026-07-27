@@ -42,6 +42,16 @@ async def get_delivery_zones():
 @lolodrive_pos_router.get("/pos/orders")
 async def pos_orders(status_filter: Optional[OrderStatus] = Query(None, alias="status"), lolo_point_code: Optional[str] = None, territory: Optional[str] = None, user: dict = Depends(get_current_user)):
     query: Dict[str, Any] = {}
+    # Compte affilié à un relais (gérant ou opérateur) → uniquement les commandes de SON relais
+    affiliated = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0, "id": 1})
+    if not affiliated:
+        u = await db.users.find_one(
+            {"id": user["id"], "role": "OPERATEUR_POS", "is_archived": {"$ne": True}},
+            {"_id": 0, "pos_point_id": 1})
+        if u and u.get("pos_point_id"):
+            affiliated = {"id": u["pos_point_id"]}
+    if affiliated:
+        query["lolo_point_id"] = affiliated["id"]
     if status_filter:
         query["status"] = status_filter.value
     if lolo_point_code:

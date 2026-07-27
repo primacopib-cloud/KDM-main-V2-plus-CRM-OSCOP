@@ -296,7 +296,7 @@ async def admin_counter_journal_export(month: Optional[str] = None, admin: dict 
         {"channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
         {"_id": 0}).sort([("lolo_point_id", 1), ("created_at", 1)]).to_list(10000)
     points = {p["id"]: p async for p in db.lolodrive_points.find({}, {"_id": 0, "id": 1, "code": 1, "name": 1})}
-    rows = ["relais;date;heure;numero;paiement;articles;remise_promo_eur;total_eur"]
+    rows = ["relais;date;heure;numero;operateur;paiement;articles;remise_promo_eur;total_eur"]
     g_cash = g_card = 0
     by_point = {}
     for o in orders:
@@ -313,15 +313,16 @@ async def admin_counter_journal_export(month: Optional[str] = None, admin: dict 
                 p_card += total
             else:
                 p_cash += total
-            rows.append(f"{label};{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};{pay};"
+            rows.append(f"{label};{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};"
+                        f"{o.get('operator_name') or 'Gerant'};{pay};"
                         f"\"{items}\";{(o.get('promo_discount_cents') or 0) / 100:.2f};{total / 100:.2f}")
-        rows.append(f"SOUS-TOTAL {label};;;;{len(plist)} vente(s);Especes {p_cash / 100:.2f};CB {p_card / 100:.2f};{(p_cash + p_card) / 100:.2f}")
+        rows.append(f"SOUS-TOTAL {label};;;;;{len(plist)} vente(s);Especes {p_cash / 100:.2f};CB {p_card / 100:.2f};{(p_cash + p_card) / 100:.2f}")
         rows.append("")
         g_cash += p_cash
         g_card += p_card
-    rows += [f"TOTAL RESEAU ESPECES;;;;;;;{g_cash / 100:.2f}", f"TOTAL RESEAU CB;;;;;;;{g_card / 100:.2f}",
-             f"TOTAL RESEAU CAISSES;;;;;;;{(g_cash + g_card) / 100:.2f}",
-             f"NB RELAIS ACTIFS;;;;;;;{len(by_point)}", f"NB VENTES;;;;;;;{len(orders)}"]
+    rows += [f"TOTAL RESEAU ESPECES;;;;;;;;{g_cash / 100:.2f}", f"TOTAL RESEAU CB;;;;;;;;{g_card / 100:.2f}",
+             f"TOTAL RESEAU CAISSES;;;;;;;;{(g_cash + g_card) / 100:.2f}",
+             f"NB RELAIS ACTIFS;;;;;;;;{len(by_point)}", f"NB VENTES;;;;;;;;{len(orders)}"]
     return PlainTextResponse(
         "\ufeff" + "\n".join(rows), media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename=caisses-reseau-{y}-{m:02d}.csv"})

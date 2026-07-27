@@ -37,6 +37,10 @@ export default function PosLolodrivePage() {
   const [soundOn, setSoundOn] = useState(true);
   const [compact, setCompact] = useState(false);
   const [cancelDialog, setCancelDialog] = useState({ open: false, order: null, reason: '', refundUc: true });
+  const [scopedPoint, setScopedPoint] = useState(null);
+  useEffect(() => {
+    lolodriveAPI.posSessionInfo().then((s) => setScopedPoint(s.point_code || null)).catch(() => {});
+  }, []);
   const previousPaidCountRef = useRef(0);
 
   const isAdmin = authAPI.getCurrentUser()?.is_admin || ['SUPER_ADMIN', 'ADMIN'].includes(authAPI.getCurrentUser()?.role);
@@ -261,13 +265,20 @@ export default function PosLolodrivePage() {
       {/* Filters */}
       <div className="grid md:grid-cols-3 gap-3 mb-6">
         <div className="md:col-span-2">
-          <Input
-            placeholder="Filtrer par code relais (ex: LP-PAP)"
-            value={pointCode}
-            onChange={(e) => setPointCode(e.target.value)}
-            className="bg-white/[0.04] border-white/10"
-            data-testid="point-code-input"
-          />
+          {scopedPoint ? (
+            <div className="h-full flex items-center px-3 rounded-lg bg-white/[0.04] border border-white/10 text-xs text-white/60"
+              data-testid="scoped-point-label">
+              Interface limitée au relais <b className="text-[#D9B35A] ml-1">{scopedPoint}</b>
+            </div>
+          ) : (
+            <Input
+              placeholder="Filtrer par code relais (ex: LP-PAP)"
+              value={pointCode}
+              onChange={(e) => setPointCode(e.target.value)}
+              className="bg-white/[0.04] border-white/10"
+              data-testid="point-code-input"
+            />
+          )}
         </div>
         <div className="flex gap-2">
           <Input

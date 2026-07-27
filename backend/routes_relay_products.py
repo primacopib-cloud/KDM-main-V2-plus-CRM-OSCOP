@@ -323,16 +323,17 @@ async def export_counter_journal(month: Optional[str] = None, user: dict = Depen
     orders = await db.lolodrive_orders.find(
         {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
         {"_id": 0}).sort("created_at", 1).to_list(3000)
-    rows = ["date;heure;numero;paiement;articles;remise_promo_eur;total_eur"]
+    rows = ["date;heure;numero;operateur;paiement;articles;remise_promo_eur;total_eur"]
     for o in orders:
         items = " + ".join(f"{l['name']} x{l['qty']}" for l in o.get("items", []))
         pay = "CB" if o.get("payment_method") == "CARD" else "Especes"
-        rows.append(f"{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};{pay};"
+        operator = o.get("operator_name") or "Gerant"
+        rows.append(f"{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};{operator};{pay};"
                     f"\"{items}\";{(o.get('promo_discount_cents') or 0) / 100:.2f};{o.get('total_cents', 0) / 100:.2f}")
     cash = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CASH")
     card = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CARD")
-    rows += ["", f"TOTAL ESPECES;;;;;;{cash / 100:.2f}", f"TOTAL CB;;;;;;{card / 100:.2f}",
-             f"TOTAL CAISSE;;;;;;{(cash + card) / 100:.2f}"]
+    rows += ["", f"TOTAL ESPECES;;;;;;;{cash / 100:.2f}", f"TOTAL CB;;;;;;;{card / 100:.2f}",
+             f"TOTAL CAISSE;;;;;;;{(cash + card) / 100:.2f}"]
     return PlainTextResponse(
         "\ufeff" + "\n".join(rows), media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename=caisse-{point['code']}-{y}-{m:02d}.csv"})
@@ -439,9 +440,11 @@ async def my_relay_products(user: dict = Depends(get_current_user)):
 @relay_products_router.get("/pos/catalog")
 async def pos_catalog(point_code: Optional[str] = None, user: dict = Depends(get_current_user)):
     """Catalogue du relais pour l'opérateur POS : produits globaux + produits relais approuvés, en € et UC."""
-    if not point_code:
-        point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
-        point_code = (point or {}).get("code")
+    try:
+        point = await _manager_point(user["id"])
+        point_code = point["code"]
+    except HTTPException:
+        pass
     query = {"is_active": {"$ne": False}, "$or": [
         {"point_code": {"$exists": False}}, {"point_code": None}]}
     if point_code:
