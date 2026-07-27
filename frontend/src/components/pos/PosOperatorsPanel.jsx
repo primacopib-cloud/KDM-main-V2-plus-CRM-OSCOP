@@ -14,9 +14,14 @@ export const PosOperatorsPanel = () => {
   const [dialog, setDialog] = useState(null);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [saving, setSaving] = useState(false);
+  const [accountant, setAccountant] = useState('');
+  const [sendingReport, setSendingReport] = useState(false);
 
   const load = () => {
-    lolodriveAPI.managerOperators().then((d) => setOperators(d.operators || [])).catch(() => setOperators(null));
+    lolodriveAPI.managerOperators().then((d) => {
+      setOperators(d.operators || []);
+      setAccountant(d.accountant_email || '');
+    }).catch(() => setOperators(null));
     lolodriveAPI.managerOperatorBreaks(7).then((d) => {
       const map = {};
       (d.operators || []).forEach((o) => { map[o.operator_name] = o; });
@@ -66,6 +71,23 @@ export const PosOperatorsPanel = () => {
     } catch { toast.error('Erreur de connexion'); }
   };
 
+  const saveAccountant = async () => {
+    try {
+      const r = await lolodriveAPI.managerSetAccountantEmail(accountant);
+      toast.success(r.accountant_email
+        ? `Comptable enregistré : ${r.accountant_email} — rapport automatique chaque 1er du mois ✓`
+        : 'Envoi comptable désactivé');
+    } catch (e) { toast.error(e.message); }
+  };
+
+  const sendReportNow = async () => {
+    setSendingReport(true);
+    try {
+      const r = await lolodriveAPI.managerSendAccountantReport(new Date().toISOString().slice(0, 7));
+      toast.success(`Rapport ${r.month} (caisse + heures) envoyé à ${r.sent_to} ✓`);
+    } catch (e) { toast.error(e.message); } finally { setSendingReport(false); }
+  };
+
   const hoursSheet = async (op) => {
     try {
       const data = await lolodriveAPI.managerOperatorHoursSheet(op.id, new Date().toISOString().slice(0, 7));
@@ -100,6 +122,20 @@ export const PosOperatorsPanel = () => {
         </div>
       </div>
       <p className="text-[11px] text-white/40 mb-3">Vos employés se connectent sur /connexion avec leurs identifiants et accèdent au POS de votre relais. Leur nom et l'horodatage de connexion s'affichent en caisse.</p>
+      <div className="mb-4 flex flex-wrap items-center gap-2 p-2.5 rounded-lg bg-[#22d3ee]/[0.05] border border-[#22d3ee]/20 text-xs"
+        data-testid="accountant-block">
+        <span className="font-bold text-[#22d3ee]">Comptable :</span>
+        <input type="email" placeholder="email@cabinet-comptable.fr" value={accountant} data-testid="accountant-email-input"
+          onChange={(e) => setAccountant(e.target.value)}
+          className="flex-1 min-w-[200px] px-2 py-1 rounded bg-white/5 border border-white/15 text-white text-xs" />
+        <button type="button" onClick={saveAccountant} data-testid="accountant-save-btn"
+          className="px-2.5 py-1 rounded-lg font-bold text-black bg-[#22d3ee] hover:bg-[#06b6d4]">Enregistrer</button>
+        <button type="button" onClick={sendReportNow} disabled={sendingReport || !accountant} data-testid="accountant-send-now-btn"
+          className="px-2.5 py-1 rounded-lg font-bold text-[#22d3ee] bg-[#22d3ee]/10 border border-[#22d3ee]/35 hover:bg-[#22d3ee]/20 disabled:opacity-40">
+          {sendingReport ? 'Envoi…' : 'Envoyer le rapport maintenant'}
+        </button>
+        <span className="w-full text-[10px] text-white/35">Rapport automatique (caisse + relevés d'heures du mois écoulé) envoyé chaque 1er du mois.</span>
+      </div>
       {operators.length === 0 && <p className="text-xs text-white/40" data-testid="no-operators">Aucun opérateur pour le moment.</p>}
       <div className="space-y-1.5">
         {operators.map((op) => (

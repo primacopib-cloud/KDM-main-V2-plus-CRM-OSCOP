@@ -83,6 +83,69 @@ async def set_sales_goal(payload: dict, user: dict = Depends(get_current_user)):
     return {"ok": True, "goal_cents": goal}
 
 
+@pos_insights_router.post("/manager/reward-best-seller")
+async def reward_best_seller(payload: dict, user: dict = Depends(get_current_user)):
+    """Le gérant offre un bonus UC au meilleur vendeur (opérateur) de la semaine passée."""
+    from routes_pos_operators import _owned_point
+    from lolodrive_helpers import get_or_create_wallet
+    import uuid
+    point = await _owned_point(user["id"])
+    try:
+        amount = int((payload or {}).get("amount_uc"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="amount_uc entier requis")
+    if amount < 1 or amount > 10000:
+        raise HTTPException(status_code=400, detail="Le bonus doit être entre 1 et 10000 UC")
+    now = datetime.utcnow()
+    week_start, prev_start = _week_ranges(now)
+    week_tag = prev_start.strftime("%Y-%m-%d")
+    if await db.bonus_rewards.find_one({"point_id": point["id"], "week": week_tag}):
+        raise HTTPException(status_code=400, detail="Une prime a déjà été offerte pour cette semaine")
+    agg = {}
+    async for o in db.lolodrive_orders.find(
+            {"lolo_point_id": point["id"], "channel": "COUNTER", "operator_id": {"$ne": None},
+             "created_at": {"$gte": prev_start, "$lt": week_start}},
+            {"_id": 0, "operator_id": 1, "operator_name": 1, "total_cents": 1}):
+        e = agg.setdefault(o["operator_id"], {"name": o.get("operator_name"), "count": 0, "total_cents": 0})
+        e["count"] += 1
+        e["total_cents"] += o.get("total_cents", 0)
+    winner_id = max(agg, key=lambda k: (agg[k]["count"], agg[k]["total_cents"]), default=None)
+    if not winner_id:
+        raise HTTPException(status_code=400, detail="Aucune vente enregistrée la semaine passée")
+    winner_user = await db.users.find_one({"id": winner_id, "role": "OPERATEUR_POS"},
+                                          {"_id": 0, "id": 1, "contact_name": 1, "email": 1})
+    if not winner_user:
+        raise HTTPException(status_code=400, detail="Le meilleur vendeur de la semaine passée est le gérant lui-même")
+    mgr_wallet = await get_or_create_wallet(user["id"])
+    op_wallet = await get_or_create_wallet(winner_id)
+    await db.lolodrive_wallets.update_one({"id": mgr_wallet["id"]},
+                                          {"$inc": {"balance_uc": -amount}, "$set": {"updated_at": now}})
+    await db.lolodrive_wallets.update_one({"id": op_wallet["id"]},
+                                          {"$inc": {"balance_uc": amount}, "$set": {"updated_at": now}})
+    for wid, typ in ((mgr_wallet["id"], "DEBIT"), (op_wallet["id"], "CREDIT")):
+        await db.lolodrive_wallet_ledger.insert_one({
+            "id": str(uuid.uuid4()), "wallet_id": wid, "type": typ, "amount_uc": amount,
+            "reason": "BEST_SELLER_BONUS", "week": week_tag, "created_at": now})
+    await db.bonus_rewards.insert_one({"point_id": point["id"], "week": week_tag,
+                                       "operator_id": winner_id, "amount_uc": amount, "created_at": now})
+    stats = agg[winner_id]
+    try:
+        from brevo_service import send_email, _wrap_html
+        subject = f"🏆 Prime meilleur vendeur — {amount} UC offerts !"
+        body = f"""
+          <p>Bravo <strong>{winner_user['contact_name']}</strong> ! 🎉</p>
+          <p>Vous êtes le <strong>meilleur vendeur de la semaine</strong> au relais {point['name']}
+          ({stats['count']} vente(s) — {stats['total_cents'] / 100:.2f} €).</p>
+          <p>Votre gérant vous offre une prime de <strong>{amount} UC</strong>, créditée sur votre CREDI'SCOP.</p>
+        """
+        await send_email(to_email=winner_user["email"], to_name=winner_user["contact_name"],
+                         subject=subject, html_content=_wrap_html(subject, body),
+                         text_content=f"Prime meilleur vendeur : {amount} UC.", tags=["prime_meilleur_vendeur"])
+    except Exception as exc:
+        logger.warning("Email prime : %s", exc)
+    return {"ok": True, "winner": winner_user["contact_name"], "amount_uc": amount, "week": week_tag}
+
+
 @pos_insights_router.get("/pos/monthly-compare")
 async def pos_monthly_compare(user: dict = Depends(get_current_user)):
     """Caisse du mois en cours vs même période du mois précédent (tendance)."""

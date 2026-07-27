@@ -42,6 +42,45 @@ async def log_stock_movement(sku, name, mtype, delta, stock_after, point_code=No
         "ref": ref, "created_at": datetime.utcnow()})
 
 
+async def _check_goal_reached(point: dict):
+    """Email de félicitations au gérant dès que l'objectif mensuel de caisse est atteint (1×/mois)."""
+    goal = point.get("monthly_goal_cents") or 0
+    if goal <= 0:
+        return
+    now = datetime.utcnow()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_tag = month_start.strftime("%Y-%m")
+    if await db.goal_reached_sent.find_one({"point_id": point["id"], "month": month_tag}):
+        return
+    total = 0
+    async for o in db.lolodrive_orders.find(
+            {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": month_start}},
+            {"_id": 0, "total_cents": 1}):
+        total += o.get("total_cents", 0)
+    if total < goal:
+        return
+    mgr = await db.users.find_one({"id": point.get("manager_user_id")}, {"_id": 0, "email": 1, "contact_name": 1})
+    if not mgr or not mgr.get("email"):
+        return
+    await db.goal_reached_sent.insert_one({"point_id": point["id"], "month": month_tag, "sent_at": now})
+    from brevo_service import send_email, _wrap_html
+    subject = f"🎉 Objectif de caisse atteint — {point['name']} !"
+    body = f"""
+      <p>Félicitations <strong>{(mgr.get('contact_name') or '').split(' ')[0]}</strong> ! 🏆</p>
+      <p>Votre relais <strong>{point['name']} ({point['code']})</strong> vient d'atteindre son
+      <strong>objectif mensuel de caisse</strong> :</p>
+      <div style='background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:14px;margin:12px 0'>
+        <p style='margin:0;font-size:16px'><strong>{total / 100:.2f} €</strong> encaissés
+        / objectif de {goal / 100:.2f} € ✅</p>
+      </div>
+      <p>Bravo à toute l'équipe — et pourquoi ne pas viser encore plus haut le mois prochain ?</p>
+    """
+    await send_email(to_email=mgr["email"], to_name=mgr.get("contact_name"), subject=subject,
+                     html_content=_wrap_html(subject, body),
+                     text_content=f"Objectif atteint : {total / 100:.2f} € / {goal / 100:.2f} €.",
+                     tags=["objectif_atteint"])
+
+
 async def _notify_negative_balance(user_id: str, point: dict, new_balance, fee_uc, order_number: str):
     from brevo_service import send_email, _wrap_html
     mgr = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "contact_name": 1})
@@ -276,6 +315,10 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
                 await _notify_negative_balance(owner_id, point, balance_uc, relay_fee_uc, order["order_number"])
             except Exception as exc:
                 logger.warning("Alerte CREDI'SCOP négatif : %s", exc)
+    try:
+        await _check_goal_reached(point)
+    except Exception as exc:
+        logger.warning("Vérif objectif atteint : %s", exc)
     return {"ok": True, "order_number": order["order_number"],
             "total_cents": total, "promo_discount_cents": discount,
             "relay_fee_uc": relay_fee_uc, "credi_scop_balance_uc": balance_uc,

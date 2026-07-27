@@ -107,6 +107,12 @@ export const lolodriveAPI = {
   posSalesGoal: () => apiCall('/lolodrive/pos/sales-goal'),
   managerSetSalesGoal: (goalCents) =>
     apiCall('/lolodrive/manager/sales-goal', { method: 'PUT', body: JSON.stringify({ goal_cents: goalCents }) }),
+  managerRewardBestSeller: (amountUc) =>
+    apiCall('/lolodrive/manager/reward-best-seller', { method: 'POST', body: JSON.stringify({ amount_uc: amountUc }) }),
+  managerSetAccountantEmail: (email) =>
+    apiCall('/lolodrive/manager/accountant-email', { method: 'PUT', body: JSON.stringify({ email }) }),
+  managerSendAccountantReport: (month) =>
+    apiCall('/lolodrive/manager/send-accountant-report', { method: 'POST', body: JSON.stringify({ month }) }),
   adminUcFeesSummary: (months = 6) =>
     apiCall(`/lolodrive/admin/uc-fees-summary?months=${months}`),
   adminGetRelayFee: () => apiCall('/lolodrive/admin/settings/relay-fee'),

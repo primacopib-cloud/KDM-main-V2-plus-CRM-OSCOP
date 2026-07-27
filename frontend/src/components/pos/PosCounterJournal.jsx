@@ -14,6 +14,11 @@ export const PosCounterJournal = ({ refreshKey }) => {
   const [compare, setCompare] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [seller, setSeller] = useState(null);
+  const [isManager, setIsManager] = useState(false);
+  const [rewarding, setRewarding] = useState(false);
+  useEffect(() => {
+    lolodriveAPI.posSessionInfo().then((s) => setIsManager(s.role !== 'OPERATEUR_POS')).catch(() => {});
+  }, []);
   useEffect(() => {
     lolodriveAPI.posCounterJournal().then(setJournal).catch(() => {});
     lolodriveAPI.posTopProducts(30).then((d) => setTop(d.top || [])).catch(() => {});
@@ -110,6 +115,23 @@ export const PosCounterJournal = ({ refreshKey }) => {
               Course de la semaine : {seller.current_week.slice(0, 3).map((s, i) =>
                 `${i + 1}. ${s.name} (${s.count})`).join(' · ')}
             </span>
+          )}
+          {isManager && seller.last_week_winner && (
+            <button type="button" disabled={rewarding} data-testid="reward-best-seller-btn"
+              onClick={async () => {
+                const v = window.prompt('Montant de la prime en UC pour le meilleur vendeur de la semaine passée :', '20');
+                if (v === null) return;
+                const uc = parseInt(v, 10);
+                if (Number.isNaN(uc) || uc < 1) return toast.error('Montant UC invalide');
+                setRewarding(true);
+                try {
+                  const r = await lolodriveAPI.managerRewardBestSeller(uc);
+                  toast.success(`Prime de ${r.amount_uc} UC offerte à ${r.winner} 🎉 (email envoyé)`);
+                } catch (e) { toast.error(e.message); } finally { setRewarding(false); }
+              }}
+              className="ml-auto shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25 disabled:opacity-50">
+              🎁 Offrir une prime UC
+            </button>
           )}
         </div>
       )}

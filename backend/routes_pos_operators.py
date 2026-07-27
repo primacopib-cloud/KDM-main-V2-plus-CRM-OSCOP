@@ -56,7 +56,7 @@ async def list_operators(user: dict = Depends(get_current_user)):
     ops = await db.users.find(
         {"role": "OPERATEUR_POS", "pos_point_id": point["id"]}, OPERATOR_FIELDS
     ).sort("created_at", 1).to_list(100)
-    return {"point_code": point["code"], "operators": ops}
+    return {"point_code": point["code"], "accountant_email": point.get("accountant_email"), "operators": ops}
 
 
 @pos_operators_router.post("/manager/operators")
@@ -319,6 +319,36 @@ async def operator_hours_export(month: Optional[str] = None, user: dict = Depend
     return PlainTextResponse(
         "\ufeff" + "\n".join(rows), media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename=heures-{point['code']}-{y}-{m:02d}.csv"})
+
+
+@pos_operators_router.put("/manager/accountant-email")
+async def set_accountant_email(payload: dict, user: dict = Depends(get_current_user)):
+    """Le gérant définit l'email du comptable (rapport mensuel automatique le 1er du mois)."""
+    point = await _owned_point(user["id"])
+    email = ((payload or {}).get("email") or "").strip().lower()
+    if email and not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        raise HTTPException(status_code=400, detail="Email invalide")
+    await db.lolodrive_points.update_one(
+        {"id": point["id"]}, {"$set": {"accountant_email": email or None, "updated_at": datetime.utcnow()}})
+    return {"ok": True, "accountant_email": email or None}
+
+
+@pos_operators_router.post("/manager/send-accountant-report")
+async def send_accountant_report_now(payload: dict = None, user: dict = Depends(get_current_user)):
+    """Envoi immédiat du rapport comptable (mois en cours ou mois donné)."""
+    point = await _owned_point(user["id"])
+    if not point.get("accountant_email"):
+        raise HTTPException(status_code=400, detail="Renseignez d'abord l'email du comptable")
+    now = datetime.utcnow()
+    try:
+        y, m = map(int, ((payload or {}).get("month") or now.strftime("%Y-%m")).split("-"))
+        start = datetime(y, m, 1)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Format mois invalide (attendu : YYYY-MM)")
+    end = datetime(y + 1, 1, 1) if m == 12 else datetime(y, m + 1, 1)
+    from accountant_report import send_accountant_report
+    await send_accountant_report(db, point, start, end, start.strftime("%Y-%m"))
+    return {"ok": True, "sent_to": point["accountant_email"], "month": start.strftime("%Y-%m")}
 
 
 @pos_operators_router.get("/pos/session-info")
