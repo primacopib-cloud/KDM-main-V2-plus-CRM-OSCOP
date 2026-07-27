@@ -80,6 +80,10 @@ export const lolodriveAPI = {
     apiCall(`/lolodrive/pos/products/${sku}/stock`, { method: 'PATCH', body: JSON.stringify({ stock_qty: stockQty }) }),
   posStockHistory: (sku, limit = 50) =>
     apiCall(`/lolodrive/pos/stock-history?sku=${encodeURIComponent(sku)}&limit=${limit}`),
+  posRelayFee: () => apiCall('/lolodrive/pos/relay-fee'),
+  adminGetRelayFee: () => apiCall('/lolodrive/admin/settings/relay-fee'),
+  adminSetRelayFee: (feeUc) =>
+    apiCall('/lolodrive/admin/settings/relay-fee', { method: 'PUT', body: JSON.stringify({ fee_uc: feeUc }) }),
   adminCounterRanking: (month) =>
     apiCall(`/lolodrive/admin/counter-ranking${month ? `?month=${month}` : ''}`),
   posEmailTicket: (orderId, email) =>

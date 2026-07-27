@@ -42,6 +42,11 @@ async def log_stock_movement(sku, name, mtype, delta, stock_after, point_code=No
         "ref": ref, "created_at": datetime.utcnow()})
 
 
+async def get_relay_fee_uc() -> float:
+    doc = await db.lolodrive_settings.find_one({"key": "relay_product_fee_uc"}, {"_id": 0})
+    return doc.get("value_uc", 3) if doc else 3
+
+
 async def _manager_point(user_id: str) -> dict:
     point = await db.lolodrive_points.find_one({"manager_user_id": user_id}, {"_id": 0})
     if not point:
@@ -177,6 +182,11 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
     if not lines:
         raise HTTPException(status_code=400, detail="Articles introuvables au catalogue du relais")
     now = datetime.utcnow()
+    relay_qty = sum(l["qty"] for l in lines if by_sku.get(l["sku"], {}).get("point_code"))
+    fee_rate = await get_relay_fee_uc() if relay_qty else 0
+    relay_fee_uc = round(fee_rate * relay_qty, 2)
+    if relay_fee_uc == int(relay_fee_uc):
+        relay_fee_uc = int(relay_fee_uc)
     order = {
         "id": str(uuid.uuid4()),
         "order_number": f"LC-{now:%Y%m%d}-{str(uuid.uuid4())[:6].upper()}",
@@ -205,8 +215,21 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
                                      res["stock_qty"], point["code"], order["order_number"])
     order.pop("_id", None)
     order["point_name"] = point.get("name")
+    balance_uc = None
+    if relay_fee_uc > 0:
+        from lolodrive_helpers import get_or_create_wallet
+        wallet = await get_or_create_wallet(user["id"])
+        await db.lolodrive_wallets.update_one(
+            {"id": wallet["id"]}, {"$inc": {"balance_uc": -relay_fee_uc}, "$set": {"updated_at": now}})
+        await db.lolodrive_wallet_ledger.insert_one({
+            "id": str(uuid.uuid4()), "wallet_id": wallet["id"], "type": "DEBIT",
+            "amount_uc": relay_fee_uc, "reason": "RELAY_PRODUCT_FEE",
+            "order_number": order["order_number"], "created_at": now})
+        fresh = await db.lolodrive_wallets.find_one({"id": wallet["id"]}, {"_id": 0, "balance_uc": 1})
+        balance_uc = (fresh or {}).get("balance_uc")
     return {"ok": True, "order_number": order["order_number"],
             "total_cents": total, "promo_discount_cents": discount,
+            "relay_fee_uc": relay_fee_uc, "credi_scop_balance_uc": balance_uc,
             "payment_method": order["payment_method"], "order": order}
 
 

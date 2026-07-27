@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 
 from lolodrive_helpers import get_current_user, require_admin
-from routes_relay_products import _manager_point, log_stock_movement
+from routes_relay_products import _manager_point, log_stock_movement, get_relay_fee_uc
 
 logger = logging.getLogger(__name__)
 pos_insights_router = APIRouter(prefix="/api/lolodrive", tags=["POS Insights"])
@@ -79,6 +79,39 @@ async def pos_stock_alerts(days: int = 30, user: dict = Depends(get_current_user
                            "critical": stock <= 5 or (days_left is not None and days_left <= 5)})
     alerts.sort(key=lambda a: (a["days_left"] if a["days_left"] is not None else 999, a["stock_qty"]))
     return {"days": days, "alerts": alerts}
+
+
+@pos_insights_router.get("/pos/relay-fee")
+async def pos_relay_fee(user: dict = Depends(get_current_user)):
+    """Règle réseau : frais UC appliqués aux ventes de produits relais + solde CREDI'SCOP du gérant."""
+    point = await _manager_point(user["id"])
+    from lolodrive_helpers import get_or_create_wallet
+    wallet = await get_or_create_wallet(user["id"])
+    return {"fee_uc": await get_relay_fee_uc(), "balance_uc": wallet.get("balance_uc", 0),
+            "point_code": point["code"]}
+
+
+@pos_insights_router.get("/admin/settings/relay-fee")
+async def admin_get_relay_fee(admin: dict = Depends(require_admin)):
+    return {"fee_uc": await get_relay_fee_uc()}
+
+
+@pos_insights_router.put("/admin/settings/relay-fee")
+async def admin_set_relay_fee(payload: dict, admin: dict = Depends(require_admin)):
+    """Le super admin modifie la valeur UC débitée par produit relais vendu au comptoir."""
+    try:
+        fee = float((payload or {}).get("fee_uc"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="fee_uc numérique requis")
+    if fee < 0 or fee > 1000:
+        raise HTTPException(status_code=400, detail="fee_uc doit être entre 0 et 1000")
+    if fee == int(fee):
+        fee = int(fee)
+    await db.lolodrive_settings.update_one(
+        {"key": "relay_product_fee_uc"},
+        {"$set": {"value_uc": fee, "updated_at": datetime.utcnow(), "updated_by": admin.get("email")}},
+        upsert=True)
+    return {"ok": True, "fee_uc": fee}
 
 
 @pos_insights_router.patch("/pos/products/{sku}/stock")

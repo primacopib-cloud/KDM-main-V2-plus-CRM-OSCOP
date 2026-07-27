@@ -9,6 +9,7 @@ import { lolodriveAPI } from '../../services/api';
 import { PosCounterJournal } from './PosCounterJournal';
 import { CounterTicketDialog } from './CounterTicketDialog';
 import { StockHistoryDialog } from './StockHistoryDialog';
+import { RelayFeeBanner } from './RelayFeeBanner';
 
 const STATUS_STYLE = {
   PENDING: { label: 'En attente de validation', color: '#f59e0b' },
@@ -109,7 +110,7 @@ export const PosCatalogPanel = () => {
     setSelling(true);
     try {
       const r = await lolodriveAPI.posCounterSale(saleItems.map(([sku, qty]) => ({ sku, qty })), method);
-      toast.success(`Vente ${r.order_number} encaissée — ${(r.total_cents / 100).toFixed(2)} € (${method === 'CARD' ? 'CB' : 'espèces'})${r.promo_discount_cents > 0 ? ` · promo −${(r.promo_discount_cents / 100).toFixed(2)} €` : ''}`);
+      toast.success(`Vente ${r.order_number} encaissée — ${(r.total_cents / 100).toFixed(2)} € (${method === 'CARD' ? 'CB' : 'espèces'})${r.promo_discount_cents > 0 ? ` · promo −${(r.promo_discount_cents / 100).toFixed(2)} €` : ''}${r.relay_fee_uc > 0 ? ` · ${r.relay_fee_uc} UC débités du CREDI'SCOP` : ''}`);
       setSale({});
       setTicket(r.order);
       setJournalKey((k) => k + 1);
@@ -170,6 +171,7 @@ export const PosCatalogPanel = () => {
         </Dialog>
       </div>
 
+      <RelayFeeBanner refreshKey={journalKey} />
       <PosCounterJournal refreshKey={journalKey} />
       {ticket && <CounterTicketDialog sale={ticket} onClose={() => setTicket(null)} />}
       {historyOf && <StockHistoryDialog product={historyOf} onClose={() => setHistoryOf(null)} />}

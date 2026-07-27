@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Store, Plus, MapPin, RefreshCw, Calculator, TrendingUp, Map as MapIcon, List } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { RelayProductsQueue } from '../components/admin/RelayProductsQueue';
+import { RelayFeeSetting } from '../components/admin/RelayFeeSetting';
 import Phase2Banner from '../components/Phase2Banner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -199,6 +200,7 @@ export default function LoloPointsAdminPage() {
         <KpiCard testId="kpi-cap-monthly" label="Plafond mensuel" value="1 200 €" sub="par point" icon={Calculator} accent="#D9B35A" />
       </div>
 
+      <RelayFeeSetting />
       <RelayProductsQueue />
 
       {loading && <div className="text-center text-white/50 py-12">Chargement…</div>}
