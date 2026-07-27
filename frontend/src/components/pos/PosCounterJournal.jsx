@@ -93,6 +93,19 @@ export const PosCounterJournal = ({ refreshKey }) => {
           </button>
         </div>
       )}
+      {journal && journal.by_operator?.length > 0 && (
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs"
+          data-testid="journal-by-operator">
+          <span className="font-bold text-white/50 uppercase tracking-wider text-[10px]">Par opérateur</span>
+          {journal.by_operator.map((op) => (
+            <span key={op.name} className="font-mono" data-testid={`operator-sales-${op.name}`}>
+              <b className="text-emerald-300">{op.name}</b>
+              <span className="text-white/60"> : {op.count} vente{op.count > 1 ? 's' : ''} · {(op.total_cents / 100).toFixed(2)} €</span>
+              <span className="text-white/35"> (💵 {(op.cash_cents / 100).toFixed(2)} · 💳 {(op.card_cents / 100).toFixed(2)})</span>
+            </span>
+          ))}
+        </div>
+      )}
       {top.length > 0 && (
         <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3" data-testid="top-products">
           <p className="text-[11px] uppercase tracking-wider text-white/40 mb-2 flex items-center gap-1.5">

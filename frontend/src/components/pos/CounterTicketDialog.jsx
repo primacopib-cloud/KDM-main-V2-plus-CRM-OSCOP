@@ -22,6 +22,7 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
       <div class="t"><table>${rows}</table></div>
       <div class="t">${discount ? `Remise promo : -${(discount / 100).toFixed(2)} €<br/>` : ''}
       <b>TOTAL : ${(sale.total_cents / 100).toFixed(2)} €</b> (${sale.payment_method === 'CARD' ? 'CB' : 'espèces'})</div>
+      ${sale.operator_name ? `<div style="margin-top:4px">Encaissé par : ${sale.operator_name}</div>` : ''}
       <div class="t" style="text-align:center">Merci de votre visite !<br/>LOLODRIVE by O'SCOP</div>
       </body></html>`);
     w.document.close();
@@ -55,6 +56,9 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
             <span>TOTAL ({sale.payment_method === 'CARD' ? 'CB' : 'espèces'})</span>
             <span data-testid="ticket-total">{(sale.total_cents / 100).toFixed(2)} €</span>
           </div>
+          {sale.operator_name && (
+            <div className="text-white/45 pt-1" data-testid="ticket-operator">Encaissé par : {sale.operator_name}</div>
+          )}
         </div>
         <Button onClick={printTicket} variant="outline" className="w-full border-white/15" data-testid="print-ticket-btn">
           <Printer className="w-4 h-4 mr-2" /> Imprimer le ticket

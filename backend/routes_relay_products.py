@@ -289,12 +289,24 @@ async def pos_counter_journal(user: dict = Depends(get_current_user)):
     start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     orders = await db.lolodrive_orders.find(
         {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": start}},
-        {"_id": 0, "order_number": 1, "total_cents": 1, "payment_method": 1, "created_at": 1}
+        {"_id": 0, "order_number": 1, "total_cents": 1, "payment_method": 1, "created_at": 1, "operator_name": 1}
     ).sort("created_at", -1).to_list(300)
     cash = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CASH")
     card = sum(o.get("total_cents", 0) for o in orders if o.get("payment_method") == "CARD")
+    by_op = {}
+    for o in orders:
+        name = o.get("operator_name") or "Gérant"
+        e = by_op.setdefault(name, {"name": name, "count": 0, "cash_cents": 0, "card_cents": 0})
+        e["count"] += 1
+        if o.get("payment_method") == "CARD":
+            e["card_cents"] += o.get("total_cents", 0)
+        else:
+            e["cash_cents"] += o.get("total_cents", 0)
+    for e in by_op.values():
+        e["total_cents"] = e["cash_cents"] + e["card_cents"]
     return {"date": start.strftime("%d/%m/%Y"), "count": len(orders),
-            "cash_cents": cash, "card_cents": card, "total_cents": cash + card, "sales": orders}
+            "cash_cents": cash, "card_cents": card, "total_cents": cash + card, "sales": orders,
+            "by_operator": sorted(by_op.values(), key=lambda x: x["total_cents"], reverse=True)}
 
 
 @relay_products_router.get("/pos/counter-journal/export")
@@ -371,6 +383,7 @@ async def email_counter_ticket(order_id: str, payload: dict, user: dict = Depend
       {f"<p style='margin:8px 0 0;color:#b45309'>⚡ Remise promo : −{discount / 100:.2f} €</p>" if discount else ''}
       <p style='margin:10px 0 0;font-size:15px'>Total encaissé : <strong>{order['total_cents'] / 100:.2f} €</strong>
       ({'carte bancaire' if order.get('payment_method') == 'CARD' else 'espèces'})</p>
+      {f"<p style='margin:6px 0 0;font-size:12px;color:#777'>Encaissé par : <strong>{order['operator_name']}</strong></p>" if order.get('operator_name') else ''}
       <p style='color:#999;font-size:11px;margin-top:12px'>Merci de votre visite — Réseau LOLODRIVE by O'SCOP.</p>
     """
     await send_email(to_email=email, to_name=None, subject=subject,

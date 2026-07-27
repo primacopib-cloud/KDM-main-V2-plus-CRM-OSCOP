@@ -86,7 +86,7 @@ async def pos_relay_fee(user: dict = Depends(get_current_user)):
     """Règle réseau : frais UC appliqués aux ventes de produits relais + solde CREDI'SCOP du gérant."""
     point = await _manager_point(user["id"])
     from lolodrive_helpers import get_or_create_wallet
-    wallet = await get_or_create_wallet(user["id"])
+    wallet = await get_or_create_wallet(point.get("manager_user_id") or user["id"])
     return {"fee_uc": await get_relay_fee_uc(), "balance_uc": wallet.get("balance_uc", 0),
             "point_code": point["code"]}
 
