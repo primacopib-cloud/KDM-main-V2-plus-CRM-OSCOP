@@ -76,6 +76,65 @@ async def send_accountant_report(db, point, start, end, month_tag) -> bool:
     return True
 
 
+async def send_network_report(db, start, end, month_tag) -> int:
+    """Rapport consolidé réseau (toutes caisses comptoir) envoyé aux super admins."""
+    from brevo_service import send_email, _wrap_html
+    points = {p["id"]: p async for p in db.lolodrive_points.find({}, {"_id": 0})}
+    rows = ["relais;date;heure;numero;operateur;paiement;articles;remise_promo_eur;total_eur"]
+    by_point, g_total = {}, 0
+    async for o in db.lolodrive_orders.find(
+            {"channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
+            {"_id": 0}).sort([("lolo_point_id", 1), ("created_at", 1)]):
+        pt = points.get(o.get("lolo_point_id"), {})
+        label = f"{pt.get('code', '?')} — {pt.get('name', '')}".strip(" —")
+        items = " + ".join(f"{l['name']} x{l['qty']}" for l in o.get("items", []))
+        pay = "CB" if o.get("payment_method") == "CARD" else "Especes"
+        total = o.get("total_cents", 0)
+        rows.append(f"{label};{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};"
+                    f"{o.get('operator_name') or 'Gerant'};{pay};\"{items}\";"
+                    f"{(o.get('promo_discount_cents') or 0) / 100:.2f};{total / 100:.2f}")
+        e = by_point.setdefault(label, {"count": 0, "total": 0})
+        e["count"] += 1
+        e["total"] += total
+        g_total += total
+    rows += ["", f"TOTAL RESEAU;;;;;{sum(e['count'] for e in by_point.values())} vente(s);;;{g_total / 100:.2f}"]
+    csv = "\ufeff" + "\n".join(rows)
+    table = "".join(
+        f"<tr><td style='padding:5px 8px;border-bottom:1px solid #eee'>{label}</td>"
+        f"<td style='padding:5px 8px;border-bottom:1px solid #eee;text-align:center'>{e['count']}</td>"
+        f"<td style='padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:bold'>{e['total'] / 100:.2f} €</td></tr>"
+        for label, e in sorted(by_point.items(), key=lambda x: -x[1]["total"]))
+    month_label = start.strftime("%m/%Y")
+    subject = f"📊 Rapport comptable réseau — {month_label} ({g_total / 100:.2f} €)"
+    body = f"""
+      <p>Bonjour,</p>
+      <p>Rapport comptable consolidé des caisses comptoir du réseau LOLODRIVE pour <strong>{month_label}</strong> :</p>
+      <table style='width:100%;border-collapse:collapse;font-size:13px;margin:10px 0'>
+        <tr style='color:#888;font-size:11px;text-transform:uppercase'>
+          <td style='padding:4px 8px'>Relais</td><td style='padding:4px 8px;text-align:center'>Ventes</td>
+          <td style='padding:4px 8px;text-align:right'>Caisse</td></tr>
+        {table}
+        <tr><td style='padding:6px 8px;font-weight:bold'>TOTAL RÉSEAU</td><td></td>
+        <td style='padding:6px 8px;text-align:right;font-weight:bold'>{g_total / 100:.2f} €</td></tr>
+      </table>
+      <p style='font-size:12px'>Le détail complet vente par vente est joint en CSV.</p>
+    """
+    recipients = {TEAM_EMAIL} if (TEAM_EMAIL := None) else set()
+    async for u in db.users.find({"is_admin": True}, {"_id": 0, "email": 1}):
+        if u.get("email"):
+            recipients.add(u["email"].lower())
+    sent = 0
+    for email in recipients:
+        await send_email(to_email=email, to_name=None, subject=subject,
+                         html_content=_wrap_html(subject, body),
+                         text_content=f"Rapport réseau {month_label} : {g_total / 100:.2f} €.",
+                         tags=["rapport_reseau"],
+                         attachments=[{"content": base64.b64encode(csv.encode("utf-8")).decode(),
+                                       "name": f"caisses-reseau-{month_tag}.csv"}])
+        sent += 1
+    return sent
+
+
 async def run_accountant_reports(db, force: bool = False, ref_date=None) -> int:
     now = ref_date or datetime.utcnow()
     if not force and now.day > SEND_UNTIL_DAY:
