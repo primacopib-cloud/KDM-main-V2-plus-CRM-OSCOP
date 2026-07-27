@@ -453,6 +453,7 @@ const reasonLabel = (r) => ({
   RECHARGE: 'Recharge wallet',
   ORDER_PAY_UC: 'Paiement commande en UC',
   NO_PICKUP_PENALTY: 'Pénalité non-retrait',
+  NO_PICKUP_PENALTY_REFUND: 'Remboursement pénalité (retrait effectué)',
 }[r] || r);
 
 const statusColor = (s) => {

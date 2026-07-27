@@ -106,6 +106,49 @@ async def pos_order_detail(order_id: str, user: dict = Depends(get_current_user)
     return {"order": order, "customer": customer, "point": point}
 
 
+async def _refund_no_pickup_penalty(order_id: str):
+    """Recrédite la pénalité de non-retrait au client quand le retrait est finalement confirmé."""
+    now = datetime.utcnow()
+    order = await db.lolodrive_orders.find_one_and_update(
+        {"id": order_id, "no_pickup_penalty_debited": True, "no_pickup_penalty_refunded": {"$ne": True}},
+        {"$set": {"no_pickup_penalty_refunded": True, "no_pickup_penalty_refunded_at": now}})
+    if not order:
+        return
+    penalty = order.get("no_pickup_penalty_uc") or 0
+    wallet = await db.lolodrive_wallets.find_one({"user_id": order.get("user_id")})
+    if penalty <= 0 or not wallet:
+        return
+    num = order.get("order_number")
+    await db.lolodrive_wallets.update_one(
+        {"id": wallet["id"]}, {"$inc": {"balance_uc": penalty}, "$set": {"updated_at": now}})
+    await db.lolodrive_wallet_ledger.insert_one({
+        "id": str(uuid.uuid4()), "wallet_id": wallet["id"], "type": "CREDIT",
+        "amount_uc": penalty, "reason": "NO_PICKUP_PENALTY_REFUND",
+        "order_number": num, "created_at": now})
+    logger.info("Pénalité %s UC remboursée (retrait tardif) — commande %s", penalty, num)
+    try:
+        client = await db.users.find_one({"id": order.get("user_id")},
+                                         {"_id": 0, "email": 1, "contact_name": 1})
+        if client and client.get("email"):
+            fresh = await db.lolodrive_wallets.find_one({"id": wallet["id"]}, {"_id": 0, "balance_uc": 1})
+            from brevo_service import send_email, _wrap_html
+            subject = f"✅ Pénalité remboursée — commande {num} retirée"
+            body = f"""
+              <p>Bonjour {((client.get('contact_name') or '').split() or [''])[0]},</p>
+              <p>Votre commande <strong>{num}</strong> a bien été retirée. La pénalité de non-retrait de
+              <strong style='color:#10b981'>{penalty:g} UC ({penalty / 10:.2f} €)</strong> vous a été
+              recréditée sur votre CREDI'SCOP.</p>
+              <p>Nouveau solde : <strong>{(fresh or {}).get('balance_uc', 0):g} UC</strong>.</p>
+              <p style='color:#999;font-size:11px;margin-top:12px'>Merci de votre confiance — Réseau LOLODRIVE by O'SCOP.</p>
+            """
+            await send_email(to_email=client["email"], to_name=client.get("contact_name"), subject=subject,
+                             html_content=_wrap_html(subject, body),
+                             text_content=f"Commande {num} retirée : pénalité de {penalty:g} UC recréditée sur votre CREDI'SCOP.",
+                             tags=["no_pickup_penalty_refund"])
+    except Exception as exc:
+        logger.warning("Email remboursement pénalité %s : %s", num, exc)
+
+
 @lolodrive_pos_router.post("/pos/orders/{order_id}/status")
 async def pos_update_order_status(order_id: str, request: StatusUpdate, user: dict = Depends(get_current_user)):
     now = datetime.utcnow()
@@ -117,6 +160,11 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
     if request.status == OrderStatus.FULFILLED:
         extra["fulfilled_at"] = now
     await db.lolodrive_orders.update_one({"id": order_id}, {"$set": {"status": request.status.value, **extra}})
+    if request.status == OrderStatus.FULFILLED:
+        try:
+            await _refund_no_pickup_penalty(order_id)
+        except Exception as exc:
+            logger.warning(f"Remboursement pénalité {order_id}: {exc}")
     await _broadcast_pos_event("order.status_changed", {"order_id": order_id, "status": request.status.value})
     # Brevo email+SMS notification on READY (best-effort)
     if request.status == OrderStatus.READY:
@@ -189,6 +237,10 @@ async def pos_scan(order_id: str, user: dict = Depends(get_current_user)):
         await _apply_drive_stock(order_id)
     except Exception as exc:
         logger.warning(f"Stock drive {order_id}: {exc}")
+    try:
+        await _refund_no_pickup_penalty(order_id)
+    except Exception as exc:
+        logger.warning(f"Remboursement pénalité {order_id}: {exc}")
     await _broadcast_pos_event("order.fulfilled", {"order_id": order_id})
     return {"ok": True, "order_id": order_id, "status": OrderStatus.FULFILLED.value}
 

@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 from lolodrive_helpers import get_current_user, require_admin
@@ -191,7 +192,7 @@ async def admin_penalties(admin: dict = Depends(require_admin)):
         {"no_pickup_penalty_uc": {"$gt": 0}},
         {"_id": 0, "id": 1, "order_number": 1, "user_id": 1, "lolo_point_id": 1, "status": 1,
          "no_pickup_penalty_uc": 1, "no_pickup_reminder_sent_at": 1, "items": 1,
-         "auto_cancelled": 1, "cancelled_at": 1}
+         "auto_cancelled": 1, "cancelled_at": 1, "no_pickup_penalty_refunded": 1}
     ).sort("no_pickup_reminder_sent_at", -1).limit(200).to_list(200)
     user_ids = list({o["user_id"] for o in orders if o.get("user_id")})
     point_ids = list({o["lolo_point_id"] for o in orders if o.get("lolo_point_id")})
@@ -210,6 +211,7 @@ async def admin_penalties(admin: dict = Depends(require_admin)):
         rows.append({
             "order_number": o.get("order_number"), "status": o.get("status"),
             "auto_cancelled": bool(o.get("auto_cancelled")),
+            "refunded": bool(o.get("no_pickup_penalty_refunded")),
             "penalty_uc": o["no_pickup_penalty_uc"],
             "penalized_at": o.get("no_pickup_reminder_sent_at"),
             "customer": u.get("contact_name") or u.get("email") or "—",
@@ -218,6 +220,63 @@ async def admin_penalties(admin: dict = Depends(require_admin)):
     by_point_list = sorted(by_point.values(), key=lambda x: -x["total_uc"])
     return {"orders": rows, "by_point": by_point_list,
             "total_uc": round(sum(p["total_uc"] for p in by_point_list), 2)}
+
+
+@taxonomy_router.get("/admin/penalties-export")
+async def admin_penalties_export(month: str, admin: dict = Depends(require_admin)):
+    """Export CSV comptable des pénalités de non-retrait du mois, par relais."""
+    from datetime import datetime as dt
+    try:
+        y, m = map(int, month.split("-"))
+        start = dt(y, m, 1)
+        end = dt(y + 1, 1, 1) if m == 12 else dt(y, m + 1, 1)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="Mois invalide (format attendu : YYYY-MM)")
+    orders = await db.lolodrive_orders.find(
+        {"no_pickup_penalty_uc": {"$gt": 0},
+         "no_pickup_reminder_sent_at": {"$gte": start, "$lt": end}},
+        {"_id": 0, "order_number": 1, "user_id": 1, "lolo_point_id": 1, "status": 1, "items": 1,
+         "no_pickup_penalty_uc": 1, "no_pickup_reminder_sent_at": 1,
+         "auto_cancelled": 1, "no_pickup_penalty_refunded": 1}
+    ).sort("no_pickup_reminder_sent_at", 1).to_list(2000)
+    users = {u["id"]: u async for u in db.users.find(
+        {"id": {"$in": list({o["user_id"] for o in orders if o.get("user_id")})}},
+        {"_id": 0, "id": 1, "contact_name": 1, "email": 1})}
+    points = {p["id"]: p async for p in db.lolodrive_points.find(
+        {"id": {"$in": list({o["lolo_point_id"] for o in orders if o.get("lolo_point_id")})}},
+        {"_id": 0, "id": 1, "name": 1, "code": 1})}
+    by_point = {}
+    for o in orders:
+        by_point.setdefault(o.get("lolo_point_id"), []).append(o)
+    rows = ["relais;code;date;numero;client;articles;penalite_uc;penalite_eur;statut"]
+    g_uc = g_ref = 0.0
+    for pid, group in sorted(by_point.items(), key=lambda kv: (points.get(kv[0], {}).get("code") or "~")):
+        pt = points.get(pid, {})
+        pname, pcode = pt.get("name") or "Sans relais", pt.get("code") or "-"
+        t_uc = t_ref = 0.0
+        for o in group:
+            u = users.get(o.get("user_id"), {})
+            pen = o["no_pickup_penalty_uc"]
+            statut = ("Remboursee (retrait tardif)" if o.get("no_pickup_penalty_refunded")
+                      else "Annulee auto" if o.get("auto_cancelled")
+                      else "Retiree" if o.get("status") == "FULFILLED" else "En attente")
+            rows.append(f"{pname};{pcode};{o['no_pickup_reminder_sent_at'].strftime('%d/%m/%Y %H:%M')};"
+                        f"{o.get('order_number')};{u.get('contact_name') or u.get('email') or '-'};"
+                        f"{sum(l.get('qty', 0) for l in o.get('items', []))};"
+                        f"{pen:g};{pen / 10:.2f};{statut}")
+            t_uc += pen
+            if o.get("no_pickup_penalty_refunded"):
+                t_ref += pen
+        rows.append(f"SOUS-TOTAL {pcode};;;;;{len(group)} cde(s);{t_uc:g};{t_uc / 10:.2f};"
+                    f"dont remboursees {t_ref:g} UC")
+        rows.append("")
+        g_uc += t_uc
+        g_ref += t_ref
+    rows += [f"TOTAL GENERAL;;;;;{len(orders)} cde(s);{g_uc:g};{g_uc / 10:.2f};dont remboursees {g_ref:g} UC",
+             f"NET FACTURE;;;;;;{g_uc - g_ref:g};{(g_uc - g_ref) / 10:.2f};"]
+    return PlainTextResponse(
+        "\ufeff" + "\n".join(rows), media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename=penalites-{month}.csv"})
 
 
 @taxonomy_router.get("/fees-config")

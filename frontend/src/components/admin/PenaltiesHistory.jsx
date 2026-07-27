@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import { lolodriveAPI } from '../../services/api';
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
@@ -8,11 +9,29 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'sh
 export const PenaltiesHistory = () => {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
 
   useEffect(() => {
     lolodriveAPI.adminPenalties().then(setData).catch(() => {});
   }, []);
   if (!data) return null;
+
+  const exportCsv = async (e) => {
+    e.stopPropagation();
+    try {
+      const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/admin/penalties-export?month=${month}`,
+        { credentials: 'include' });
+      if (!r.ok) { toast.error('Export impossible'); return; }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `penalites-${month}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Pénalités exportées en CSV ✓');
+    } catch { toast.error('Erreur de connexion'); }
+  };
 
   return (
     <div className="mt-6 rounded-2xl bg-white/[0.025] border border-white/[0.07] p-5" data-testid="penalties-history">
@@ -29,6 +48,15 @@ export const PenaltiesHistory = () => {
       </button>
       {open && (
         <div className="mt-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
+              data-testid="penalties-month-input"
+              className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white" />
+            <button type="button" onClick={exportCsv} data-testid="penalties-export-btn"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20">
+              <Download className="w-3 h-3" /> Export CSV comptable
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2" data-testid="penalties-by-point">
             {data.by_point.map((p) => (
               <div key={p.code} data-testid={`penalties-point-${p.code}`}
@@ -61,11 +89,13 @@ export const PenaltiesHistory = () => {
                     <td className="py-1.5 px-2 text-white/60">{o.items_count}</td>
                     <td className="py-1.5 px-2 font-bold text-red-400">{o.penalty_uc} UC</td>
                     <td className="py-1.5 px-2">
-                      {o.auto_cancelled
-                        ? <span className="text-red-400 font-semibold">Annulée auto</span>
-                        : o.status === 'FULFILLED'
-                          ? <span className="text-emerald-400">Retirée</span>
-                          : <span className="text-amber-400">{o.status === 'READY' ? 'En attente' : o.status}</span>}
+                      {o.refunded
+                        ? <span className="text-cyan-300 font-semibold">Remboursée (retrait tardif)</span>
+                        : o.auto_cancelled
+                          ? <span className="text-red-400 font-semibold">Annulée auto</span>
+                          : o.status === 'FULFILLED'
+                            ? <span className="text-emerald-400">Retirée</span>
+                            : <span className="text-amber-400">{o.status === 'READY' ? 'En attente' : o.status}</span>}
                     </td>
                   </tr>
                 ))}
