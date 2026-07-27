@@ -1,9 +1,10 @@
 """Taxonomie LOLODRIVE (catégories → sous-catégories, gérées par le super admin) + frais de retrait/livraison par créneau."""
 import uuid
 import logging
+import os
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
@@ -309,6 +310,39 @@ async def admin_penalties_export(month: str, admin: dict = Depends(require_admin
     return PlainTextResponse(
         "\ufeff" + "\n".join(rows), media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename=penalites-{month}.csv"})
+
+
+@taxonomy_router.get("/admin/missing-photos")
+async def admin_missing_photos(admin: dict = Depends(require_admin)):
+    """Produits actifs du catalogue sans photo, pour complétion par le super admin."""
+    products = await db.lolodrive_products.find(
+        {"is_active": {"$ne": False}, "status": {"$nin": ["PENDING", "REJECTED"]},
+         "$or": [{"image_url": {"$exists": False}}, {"image_url": None}, {"image_url": ""}]},
+        {"_id": 0, "sku": 1, "name": 1, "brand": 1, "category": 1, "subcategory": 1, "point_code": 1}
+    ).sort("category", 1).to_list(500)
+    return {"products": products, "count": len(products)}
+
+
+@taxonomy_router.post("/admin/products/{sku}/photo")
+async def admin_set_product_photo(sku: str, file: UploadFile = File(...), admin: dict = Depends(require_admin)):
+    """Upload direct d'une photo produit par le super admin (jpg/png/webp, 4 Mo max)."""
+    prod = await db.lolodrive_products.find_one({"sku": sku}, {"_id": 0, "sku": 1})
+    if not prod:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    ext = (file.filename or "img.jpg").rsplit(".", 1)[-1].lower()
+    if ext not in ("jpg", "jpeg", "png", "webp"):
+        raise HTTPException(status_code=400, detail="Format non supporté (jpg, png, webp)")
+    data = await file.read()
+    if len(data) > 4 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image trop lourde (max 4 Mo)")
+    up_dir = os.path.join(os.path.dirname(__file__), "uploads", "products")
+    os.makedirs(up_dir, exist_ok=True)
+    fname = f"product-admin-{uuid.uuid4().hex[:8]}.{ext}"
+    with open(os.path.join(up_dir, fname), "wb") as f:
+        f.write(data)
+    image_url = f"/api/uploads/products/{fname}"
+    await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"image_url": image_url}})
+    return {"ok": True, "sku": sku, "image_url": image_url}
 
 
 @taxonomy_router.get("/fees-config")

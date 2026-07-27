@@ -85,6 +85,7 @@ export const lolodriveAPI = {
     apiCall(`/lolodrive/admin/categories/${id}`, { method: 'DELETE' }),
   feesConfig: () => apiCall('/lolodrive/fees-config'),
   adminPenalties: () => apiCall('/lolodrive/admin/penalties'),
+  adminMissingPhotos: () => apiCall('/lolodrive/admin/missing-photos'),
   adminUpdateFeesConfig: (payload) =>
     apiCall('/lolodrive/admin/fees-config', { method: 'PUT', body: JSON.stringify(payload) }),
   loyaltyMe: () => apiCall('/lolodrive/loyalty/me'),

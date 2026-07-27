@@ -359,7 +359,7 @@ export default function LolodriveCatalogPage() {
             {g.subs.map((s) => (
               <div key={s.name} className="mb-5">
                 <h3 className="text-sm font-semibold text-white/60 mb-2 border-l-2 border-[#D9B35A]/50 pl-2" data-testid={`catalog-sub-${s.name}`}>{s.name}</h3>
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
                   {[...s.items]
                     .sort((a, b) => (favs.includes(b.sku) ? 1 : 0) - (favs.includes(a.sku) ? 1 : 0))
                     .map((p) => (
