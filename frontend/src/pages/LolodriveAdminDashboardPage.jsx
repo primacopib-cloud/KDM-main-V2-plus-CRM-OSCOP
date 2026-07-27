@@ -1,4 +1,5 @@
 import { DriveFeesPanel } from '../components/admin/DriveFeesPanel';
+import { PenaltiesHistory } from '../components/admin/PenaltiesHistory';
 import { LolodriveCategoriesPanel } from '../components/admin/LolodriveCategoriesPanel';
 import { LoyaltyConfigPanel } from '../components/admin/LoyaltyConfigPanel';
 import i18n from '@/i18n';
@@ -330,6 +331,7 @@ export default function LolodriveAdminDashboardPage() {
       )}
       <LolodriveCategoriesPanel />
       <DriveFeesPanel />
+      <PenaltiesHistory />
       <LoyaltyConfigPanel />
     </LolodriveLayout>
   );

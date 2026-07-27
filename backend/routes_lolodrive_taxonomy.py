@@ -184,6 +184,42 @@ async def compute_penalty_uc(lines: list) -> float:
     return round(fee, 2)
 
 
+@taxonomy_router.get("/admin/penalties")
+async def admin_penalties(admin: dict = Depends(require_admin)):
+    """Historique des commandes pénalisées (non retirées) + total UC par relais."""
+    orders = await db.lolodrive_orders.find(
+        {"no_pickup_penalty_uc": {"$gt": 0}},
+        {"_id": 0, "id": 1, "order_number": 1, "user_id": 1, "lolo_point_id": 1, "status": 1,
+         "no_pickup_penalty_uc": 1, "no_pickup_reminder_sent_at": 1, "items": 1,
+         "auto_cancelled": 1, "cancelled_at": 1}
+    ).sort("no_pickup_reminder_sent_at", -1).limit(200).to_list(200)
+    user_ids = list({o["user_id"] for o in orders if o.get("user_id")})
+    point_ids = list({o["lolo_point_id"] for o in orders if o.get("lolo_point_id")})
+    users = {u["id"]: u async for u in db.users.find(
+        {"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "contact_name": 1, "email": 1})}
+    points = {p["id"]: p async for p in db.lolodrive_points.find(
+        {"id": {"$in": point_ids}}, {"_id": 0, "id": 1, "name": 1, "code": 1})}
+    rows, by_point = [], {}
+    for o in orders:
+        u, pt = users.get(o.get("user_id"), {}), points.get(o.get("lolo_point_id"), {})
+        key = pt.get("code") or "—"
+        agg = by_point.setdefault(key, {"code": key, "name": pt.get("name") or "Sans relais",
+                                        "count": 0, "total_uc": 0.0})
+        agg["count"] += 1
+        agg["total_uc"] = round(agg["total_uc"] + o["no_pickup_penalty_uc"], 2)
+        rows.append({
+            "order_number": o.get("order_number"), "status": o.get("status"),
+            "auto_cancelled": bool(o.get("auto_cancelled")),
+            "penalty_uc": o["no_pickup_penalty_uc"],
+            "penalized_at": o.get("no_pickup_reminder_sent_at"),
+            "customer": u.get("contact_name") or u.get("email") or "—",
+            "point_name": pt.get("name"), "point_code": pt.get("code"),
+            "items_count": sum(l.get("qty", 0) for l in o.get("items", []))})
+    by_point_list = sorted(by_point.values(), key=lambda x: -x["total_uc"])
+    return {"orders": rows, "by_point": by_point_list,
+            "total_uc": round(sum(p["total_uc"] for p in by_point_list), 2)}
+
+
 @taxonomy_router.get("/fees-config")
 async def public_fees_config(user: dict = Depends(get_current_user)):
     return await get_fees_config_doc()

@@ -360,8 +360,10 @@ async def _slot_reminder_loop():
     while True:
         try:
             from slot_pickup_reminder import run_slot_reminders, run_no_pickup_reminders
+            from auto_cancel_orders import run_auto_cancellations
             await run_slot_reminders(_db)
             await run_no_pickup_reminders(_db)
+            await run_auto_cancellations(_db)
         except Exception as exc:
             logger.exception("Slot reminder loop crashed: %s", exc)
         await asyncio.sleep(600)
