@@ -18,6 +18,7 @@ import { RelayReviewPrompt } from '../components/pass/RelayReviewPrompt';
 import { SavedCartReminder } from '../components/pass/SavedCartReminder';
 import QuickRechargeCards from '../components/pass/QuickRechargeCards';
 import { PassQrCard } from '../components/lolodrive/PassQrCard';
+import { LoyaltyCard } from '../components/pass/LoyaltyCard';
 import { toast } from 'sonner';
 
 export default function PassSpacePage() {
@@ -275,6 +276,7 @@ export default function PassSpacePage() {
 
           {/* Recharge express 1 clic */}
           {data.active && <QuickRechargeCards />}
+          <LoyaltyCard />
 
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -370,7 +372,7 @@ export default function PassSpacePage() {
                       </div>
                       {o.pickup_slot_label && (
                         <div className="text-[10px] text-[#D9B35A]" data-testid={`order-slot-${o.id}`}>
-                          🕐 {o.pickup_slot_label}{(o.slot_fee_uc || 0) > 0 ? ` · frais ${o.slot_fee_uc} UC` : ''}
+                          🕐 {o.pickup_date ? `${new Date(o.pickup_date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })} · ` : ''}{o.pickup_slot_label}{(o.slot_fee_uc || 0) > 0 ? ` · frais ${o.slot_fee_uc} UC` : ''}
                         </div>
                       )}
                     </div>

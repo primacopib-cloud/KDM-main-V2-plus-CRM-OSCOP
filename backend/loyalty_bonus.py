@@ -9,19 +9,32 @@ LOYALTY_EVERY = 10
 DEFAULT_BONUS_UC = 10
 
 
-async def check_loyalty_bonus(db, customer: dict, point: dict, order_number: str):
-    """Retourne le bonus UC offert (0 si l'achat n'est pas un multiple de 10)."""
-    count = await db.lolodrive_orders.count_documents(
-        {"channel": "COUNTER", "user_id": customer["id"], "lolo_point_id": point["id"]})
-    if count == 0 or count % LOYALTY_EVERY != 0:
-        return 0
-    doc = await db.lolodrive_settings.find_one({"key": "loyalty_bonus_uc"}, {"_id": 0})
+async def get_loyalty_config(db) -> dict:
+    """Config fidélité : seuil d'achats et bonus UC (réglables super admin)."""
+    doc = await db.lolodrive_settings.find_one({"key": "loyalty_config"}, {"_id": 0})
+    val = (doc or {}).get("value", {})
     try:
-        bonus = max(0.0, float((doc or {}).get("value", DEFAULT_BONUS_UC)))
+        threshold = int(val.get("threshold", LOYALTY_EVERY))
+    except (TypeError, ValueError):
+        threshold = LOYALTY_EVERY
+    legacy = await db.lolodrive_settings.find_one({"key": "loyalty_bonus_uc"}, {"_id": 0})
+    try:
+        bonus = float(val.get("bonus_uc", (legacy or {}).get("value", DEFAULT_BONUS_UC)))
     except (TypeError, ValueError):
         bonus = DEFAULT_BONUS_UC
     if bonus == int(bonus):
         bonus = int(bonus)
+    return {"threshold": max(2, threshold), "bonus_uc": max(0, bonus)}
+
+
+async def check_loyalty_bonus(db, customer: dict, point: dict, order_number: str):
+    """Retourne le bonus UC offert (0 si l'achat n'atteint pas le seuil de fidélité)."""
+    cfg = await get_loyalty_config(db)
+    count = await db.lolodrive_orders.count_documents(
+        {"channel": "COUNTER", "user_id": customer["id"], "lolo_point_id": point["id"]})
+    if count == 0 or count % cfg["threshold"] != 0:
+        return 0
+    bonus = cfg["bonus_uc"]
     if bonus <= 0:
         return 0
     from lolodrive_helpers import get_or_create_wallet

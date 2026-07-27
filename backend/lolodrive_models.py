@@ -91,6 +91,7 @@ class OrderCreate(BaseModel):
     delivery_zone: Optional[str] = None
     delivery_slot_id: Optional[str] = None
     pickup_slot_id: Optional[str] = None
+    pickup_date: Optional[str] = None
 
 class RechargeIntentRequest(BaseModel):
     pack: str = Field(..., description="MINI | STANDARD | MAXI")

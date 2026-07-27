@@ -66,6 +66,8 @@ def set_lolodrive_database(database):
     set_pos_counter_database(database)
     from routes_lolodrive_taxonomy import set_taxonomy_database
     set_taxonomy_database(database)
+    from routes_loyalty import set_loyalty_database
+    set_loyalty_database(database)
 
 # =======================
 # Public / user routes
@@ -162,6 +164,20 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
     fees_cents += slot_fee_cents
     fees_uc = round(fees_uc + slot_fee_uc, 2)
 
+    # Jour de retrait choisi (aujourd'hui / demain)
+    pickup_date = None
+    if slot_id and request.pickup_date:
+        try:
+            chosen = datetime.strptime(request.pickup_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Date de retrait invalide (attendu : YYYY-MM-DD)")
+        today = datetime.utcnow().date()
+        if not (today <= chosen <= today + timedelta(days=1)):
+            raise HTTPException(status_code=400, detail="Le retrait doit être aujourd'hui ou demain")
+        pickup_date = chosen.strftime("%Y-%m-%d")
+    elif slot_id:
+        pickup_date = datetime.utcnow().strftime("%Y-%m-%d")
+
     order = {
         "id": str(uuid.uuid4()),
         "order_number": f"LD-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}",
@@ -172,6 +188,7 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
         "delivery_slot_id": request.delivery_slot_id,
         "pickup_slot_id": slot_id,
         "pickup_slot_label": slot_label,
+        "pickup_date": pickup_date,
         "slot_fee_uc": slot_fee_uc,
         "slot_fee_cents": slot_fee_cents,
         "status": OrderStatus.DRAFT.value,

@@ -86,6 +86,10 @@ export const lolodriveAPI = {
   feesConfig: () => apiCall('/lolodrive/fees-config'),
   adminUpdateFeesConfig: (payload) =>
     apiCall('/lolodrive/admin/fees-config', { method: 'PUT', body: JSON.stringify(payload) }),
+  loyaltyMe: () => apiCall('/lolodrive/loyalty/me'),
+  adminLoyaltyConfig: () => apiCall('/lolodrive/admin/loyalty-config'),
+  adminUpdateLoyaltyConfig: (payload) =>
+    apiCall('/lolodrive/admin/loyalty-config', { method: 'PUT', body: JSON.stringify(payload) }),
   managerBonusHistory: () => apiCall('/lolodrive/manager/bonus-history'),
   adminSendNetworkReport: (month) =>
     apiCall('/lolodrive/admin/network-report/send', { method: 'POST', body: JSON.stringify({ month }) }),

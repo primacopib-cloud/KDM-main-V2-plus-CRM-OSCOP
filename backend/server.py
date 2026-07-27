@@ -295,6 +295,7 @@ from routes_relay_products import relay_products_router
 from routes_pos_insights import pos_insights_router
 from routes_pos_counter import pos_counter_router
 from routes_lolodrive_taxonomy import taxonomy_router
+from routes_loyalty import loyalty_router
 from routes_pos_operators import pos_operators_router
 from routes_lolodrive_admin import lolodrive_admin_router, ensure_lolodrive_indexes
 set_lolodrive_database(db)
@@ -308,6 +309,7 @@ app.include_router(relay_products_router)
 app.include_router(pos_insights_router)
 app.include_router(pos_counter_router)
 app.include_router(taxonomy_router)
+app.include_router(loyalty_router)
 app.include_router(pos_operators_router)
 app.include_router(lolodrive_admin_router)
 

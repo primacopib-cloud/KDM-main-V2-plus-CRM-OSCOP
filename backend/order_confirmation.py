@@ -41,7 +41,14 @@ async def notify_order_confirmed(db, order: dict, paid_with: str):
     slot_html = ""
     if order.get("pickup_slot_label"):
         fee = order.get("slot_fee_uc") or 0
-        slot_html = (f"<p style='margin:8px 0 0'>🕐 Créneau de retrait : <strong>{order['pickup_slot_label']}</strong>"
+        date_txt = ""
+        if order.get("pickup_date"):
+            try:
+                from datetime import datetime as _dt
+                date_txt = " le " + _dt.strptime(order["pickup_date"], "%Y-%m-%d").strftime("%d/%m/%Y")
+            except ValueError:
+                pass
+        slot_html = (f"<p style='margin:8px 0 0'>🕐 Créneau de retrait{date_txt} : <strong>{order['pickup_slot_label']}</strong>"
                      + (f" — frais de créneau : <strong>{fee:g} UC</strong>" if fee else "") + "</p>")
     body = f"""
       <p>Bonjour{f' {first}' if first else ''},</p>

@@ -27,6 +27,8 @@ async def run_slot_reminders(db, now=None) -> int:
             "$or": [{"pickup_slot_id": {"$nin": [None, ""]}}, {"delivery_slot_id": {"$nin": [None, ""]}}],
             "slot_reminder_sent_at": {"$exists": False}}, {"_id": 0}):
         kind = "pickup" if o.get("pickup_slot_id") else "delivery"
+        if o.get("pickup_date") and o["pickup_date"] != now.strftime("%Y-%m-%d"):
+            continue
         slot = slots.get((kind, o.get("pickup_slot_id") or o.get("delivery_slot_id")))
         hm = _parse_hhmm((slot or {}).get("start"))
         if not slot or not hm:

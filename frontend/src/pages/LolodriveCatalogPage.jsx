@@ -29,6 +29,7 @@ export default function LolodriveCatalogPage() {
   });
   const [fulfillment, setFulfillment] = useState('DRIVE');
   const [pickupSlot, setPickupSlot] = useState('');
+  const [pickupDate, setPickupDate] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
@@ -168,6 +169,7 @@ export default function LolodriveCatalogPage() {
         reference_point_code: refCode || undefined,
         pickup_slot_id: fulfillment !== 'DELIVERY' ? pickupSlot || undefined : undefined,
         delivery_slot_id: fulfillment === 'DELIVERY' ? pickupSlot || undefined : undefined,
+        pickup_date: pickupSlot ? pickupDate || undefined : undefined,
       });
       toast.success(`Commande ${order.order_number} créée`);
       setCart({});
@@ -264,7 +266,8 @@ export default function LolodriveCatalogPage() {
                   </Select>
                 </div>
                 <CartSlotPicker fulfillment={fulfillment} cartItems={cartItems} products={products}
-                  slotId={pickupSlot} setSlotId={setPickupSlot} />
+                  slotId={pickupSlot} setSlotId={setPickupSlot}
+                  pickupDate={pickupDate} setPickupDate={setPickupDate} />
                 {fulfillment === 'LOLO_POINT' && (
                   <Select value={selectedPoint} onValueChange={setSelectedPoint}>
                     <SelectTrigger className="bg-white/[0.04] border-white/10" data-testid="lolo-point-select">
