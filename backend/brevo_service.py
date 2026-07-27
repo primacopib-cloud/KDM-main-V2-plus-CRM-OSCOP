@@ -268,6 +268,7 @@ async def notify_order_ready(
     to_phone: Optional[str],
     order_number: str,
     pickup_point: str,
+    slot_label: Optional[str] = None,
 ) -> Dict[str, Any]:
     first = (to_name or "").split()[0] if to_name else ""
     subject = f"Commande {order_number} prête au retrait"
@@ -277,6 +278,7 @@ async def notify_order_ready(
       <div style=\"background:rgba(87,209,154,0.08);border:1px solid rgba(87,209,154,0.2);border-radius:12px;padding:16px;margin:16px 0;\">
         <p style=\"margin:0;color:#57D19A;font-size:12px;text-transform:uppercase;letter-spacing:1px;\">Point de retrait</p>
         <p style=\"margin:6px 0 0;font-size:18px;font-weight:600;\">{pickup_point}</p>
+        {f'<p style="margin:6px 0 0;font-size:13px;">🕐 Votre créneau : <strong>{slot_label}</strong></p>' if slot_label else ''}
       </div>
       <p>Présentez-vous avec votre QR-code de commande pour le retrait.</p>
     """
@@ -285,12 +287,13 @@ async def notify_order_ready(
         to_name=to_name,
         subject=subject,
         html_content=_wrap_html(subject, body),
-        text_content=f"Commande #{order_number} prête au retrait : {pickup_point}.",
+        text_content=f"Commande #{order_number} prête au retrait : {pickup_point}."
+                     + (f" Creneau : {slot_label}." if slot_label else ""),
         tags=["order_ready"],
     )
     sms_text = (
         f"KDMARCHE x O'SCOP : votre commande #{order_number} est prete au retrait "
-        f"({pickup_point}). Munissez-vous de votre QR-code."
+        f"({pickup_point}{f', creneau {slot_label}' if slot_label else ''}). Munissez-vous de votre QR-code."
     )
     sms_res = await send_sms(to_phone, sms_text, tag="order_ready") if to_phone else None
     return {"email": email_res, "sms": sms_res}

@@ -130,12 +130,19 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
                     if pt:
                         pickup = pt.get("name") or pt.get("code") or pickup
                 if user_doc and user_doc.get("email"):
+                    slot_label = order.get("pickup_slot_label")
+                    if slot_label and order.get("pickup_date"):
+                        try:
+                            slot_label = f"{datetime.strptime(order['pickup_date'], '%Y-%m-%d').strftime('%d/%m')} — {slot_label}"
+                        except ValueError:
+                            pass
                     await notify_order_ready(
                         to_email=user_doc["email"],
                         to_name=user_doc.get("contact_name"),
                         to_phone=user_doc.get("phone"),
                         order_number=str(order.get("order_number") or order.get("id", ""))[:32],
                         pickup_point=pickup,
+                        slot_label=slot_label,
                     )
         except Exception as exc:
             logger.warning(f"Brevo order-ready notification failed: {exc}")
