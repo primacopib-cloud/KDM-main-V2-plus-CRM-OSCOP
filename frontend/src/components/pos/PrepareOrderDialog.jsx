@@ -92,7 +92,7 @@ export const PrepareOrderDialog = ({ orderId, onClose, onStart, acting }) => {
                   <Printer className="w-3 h-3 mr-1" /> Imprimer le bon
                 </Button>
                 {o.status === 'PAID' && (
-                  <Button size="sm" disabled={acting} onClick={() => onStart(o.id)} data-testid="prepare-start-btn"
+                  <Button size="sm" disabled={acting} onClick={() => { printSlip(); onStart(o.id); }} data-testid="prepare-start-btn"
                     className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black font-bold">
                     <Package className="w-3 h-3 mr-1" /> Commencer la préparation
                   </Button>
