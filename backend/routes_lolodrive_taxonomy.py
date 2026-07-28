@@ -134,6 +134,8 @@ DEFAULT_FEES = {
     "no_pickup_block": {"threshold": 3, "window_days": 30, "block_days": 15},
     # Bonus fidélité 'Client fiable' : UC offerts si aucun non-retrait sur 6 mois (bonus_uc 0 = désactivé)
     "reliable_bonus": {"bonus_uc": 10, "min_orders": 5},
+    # Alerte super admin : seuil de retours 'Défectueux' par produit sur le mois (0 = désactivé)
+    "defective_alert_threshold": 3,
 }
 
 
@@ -150,6 +152,8 @@ async def get_fees_config_doc() -> dict:
         cfg["no_pickup_block"] = DEFAULT_FEES["no_pickup_block"]
     if "reliable_bonus" not in cfg:
         cfg["reliable_bonus"] = DEFAULT_FEES["reliable_bonus"]
+    if "defective_alert_threshold" not in cfg:
+        cfg["defective_alert_threshold"] = DEFAULT_FEES["defective_alert_threshold"]
     return cfg
 
 
@@ -454,5 +458,13 @@ async def update_fees_config(payload: dict, admin: dict = Depends(require_admin)
         if not (0 <= bonus <= 100000) or not (0 <= min_orders <= 1000):
             raise HTTPException(status_code=400, detail="reliable_bonus : valeurs hors limites")
         cfg["reliable_bonus"] = {"bonus_uc": bonus, "min_orders": min_orders}
+    if "defective_alert_threshold" in payload:
+        try:
+            th = int(payload["defective_alert_threshold"])
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="defective_alert_threshold : entier attendu")
+        if not (0 <= th <= 1000):
+            raise HTTPException(status_code=400, detail="defective_alert_threshold : valeur hors limites")
+        cfg["defective_alert_threshold"] = th
     await db.lolodrive_settings.update_one({"key": "drive_fees"}, {"$set": {"value": cfg}}, upsert=True)
     return {"ok": True, "config": cfg}

@@ -352,9 +352,24 @@ async def export_counter_journal(month: Optional[str] = None, user: dict = Depen
         rows.append(f"{o['created_at']:%d/%m/%Y};{o['created_at']:%H:%M};{o['order_number']};{operator};{_pay_label(o)};"
                     f"\"{items}\";{(o.get('promo_discount_cents') or 0) / 100:.2f};{o.get('total_cents', 0) / 100:.2f}")
     cash, card, uc = split_totals(orders)
+    refunds = await db.counter_refunds.find(
+        {"point_id": point["id"], "created_at": {"$gte": start, "$lt": end}},
+        {"_id": 0}).sort("created_at", 1).to_list(1000)
+    from routes_counter_refund import REFUND_REASONS
+    if refunds:
+        rows += ["", "RETOURS;date;heure;numero;motif;articles;methode;montant_eur"]
+        for r in refunds:
+            items = " + ".join(f"{it.get('name', it['sku'])} x{it['qty']}" for it in r.get("items", []))
+            rows.append(f";{r['created_at']:%d/%m/%Y};{r['created_at']:%H:%M};{r.get('order_number')};"
+                        f"{REFUND_REASONS.get(r.get('reason'), 'Autre')};\"{items}\";"
+                        f"{'UC' if r.get('method') == 'UC' else 'Especes'};-{r['amount_cents'] / 100:.2f}")
+    ref_total = sum(r["amount_cents"] for r in refunds)
+    ref_cash = sum(r["amount_cents"] for r in refunds if r.get("method") != "UC")
     rows += ["", f"TOTAL ESPECES;;;;;;;{cash / 100:.2f}", f"TOTAL CB;;;;;;;{card / 100:.2f}",
              f"TOTAL UC;;;;;;;{uc / 100:.2f}",
-             f"TOTAL CAISSE;;;;;;;{(cash + card + uc) / 100:.2f}"]
+             f"TOTAL RETOURS;;;;;;;-{ref_total / 100:.2f}",
+             f"ESPECES NETTES (retours deduits);;;;;;;{(cash - ref_cash) / 100:.2f}",
+             f"TOTAL CAISSE NET;;;;;;;{(cash + card + uc - ref_total) / 100:.2f}"]
     return PlainTextResponse(
         "\ufeff" + "\n".join(rows), media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename=caisse-{point['code']}-{y}-{m:02d}.csv"})
