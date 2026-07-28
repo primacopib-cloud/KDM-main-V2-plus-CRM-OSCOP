@@ -46,10 +46,16 @@ export const ProductsTvaPanel = () => {
   const saveSupplier = async (p) => {
     const supplier = document.querySelector(`[data-testid="supplier-input-${p.sku}"]`)?.value.trim() || '';
     const email = document.querySelector(`[data-testid="supplier-email-input-${p.sku}"]`)?.value.trim() || '';
-    if (supplier === (p.supplier || '') && email === (p.supplier_email || '')) return;
+    const rawPrice = document.querySelector(`[data-testid="purchase-input-${p.sku}"]`)?.value.trim() || '';
+    let purchase = null;
+    if (rawPrice !== '') {
+      purchase = Math.round(parseFloat(rawPrice.replace(',', '.')) * 100);
+      if (Number.isNaN(purchase) || purchase < 0) return toast.error("Prix d'achat invalide");
+    }
+    if (supplier === (p.supplier || '') && email === (p.supplier_email || '') && purchase === (p.purchase_price_cents ?? null)) return;
     try {
-      await lolodriveAPI.adminSetProductSupplier(p.sku, { supplier, supplier_email: email });
-      setData((prev) => ({ ...prev, products: prev.products.map((x) => (x.sku === p.sku ? { ...x, supplier: supplier || null, supplier_email: email || null } : x)) }));
+      await lolodriveAPI.adminSetProductSupplier(p.sku, { supplier, supplier_email: email, purchase_price_cents: purchase });
+      setData((prev) => ({ ...prev, products: prev.products.map((x) => (x.sku === p.sku ? { ...x, supplier: supplier || null, supplier_email: email || null, purchase_price_cents: purchase } : x)) }));
       toast.success('Fournisseur enregistré ✓');
     } catch (e) { toast.error(e.message); }
   };
@@ -84,6 +90,9 @@ export const ProductsTvaPanel = () => {
                   </span>
                   <span className="block text-[10px] text-white/40 truncate">
                     {p.category || '—'}{p.point_code ? ` · Relais ${p.point_code}` : ''} · {(p.price_public_cents / 100).toFixed(2)} € TTC
+                    {p.purchase_price_cents != null && p.price_public_cents > 0 && (
+                      <span className="text-emerald-300/80" data-testid={`margin-${p.sku}`}> · marge {Math.round(100 * (p.price_public_cents - p.purchase_price_cents) / p.price_public_cents)} %</span>
+                    )}
                   </span>
                   <span className="mt-0.5 flex gap-1">
                     <input type="text" defaultValue={p.supplier || ''} placeholder="Fournisseur…"
@@ -95,7 +104,12 @@ export const ProductsTvaPanel = () => {
                       data-testid={`supplier-email-input-${p.sku}`}
                       onBlur={() => saveSupplier(p)}
                       onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
-                      className="w-full max-w-[125px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white/70 placeholder:text-white/25" />
+                      className="w-full max-w-[105px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white/70 placeholder:text-white/25" />
+                    <input type="text" defaultValue={p.purchase_price_cents != null ? (p.purchase_price_cents / 100).toFixed(2) : ''} placeholder="achat €"
+                      data-testid={`purchase-input-${p.sku}`}
+                      onBlur={() => saveSupplier(p)}
+                      onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
+                      className="w-full max-w-[52px] bg-white/5 border border-emerald-500/25 rounded px-1.5 py-0.5 text-[10px] text-emerald-200/80 placeholder:text-white/25 font-mono" />
                   </span>
                 </span>
               </span>

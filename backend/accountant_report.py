@@ -94,6 +94,22 @@ async def _tickets_zip(db, point, start, end):
     return buf.getvalue(), len(orders)
 
 
+async def _restock_zip(db, point, start, end):
+    """Archive ZIP des bons de commande fournisseur PDF du mois : (zip_bytes, nb)."""
+    import io
+    import zipfile
+    orders = await db.restock_orders.find(
+        {"point_id": point["id"], "created_at": {"$gte": start, "$lt": end}}, {"_id": 0}).sort("created_at", 1).to_list(500)
+    if not orders:
+        return None, 0
+    from restock_pdf import build_restock_pdf
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for o in orders:
+            z.writestr(f"bon-{o['order_number']}.pdf", build_restock_pdf(o, point))
+    return buf.getvalue(), len(orders)
+
+
 async def send_accountant_report(db, point, start, end, month_tag) -> bool:
     """Construit et envoie les CSV (caisse + heures + pénalités) au comptable du relais."""
     from brevo_service import send_email, _wrap_html
@@ -104,6 +120,7 @@ async def send_accountant_report(db, point, start, end, month_tag) -> bool:
     hours_csv = await _hours_csv(db, point, start, end)
     pen_csv, nb_pen, pen_net = await _penalties_csv(db, point, start, end)
     tickets_zip, nb_tickets = await _tickets_zip(db, point, start, end)
+    bons_zip, nb_bons = await _restock_zip(db, point, start, end)
     month_label = start.strftime("%m/%Y")
     subject = f"📊 Rapport mensuel {month_label} — {point['name']} ({point['code']})"
     pen_line = (f"<li><strong>Pénalités de non-retrait</strong> : {nb_pen} commande(s) — "
@@ -118,6 +135,7 @@ async def send_accountant_report(db, point, start, end, month_tag) -> bool:
         <li><strong>Relevés d'heures des opérateurs</strong> (CSV joint, présence nette pauses déduites)</li>
         {pen_line}
         {f"<li><strong>Tickets de caisse</strong> : {nb_tickets} ticket(s) PDF du mois (archive ZIP jointe)</li>" if nb_tickets else ''}
+        {f"<li><strong>Bons de commande fournisseur</strong> : {nb_bons} bon(s) PDF du mois (archive ZIP jointe)</li>" if nb_bons else ''}
       </ul>
       <p style='color:#999;font-size:11px;margin-top:12px'>Rapport automatique mensuel — Réseau LOLODRIVE by O'SCOP.</p>
     """
@@ -131,6 +149,9 @@ async def send_accountant_report(db, point, start, end, month_tag) -> bool:
     if tickets_zip:
         attachments.append({"content": base64.b64encode(tickets_zip).decode(),
                             "name": f"tickets-{point['code']}-{month_tag}.zip"})
+    if bons_zip:
+        attachments.append({"content": base64.b64encode(bons_zip).decode(),
+                            "name": f"bons-commande-{point['code']}-{month_tag}.zip"})
     await send_email(
         to_email=email, to_name=None, subject=subject,
         html_content=_wrap_html(subject, body),

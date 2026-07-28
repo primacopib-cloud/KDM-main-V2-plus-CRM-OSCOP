@@ -370,7 +370,7 @@ async def admin_products_tva(admin: dict = Depends(require_admin)):
     """Fiches produits du catalogue pour le super admin (TVA + photo + activation)."""
     products = await db.lolodrive_products.find(
         {"status": {"$nin": ["PENDING", "REJECTED"]}},
-        {"_id": 0, "sku": 1, "name": 1, "category": 1, "point_code": 1, "is_active": 1, "supplier": 1, "supplier_email": 1,
+        {"_id": 0, "sku": 1, "name": 1, "category": 1, "point_code": 1, "is_active": 1, "supplier": 1, "supplier_email": 1, "purchase_price_cents": 1,
          "price_public_cents": 1, "tva_rate": 1, "image_url": 1, "image_ai_generated": 1}
     ).sort("category", 1).to_list(1000)
     return {"products": products, "count": len(products)}

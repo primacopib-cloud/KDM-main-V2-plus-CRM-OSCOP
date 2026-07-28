@@ -68,6 +68,14 @@ export const RestockOrderDialog = ({ alerts, onClose }) => {
           className="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold">
           {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-1.5" /> Envoyer le bon de commande</>}
         </Button>
+        {(() => {
+          const t = alerts.reduce((s, a) => s + ((a.purchase_price_cents || 0) * (parseInt(qtys[a.sku], 10) || 0)), 0);
+          return t > 0 ? (
+            <p className="text-xs text-white/60 text-right -mt-1" data-testid="restock-order-total">
+              Total achat estimé : <b className="text-emerald-300">{(t / 100).toFixed(2)} €</b>
+            </p>
+          ) : null;
+        })()}
       </DialogContent>
     </Dialog>
   );

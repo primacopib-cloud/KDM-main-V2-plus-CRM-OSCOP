@@ -49,6 +49,7 @@ export const RestockAdminPanel = () => {
               <span className="text-white/50 truncate">
                 {o.lines.map((l) => `${l.name} ×${l.qty}`).join(', ')}
               </span>
+              {o.total_cents > 0 && <span className="text-emerald-300/80 font-mono">{(o.total_cents / 100).toFixed(2)} €</span>}
               {(o.shortages || []).length > 0 && <span className="text-red-300 text-[10px] font-bold">écart : {o.shortages.reduce((a, s) => a + s.missing, 0)} manquant(s)</span>}
               <span className="ml-auto">{badge(o)}</span>
             </div>

@@ -213,7 +213,7 @@ async def pos_stock_alerts(days: int = 30, user: dict = Depends(get_current_user
         return {"days": days, "alerts": []}
     prods = await db.lolodrive_products.find(
         {"sku": {"$in": list(sold)}, "stock_qty": {"$ne": None}},
-        {"_id": 0, "sku": 1, "name": 1, "stock_qty": 1, "supplier": 1, "supplier_email": 1}).to_list(100)
+        {"_id": 0, "sku": 1, "name": 1, "stock_qty": 1, "supplier": 1, "supplier_email": 1, "purchase_price_cents": 1}).to_list(100)
     alerts = []
     for p in prods:
         stock = p.get("stock_qty") or 0
@@ -225,6 +225,7 @@ async def pos_stock_alerts(days: int = 30, user: dict = Depends(get_current_user
                            "sold_qty": sold[p["sku"]], "days_left": days_left,
                            "suggested_qty": suggested,
                            "supplier": p.get("supplier"), "supplier_email": p.get("supplier_email"),
+                           "purchase_price_cents": p.get("purchase_price_cents"),
                            "critical": stock <= 5 or (days_left is not None and days_left <= 5)})
     alerts.sort(key=lambda a: (a["days_left"] if a["days_left"] is not None else 999, a["stock_qty"]))
     return {"days": days, "alerts": alerts}

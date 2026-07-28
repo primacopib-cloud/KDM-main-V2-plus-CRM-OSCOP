@@ -75,6 +75,7 @@ export const RestockOrdersHistory = () => {
                 <span className="text-white/35 font-mono">{fmtDate(o.created_at)}</span>
                 <b className="font-mono">{o.order_number}</b>
                 <span className="text-white/50">{o.lines.length} article(s) · {[...new Set(o.lines.map((l) => l.supplier || 'sans fournisseur'))].join(', ')}</span>
+                {o.total_cents > 0 && <span className="text-emerald-300/80 font-mono">{(o.total_cents / 100).toFixed(2)} €</span>}
                 <span className="ml-auto">{badge(o)}</span>
               </button>
               {expanded === o.id && (

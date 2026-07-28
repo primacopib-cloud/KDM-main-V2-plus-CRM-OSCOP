@@ -3,6 +3,7 @@ import { PenaltiesHistory } from '../components/admin/PenaltiesHistory';
 import { MissingPhotosPanel } from '../components/admin/MissingPhotosPanel';
 import { ProductsTvaPanel } from '../components/admin/ProductsTvaPanel';
 import { RestockAdminPanel } from '../components/admin/RestockAdminPanel';
+import { SuppliersPanel } from '../components/admin/SuppliersPanel';
 import { LolodriveCategoriesPanel } from '../components/admin/LolodriveCategoriesPanel';
 import { LoyaltyConfigPanel } from '../components/admin/LoyaltyConfigPanel';
 import i18n from '@/i18n';
@@ -337,6 +338,7 @@ export default function LolodriveAdminDashboardPage() {
       <MissingPhotosPanel />
       <ProductsTvaPanel />
       <RestockAdminPanel />
+      <SuppliersPanel />
       <PenaltiesHistory />
       <LoyaltyConfigPanel />
     </LolodriveLayout>
