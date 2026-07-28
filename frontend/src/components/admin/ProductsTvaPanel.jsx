@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Percent, ChevronDown, ChevronUp, Package, Sparkles, Loader2, Ban, RotateCcw } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
+import { ProductToggleHistory } from './ProductToggleHistory';
 
 const RATES = ['0', '2.1', '5.5', '8.5', '20'];
 
@@ -42,10 +43,13 @@ export const ProductsTvaPanel = () => {
     } catch (e) { toast.error(e.message); }
   };
 
-  const saveSupplier = async (sku, value) => {
+  const saveSupplier = async (p) => {
+    const supplier = document.querySelector(`[data-testid="supplier-input-${p.sku}"]`)?.value.trim() || '';
+    const email = document.querySelector(`[data-testid="supplier-email-input-${p.sku}"]`)?.value.trim() || '';
+    if (supplier === (p.supplier || '') && email === (p.supplier_email || '')) return;
     try {
-      await lolodriveAPI.adminSetProductSupplier(sku, value);
-      setData((prev) => ({ ...prev, products: prev.products.map((x) => (x.sku === sku ? { ...x, supplier: value || null } : x)) }));
+      await lolodriveAPI.adminSetProductSupplier(p.sku, { supplier, supplier_email: email });
+      setData((prev) => ({ ...prev, products: prev.products.map((x) => (x.sku === p.sku ? { ...x, supplier: supplier || null, supplier_email: email || null } : x)) }));
       toast.success('Fournisseur enregistré ✓');
     } catch (e) { toast.error(e.message); }
   };
@@ -61,6 +65,7 @@ export const ProductsTvaPanel = () => {
         {open ? <ChevronUp className="w-4 h-4 text-white/40" /> : <ChevronDown className="w-4 h-4 text-white/40" />}
       </button>
       {open && (
+        <>
         <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[380px] overflow-y-auto pr-1">
           {data.products.map((p) => (
             <div key={p.sku} data-testid={`tva-row-${p.sku}`}
@@ -80,11 +85,18 @@ export const ProductsTvaPanel = () => {
                   <span className="block text-[10px] text-white/40 truncate">
                     {p.category || '—'}{p.point_code ? ` · Relais ${p.point_code}` : ''} · {(p.price_public_cents / 100).toFixed(2)} € TTC
                   </span>
-                  <input type="text" defaultValue={p.supplier || ''} placeholder="Fournisseur…"
-                    data-testid={`supplier-input-${p.sku}`}
-                    onBlur={(ev) => { const v = ev.target.value.trim(); if (v !== (p.supplier || '')) saveSupplier(p.sku, v); }}
-                    onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
-                    className="mt-0.5 w-full max-w-[150px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white/70 placeholder:text-white/25" />
+                  <span className="mt-0.5 flex gap-1">
+                    <input type="text" defaultValue={p.supplier || ''} placeholder="Fournisseur…"
+                      data-testid={`supplier-input-${p.sku}`}
+                      onBlur={() => saveSupplier(p)}
+                      onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
+                      className="w-full max-w-[105px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white/70 placeholder:text-white/25" />
+                    <input type="text" defaultValue={p.supplier_email || ''} placeholder="email fournisseur…"
+                      data-testid={`supplier-email-input-${p.sku}`}
+                      onBlur={() => saveSupplier(p)}
+                      onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
+                      className="w-full max-w-[125px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white/70 placeholder:text-white/25" />
+                  </span>
                 </span>
               </span>
               <span className="flex items-center gap-1 shrink-0">
@@ -112,6 +124,8 @@ export const ProductsTvaPanel = () => {
             </div>
           ))}
         </div>
+        <ProductToggleHistory />
+        </>
       )}
     </div>
   );

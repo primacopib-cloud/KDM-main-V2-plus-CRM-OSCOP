@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Minus, Loader2, Camera, CreditCard, Coins, Pencil, ClipboardList, ScanBarcode, Search } from 'lucide-react';
+import { Package, Plus, Minus, Loader2, Camera, CreditCard, Coins, Pencil, ClipboardList, ScanBarcode, Search, Tags } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -12,6 +12,7 @@ import { StockHistoryDialog } from './StockHistoryDialog';
 import { RelayFeeBanner } from './RelayFeeBanner';
 import { SalesGoalBar } from './SalesGoalBar';
 import { InventoryDialog } from './InventoryDialog';
+import { printShelfLabels } from './shelfLabelsPrint';
 import { CounterPaymentDialog } from './CounterPaymentDialog';
 import { CounterRechargeDialog } from './CounterRechargeDialog';
 import { groupByCategory } from '../lolodrive/groupByCategory';
@@ -174,6 +175,10 @@ export const PosCatalogPanel = () => {
           <Button size="sm" variant="outline" onClick={() => setShowInventory(true)} data-testid="inventory-btn"
             className="border-[#22d3ee]/40 text-[#22d3ee] hover:bg-[#22d3ee]/10">
             <ClipboardList className="w-3 h-3 mr-1" /> Inventaire
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => printShelfLabels(catalog.products)} data-testid="shelf-labels-btn"
+            className="border-[#D9B35A]/40 text-[#D9B35A] hover:bg-[#D9B35A]/10">
+            <Tags className="w-3 h-3 mr-1" /> Étiquettes rayon
           </Button>
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditSku(null); }}>
           <DialogTrigger asChild>

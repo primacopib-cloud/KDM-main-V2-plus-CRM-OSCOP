@@ -353,20 +353,16 @@ async def admin_set_product_photo(sku: str, file: UploadFile = File(...), admin:
 async def admin_toggle_product(sku: str, payload: dict, admin: dict = Depends(require_admin)):
     """Active / désactive un produit du catalogue (retrait en un clic d'un produit suspect)."""
     is_active = bool((payload or {}).get("is_active", False))
-    res = await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"is_active": is_active}})
-    if res.matched_count == 0:
+    prod = await db.lolodrive_products.find_one({"sku": sku}, {"_id": 0, "name": 1})
+    if not prod:
         raise HTTPException(status_code=404, detail="Produit introuvable")
+    await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"is_active": is_active}})
+    from datetime import datetime as dt
+    await db.product_toggle_logs.insert_one({
+        "sku": sku, "name": prod.get("name"), "is_active": is_active,
+        "by_email": admin.get("email"), "by_name": admin.get("contact_name") or admin.get("email"),
+        "at": dt.utcnow()})
     return {"ok": True, "sku": sku, "is_active": is_active}
-
-
-@taxonomy_router.put("/admin/products/{sku}/supplier")
-async def admin_set_product_supplier(sku: str, payload: dict, admin: dict = Depends(require_admin)):
-    """Nom du fournisseur d'un produit (pour cibler l'origine des lots défectueux)."""
-    supplier = str((payload or {}).get("supplier") or "").strip()[:120]
-    res = await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"supplier": supplier or None}})
-    if res.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Produit introuvable")
-    return {"ok": True, "sku": sku, "supplier": supplier or None}
 
 
 @taxonomy_router.get("/admin/products-tva")
@@ -374,7 +370,7 @@ async def admin_products_tva(admin: dict = Depends(require_admin)):
     """Fiches produits du catalogue pour le super admin (TVA + photo + activation)."""
     products = await db.lolodrive_products.find(
         {"status": {"$nin": ["PENDING", "REJECTED"]}},
-        {"_id": 0, "sku": 1, "name": 1, "category": 1, "point_code": 1, "is_active": 1, "supplier": 1,
+        {"_id": 0, "sku": 1, "name": 1, "category": 1, "point_code": 1, "is_active": 1, "supplier": 1, "supplier_email": 1,
          "price_public_cents": 1, "tva_rate": 1, "image_url": 1, "image_ai_generated": 1}
     ).sort("category", 1).to_list(1000)
     return {"products": products, "count": len(products)}

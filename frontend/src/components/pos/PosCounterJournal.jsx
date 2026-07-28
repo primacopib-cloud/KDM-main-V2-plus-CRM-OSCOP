@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Receipt, Download, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react';
+import { Receipt, Download, TrendingUp, TrendingDown, Minus, AlertTriangle, PackagePlus } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
 import { BonusHistoryDialog } from './BonusHistoryDialog';
 import { SalesTicketsList } from './SalesTicketsList';
+import { RestockOrderDialog } from './RestockOrderDialog';
 
 const monthLabel = (ym) => {
   const [y, m] = ym.split('-');
@@ -18,6 +19,7 @@ export const PosCounterJournal = ({ refreshKey }) => {
   const [seller, setSeller] = useState(null);
   const [isManager, setIsManager] = useState(false);
   const [rewarding, setRewarding] = useState(false);
+  const [showRestock, setShowRestock] = useState(false);
   useEffect(() => {
     lolodriveAPI.posSessionInfo().then((s) => setIsManager(s.role !== 'OPERATEUR_POS')).catch(() => {});
   }, []);
@@ -62,9 +64,17 @@ export const PosCounterJournal = ({ refreshKey }) => {
     <div className="mb-4 space-y-2">
       {alerts.length > 0 && (
         <div className="rounded-xl border border-amber-400/40 bg-amber-400/[0.07] px-4 py-2.5" data-testid="stock-alerts">
-          <p className="text-xs font-bold text-amber-300 flex items-center gap-1.5 mb-1">
-            <AlertTriangle className="w-3.5 h-3.5" /> Alerte stock bas — produits du top ventes
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+            <p className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" /> Alerte stock bas — produits du top ventes
+            </p>
+            {isManager && (
+              <button type="button" onClick={() => setShowRestock(true)} data-testid="restock-order-btn"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/35 hover:bg-emerald-500/20">
+                <PackagePlus className="w-3 h-3" /> Bon de commande
+              </button>
+            )}
+          </div>
           <div className="space-y-0.5">
             {alerts.map((a) => (
               <p key={a.sku} className="text-xs text-white/70 flex flex-wrap items-center gap-x-1.5" data-testid={`stock-alert-${a.sku}`}>
@@ -208,6 +218,7 @@ export const PosCounterJournal = ({ refreshKey }) => {
           </div>
         </div>
       )}
+      {showRestock && <RestockOrderDialog alerts={alerts} onClose={() => setShowRestock(false)} />}
     </div>
   );
 };

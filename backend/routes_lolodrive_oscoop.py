@@ -72,6 +72,8 @@ def set_lolodrive_database(database):
     set_taxonomy_database(database)
     from routes_loyalty import set_loyalty_database
     set_loyalty_database(database)
+    from routes_product_extras import set_product_extras_database
+    set_product_extras_database(database)
 
 # =======================
 # Public / user routes

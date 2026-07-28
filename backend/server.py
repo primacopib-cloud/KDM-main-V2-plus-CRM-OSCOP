@@ -297,6 +297,7 @@ from routes_pos_counter import pos_counter_router
 from routes_ticket_pdf import ticket_pdf_router
 from routes_counter_refund import counter_refund_router
 from routes_lolodrive_taxonomy import taxonomy_router
+from routes_product_extras import product_extras_router
 from routes_loyalty import loyalty_router
 from routes_pos_operators import pos_operators_router
 from routes_lolodrive_admin import lolodrive_admin_router, ensure_lolodrive_indexes
@@ -313,6 +314,7 @@ app.include_router(pos_counter_router)
 app.include_router(ticket_pdf_router)
 app.include_router(counter_refund_router)
 app.include_router(taxonomy_router)
+app.include_router(product_extras_router)
 app.include_router(loyalty_router)
 app.include_router(pos_operators_router)
 app.include_router(lolodrive_admin_router)
