@@ -247,6 +247,8 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
                                      res["stock_qty"], point["code"], order["order_number"])
     order.pop("_id", None)
     order["point_name"] = point.get("name")
+    order["point_siret"] = point.get("siret")
+    order["point_vat"] = point.get("vat_number")
     balance_uc = None
     if relay_fee_uc > 0:
         owner_id = point.get("manager_user_id") or user["id"]
@@ -400,8 +402,12 @@ async def email_counter_ticket(order_id: str, payload: dict, user: dict = Depend
               "MIXED": "paiement combiné UC + " + ("CB" if order.get("rest_method") == "CARD" else "espèces")
               }.get(order.get("payment_method"), "espèces")
     subject = f"🧾 Ticket de caisse — {order['order_number']} ({point['name']})"
+    fiscal = " · ".join(x for x in (
+        f"SIRET {point['siret']}" if point.get("siret") else None,
+        f"N° TVA {point['vat_number']}" if point.get("vat_number") else None) if x)
     body = f"""
       <p><strong>{point['name']}</strong> — vente au comptoir du {order['created_at'].strftime('%d/%m/%Y %H:%M')}</p>
+      {f"<p style='margin:-6px 0 8px;font-size:11px;color:#888'>{fiscal}</p>" if fiscal else ''}
       <table style='width:100%;border-collapse:collapse;font-size:13px;border-top:1px dashed #ccc;border-bottom:1px dashed #ccc'>{rows}</table>
       <table style='width:100%;border-collapse:collapse;font-size:13px;margin-top:6px'>
         <tr><td style='padding:3px 8px'><strong>Sous-total HT</strong></td>

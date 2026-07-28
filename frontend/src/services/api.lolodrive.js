@@ -86,6 +86,13 @@ export const lolodriveAPI = {
   feesConfig: () => apiCall('/lolodrive/fees-config'),
   adminPenalties: () => apiCall('/lolodrive/admin/penalties'),
   adminMissingPhotos: () => apiCall('/lolodrive/admin/missing-photos'),
+  adminProductsTva: () => apiCall('/lolodrive/admin/products-tva'),
+  adminSetProductTva: (sku, rate) =>
+    apiCall(`/lolodrive/admin/products/${sku}/tva`, { method: 'PUT', body: JSON.stringify({ tva_rate: rate }) }),
+  adminGenerateProductPhoto: (sku) =>
+    apiCall(`/lolodrive/admin/products/${sku}/generate-photo`, { method: 'POST' }),
+  adminUpdatePoint: (pointId, payload) =>
+    apiCall(`/lolodrive/admin/lolo-points/${pointId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   adminUpdateFeesConfig: (payload) =>
     apiCall('/lolodrive/admin/fees-config', { method: 'PUT', body: JSON.stringify(payload) }),
   loyaltyMe: () => apiCall('/lolodrive/loyalty/me'),

@@ -75,7 +75,7 @@ async def create_lolo_point(request: LoloPointCreate, admin: dict = Depends(requ
 
 ALLOWED_POINT_FIELDS = {"name", "address", "city", "contact_email", "contact_phone",
                         "opening_hours", "offers_drive", "offers_delivery", "delivery_conditions",
-                        "photo_url", "manager_user_id"}
+                        "photo_url", "manager_user_id", "siret", "vat_number"}
 
 
 @lolodrive_points_router.patch("/admin/lolo-points/{point_id}")

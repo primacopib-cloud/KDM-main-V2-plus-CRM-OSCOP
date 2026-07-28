@@ -4,6 +4,7 @@ import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../compone
 import { RelayProductsQueue } from '../components/admin/RelayProductsQueue';
 import { RelayFeeSetting } from '../components/admin/RelayFeeSetting';
 import { UcFeesSummary } from '../components/admin/UcFeesSummary';
+import { PointFiscalEditor } from '../components/admin/PointFiscalEditor';
 import Phase2Banner from '../components/Phase2Banner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -239,6 +240,7 @@ export default function LoloPointsAdminPage() {
                 <div><MapPin className="w-3 h-3 inline mr-1" />{p.address || '—'}, {p.city || '—'}</div>
                 {p.zone_name && <div>Zone : {p.zone_name}</div>}
               </div>
+              <PointFiscalEditor point={p} />
               <Button size="sm" variant="outline" className="w-full"
                 onClick={() => previewPayout(p)} data-testid={`payout-${p.id}`}>
                 <Calculator className="w-3 h-3 mr-2" /> Aperçu commissions (30j)

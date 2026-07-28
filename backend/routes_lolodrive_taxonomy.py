@@ -345,6 +345,31 @@ async def admin_set_product_photo(sku: str, file: UploadFile = File(...), admin:
     return {"ok": True, "sku": sku, "image_url": image_url}
 
 
+@taxonomy_router.get("/admin/products-tva")
+async def admin_products_tva(admin: dict = Depends(require_admin)):
+    """Fiches produits du catalogue pour le super admin (TVA + photo)."""
+    products = await db.lolodrive_products.find(
+        {"is_active": {"$ne": False}, "status": {"$nin": ["PENDING", "REJECTED"]}},
+        {"_id": 0, "sku": 1, "name": 1, "category": 1, "point_code": 1,
+         "price_public_cents": 1, "tva_rate": 1, "image_url": 1, "image_ai_generated": 1}
+    ).sort("category", 1).to_list(1000)
+    return {"products": products, "count": len(products)}
+
+
+@taxonomy_router.put("/admin/products/{sku}/tva")
+async def admin_set_product_tva(sku: str, payload: dict, admin: dict = Depends(require_admin)):
+    try:
+        rate = float(payload.get("tva_rate"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="tva_rate : nombre attendu")
+    if not (0 <= rate <= 30):
+        raise HTTPException(status_code=400, detail="tva_rate : taux hors limites (0-30%)")
+    res = await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"tva_rate": rate}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    return {"ok": True, "sku": sku, "tva_rate": rate}
+
+
 @taxonomy_router.post("/admin/products/{sku}/generate-photo")
 async def admin_generate_product_photo(sku: str, admin: dict = Depends(require_admin)):
     """Génère une photo d'illustration IA pour un produit sans image (super admin)."""

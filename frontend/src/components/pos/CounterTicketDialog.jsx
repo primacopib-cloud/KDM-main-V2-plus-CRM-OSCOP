@@ -37,7 +37,9 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
     const w = window.open('', '_blank', 'width=380,height=620');
     w.document.write(`<html><head><title>Ticket ${sale.order_number}</title>
       <style>body{font-family:monospace;font-size:12px;padding:12px}table{width:100%;border-collapse:collapse}td{padding:2px 4px}.t{border-top:1px dashed #000;margin-top:8px;padding-top:8px}</style></head><body>
-      <div style="text-align:center"><b>${sale.point_name || 'Relais LOLODRIVE'}</b><br/>Vente au comptoir<br/>${sale.order_number}</div>
+      <div style="text-align:center"><b>${sale.point_name || 'Relais LOLODRIVE'}</b><br/>
+      ${sale.point_siret ? `SIRET ${sale.point_siret}<br/>` : ''}${sale.point_vat ? `N° TVA ${sale.point_vat}<br/>` : ''}
+      Vente au comptoir<br/>${sale.order_number}</div>
       <div class="t"><table>${rows}</table></div>
       <div class="t"><table>
       <tr><td><b>Sous-total HT</b></td><td style="text-align:right"><b>${(totalHt / 100).toFixed(2)} €</b></td></tr>
@@ -68,6 +70,14 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="bg-[#15151c] border-white/10 text-white max-w-sm" data-testid="counter-ticket-dialog">
         <DialogHeader><DialogTitle>🧾 Ticket — {sale.order_number}</DialogTitle></DialogHeader>
+        {(sale.point_siret || sale.point_vat) && (
+          <p className="text-[10px] text-white/45 font-mono -mt-2" data-testid="ticket-fiscal-info">
+            {sale.point_name ? `${sale.point_name} · ` : ''}
+            {sale.point_siret ? `SIRET ${sale.point_siret}` : ''}
+            {sale.point_siret && sale.point_vat ? ' · ' : ''}
+            {sale.point_vat ? `N° TVA ${sale.point_vat}` : ''}
+          </p>
+        )}
         <div className="font-mono text-xs bg-black/30 rounded-xl p-3 border border-white/10 space-y-1" data-testid="ticket-lines">
           {euLines.map((l) => (
             <div key={l.sku} className="flex justify-between">
