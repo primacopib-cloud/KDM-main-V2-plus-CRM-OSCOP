@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Percent, ChevronDown, ChevronUp, Package, Sparkles, Loader2 } from 'lucide-react';
+import { Percent, ChevronDown, ChevronUp, Package, Sparkles, Loader2, Ban, RotateCcw } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
 
 const RATES = ['0', '2.1', '5.5', '8.5', '20'];
@@ -33,6 +33,15 @@ export const ProductsTvaPanel = () => {
     } catch (e) { toast.error(e.message); } finally { setAiSku(null); }
   };
 
+  const toggleActive = async (p) => {
+    const next = p.is_active === false;
+    try {
+      await lolodriveAPI.adminToggleProduct(p.sku, next);
+      setData((prev) => ({ ...prev, products: prev.products.map((x) => (x.sku === p.sku ? { ...x, is_active: next } : x)) }));
+      toast.success(next ? `${p.name} remis au catalogue ✓` : `${p.name} retiré du catalogue`);
+    } catch (e) { toast.error(e.message); }
+  };
+
   return (
     <div className="mt-6 rounded-2xl bg-white/[0.025] border border-white/[0.07] p-5" data-testid="products-tva-panel">
       <button type="button" onClick={() => setOpen(!open)} data-testid="products-tva-toggle"
@@ -47,7 +56,7 @@ export const ProductsTvaPanel = () => {
         <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[380px] overflow-y-auto pr-1">
           {data.products.map((p) => (
             <div key={p.sku} data-testid={`tva-row-${p.sku}`}
-              className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] border border-white/[0.06] px-2 py-2 text-xs">
+              className={`flex items-center justify-between gap-2 rounded-lg border px-2 py-2 text-xs ${p.is_active === false ? 'bg-red-500/[0.06] border-red-500/25 opacity-70' : 'bg-white/[0.03] border-white/[0.06]'}`}>
               <span className="flex items-center gap-2 min-w-0">
                 <span className="relative w-9 h-9 rounded-md overflow-hidden bg-white/[0.05] shrink-0 flex items-center justify-center">
                   {p.image_url
@@ -56,13 +65,23 @@ export const ProductsTvaPanel = () => {
                   {p.image_ai_generated && <span className="absolute bottom-0 right-0 text-[7px] bg-[#7c3aed] text-white px-0.5 rounded-tl">IA</span>}
                 </span>
                 <span className="min-w-0">
-                  <span className="block font-medium truncate">{p.name}</span>
+                  <span className="block font-medium truncate">
+                    {p.name}
+                    {p.is_active === false && <span className="ml-1 text-[9px] font-bold text-red-400 uppercase" data-testid={`inactive-badge-${p.sku}`}>Retiré</span>}
+                  </span>
                   <span className="block text-[10px] text-white/40 truncate">
                     {p.category || '—'}{p.point_code ? ` · Relais ${p.point_code}` : ''} · {(p.price_public_cents / 100).toFixed(2)} € TTC
                   </span>
                 </span>
               </span>
               <span className="flex items-center gap-1 shrink-0">
+                <button type="button" onClick={() => toggleActive(p)} data-testid={`product-toggle-${p.sku}`}
+                  title={p.is_active === false ? 'Remettre au catalogue' : 'Retirer du catalogue (produit suspect)'}
+                  className={`w-7 h-7 rounded-md flex items-center justify-center border ${p.is_active === false
+                    ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/35 hover:bg-emerald-500/25'
+                    : 'text-red-300 bg-red-500/10 border-red-500/35 hover:bg-red-500/25'}`}>
+                  {p.is_active === false ? <RotateCcw className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                </button>
                 <button type="button" onClick={() => regenPhoto(p.sku)} disabled={aiSku === p.sku}
                   data-testid={`regen-photo-${p.sku}`}
                   title={p.image_url ? 'Remplacer par une photo IA' : 'Générer une photo IA'}

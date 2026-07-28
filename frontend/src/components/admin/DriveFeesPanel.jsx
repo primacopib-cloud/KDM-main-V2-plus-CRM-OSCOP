@@ -51,6 +51,7 @@ export const DriveFeesPanel = () => {
             .filter(([, r]) => !Number.isNaN(r) && r >= 0)),
         no_pickup_block: cfg.no_pickup_block || { threshold: 3, window_days: 30, block_days: 15 },
         reliable_bonus: cfg.reliable_bonus || { bonus_uc: 10, min_orders: 5 },
+        defective_alert_threshold: cfg.defective_alert_threshold ?? 3,
       });
       toast.success('Tarifs de créneaux enregistrés ✓');
       setCfg(await lolodriveAPI.feesConfig());
@@ -178,6 +179,20 @@ export const DriveFeesPanel = () => {
           </div>
           <p className="text-[11px] text-white/40 mt-1.5">
             Le bonus est crédité automatiquement sur le CREDI'SCOP avec un email 🏅, et le badge s'affiche dans l'espace PASS du client.
+          </p>
+        </div>
+        <div className="mt-4 pt-4 border-t border-white/[0.06]">
+          <div className="text-sm font-semibold mb-2">⚠️ Alerte produit défectueux <span className="text-white/40 font-normal text-xs">(0 = désactivé)</span></div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
+            Alerter les super admins par email dès
+            <input type="text" data-testid="defective-threshold-input"
+              value={cfg.defective_alert_threshold ?? 3}
+              onChange={(e) => setCfg({ ...cfg, defective_alert_threshold: e.target.value })}
+              className="w-14 bg-white/5 border border-white/10 rounded px-2 py-1 text-white font-mono" />
+            retour(s) « Défectueux » d'un même produit sur le mois.
+          </div>
+          <p className="text-[11px] text-white/40 mt-1.5">
+            L'email indique la répartition par relais. Le retrait du produit se fait ensuite en un clic depuis « Fiches produits — TVA &amp; photos » ci-dessous.
           </p>
         </div>
       </div>
