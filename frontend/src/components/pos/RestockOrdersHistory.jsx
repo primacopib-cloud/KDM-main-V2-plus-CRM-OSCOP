@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { PackageCheck, ChevronDown, ChevronUp, Loader2, PackagePlus } from 'lucide-react';
+import { PackageCheck, ChevronDown, ChevronUp, Loader2, PackagePlus, FileText } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
 
 const fmtDate = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
@@ -29,9 +29,25 @@ export const RestockOrdersHistory = () => {
     try {
       const r = await lolodriveAPI.posReceiveRestockOrder(o.id, items);
       toast.success(`Réception ${r.order_number} pointée — ${r.received.length} stock(s) mis à jour ✓`);
+      if (r.shortages?.length) {
+        toast.warning(`Écart de livraison : ${r.shortages.reduce((a, s) => a + s.missing, 0)} manquant(s) — ${r.suppliers_notified?.length ? `fournisseur prévenu par email (${r.suppliers_notified.join(', ')})` : 'pas d\u2019email fournisseur, pensez à le signaler'}`);
+      }
       setExpanded(null);
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
+  };
+
+  const downloadPdf = async (o) => {
+    try {
+      const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/pos/restock-orders/${o.id}/pdf`,
+        { credentials: 'include' });
+      if (!r.ok) { toast.error('PDF indisponible'); return; }
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a');
+      a.href = url; a.download = `bon-${o.order_number}.pdf`; a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Bon de commande PDF téléchargé ✓');
+    } catch { toast.error('Erreur de connexion'); }
   };
 
   const badge = (o) => {
@@ -63,6 +79,10 @@ export const RestockOrdersHistory = () => {
               </button>
               {expanded === o.id && (
                 <div className="px-2.5 pb-2.5 space-y-1" data-testid={`ro-detail-${o.order_number}`}>
+                  <button type="button" onClick={() => downloadPdf(o)} data-testid={`ro-pdf-btn-${o.order_number}`}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-[#22d3ee] bg-[#22d3ee]/10 border border-[#22d3ee]/35 hover:bg-[#22d3ee]/20">
+                    <FileText className="w-3 h-3" /> Bon de commande PDF
+                  </button>
                   {o.lines.map((l) => (
                     <div key={l.sku} className="flex items-center gap-3 text-xs p-1.5 rounded bg-white/[0.03]">
                       <span className="flex-1 truncate">{l.name}</span>

@@ -101,6 +101,7 @@ export const lolodriveAPI = {
   posRestockOrders: () => apiCall('/lolodrive/pos/restock-orders'),
   posReceiveRestockOrder: (orderId, items) =>
     apiCall(`/lolodrive/pos/restock-orders/${orderId}/receive`, { method: 'POST', body: JSON.stringify({ items }) }),
+  adminRestockOrders: () => apiCall('/lolodrive/admin/restock-orders'),
   adminUpdatePoint: (pointId, payload) =>
     apiCall(`/lolodrive/admin/lolo-points/${pointId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   adminUpdateFeesConfig: (payload) =>

@@ -148,9 +148,95 @@ async def pos_receive_restock_order(order_id: str, payload: dict, user: dict = D
         received.append({"sku": l["sku"], "name": l.get("name"), "qty": qty, "stock_after": res["stock_qty"]})
     if not received:
         raise HTTPException(status_code=400, detail="Aucune quantité reçue à pointer")
+    got = {r["sku"]: r["qty"] for r in received}
+    shortages = [{**l, "received": got.get(l["sku"], 0), "missing": l["qty"] - got.get(l["sku"], 0)}
+                 for l in order.get("lines", []) if got.get(l["sku"], 0) < l["qty"]]
     await db.restock_orders.update_one(
-        {"id": order_id}, {"$set": {"received_at": now, "received_items": received, "status": "RECEIVED"}})
-    return {"ok": True, "order_number": order["order_number"], "received": received}
+        {"id": order_id}, {"$set": {"received_at": now, "received_items": received,
+                                    "shortages": shortages, "status": "RECEIVED"}})
+    notified = await _notify_shortages(order, shortages, point, user)
+    return {"ok": True, "order_number": order["order_number"], "received": received,
+            "shortages": shortages, "suppliers_notified": notified}
+
+
+@product_extras_router.get("/pos/restock-orders/{order_id}/pdf")
+async def pos_restock_order_pdf(order_id: str, user: dict = Depends(get_current_user)):
+    """Bon de commande en PDF A4 (comptabilité) — gérant du relais uniquement."""
+    from fastapi.responses import Response
+    from routes_pos_operators import _owned_point
+    from restock_pdf import build_restock_pdf
+    point = await _owned_point(user["id"])
+    order = await db.restock_orders.find_one({"id": order_id, "point_id": point["id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Bon de commande introuvable")
+    pdf = build_restock_pdf(order, point)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="bon-{order["order_number"]}.pdf"'})
+
+
+@product_extras_router.get("/admin/restock-orders")
+async def admin_restock_orders(limit: int = 100, admin: dict = Depends(require_admin)):
+    """Vue réseau super admin : tous les bons de commande fournisseur + retards par relais."""
+    orders = await db.restock_orders.find({}, {"_id": 0}).sort("created_at", -1).to_list(max(1, min(limit, 300)))
+    pts = {p["id"]: p async for p in db.lolodrive_points.find({}, {"_id": 0, "id": 1, "name": 1, "code": 1})}
+    now = datetime.utcnow()
+    pending = late = 0
+    for o in orders:
+        pt = pts.get(o.get("point_id"), {})
+        o["point_name"], o["point_code"] = pt.get("name"), pt.get("code", o.get("point_code"))
+        if not o.get("received_at"):
+            pending += 1
+            o["days_pending"] = (now - o["created_at"]).days
+            if o["days_pending"] >= 5:
+                late += 1
+        for k in ("created_at", "received_at", "reminder_sent_at"):
+            if isinstance(o.get(k), datetime):
+                o[k] = o[k].isoformat()
+    return {"orders": orders, "count": len(orders), "pending": pending, "late": late}
+
+
+async def _notify_shortages(order, shortages, point, user):
+    """Email au fournisseur : quantités manquantes après une réception partielle (best-effort)."""
+    groups = {}
+    for s in shortages:
+        if s.get("supplier_email"):
+            groups.setdefault((s["supplier"] or "Fournisseur", s["supplier_email"]), []).append(s)
+    notified = []
+    for (supplier, email), ls in groups.items():
+        try:
+            await _send_shortage_email(email, supplier, ls, point, order, user)
+            notified.append(supplier)
+        except Exception as exc:
+            logger.warning("Écart livraison %s → %s : %s", order.get("order_number"), email, exc)
+    return notified
+
+
+async def _send_shortage_email(email, supplier, ls, point, order, user):
+    from brevo_service import send_email, _wrap_html
+    subject = f"⚠️ Écart de livraison — bon de commande {order['order_number']}"
+    rows = "".join(
+        f"<tr><td style='border:1px solid #ccc;padding:6px 10px'>{s['name']}</td>"
+        f"<td style='border:1px solid #ccc;padding:6px 10px;text-align:center'>{s['qty']}</td>"
+        f"<td style='border:1px solid #ccc;padding:6px 10px;text-align:center'>{s['received']}</td>"
+        f"<td style='border:1px solid #ccc;padding:6px 10px;text-align:center;color:#dc2626'><strong>{s['missing']}</strong></td></tr>" for s in ls)
+    body = f"""
+      <p>Bonjour,</p>
+      <p>La livraison du bon de commande <strong>{order['order_number']}</strong>
+      (relais <strong>{point.get('name')}</strong>, {point.get('code', '—')}) est incomplète :</p>
+      <table style='border-collapse:collapse;font-size:13px;margin:8px 0'>
+        <tr><th style='border:1px solid #ccc;padding:6px 10px;background:#f0f0f0'>Produit</th>
+        <th style='border:1px solid #ccc;padding:6px 10px;background:#f0f0f0'>Commandé</th>
+        <th style='border:1px solid #ccc;padding:6px 10px;background:#f0f0f0'>Reçu</th>
+        <th style='border:1px solid #ccc;padding:6px 10px;background:#f0f0f0'>Manquant</th></tr>{rows}
+      </table>
+      <p>Merci de compléter la livraison ou d'émettre un avoir.
+      Contact : {user.get('contact_name') or user.get('email')} — <a href='mailto:{user.get('email')}'>{user.get('email')}</a></p>
+      <p style='color:#999;font-size:11px;margin-top:12px'>Signalement automatique — Réseau LOLODRIVE by O'SCOP.</p>
+    """
+    await send_email(to_email=email, to_name=supplier, subject=subject,
+                     html_content=_wrap_html(subject, body),
+                     text_content=f"Ecart de livraison bon {order['order_number']} : " + ", ".join(f"{s['name']} manque {s['missing']}" for s in ls),
+                     tags=["restock_shortage"])
 
 
 def _lines_table(ls):
