@@ -93,9 +93,64 @@ async def pos_restock_order(payload: dict, user: dict = Depends(get_current_user
         "id": str(uuid.uuid4()), "order_number": order_number, "point_id": point["id"],
         "point_code": point.get("code"), "by_user_id": user["id"], "by_name": gerant_name,
         "lines": [{k: l[k] for k in ("sku", "name", "qty", "supplier", "supplier_email")} for l in lines],
-        "sent_suppliers": sent_suppliers, "created_at": now})
+        "sent_suppliers": sent_suppliers, "status": "PENDING", "created_at": now})
     return {"ok": True, "order_number": order_number,
             "suppliers_emailed": sent_suppliers, "recap_sent_to": gerant_email}
+
+
+@product_extras_router.get("/pos/restock-orders")
+async def pos_restock_orders(limit: int = 20, user: dict = Depends(get_current_user)):
+    """Historique des bons de commande fournisseur du relais (gérant uniquement)."""
+    from routes_pos_operators import _owned_point
+    point = await _owned_point(user["id"])
+    orders = await db.restock_orders.find(
+        {"point_id": point["id"]}, {"_id": 0}).sort("created_at", -1).to_list(max(1, min(limit, 100)))
+    for o in orders:
+        for k in ("created_at", "received_at", "reminder_sent_at"):
+            if isinstance(o.get(k), datetime):
+                o[k] = o[k].isoformat()
+    return {"orders": orders, "count": len(orders)}
+
+
+@product_extras_router.post("/pos/restock-orders/{order_id}/receive")
+async def pos_receive_restock_order(order_id: str, payload: dict, user: dict = Depends(get_current_user)):
+    """Pointage de la livraison reçue : remet les stocks à jour depuis le bon (gérant)."""
+    from routes_pos_operators import _owned_point
+    from routes_relay_products import log_stock_movement
+    from pymongo import ReturnDocument
+    point = await _owned_point(user["id"])
+    order = await db.restock_orders.find_one({"id": order_id, "point_id": point["id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Bon de commande introuvable")
+    if order.get("received_at"):
+        raise HTTPException(status_code=400, detail="Réception déjà pointée pour ce bon")
+    req = {}
+    for it in (payload or {}).get("items") or []:
+        try:
+            q = int(it.get("qty"))
+        except (TypeError, ValueError):
+            continue
+        if it.get("sku") and 0 <= q <= 10000:
+            req[str(it["sku"])] = q
+    received, now = [], datetime.utcnow()
+    for l in order.get("lines", []):
+        qty = req.get(l["sku"], l["qty"]) if req else l["qty"]
+        if qty <= 0:
+            continue
+        res = await db.lolodrive_products.find_one_and_update(
+            {"sku": l["sku"]},
+            [{"$set": {"stock_qty": {"$add": [{"$ifNull": ["$stock_qty", 0]}, qty]}}}],
+            return_document=ReturnDocument.AFTER, projection={"_id": 0, "stock_qty": 1})
+        if not res:
+            continue
+        await log_stock_movement(l["sku"], l.get("name"), "RESTOCK", qty, res["stock_qty"],
+                                 point.get("code"), order["order_number"])
+        received.append({"sku": l["sku"], "name": l.get("name"), "qty": qty, "stock_after": res["stock_qty"]})
+    if not received:
+        raise HTTPException(status_code=400, detail="Aucune quantité reçue à pointer")
+    await db.restock_orders.update_one(
+        {"id": order_id}, {"$set": {"received_at": now, "received_items": received, "status": "RECEIVED"}})
+    return {"ok": True, "order_number": order["order_number"], "received": received}
 
 
 def _lines_table(ls):

@@ -98,6 +98,9 @@ export const lolodriveAPI = {
   adminToggleHistory: () => apiCall('/lolodrive/admin/products/toggle-history'),
   posRestockOrder: (items) =>
     apiCall('/lolodrive/pos/restock-order', { method: 'POST', body: JSON.stringify({ items }) }),
+  posRestockOrders: () => apiCall('/lolodrive/pos/restock-orders'),
+  posReceiveRestockOrder: (orderId, items) =>
+    apiCall(`/lolodrive/pos/restock-orders/${orderId}/receive`, { method: 'POST', body: JSON.stringify({ items }) }),
   adminUpdatePoint: (pointId, payload) =>
     apiCall(`/lolodrive/admin/lolo-points/${pointId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   adminUpdateFeesConfig: (payload) =>
