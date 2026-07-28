@@ -66,6 +66,7 @@ import PassRegistrationPage from "./pages/PassRegistrationPage";
 import PassLolodrivePage from "./pages/PassLolodrivePage";
 import PosLolodrivePage from "./pages/PosLolodrivePage";
 import LoloPointsAdminPage from "./pages/LoloPointsAdminPage";
+import TicketPublicPage from "./pages/TicketPublicPage";
 import LoloHourAdminPage from "./pages/LoloHourAdminPage";
 import CrmPartnersPage from "./pages/CrmPartnersPage";
 import EssReportingPage from "./pages/EssReportingPage";
@@ -120,6 +121,7 @@ function App() {
           <Route path="/" element={isCustomDomain ? <TenantPage domainMode /> : <LandingPage />} />
           <Route path="/offres" element={<OffersPage />} />
           <Route path="/connexion" element={<LoginPage />} />
+          <Route path="/ticket/:orderId" element={<TicketPublicPage />} />
           <Route path="/admin/connexion" element={<AdminLoginPage />} />
           <Route path="/inscription" element={<RedirectInscription />} />
           <Route path="/tarifs" element={<PricingPage />} />

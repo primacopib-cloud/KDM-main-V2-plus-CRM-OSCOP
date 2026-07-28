@@ -1,5 +1,8 @@
 """Ticket de caisse PDF (format reçu 80 mm, standard européen HT / TVA par taux / TTC)."""
 import io
+from reportlab.graphics import renderPDF
+from reportlab.graphics.barcode import qr
+from reportlab.graphics.shapes import Drawing
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 
@@ -19,11 +22,11 @@ def _eu_lines(items):
     return out, total_ht, tva_by_rate
 
 
-def build_ticket_pdf(order: dict, point: dict) -> bytes:
+def build_ticket_pdf(order: dict, point: dict, public_url: str = None) -> bytes:
     items = order.get("items", [])
     lines, total_ht, tva_by_rate = _eu_lines(items)
     n_extra = len(tva_by_rate) + (1 if order.get("promo_discount_cents") else 0)
-    height = (60 + len(lines) * 5 + n_extra * 4.5 + 55) * mm / 10 + 60 * mm
+    height = (60 + len(lines) * 5 + n_extra * 4.5 + 55) * mm / 10 + 60 * mm + (30 * mm if public_url else 0)
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(W, height))
     y = height - 10 * mm
@@ -78,6 +81,18 @@ def build_ticket_pdf(order: dict, point: dict) -> bytes:
     if order.get("operator_name"):
         line(f"Encaisse par : {order['operator_name']}", size=7)
     y -= 2 * mm
+    if public_url:
+        widget = qr.QrCodeWidget(public_url, barLevel="M")
+        b = widget.getBounds()
+        size = 20 * mm
+        d = Drawing(size, size, transform=[size / (b[2] - b[0]), 0, 0, size / (b[3] - b[1]), 0, 0])
+        d.add(widget)
+        y -= size
+        renderPDF.draw(d, c, (W - size) / 2, y)
+        y -= 3.5 * mm
+        c.setFont("Courier", 6)
+        c.drawCentredString(W / 2, y, "Scannez pour le detail de la vente en ligne")
+        y -= 4 * mm
     c.setFont("Courier", 6.5)
     c.drawCentredString(W / 2, y, "Merci de votre visite !")
     y -= 3.2 * mm

@@ -1,5 +1,9 @@
-"""Ticket de caisse : téléchargement PDF (archivage comptable) et envoi email au client (PDF joint)."""
+"""Ticket de caisse : PDF (QR détail en ligne), ZIP mensuel, email client (PDF joint), détail public."""
 import base64
+import io
+import os
+import zipfile
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
@@ -16,6 +20,11 @@ def set_ticket_pdf_database(database):
     db = database
 
 
+def _public_ticket_url(order_id: str):
+    base = os.environ.get("PUBLIC_BASE_URL")
+    return f"{base.rstrip('/')}/ticket/{order_id}" if base else None
+
+
 async def _get_counter_order(user_id: str, order_id: str):
     point = await _manager_point(user_id)
     order = await db.lolodrive_orders.find_one(
@@ -29,9 +38,53 @@ async def _get_counter_order(user_id: str, order_id: str):
 async def download_ticket_pdf(order_id: str, user: dict = Depends(get_current_user)):
     point, order = await _get_counter_order(user["id"], order_id)
     from ticket_pdf import build_ticket_pdf
-    pdf = build_ticket_pdf(order, point)
+    pdf = build_ticket_pdf(order, point, public_url=_public_ticket_url(order_id))
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename=ticket-{order.get('order_number')}.pdf"})
+
+
+@ticket_pdf_router.get("/pos/counter-journal/tickets.zip")
+async def download_tickets_zip(month: str, user: dict = Depends(get_current_user)):
+    """Archive ZIP de tous les tickets PDF du mois pour le relais du gérant."""
+    point = await _manager_point(user["id"])
+    try:
+        y, m = map(int, month.split("-"))
+        start = datetime(y, m, 1)
+        end = datetime(y + 1, 1, 1) if m == 12 else datetime(y, m + 1, 1)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="Mois invalide (format attendu : YYYY-MM)")
+    orders = await db.lolodrive_orders.find(
+        {"lolo_point_id": point["id"], "channel": "COUNTER",
+         "created_at": {"$gte": start, "$lt": end}}, {"_id": 0}).sort("created_at", 1).to_list(2000)
+    if not orders:
+        raise HTTPException(status_code=404, detail="Aucune vente au comptoir sur ce mois")
+    from ticket_pdf import build_ticket_pdf
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for o in orders:
+            pdf = build_ticket_pdf(o, point, public_url=_public_ticket_url(o["id"]))
+            z.writestr(f"ticket-{o.get('order_number')}.pdf", pdf)
+    return Response(content=buf.getvalue(), media_type="application/zip",
+                    headers={"Content-Disposition": f"attachment; filename=tickets-{point['code']}-{month}.zip"})
+
+
+@ticket_pdf_router.get("/ticket/{order_id}/public")
+async def public_ticket_detail(order_id: str):
+    """Détail public d'une vente au comptoir (cible du QR code du ticket, sans données personnelles)."""
+    order = await db.lolodrive_orders.find_one(
+        {"id": order_id, "channel": "COUNTER"},
+        {"_id": 0, "order_number": 1, "created_at": 1, "items": 1, "total_cents": 1,
+         "payment_method": 1, "rest_method": 1, "uc_paid": 1, "promo_discount_cents": 1,
+         "operator_name": 1, "lolo_point_id": 1})
+    if not order:
+        raise HTTPException(status_code=404, detail="Ticket introuvable")
+    point = await db.lolodrive_points.find_one(
+        {"id": order.pop("lolo_point_id", None)},
+        {"_id": 0, "name": 1, "code": 1, "siret": 1, "vat_number": 1, "city": 1}) or {}
+    order["created_at"] = order["created_at"].isoformat() if order.get("created_at") else None
+    order["items"] = [{k: l.get(k) for k in ("name", "qty", "unit_cents", "tva_rate", "promo_percent")}
+                      for l in order.get("items", [])]
+    return {"order": order, "point": point}
 
 
 @ticket_pdf_router.post("/pos/counter-sale/{order_id}/email-ticket")
@@ -92,7 +145,7 @@ async def email_counter_ticket(order_id: str, payload: dict, user: dict = Depend
       {f"<p style='margin:6px 0 0;font-size:12px;color:#777'>Encaissé par : <strong>{order['operator_name']}</strong></p>" if order.get('operator_name') else ''}
       <p style='color:#999;font-size:11px;margin-top:12px'>Votre ticket PDF est joint à cet email. Merci de votre visite — Réseau LOLODRIVE by O'SCOP.</p>
     """
-    pdf = build_ticket_pdf(order, point)
+    pdf = build_ticket_pdf(order, point, public_url=_public_ticket_url(order_id))
     await send_email(to_email=email, to_name=None, subject=subject,
                      html_content=_wrap_html(subject, body),
                      text_content=f"Ticket {order['order_number']} — total {order['total_cents'] / 100:.2f} € ({total_uc:g} UC). PDF joint.",

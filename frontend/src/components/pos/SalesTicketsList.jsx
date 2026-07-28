@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { FileText, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { FileText, ChevronDown, ChevronUp, Loader2, FolderArchive } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
 
 const PAY = { CARD: '💳 CB', UC: "🪙 UC", MIXED: '🪙+💳 Mixte', CASH: '💵 Espèces' };
@@ -13,6 +13,25 @@ export const SalesTicketsList = ({ sales: todaySales }) => {
   const [date, setDate] = useState(today());
   const [sales, setSales] = useState(todaySales || []);
   const [loading, setLoading] = useState(false);
+  const [zipping, setZipping] = useState(false);
+
+  const downloadZip = async () => {
+    const month = date.slice(0, 7);
+    setZipping(true);
+    try {
+      const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/pos/counter-journal/tickets.zip?month=${month}`,
+        { credentials: 'include' });
+      if (!r.ok) { toast.error((await r.json()).detail || 'Archive indisponible'); return; }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tickets-${month}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Tickets du mois ${month} archivés en ZIP ✓`);
+    } catch { toast.error('Erreur de connexion'); } finally { setZipping(false); }
+  };
 
   useEffect(() => {
     if (date === today()) { setSales(todaySales || []); return; }
@@ -72,6 +91,11 @@ export const SalesTicketsList = ({ sales: todaySales }) => {
               className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white" />
             {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-white/40" />}
             {!loading && sales.length === 0 && <span className="text-white/40" data-testid="sales-empty">Aucune vente ce jour-là.</span>}
+            <button type="button" onClick={downloadZip} disabled={zipping} data-testid="tickets-zip-btn"
+              title="Télécharger tous les tickets PDF du mois en une archive ZIP"
+              className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 disabled:opacity-50">
+              {zipping ? <Loader2 className="w-3 h-3 animate-spin" /> : <FolderArchive className="w-3 h-3" />} ZIP du mois
+            </button>
           </div>
           <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
           {sales.map((s) => (
