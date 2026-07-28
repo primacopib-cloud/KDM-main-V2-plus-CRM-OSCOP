@@ -57,6 +57,7 @@ async def _notify_admins(db, sku, e, threshold, month):
       <p>Répartition par relais :</p>
       <ul style='font-size:13px'>{detail}</ul>
       <p>Vérifiez le lot, le fournisseur ou retirez temporairement le produit du catalogue.</p>
+      {_disable_button(sku)}
       <p style='color:#999;font-size:11px;margin-top:12px'>Alerte automatique — Réseau LOLODRIVE by O'SCOP.</p>
     """
     for a in admins:
