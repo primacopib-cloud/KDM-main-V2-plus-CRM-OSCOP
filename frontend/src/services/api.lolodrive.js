@@ -104,7 +104,7 @@ export const lolodriveAPI = {
   managerBonusHistory: () => apiCall('/lolodrive/manager/bonus-history'),
   adminSendNetworkReport: (month) =>
     apiCall('/lolodrive/admin/network-report/send', { method: 'POST', body: JSON.stringify({ month }) }),
-  posCounterJournal: () => apiCall('/lolodrive/pos/counter-journal'),
+  posCounterJournal: (date) => apiCall(`/lolodrive/pos/counter-journal${date ? `?date=${date}` : ''}`),
   posTopProducts: (days = 30) => apiCall(`/lolodrive/pos/top-products?days=${days}`),
   posMonthlyCompare: () => apiCall('/lolodrive/pos/monthly-compare'),
   posStockAlerts: (days = 30) => apiCall(`/lolodrive/pos/stock-alerts?days=${days}`),

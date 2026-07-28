@@ -281,12 +281,19 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
 
 
 @pos_counter_router.get("/pos/counter-journal")
-async def pos_counter_journal(user: dict = Depends(get_current_user)):
-    """Journal de caisse du jour : totaux espèces / CB / UC des ventes au comptoir."""
+async def pos_counter_journal(date: Optional[str] = None, user: dict = Depends(get_current_user)):
+    """Journal de caisse (jour courant ou date passée) : totaux espèces / CB / UC des ventes au comptoir."""
     point = await _manager_point(user["id"])
-    start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    if date:
+        try:
+            start = datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Date invalide (format YYYY-MM-DD)")
+    else:
+        start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1)
     orders = await db.lolodrive_orders.find(
-        {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": start}},
+        {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": start, "$lt": end}},
         {"_id": 0, "id": 1, "order_number": 1, "total_cents": 1, "payment_method": 1, "created_at": 1,
          "operator_name": 1, "uc_covered_cents": 1, "rest_method": 1, "uc_paid": 1, "customer_name": 1}
     ).sort("created_at", -1).to_list(300)
@@ -303,7 +310,7 @@ async def pos_counter_journal(user: dict = Depends(get_current_user)):
     for e in by_op.values():
         e["total_cents"] = e["cash_cents"] + e["card_cents"] + e["uc_cents"]
     recharges = await db.counter_recharges.find(
-        {"point_id": point["id"], "created_at": {"$gte": start}}, {"_id": 0}).sort("created_at", -1).to_list(200)
+        {"point_id": point["id"], "created_at": {"$gte": start, "$lt": end}}, {"_id": 0}).sort("created_at", -1).to_list(200)
     rech = {"count": len(recharges),
             "cash_cents": sum(r["amount_cents"] for r in recharges if r.get("payment_method") == "CASH"),
             "card_cents": sum(r["amount_cents"] for r in recharges if r.get("payment_method") == "CARD"),
@@ -358,74 +365,6 @@ async def pos_top_products(days: int = 30, user: dict = Depends(get_current_user
             e["revenue_cents"] += l.get("unit_cents", 0) * l.get("qty", 0)
     top = sorted(agg.values(), key=lambda x: (x["qty"], x["revenue_cents"]), reverse=True)[:5]
     return {"days": days, "top": top}
-
-
-@pos_counter_router.post("/pos/counter-sale/{order_id}/email-ticket")
-async def email_counter_ticket(order_id: str, payload: dict, user: dict = Depends(get_current_user)):
-    """Envoie le ticket de caisse d'une vente au comptoir par email."""
-    email = ((payload or {}).get("email") or "").strip()
-    if "@" not in email:
-        raise HTTPException(status_code=400, detail="Email invalide")
-    point = await _manager_point(user["id"])
-    order = await db.lolodrive_orders.find_one(
-        {"id": order_id, "channel": "COUNTER", "lolo_point_id": point["id"]}, {"_id": 0})
-    if not order:
-        raise HTTPException(status_code=404, detail="Vente introuvable pour ce relais")
-    from brevo_service import send_email, _wrap_html
-
-    def _eu(l):
-        ttc = l["unit_cents"] * l["qty"]
-        rate = float(l.get("tva_rate") or 8.5)
-        ht = round(ttc / (1 + rate / 100))
-        return ttc, rate, ht
-
-    def _row(l):
-        _, rate, ht = _eu(l)
-        promo = f" <span style='color:#b45309;font-size:11px'>-{l['promo_percent']:g}%</span>" if l.get("promo_percent") else ""
-        return (f"<tr><td style='padding:4px 8px'>{l['qty']} × {l['name']}{promo} · TVA {rate:g}%</td>"
-                f"<td style='padding:4px 8px;text-align:right'>{ht / 100:.2f} € HT</td></tr>")
-
-    items = order.get("items", [])
-    rows = "".join(_row(l) for l in items)
-    total_ht = 0
-    tva_by_rate = {}
-    for l in items:
-        ttc, rate, ht = _eu(l)
-        total_ht += ht
-        tva_by_rate[rate] = tva_by_rate.get(rate, 0) + (ttc - ht)
-    tva_rows = "".join(
-        f"<tr><td style='padding:3px 8px;color:#666'>TVA {rate:.2f} %</td>"
-        f"<td style='padding:3px 8px;text-align:right;color:#666'>{tva / 100:.2f} €</td></tr>"
-        for rate, tva in sorted(tva_by_rate.items()))
-    discount = order.get("promo_discount_cents") or 0
-    pay_fr = {"CARD": "carte bancaire", "UC": "UC — CREDI'SCOP",
-              "MIXED": "paiement combiné UC + " + ("CB" if order.get("rest_method") == "CARD" else "espèces")
-              }.get(order.get("payment_method"), "espèces")
-    subject = f"🧾 Ticket de caisse — {order['order_number']} ({point['name']})"
-    fiscal = " · ".join(x for x in (
-        f"SIRET {point['siret']}" if point.get("siret") else None,
-        f"N° TVA {point['vat_number']}" if point.get("vat_number") else None) if x)
-    body = f"""
-      <p><strong>{point['name']}</strong> — vente au comptoir du {order['created_at'].strftime('%d/%m/%Y %H:%M')}</p>
-      {f"<p style='margin:-6px 0 8px;font-size:11px;color:#888'>{fiscal}</p>" if fiscal else ''}
-      <table style='width:100%;border-collapse:collapse;font-size:13px;border-top:1px dashed #ccc;border-bottom:1px dashed #ccc'>{rows}</table>
-      <table style='width:100%;border-collapse:collapse;font-size:13px;margin-top:6px'>
-        <tr><td style='padding:3px 8px'><strong>Sous-total HT</strong></td>
-        <td style='padding:3px 8px;text-align:right'><strong>{total_ht / 100:.2f} €</strong></td></tr>
-        {tva_rows}
-        {f"<tr><td style='padding:3px 8px;color:#b45309'>⚡ Remise promo (déjà déduite des lignes)</td><td style='padding:3px 8px;text-align:right;color:#b45309'>−{discount / 100:.2f} €</td></tr>" if discount else ''}
-      </table>
-      <p style='margin:10px 0 0;font-size:15px;border-top:1px dashed #ccc;padding-top:8px'>Montant TTC : <strong>{order['total_cents'] / 100:.2f} €</strong>
-      ({pay_fr})</p>
-      {f"<p style='margin:6px 0 0;font-size:12px;color:#b8860b'>🪙 Payé en UC : <strong>{order['uc_paid']} UC</strong> débités du CREDI'SCOP</p>" if order.get('uc_paid') else ''}
-      {f"<p style='margin:6px 0 0;font-size:12px;color:#777'>Encaissé par : <strong>{order['operator_name']}</strong></p>" if order.get('operator_name') else ''}
-      <p style='color:#999;font-size:11px;margin-top:12px'>Merci de votre visite — Réseau LOLODRIVE by O'SCOP.</p>
-    """
-    await send_email(to_email=email, to_name=None, subject=subject,
-                     html_content=_wrap_html(subject, body),
-                     text_content=f"Ticket {order['order_number']} — total {order['total_cents'] / 100:.2f} €.",
-                     tags=["counter_ticket"])
-    return {"ok": True, "sent_to": email}
 
 
 class CounterRechargeBody(BaseModel):

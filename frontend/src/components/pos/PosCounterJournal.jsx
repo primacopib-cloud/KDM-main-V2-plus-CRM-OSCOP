@@ -110,7 +110,7 @@ export const PosCounterJournal = ({ refreshKey }) => {
           </button>
         </div>
       )}
-      {journal && journal.sales?.length > 0 && <SalesTicketsList sales={journal.sales} />}
+      {journal && <SalesTicketsList sales={journal.sales || []} />}
       {seller && (seller.last_week_winner || seller.current_week.length > 0) && (
         <div className="rounded-xl border border-[#D9B35A]/30 bg-[#D9B35A]/[0.05] px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs"
           data-testid="best-seller-badge">

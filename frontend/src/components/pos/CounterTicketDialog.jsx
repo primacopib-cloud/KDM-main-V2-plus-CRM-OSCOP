@@ -31,7 +31,7 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
 
   const printTicket = () => {
     const rows = euLines.map((l) =>
-      `<tr><td>${l.qty} × ${l.name}${l.promo_percent ? ` (-${l.promo_percent}%)` : ''} · TVA ${l.rate}%</td><td style="text-align:right">${(l.ht / 100).toFixed(2)} € HT</td></tr>`).join('');
+      `<tr><td>${l.qty} × ${l.name}${l.promo_percent ? ` (-${l.promo_percent}%)` : ''} · TVA ${l.rate}%</td><td style="text-align:right">${(l.ht / 100).toFixed(2)} € HT · ${+(l.ttc / 10).toFixed(1)} UC</td></tr>`).join('');
     const tvaRows = tvaByRate.map(([rate, tva]) =>
       `<tr><td>TVA ${parseFloat(rate).toFixed(2).replace('.', ',')} %</td><td style="text-align:right">${(tva / 100).toFixed(2)} €</td></tr>`).join('');
     const w = window.open('', '_blank', 'width=380,height=620');
@@ -46,7 +46,7 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
       ${tvaRows}
       ${discount ? `<tr><td>Remise promo (deja deduite des lignes)</td><td style="text-align:right">-${(discount / 100).toFixed(2)} €</td></tr>` : ''}
       </table></div>
-      <div class="t"><b>MONTANT TTC : ${(sale.total_cents / 100).toFixed(2)} €</b> (${payLabel})
+      <div class="t"><b>MONTANT TTC : ${(sale.total_cents / 100).toFixed(2)} € · ${+(sale.total_cents / 10).toFixed(1)} UC</b> (${payLabel})
       ${sale.uc_paid ? `<br/>Payé en UC : ${sale.uc_paid} UC (CREDI'SCOP mis à jour)` : ''}</div>
       ${sale.operator_name ? `<div style="margin-top:4px">Encaissé par : ${sale.operator_name}</div>` : ''}
       <div class="t" style="text-align:center">Merci de votre visite !<br/>LOLODRIVE by O'SCOP</div>
@@ -82,7 +82,7 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
           {euLines.map((l) => (
             <div key={l.sku} className="flex justify-between">
               <span className="truncate">{l.qty} × {l.name}{l.promo_percent ? ` (-${l.promo_percent}%)` : ''} · TVA {l.rate}%</span>
-              <span className="shrink-0 ml-2">{(l.ht / 100).toFixed(2)} € HT</span>
+              <span className="shrink-0 ml-2">{(l.ht / 100).toFixed(2)} € HT <span className="text-[#D9B35A]">· {+(l.ttc / 10).toFixed(1)} UC</span></span>
             </div>
           ))}
           <div className="flex justify-between font-bold border-t border-dashed border-white/20 pt-1 mt-1">
@@ -100,7 +100,7 @@ export const CounterTicketDialog = ({ sale, onClose }) => {
           {discount > 0 && <div className="flex justify-between text-[#FF9E7A]"><span>⚡ Remise promo (déjà déduite des lignes)</span><span>−{(discount / 100).toFixed(2)} €</span></div>}
           <div className="flex justify-between font-bold border-t border-dashed border-white/20 pt-1 mt-1">
             <span>MONTANT TTC ({payLabel})</span>
-            <span data-testid="ticket-total">{(sale.total_cents / 100).toFixed(2)} €</span>
+            <span data-testid="ticket-total">{(sale.total_cents / 100).toFixed(2)} € <span className="text-[#D9B35A]">· {+(sale.total_cents / 10).toFixed(1)} UC</span></span>
           </div>
           {sale.uc_paid > 0 && (
             <div className="flex justify-between text-[#D9B35A]" data-testid="ticket-uc-paid">

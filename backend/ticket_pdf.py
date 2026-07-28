@@ -61,7 +61,8 @@ def build_ticket_pdf(order: dict, point: dict) -> bytes:
         name = f"{l['qty']} x {l['name']}"[:30]
         promo = f" -{l['promo_percent']:g}%" if l.get("promo_percent") else ""
         line(f"{name}{promo}", None, size=7.5, dy=3.4 * mm)
-        line(f"   TVA {rate:g}%", f"{ht / 100:.2f} EUR HT", size=7, dy=4 * mm)
+        ttc = l["unit_cents"] * l["qty"]
+        line(f"   TVA {rate:g}% · {round(ttc / 10, 1):g} UC", f"{ht / 100:.2f} EUR HT", size=7, dy=4 * mm)
     dashes()
     line("Sous-total HT", f"{total_ht / 100:.2f} EUR", bold=True)
     for rate, tva in sorted(tva_by_rate.items()):
@@ -70,7 +71,8 @@ def build_ticket_pdf(order: dict, point: dict) -> bytes:
         line("Remise promo (deja deduite)", f"-{order['promo_discount_cents'] / 100:.2f} EUR", size=7)
     dashes()
     pay = PAY_FR.get(order.get("payment_method"), "Especes")
-    line(f"MONTANT TTC ({pay})", f"{order.get('total_cents', 0) / 100:.2f} EUR", size=8.5, bold=True, dy=4.5 * mm)
+    line(f"MONTANT TTC ({pay})", f"{order.get('total_cents', 0) / 100:.2f} EUR", size=8.5, bold=True, dy=4 * mm)
+    line("", f"soit {round(order.get('total_cents', 0) / 10, 1):g} UC", size=7, dy=4.5 * mm)
     if order.get("uc_paid"):
         line(f"Paye en UC : {order['uc_paid']} UC", size=7)
     if order.get("operator_name"):
