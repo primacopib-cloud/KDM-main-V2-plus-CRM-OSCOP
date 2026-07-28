@@ -5,11 +5,18 @@ import { Undo2, Loader2, Minus, Plus } from 'lucide-react';
 import { QrPassScanner } from './QrPassScanner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+const REASONS = [
+  { id: 'DEFECTIVE', label: 'Défectueux' },
+  { id: 'ERROR', label: 'Erreur de caisse' },
+  { id: 'EXPIRED', label: 'Péremption' },
+  { id: 'OTHER', label: 'Autre' },
+];
 
 // Retour / remboursement d'articles : scan du QR du ticket ou ouverture depuis une vente du journal
 export const CounterRefundDialog = ({ orderId: initialId, onClose, onDone }) => {
   const [order, setOrder] = useState(null);
   const [qty, setQty] = useState({});
+  const [reason, setReason] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const loadOrder = async (id) => {
@@ -32,10 +39,11 @@ export const CounterRefundDialog = ({ orderId: initialId, onClose, onDone }) => 
   const confirm = async () => {
     const items = Object.entries(qty).filter(([, q]) => q > 0).map(([sku, q]) => ({ sku, qty: q }));
     if (!items.length) { toast.error('Sélectionnez au moins un article'); return; }
+    if (!reason) { toast.error('Choisissez le motif du retour'); return; }
     setBusy(true);
     try {
       const r = await fetch(`${API}/api/lolodrive/pos/counter-sale/${order.id}/refund`,
-        { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items }) });
+        { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items, reason }) });
       const d = await r.json();
       if (!r.ok) { toast.error(d.detail || 'Retour impossible'); return; }
       toast.success(d.method === 'UC'
@@ -98,7 +106,22 @@ export const CounterRefundDialog = ({ orderId: initialId, onClose, onDone }) => 
                 {(total / 100).toFixed(2)} € {order.payment_method === 'UC' && <span className="text-[#D9B35A]">· {+(total / 10).toFixed(1)} UC</span>}
               </span>
             </div>
-            <button type="button" onClick={confirm} disabled={busy || total === 0} data-testid="refund-confirm-btn"
+            <div>
+              <p className="text-white/50 text-[10px] mb-1">Motif du retour :</p>
+              <div className="flex flex-wrap gap-1.5">
+                {REASONS.map((r) => (
+                  <button key={r.id} type="button" onClick={() => setReason(r.id)}
+                    data-testid={`refund-reason-${r.id}`}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-bold border ${
+                      reason === r.id
+                        ? 'bg-[#D9B35A] text-black border-[#D9B35A]'
+                        : 'bg-white/[0.04] text-white/60 border-white/15 hover:border-[#D9B35A]/50'}`}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button type="button" onClick={confirm} disabled={busy || total === 0 || !reason} data-testid="refund-confirm-btn"
               className="w-full py-2 rounded-lg text-sm font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] disabled:opacity-40 flex items-center justify-center gap-2">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Undo2 className="w-4 h-4" />}
               Valider le retour {order.payment_method === 'UC' ? '(recrédit UC)' : '(remboursement espèces)'}

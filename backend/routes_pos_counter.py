@@ -315,9 +315,19 @@ async def pos_counter_journal(date: Optional[str] = None, user: dict = Depends(g
             "cash_cents": sum(r["amount_cents"] for r in recharges if r.get("payment_method") == "CASH"),
             "card_cents": sum(r["amount_cents"] for r in recharges if r.get("payment_method") == "CARD"),
             "total_uc": sum(r.get("amount_uc", 0) for r in recharges)}
+    refunds = await db.counter_refunds.find(
+        {"point_id": point["id"], "created_at": {"$gte": start, "$lt": end}},
+        {"_id": 0, "amount_cents": 1, "method": 1}).to_list(500)
+    refunds_summary = {
+        "count": len(refunds),
+        "total_cents": sum(r["amount_cents"] for r in refunds),
+        "cash_cents": sum(r["amount_cents"] for r in refunds if r.get("method") != "UC"),
+        "uc_cents": sum(r["amount_cents"] for r in refunds if r.get("method") == "UC")}
     return {"date": start.strftime("%d/%m/%Y"), "count": len(orders),
             "cash_cents": cash, "card_cents": card, "uc_cents": uc,
             "total_cents": cash + card + uc, "sales": orders, "recharges": rech,
+            "refunds": refunds_summary,
+            "net_cash_cents": cash - refunds_summary["cash_cents"],
             "by_operator": sorted(by_op.values(), key=lambda x: x["total_cents"], reverse=True)}
 
 

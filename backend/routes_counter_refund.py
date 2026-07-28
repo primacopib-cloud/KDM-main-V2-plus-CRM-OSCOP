@@ -9,6 +9,8 @@ from routes_relay_products import _manager_point, log_stock_movement
 
 counter_refund_router = APIRouter(prefix="/api/lolodrive", tags=["Retours comptoir"])
 db = None
+REFUND_REASONS = {"DEFECTIVE": "Défectueux", "ERROR": "Erreur de caisse",
+                  "EXPIRED": "Péremption", "OTHER": "Autre"}
 
 
 def set_counter_refund_database(database):
@@ -40,6 +42,9 @@ async def refund_counter_sale(order_id: str, payload: dict, user: dict = Depends
     wanted = {k: v for k, v in wanted.items() if v > 0}
     if not wanted:
         raise HTTPException(status_code=400, detail="Aucun article à retourner")
+    reason = (payload or {}).get("reason") or "OTHER"
+    if reason not in REFUND_REASONS:
+        raise HTTPException(status_code=400, detail="Motif de retour invalide")
     lines = {l["sku"]: l for l in order.get("items", [])}
     refund_cents = 0
     for sku, qty in wanted.items():
@@ -82,8 +87,10 @@ async def refund_counter_sale(order_id: str, payload: dict, user: dict = Depends
                                          res["stock_qty"], point.get("code"), order.get("order_number"))
         new_items.append(l)
     refund_doc = {"id": str(uuid.uuid4()), "order_id": order_id, "order_number": order.get("order_number"),
-                  "point_id": point["id"], "items": [{"sku": s, "qty": q} for s, q in wanted.items()],
+                  "point_id": point["id"],
+                  "items": [{"sku": s, "qty": q, "name": lines[s].get("name", s)} for s, q in wanted.items()],
                   "amount_cents": refund_cents, "uc_refunded": uc_refunded, "method": method,
+                  "reason": reason,
                   "operator_name": user.get("contact_name") or user.get("email"), "created_at": now}
     await db.counter_refunds.insert_one(dict(refund_doc))
     await db.lolodrive_orders.update_one(
@@ -92,3 +99,26 @@ async def refund_counter_sale(order_id: str, payload: dict, user: dict = Depends
     refund_doc.pop("_id", None)
     refund_doc["created_at"] = now.isoformat()
     return {"ok": True, "refunded_cents": refund_cents, "uc_refunded": uc_refunded, "method": method}
+
+
+@counter_refund_router.get("/pos/counter-refunds/stats")
+async def counter_refunds_stats(days: int = 30, user: dict = Depends(get_current_user)):
+    """Articles les plus retournés du relais (avec répartition par motif)."""
+    from datetime import timedelta
+    point = await _manager_point(user["id"])
+    since = datetime.utcnow() - timedelta(days=max(1, min(days, 365)))
+    top = {}
+    total_refunds = 0
+    async for r in db.counter_refunds.find(
+            {"point_id": point["id"], "created_at": {"$gte": since}},
+            {"_id": 0, "items": 1, "reason": 1, "amount_cents": 1}):
+        total_refunds += 1
+        reason = r.get("reason") or "OTHER"
+        for it in r.get("items", []):
+            e = top.setdefault(it["sku"], {"sku": it["sku"], "name": it.get("name", it["sku"]),
+                                           "qty": 0, "reasons": {}})
+            e["qty"] += it.get("qty", 0)
+            e["reasons"][reason] = e["reasons"].get(reason, 0) + it.get("qty", 0)
+    items = sorted(top.values(), key=lambda x: -x["qty"])[:10]
+    return {"days": days, "total_refunds": total_refunds, "items": items,
+            "reason_labels": REFUND_REASONS}

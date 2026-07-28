@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { FileText, ChevronDown, ChevronUp, Loader2, FolderArchive, Undo2 } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
 import { CounterRefundDialog } from './CounterRefundDialog';
+import { TopRefundsBlock } from './TopRefundsBlock';
 
 const PAY = { CARD: '💳 CB', UC: "🪙 UC", MIXED: '🪙+💳 Mixte', CASH: '💵 Espèces' };
 const today = () => new Date().toISOString().slice(0, 10);
@@ -126,6 +127,7 @@ export const SalesTicketsList = ({ sales: todaySales }) => {
             </div>
           ))}
           </div>
+          <TopRefundsBlock />
         </div>
       )}
       {refund && <CounterRefundDialog orderId={refund.orderId} onClose={() => setRefund(null)} />}
