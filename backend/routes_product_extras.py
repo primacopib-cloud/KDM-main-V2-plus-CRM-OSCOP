@@ -209,6 +209,91 @@ async def admin_restock_orders(limit: int = 100, admin: dict = Depends(require_a
     return {"orders": orders, "count": len(orders), "pending": pending, "late": late}
 
 
+@product_extras_router.get("/admin/products/export.csv")
+async def admin_products_export(admin: dict = Depends(require_admin)):
+    """Export CSV des fiches produits (modèle pour l'import en masse)."""
+    import csv
+    import io
+    from fastapi.responses import Response
+    rows = await db.lolodrive_products.find(
+        {}, {"_id": 0, "sku": 1, "name": 1, "price_public_cents": 1, "tva_rate": 1,
+             "supplier": 1, "supplier_email": 1, "purchase_price_cents": 1, "is_active": 1}).sort("name", 1).to_list(2000)
+    buf = io.StringIO()
+    wcsv = csv.writer(buf, delimiter=";")
+    wcsv.writerow(["sku", "nom", "prix_public_eur", "tva", "fournisseur", "email_fournisseur", "prix_achat_eur", "actif"])
+    for p in rows:
+        wcsv.writerow([p["sku"], p.get("name", ""), f"{p.get('price_public_cents', 0) / 100:.2f}",
+                       p.get("tva_rate", ""), p.get("supplier") or "", p.get("supplier_email") or "",
+                       f"{p['purchase_price_cents'] / 100:.2f}" if p.get("purchase_price_cents") else "",
+                       "oui" if p.get("is_active", True) else "non"])
+    return Response(content="\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="produits-kdmarche.csv"'})
+
+
+VALID_TVA = {0.0, 2.1, 5.5, 8.5, 20.0}
+
+
+def _csv_euros(v):
+    c = round(float(v.replace("€", "").replace(",", ".").strip()) * 100)
+    if not 0 <= c <= 10_000_000:
+        raise ValueError
+    return int(c)
+
+
+@product_extras_router.post("/admin/products/import-csv")
+async def admin_products_import(payload: dict, admin: dict = Depends(require_admin)):
+    """Mise à jour en masse des fiches produits (prix, TVA, fournisseurs) via CSV — par SKU."""
+    import csv
+    import io
+    content = str((payload or {}).get("csv") or "").lstrip("\ufeff")
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="Fichier CSV vide")
+    first = content.splitlines()[0]
+    delim = ";" if first.count(";") >= first.count(",") else ","
+    updated, errors = 0, []
+    for i, row in enumerate(csv.DictReader(io.StringIO(content), delimiter=delim), start=2):
+        row = {(k or "").strip().lower(): (v or "").strip() for k, v in row.items()}
+        sku = row.get("sku")
+        if not sku:
+            errors.append(f"Ligne {i} : sku manquant")
+            continue
+        update = {}
+        try:
+            if row.get("prix_public_eur"):
+                update["price_public_cents"] = _csv_euros(row["prix_public_eur"])
+            if row.get("prix_achat_eur"):
+                update["purchase_price_cents"] = _csv_euros(row["prix_achat_eur"])
+        except ValueError:
+            errors.append(f"Ligne {i} ({sku}) : prix invalide")
+            continue
+        if row.get("tva"):
+            try:
+                t = float(row["tva"].replace(",", ".").replace("%", "").strip())
+                if t not in VALID_TVA:
+                    raise ValueError
+                update["tva_rate"] = t
+            except ValueError:
+                errors.append(f"Ligne {i} ({sku}) : TVA invalide (0, 2.1, 5.5, 8.5 ou 20)")
+                continue
+        if row.get("fournisseur"):
+            update["supplier"] = row["fournisseur"][:120]
+        if row.get("email_fournisseur"):
+            if not EMAIL_RE.match(row["email_fournisseur"]):
+                errors.append(f"Ligne {i} ({sku}) : email fournisseur invalide")
+                continue
+            update["supplier_email"] = row["email_fournisseur"][:120]
+        if row.get("actif"):
+            update["is_active"] = row["actif"].lower() in ("oui", "1", "true", "vrai", "yes")
+        if not update:
+            continue
+        res = await db.lolodrive_products.update_one({"sku": sku}, {"$set": update})
+        if res.matched_count == 0:
+            errors.append(f"Ligne {i} : SKU inconnu « {sku} »")
+        else:
+            updated += 1
+    return {"ok": True, "updated": updated, "errors": errors[:30], "error_count": len(errors)}
+
+
 @product_extras_router.get("/admin/suppliers")
 async def admin_suppliers(admin: dict = Depends(require_admin)):
     """Fiches fournisseurs : produits, bons, écarts, retards → fiabilité (super admin)."""
@@ -244,6 +329,8 @@ async def admin_suppliers(admin: dict = Depends(require_admin)):
             for sh in o.get("shortages", []):
                 if sh.get("supplier") == name:
                     s["missing_qty"] += sh.get("missing", 0)
+    for s in suppliers.values():
+        s["score"] = max(0, 100 - 15 * s["late"] - 3 * s["missing_qty"]) if s["orders"] else None
     return {"suppliers": sorted(suppliers.values(), key=lambda x: x["supplier"].lower())}
 
 

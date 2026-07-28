@@ -31,6 +31,17 @@ export const SuppliersPanel = () => {
       </button>
       {open && (
         <div className="mt-3 space-y-2 max-h-96 overflow-y-auto">
+          {data && data.suppliers.some((s) => s.orders > 0) && (
+            <div className="flex flex-wrap items-center gap-2 pb-1" data-testid="suppliers-podium">
+              <span className="text-[10px] uppercase tracking-wide text-white/35 font-bold">Top fiabilité réseau :</span>
+              {[...data.suppliers].filter((s) => s.orders > 0).sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 3).map((s, i) => (
+                <span key={s.supplier} data-testid={`podium-${i + 1}`}
+                  className="px-2 py-1 rounded-lg bg-[#D9B35A]/10 border border-[#D9B35A]/30 text-[11px] font-bold text-[#D9B35A]">
+                  {['🥇', '🥈', '🥉'][i]} {s.supplier} — {s.score}/100
+                </span>
+              ))}
+            </div>
+          )}
           {data === null && <p className="text-[11px] text-white/30">Chargement…</p>}
           {data?.suppliers.length === 0 && <p className="text-[11px] text-white/30">Aucun fournisseur renseigné sur les fiches produits.</p>}
           {data?.suppliers.map((s) => (
@@ -38,6 +49,7 @@ export const SuppliersPanel = () => {
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <b>{s.supplier}</b>
                 {s.supplier_email && <span className="text-white/35">{s.supplier_email}</span>}
+                {s.score != null && <span className="text-white/40 font-mono text-[10px]" data-testid={`score-${s.supplier}`}>{s.score}/100</span>}
                 <span className="ml-auto">{badge(s)}</span>
               </div>
               <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/50">

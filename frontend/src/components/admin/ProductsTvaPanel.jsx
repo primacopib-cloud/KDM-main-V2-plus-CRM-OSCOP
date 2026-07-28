@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Percent, ChevronDown, ChevronUp, Package, Sparkles, Loader2, Ban, RotateCcw } from 'lucide-react';
+import { Percent, ChevronDown, ChevronUp, Package, Sparkles, Loader2, Ban, RotateCcw, Download, Upload } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
 import { ProductToggleHistory } from './ProductToggleHistory';
 
@@ -60,6 +60,31 @@ export const ProductsTvaPanel = () => {
     } catch (e) { toast.error(e.message); }
   };
 
+  const importCsv = async (e) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    try {
+      const text = await f.text();
+      const r = await lolodriveAPI.adminImportProductsCsv(text);
+      toast.success(`Import CSV : ${r.updated} fiche(s) mise(s) à jour${r.error_count ? ` — ${r.error_count} erreur(s)` : ''} ✓`);
+      if (r.errors?.length) toast.warning(r.errors.slice(0, 5).join(' · '));
+      lolodriveAPI.adminProductsTva().then(setData).catch(() => {});
+    } catch (err) { toast.error(err.message); }
+  };
+
+  const exportCsv = async () => {
+    try {
+      const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/admin/products/export.csv`, { credentials: 'include' });
+      if (!r.ok) return toast.error('Export indisponible');
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a');
+      a.href = url; a.download = 'produits-kdmarche.csv'; a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Export CSV téléchargé ✓');
+    } catch { toast.error('Erreur de connexion'); }
+  };
+
   return (
     <div className="mt-6 rounded-2xl bg-white/[0.025] border border-white/[0.07] p-5" data-testid="products-tva-panel">
       <button type="button" onClick={() => setOpen(!open)} data-testid="products-tva-toggle"
@@ -72,6 +97,18 @@ export const ProductsTvaPanel = () => {
       </button>
       {open && (
         <>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <button type="button" onClick={exportCsv} data-testid="export-products-csv-btn"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-[#22d3ee] bg-[#22d3ee]/10 border border-[#22d3ee]/35 hover:bg-[#22d3ee]/20">
+            <Download className="w-3 h-3" /> Exporter CSV
+          </button>
+          <label data-testid="import-products-csv-btn"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/35 hover:bg-emerald-500/20 cursor-pointer">
+            <Upload className="w-3 h-3" /> Importer CSV
+            <input type="file" accept=".csv,text/csv" className="hidden" onChange={importCsv} data-testid="import-products-csv-input" />
+          </label>
+          <span className="text-[10px] text-white/30">exportez, modifiez puis réimportez — colonnes : sku · prix_public_eur · tva · fournisseur · email_fournisseur · prix_achat_eur · actif</span>
+        </div>
         <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[380px] overflow-y-auto pr-1">
           {data.products.map((p) => (
             <div key={p.sku} data-testid={`tva-row-${p.sku}`}
@@ -95,17 +132,17 @@ export const ProductsTvaPanel = () => {
                     )}
                   </span>
                   <span className="mt-0.5 flex gap-1">
-                    <input type="text" defaultValue={p.supplier || ''} placeholder="Fournisseur…"
+                    <input type="text" key={`s-${p.supplier || ''}`} defaultValue={p.supplier || ''} placeholder="Fournisseur…"
                       data-testid={`supplier-input-${p.sku}`}
                       onBlur={() => saveSupplier(p)}
                       onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
                       className="w-full max-w-[105px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white/70 placeholder:text-white/25" />
-                    <input type="text" defaultValue={p.supplier_email || ''} placeholder="email fournisseur…"
+                    <input type="text" key={`e-${p.supplier_email || ''}`} defaultValue={p.supplier_email || ''} placeholder="email fournisseur…"
                       data-testid={`supplier-email-input-${p.sku}`}
                       onBlur={() => saveSupplier(p)}
                       onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
                       className="w-full max-w-[105px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white/70 placeholder:text-white/25" />
-                    <input type="text" defaultValue={p.purchase_price_cents != null ? (p.purchase_price_cents / 100).toFixed(2) : ''} placeholder="achat €"
+                    <input type="text" key={`p-${p.purchase_price_cents ?? ''}`} defaultValue={p.purchase_price_cents != null ? (p.purchase_price_cents / 100).toFixed(2) : ''} placeholder="achat €"
                       data-testid={`purchase-input-${p.sku}`}
                       onBlur={() => saveSupplier(p)}
                       onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
