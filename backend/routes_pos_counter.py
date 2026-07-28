@@ -287,7 +287,7 @@ async def pos_counter_journal(user: dict = Depends(get_current_user)):
     start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     orders = await db.lolodrive_orders.find(
         {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": start}},
-        {"_id": 0, "order_number": 1, "total_cents": 1, "payment_method": 1, "created_at": 1,
+        {"_id": 0, "id": 1, "order_number": 1, "total_cents": 1, "payment_method": 1, "created_at": 1,
          "operator_name": 1, "uc_covered_cents": 1, "rest_method": 1, "uc_paid": 1, "customer_name": 1}
     ).sort("created_at", -1).to_list(300)
     cash, card, uc = split_totals(orders)
