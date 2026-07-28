@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { FileText, ChevronDown, ChevronUp, Loader2, FolderArchive } from 'lucide-react';
+import { FileText, ChevronDown, ChevronUp, Loader2, FolderArchive, Undo2 } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
+import { CounterRefundDialog } from './CounterRefundDialog';
 
 const PAY = { CARD: '💳 CB', UC: "🪙 UC", MIXED: '🪙+💳 Mixte', CASH: '💵 Espèces' };
 const today = () => new Date().toISOString().slice(0, 10);
@@ -14,6 +15,7 @@ export const SalesTicketsList = ({ sales: todaySales }) => {
   const [sales, setSales] = useState(todaySales || []);
   const [loading, setLoading] = useState(false);
   const [zipping, setZipping] = useState(false);
+  const [refund, setRefund] = useState(null); // null | { orderId } | { orderId: null } (scan)
 
   const downloadZip = async () => {
     const month = date.slice(0, 7);
@@ -91,9 +93,14 @@ export const SalesTicketsList = ({ sales: todaySales }) => {
               className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white" />
             {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-white/40" />}
             {!loading && sales.length === 0 && <span className="text-white/40" data-testid="sales-empty">Aucune vente ce jour-là.</span>}
+            <button type="button" onClick={() => setRefund({ orderId: null })} data-testid="refund-open-btn"
+              title="Retour / remboursement d'articles (scan du QR du ticket)"
+              className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg font-bold text-[#FF9E7A] bg-[#FF9E7A]/10 border border-[#FF9E7A]/30 hover:bg-[#FF9E7A]/20">
+              <Undo2 className="w-3 h-3" /> Retour
+            </button>
             <button type="button" onClick={downloadZip} disabled={zipping} data-testid="tickets-zip-btn"
               title="Télécharger tous les tickets PDF du mois en une archive ZIP"
-              className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 disabled:opacity-50">
+              className="flex items-center gap-1 px-2 py-1 rounded-lg font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 disabled:opacity-50">
               {zipping ? <Loader2 className="w-3 h-3 animate-spin" /> : <FolderArchive className="w-3 h-3" />} ZIP du mois
             </button>
           </div>
@@ -106,6 +113,11 @@ export const SalesTicketsList = ({ sales: todaySales }) => {
               <span className="text-white/45 truncate hidden sm:block">{s.customer_name || ''}</span>
               <span className="ml-auto shrink-0 text-white/55">{PAY[s.payment_method] || PAY.CASH}</span>
               <span className="font-mono font-bold shrink-0">{(s.total_cents / 100).toFixed(2)} € <span className="text-[#D9B35A] font-normal">· {+(s.total_cents / 10).toFixed(1)} UC</span></span>
+              <button type="button" onClick={() => setRefund({ orderId: s.id })}
+                data-testid={`refund-row-${s.order_number}`} title="Retour / remboursement d'articles"
+                className="shrink-0 flex items-center px-1.5 py-1 rounded-lg text-[#FF9E7A] bg-[#FF9E7A]/10 border border-[#FF9E7A]/30 hover:bg-[#FF9E7A]/20">
+                <Undo2 className="w-3 h-3" />
+              </button>
               <button type="button" onClick={() => downloadPdf(s)} disabled={pdfId === s.id}
                 data-testid={`ticket-pdf-${s.order_number}`} title="Télécharger le ticket PDF"
                 className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/35 hover:bg-[#D9B35A]/25 disabled:opacity-50">
@@ -116,6 +128,7 @@ export const SalesTicketsList = ({ sales: todaySales }) => {
           </div>
         </div>
       )}
+      {refund && <CounterRefundDialog orderId={refund.orderId} onClose={() => setRefund(null)} />}
     </div>
   );
 };

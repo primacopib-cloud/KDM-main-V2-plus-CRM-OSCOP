@@ -465,6 +465,7 @@ const reasonLabel = (r) => ({
   NO_PICKUP_PENALTY: 'Pénalité non-retrait',
   NO_PICKUP_PENALTY_REFUND: 'Remboursement pénalité (retrait effectué)',
   RELIABLE_CLIENT_BONUS: '🏅 Bonus Client Fiable',
+  COUNTER_REFUND_UC: 'Remboursement retour article',
 }[r] || r);
 
 const statusColor = (s) => {

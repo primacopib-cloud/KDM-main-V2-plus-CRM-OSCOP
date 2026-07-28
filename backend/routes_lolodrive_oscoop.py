@@ -66,6 +66,8 @@ def set_lolodrive_database(database):
     set_pos_counter_database(database)
     from routes_ticket_pdf import set_ticket_pdf_database
     set_ticket_pdf_database(database)
+    from routes_counter_refund import set_counter_refund_database
+    set_counter_refund_database(database)
     from routes_lolodrive_taxonomy import set_taxonomy_database
     set_taxonomy_database(database)
     from routes_loyalty import set_loyalty_database
