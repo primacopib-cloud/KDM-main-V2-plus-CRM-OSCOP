@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { ArrowRight, Mail, MapPin, Package, ShoppingCart, Store, Loader2 } from 'lucide-react';
 import Footer from '../components/Footer';
 
@@ -25,7 +26,7 @@ export default function TenantPage({ domainMode = false }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-white" style={{ background: '#1A092D' }} data-testid="tenant-not-found">
         <p className="text-lg">Cette vitrine territoriale n'existe pas ou n'est plus active.</p>
-        <Link to="/" className="text-[#D9B35A] underline">Retour à l'accueil KDMARCHÉ × O'SCOP</Link>
+        <BackLink fallback="/" data-testid="tenant-back-btn" className="text-[#D9B35A] underline">Retour</BackLink>
       </div>
     );
   }

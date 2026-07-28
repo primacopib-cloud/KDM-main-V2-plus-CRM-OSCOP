@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { ArrowLeft, FileText, Download, Printer } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { partners } from '../data/mock';
@@ -103,10 +103,10 @@ export default function OrderPreviewPage() {
       >
         <div className="max-w-[1200px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/commandes" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+            <BackLink fallback="/commandes" data-testid="order-preview-back-btn" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Retour aux commandes</span>
-            </Link>
+              <span className="text-sm">Retour</span>
+            </BackLink>
             <div className="flex items-center gap-2">
               <BrandLogos size="sm" />
             </div>

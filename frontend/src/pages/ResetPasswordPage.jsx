@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { partners } from '../data/mock';
@@ -95,10 +96,10 @@ const ResetPasswordPage = () => {
       }}
     >
       <div className="w-full max-w-md">
-        <Link to="/connexion" className="inline-flex items-center text-white/60 hover:text-white mb-6 transition-colors text-sm">
+        <BackLink fallback="/connexion" data-testid="reset-back-btn" className="inline-flex items-center text-white/60 hover:text-white mb-6 transition-colors text-sm">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Retour à la connexion
-        </Link>
+          Retour
+        </BackLink>
         
         <div className="glass-panel rounded-[26px] p-8">
           <div className="text-center mb-8">

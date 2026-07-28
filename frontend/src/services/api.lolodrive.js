@@ -93,6 +93,8 @@ export const lolodriveAPI = {
     apiCall(`/lolodrive/admin/products/${sku}/generate-photo`, { method: 'POST' }),
   adminToggleProduct: (sku, isActive) =>
     apiCall(`/lolodrive/admin/products/${sku}/toggle-active`, { method: 'POST', body: JSON.stringify({ is_active: isActive }) }),
+  adminSetProductSupplier: (sku, supplier) =>
+    apiCall(`/lolodrive/admin/products/${sku}/supplier`, { method: 'PUT', body: JSON.stringify({ supplier }) }),
   adminUpdatePoint: (pointId, payload) =>
     apiCall(`/lolodrive/admin/lolo-points/${pointId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   adminUpdateFeesConfig: (payload) =>

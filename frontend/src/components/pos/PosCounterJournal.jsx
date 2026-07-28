@@ -29,6 +29,14 @@ export const PosCounterJournal = ({ refreshKey }) => {
     lolodriveAPI.posBestSeller().then(setSeller).catch(() => {});
   }, [refreshKey]);
 
+  const restock = async (a) => {
+    try {
+      const d = await lolodriveAPI.posSetStock(a.sku, a.stock_qty + a.suggested_qty);
+      toast.success(`${a.name} : stock mis à jour → ${d.stock_qty} ✓`);
+      lolodriveAPI.posStockAlerts(30).then((x) => setAlerts(x.alerts || [])).catch(() => {});
+    } catch (e) { toast.error(e.message); }
+  };
+
   const exportCsv = async () => {
     try {
       const month = new Date().toISOString().slice(0, 7);
@@ -59,11 +67,22 @@ export const PosCounterJournal = ({ refreshKey }) => {
           </p>
           <div className="space-y-0.5">
             {alerts.map((a) => (
-              <p key={a.sku} className="text-xs text-white/70" data-testid={`stock-alert-${a.sku}`}>
+              <p key={a.sku} className="text-xs text-white/70 flex flex-wrap items-center gap-x-1.5" data-testid={`stock-alert-${a.sku}`}>
                 <b className={a.critical ? 'text-red-300' : 'text-amber-200'}>{a.name}</b>
                 {' — '}{a.stock_qty} en stock · {a.sold_qty} vendus / 30 j
                 {a.days_left !== null && <> · rupture estimée dans <b className={a.critical ? 'text-red-300' : 'text-amber-200'}>~{a.days_left} j</b></>}
                 {a.critical && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 font-bold text-[10px]">RÉASSORT URGENT</span>}
+                {a.suggested_qty > 0 && (
+                  <>
+                    <span className="text-amber-200/80" data-testid={`restock-suggestion-${a.sku}`}>· réassort conseillé : <b>+{a.suggested_qty}</b> (30 j)</span>
+                    {isManager && (
+                      <button type="button" onClick={() => restock(a)} data-testid={`restock-apply-${a.sku}`}
+                        className="px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold text-[10px] hover:bg-emerald-500/30">
+                        Réassort fait (+{a.suggested_qty})
+                      </button>
+                    )}
+                  </>
+                )}
               </p>
             ))}
           </div>

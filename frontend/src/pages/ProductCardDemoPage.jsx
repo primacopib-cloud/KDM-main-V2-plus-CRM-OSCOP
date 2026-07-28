@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { ArrowLeft, Package, Utensils, Wrench, Factory, Droplets } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -384,10 +384,10 @@ export default function ProductCardDemoPage() {
       >
         <div className="max-w-[1400px] mx-auto px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+            <BackLink fallback="/dashboard" data-testid="demo-back-btn" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm hidden sm:inline">Retour</span>
-            </Link>
+            </BackLink>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#D9B35A]/20 flex items-center justify-center">
                 <Package className="w-5 h-5 text-[#D9B35A]" />

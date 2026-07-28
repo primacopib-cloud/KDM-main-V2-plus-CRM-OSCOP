@@ -1,6 +1,7 @@
 """Insights POS LOLODRIVE : comparatif mensuel gérant, alertes stock bas, export caisse consolidé admin."""
 import logging
 from datetime import datetime, timedelta
+from math import ceil
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -219,8 +220,10 @@ async def pos_stock_alerts(days: int = 30, user: dict = Depends(get_current_user
         daily = sold[p["sku"]] / days
         days_left = round(stock / daily) if daily > 0 else None
         if stock <= 5 or (days_left is not None and days_left <= 14):
+            suggested = max(0, ceil(daily * 30) - stock) if daily > 0 else 0
             alerts.append({"sku": p["sku"], "name": p["name"], "stock_qty": stock,
                            "sold_qty": sold[p["sku"]], "days_left": days_left,
+                           "suggested_qty": suggested,
                            "critical": stock <= 5 or (days_left is not None and days_left <= 5)})
     alerts.sort(key=lambda a: (a["days_left"] if a["days_left"] is not None else 999, a["stock_qty"]))
     return {"days": days, "alerts": alerts}

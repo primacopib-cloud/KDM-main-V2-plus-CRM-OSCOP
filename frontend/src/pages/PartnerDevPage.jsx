@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { KeyRound, BookOpen, ArrowLeft, Activity, Gauge, Loader2, Webhook } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -95,9 +96,9 @@ export default function PartnerDevPage() {
   return (
     <div className="min-h-screen text-white px-5 py-10" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #1A092D 100%)' }} data-testid="partner-dev-page">
       <div className="max-w-[860px] mx-auto">
-        <Link to="/" className="text-xs text-white/50 hover:text-white inline-flex items-center gap-1.5 mb-6">
-          <ArrowLeft className="w-3.5 h-3.5" /> Retour à l'accueil
-        </Link>
+        <BackLink fallback="/" data-testid="partner-dev-back-btn" className="text-xs text-white/50 hover:text-white inline-flex items-center gap-1.5 mb-6">
+          <ArrowLeft className="w-3.5 h-3.5" /> Retour
+        </BackLink>
         <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
           <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
             <KeyRound className="w-8 h-8 text-[#D9B35A]" /> Espace Développeur

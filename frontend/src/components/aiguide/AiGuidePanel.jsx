@@ -185,14 +185,14 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   };
 
   return (
-    <div className="fixed bottom-24 right-6 z-[70] w-[370px] max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden flex flex-col"
+    <div className="fixed bottom-24 right-6 z-[70] w-[370px] max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden flex flex-col transition-opacity duration-300 opacity-60 hover:opacity-100 focus-within:opacity-100"
       data-testid="ai-guide-panel"
       style={{
         height: 'min(540px, calc(100vh - 8rem))',
-        background: 'linear-gradient(180deg, rgba(42,16,69,0.96) 0%, rgba(30,12,52,0.98) 100%)',
+        background: 'linear-gradient(180deg, rgba(42,16,69,0.82) 0%, rgba(30,12,52,0.88) 100%)',
         border: '1px solid rgba(217,179,90,0.4)',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.55), 0 0 30px rgba(217,179,90,0.12)',
-        backdropFilter: 'blur(18px)',
+        boxShadow: '0 24px 60px rgba(0,0,0,0.45), 0 0 30px rgba(217,179,90,0.1)',
+        backdropFilter: 'blur(5px)',
       }}>
       <div className="px-4 py-3 flex items-center gap-2.5"
         style={{ background: 'linear-gradient(90deg, rgba(69,31,107,0.9), rgba(184,134,11,0.25))', borderBottom: '1px solid rgba(217,179,90,0.3)' }}>

@@ -234,11 +234,11 @@ const AdminPlansPage = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <button
-              onClick={() => navigate('/superadmin')}
+              onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/superadmin'))}
               className="flex items-center gap-2 text-sm text-white/60 hover:text-white mb-2"
               data-testid="back-to-superadmin"
             >
-              <ArrowLeft className="w-4 h-4" /> {i18n.t('adm.retour_super_admin')}
+              <ArrowLeft className="w-4 h-4" /> {i18n.t('adm.retour')}
             </button>
             <h1 className="text-3xl sm:text-4xl font-bold text-white">
               {i18n.t('adm.plans_options_credits')}

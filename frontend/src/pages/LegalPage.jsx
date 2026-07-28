@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { ArrowLeft, FileText, Scale, Building2, CreditCard, Truck, Shield, Handshake, CheckCircle2, XCircle, Download, ChevronRight, Leaf, Package, FileSignature, Route } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -78,10 +79,10 @@ export default function LegalPage() {
       >
         <div className="max-w-[1000px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+            <BackLink fallback="/" data-testid="legal-back-btn" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm">Retour</span>
-            </Link>
+            </BackLink>
             <div className="flex items-center gap-2">
               <BrandLogos size="sm" />
             </div>

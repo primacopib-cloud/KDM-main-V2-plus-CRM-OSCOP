@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { ArrowLeft, Coins, Download, Ticket, Wallet, Building2 } from 'lucide-react';
 import { BrandLogos } from '../components/BrandLogos';
 
@@ -31,9 +31,9 @@ export default function CrediscopStatementPage() {
             style={{ background: '#D9B35A', color: '#1F0A33' }}>
             <Download className="w-3.5 h-3.5" /> Relevé PDF
           </a>
-          <Link to="/espace-vendeur" className="inline-flex items-center gap-1 text-xs text-white/60 hover:text-white" data-testid="statement-back-link">
+          <BackLink fallback="/espace-vendeur" className="inline-flex items-center gap-1 text-xs text-white/60 hover:text-white" data-testid="statement-back-link">
             <ArrowLeft className="w-3.5 h-3.5" /> Retour
-          </Link>
+          </BackLink>
         </div>
       </header>
       <main className="max-w-4xl mx-auto px-5 py-6 space-y-5">

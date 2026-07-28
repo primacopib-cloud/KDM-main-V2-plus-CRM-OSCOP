@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { BookOpen, KeyRound, ArrowLeft } from 'lucide-react';
 
 const BASE = process.env.REACT_APP_BACKEND_URL;
@@ -19,9 +20,9 @@ export default function ApiDocsPage() {
   return (
     <div className="min-h-screen text-white px-5 py-10" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #1A092D 100%)' }} data-testid="api-docs-page">
       <div className="max-w-[860px] mx-auto">
-        <Link to="/" className="text-xs text-white/50 hover:text-white inline-flex items-center gap-1.5 mb-6">
-          <ArrowLeft className="w-3.5 h-3.5" /> Retour à l'accueil
-        </Link>
+        <BackLink fallback="/" data-testid="api-docs-back-btn" className="text-xs text-white/50 hover:text-white inline-flex items-center gap-1.5 mb-6">
+          <ArrowLeft className="w-3.5 h-3.5" /> Retour
+        </BackLink>
         <Link to="/espace-developpeur" className="text-xs text-[#D9B35A] hover:underline inline-flex items-center gap-1.5 mb-6 ml-4" data-testid="docs-dev-space-link">
           <KeyRound className="w-3.5 h-3.5" /> Mon espace développeur
         </Link>

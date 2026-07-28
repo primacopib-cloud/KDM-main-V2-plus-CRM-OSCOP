@@ -1,6 +1,7 @@
 import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { ShoppingCart, Plus, Minus, Wallet, CreditCard, ArrowLeft, Star } from 'lucide-react';
 import LolodriveLayout, { fmtEUR } from '../components/LolodriveLayout';
 import { useCatalogPromos, bestPromos } from '../components/catalog/ProductPromoBadges';
@@ -200,9 +201,9 @@ export default function LolodriveCatalogPage() {
       actions={
         <>
         <Button asChild variant="outline" data-testid="back-to-orders-btn">
-          <Link to="/pass">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Retour à mes commandes
-          </Link>
+          <BackLink fallback="/pass">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Retour
+          </BackLink>
         </Button>
         <Sheet>
           <SheetTrigger asChild>

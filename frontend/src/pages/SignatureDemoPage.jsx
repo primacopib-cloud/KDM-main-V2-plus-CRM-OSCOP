@@ -1,6 +1,6 @@
 import i18n from '@/i18n';
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { ArrowLeft, FileSignature, Phone, CheckCircle2, Shield, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -81,10 +81,10 @@ export default function SignatureDemoPage() {
       >
         <div className="max-w-[1200px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+            <BackLink fallback="/" data-testid="signature-back-btn" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm">Retour</span>
-            </Link>
+            </BackLink>
             <div className="flex items-center gap-2">
               <BrandLogos size="sm" />
             </div>

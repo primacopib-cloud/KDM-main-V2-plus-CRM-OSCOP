@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { useTranslation } from 'react-i18next';
 import { Truck, Warehouse, Ship, ArrowLeft, PackageCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -45,9 +45,9 @@ export default function LogicoopSpacePage() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }} data-testid="logicoop-space-page">
       <header className="sticky top-0 z-50" style={{ background: 'rgba(30,12,52,0.9)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(212,175,55,0.32)' }}>
         <div className="max-w-[1160px] mx-auto px-5 py-3 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+          <BackLink fallback="/" data-testid="logicoop-back-btn" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" /><span className="text-sm hidden sm:inline">{t('logicoop.back', 'Retour')}</span>
-          </Link>
+          </BackLink>
           <BrandLogos size="sm" />
           <span className="ml-auto inline-flex items-center gap-2 text-sm font-bold text-[#E9CF8E]">
             <Truck className="w-4 h-4" /> {t('logicoop.space', 'Espace LOGICOOP')}

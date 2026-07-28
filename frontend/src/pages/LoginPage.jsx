@@ -1,6 +1,7 @@
 import Seo from '../components/Seo';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { partners } from '../data/mock';
@@ -97,14 +98,14 @@ const LoginPage = () => {
 
         {/* Brand */}
         <div className="relative">
-          <Link
-            to="/"
+          <BackLink
+            fallback="/"
             className="inline-flex items-center gap-2 text-white/60 hover:text-white/90 text-sm transition-colors mb-10"
             data-testid="back-home-link"
           >
             <ArrowLeft className="w-4 h-4" />
-            {t('common.back_home')}
-          </Link>
+            {t('common.back')}
+          </BackLink>
           <div className="flex items-center gap-3">
             <BrandLogos size="lg" />
           </div>

@@ -38,6 +38,8 @@ async def run_defective_alerts(db, now=None) -> int:
 
 
 async def _notify_admins(db, sku, e, threshold, month):
+    prod = await db.lolodrive_products.find_one({"sku": sku}, {"_id": 0, "supplier": 1})
+    supplier = (prod or {}).get("supplier")
     admins = await db.users.find(
         {"$or": [{"is_admin": True}, {"role": {"$in": ["oscop_super_admin", "SUPER_ADMIN", "ADMIN", "admin"]}}],
          "email": {"$ne": None}}, {"_id": 0, "email": 1, "contact_name": 1}).to_list(20)
@@ -54,6 +56,7 @@ async def _notify_admins(db, sku, e, threshold, month):
       <p>Le produit <strong>{e['name']}</strong> (SKU {sku}) a atteint
       <strong style='color:#dc2626'>{e['qty']} retour(s) « Défectueux »</strong> sur {month}
       (seuil d'alerte : {threshold}).</p>
+      {f"<p>Fournisseur : <strong>{supplier}</strong></p>" if supplier else ""}
       <p>Répartition par relais :</p>
       <ul style='font-size:13px'>{detail}</ul>
       <p>Vérifiez le lot, le fournisseur ou retirez temporairement le produit du catalogue

@@ -1,6 +1,7 @@
 import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { toast } from 'sonner';
 import {
   ArrowLeft, Shield, Building2, Users, FileText, Clock, CheckCircle2,
@@ -235,10 +236,10 @@ export default function AdminV2Page() {
       >
         <div className="max-w-[1280px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/superadmin" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+            <BackLink fallback="/superadmin" data-testid="adminv2-back-btn" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm hidden sm:inline">{i18n.t('adm.retour')}</span>
-            </Link>
+            </BackLink>
             <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
               <Shield className="w-3 h-3 mr-1" />
               Espace Admin

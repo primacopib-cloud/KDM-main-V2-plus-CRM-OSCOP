@@ -1,6 +1,7 @@
 import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { toast } from 'sonner';
 import {
   ArrowLeft, Package, Clock, CheckCircle2, XCircle, Truck,
@@ -159,10 +160,10 @@ export default function OrdersPage() {
       >
         <div className="max-w-[1160px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+            <BackLink fallback="/dashboard" data-testid="orders-back-btn" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm hidden sm:inline">{i18n.t('orders.retour')}</span>
-            </Link>
+            </BackLink>
             <div className="flex items-center gap-3">
               <BrandLogos />
             </div>

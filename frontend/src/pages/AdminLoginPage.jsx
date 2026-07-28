@@ -1,6 +1,7 @@
 import i18n from '@/i18n';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { partners } from '../data/mock';
@@ -74,14 +75,14 @@ const AdminLoginPage = () => {
         />
 
         <div className="relative">
-          <Link
-            to="/connexion"
+          <BackLink
+            fallback="/connexion"
             className="inline-flex items-center gap-2 text-white/60 hover:text-white/90 text-sm transition-colors mb-10"
             data-testid="back-to-member-login-link"
           >
             <ArrowLeft className="w-4 h-4" />
-            {i18n.t('adm.retour_connexion_membres')}
-          </Link>
+            {i18n.t('adm.retour')}
+          </BackLink>
           <div className="flex items-center gap-3">
             <BrandLogos size="lg" />
           </div>

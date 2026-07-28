@@ -42,6 +42,14 @@ export const ProductsTvaPanel = () => {
     } catch (e) { toast.error(e.message); }
   };
 
+  const saveSupplier = async (sku, value) => {
+    try {
+      await lolodriveAPI.adminSetProductSupplier(sku, value);
+      setData((prev) => ({ ...prev, products: prev.products.map((x) => (x.sku === sku ? { ...x, supplier: value || null } : x)) }));
+      toast.success('Fournisseur enregistré ✓');
+    } catch (e) { toast.error(e.message); }
+  };
+
   return (
     <div className="mt-6 rounded-2xl bg-white/[0.025] border border-white/[0.07] p-5" data-testid="products-tva-panel">
       <button type="button" onClick={() => setOpen(!open)} data-testid="products-tva-toggle"
@@ -72,6 +80,11 @@ export const ProductsTvaPanel = () => {
                   <span className="block text-[10px] text-white/40 truncate">
                     {p.category || '—'}{p.point_code ? ` · Relais ${p.point_code}` : ''} · {(p.price_public_cents / 100).toFixed(2)} € TTC
                   </span>
+                  <input type="text" defaultValue={p.supplier || ''} placeholder="Fournisseur…"
+                    data-testid={`supplier-input-${p.sku}`}
+                    onBlur={(ev) => { const v = ev.target.value.trim(); if (v !== (p.supplier || '')) saveSupplier(p.sku, v); }}
+                    onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
+                    className="mt-0.5 w-full max-w-[150px] bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white/70 placeholder:text-white/25" />
                 </span>
               </span>
               <span className="flex items-center gap-1 shrink-0">
