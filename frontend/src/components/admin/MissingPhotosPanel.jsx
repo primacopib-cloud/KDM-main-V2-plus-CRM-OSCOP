@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Camera, ImageOff, Loader2 } from 'lucide-react';
+import { Camera, ImageOff, Loader2, Sparkles } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
 
 // Super admin : produits du catalogue sans photo, avec upload direct pour compléter
 export const MissingPhotosPanel = () => {
   const [data, setData] = useState(null);
   const [uploadingSku, setUploadingSku] = useState(null);
+  const [aiSku, setAiSku] = useState(null);
   const fileRef = useRef(null);
   const targetSku = useRef(null);
 
@@ -15,6 +16,18 @@ export const MissingPhotosPanel = () => {
   if (!data || data.count === 0) return null;
 
   const pickPhoto = (sku) => { targetSku.current = sku; fileRef.current?.click(); };
+
+  const generateAi = async (sku) => {
+    setAiSku(sku);
+    try {
+      const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/admin/products/${sku}/generate-photo`,
+        { method: 'POST', credentials: 'include' });
+      const d = await r.json();
+      if (!r.ok) { toast.error(d.detail || 'Génération IA échouée'); return; }
+      toast.success('Photo IA générée et ajoutée au catalogue ✨');
+      load();
+    } catch { toast.error('Erreur de connexion'); } finally { setAiSku(null); }
+  };
 
   const upload = async (file) => {
     const sku = targetSku.current;
@@ -54,12 +67,20 @@ export const MissingPhotosPanel = () => {
                 {p.category || '—'}{p.subcategory ? ` · ${p.subcategory}` : ''}{p.point_code ? ` · Relais ${p.point_code}` : ''}
               </span>
             </span>
-            <button type="button" onClick={() => pickPhoto(p.sku)} disabled={uploadingSku === p.sku}
-              data-testid={`missing-photo-upload-${p.sku}`}
-              className="flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg text-[11px] font-bold text-amber-300 bg-amber-400/10 border border-amber-400/35 hover:bg-amber-400/20">
-              {uploadingSku === p.sku ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
-              Photo
-            </button>
+            <span className="flex items-center gap-1 shrink-0">
+              <button type="button" onClick={() => generateAi(p.sku)} disabled={aiSku === p.sku}
+                data-testid={`missing-photo-ai-${p.sku}`} title="Générer une photo d'illustration par IA"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-[#c4b5fd] bg-[#7c3aed]/10 border border-[#7c3aed]/35 hover:bg-[#7c3aed]/20 disabled:opacity-60">
+                {aiSku === p.sku ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                IA
+              </button>
+              <button type="button" onClick={() => pickPhoto(p.sku)} disabled={uploadingSku === p.sku}
+                data-testid={`missing-photo-upload-${p.sku}`}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-amber-300 bg-amber-400/10 border border-amber-400/35 hover:bg-amber-400/20">
+                {uploadingSku === p.sku ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+                Photo
+              </button>
+            </span>
           </div>
         ))}
       </div>

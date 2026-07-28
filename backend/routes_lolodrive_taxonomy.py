@@ -345,6 +345,23 @@ async def admin_set_product_photo(sku: str, file: UploadFile = File(...), admin:
     return {"ok": True, "sku": sku, "image_url": image_url}
 
 
+@taxonomy_router.post("/admin/products/{sku}/generate-photo")
+async def admin_generate_product_photo(sku: str, admin: dict = Depends(require_admin)):
+    """Génère une photo d'illustration IA pour un produit sans image (super admin)."""
+    prod = await db.lolodrive_products.find_one(
+        {"sku": sku}, {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1})
+    if not prod:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    from product_photo_ai import generate_product_photo
+    try:
+        image_url = await generate_product_photo(prod["name"], prod.get("category"), prod.get("brand"))
+    except Exception as exc:
+        logging.getLogger(__name__).warning("Génération photo IA %s : %s", sku, exc)
+        raise HTTPException(status_code=502, detail="Génération IA indisponible — réessayez ou ajoutez une photo manuelle")
+    await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"image_url": image_url, "image_ai_generated": True}})
+    return {"ok": True, "sku": sku, "image_url": image_url}
+
+
 @taxonomy_router.get("/fees-config")
 async def public_fees_config(user: dict = Depends(get_current_user)):
     return await get_fees_config_doc()

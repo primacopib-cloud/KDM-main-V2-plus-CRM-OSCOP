@@ -371,13 +371,30 @@ async def email_counter_ticket(order_id: str, payload: dict, user: dict = Depend
         raise HTTPException(status_code=404, detail="Vente introuvable pour ce relais")
     from brevo_service import send_email, _wrap_html
 
-    def _row(l):
-        promo = f" <span style='color:#b45309;font-size:11px'>-{l['promo_percent']:g}%</span>" if l.get("promo_percent") else ""
-        return (f"<tr><td style='padding:4px 8px'>{l['name']}{promo}</td>"
-                f"<td style='padding:4px 8px;text-align:center'>× {l['qty']}</td>"
-                f"<td style='padding:4px 8px;text-align:right'>{l['unit_cents'] * l['qty'] / 100:.2f} €</td></tr>")
+    def _eu(l):
+        ttc = l["unit_cents"] * l["qty"]
+        rate = float(l.get("tva_rate") or 8.5)
+        ht = round(ttc / (1 + rate / 100))
+        return ttc, rate, ht
 
-    rows = "".join(_row(l) for l in order.get("items", []))
+    def _row(l):
+        _, rate, ht = _eu(l)
+        promo = f" <span style='color:#b45309;font-size:11px'>-{l['promo_percent']:g}%</span>" if l.get("promo_percent") else ""
+        return (f"<tr><td style='padding:4px 8px'>{l['qty']} × {l['name']}{promo} · TVA {rate:g}%</td>"
+                f"<td style='padding:4px 8px;text-align:right'>{ht / 100:.2f} € HT</td></tr>")
+
+    items = order.get("items", [])
+    rows = "".join(_row(l) for l in items)
+    total_ht = 0
+    tva_by_rate = {}
+    for l in items:
+        ttc, rate, ht = _eu(l)
+        total_ht += ht
+        tva_by_rate[rate] = tva_by_rate.get(rate, 0) + (ttc - ht)
+    tva_rows = "".join(
+        f"<tr><td style='padding:3px 8px;color:#666'>TVA {rate:.2f} %</td>"
+        f"<td style='padding:3px 8px;text-align:right;color:#666'>{tva / 100:.2f} €</td></tr>"
+        for rate, tva in sorted(tva_by_rate.items()))
     discount = order.get("promo_discount_cents") or 0
     pay_fr = {"CARD": "carte bancaire", "UC": "UC — CREDI'SCOP",
               "MIXED": "paiement combiné UC + " + ("CB" if order.get("rest_method") == "CARD" else "espèces")
@@ -386,8 +403,13 @@ async def email_counter_ticket(order_id: str, payload: dict, user: dict = Depend
     body = f"""
       <p><strong>{point['name']}</strong> — vente au comptoir du {order['created_at'].strftime('%d/%m/%Y %H:%M')}</p>
       <table style='width:100%;border-collapse:collapse;font-size:13px;border-top:1px dashed #ccc;border-bottom:1px dashed #ccc'>{rows}</table>
-      {f"<p style='margin:8px 0 0;color:#b45309'>⚡ Remise promo : −{discount / 100:.2f} €</p>" if discount else ''}
-      <p style='margin:10px 0 0;font-size:15px'>Total encaissé : <strong>{order['total_cents'] / 100:.2f} €</strong>
+      <table style='width:100%;border-collapse:collapse;font-size:13px;margin-top:6px'>
+        <tr><td style='padding:3px 8px'><strong>Sous-total HT</strong></td>
+        <td style='padding:3px 8px;text-align:right'><strong>{total_ht / 100:.2f} €</strong></td></tr>
+        {tva_rows}
+        {f"<tr><td style='padding:3px 8px;color:#b45309'>⚡ Remise promo (déjà déduite des lignes)</td><td style='padding:3px 8px;text-align:right;color:#b45309'>−{discount / 100:.2f} €</td></tr>" if discount else ''}
+      </table>
+      <p style='margin:10px 0 0;font-size:15px;border-top:1px dashed #ccc;padding-top:8px'>Montant TTC : <strong>{order['total_cents'] / 100:.2f} €</strong>
       ({pay_fr})</p>
       {f"<p style='margin:6px 0 0;font-size:12px;color:#b8860b'>🪙 Payé en UC : <strong>{order['uc_paid']} UC</strong> débités du CREDI'SCOP</p>" if order.get('uc_paid') else ''}
       {f"<p style='margin:6px 0 0;font-size:12px;color:#777'>Encaissé par : <strong>{order['operator_name']}</strong></p>" if order.get('operator_name') else ''}
