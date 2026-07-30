@@ -406,10 +406,12 @@ export default function CatalogPage() {
       />
       {/* Main Content */}
       <div className="max-w-[1280px] mx-auto px-5 py-6">
-        {/* Breadcrumb */}
-        <div className="mb-4">
-          <BreadcrumbPill />
-        </div>
+        {/* Breadcrumb (membres uniquement — les visiteurs restent dans le contexte Accueil) */}
+        {authAPI.isAuthenticated() && (
+          <div className="mb-4">
+            <BreadcrumbPill />
+          </div>
+        )}
 
         {/* Title & Search */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">

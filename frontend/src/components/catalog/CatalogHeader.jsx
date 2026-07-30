@@ -25,8 +25,9 @@ export const CatalogHeader = ({
   cartLoading, cartItemCount, cartTotal, handleUpdateQuantity,
   handleRemoveFromCart, handleAddToCart, navigate,
 }) => {
+  const connected = authAPI.isAuthenticated();
   const [me, setMe] = useState(null);
-  useEffect(() => { authAPI.getMe().then(setMe).catch(() => {}); }, []);
+  useEffect(() => { if (connected) authAPI.getMe().then(setMe).catch(() => {}); }, [connected]);
   const mySpace = getMySpace(me);
   const admin = isAdminUser(me);
   return (
@@ -40,10 +41,17 @@ export const CatalogHeader = ({
       >
         <div className="max-w-[1280px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to={mySpace} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors" data-testid="catalog-back-my-space">
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm hidden sm:inline">Mon Espace</span>
-            </Link>
+            {connected ? (
+              <Link to={mySpace} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors" data-testid="catalog-back-my-space">
+                <ArrowLeft className="w-4 h-4" />
+                <span className="text-sm hidden sm:inline">Mon Espace</span>
+              </Link>
+            ) : (
+              <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors" data-testid="catalog-back-home">
+                <ArrowLeft className="w-4 h-4" />
+                <span className="text-sm hidden sm:inline">Accueil</span>
+              </Link>
+            )}
             <div className="flex items-center gap-3">
               <BrandLogos />
             </div>
@@ -54,6 +62,21 @@ export const CatalogHeader = ({
             <Link to="/" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
               Accueil
             </Link>
+            {!connected && (
+              <>
+                <Link to="/kdmarche" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors" data-testid="catalog-nav-kdmarche">
+                  KDMARCHÉ
+                </Link>
+                <Link to="/tarifs" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors" data-testid="catalog-nav-acces-pro">
+                  Accès Pro
+                </Link>
+                <Link to="/contact" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors" data-testid="catalog-nav-contact">
+                  Contact
+                </Link>
+              </>
+            )}
+            {connected && (
+              <>
             <Link to={mySpace} className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors" data-testid="catalog-nav-my-space">
               Mon Espace
             </Link>
@@ -73,13 +96,15 @@ export const CatalogHeader = ({
                 Super Admin
               </Link>
             )}
+              </>
+            )}
           </nav>
           
           <div className="flex items-center gap-3">
-            <CrediscopBadge className="hidden sm:inline-flex" />
-            <NotificationsBell />
+            {connected && <CrediscopBadge className="hidden sm:inline-flex" />}
+            {connected && <NotificationsBell />}
             {/* Navigation History */}
-            <NavigationHistoryDropdown variant="dark" />
+            {connected && <NavigationHistoryDropdown variant="dark" />}
             
             {/* Zone selector */}
             <Select value={selectedZone} onValueChange={setSelectedZone}>
@@ -103,7 +128,8 @@ export const CatalogHeader = ({
               </SelectContent>
             </Select>
 
-            {/* Cart button */}
+            {/* Cart button (membres) / Connexion (visiteurs) */}
+            {connected ? (
             <Sheet open={cartOpen} onOpenChange={setCartOpen}>
               <SheetTrigger asChild>
                 <Button 
@@ -228,6 +254,18 @@ export const CatalogHeader = ({
                 </div>
               </SheetContent>
             </Sheet>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Link to="/connexion" data-testid="catalog-login-btn"
+                  className="px-3 py-2 rounded-lg text-xs font-semibold text-white/80 border border-white/20 hover:bg-white/10 transition-colors">
+                  Connexion
+                </Link>
+                <Link to="/adhesion" data-testid="catalog-join-btn"
+                  className="px-3 py-2 rounded-lg text-xs font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors">
+                  Adhérer
+                </Link>
+              </span>
+            )}
           </div>
         </div>
       </header>
