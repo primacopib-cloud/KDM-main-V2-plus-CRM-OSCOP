@@ -349,7 +349,25 @@ export default function LolodriveCatalogPage() {
         if (visible.length === 0 && filter !== 'FAVS') {
           return <div className="text-center text-white/40 py-12" data-testid="catalog-no-result">Aucun produit ne correspond à ces filtres.</div>;
         }
-        return groupByCategory(visible).map((g) => (
+        const promos = visible.filter((p) => p.tag === 'PROMO' || p.tag === 'SOLDE');
+        return (
+          <>
+            {promos.length > 0 && (
+              <div className="mb-8 rounded-2xl border border-red-400/25 bg-red-500/[0.05] p-3" data-testid="catalog-promos-section">
+                <h2 className="text-lg font-bold text-red-300 mb-2 flex items-baseline gap-2">
+                  🔥 Promos &amp; Soldes
+                  <span className="text-xs font-normal text-white/35">{promos.length} produit(s)</span>
+                </h2>
+                <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+                  {promos.map((p) => (
+                    <LolodriveProductCard key={`promo-${p.sku}`} p={p} qty={cart[p.sku] || 0} add={add} sub={sub}
+                      isFav={favs.includes(p.sku)} toggleFav={toggleFav}
+                      promo={promoOf(p)} favPromo={favPromo(p)} discounted={discountedUnit(p)} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {groupByCategory(visible).map((g) => (
           <div key={g.category} className="mb-8" data-testid={`catalog-group-${g.category}`}>
             <h2 className="text-lg font-bold text-[#D9B35A] mb-2 flex items-baseline gap-2">
               {g.category}
@@ -372,7 +390,9 @@ export default function LolodriveCatalogPage() {
               </div>
             ))}
           </div>
-        ));
+            ))}
+          </>
+        );
       })()}
     </LolodriveLayout>
   );

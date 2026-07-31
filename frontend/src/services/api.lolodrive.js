@@ -109,6 +109,10 @@ export const lolodriveAPI = {
     apiCall(`/lolodrive/admin/products/${sku}/tag`, { method: 'PUT', body: JSON.stringify({ tag, tag_until: tagUntil }) }),
   adminCreateLot: (payload) =>
     apiCall('/lolodrive/admin/products/create-lot', { method: 'POST', body: JSON.stringify(payload) }),
+  adminBulkTag: (payload) =>
+    apiCall('/lolodrive/admin/products/bulk-tag', { method: 'POST', body: JSON.stringify(payload) }),
+  adminBulkCreateLot: (payload) =>
+    apiCall('/lolodrive/admin/products/bulk-create-lot', { method: 'POST', body: JSON.stringify(payload) }),
   adminUpdatePoint: (pointId, payload) =>
     apiCall(`/lolodrive/admin/lolo-points/${pointId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   adminUpdateFeesConfig: (payload) =>

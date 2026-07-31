@@ -322,15 +322,33 @@ export const PosCatalogPanel = () => {
       </div>
 
       <div className="max-h-[520px] overflow-y-auto pr-1" data-testid="pos-catalog-list">
-        {groupByCategory(catalog.products
-          .filter((p) => !category || p.category === category)
-          .filter((p) => !subcategory || p.subcategory === subcategory)
-          .filter((p) => {
-            const q = search.trim().toLowerCase();
-            if (!q) return true;
-            return p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
-              || (p.brand || '').toLowerCase().includes(q) || (p.barcode || '').toLowerCase() === q;
-          })).map((g) => (
+        {(() => {
+          const visible = catalog.products
+            .filter((p) => !category || p.category === category)
+            .filter((p) => !subcategory || p.subcategory === subcategory)
+            .filter((p) => {
+              const q = search.trim().toLowerCase();
+              if (!q) return true;
+              return p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
+                || (p.brand || '').toLowerCase().includes(q) || (p.barcode || '').toLowerCase() === q;
+            });
+          const promos = visible.filter((p) => p.tag === 'PROMO' || p.tag === 'SOLDE');
+          return (
+            <>
+              {promos.length > 0 && (
+                <div className="mb-4 rounded-xl border border-red-400/25 bg-red-500/[0.05] p-2.5" data-testid="pos-promos-section">
+                  <h4 className="text-sm font-bold text-red-300 mb-1.5">🔥 Rayon Promos &amp; Soldes <span className="text-[10px] font-normal text-white/35">({promos.length})</span></h4>
+                  <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))' }}>
+                    {promos.map((p) => (
+                      <PosProductCard key={`promo-${p.sku}`} p={p} count={sale[p.sku]}
+                        stockEdit={stockEdit} setStockEdit={setStockEdit} saveStock={saveStock}
+                        onHistory={() => setHistoryOf({ sku: p.sku, name: p.name })}
+                        onSell={() => addSale(p.sku)} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {groupByCategory(visible).map((g) => (
           <div key={g.category} className="mb-4">
             <h4 className="text-sm font-bold text-[#D9B35A] mb-1.5" data-testid={`pos-group-${g.category}`}>{g.category}</h4>
             {g.subs.map((sc) => (
@@ -347,7 +365,10 @@ export const PosCatalogPanel = () => {
               </div>
             ))}
           </div>
-        ))}
+              ))}
+            </>
+          );
+        })()}
       </div>
 
       {saleItems.length > 0 && (

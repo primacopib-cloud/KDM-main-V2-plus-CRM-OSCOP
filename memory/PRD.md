@@ -2152,3 +2152,15 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 - **Prix barré lot** : create-lot stocke `lot_ref_price_cents` (= prix public unitaire × total) et `lot_ref_pass_cents` (idem pass) — 2 lots existants migrés par script. Affichage si ref > prix : carte client (testid lot-savings-{sku}) « ~~6,80 €~~ · économisez 1,70 € (−25 %) » (ref pass ou public selon display_price_cents), carte POS (testid lot-savings-pos-{sku}) « au lieu de ~~8,80 €~~ · −25 % ». Lot ×2 sans gratuit → ref == prix → rien d'affiché (voulu).
 - **Dates de fin d'étiquettes** : PUT tag accepte `tag_until` (AAAA-MM-JJ → 23h59, 400 si passée/invalide, effacée si tag retiré) ; `run_tag_expiry` dans routes_product_lots.py (cron 10 min via scheduler) retire tag+date expirés. Admin : input date (testid tag-until-{sku}) visible quand une étiquette est posée, toast « jusqu'au JJ/MM/AAAA ». products-tva expose tag_until.
 - Testé E2E : tag+date 200/400×2, expiry force-datée → 1 retiré (riz) / banane future conservée, lot mangue test créé puis supprimé ; Playwright : économie client −25 %, POS « au lieu de 8.80 € », date 2026-08-01 en admin. Démo : banane PROMO jusqu'au 01/08/2026.
+
+## 2026-07-31 — Lot 79 : Programmation en masse (tags/lots) + Rayon Promos (self-testé python E2E + Playwright)
+- **Backend `routes_product_lots.py`** (refactor complet, 170 lignes) :
+  - **POST /admin/products/bulk-tag** : applique/retire (tag=null) une étiquette EN MASSE — cible `{category}` ou `{category, subcategory}` ou `{skus:[…≤500]}`, `tag_until` optionnel. 400 tag invalide/cible vide/date passée, 404 aucun match. Retour {matched}.
+  - **POST /admin/products/bulk-create-lot** : crée des lots (paid_qty/free_qty) pour tous les produits de la cible (skip is_lot), 409 doublons comptés dans skipped_existing. Retour {created[], created_count, skipped_existing}.
+  - Helpers factorisés : `_parse_tag`, `_parse_lot_qty`, `_scope_query`, `_create_lot`.
+- **Frontend** :
+  - `BulkProgramDialog.jsx` (testid bulk-program-dialog) : cible catégorie/sous-catégorie/produits cochés, action étiquette (+date fin)/retrait/création lots (×N payés + offerts). Intégré dans ProductsTvaPanel via bouton « Programmation en masse » (testid bulk-program-open-btn).
+  - **Rayon Promos client** (`LolodriveCatalogPage.jsx`, testid catalog-promos-section) : section 🔥 « Promos & Soldes » rouge en tête du catalogue avec tous les produits tag PROMO/SOLDE (respecte filtres/recherche), puis groupes normaux.
+  - **Rayon Promos POS** (`PosCatalogPanel.jsx`, testid pos-promos-section) : même section en tête de la liste POS.
+  - ⚠️ Bug corrigé : fermeture JSX incomplète de l'IIFE promos dans LolodriveCatalogPage (`));` → `))}</>);`) qui cassait la compilation webpack.
+- Testé E2E python (/tmp/test_lot79.py) : bulk-tag catégorie 16 produits + vérif client 15 visibles, 400 tag invalide + cible vide, untag, bulk-tag par skus (3), bulk-create-lot 2 lots créés (supprimés après test). Playwright : dialog admin ouvert, Rayon Promos visible catalogue client (5 produits) ET POS (5 produits). Démo : RIZ-5KG/LAIT-1L/HUILE-1L tag PROMO jusqu'au 31/12/2026 + bananes (lot 78).

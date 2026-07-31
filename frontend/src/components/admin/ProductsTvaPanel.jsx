@@ -4,6 +4,7 @@ import { Percent, ChevronDown, ChevronUp, Package, Sparkles, Loader2, Ban, Rotat
 import { lolodriveAPI } from '../../services/api';
 import { ProductToggleHistory } from './ProductToggleHistory';
 import { CreateLotDialog } from './CreateLotDialog';
+import { BulkProgramDialog } from './BulkProgramDialog';
 import { PRODUCT_TAGS } from '../lolodrive/ProductTagBadge';
 
 const RATES = ['0', '2.1', '5.5', '8.5', '20'];
@@ -14,6 +15,7 @@ export const ProductsTvaPanel = () => {
   const [open, setOpen] = useState(false);
   const [aiSku, setAiSku] = useState(null);
   const [showLot, setShowLot] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
 
   useEffect(() => {
     lolodriveAPI.adminProductsTva().then(setData).catch(() => {});
@@ -124,6 +126,10 @@ export const ProductsTvaPanel = () => {
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-fuchsia-300 bg-fuchsia-500/10 border border-fuchsia-400/35 hover:bg-fuchsia-500/20">
             <Package className="w-3 h-3" /> Créer un lot
           </button>
+          <button type="button" onClick={() => setShowBulk(true)} data-testid="bulk-program-open-btn"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/35 hover:bg-[#D9B35A]/20">
+            <Percent className="w-3 h-3" /> Programmation en masse
+          </button>
           <span className="text-[10px] text-white/30">exportez, modifiez puis réimportez — colonnes : sku · prix_public_eur · tva · fournisseur · email_fournisseur · prix_achat_eur · actif</span>
         </div>
         <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[380px] overflow-y-auto pr-1">
@@ -207,6 +213,10 @@ export const ProductsTvaPanel = () => {
         {showLot && (
           <CreateLotDialog products={data?.products || []} onClose={() => setShowLot(false)}
             onCreated={() => lolodriveAPI.adminProductsTva().then(setData).catch(() => {})} />
+        )}
+        {showBulk && (
+          <BulkProgramDialog products={data?.products || []} onClose={() => setShowBulk(false)}
+            onDone={() => lolodriveAPI.adminProductsTva().then(setData).catch(() => {})} />
         )}
         </>
       )}

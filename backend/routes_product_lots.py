@@ -1,4 +1,4 @@
-"""Étiquettes produits (Promo, Solde, Nouveau…) + création de produits en lot (×2, ×3+1 offert…)."""
+"""Étiquettes produits (Promo, Solde…), produits en lot, et programmation EN MASSE (catégorie/sous-catégorie/produits)."""
 import logging
 import uuid
 from datetime import datetime, timedelta
@@ -29,9 +29,8 @@ async def run_tag_expiry(database) -> int:
     return res.modified_count
 
 
-@product_lots_router.put("/admin/products/{sku}/tag")
-async def admin_set_product_tag(sku: str, payload: dict, admin: dict = Depends(require_admin)):
-    """Étiquette commerciale (Promo, Solde…) avec date de fin optionnelle — retrait auto à échéance."""
+def _parse_tag(payload):
+    """Valide {tag, tag_until} → (tag|None, datetime|None)."""
     tag = (payload or {}).get("tag")
     until = None
     if tag:
@@ -48,16 +47,10 @@ async def admin_set_product_tag(sku: str, payload: dict, admin: dict = Depends(r
                 raise HTTPException(status_code=400, detail="La date de fin est déjà passée")
     else:
         tag = None
-    res = await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"tag": tag, "tag_until": until}})
-    if res.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Produit introuvable")
-    return {"ok": True, "sku": sku, "tag": tag, "tag_until": until.isoformat() if until else None}
+    return tag, until
 
 
-@product_lots_router.post("/admin/products/create-lot")
-async def admin_create_lot(payload: dict, admin: dict = Depends(require_admin)):
-    """Crée un produit LOT à partir d'un produit de base : ×N payés + M offerts. Stock indépendant (en lots)."""
-    base_sku = str((payload or {}).get("base_sku") or "").strip()
+def _parse_lot_qty(payload):
     try:
         paid = int(payload.get("paid_qty"))
         free = int(payload.get("free_qty") or 0)
@@ -65,20 +58,106 @@ async def admin_create_lot(payload: dict, admin: dict = Depends(require_admin)):
         raise HTTPException(status_code=400, detail="Quantités invalides")
     if not (2 <= paid <= 50) or not (0 <= free <= 20):
         raise HTTPException(status_code=400, detail="Quantités hors limites (payées : 2-50, offertes : 0-20)")
+    return paid, free
+
+
+def _scope_query(payload):
+    """Cible d'une opération en masse : liste de skus OU catégorie (+ sous-catégorie)."""
+    skus = (payload or {}).get("skus")
+    if skus and isinstance(skus, list):
+        return {"sku": {"$in": [str(s) for s in skus][:500]}}
+    q = {}
+    if (payload or {}).get("category"):
+        q["category"] = str(payload["category"])
+    if (payload or {}).get("subcategory"):
+        q["subcategory"] = str(payload["subcategory"])
+    if not q:
+        raise HTTPException(status_code=400, detail="Cible requise : catégorie, sous-catégorie ou liste de produits")
+    return q
+
+
+async def _create_lot(base, paid, free, price_public=None, price_pass=None):
+    """Construit et insère le produit LOT. Lève 409 si le sku existe déjà."""
+    total = paid + free
+    sku = f"{base['sku']}-LOT{paid}" + (f"P{free}" if free else "")
+    if await db.lolodrive_products.find_one({"sku": sku}, {"_id": 1}):
+        raise HTTPException(status_code=409, detail=f"Le lot {sku} existe déjà")
+    base_pass = base.get("price_pass_cents")
+    now = datetime.utcnow()
+    doc = {
+        "id": str(uuid.uuid4()), "sku": sku,
+        "name": f"{base['name']} — Lot ×{total}" + (f" ({free} offert{'s' if free > 1 else ''})" if free else ""),
+        "is_lot": True, "base_sku": base["sku"], "lot_paid_qty": paid, "lot_free_qty": free, "lot_total_qty": total,
+        "price_public_cents": price_public or base.get("price_public_cents", 0) * paid,
+        "price_pass_cents": price_pass or (base_pass * paid if base_pass else None),
+        "purchase_price_cents": base["purchase_price_cents"] * total if base.get("purchase_price_cents") else None,
+        "lot_ref_price_cents": base.get("price_public_cents", 0) * total,
+        "lot_ref_pass_cents": base_pass * total if base_pass else None,
+        "catalog_type": base.get("catalog_type"), "category": base.get("category"),
+        "subcategory": base.get("subcategory"), "brand": base.get("brand"),
+        "territories": base.get("territories"), "tva_rate": base.get("tva_rate"),
+        "supplier": base.get("supplier"), "supplier_email": base.get("supplier_email"),
+        "image_url": base.get("image_url"), "tag": base.get("tag"),
+        "stock_qty": 0, "is_active": True, "created_at": now, "updated_at": now,
+    }
+    await db.lolodrive_products.insert_one({**doc})
+    return doc
+
+
+@product_lots_router.put("/admin/products/{sku}/tag")
+async def admin_set_product_tag(sku: str, payload: dict, admin: dict = Depends(require_admin)):
+    """Étiquette commerciale (Promo, Solde…) avec date de fin optionnelle — retrait auto à échéance."""
+    tag, until = _parse_tag(payload)
+    res = await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"tag": tag, "tag_until": until}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    return {"ok": True, "sku": sku, "tag": tag, "tag_until": until.isoformat() if until else None}
+
+
+@product_lots_router.post("/admin/products/bulk-tag")
+async def admin_bulk_tag(payload: dict, admin: dict = Depends(require_admin)):
+    """Applique (ou retire, tag=null) une étiquette EN MASSE par catégorie, sous-catégorie ou produits."""
+    tag, until = _parse_tag(payload)
+    q = _scope_query(payload)
+    res = await db.lolodrive_products.update_many(q, {"$set": {"tag": tag, "tag_until": until}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Aucun produit ne correspond à cette cible")
+    return {"ok": True, "matched": res.matched_count, "tag": tag,
+            "tag_until": until.isoformat() if until else None}
+
+
+@product_lots_router.post("/admin/products/bulk-create-lot")
+async def admin_bulk_create_lot(payload: dict, admin: dict = Depends(require_admin)):
+    """Crée des lots EN MASSE pour tous les produits d'une catégorie/sous-catégorie ou d'une sélection."""
+    paid, free = _parse_lot_qty(payload)
+    q = {**_scope_query(payload), "is_lot": {"$ne": True}}
+    created, skipped = [], 0
+    async for base in db.lolodrive_products.find(q, {"_id": 0}):
+        try:
+            doc = await _create_lot(base, paid, free)
+            created.append(doc["sku"])
+        except HTTPException:
+            skipped += 1
+    if not created and not skipped:
+        raise HTTPException(status_code=404, detail="Aucun produit ne correspond à cette cible")
+    return {"ok": True, "created": created, "created_count": len(created), "skipped_existing": skipped}
+
+
+@product_lots_router.post("/admin/products/create-lot")
+async def admin_create_lot(payload: dict, admin: dict = Depends(require_admin)):
+    """Crée un produit LOT à partir d'un produit de base : ×N payés + M offerts. Stock indépendant (en lots)."""
+    base_sku = str((payload or {}).get("base_sku") or "").strip()
+    paid, free = _parse_lot_qty(payload)
     base = await db.lolodrive_products.find_one({"sku": base_sku}, {"_id": 0})
     if not base:
         raise HTTPException(status_code=404, detail="Produit de base introuvable")
     if base.get("is_lot"):
         raise HTTPException(status_code=400, detail="Impossible de créer un lot à partir d'un lot")
-    total = paid + free
-    sku = f"{base_sku}-LOT{paid}" + (f"P{free}" if free else "")
-    if await db.lolodrive_products.find_one({"sku": sku}, {"_id": 1}):
-        raise HTTPException(status_code=409, detail=f"Le lot {sku} existe déjà")
 
-    def _price(key, default):
+    def _price(key):
         v = (payload or {}).get(key)
         if v in (None, ""):
-            return default
+            return None
         try:
             v = int(v)
         except (TypeError, ValueError):
@@ -87,24 +166,4 @@ async def admin_create_lot(payload: dict, admin: dict = Depends(require_admin)):
             raise HTTPException(status_code=400, detail="Prix hors limites")
         return v
 
-    price_public = _price("price_public_cents", base.get("price_public_cents", 0) * paid)
-    base_pass = base.get("price_pass_cents")
-    price_pass = _price("price_pass_cents", base_pass * paid if base_pass else None) if base_pass or payload.get("price_pass_cents") else None
-    name = f"{base['name']} — Lot ×{total}" + (f" ({free} offert{'s' if free > 1 else ''})" if free else "")
-    now = datetime.utcnow()
-    doc = {
-        "id": str(uuid.uuid4()), "sku": sku, "name": name,
-        "is_lot": True, "base_sku": base_sku, "lot_paid_qty": paid, "lot_free_qty": free, "lot_total_qty": total,
-        "price_public_cents": price_public, "price_pass_cents": price_pass,
-        "purchase_price_cents": base["purchase_price_cents"] * total if base.get("purchase_price_cents") else None,
-        "catalog_type": base.get("catalog_type"), "category": base.get("category"),
-        "subcategory": base.get("subcategory"), "brand": base.get("brand"),
-        "territories": base.get("territories"), "tva_rate": base.get("tva_rate"),
-        "supplier": base.get("supplier"), "supplier_email": base.get("supplier_email"),
-        "image_url": base.get("image_url"), "tag": base.get("tag"),
-        "lot_ref_price_cents": base.get("price_public_cents", 0) * total,
-        "lot_ref_pass_cents": base_pass * total if base_pass else None,
-        "stock_qty": 0, "is_active": True, "created_at": now, "updated_at": now,
-    }
-    await db.lolodrive_products.insert_one({**doc})
-    return doc
+    return await _create_lot(base, paid, free, _price("price_public_cents"), _price("price_pass_cents"))
