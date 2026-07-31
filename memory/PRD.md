@@ -2164,3 +2164,8 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
   - **Rayon Promos POS** (`PosCatalogPanel.jsx`, testid pos-promos-section) : même section en tête de la liste POS.
   - ⚠️ Bug corrigé : fermeture JSX incomplète de l'IIFE promos dans LolodriveCatalogPage (`));` → `))}</>);`) qui cassait la compilation webpack.
 - Testé E2E python (/tmp/test_lot79.py) : bulk-tag catégorie 16 produits + vérif client 15 visibles, 400 tag invalide + cible vide, untag, bulk-tag par skus (3), bulk-create-lot 2 lots créés (supprimés après test). Playwright : dialog admin ouvert, Rayon Promos visible catalogue client (5 produits) ET POS (5 produits). Démo : RIZ-5KG/LAIT-1L/HUILE-1L tag PROMO jusqu'au 31/12/2026 + bananes (lot 78).
+
+## 2026-07-31 — Compteur Promo Client : « fin dans X j » (self-testé Playwright)
+- `TagCountdown` ajouté dans `ProductTagBadge.jsx` (partagé) : si produit a `tag` + `tag_until` futur → badge compte à rebours (testid tag-countdown-{sku}). ≤3 jours : rouge + animate-pulse « ⏳ fin dans X j ! » / « ⏳ dernier jour ! » ; sinon ambre « fin dans X j ».
+- Affiché sur `LolodriveProductCard` (client) et `PosProductCard` (POS) à côté du TagBadge. Aucun changement backend (catalog/products et pos/catalog renvoient déjà tag_until).
+- Testé Playwright catalogue client : LAIT-1L (J+2) « ⏳ fin dans 3 j ! » rouge, RIZ-5KG (31/12) « fin dans 154 j » ambre. Démo : LAIT-1L tag PROMO jusqu'au 02/08/2026.

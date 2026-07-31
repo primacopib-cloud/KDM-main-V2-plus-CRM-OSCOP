@@ -25,3 +25,18 @@ export const LotBadge = ({ p }) =>
       LOT ×{p.lot_total_qty}{p.lot_free_qty ? ` (+${p.lot_free_qty} OFFERT${p.lot_free_qty > 1 ? 'S' : ''})` : ''}
     </span>
   ) : null;
+
+// Compte à rebours d'étiquette : « fin dans X j » / « dernier jour ! » — urgence d'achat
+export const TagCountdown = ({ p }) => {
+  if (!p.tag || !p.tag_until) return null;
+  const ms = new Date(p.tag_until).getTime() - Date.now();
+  if (ms <= 0) return null;
+  const days = Math.ceil(ms / 86400000);
+  const label = days <= 1 ? '⏳ dernier jour !' : days <= 3 ? `⏳ fin dans ${days} j !` : `fin dans ${days} j`;
+  return (
+    <span data-testid={`tag-countdown-${p.sku}`}
+      className={`px-1 py-0.5 rounded bg-black/60 border backdrop-blur-sm ${days <= 3 ? 'text-red-300 border-red-400/50 animate-pulse' : 'text-amber-300 border-amber-400/40'}`}>
+      {label}
+    </span>
+  );
+};

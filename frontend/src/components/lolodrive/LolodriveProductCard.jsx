@@ -1,7 +1,7 @@
 import { Plus, Minus, Star, Package } from 'lucide-react';
 import { fmtEUR } from '../LolodriveLayout';
 import { PassLolodriveBadge } from '../catalog/ProductPromoBadges';
-import { TagBadge, LotBadge } from './ProductTagBadge';
+import { TagBadge, LotBadge, TagCountdown } from './ProductTagBadge';
 
 // Carte produit compacte du catalogue client LOLODRIVE : densité élevée, hauteur uniforme, fallback image propre
 export const LolodriveProductCard = ({ p, qty, add, sub, isFav, toggleFav, promo, favPromo, discounted }) => (
@@ -26,6 +26,7 @@ export const LolodriveProductCard = ({ p, qty, add, sub, isFav, toggleFav, promo
           : <span className="px-1 py-0.5 rounded text-[#c4b5fd] bg-black/60 border border-[#7c3aed]/40 backdrop-blur-sm">HORS-25</span>}
         {p.point_code && <span className="px-1 py-0.5 rounded text-emerald-300 bg-black/60 border border-emerald-400/40 backdrop-blur-sm">Relais {p.point_code}</span>}
         <TagBadge tag={p.tag} sku={p.sku} />
+        <TagCountdown p={p} />
         <LotBadge p={p} />
       </div>
       {favPromo && (
