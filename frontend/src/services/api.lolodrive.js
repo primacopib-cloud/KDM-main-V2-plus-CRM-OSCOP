@@ -105,6 +105,10 @@ export const lolodriveAPI = {
   adminSuppliers: () => apiCall('/lolodrive/admin/suppliers'),
   adminImportProductsCsv: (csv) =>
     apiCall('/lolodrive/admin/products/import-csv', { method: 'POST', body: JSON.stringify({ csv }) }),
+  adminSetProductTag: (sku, tag) =>
+    apiCall(`/lolodrive/admin/products/${sku}/tag`, { method: 'PUT', body: JSON.stringify({ tag }) }),
+  adminCreateLot: (payload) =>
+    apiCall('/lolodrive/admin/products/create-lot', { method: 'POST', body: JSON.stringify(payload) }),
   adminUpdatePoint: (pointId, payload) =>
     apiCall(`/lolodrive/admin/lolo-points/${pointId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   adminUpdateFeesConfig: (payload) =>

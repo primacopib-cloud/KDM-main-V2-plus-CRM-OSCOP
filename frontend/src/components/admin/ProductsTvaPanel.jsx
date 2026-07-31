@@ -3,6 +3,8 @@ import { toast } from 'sonner';
 import { Percent, ChevronDown, ChevronUp, Package, Sparkles, Loader2, Ban, RotateCcw, Download, Upload } from 'lucide-react';
 import { lolodriveAPI } from '../../services/api';
 import { ProductToggleHistory } from './ProductToggleHistory';
+import { CreateLotDialog } from './CreateLotDialog';
+import { PRODUCT_TAGS } from '../lolodrive/ProductTagBadge';
 
 const RATES = ['0', '2.1', '5.5', '8.5', '20'];
 
@@ -11,6 +13,7 @@ export const ProductsTvaPanel = () => {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
   const [aiSku, setAiSku] = useState(null);
+  const [showLot, setShowLot] = useState(false);
 
   useEffect(() => {
     lolodriveAPI.adminProductsTva().then(setData).catch(() => {});
@@ -57,6 +60,14 @@ export const ProductsTvaPanel = () => {
       await lolodriveAPI.adminSetProductSupplier(p.sku, { supplier, supplier_email: email, purchase_price_cents: purchase });
       setData((prev) => ({ ...prev, products: prev.products.map((x) => (x.sku === p.sku ? { ...x, supplier: supplier || null, supplier_email: email || null, purchase_price_cents: purchase } : x)) }));
       toast.success('Fournisseur enregistré ✓');
+    } catch (e) { toast.error(e.message); }
+  };
+
+  const saveTag = async (p, tag) => {
+    try {
+      await lolodriveAPI.adminSetProductTag(p.sku, tag || null);
+      setData((prev) => ({ ...prev, products: prev.products.map((x) => (x.sku === p.sku ? { ...x, tag: tag || null } : x)) }));
+      toast.success(tag ? `Étiquette « ${PRODUCT_TAGS.find((t) => t.value === tag)?.label} » appliquée ✓` : 'Étiquette retirée');
     } catch (e) { toast.error(e.message); }
   };
 
@@ -107,6 +118,10 @@ export const ProductsTvaPanel = () => {
             <Upload className="w-3 h-3" /> Importer CSV
             <input type="file" accept=".csv,text/csv" className="hidden" onChange={importCsv} data-testid="import-products-csv-input" />
           </label>
+          <button type="button" onClick={() => setShowLot(true)} data-testid="create-lot-open-btn"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-fuchsia-300 bg-fuchsia-500/10 border border-fuchsia-400/35 hover:bg-fuchsia-500/20">
+            <Package className="w-3 h-3" /> Créer un lot
+          </button>
           <span className="text-[10px] text-white/30">exportez, modifiez puis réimportez — colonnes : sku · prix_public_eur · tva · fournisseur · email_fournisseur · prix_achat_eur · actif</span>
         </div>
         <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[380px] overflow-y-auto pr-1">
@@ -147,6 +162,11 @@ export const ProductsTvaPanel = () => {
                       onBlur={() => saveSupplier(p)}
                       onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
                       className="w-full max-w-[52px] bg-white/5 border border-emerald-500/25 rounded px-1.5 py-0.5 text-[10px] text-emerald-200/80 placeholder:text-white/25 font-mono" />
+                    <select value={p.tag || ''} onChange={(ev) => saveTag(p, ev.target.value)} data-testid={`tag-select-${p.sku}`}
+                      className="max-w-[84px] bg-white/5 border border-white/10 rounded px-1 py-0.5 text-[10px] text-white/70">
+                      <option value="" className="bg-[#15151c]">🏷️ aucune</option>
+                      {PRODUCT_TAGS.map((t) => <option key={t.value} value={t.value} className="bg-[#15151c]">{t.label}</option>)}
+                    </select>
                   </span>
                 </span>
               </span>
@@ -176,6 +196,10 @@ export const ProductsTvaPanel = () => {
           ))}
         </div>
         <ProductToggleHistory />
+        {showLot && (
+          <CreateLotDialog products={data?.products || []} onClose={() => setShowLot(false)}
+            onCreated={() => lolodriveAPI.adminProductsTva().then(setData).catch(() => {})} />
+        )}
         </>
       )}
     </div>
