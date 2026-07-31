@@ -120,6 +120,7 @@ async def quote_cart(user_id: str, items: List[QuoteLine]) -> dict:
             "unit_cents": unit_cents,
             "unit_uc": unit_uc,
             "promo_percent": promo_pct or None,
+            "tag": p.get("tag"),
         })
 
     return {"pass_active": pass_active, "subtotal_cents": subtotal_cents, "subtotal_uc": subtotal_uc,

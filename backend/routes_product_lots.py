@@ -167,3 +167,41 @@ async def admin_create_lot(payload: dict, admin: dict = Depends(require_admin)):
         return v
 
     return await _create_lot(base, paid, free, _price("price_public_cents"), _price("price_pass_cents"))
+
+
+@product_lots_router.get("/admin/promo-stats")
+async def admin_promo_stats(days: int = 30, admin: dict = Depends(require_admin)):
+    """Bilan des ventes par étiquette promo (tag figé sur chaque ligne au moment de la vente)."""
+    days = max(1, min(int(days), 365))
+    cutoff = datetime.utcnow() - timedelta(days=days)
+    pipeline = [
+        {"$match": {"paid_at": {"$gte": cutoff}}},
+        {"$unwind": "$items"},
+        {"$match": {"items.tag": {"$in": sorted(PRODUCT_TAGS)}}},
+        {"$group": {
+            "_id": {"tag": "$items.tag", "sku": "$items.sku"},
+            "name": {"$last": "$items.name"},
+            "qty": {"$sum": "$items.qty"},
+            "revenue_cents": {"$sum": {"$multiply": ["$items.unit_cents", "$items.qty"]}},
+            "orders": {"$addToSet": "$id"},
+        }},
+    ]
+    rows = await db.lolodrive_orders.aggregate(pipeline).to_list(500)
+    tags = {}
+    for r in rows:
+        t = tags.setdefault(r["_id"]["tag"], {"tag": r["_id"]["tag"], "qty": 0, "revenue_cents": 0,
+                                              "order_ids": set(), "products": []})
+        t["qty"] += r["qty"]
+        t["revenue_cents"] += r["revenue_cents"]
+        t["order_ids"].update(r["orders"])
+        t["products"].append({"sku": r["_id"]["sku"], "name": r["name"], "qty": r["qty"],
+                              "revenue_cents": r["revenue_cents"], "orders": len(r["orders"])})
+    out = []
+    for t in tags.values():
+        t["orders"] = len(t.pop("order_ids"))
+        t["products"].sort(key=lambda x: -x["revenue_cents"])
+        out.append(t)
+    out.sort(key=lambda x: -x["revenue_cents"])
+    return {"days": days, "tags": out,
+            "total_revenue_cents": sum(t["revenue_cents"] for t in out),
+            "total_qty": sum(t["qty"] for t in out)}

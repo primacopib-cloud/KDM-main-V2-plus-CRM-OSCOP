@@ -2,6 +2,7 @@ import { DriveFeesPanel } from '../components/admin/DriveFeesPanel';
 import { PenaltiesHistory } from '../components/admin/PenaltiesHistory';
 import { MissingPhotosPanel } from '../components/admin/MissingPhotosPanel';
 import { ProductsTvaPanel } from '../components/admin/ProductsTvaPanel';
+import { PromoStatsPanel } from '../components/admin/PromoStatsPanel';
 import { RestockAdminPanel } from '../components/admin/RestockAdminPanel';
 import { SuppliersPanel } from '../components/admin/SuppliersPanel';
 import { LolodriveCategoriesPanel } from '../components/admin/LolodriveCategoriesPanel';
@@ -337,6 +338,7 @@ export default function LolodriveAdminDashboardPage() {
       <DriveFeesPanel />
       <MissingPhotosPanel />
       <ProductsTvaPanel />
+      <PromoStatsPanel />
       <RestockAdminPanel />
       <SuppliersPanel />
       <PenaltiesHistory />

@@ -146,6 +146,7 @@ async def pos_counter_sale(body: CounterSaleBody, user: dict = Depends(get_curre
         total += unit * it.qty
         lines.append({"sku": p["sku"], "name": p["name"], "qty": it.qty,
                       "unit_cents": unit, "promo_percent": pct or None,
+                      "tag": p.get("tag"),
                       "tva_rate": float(p.get("tva_rate") or 8.5)})
     if not lines:
         raise HTTPException(status_code=400, detail="Articles introuvables au catalogue du relais")
