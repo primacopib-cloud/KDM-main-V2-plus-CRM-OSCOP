@@ -114,7 +114,7 @@ async def run_favorite_tag_alerts(db) -> int:
         skus = [s for s in (fav.get("skus") or []) if s in by_sku]
         if not skus:
             continue
-        user = await db.users.find_one({"id": fav["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1})
+        user = await db.users.find_one({"id": fav["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
         if not user or not user.get("email"):
             continue
         hits = []
@@ -160,6 +160,15 @@ async def run_favorite_tag_alerts(db) -> int:
                 await db.favorite_promo_notified.insert_one(
                     {"user_id": fav["user_id"], "key": key, "notified_at": datetime.utcnow()})
             sent += 1
+            if user.get("phone"):
+                from brevo_service import send_sms
+                names = ", ".join(p["name"] for p, _ in hits[:2]) + (" +…" if len(hits) > 2 else "")
+                try:
+                    await send_sms(user["phone"],
+                                   f"KDMARCHE 🔥 {len(hits)} de vos favoris en promo : {names}. Rayon Promos de votre catalogue LOLODRIVE !",
+                                   tag="favorite_tag_alert_sms")
+                except Exception as exc:
+                    logger.warning("SMS étiquette favoris %s échoué : %s", user["phone"], exc)
         except Exception as exc:
             logger.warning("Alerte étiquette favoris %s échouée : %s", user["email"], exc)
     if sent:

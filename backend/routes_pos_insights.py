@@ -199,35 +199,57 @@ async def pos_monthly_compare(user: dict = Depends(get_current_user)):
 
 @pos_insights_router.get("/pos/stock-alerts")
 async def pos_stock_alerts(days: int = 30, user: dict = Depends(get_current_user)):
-    """Produits du top ventes comptoir dont le stock risque la rupture (< 14 jours de couverture)."""
+    """Produits du top ventes comptoir dont le stock risque la rupture (< 14 jours de couverture).
+    Promo-aware : un produit étiqueté qui part plus vite que son stock déclenche une suggestion de réassort."""
     point = await _manager_point(user["id"])
     days = max(1, min(days, 365))
-    since = datetime.utcnow() - timedelta(days=days)
-    sold = {}
+    now = datetime.utcnow()
+    since = now - timedelta(days=days)
+    sold, promo_sold = {}, {}
     async for o in db.lolodrive_orders.find(
             {"lolo_point_id": point["id"], "channel": "COUNTER", "created_at": {"$gte": since}},
-            {"_id": 0, "items": 1}):
+            {"_id": 0, "items": 1, "created_at": 1}):
         for l in o.get("items", []):
             sold[l["sku"]] = sold.get(l["sku"], 0) + l.get("qty", 0)
+            if l.get("tag"):
+                ps = promo_sold.setdefault(l["sku"], {"qty": 0, "first": o["created_at"]})
+                ps["qty"] += l.get("qty", 0)
+                ps["first"] = min(ps["first"], o["created_at"])
     if not sold:
         return {"days": days, "alerts": []}
     prods = await db.lolodrive_products.find(
         {"sku": {"$in": list(sold)}, "stock_qty": {"$ne": None}},
-        {"_id": 0, "sku": 1, "name": 1, "stock_qty": 1, "supplier": 1, "supplier_email": 1, "purchase_price_cents": 1}).to_list(100)
+        {"_id": 0, "sku": 1, "name": 1, "stock_qty": 1, "supplier": 1, "supplier_email": 1,
+         "purchase_price_cents": 1, "tag": 1, "tag_until": 1}).to_list(100)
     alerts = []
     for p in prods:
         stock = p.get("stock_qty") or 0
         daily = sold[p["sku"]] / days
         days_left = round(stock / daily) if daily > 0 else None
-        if stock <= 5 or (days_left is not None and days_left <= 14):
-            suggested = max(0, ceil(daily * 30) - stock) if daily > 0 else 0
+        # --- Vitesse promo : produit actuellement étiqueté vendu plus vite que son stock ---
+        promo_hit = False
+        ps = promo_sold.get(p["sku"])
+        if p.get("tag") and ps and ps["qty"] > 0:
+            promo_days = max(1, (now - ps["first"]).days + 1)
+            promo_daily = ps["qty"] / promo_days
+            promo_left = round(stock / promo_daily) if promo_daily > 0 else None
+            remaining = max(1, (p["tag_until"] - now).days + 1) if p.get("tag_until") else 7
+            if promo_left is not None and promo_left <= remaining:
+                promo_hit = True
+                days_left = promo_left
+                horizon = min(max(remaining, 7), 30)
+                promo_suggested = max(0, ceil(promo_daily * horizon) - stock)
+        if promo_hit or stock <= 5 or (days_left is not None and days_left <= 14):
+            suggested = promo_suggested if promo_hit else (max(0, ceil(daily * 30) - stock) if daily > 0 else 0)
             alerts.append({"sku": p["sku"], "name": p["name"], "stock_qty": stock,
                            "sold_qty": sold[p["sku"]], "days_left": days_left,
                            "suggested_qty": suggested,
+                           "promo": promo_hit, "tag": p.get("tag") if promo_hit else None,
+                           "promo_sold_qty": ps["qty"] if promo_hit else None,
                            "supplier": p.get("supplier"), "supplier_email": p.get("supplier_email"),
                            "purchase_price_cents": p.get("purchase_price_cents"),
-                           "critical": stock <= 5 or (days_left is not None and days_left <= 5)})
-    alerts.sort(key=lambda a: (a["days_left"] if a["days_left"] is not None else 999, a["stock_qty"]))
+                           "critical": promo_hit or stock <= 5 or (days_left is not None and days_left <= 5)})
+    alerts.sort(key=lambda a: (not a["promo"], a["days_left"] if a["days_left"] is not None else 999, a["stock_qty"]))
     return {"days": days, "alerts": alerts}
 
 
