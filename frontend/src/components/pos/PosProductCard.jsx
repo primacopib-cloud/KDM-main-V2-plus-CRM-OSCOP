@@ -31,6 +31,11 @@ export const PosProductCard = ({ p, count, stockEdit, setStockEdit, saveStock, o
         {p.price_pass_cents != null && (
           <span className="block text-[9px] text-white/40 font-mono">PASS {(p.price_pass_cents / 100).toFixed(2)} € · {p.uc_pass} UC</span>
         )}
+        {p.is_lot && p.lot_ref_price_cents > p.price_public_cents && (
+          <span className="block text-[9px] text-emerald-300 font-mono" data-testid={`lot-savings-pos-${p.sku}`}>
+            au lieu de <s className="text-white/35">{(p.lot_ref_price_cents / 100).toFixed(2)} €</s> · −{Math.round(((p.lot_ref_price_cents - p.price_public_cents) / p.lot_ref_price_cents) * 100)} %
+          </span>
+        )}
       </div>
       <div className="flex items-center gap-1 mb-1.5 mt-auto">
         {stockEdit?.sku === p.sku ? (

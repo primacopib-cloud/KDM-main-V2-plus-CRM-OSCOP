@@ -51,6 +51,14 @@ export const LolodriveProductCard = ({ p, qty, add, sub, isFav, toggleFav, promo
             <span className="text-sm font-bold">{fmtEUR(p.display_price_cents)}</span>
           )}
           {p.display_uc != null && <span className="block text-[10px] text-[#D9B35A]">{p.display_uc} UC</span>}
+          {p.is_lot && (() => {
+            const ref = p.display_price_cents === p.price_pass_cents ? p.lot_ref_pass_cents : p.lot_ref_price_cents;
+            return ref > p.display_price_cents ? (
+              <span className="block text-[10px] text-emerald-300" data-testid={`lot-savings-${p.sku}`}>
+                <s className="text-white/35">{fmtEUR(ref)}</s> · économisez {fmtEUR(ref - p.display_price_cents)} (−{Math.round(((ref - p.display_price_cents) / ref) * 100)} %)
+              </span>
+            ) : null;
+          })()}
         </div>
         {p.catalog_type === 'ESSENTIAL' && p.price_pass_cents && p.price_public_cents > p.price_pass_cents && (
           <span className="text-[9px] font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/30 rounded px-1 py-0.5 shrink-0">

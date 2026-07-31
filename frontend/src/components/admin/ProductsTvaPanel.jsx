@@ -63,11 +63,13 @@ export const ProductsTvaPanel = () => {
     } catch (e) { toast.error(e.message); }
   };
 
-  const saveTag = async (p, tag) => {
+  const saveTag = async (p, tag, until) => {
     try {
-      await lolodriveAPI.adminSetProductTag(p.sku, tag || null);
-      setData((prev) => ({ ...prev, products: prev.products.map((x) => (x.sku === p.sku ? { ...x, tag: tag || null } : x)) }));
-      toast.success(tag ? `Étiquette « ${PRODUCT_TAGS.find((t) => t.value === tag)?.label} » appliquée ✓` : 'Étiquette retirée');
+      await lolodriveAPI.adminSetProductTag(p.sku, tag || null, tag ? until || null : null);
+      setData((prev) => ({ ...prev, products: prev.products.map((x) => (x.sku === p.sku ? { ...x, tag: tag || null, tag_until: tag && until ? until : null } : x)) }));
+      toast.success(tag
+        ? `Étiquette « ${PRODUCT_TAGS.find((t) => t.value === tag)?.label} »${until ? ` jusqu'au ${new Date(until).toLocaleDateString('fr-FR')}` : ''} ✓`
+        : 'Étiquette retirée');
     } catch (e) { toast.error(e.message); }
   };
 
@@ -162,11 +164,17 @@ export const ProductsTvaPanel = () => {
                       onBlur={() => saveSupplier(p)}
                       onKeyDown={(ev) => ev.key === 'Enter' && ev.target.blur()}
                       className="w-full max-w-[52px] bg-white/5 border border-emerald-500/25 rounded px-1.5 py-0.5 text-[10px] text-emerald-200/80 placeholder:text-white/25 font-mono" />
-                    <select value={p.tag || ''} onChange={(ev) => saveTag(p, ev.target.value)} data-testid={`tag-select-${p.sku}`}
+                    <select value={p.tag || ''} onChange={(ev) => saveTag(p, ev.target.value, p.tag_until ? p.tag_until.slice(0, 10) : null)} data-testid={`tag-select-${p.sku}`}
                       className="max-w-[84px] bg-white/5 border border-white/10 rounded px-1 py-0.5 text-[10px] text-white/70">
                       <option value="" className="bg-[#15151c]">🏷️ aucune</option>
                       {PRODUCT_TAGS.map((t) => <option key={t.value} value={t.value} className="bg-[#15151c]">{t.label}</option>)}
                     </select>
+                    {p.tag && (
+                      <input type="date" value={p.tag_until ? p.tag_until.slice(0, 10) : ''} data-testid={`tag-until-${p.sku}`}
+                        title="Fin de l'étiquette (retrait automatique)"
+                        onChange={(ev) => saveTag(p, p.tag, ev.target.value)}
+                        className="max-w-[104px] bg-white/5 border border-white/10 rounded px-1 py-0.5 text-[10px] text-white/60" />
+                    )}
                   </span>
                 </span>
               </span>

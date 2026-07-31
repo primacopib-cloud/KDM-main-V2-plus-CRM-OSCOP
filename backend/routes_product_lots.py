@@ -1,7 +1,7 @@
 """Étiquettes produits (Promo, Solde, Nouveau…) + création de produits en lot (×2, ×3+1 offert…)."""
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -19,20 +19,39 @@ def set_product_lots_database(database):
     db = database
 
 
+async def run_tag_expiry(database) -> int:
+    """Retire automatiquement les étiquettes dont la date de fin est dépassée (cron 10 min)."""
+    res = await database.lolodrive_products.update_many(
+        {"tag": {"$ne": None}, "tag_until": {"$ne": None, "$lte": datetime.utcnow()}},
+        {"$set": {"tag": None, "tag_until": None}})
+    if res.modified_count:
+        logger.info("Étiquettes expirées retirées : %s", res.modified_count)
+    return res.modified_count
+
+
 @product_lots_router.put("/admin/products/{sku}/tag")
 async def admin_set_product_tag(sku: str, payload: dict, admin: dict = Depends(require_admin)):
-    """Étiquette commerciale d'un produit (Promo, Solde, Nouveau, Déstockage, Exclusivité) — null pour retirer."""
+    """Étiquette commerciale (Promo, Solde…) avec date de fin optionnelle — retrait auto à échéance."""
     tag = (payload or {}).get("tag")
+    until = None
     if tag:
         tag = str(tag).upper().strip()
         if tag not in PRODUCT_TAGS:
             raise HTTPException(status_code=400, detail=f"Étiquette invalide (choix : {', '.join(sorted(PRODUCT_TAGS))})")
+        raw = (payload or {}).get("tag_until")
+        if raw:
+            try:
+                until = datetime.strptime(str(raw)[:10], "%Y-%m-%d") + timedelta(hours=23, minutes=59)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Date de fin invalide (AAAA-MM-JJ)")
+            if until < datetime.utcnow():
+                raise HTTPException(status_code=400, detail="La date de fin est déjà passée")
     else:
         tag = None
-    res = await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"tag": tag}})
+    res = await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"tag": tag, "tag_until": until}})
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Produit introuvable")
-    return {"ok": True, "sku": sku, "tag": tag}
+    return {"ok": True, "sku": sku, "tag": tag, "tag_until": until.isoformat() if until else None}
 
 
 @product_lots_router.post("/admin/products/create-lot")
@@ -83,6 +102,8 @@ async def admin_create_lot(payload: dict, admin: dict = Depends(require_admin)):
         "territories": base.get("territories"), "tva_rate": base.get("tva_rate"),
         "supplier": base.get("supplier"), "supplier_email": base.get("supplier_email"),
         "image_url": base.get("image_url"), "tag": base.get("tag"),
+        "lot_ref_price_cents": base.get("price_public_cents", 0) * total,
+        "lot_ref_pass_cents": base_pass * total if base_pass else None,
         "stock_qty": 0, "is_active": True, "created_at": now, "updated_at": now,
     }
     await db.lolodrive_products.insert_one({**doc})
