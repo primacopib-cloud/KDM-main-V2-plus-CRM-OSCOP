@@ -184,9 +184,21 @@ async def admin_promo_stats(days: int = 30, admin: dict = Depends(require_admin)
             "qty": {"$sum": "$items.qty"},
             "revenue_cents": {"$sum": {"$multiply": ["$items.unit_cents", "$items.qty"]}},
             "orders": {"$addToSet": "$id"},
+            "first": {"$min": "$paid_at"}, "last": {"$max": "$paid_at"},
         }},
     ]
     rows = await db.lolodrive_orders.aggregate(pipeline).to_list(500)
+    # Base de comparaison : ventes des mêmes produits SANS étiquette sur la même période
+    skus = list({r["_id"]["sku"] for r in rows})
+    base_by_sku = {}
+    if skus:
+        base_rows = await db.lolodrive_orders.aggregate([
+            {"$match": {"paid_at": {"$gte": cutoff}}},
+            {"$unwind": "$items"},
+            {"$match": {"items.sku": {"$in": skus}, "items.tag": {"$nin": sorted(PRODUCT_TAGS)}}},
+            {"$group": {"_id": "$items.sku", "qty": {"$sum": "$items.qty"}}},
+        ]).to_list(500)
+        base_by_sku = {r["_id"]: r["qty"] for r in base_rows}
     tags = {}
     for r in rows:
         t = tags.setdefault(r["_id"]["tag"], {"tag": r["_id"]["tag"], "qty": 0, "revenue_cents": 0,
@@ -194,8 +206,14 @@ async def admin_promo_stats(days: int = 30, admin: dict = Depends(require_admin)
         t["qty"] += r["qty"]
         t["revenue_cents"] += r["revenue_cents"]
         t["order_ids"].update(r["orders"])
-        t["products"].append({"sku": r["_id"]["sku"], "name": r["name"], "qty": r["qty"],
-                              "revenue_cents": r["revenue_cents"], "orders": len(r["orders"])})
+        sku = r["_id"]["sku"]
+        promo_days = max(1, (r["last"] - r["first"]).days + 1)
+        base_qty = base_by_sku.get(sku, 0)
+        base_days = max(1, days - promo_days)
+        accel = round((r["qty"] / promo_days) / (base_qty / base_days), 1) if base_qty else None
+        t["products"].append({"sku": sku, "name": r["name"], "qty": r["qty"],
+                              "revenue_cents": r["revenue_cents"], "orders": len(r["orders"]),
+                              "base_qty": base_qty, "accel": accel})
     out = []
     for t in tags.values():
         t["orders"] = len(t.pop("order_ids"))

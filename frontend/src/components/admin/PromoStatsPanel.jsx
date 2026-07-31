@@ -63,6 +63,20 @@ export const PromoStatsPanel = () => {
                   <div key={p.sku} className="flex items-center justify-between text-[11px]" data-testid={`promo-stats-row-${t.tag}-${p.sku}`}>
                     <span className="truncate text-white/70">{p.name}</span>
                     <span className="flex items-center gap-3 shrink-0 ml-3 font-mono">
+                      {p.accel != null ? (
+                        <span data-testid={`promo-accel-${t.tag}-${p.sku}`} title={`${p.qty} vendus en promo vs ${p.base_qty} hors promo sur la période`}
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${p.accel >= 1.5
+                            ? 'text-emerald-300 bg-emerald-400/10 border-emerald-400/30'
+                            : p.accel >= 0.8 ? 'text-white/50 bg-white/[0.04] border-white/15'
+                              : 'text-amber-300 bg-amber-400/10 border-amber-400/30'}`}>
+                          {p.accel >= 1.5 ? '🚀 ' : ''}×{p.accel} vs habitude
+                        </span>
+                      ) : (
+                        <span data-testid={`promo-accel-${t.tag}-${p.sku}`}
+                          className="px-1.5 py-0.5 rounded text-[9px] text-white/30 bg-white/[0.03] border border-white/10">
+                          pas de vente hors promo
+                        </span>
+                      )}
                       <span className="text-white/40">×{p.qty}</span>
                       <span className="w-20 text-right text-emerald-300">{fmt(p.revenue_cents)}</span>
                     </span>
