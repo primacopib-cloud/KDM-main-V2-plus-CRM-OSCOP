@@ -16,7 +16,7 @@ export const ZoneProductsShowcase = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_URL}/api/v2/catalog/products?zone_code=${zone}&sort=rating&limit=4`)
+    fetch(`${API_URL}/api/v2/catalog/products?zone_code=${zone}&sort=rating&limit=12`)
       .then((r) => (r.ok ? r.json() : []))
       .then((d) => setProducts(Array.isArray(d) ? d : []))
       .catch(() => setProducts([]))
@@ -50,33 +50,41 @@ export const ZoneProductsShowcase = () => {
             {i18n.t('landing.zone_showcase_empty', 'Les premiers produits de cette zone arrivent bientôt — devenez pionnier de votre territoire !')}
           </p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="showcase-products">
-            {products.map((p) => (
-              <Link
-                key={p.id}
-                to={`/catalogue?produit=${p.id}`}
-                data-testid={`showcase-product-${p.sku}`}
-                className="group rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] hover:border-[#D9B35A]/40 transition-all"
-              >
-                <div className="relative h-28 bg-white/[0.04] flex items-center justify-center overflow-hidden">
-                  {p.image_url ? (
-                    <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  ) : (
-                    <Package className="w-8 h-8 text-white/20" />
-                  )}
-                  {p.rating_avg >= 4.5 && (
-                    <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold text-white"
-                      style={{ background: 'linear-gradient(90deg, #C0392B, #E74C3C)' }}>
-                      <Heart size={9} fill="currentColor" /> {i18n.t('catalog.coup_de_coeur_court', 'Coup de cœur')}
-                    </span>
-                  )}
-                </div>
-                <div className="p-3">
-                  <p className="text-sm font-semibold truncate" style={{ color: '#F7F2E9' }}>{tData(p.name) || p.name}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(247,242,233,0.45)' }}>{p.sku}</p>
-                </div>
-              </Link>
-            ))}
+          <div className="relative overflow-hidden group/carousel" data-testid="showcase-products"
+            style={{ maskImage: 'linear-gradient(90deg, transparent, black 6%, black 94%, transparent)', WebkitMaskImage: 'linear-gradient(90deg, transparent, black 6%, black 94%, transparent)' }}>
+            <style>{`
+              @keyframes showcase-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+              .showcase-track { animation: showcase-scroll ${Math.max(products.length * 5, 20)}s linear infinite; width: max-content; }
+              .group\\/carousel:hover .showcase-track { animation-play-state: paused; }
+            `}</style>
+            <div className="showcase-track flex gap-4">
+              {[...products, ...products].map((p, i) => (
+                <Link
+                  key={`${p.id}-${i}`}
+                  to={`/catalogue?produit=${p.id}`}
+                  data-testid={i < products.length ? `showcase-product-${p.sku}` : undefined}
+                  className="group w-[210px] shrink-0 rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] hover:border-[#D9B35A]/40 transition-colors"
+                >
+                  <div className="relative h-28 bg-white/[0.04] flex items-center justify-center overflow-hidden">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    ) : (
+                      <Package className="w-8 h-8 text-white/20" />
+                    )}
+                    {p.rating_avg >= 4.5 && (
+                      <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold text-white"
+                        style={{ background: 'linear-gradient(90deg, #C0392B, #E74C3C)' }}>
+                        <Heart size={9} fill="currentColor" /> {i18n.t('catalog.coup_de_coeur_court', 'Coup de cœur')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm font-semibold truncate" style={{ color: '#F7F2E9' }}>{tData(p.name) || p.name}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(247,242,233,0.45)' }}>{p.sku}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 
