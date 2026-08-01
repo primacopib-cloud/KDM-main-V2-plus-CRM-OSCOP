@@ -2190,3 +2190,7 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 ## 2026-08-01 — Carrousel produits page d'accueil (self-testé Playwright)
 - `ZoneProductsShowcase.jsx` : la grille statique 4 produits devient un carrousel défilant automatiquement — fetch limit=12, piste dupliquée ([...products, ...products]) animée par keyframes CSS `showcase-scroll` (translateX -50 %, durée = nb_produits×5 s min 20 s), boucle infinie fluide, **pause au survol** (`animation-play-state: paused`), fondu latéral via mask-image. Cartes 210 px shrink-0, images lazy. testids conservés (showcase-product-{sku} sur la 1re série uniquement).
 - Testé Playwright accueil visiteur : track défile (x 236→145 en 2 s), 22 cartes rendues (11×2), rendu propre. ⚠️ PRODUCTION : l'utilisateur doit REDÉPLOYER pour voir le carrousel sur centrale.objectifscopoutremer.com.
+
+## 2026-08-01 — Flèches carrousel accueil (self-testé Playwright)
+- `ZoneProductsShowcase.jsx` : le marquee CSS est remplacé par un défilement rAF piloté JS (offsetRef, 0.6 px/frame, modulo demi-piste pour la boucle) — permet la navigation manuelle. Flèches ‹ › circulaires dorées (testid showcase-prev-btn / showcase-next-btn) en overlay absolu : saut d'une carte (226 px) avec transition 0.35 s, wrap modulo, auto-défilement mis en pause pendant le saut et au survol (onMouseEnter/Leave sur le conteneur).
+- Testé Playwright : auto-défilement OK (x 302→248), clic droite → saut (−230 px), clic gauche → retour (+221 px). ⚠️ PRODUCTION : redéployer pour pousser sur centrale.objectifscopoutremer.com.

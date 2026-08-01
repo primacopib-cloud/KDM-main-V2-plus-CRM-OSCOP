@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, ArrowRight, Heart, Package } from 'lucide-react';
+import { MapPin, ArrowRight, Heart, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import i18n from '@/i18n';
 import { tData } from '@/i18n/tData';
 import { TerritoryMap } from './TerritoryMap';
@@ -13,6 +13,42 @@ export const ZoneProductsShowcase = () => {
   const [zone, setZone] = useState('GUADELOUPE');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const trackRef = useRef(null);
+  const offsetRef = useRef(0);
+  const pausedRef = useRef(false);
+
+  // Défilement automatique continu (boucle infinie), pause au survol ou pendant une navigation manuelle
+  useEffect(() => {
+    let raf;
+    const step = () => {
+      const el = trackRef.current;
+      if (el && !pausedRef.current) {
+        const half = el.scrollWidth / 2;
+        if (half > 0) {
+          offsetRef.current = (offsetRef.current + 0.6) % half;
+          el.style.transform = `translateX(-${offsetRef.current}px)`;
+        }
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [products]);
+
+  // Flèches : saut d'une carte (210 px + 16 px de gap) avec transition douce
+  const shift = (dir) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const half = el.scrollWidth / 2;
+    pausedRef.current = true;
+    offsetRef.current = (((offsetRef.current + dir * 226) % half) + half) % half;
+    el.style.transition = 'transform 0.35s ease';
+    el.style.transform = `translateX(-${offsetRef.current}px)`;
+    setTimeout(() => {
+      if (trackRef.current) trackRef.current.style.transition = '';
+      pausedRef.current = false;
+    }, 400);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -50,14 +86,12 @@ export const ZoneProductsShowcase = () => {
             {i18n.t('landing.zone_showcase_empty', 'Les premiers produits de cette zone arrivent bientôt — devenez pionnier de votre territoire !')}
           </p>
         ) : (
-          <div className="relative overflow-hidden group/carousel" data-testid="showcase-products"
-            style={{ maskImage: 'linear-gradient(90deg, transparent, black 6%, black 94%, transparent)', WebkitMaskImage: 'linear-gradient(90deg, transparent, black 6%, black 94%, transparent)' }}>
-            <style>{`
-              @keyframes showcase-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-              .showcase-track { animation: showcase-scroll ${Math.max(products.length * 5, 20)}s linear infinite; width: max-content; }
-              .group\\/carousel:hover .showcase-track { animation-play-state: paused; }
-            `}</style>
-            <div className="showcase-track flex gap-4">
+          <div className="relative" data-testid="showcase-products"
+            onMouseEnter={() => { pausedRef.current = true; }}
+            onMouseLeave={() => { pausedRef.current = false; }}>
+            <div className="overflow-hidden"
+              style={{ maskImage: 'linear-gradient(90deg, transparent, black 6%, black 94%, transparent)', WebkitMaskImage: 'linear-gradient(90deg, transparent, black 6%, black 94%, transparent)' }}>
+              <div ref={trackRef} className="flex gap-4" style={{ width: 'max-content', willChange: 'transform' }}>
               {[...products, ...products].map((p, i) => (
                 <Link
                   key={`${p.id}-${i}`}
@@ -85,6 +119,17 @@ export const ZoneProductsShowcase = () => {
                 </Link>
               ))}
             </div>
+            </div>
+            <button type="button" onClick={() => shift(-1)} data-testid="showcase-prev-btn"
+              aria-label="Produits précédents"
+              className="absolute left-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full flex items-center justify-center bg-black/55 backdrop-blur-sm border border-[#D9B35A]/45 text-[#D9B35A] hover:bg-[#D9B35A] hover:text-black transition-colors shadow-lg">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button type="button" onClick={() => shift(1)} data-testid="showcase-next-btn"
+              aria-label="Produits suivants"
+              className="absolute right-1 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full flex items-center justify-center bg-black/55 backdrop-blur-sm border border-[#D9B35A]/45 text-[#D9B35A] hover:bg-[#D9B35A] hover:text-black transition-colors shadow-lg">
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
         )}
 
