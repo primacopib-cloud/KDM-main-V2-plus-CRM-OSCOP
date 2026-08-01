@@ -24,7 +24,8 @@ export const CatalogZoneMap = ({ selectedZone, onZoneSelect }) => {
       </button>
       {open && (
         <div className="mt-4">
-          <TerritoryMap zone={selectedZone} onSelect={onZoneSelect} />
+          <TerritoryMap zone={selectedZone === 'ALL' ? '' : selectedZone}
+            onSelect={(c) => onZoneSelect(c || 'ALL')} showAll />
         </div>
       )}
     </div>

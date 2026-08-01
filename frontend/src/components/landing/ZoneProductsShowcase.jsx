@@ -10,7 +10,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Aperçu des produits phares par territoire sur la page d'accueil (visiteurs)
 export const ZoneProductsShowcase = () => {
-  const [zone, setZone] = useState('GUADELOUPE');
+  const [zone, setZone] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const trackRef = useRef(null);
@@ -52,7 +52,7 @@ export const ZoneProductsShowcase = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_URL}/api/v2/catalog/products?zone_code=${zone}&sort=rating&limit=12`)
+    fetch(`${API_URL}/api/v2/catalog/products?sort=rating&limit=12${zone ? `&zone_code=${zone}` : ''}`)
       .then((r) => (r.ok ? r.json() : []))
       .then((d) => setProducts(Array.isArray(d) ? d : []))
       .catch(() => setProducts([]))
@@ -73,7 +73,7 @@ export const ZoneProductsShowcase = () => {
         </p>
 
         {/* Carte interactive des Outre-mer */}
-        <TerritoryMap zone={zone} onSelect={setZone} />
+        <TerritoryMap zone={zone} onSelect={setZone} showAll />
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -115,6 +115,13 @@ export const ZoneProductsShowcase = () => {
                   <div className="p-3">
                     <p className="text-sm font-semibold truncate" style={{ color: '#F7F2E9' }}>{tData(p.name) || p.name}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(247,242,233,0.45)' }}>{p.sku}</p>
+                    {(p.price_ht_cents ?? p.teaser_price_ht_cents) != null && (
+                      <p className="text-sm font-bold mt-1" style={{ color: '#D9B35A' }}
+                        data-testid={i < products.length ? `showcase-price-${p.sku}` : undefined}>
+                        {p.price_ht_cents == null && <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}>{i18n.t('landing.a_partir_de', 'à partir de')} </span>}
+                        {(((p.price_ht_cents ?? p.teaser_price_ht_cents)) / 100).toFixed(2)} € <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}>HT</span>
+                      </p>
+                    )}
                   </div>
                 </Link>
               ))}

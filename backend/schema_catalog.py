@@ -126,6 +126,8 @@ class ProductResponse(BaseModel):
     price_type: Optional[str] = None
     original_price_ht_cents: Optional[int] = None  # For promos
     savings_percent: Optional[float] = None
+    # Prix d'appel marketing (vitrine/carrousel) quand le tarif adhérent est masqué
+    teaser_price_ht_cents: Optional[int] = None
     # Stock
     in_stock: bool = True
     stock_quantity: Optional[int] = None

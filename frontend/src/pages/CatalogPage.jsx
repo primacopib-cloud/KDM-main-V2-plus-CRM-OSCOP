@@ -55,7 +55,7 @@ export default function CatalogPage() {
   const [addonZone, setAddonZone] = useState(null);
 
   const handleZoneChange = (code) => {
-    if (Array.isArray(entitledZones) && !entitledZones.includes(code)) {
+    if (code !== 'ALL' && Array.isArray(entitledZones) && !entitledZones.includes(code)) {
       setAddonZone(zones.find((z) => z.code === code) || { code, name: code });
       return;
     }
@@ -118,18 +118,15 @@ export default function CatalogPage() {
         const entitled = !isAuth ? null : (myZonesData?.is_admin ? null : (myZonesData?.entitled || []));
         setEntitledZones(entitled);
 
-        // Set default zone: priorité aux zones autorisées par l'abonnement
+        // Par défaut : TOUS les territoires affichés (onglet « Tous »)
         if (zonesData.length > 0) {
-          const allowedZone = entitled === null
-            ? zonesData[0]
-            : (zonesData.find((z) => (entitled || []).includes(z.code)) || zonesData[0]);
-          const defaultZone = allowedZone.code;
+          const defaultZone = 'ALL';
           setSelectedZone(defaultZone);
           
           // Load products and pickup locations for this zone
           const [productsData, locationsData] = await Promise.all([
             catalogAPI.getProducts({ zoneCode: defaultZone }),
-            catalogAPI.getPickupLocations(defaultZone),
+            catalogAPI.getPickupLocations(),
           ]);
           setProducts(productsData);
           setPickupLocations(locationsData);
@@ -236,11 +233,11 @@ export default function CatalogPage() {
   useEffect(() => {
     if (selectedZone) {
       loadProducts();
-      // Load pickup locations for zone
-      catalogAPI.getPickupLocations(selectedZone).then(setPickupLocations).catch(console.error);
+      // Load pickup locations for zone (toutes si « Tous les territoires »)
+      catalogAPI.getPickupLocations(selectedZone === 'ALL' ? null : selectedZone).then(setPickupLocations).catch(console.error);
       // Sync cart with selected zone (members only)
       if (authAPI.isAuthenticated()) {
-        catalogAPI.getCart(selectedZone).then(setCart).catch(() => {});
+        catalogAPI.getCart(selectedZone === 'ALL' ? null : selectedZone).then(setCart).catch(() => {});
       }
     }
   }, [selectedZone, loadProducts]);
@@ -455,7 +452,7 @@ export default function CatalogPage() {
           setMinRating={setMinRating}
           sortByRating={sortByRating}
           setSortByRating={setSortByRating}
-          zoneName={zones.find((z) => z.code === selectedZone)?.name || selectedZone}
+          zoneName={selectedZone === 'ALL' ? 'Tous les territoires' : (zones.find((z) => z.code === selectedZone)?.name || selectedZone)}
           products={products}
           user={user}
           navigate={navigate}

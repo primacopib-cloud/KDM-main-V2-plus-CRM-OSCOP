@@ -18,8 +18,8 @@ const arc = (a, b) => {
   return `M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`;
 };
 
-// Carte interactive « réseau des Outre-mer » (accueil + catalogue)
-export const TerritoryMap = ({ zone, onSelect }) => {
+// Carte interactive « réseau des Outre-mer » (accueil + catalogue) — `showAll` : pastille « Tous les territoires »
+export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
   const [stats, setStats] = useState({});
 
   useEffect(() => {
@@ -104,6 +104,14 @@ export const TerritoryMap = ({ zone, onSelect }) => {
     <p className="absolute bottom-2 right-4 text-[10px]" style={{ color: 'rgba(247,242,233,0.35)' }}>
       {i18n.t('landing.map_hint', 'Cliquez sur un territoire pour découvrir ses produits')}
     </p>
+    {showAll && (
+      <button type="button" onClick={() => onSelect('')} data-testid="map-zone-all"
+        className={`absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${!zone
+          ? 'bg-[#D9B35A] text-black border-[#D9B35A]'
+          : 'bg-black/40 text-white/75 border-[#D9B35A]/40 hover:bg-black/60 backdrop-blur-sm'}`}>
+        🌍 {i18n.t('landing.map_tous', 'Tous les territoires')}
+      </button>
+    )}
   </div>
   );
 };

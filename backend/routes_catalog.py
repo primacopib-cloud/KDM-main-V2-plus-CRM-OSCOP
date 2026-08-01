@@ -236,8 +236,13 @@ async def list_products(
     limit: int = 50,
 ):
     """List products with ABAC-controlled pricing (visitors see products without prices)"""
-    # Zone demandée par l'UI, sinon zone sélectionnée côté serveur
-    zone_code = zone_code or (await get_selected_zone(current_user) if current_user else None)
+    # "ALL" = tous les territoires (pas de filtre zone) ; le tarif reste calculé sur la zone serveur du membre
+    show_all = (zone_code or "").upper() == "ALL"
+    if show_all:
+        zone_code = (await get_selected_zone(current_user)) if current_user else None
+    else:
+        # Zone demandée par l'UI, sinon zone sélectionnée côté serveur
+        zone_code = zone_code or (await get_selected_zone(current_user) if current_user else None)
     
     # Check price access (entitlement de la zone demandée obligatoire)
     price_visible = False
@@ -276,7 +281,7 @@ async def list_products(
     # Filtre incoterm (par zone si connue, sinon toutes zones)
     if incoterm:
         incoterm = incoterm.upper()
-        if zone_code:
+        if zone_code and not show_all:
             query[f"incoterms.{zone_code}"] = incoterm
         else:
             zone_codes = [z["code"] async for z in db.zones_v2.find({}, {"code": 1})]
@@ -289,7 +294,7 @@ async def list_products(
         query["rating_avg"] = {"$gte": min_rating}
 
     # Disponibilité par zone : uniquement les produits avec un prix actif dans la zone demandée
-    if zone_code:
+    if zone_code and not show_all:
         zone_product_ids = await db.zone_prices.distinct(
             "product_id", {"zone_code": zone_code, "is_active": True})
         query["id"] = {"$in": zone_product_ids}
@@ -431,6 +436,19 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
         if stock:
             resp.in_stock = stock["quantity_available"] > stock["quantity_reserved"]
             resp.stock_quantity = stock["quantity_available"] - stock["quantity_reserved"]
+
+    # Prix d'appel vitrine : meilleur prix actif (zone demandée sinon toutes zones)
+    if resp.price_ht_cents is None:
+        resp.price_visible = False
+        tq = {"product_id": product["id"], "is_active": True}
+        if zone_code:
+            tq["zone_code"] = zone_code
+        teaser = await db.zone_prices.find(tq, {"_id": 0, "price_ht_cents": 1}).sort("price_ht_cents", 1).to_list(1)
+        if not teaser and zone_code:
+            teaser = await db.zone_prices.find({"product_id": product["id"], "is_active": True},
+                                               {"_id": 0, "price_ht_cents": 1}).sort("price_ht_cents", 1).to_list(1)
+        if teaser:
+            resp.teaser_price_ht_cents = teaser[0]["price_ht_cents"]
     
     return resp
 

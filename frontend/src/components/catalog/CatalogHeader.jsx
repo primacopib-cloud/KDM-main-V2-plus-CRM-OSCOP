@@ -113,6 +113,9 @@ export const CatalogHeader = ({
                 <SelectValue placeholder="Zone" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="ALL" data-testid="zone-option-ALL">
+                  <span className="inline-flex items-center gap-1.5">🌍 Tous les territoires</span>
+                </SelectItem>
                 {zones.map(zone => {
                   const locked = Array.isArray(entitledZones) && !entitledZones.includes(zone.code);
                   return (
@@ -152,7 +155,7 @@ export const CatalogHeader = ({
                     Panier ({cartItemCount} article{cartItemCount > 1 ? 's' : ''})
                   </SheetTitle>
                   <SheetDescription className="text-white/60">
-                    Zone: {zones.find(z => z.code === selectedZone)?.name || selectedZone}
+                    Zone: {selectedZone === 'ALL' ? 'Tous les territoires' : (zones.find(z => z.code === selectedZone)?.name || selectedZone)}
                   </SheetDescription>
                 </SheetHeader>
 
