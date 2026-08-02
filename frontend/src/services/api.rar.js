@@ -30,6 +30,15 @@ export const rarAPI = {
   ceilingHistory: () => apiCall('/rar/delivery/ceiling-history'),
   carrierStats: () => apiCall('/rar/stats/admin/carrier-stats'),
   adminUnpaid: () => apiCall('/rar/stats/admin/unpaid'),
+  reactivateAccount: (orgId) => apiCall('/rar/stats/admin/reactivate', { method: 'POST', body: JSON.stringify({ org_id: orgId }) }),
+  downloadUnpaidCsv: async () => {
+    const r = await fetch(`${API}/rar/stats/admin/unpaid/export`, { credentials: 'include', headers: getAuthHeaders() });
+    if (!r.ok) throw new Error('Export indisponible');
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = 'impayes-rar.csv'; a.click();
+    URL.revokeObjectURL(url);
+  },
   setCarrierBlocked: (carrier, blocked, reason = '') => apiCall('/rar/stats/admin/blocked-carriers', { method: 'POST', body: JSON.stringify({ carrier, blocked, reason }) }),
   carrierBlockLog: () => apiCall('/rar/stats/admin/carrier-block-log'),
   downloadBlockLogCsv: async () => {

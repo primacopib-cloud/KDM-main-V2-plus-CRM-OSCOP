@@ -181,9 +181,7 @@ async def carrier_block_log_export(admin: dict = Depends(require_admin)):
         "Content-Disposition": "attachment; filename=journal-ecartements-transporteurs.csv"})
 
 
-@rar_stats_router.get("/admin/unpaid")
-async def unpaid_dashboard(admin: dict = Depends(require_admin)):
-    """Tableau de bord des impayés RàR : ancienneté, relances envoyées, statut du plafond."""
+async def _unpaid_items():
     from datetime import datetime
     now = datetime.utcnow()
     orders = await db.orders.find(
@@ -201,7 +199,8 @@ async def unpaid_dashboard(admin: dict = Depends(require_admin)):
     for o in orders:
         ref = o.get("rar_proof_at") or o.get("confirmed_at")
         items.append({
-            "order_number": o.get("order_number"), "org_name": orgs.get(o.get("org_id"), o.get("org_id")),
+            "order_number": o.get("order_number"), "org_id": o.get("org_id"),
+            "org_name": orgs.get(o.get("org_id"), o.get("org_id")),
             "due_cents": o.get("cod_amount_due_cents") or 0,
             "age_days": (now - ref).days if ref else None,
             "delivered": bool(o.get("rar_proof_at")),
@@ -212,7 +211,71 @@ async def unpaid_dashboard(admin: dict = Depends(require_admin)):
             "rar_status": o.get("rar_status"),
         })
     items.sort(key=lambda i: -(i["age_days"] or 0))
+    return items
+
+
+@rar_stats_router.get("/admin/unpaid")
+async def unpaid_dashboard(admin: dict = Depends(require_admin)):
+    """Tableau de bord des impayés RàR : ancienneté, relances envoyées, statut du plafond."""
+    items = await _unpaid_items()
     return {"items": items, "count": len(items), "total_due_cents": sum(i["due_cents"] for i in items)}
+
+
+@rar_stats_router.get("/admin/unpaid/export")
+async def unpaid_export(admin: dict = Depends(require_admin)):
+    """Export CSV des impayés RàR pour le suivi comptable."""
+    items = await _unpaid_items()
+    lines = ["commande;organisation;exigible_eur;anciennete_jours;livree;relances;dernier_rappel;plafond"]
+    for i in items:
+        lines.append(";".join([
+            i["order_number"] or "", (i["org_name"] or "").replace(";", ","),
+            f"{i['due_cents'] / 100:.2f}", str(i["age_days"] if i["age_days"] is not None else ""),
+            "oui" if i["delivered"] else "non", f"{i['reminders']}/3",
+            "oui" if i["final_notice"] else "non",
+            "SUSPENDU" if i["account_status"] == "SUSPENDED" else "ACTIF"]))
+    csv = "\ufeff" + "\n".join(lines)
+    return Response(content=csv, media_type="text/csv; charset=utf-8", headers={
+        "Content-Disposition": "attachment; filename=impayes-rar.csv"})
+
+
+@rar_stats_router.post("/admin/reactivate")
+async def reactivate_account(body: dict, admin: dict = Depends(require_admin)):
+    """Réactivation guidée d'un plafond suspendu après régularisation."""
+    from datetime import datetime
+    org_id = ((body or {}).get("org_id") or "").strip()
+    if not org_id:
+        raise HTTPException(status_code=400, detail="org_id requis")
+    account = await db.rar_accounts.find_one({"org_id": org_id})
+    if not account:
+        raise HTTPException(status_code=404, detail="Compte RàR introuvable")
+    if account.get("status") != "SUSPENDED":
+        raise HTTPException(status_code=400, detail="Ce plafond n'est pas suspendu")
+    await db.rar_accounts.update_one(
+        {"org_id": org_id},
+        {"$set": {"status": "APPROVED", "reactivated_at": datetime.utcnow(),
+                  "reactivated_by": admin.get("email")},
+         "$unset": {"auto_suspended": "", "suspended_reason": "", "suspended_at": ""}})
+    try:
+        from consultation_audit import audit
+        await audit("RAR_ACCOUNT_REACTIVATED", admin.get("email"), None, {"org_id": org_id})
+    except Exception as exc:
+        logger.warning("Audit réactivation non journalisé : %s", exc)
+    try:
+        from brevo_service import send_email, _wrap_html
+        subject = "✅ Votre plafond Règlement à Réception Pro est réactivé"
+        html = _wrap_html(subject, "<p>Bonjour,</p><p>Suite à la régularisation de votre dossier, votre plafond "
+                                   "<b>Règlement à Réception Pro</b> est de nouveau <b>actif</b> : vous pouvez à "
+                                   "nouveau commander sans acompte dans la limite de votre plafond disponible.</p>")
+        members = await db.org_memberships.find({"org_id": org_id}).to_list(3)
+        users = await db.users.find({"id": {"$in": [m["user_id"] for m in members]}},
+                                    {"email": 1, "contact_name": 1}).to_list(3)
+        for u in users:
+            if u.get("email"):
+                await send_email(to_email=u["email"], to_name=u.get("contact_name"), subject=subject,
+                                 html_content=html, text_content=subject, tags=["rar_reactivation"])
+    except Exception as exc:
+        logger.warning("Email réactivation non envoyé : %s", exc)
+    return {"ok": True, "org_id": org_id, "status": "APPROVED"}
 
 
 @rar_stats_router.get("/admin/annual-archive/runs")

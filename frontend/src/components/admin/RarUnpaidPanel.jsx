@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Download, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
 
 const fmt = (c) => `${((c || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
@@ -10,9 +11,19 @@ const ageStyle = (d) => (d >= 14 ? 'text-red-300 bg-red-400/10' : d >= 7 ? 'text
 export const RarUnpaidPanel = () => {
   const [data, setData] = useState(null);
 
-  useEffect(() => {
+  const load = () => {
     rarAPI.adminUnpaid().then(setData).catch(() => {});
-  }, []);
+  };
+  useEffect(() => { load(); }, []);
+
+  const reactivate = async (i) => {
+    if (!window.confirm(`Réactiver le plafond de ${i.org_name} ? Confirmez que le dossier est régularisé.`)) return;
+    try {
+      await rarAPI.reactivateAccount(i.org_id);
+      toast.success(`Plafond de ${i.org_name} réactivé — client prévenu par email`);
+      load();
+    } catch (e) { toast.error(e.message); }
+  };
 
   if (!data) return null;
   return (
@@ -23,6 +34,13 @@ export const RarUnpaidPanel = () => {
           <span className="text-amber-300 normal-case tracking-normal" data-testid="rar-unpaid-total">
             — {data.count} commande{data.count > 1 ? 's' : ''} · {fmt(data.total_due_cents)} exigibles
           </span>
+        )}
+        {data.count > 0 && (
+          <button type="button" data-testid="rar-unpaid-csv-btn"
+            onClick={() => rarAPI.downloadUnpaidCsv().then(() => toast.success('Impayés CSV téléchargés')).catch((e) => toast.error(e.message))}
+            className="ml-auto px-2 py-0.5 rounded text-[10px] font-bold text-white/55 border border-white/20 hover:text-white flex items-center gap-1 normal-case tracking-normal">
+            <Download className="w-3 h-3" /> CSV
+          </button>
         )}
       </h4>
       {data.items.length === 0 ? (
@@ -70,6 +88,14 @@ export const RarUnpaidPanel = () => {
                         : 'text-emerald-300 bg-emerald-400/10 border-emerald-400/30'}`}>
                       {i.account_status === 'SUSPENDED' ? 'Suspendu' : 'Actif'}
                     </span>
+                    {i.account_status === 'SUSPENDED' && (
+                      <button type="button" onClick={() => reactivate(i)}
+                        data-testid={`rar-reactivate-${i.order_number}`}
+                        title="Réactiver le plafond après régularisation du dossier"
+                        className="ml-1.5 px-2 py-0.5 rounded text-[10px] font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/30 hover:bg-emerald-400/20 inline-flex items-center gap-1">
+                        <RotateCcw className="w-3 h-3" /> Réactiver après régularisation
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
