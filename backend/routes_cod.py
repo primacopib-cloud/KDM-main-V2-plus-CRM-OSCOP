@@ -27,9 +27,11 @@ async def _is_cod_eligible(user: dict) -> bool:
 
 @cod_router.get("/cod-eligibility")
 async def cod_eligibility(current_user: dict = Depends(get_current_user_checkout)):
-    eligible = await _is_cod_eligible(current_user)
-    return {"eligible": eligible,
-            "reason": None if eligible else "Réservé aux acheteurs Pro avec abonnement actif"}
+    if not await _is_cod_eligible(current_user):
+        return {"eligible": False, "reason": "Réservé aux acheteurs Pro avec abonnement actif"}
+    from routes_rar import rar_gate
+    gate = await rar_gate(current_user)
+    return {"eligible": gate["allowed"], "reason": gate.get("reason"), **{k: v for k, v in gate.items() if k not in ("allowed", "org_id")}}
 
 
 @cod_router.post("/confirm-cod")
@@ -42,6 +44,14 @@ async def confirm_cod(order_id: str = Query(...), current_user: dict = Depends(g
     if order.get("payment_status") in ("succeeded", "paid"):
         raise HTTPException(status_code=400, detail="Commande déjà payée")
     amount = order["total_ttc_cents"]
+    # Gate RàR : compte validé + plafond disponible + produits éligibles
+    from routes_rar import rar_gate
+    gate = await rar_gate(current_user, amount_cents=amount, order_or_cart=order)
+    if not gate["allowed"]:
+        detail = gate.get("reason") or "Accès Règlement à Réception Pro refusé"
+        if gate.get("ineligible_items"):
+            detail += " : " + ", ".join(i["name"] for i in gate["ineligible_items"][:4])
+        raise HTTPException(status_code=403, detail=detail)
     await db.orders.update_one(
         {"id": order_id},
         {"$set": {
@@ -50,6 +60,9 @@ async def confirm_cod(order_id: str = Query(...), current_user: dict = Depends(g
             "payment_method": "cod",
             "cod": True,
             "cod_amount_due_cents": amount,
+            "rar": True,
+            "rar_status": "Commande acceptée sous plafond",
+            "rar_reserved_cents": amount,
             "confirmed_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
         }})

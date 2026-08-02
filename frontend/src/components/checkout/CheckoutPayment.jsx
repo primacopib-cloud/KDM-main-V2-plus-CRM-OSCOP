@@ -12,7 +12,7 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { formatCurrency, MIN_INSTALLMENT_CENTS } from './checkoutUtils';
 
-export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstallment, paymentMethod, setPaymentMethod, orderNotes, setOrderNotes, signatureComplete, processingPayment, handlePayment, codEligible = false }) => (
+export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstallment, paymentMethod, setPaymentMethod, orderNotes, setOrderNotes, signatureComplete, processingPayment, handlePayment, codEligible = false, rarCtx = null }) => (
   <>
             {/* Step 4: Payment */}
             {currentStep === 4 && (
@@ -139,8 +139,15 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                               Règlement à Réception Pro
                             </p>
                             <p className="text-xs text-white/50 mt-1">
-                              Commandez en toute sérénité : réglez uniquement à réception de vos marchandises. Avantage exclusif membres Pro abonnés.
+                              Aucun acompte sur les marchandises. Le paiement sera déclenché après confirmation de la livraison.
                             </p>
+                            {rarCtx?.rar?.ceiling_cents > 0 && (
+                              <div className="mt-2 space-y-0.5 text-[11px]" data-testid="rar-checkout-amounts">
+                                <p className="text-white/60">Plafond disponible : <b className="text-emerald-300">{formatCurrency(rarCtx.rar.available_cents)}</b></p>
+                                <p className="text-white/60">Montant de cette commande : <b className="text-white">{formatCurrency(totals.totalTTC)}</b></p>
+                                <p className="text-white/60">Plafond restant après validation : <b className="text-[#D9B35A]">{formatCurrency(Math.max(0, (rarCtx.rar.available_cents || 0) - totals.totalTTC))}</b></p>
+                              </div>
+                            )}
                           </div>
                           <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Pro abonné</Badge>
                         </div>
@@ -213,7 +220,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                     ) : paymentMethod === 'cod' && !useInstallment ? (
                       <>
                         <Truck className="w-4 h-4 mr-2" />
-                        Confirmer — je règle {formatCurrency(totals.totalTTC)} à la livraison
+                        Confirmer ma commande sans acompte
                       </>
                     ) : (
                       <>

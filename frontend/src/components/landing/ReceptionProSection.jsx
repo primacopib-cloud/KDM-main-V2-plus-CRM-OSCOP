@@ -33,7 +33,7 @@ export const ReceptionProSection = () => (
               <PackageCheck className="w-4 h-4" />
               Aucun paiement de la marchandise avant réception.
             </p>
-            <Link to="/tarifs" data-testid="reception-pro-eligibility-btn"
+            <Link to="/espace-acheteur" data-testid="reception-pro-eligibility-btn"
               onClick={() => trackCta('reception_pro_eligibilite')}
               className="force-white inline-flex items-center gap-2.5 rounded-[14px] px-5 py-3 text-sm font-semibold text-black shadow-lg transition-transform hover:scale-[1.02]"
               style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #B8933D 100%)' }}>

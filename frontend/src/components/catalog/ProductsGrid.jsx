@@ -206,6 +206,21 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                 </div>
               )}
               
+              {/* Règlement à Réception Pro / EXW */}
+              <div className="flex flex-wrap gap-1 mb-3">
+                {product.rar_eligible ? (
+                  <span data-testid={`rar-badge-${product.sku}`}
+                    className="px-1.5 py-0.5 rounded text-[9px] font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/30">
+                    ✓ Éligible au règlement à réception
+                  </span>
+                ) : (
+                  <span data-testid={`exw-badge-${product.sku}`}
+                    className="px-1.5 py-0.5 rounded text-[9px] font-bold text-sky-300 bg-sky-400/10 border border-sky-400/30">
+                    Règlement à l'enlèvement — produit EXW
+                  </span>
+                )}
+              </div>
+
               {/* Price & Add to cart */}
               <div className="mt-auto flex items-end justify-between">
                 <div>

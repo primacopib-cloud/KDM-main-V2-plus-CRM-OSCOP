@@ -80,10 +80,17 @@ export default function CheckoutPage() {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [stripeSessionUrl, setStripeSessionUrl] = useState(null);
   const [codEligible, setCodEligible] = useState(false);
+  const [rarCtx, setRarCtx] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/v2/checkout/cod-eligibility`, { headers: { Authorization: `Bearer ${getSessionToken()}` } })
-      .then((r) => r.json()).then((d) => setCodEligible(!!d.eligible)).catch(() => {});
+    fetch(`${API_URL}/api/rar/checkout-context`, { headers: { Authorization: `Bearer ${getSessionToken()}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        setRarCtx(d);
+        const rarVisible = (d.options || []).some((o) => o.code === 'RAR');
+        setCodEligible(rarVisible && !!d.rar?.allowed);
+      })
+      .catch(() => {});
   }, []);
 
   // Build products from cart for DynamicOrderForm
@@ -450,7 +457,7 @@ export default function CheckoutPage() {
             <DeliveryStep currentStep={currentStep} cart={cart} zones={zones} selectedZone={selectedZone} setSelectedZone={setSelectedZone} deliveryOption={deliveryOption} setDeliveryOption={setDeliveryOption} transportContractAccepted={transportContractAccepted} setTransportContractAccepted={setTransportContractAccepted} />
             <PreparationStep currentStep={currentStep} user={user} products={products} selectedZone={selectedZone} handleTotalsChange={handleTotalsChange} handlePreparationChange={handlePreparationChange} />
             <SignatureStep currentStep={currentStep} signatureComplete={signatureComplete} signatureData={signatureData} setSignatureModalOpen={setSignatureModalOpen} />
-            <PaymentStep currentStep={currentStep} totals={totals} useInstallment={useInstallment} setUseInstallment={setUseInstallment} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} orderNotes={orderNotes} setOrderNotes={setOrderNotes} signatureComplete={signatureComplete} processingPayment={processingPayment} handlePayment={handlePayment} codEligible={codEligible} />
+            <PaymentStep currentStep={currentStep} totals={totals} useInstallment={useInstallment} setUseInstallment={setUseInstallment} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} orderNotes={orderNotes} setOrderNotes={setOrderNotes} signatureComplete={signatureComplete} processingPayment={processingPayment} handlePayment={handlePayment} codEligible={codEligible} rarCtx={rarCtx} />
           </div>
 
           <OrderSummarySidebar currentStep={currentStep} totals={totals} signatureComplete={signatureComplete} submitting={submitting} setCurrentStep={setCurrentStep} handleSubmitOrder={handleSubmitOrder} nextStep={nextStep} cart={cart} />

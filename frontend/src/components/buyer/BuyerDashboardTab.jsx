@@ -9,9 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { TabsContent } from '../ui/tabs';
 import { formatCurrency, formatShortDate, ORDER_STATUS } from './buyerUtils';
 import { ReferralPanel } from '../vendor/ReferralPanel';
+import { RarCeilingBlock } from './RarCeilingBlock';
 
 export const BuyerDashboardTab = ({ stats, orders, setActiveTab }) => (
           <TabsContent value="dashboard" className="space-y-6">
+            {/* Mon plafond à réception — Règlement à Réception Pro */}
+            <RarCeilingBlock />
             {/* KPIs */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="bg-white/[0.04] border-white/[0.08]">

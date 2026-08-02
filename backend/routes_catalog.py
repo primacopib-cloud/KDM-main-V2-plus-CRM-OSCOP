@@ -437,6 +437,12 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
             resp.in_stock = stock["quantity_available"] > stock["quantity_reserved"]
             resp.stock_quantity = stock["quantity_available"] - stock["quantity_reserved"]
 
+    # Règlement à Réception Pro — paramètres produit
+    resp.rar_eligible = bool(product.get("rar_eligible"))
+    resp.rar_zones = product.get("rar_zones") or []
+    for _f in ("rar_min_ceiling_cents", "rar_delay", "rar_trigger", "rar_logistics_fees", "rar_customs", "rar_delivery_mode"):
+        setattr(resp, _f, product.get(_f))
+
     # Prix d'appel vitrine : meilleur prix actif (zone demandée sinon toutes zones)
     if resp.price_ht_cents is None:
         resp.price_visible = False

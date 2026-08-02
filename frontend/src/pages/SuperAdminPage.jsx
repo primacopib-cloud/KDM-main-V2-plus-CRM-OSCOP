@@ -13,6 +13,7 @@ import { DashboardTab } from '../components/superadmin/DashboardTab';
 import { UsersTab, OrdersTab } from '../components/superadmin/UsersOrdersTabs';
 import { TeamRolesTab } from '../components/superadmin/TeamRolesTab';
 import { BuyersTab } from '../components/superadmin/BuyersTab';
+import { RarAdminPanel } from '../components/admin/RarAdminPanel';
 import { TaxonomyTab } from '../components/superadmin/TaxonomyTab';
 import { VendorCreditsTab } from '../components/superadmin/VendorCreditsTab';
 import { LogicoopPanel } from '../components/superadmin/LogicoopPanel';
@@ -187,6 +188,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="buyers">
             <BuyersTab />
+            <RarAdminPanel />
           </TabsContent>
 
           <TabsContent value="taxonomy">

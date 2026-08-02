@@ -1,0 +1,20 @@
+// Règlement à Réception Pro — API client
+import { apiCall } from './http';
+
+export const rarAPI = {
+  paymentOptions: () => apiCall('/rar/payment-options'),
+  myStatus: () => apiCall('/rar/my-status'),
+  requestAccess: (message) => apiCall('/rar/request', { method: 'POST', body: JSON.stringify({ message }) }),
+  activateViaPack: () => apiCall('/rar/activate-via-pack', { method: 'POST' }),
+  checkoutContext: () => apiCall('/rar/checkout-context'),
+  // Admin
+  adminAccounts: () => apiCall('/rar/admin/accounts'),
+  adminDecide: (payload) => apiCall('/rar/admin/decide', { method: 'POST', body: JSON.stringify(payload) }),
+  adminUpdate: (payload) => apiCall('/rar/admin/update', { method: 'POST', body: JSON.stringify(payload) }),
+  adminPaymentOptions: () => apiCall('/rar/admin/payment-options'),
+  adminAddOption: (payload) => apiCall('/rar/admin/payment-options', { method: 'POST', body: JSON.stringify(payload) }),
+  adminUpdateOption: (code, payload) => apiCall(`/rar/admin/payment-options/${code}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  adminDeleteOption: (code) => apiCall(`/rar/admin/payment-options/${code}`, { method: 'DELETE' }),
+  adminProducts: () => apiCall('/rar/admin/products'),
+  adminSetProduct: (productId, payload) => apiCall(`/rar/admin/products/${productId}`, { method: 'PUT', body: JSON.stringify(payload) }),
+};

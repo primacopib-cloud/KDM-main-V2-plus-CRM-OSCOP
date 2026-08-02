@@ -128,6 +128,15 @@ class ProductResponse(BaseModel):
     savings_percent: Optional[float] = None
     # Prix d'appel marketing (vitrine/carrousel) quand le tarif adhérent est masqué
     teaser_price_ht_cents: Optional[int] = None
+    # Règlement à Réception Pro (Lot B)
+    rar_eligible: bool = False
+    rar_zones: List[str] = []
+    rar_min_ceiling_cents: Optional[int] = None
+    rar_delay: Optional[str] = None
+    rar_trigger: Optional[str] = None
+    rar_logistics_fees: Optional[str] = None
+    rar_customs: Optional[str] = None
+    rar_delivery_mode: Optional[str] = None
     # Stock
     in_stock: bool = True
     stock_quantity: Optional[int] = None
