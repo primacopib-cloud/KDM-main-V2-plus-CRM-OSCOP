@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, MapPin, ArrowRight, Flame, Share2, ShoppingB
 import { toast } from 'sonner';
 import { TERRITORIES } from '../../data/territories';
 import { WhatsAppIcon } from '../catalog/ProductShareButtons';
+import { trackCta } from '../../services/ctaTracking';
 
 const TOTAL = TERRITORIES.length;
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -198,6 +199,7 @@ export const TerritoryCarousel = () => {
               ))}
             </ul>
             <Link to={`/catalogue?zone=${t.zoneCode}`} data-testid={`territory-link-${t.id}`}
+              onClick={() => trackCta(`territoire_${t.id}`)}
               className="mt-auto inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
               style={{ color: t.color }}
               aria-label={`Voir les offres de la zone ${t.name}`}>
@@ -207,6 +209,15 @@ export const TerritoryCarousel = () => {
           </article>
           );
         })}
+      </div>
+      <div className="flex justify-center gap-2 mt-4" aria-label="Aller directement à un territoire" data-testid="territory-dots">
+        {TERRITORIES.map((t, i) => (
+          <button key={t.id} type="button" onClick={() => scrollToIndex(i)}
+            aria-label={`Aller au territoire ${t.name}`} aria-current={index === i ? 'true' : undefined}
+            data-testid={`territory-dot-${i}`}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              index === i ? 'w-6 bg-[#8CC63E]' : 'w-2 bg-white/25 hover:bg-white/55'}`} />
+        ))}
       </div>
     </section>
   );

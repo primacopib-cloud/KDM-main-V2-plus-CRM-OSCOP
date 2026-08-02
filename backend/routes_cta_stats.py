@@ -31,6 +31,12 @@ CTA_LABELS = {
     "tarifs_ess-volume-pro": "S'inscrire — ESS Volume Pro (/tarifs)",
     "tarifs_ess-impact-pro": "S'inscrire — ESS Impact Pro (/tarifs)",
     "rejoindre_parrainer": "Rejoindre et parrainer (bandeau défi parrainage)",
+    "territoire_guadeloupe": "Voir les offres — Guadeloupe (/kdmarche)",
+    "territoire_martinique": "Voir les offres — Martinique (/kdmarche)",
+    "territoire_guyane": "Voir les offres — Guyane (/kdmarche)",
+    "territoire_reunion": "Voir les offres — La Réunion (/kdmarche)",
+    "territoire_mayotte": "Voir les offres — Mayotte (/kdmarche)",
+    "territoire_iles-du-nord": "Voir les offres — Îles du Nord (/kdmarche)",
 }
 
 
