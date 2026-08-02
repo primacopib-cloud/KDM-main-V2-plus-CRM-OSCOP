@@ -3,9 +3,15 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, MapPin, ArrowRight, Flame, Share2, ShoppingBag, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { TERRITORIES } from '../../data/territories';
+import { WhatsAppIcon } from '../catalog/ProductShareButtons';
 
 const TOTAL = TERRITORIES.length;
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const AUTO_SCROLL_MS = 4500;
+const REDUCED_MOTION = typeof window !== 'undefined'
+  && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const shareText = (t) => `Découvrez les offres ${t.name} (${t.tagline}) sur KDMARCHÉ, la centrale d'achat coopérative. ${window.location.origin}/catalogue?zone=${t.zoneCode}`;
 
 // Carrousel des territoires de la coopérative — page /kdmarche (#territoires)
 export const TerritoryCarousel = () => {
@@ -13,6 +19,7 @@ export const TerritoryCarousel = () => {
   const [index, setIndex] = useState(0);
   const [topProducts, setTopProducts] = useState({});
   const [zoneStats, setZoneStats] = useState({});
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/public/territory-top-products`)
@@ -27,7 +34,7 @@ export const TerritoryCarousel = () => {
     if (navigator.share) {
       try { await navigator.share(data); return; } catch { /* partage annulé */ }
     }
-    const text = `${data.text} ${url}`;
+    const text = shareText(t);
     try {
       await navigator.clipboard.writeText(text);
       toast.success(`Lien des offres ${t.name} copié — prêt à partager !`);
@@ -54,6 +61,23 @@ export const TerritoryCarousel = () => {
     setIndex(next);
   }, []);
 
+  // Défilement automatique doux, en boucle — pause au survol, au focus, au toucher et si reduced-motion
+  useEffect(() => {
+    if (paused || REDUCED_MOTION) return undefined;
+    const id = setInterval(() => {
+      const track = trackRef.current;
+      const next = (index + 1) % TOTAL;
+      if (!track) return;
+      if (next === 0) {
+        track.scrollTo({ left: 0, behavior: 'smooth' });
+        setIndex(0);
+      } else {
+        scrollToIndex(index + 1);
+      }
+    }, AUTO_SCROLL_MS);
+    return () => clearInterval(id);
+  }, [index, paused, scrollToIndex]);
+
   const onScroll = () => {
     const track = trackRef.current;
     if (!track || track.children.length === 0) return;
@@ -70,7 +94,10 @@ export const TerritoryCarousel = () => {
 
   return (
     <section id="territoires" data-territory-carousel className="max-w-[1160px] mx-auto px-5 mb-14 scroll-mt-24"
-      aria-roledescription="carrousel" aria-label="Territoires de la coopérative" data-testid="kdm-territories-section">
+      aria-roledescription="carrousel" aria-label="Territoires de la coopérative" data-testid="kdm-territories-section"
+      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}
+      onTouchStart={() => setPaused(true)} onTouchEnd={() => setPaused(false)}>
       <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
           <p className="text-[11px] uppercase tracking-[0.2em] text-[#8CC63E] mb-2 flex items-center gap-1.5">
@@ -113,6 +140,13 @@ export const TerritoryCarousel = () => {
               <img src={t.image} alt={`Ambiance ${t.name}`} loading="lazy"
                 className="w-full h-full object-cover" data-testid={`territory-image-${t.id}`} />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(30,12,52,0.92), rgba(30,12,52,0.05))' }} aria-hidden="true" />
+              <a href={`https://wa.me/?text=${encodeURIComponent(shareText(t))}`}
+                target="_blank" rel="noopener noreferrer" data-testid={`territory-whatsapp-${t.id}`}
+                aria-label={`Partager les offres de la zone ${t.name} sur WhatsApp`}
+                title="Partager sur WhatsApp"
+                className="absolute top-2.5 right-12 w-8 h-8 rounded-full bg-[#25D366]/85 backdrop-blur border border-white/25 flex items-center justify-center text-white hover:bg-[#25D366] transition-colors">
+                <WhatsAppIcon className="w-4 h-4" aria-hidden="true" />
+              </a>
               <button type="button" onClick={() => share(t)} data-testid={`territory-share-${t.id}`}
                 aria-label={`Partager les offres de la zone ${t.name}`}
                 title="Partager cette zone"

@@ -37,6 +37,7 @@ export const TERRITORIES = [
     tagline: 'Approvisionnements mixtes',
     color: '#D9B35A',
     zoneCode: 'REUNION',
+    image: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/93f63091cc88faf3a553e91ad359a9c3f2c9d3332f97d48c20ff3d12423ba422.jpeg',
     products: ['Farine T55 25 kg', 'Boîtes alimentaires PP 1 L ×200', 'Café grain 5 kg'],
   },
   {
