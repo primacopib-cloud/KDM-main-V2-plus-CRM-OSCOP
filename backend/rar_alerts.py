@@ -153,8 +153,21 @@ async def run_annual_statements(db, force_year: str = None) -> int:
                 logger.warning("Relevé annuel non envoyé %s : %s", u.get("email"), exc)
         if ok:
             sent += 1
+            ged_doc_id = None
+            try:
+                from gedess_client import is_gedess_configured, gedess_upload_file
+                if is_gedess_configured():
+                    doc = await gedess_upload_file(
+                        filename=f"releve-plafond-annuel-{year}-{org_id}.pdf", content=pdf,
+                        categorie="rapport",
+                        description=f"Relevé annuel de plafond RàR {year} — {org_name}",
+                        tags=f"rar,releve-annuel,{year}", mime_type="application/pdf")
+                    ged_doc_id = doc.get("id")
+            except Exception as exc:
+                logger.warning("Archivage GEDESS relevé annuel %s : %s", org_id, exc)
             await db.rar_statement_log.insert_one(
-                {"org_id": org_id, "month": f"ANNUEL-{year}", "events": len(events), "sent_at": datetime.utcnow()})
+                {"org_id": org_id, "month": f"ANNUEL-{year}", "events": len(events),
+                 "sent_at": datetime.utcnow(), "ged_doc_id": ged_doc_id})
     if sent:
         logger.info("Relevés annuels de plafond envoyés : %s (%s)", sent, year)
     return sent

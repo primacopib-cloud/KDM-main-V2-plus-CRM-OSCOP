@@ -164,6 +164,23 @@ async def carrier_block_log(admin: dict = Depends(require_admin)):
     return {"entries": entries}
 
 
+@rar_stats_router.get("/admin/carrier-block-log/export")
+async def carrier_block_log_export(admin: dict = Depends(require_admin)):
+    """Export CSV du journal des écartements pour les dossiers de conformité."""
+    entries = await db.rar_carrier_block_log.find({}, {"_id": 0}).sort("at", -1).to_list(1000)
+    lines = ["date;action;transporteur;motif;auteur"]
+    for e in entries:
+        lines.append(";".join([
+            str(e.get("at") or "")[:16],
+            "ECARTE" if e.get("action") == "BLOCK" else "REINTEGRE",
+            (e.get("carrier") or "").replace(";", ","),
+            (e.get("reason") or "").replace(";", ",").replace("\n", " "),
+            e.get("by") or ""]))
+    csv = "\ufeff" + "\n".join(lines)
+    return Response(content=csv, media_type="text/csv; charset=utf-8", headers={
+        "Content-Disposition": "attachment; filename=journal-ecartements-transporteurs.csv"})
+
+
 @rar_stats_router.get("/admin/carrier-stats")
 async def carrier_stats(admin: dict = Depends(require_admin)):
     """Taux de réserves par transporteur pour repérer les livraisons à problème."""

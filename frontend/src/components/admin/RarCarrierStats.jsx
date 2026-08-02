@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Truck, Ban, RotateCcw, ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Truck, Ban, RotateCcw, ScrollText, ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
 
@@ -103,11 +103,18 @@ export const RarCarrierStats = () => {
           </table>
         </div>
       )}
-      <button type="button" onClick={toggleLog} data-testid="rar-block-log-toggle"
-        className="mt-2 text-[10px] text-white/45 hover:text-white/70 flex items-center gap-1">
-        <ScrollText className="w-3 h-3" /> Journal des écartements
-        {logOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-      </button>
+      <div className="mt-2 flex items-center gap-2">
+        <button type="button" onClick={toggleLog} data-testid="rar-block-log-toggle"
+          className="text-[10px] text-white/45 hover:text-white/70 flex items-center gap-1">
+          <ScrollText className="w-3 h-3" /> Journal des écartements
+          {logOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        </button>
+        <button type="button" data-testid="rar-block-log-csv-btn"
+          onClick={() => rarAPI.downloadBlockLogCsv().then(() => toast.success('Journal CSV téléchargé')).catch((e) => toast.error(e.message))}
+          className="px-2 py-0.5 rounded text-[10px] font-bold text-white/55 border border-white/20 hover:text-white flex items-center gap-1">
+          <Download className="w-3 h-3" /> CSV
+        </button>
+      </div>
       {logOpen && (
         <div className="mt-1.5 space-y-1 max-h-48 overflow-y-auto pr-1" data-testid="rar-block-log-list">
           {log && log.length === 0 && (
