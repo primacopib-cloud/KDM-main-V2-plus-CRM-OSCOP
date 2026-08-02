@@ -118,7 +118,11 @@ export const CtaStatsPanel = () => {
                     <p className="text-[10px] text-white/50 m-0">
                       {s[periodKey]} clic{s[periodKey] > 1 ? 's' : ''}
                       {podiumPeriod === '7j' ? ' sur 7 j' : podiumPeriod === '30j' ? ' sur 30 j' : ' au total'}
-                      {s.paid > 0 && <span className="text-[#7BC94E] font-bold"> · {s.paid} commande{s.paid > 1 ? 's' : ''}</span>}
+                      {s.paid > 0 && (
+                        <span className="text-[#7BC94E] font-bold" data-testid={`podium-conv-${s.cta_id}`}>
+                          {' '}· {s.paid} commande{s.paid > 1 ? 's' : ''}{s.rate !== null && ` (${s.rate} % de conversion)`}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
