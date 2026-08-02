@@ -234,6 +234,82 @@ async def delivery_proof_pdf(order_id: str, user: dict = Depends(get_current_use
         "Content-Disposition": f"attachment; filename=bon-livraison-{order.get('order_number')}.pdf"})
 
 
+@rar_delivery_router.get("/ceiling-history")
+async def ceiling_history(user: dict = Depends(get_current_user_checkout)):
+    """Mouvements de plafond dérivés : attribution, réservations, avoirs, rétablissements."""
+    m = await db.org_memberships.find_one({"user_id": user["id"]})
+    if not m:
+        return {"events": []}
+    events = []
+    account = await db.rar_accounts.find_one({"org_id": m["org_id"]}, {"_id": 0})
+    if account and account.get("decided_at") and account.get("ceiling_cents"):
+        events.append({"date": account["decided_at"], "type": "GRANT",
+                       "label": "Plafond accordé" + (" (pack CREDI'SCOP)" if account.get("source") == "CREDISCOP_PACK" else ""),
+                       "amount_cents": account["ceiling_cents"], "order_number": None})
+    async for o in db.orders.find({"org_id": m["org_id"], "rar": True},
+                                  {"_id": 0, "order_number": 1, "confirmed_at": 1, "paid_at": 1,
+                                   "payment_status": 1, "total_ttc_cents": 1, "rar_reserved_cents": 1,
+                                   "rar_reserve_resolution": 1}):
+        n = o.get("order_number")
+        if o.get("confirmed_at"):
+            events.append({"date": o["confirmed_at"], "type": "RESERVE",
+                           "label": "Commande sans acompte — montant réservé",
+                           "amount_cents": -(o.get("total_ttc_cents") or 0), "order_number": n})
+        res = o.get("rar_reserve_resolution") or {}
+        if res.get("action") == "CREDIT":
+            events.append({"date": res.get("at"), "type": "CREDIT",
+                           "label": "Avoir accordé — plafond libéré",
+                           "amount_cents": res.get("amount_cents", 0), "order_number": n})
+        if o.get("payment_status") == "succeeded" and o.get("paid_at"):
+            events.append({"date": o["paid_at"], "type": "RESTORE",
+                           "label": "Paiement encaissé — plafond rétabli",
+                           "amount_cents": o.get("rar_reserved_cents") or o.get("total_ttc_cents") or 0,
+                           "order_number": n})
+    events.sort(key=lambda e: str(e["date"] or ""), reverse=True)
+    return {"events": events[:50]}
+
+
+@rar_delivery_router.get("/admin/litigation-export")
+async def litigation_export(all: bool = False, admin: dict = Depends(require_admin)):
+    """ZIP des bons de livraison + preuves (par défaut : uniquement les livraisons avec réserves)."""
+    import io
+    import json
+    import zipfile
+    from fastapi.responses import Response
+    from pdf_delivery_note import build_delivery_note_pdf, _local
+    query = {} if all else {"reserves.0": {"$exists": True}}
+    proofs = await db.delivery_proofs.find(query, {"_id": 0}).sort("confirmed_at", -1).to_list(100)
+    if not proofs:
+        raise HTTPException(status_code=404, detail="Aucun litige à exporter")
+    buf = io.BytesIO()
+    csv_lines = ["commande;date;receptionnaire;transporteur;reserves;valeur_suspendue_eur;resolution"]
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for p in proofs:
+            order = await db.orders.find_one({"id": p["order_id"]})
+            if not order:
+                continue
+            folder = p.get("order_number", p["order_id"][:8])
+            try:
+                z.writestr(f"{folder}/bon-livraison-{folder}.pdf", build_delivery_note_pdf(order, p))
+            except Exception as exc:
+                logger.warning("BL PDF export %s : %s", folder, exc)
+            for i, url in enumerate([p.get("signature_url")] + (p.get("photos") or []), 1):
+                path = _local(url)
+                if path:
+                    name = "signature" if i == 1 else f"photo-{i - 1}"
+                    z.write(path, f"{folder}/{name}{os.path.splitext(path)[1]}")
+            z.writestr(f"{folder}/preuve.json", json.dumps(p, default=str, ensure_ascii=False, indent=2))
+            res = order.get("rar_reserve_resolution") or {}
+            csv_lines.append(";".join([
+                folder, str(p.get("confirmed_at", ""))[:16], p.get("receiver_name", ""),
+                p.get("carrier_name", ""), str(len(p.get("reserves") or [])),
+                f"{(order.get('rar_disputed_cents') or res.get('amount_cents') or 0) / 100:.2f}",
+                f"{res.get('action', 'EN COURS')}{(' — ' + res['note']) if res.get('note') else ''}"]))
+        z.writestr("recapitulatif-litiges.csv", "\ufeff" + "\n".join(csv_lines))
+    return Response(content=buf.getvalue(), media_type="application/zip", headers={
+        "Content-Disposition": f"attachment; filename=litiges-rar-{datetime.utcnow().strftime('%Y%m%d')}.zip"})
+
+
 # ============ RÉSERVES : INSTRUCTION ADMIN ============
 
 @rar_delivery_router.get("/reserves/admin/list")

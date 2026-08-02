@@ -27,6 +27,15 @@ export const rarAPI = {
   // Réserves & PDF
   adminReserves: () => apiCall('/rar/delivery/reserves/admin/list'),
   resolveReserve: (orderId, action, note) => apiCall(`/rar/delivery/reserves/${orderId}/resolve`, { method: 'POST', body: JSON.stringify({ action, note }) }),
+  ceilingHistory: () => apiCall('/rar/delivery/ceiling-history'),
+  downloadLitigationZip: async () => {
+    const r = await fetch(`${API}/rar/delivery/admin/litigation-export`, { credentials: 'include', headers: getAuthHeaders() });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'Aucun litige à exporter');
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = 'litiges-rar.zip'; a.click();
+    URL.revokeObjectURL(url);
+  },
   downloadProofPdf: async (orderId, orderNumber) => {
     const r = await fetch(`${API}/rar/delivery/${orderId}/proof-pdf`, { credentials: 'include', headers: getAuthHeaders() });
     if (!r.ok) throw new Error('Bon de livraison indisponible');
