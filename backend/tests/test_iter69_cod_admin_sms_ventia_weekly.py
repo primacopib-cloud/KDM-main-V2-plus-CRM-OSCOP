@@ -8,7 +8,7 @@ import pytest
 import requests
 from motor.motor_asyncio import AsyncIOMotorClient
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://coop-dashboard-8.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://oscop-platform-3.preview.emergentagent.com").rstrip("/")
 BUYER = ("acheteur-pro@kdmarche.fr", "Demo2026!")
 VENDOR = ("vendor-pro@kdmarche.fr", "Demo2026!")
 ADMIN = ("admin@kdmarche-oscop.fr", "AdminKDM2025!")

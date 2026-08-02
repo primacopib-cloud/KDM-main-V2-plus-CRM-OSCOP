@@ -177,7 +177,11 @@ export const RarAdminPanel = () => {
             <span className="flex gap-1.5">
               {o.payment_status !== 'succeeded' && o.rar_status === 'Commande acceptée sous plafond' && (
                 <button type="button" data-testid={`rar-start-delivery-${o.order_number}`}
-                  onClick={async () => { try { await rarAPI.adminStartDelivery(o.id, "LOGI'SCOP"); toast.success('OTP envoyé au client'); load(); } catch (e) { toast.error(e.message); } }}
+                  onClick={async () => {
+                    const c = window.prompt('Transporteur pour cette livraison :', "LOGI'SCOP");
+                    if (c === null) return;
+                    try { await rarAPI.adminStartDelivery(o.id, c.trim() || "LOGI'SCOP"); toast.success('OTP envoyé au client'); load(); } catch (e) { toast.error(e.message); }
+                  }}
                   className="px-2 py-1 rounded text-[10px] font-bold text-sky-300 bg-sky-400/10 border border-sky-400/30">
                   🚚 Livrer (envoyer OTP)
                 </button>

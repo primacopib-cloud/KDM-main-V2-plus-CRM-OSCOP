@@ -39,6 +39,57 @@ async def ceiling_statement_pdf(month: str, user: dict = Depends(get_current_use
         "Content-Disposition": f"attachment; filename=releve-plafond-{month}.pdf"})
 
 
+@rar_stats_router.get("/alert-threshold")
+async def get_alert_threshold(user: dict = Depends(get_current_user_checkout)):
+    m = await db.org_memberships.find_one({"user_id": user["id"]})
+    if not m:
+        return {"threshold_cents": 0, "alert_active": False}
+    account = await db.rar_accounts.find_one(
+        {"org_id": m["org_id"]}, {"alert_threshold_cents": 1, "alert_active": 1})
+    return {"threshold_cents": (account or {}).get("alert_threshold_cents") or 0,
+            "alert_active": bool((account or {}).get("alert_active"))}
+
+
+@rar_stats_router.put("/alert-threshold")
+async def set_alert_threshold(body: dict, user: dict = Depends(get_current_user_checkout)):
+    """Seuil d'alerte email du plafond disponible (0 = désactivé)."""
+    try:
+        cents = int((body or {}).get("threshold_cents") or 0)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="threshold_cents : entier attendu")
+    if cents < 0 or cents > 100_000_000:
+        raise HTTPException(status_code=400, detail="Seuil hors limites")
+    m = await db.org_memberships.find_one({"user_id": user["id"]})
+    if not m:
+        raise HTTPException(status_code=404, detail="Aucune organisation associée")
+    account = await db.rar_accounts.find_one({"org_id": m["org_id"]}, {"_id": 1})
+    if not account:
+        raise HTTPException(status_code=404, detail="Aucun compte Règlement à Réception Pro")
+    await db.rar_accounts.update_one(
+        {"org_id": m["org_id"]},
+        {"$set": {"alert_threshold_cents": cents, "alert_active": False}})
+    if cents:
+        from rar_alerts import check_ceiling_alert
+        await check_ceiling_alert(db, m["org_id"])
+    return {"ok": True, "threshold_cents": cents}
+
+
+@rar_stats_router.get("/carrier-scores")
+async def carrier_scores(user: dict = Depends(get_current_user_checkout)):
+    """Note de fiabilité par transporteur = part des livraisons sans réserve (visible au checkout)."""
+    stats = {}
+    async for p in db.delivery_proofs.find({}, {"_id": 0, "carrier_name": 1, "reserves": 1}):
+        carrier = p.get("carrier_name") or "LOGI'SCOP"
+        s = stats.setdefault(carrier, {"carrier": carrier, "deliveries": 0, "clean": 0})
+        s["deliveries"] += 1
+        if not p.get("reserves"):
+            s["clean"] += 1
+    out = [{"carrier": s["carrier"], "deliveries": s["deliveries"],
+            "score": round(100 * s["clean"] / s["deliveries"], 1)} for s in stats.values()]
+    out.sort(key=lambda s: (-s["score"], -s["deliveries"]))
+    return {"carriers": out}
+
+
 @rar_stats_router.get("/admin/carrier-stats")
 async def carrier_stats(admin: dict = Depends(require_admin)):
     """Taux de réserves par transporteur pour repérer les livraisons à problème."""

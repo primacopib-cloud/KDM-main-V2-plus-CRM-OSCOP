@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # Get SendGrid API key from environment
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "noreply@kdmarche-oscop.fr")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://plan-builder-75.preview.emergentagent.com")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://oscop-platform-3.preview.emergentagent.com")
 
 
 class EmailServiceError(Exception):

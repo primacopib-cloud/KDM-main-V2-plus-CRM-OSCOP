@@ -29,6 +29,9 @@ export const rarAPI = {
   resolveReserve: (orderId, action, note) => apiCall(`/rar/delivery/reserves/${orderId}/resolve`, { method: 'POST', body: JSON.stringify({ action, note }) }),
   ceilingHistory: () => apiCall('/rar/delivery/ceiling-history'),
   carrierStats: () => apiCall('/rar/stats/admin/carrier-stats'),
+  carrierScores: () => apiCall('/rar/stats/carrier-scores'),
+  getAlertThreshold: () => apiCall('/rar/stats/alert-threshold'),
+  setAlertThreshold: (cents) => apiCall('/rar/stats/alert-threshold', { method: 'PUT', body: JSON.stringify({ threshold_cents: cents }) }),
   downloadCeilingStatement: async (month) => {
     const r = await fetch(`${API}/rar/stats/ceiling-statement-pdf?month=${month}`, { credentials: 'include', headers: getAuthHeaders() });
     if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'Relevé indisponible');

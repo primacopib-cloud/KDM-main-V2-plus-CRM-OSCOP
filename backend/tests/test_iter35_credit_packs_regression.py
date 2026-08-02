@@ -71,7 +71,7 @@ def test_credit_packs_list_active_three_packs():
 @pytest.fixture(scope="module")
 def stripe_session(vendor_hdr):
     payload = {"pack_id": "starter", "vendor_id": VENDOR_ID,
-               "origin_url": "https://coop-dashboard-8.preview.emergentagent.com"}
+               "origin_url": "https://oscop-platform-3.preview.emergentagent.com"}
     r = requests.post(f"{BASE}/api/credit-packs/purchase", headers=vendor_hdr, json=payload, timeout=25)
     assert r.status_code == 200, r.text
     d = r.json()
@@ -109,7 +109,7 @@ def test_status_from_other_user_returns_403(stripe_session, buyer_hdr):
 
 def test_purchase_unknown_pack_returns_404(vendor_hdr):
     payload = {"pack_id": "nonexistent-pack-xyz", "vendor_id": VENDOR_ID,
-               "origin_url": "https://coop-dashboard-8.preview.emergentagent.com"}
+               "origin_url": "https://oscop-platform-3.preview.emergentagent.com"}
     r = requests.post(f"{BASE}/api/credit-packs/purchase", headers=vendor_hdr, json=payload, timeout=20)
     assert r.status_code == 404, f"expected 404 got {r.status_code}: {r.text}"
 

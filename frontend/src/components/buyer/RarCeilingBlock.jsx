@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
 import { RarDeliveryConfirmDialog } from './RarDeliveryConfirmDialog';
 import { RarCeilingHistory } from './RarCeilingHistory';
+import { RarAlertThreshold } from './RarAlertThreshold';
 
 const fmt = (c) => `${((c || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 
@@ -88,6 +89,7 @@ export const RarCeilingBlock = () => {
           <p className="text-[10px] text-white/35 mt-2">
             Le plafond est rétabli après confirmation effective du paiement (encaissement définitif), non à la signature du bon de livraison.
           </p>
+          <RarAlertThreshold />
           <RarCeilingHistory />
           {deliveries.length > 0 && (
             <div className="mt-3 space-y-1.5" data-testid="rar-deliveries-list">

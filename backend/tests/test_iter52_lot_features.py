@@ -18,7 +18,7 @@ sys.path.insert(0, "/app/backend")
 from dotenv import load_dotenv
 load_dotenv("/app/backend/.env", override=True)
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://coop-dashboard-8.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://oscop-platform-3.preview.emergentagent.com").rstrip("/")
 ADMIN_EMAIL = "admin@kdmarche-oscop.fr"
 ADMIN_PASS = "AdminKDM2025!"
 VENDOR_EMAIL = "vendor-pro@kdmarche.fr"

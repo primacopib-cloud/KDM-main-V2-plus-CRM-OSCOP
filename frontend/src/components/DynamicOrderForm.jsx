@@ -449,6 +449,7 @@ const DynamicOrderForm = ({
           getTypeColor={getTypeColor}
           formatCurrency={formatCurrency}
           zoneCode={zoneCode}
+          isVatExonerated={isVatExonerated}
         />
         <TotalsAndSignatures
           calculatedTotals={calculatedTotals}

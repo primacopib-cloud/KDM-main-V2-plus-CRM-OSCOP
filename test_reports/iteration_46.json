@@ -20,7 +20,7 @@
   ],
   "success_rate": {"backend": "100% (3/3)", "frontend": "100% (all acceptance criteria PASS)"},
   "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin) ; acheteur-pro@kdmarche.fr / Demo2026!",
-  "seed_data_creation": "1 nouvelle demande de devis publique créée via POST /api/quotes (TEST QA Footer / Marie Test / qa.footer@example.com) → poussée sur objectifscopoutremer.com (oscop_demande_id=74a184f8-9aa9-4b69-8649-33a169879db3). default-1 tarif remis à prix_base=30 après manipulation temporaire (état identique à avant iter46).",
+  "seed_data_creation": "1 nouvelle demande de devis publique créée via POST /api/quotes (TEST QA Footer / Marie Test / qa.footer@example.com) → poussée sur objectifscopoutremer.com (oscop_demande_id=oscop-platform-3). default-1 tarif remis à prix_base=30 après manipulation temporaire (état identique à avant iter46).",
   "retest_needed": false,
   "main_agent_can_self_test": true,
   "context_for_next_testing_agent": "Le journal des pushes contient désormais 2 lignes 'TEST QA Footer / qa.footer@example.com' (celle du main agent E1 précédent + celle de ce run). Le tarif inactif default-1 est bien à Prix HT 30 / Crédits 5 (état d'origine restauré). Les tarifs actifs (default-2..5) NON TOUCHÉS.",

@@ -4,7 +4,7 @@ import uuid
 import requests
 from datetime import datetime, timedelta, timezone
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://coop-dashboard-8.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://oscop-platform-3.preview.emergentagent.com").rstrip("/")
 
 def _login(email, password, portal=None):
     body = {"email": email, "password": password}

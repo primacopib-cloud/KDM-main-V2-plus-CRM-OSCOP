@@ -66,6 +66,11 @@ async def confirm_cod(order_id: str = Query(...), current_user: dict = Depends(g
             "confirmed_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
         }})
+    try:
+        from rar_alerts import check_ceiling_alert
+        await check_ceiling_alert(db, order.get("org_id"))
+    except Exception as exc:
+        logger.warning("Alerte plafond non vérifiée : %s", exc)
     from consultation_audit import audit
     await audit("ORDER_COD_CONFIRMED", current_user.get("email"), None,
                 {"order_id": order_id, "order_number": order.get("order_number"), "amount_due_cents": amount})
@@ -155,6 +160,12 @@ async def collect_order_core(order_id: str, body: dict, actor: str) -> dict:
             {"$set": {"status": "PAID", "payment_status": "PAID", "paid_at": datetime.utcnow().isoformat()}})
     except Exception as exc:
         logger.error("Facture COD non générée : %s", exc)
+    if order.get("rar"):
+        try:
+            from rar_alerts import check_ceiling_alert
+            await check_ceiling_alert(db, order.get("org_id"))
+        except Exception as exc:
+            logger.warning("Réarmement alerte plafond non effectué : %s", exc)
     from consultation_audit import audit
     await audit("ORDER_COD_COLLECTED", actor, None,
                 {"order_id": order_id, "order_number": order.get("order_number"), "amount_cents": amount})

@@ -11,6 +11,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { formatCurrency, MIN_INSTALLMENT_CENTS } from './checkoutUtils';
+import { CarrierScoreBadge } from './CarrierScoreBadge';
 
 export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstallment, paymentMethod, setPaymentMethod, orderNotes, setOrderNotes, signatureComplete, processingPayment, handlePayment, codEligible = false, rarCtx = null }) => (
   <>
@@ -148,6 +149,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                                 <p className="text-white/60">Plafond restant après validation : <b className="text-[#D9B35A]">{formatCurrency(Math.max(0, (rarCtx.rar.available_cents || 0) - totals.totalTTC))}</b></p>
                               </div>
                             )}
+                            <CarrierScoreBadge />
                           </div>
                           <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Pro abonné</Badge>
                         </div>

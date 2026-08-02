@@ -37,7 +37,7 @@ def _public_origin() -> str:
     return (
         os.environ.get("KDM_PUBLIC_ORIGIN")
         or os.environ.get("FRONTEND_URL")
-        or "https://coop-dashboard-8.preview.emergentagent.com"
+        or "https://oscop-platform-3.preview.emergentagent.com"
     ).rstrip("/")
 
 

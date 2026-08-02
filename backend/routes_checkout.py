@@ -69,7 +69,7 @@ async def create_checkout_session(
         amount_cents = order["total_ttc_cents"]
     
     # Base URLs
-    frontend_url = os.environ.get("FRONTEND_URL", "https://plan-builder-75.preview.emergentagent.com")
+    frontend_url = os.environ.get("FRONTEND_URL", "https://oscop-platform-3.preview.emergentagent.com")
     success_url = request_data.success_url or f"{frontend_url}/espace-acheteur?payment=success&order={order['order_number']}"
     cancel_url = request_data.cancel_url or f"{frontend_url}/checkout?payment=cancelled&order={order['order_number']}"
     

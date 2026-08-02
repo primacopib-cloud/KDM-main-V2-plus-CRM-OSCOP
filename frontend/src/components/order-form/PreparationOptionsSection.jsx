@@ -11,7 +11,7 @@ import { replaceVariables } from '../../data/legalDocuments';
 export const PreparationOptionsSection = ({
   preparationOptions, selectedOptions, quantities, loading, error, calculating,
   calculatedTotals, toggleOption, updateQuantity, getPricingModeLabel,
-  getTypeColor, formatCurrency, zoneCode,
+  getTypeColor, formatCurrency, zoneCode, isVatExonerated = false,
 }) => (
   <>
         {/* ===== PREPARATION OPTIONS - ZONE BASED ===== */}

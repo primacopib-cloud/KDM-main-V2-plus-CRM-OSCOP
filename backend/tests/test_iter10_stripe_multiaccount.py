@@ -15,7 +15,7 @@ import pytest
 import requests
 from urllib.parse import urlparse, parse_qs
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://coop-dashboard-8.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://oscop-platform-3.preview.emergentagent.com").rstrip("/")
 MARIE_EMAIL = os.environ.get("DEMO_USER_EMAIL", "marie@example.com")
 # Password sourced from env; falls back to the documented demo seed for local CI.
 MARIE_PASSWORD = os.environ.get("DEMO_USER_PASSWORD") or os.environ.get("DEMO_SEED_PASSWORD") or "Demo2026!"

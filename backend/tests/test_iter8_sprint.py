@@ -11,7 +11,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://coop-dashboard-8.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://oscop-platform-3.preview.emergentagent.com").rstrip("/")
 ADMIN = {"email": "admin@kdmarche-oscop.fr", "password": "AdminKDM2025!"}
 MARIE = {"email": "marie@example.com", "password": "Demo2026!"}
 GERANT = {"email": "gerant@lolopoint.fr", "password": "Demo2026!"}
@@ -83,7 +83,7 @@ class TestCheckoutStripeTestMode:
         r = requests.post(
             f"{BASE_URL}/api/lolodrive/checkout/pass-session",
             headers={"Authorization": f"Bearer {marie_token}"},
-            json={"origin_url": "https://coop-dashboard-8.preview.emergentagent.com"},
+            json={"origin_url": "https://oscop-platform-3.preview.emergentagent.com"},
             timeout=20,
         )
         assert r.status_code == 200, r.text
