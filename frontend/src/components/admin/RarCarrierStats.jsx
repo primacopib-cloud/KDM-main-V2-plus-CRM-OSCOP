@@ -15,8 +15,14 @@ export const RarCarrierStats = () => {
   useEffect(() => { load(); }, []);
 
   const toggleBlock = async (c) => {
+    let reason = '';
+    if (!c.blocked) {
+      const r = window.prompt(`Motif de l'écartement de ${c.carrier} (affiché au survol) :`);
+      if (r === null) return;
+      reason = r.trim();
+    }
     try {
-      await rarAPI.setCarrierBlocked(c.carrier, !c.blocked);
+      await rarAPI.setCarrierBlocked(c.carrier, !c.blocked, reason);
       toast.success(!c.blocked
         ? `${c.carrier} écarté — il ne sera plus proposé`
         : `${c.carrier} réintégré dans les propositions`);
@@ -51,7 +57,8 @@ export const RarCarrierStats = () => {
                   <td className="py-1.5 pr-2 text-white font-bold">
                     {c.carrier}
                     {c.blocked && (
-                      <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full text-red-300 bg-red-400/10 border border-red-400/30 font-normal"
+                      <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full text-red-300 bg-red-400/10 border border-red-400/30 font-normal cursor-help"
+                        title={`${c.blocked_reason || 'Aucun motif renseigné'}${c.blocked_by ? ` — écarté par ${c.blocked_by}` : ''}${c.blocked_at ? ` le ${c.blocked_at.slice(0, 10)}` : ''}`}
                         data-testid={`rar-carrier-blocked-${c.carrier}`}>
                         Écarté
                       </span>

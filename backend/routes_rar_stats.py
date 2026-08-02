@@ -134,10 +134,11 @@ async def set_carrier_blocked(body: dict, admin: dict = Depends(require_admin)):
     if not carrier:
         raise HTTPException(status_code=400, detail="Nom du transporteur requis")
     blocked = bool((body or {}).get("blocked", True))
+    reason = ((body or {}).get("reason") or "").strip()[:300]
     if blocked:
         await db.rar_blocked_carriers.update_one(
             {"carrier": carrier},
-            {"$set": {"carrier": carrier, "blocked_by": admin.get("email"),
+            {"$set": {"carrier": carrier, "reason": reason, "blocked_by": admin.get("email"),
                       "blocked_at": datetime.utcnow()}}, upsert=True)
     else:
         await db.rar_blocked_carriers.delete_one({"carrier": carrier})
@@ -164,10 +165,15 @@ async def carrier_stats(admin: dict = Depends(require_admin)):
                 if res.get("action") == "CREDIT":
                     s["credited_cents"] += res.get("amount_cents") or 0
     out = []
-    blocked = set(await db.rar_blocked_carriers.distinct("carrier"))
+    blocked = {b["carrier"]: b async for b in db.rar_blocked_carriers.find(
+        {}, {"_id": 0, "carrier": 1, "reason": 1, "blocked_by": 1, "blocked_at": 1})}
     for s in stats.values():
         s["reserve_rate"] = round(100 * s["with_reserves"] / s["deliveries"], 1) if s["deliveries"] else 0
-        s["blocked"] = s["carrier"] in blocked
+        b = blocked.get(s["carrier"])
+        s["blocked"] = b is not None
+        s["blocked_reason"] = (b or {}).get("reason") or ""
+        s["blocked_by"] = (b or {}).get("blocked_by")
+        s["blocked_at"] = str((b or {}).get("blocked_at") or "")[:16]
         out.append(s)
     out.sort(key=lambda s: (-s["reserve_rate"], -s["deliveries"]))
     return {"carriers": out}
