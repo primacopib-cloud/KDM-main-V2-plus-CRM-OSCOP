@@ -4,6 +4,43 @@ import { toast } from 'sonner';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { API, getAuthHeaders } from '../../services/http';
 
+const eur = (cents) => (cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+
+const ZoneBaskets = ({ stats }) => {
+  const zones = stats
+    .filter((s) => s.cta_id.startsWith('territoire_') && s.paid > 0 && s.avg_basket_cents)
+    .sort((a, b) => b.avg_basket_cents - a.avg_basket_cents);
+  if (zones.length === 0) return null;
+  const maxAvg = zones[0].avg_basket_cents;
+  return (
+    <div className="mb-4" data-testid="zone-baskets">
+      <p className="text-[10px] uppercase tracking-wider text-white/35 mb-1.5">💶 Panier moyen par territoire (commandes attribuées)</p>
+      <div className="space-y-1.5">
+        {zones.map((s, i) => (
+          <div key={s.cta_id} className="flex items-center gap-3" data-testid={`zone-basket-${s.cta_id}`}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[11px] text-white/70 truncate">
+                  {i === 0 && <span className="text-[#7BC94E] font-bold mr-1">★</span>}
+                  {s.label.replace('Voir les offres — ', '').replace(' (/kdmarche)', '')}
+                </span>
+                <span className="text-[10px] text-white/45 whitespace-nowrap">
+                  {s.paid} cmd · CA {eur(s.revenue_cents)}
+                </span>
+              </div>
+              <div className="h-1.5 rounded bg-white/[0.05] mt-1 overflow-hidden">
+                <div className="h-full rounded" style={{ width: `${Math.max((s.avg_basket_cents / maxAvg) * 100, 2)}%`, background: 'linear-gradient(90deg,#7BC94E,#4e8a2e)' }} />
+              </div>
+            </div>
+            <span className="w-20 text-right text-[12px] font-bold text-[#7BC94E]" data-testid={`zone-avg-${s.cta_id}`}>{eur(s.avg_basket_cents)}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[10px] text-white/35 mt-1 m-0">★ = zone la plus rentable au panier moyen. CA = chiffre d'affaires TTC des commandes attribuées.</p>
+    </div>
+  );
+};
+
 const TrendChart = ({ points }) => {
   if (!points || points.every((p) => !p.clicks && !p.paid)) return null;
   return (
@@ -131,6 +168,7 @@ export const CtaStatsPanel = () => {
             )}
           </div>
         )}
+        <ZoneBaskets stats={data.stats} />
         <TrendChart points={trend} />
         <div className="space-y-2">
           <div className="flex items-center gap-3 text-[10px] uppercase tracking-wider text-white/35">

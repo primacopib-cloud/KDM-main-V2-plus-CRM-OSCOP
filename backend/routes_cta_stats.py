@@ -65,12 +65,20 @@ async def _collect_stats():
             paid = await db.orders.count_documents(conv_q)
             paid30 = await db.orders.count_documents(
                 {**conv_q, "created_at": {"$gte": datetime.utcnow() - timedelta(days=30)}})
+            agg = await db.orders.aggregate([
+                {"$match": conv_q},
+                {"$group": {"_id": None, "avg": {"$avg": "$total_ttc_cents"},
+                            "sum": {"$sum": "$total_ttc_cents"}}}]).to_list(1)
+            avg_basket = round(agg[0]["avg"]) if agg and agg[0].get("avg") else None
+            revenue = int(agg[0]["sum"]) if agg else 0
         else:
             paid = await db.vendor_onboarding.count_documents(conv_q)
             paid30 = await db.vendor_onboarding.count_documents({**conv_q, "created_at": {"$gte": d30}})
+            avg_basket, revenue = None, 0
         rate = round(paid / total * 100) if total else None
         stats.append({"cta_id": cta_id, "label": label, "total": total, "last7": last7,
-                      "last30": last30, "paid": paid, "paid30": paid30, "rate": rate})
+                      "last30": last30, "paid": paid, "paid30": paid30, "rate": rate,
+                      "avg_basket_cents": avg_basket, "revenue_cents": revenue})
     stats.sort(key=lambda s: s["total"], reverse=True)
     return stats
 
@@ -150,11 +158,13 @@ async def cta_stats_trend(weeks: int = 12, admin: dict = Depends(require_admin))
 @cta_stats_router.get("/admin/cta-stats/export")
 async def cta_stats_export(admin: dict = Depends(require_admin)):
     stats = await _collect_stats()
-    lines = ["CTA;Libellé;Clics 7j;Clics 30j;Clics total;Adhésions payées 30j;Adhésions payées total;Taux (%)"]
+    lines = ["CTA;Libellé;Clics 7j;Clics 30j;Clics total;Adhésions payées 30j;Adhésions payées total;Taux (%);Panier moyen (€);CA attribué (€)"]
     for s in stats:
         label = (s["label"] or "").replace(";", ",")
         rate = "" if s["rate"] is None else s["rate"]
-        lines.append(f'{s["cta_id"]};{label};{s["last7"]};{s["last30"]};{s["total"]};{s["paid30"]};{s["paid"]};{rate}')
+        avg = "" if s["avg_basket_cents"] is None else f'{s["avg_basket_cents"] / 100:.2f}'.replace(".", ",")
+        rev = "" if not s["revenue_cents"] else f'{s["revenue_cents"] / 100:.2f}'.replace(".", ",")
+        lines.append(f'{s["cta_id"]};{label};{s["last7"]};{s["last30"]};{s["total"]};{s["paid30"]};{s["paid"]};{rate};{avg};{rev}')
     csv = "\ufeff" + "\n".join(lines)
     filename = f"conversion-cta-{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"
     return Response(content=csv, media_type="text/csv; charset=utf-8",

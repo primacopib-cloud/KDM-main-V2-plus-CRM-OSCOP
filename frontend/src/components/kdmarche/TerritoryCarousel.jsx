@@ -17,6 +17,7 @@ const shareText = (t) => `Découvrez les offres ${t.name} (${t.tagline}) sur KDM
 // Carrousel des territoires de la coopérative — page /kdmarche (#territoires)
 export const TerritoryCarousel = () => {
   const trackRef = useRef(null);
+  const programmaticUntil = useRef(0);
   const [index, setIndex] = useState(0);
   const [topProducts, setTopProducts] = useState({});
   const [zoneStats, setZoneStats] = useState({});
@@ -58,6 +59,7 @@ export const TerritoryCarousel = () => {
     if (!track) return;
     const next = Math.max(0, Math.min(TOTAL - 1, i));
     const card = track.children[next];
+    programmaticUntil.current = Date.now() + 800;
     if (card) track.scrollTo({ left: Math.min(card.offsetLeft - track.offsetLeft, track.scrollWidth - track.clientWidth), behavior: 'smooth' });
     setIndex(next);
   }, []);
@@ -80,6 +82,7 @@ export const TerritoryCarousel = () => {
   }, [index, paused, scrollToIndex]);
 
   const onScroll = () => {
+    if (Date.now() < programmaticUntil.current) return;
     const track = trackRef.current;
     if (!track || track.children.length === 0) return;
     const maxScroll = track.scrollWidth - track.clientWidth;
