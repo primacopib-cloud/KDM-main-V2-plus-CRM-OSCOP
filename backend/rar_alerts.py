@@ -109,3 +109,52 @@ async def run_monthly_statements(db, force_month: str = None) -> int:
     if sent:
         logger.info("Relevés mensuels de plafond envoyés : %s (%s)", sent, month)
     return sent
+
+
+async def run_annual_statements(db, force_year: str = None) -> int:
+    """Début janvier : envoie le relevé annuel PDF de l'exercice écoulé aux acheteurs RàR actifs."""
+    now = datetime.utcnow()
+    if force_year:
+        year = force_year
+    else:
+        if now.month != 1 or now.day > 5:
+            return 0
+        year = str(now.year - 1)
+    sent = 0
+    async for account in db.rar_accounts.find({"status": "APPROVED"}):
+        org_id = account["org_id"]
+        if await db.rar_statement_log.find_one({"org_id": org_id, "month": f"ANNUEL-{year}"}):
+            continue
+        from routes_rar_delivery import compute_ceiling_events
+        events = [e for e in await compute_ceiling_events(org_id) if str(e["date"] or "")[:4] == year]
+        if not events:
+            continue
+        org_name = await _org_name(db, org_id)
+        from pdf_ceiling_statement import build_ceiling_annual_pdf
+        pdf = build_ceiling_annual_pdf(org_name, year, events, account.get("ceiling_cents") or 0)
+        from brevo_service import send_email, _wrap_html
+        subject = f"📊 Votre relevé annuel de plafond — exercice {year}"
+        body = (f"<p>Bonjour,</p><p>Veuillez trouver ci-joint votre relevé annuel de plafond "
+                f"<b>Règlement à Réception Pro</b> pour l'exercice <b>{year}</b> "
+                f"({len(events)} mouvement(s), synthèse mensuelle incluse).</p>"
+                f"<p>Ce document récapitulatif peut être joint à votre bilan comptable.</p>")
+        ok = False
+        for u in await _org_members(db, org_id):
+            if not u.get("email"):
+                continue
+            try:
+                await send_email(to_email=u["email"], to_name=u.get("contact_name"), subject=subject,
+                                 html_content=_wrap_html(subject, body), text_content=subject,
+                                 tags=["rar_annual_statement"],
+                                 attachments=[{"content": base64.b64encode(pdf).decode(),
+                                               "name": f"releve-plafond-annuel-{year}.pdf"}])
+                ok = True
+            except Exception as exc:
+                logger.warning("Relevé annuel non envoyé %s : %s", u.get("email"), exc)
+        if ok:
+            sent += 1
+            await db.rar_statement_log.insert_one(
+                {"org_id": org_id, "month": f"ANNUEL-{year}", "events": len(events), "sent_at": datetime.utcnow()})
+    if sent:
+        logger.info("Relevés annuels de plafond envoyés : %s (%s)", sent, year)
+    return sent

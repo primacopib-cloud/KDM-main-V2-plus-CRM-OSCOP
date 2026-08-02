@@ -334,8 +334,9 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler COD reminders crashed: %s", exc)
         try:
-            from rar_alerts import run_monthly_statements
+            from rar_alerts import run_monthly_statements, run_annual_statements
             await run_monthly_statements(_db)
+            await run_annual_statements(_db)
         except Exception as exc:
             logger.exception("Scheduler RàR monthly statements crashed: %s", exc)
         try:
