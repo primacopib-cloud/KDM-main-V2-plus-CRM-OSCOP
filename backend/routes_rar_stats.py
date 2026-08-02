@@ -76,10 +76,13 @@ async def set_alert_threshold(body: dict, user: dict = Depends(get_current_user_
 
 @rar_stats_router.get("/carrier-scores")
 async def carrier_scores(user: dict = Depends(get_current_user_checkout)):
-    """Note de fiabilité par transporteur = part des livraisons sans réserve (visible au checkout)."""
+    """Note de fiabilité par transporteur = part des livraisons sans réserve (transporteurs écartés exclus)."""
+    blocked = set(await db.rar_blocked_carriers.distinct("carrier"))
     stats = {}
     async for p in db.delivery_proofs.find({}, {"_id": 0, "carrier_name": 1, "reserves": 1}):
         carrier = p.get("carrier_name") or "LOGI'SCOP"
+        if carrier in blocked:
+            continue
         s = stats.setdefault(carrier, {"carrier": carrier, "deliveries": 0, "clean": 0})
         s["deliveries"] += 1
         if not p.get("reserves"):
@@ -123,6 +126,25 @@ async def ceiling_statement_annual_pdf(year: str, user: dict = Depends(get_curre
         "Content-Disposition": f"attachment; filename=releve-plafond-annuel-{year}.pdf"})
 
 
+@rar_stats_router.post("/admin/blocked-carriers")
+async def set_carrier_blocked(body: dict, admin: dict = Depends(require_admin)):
+    """Écarte (blocked=true) ou réintègre (blocked=false) un transporteur des propositions."""
+    from datetime import datetime
+    carrier = ((body or {}).get("carrier") or "").strip()[:80]
+    if not carrier:
+        raise HTTPException(status_code=400, detail="Nom du transporteur requis")
+    blocked = bool((body or {}).get("blocked", True))
+    if blocked:
+        await db.rar_blocked_carriers.update_one(
+            {"carrier": carrier},
+            {"$set": {"carrier": carrier, "blocked_by": admin.get("email"),
+                      "blocked_at": datetime.utcnow()}}, upsert=True)
+    else:
+        await db.rar_blocked_carriers.delete_one({"carrier": carrier})
+    logger.info("Transporteur %s %s par %s", carrier, "écarté" if blocked else "réintégré", admin.get("email"))
+    return {"ok": True, "carrier": carrier, "blocked": blocked}
+
+
 @rar_stats_router.get("/admin/carrier-stats")
 async def carrier_stats(admin: dict = Depends(require_admin)):
     """Taux de réserves par transporteur pour repérer les livraisons à problème."""
@@ -142,8 +164,10 @@ async def carrier_stats(admin: dict = Depends(require_admin)):
                 if res.get("action") == "CREDIT":
                     s["credited_cents"] += res.get("amount_cents") or 0
     out = []
+    blocked = set(await db.rar_blocked_carriers.distinct("carrier"))
     for s in stats.values():
         s["reserve_rate"] = round(100 * s["with_reserves"] / s["deliveries"], 1) if s["deliveries"] else 0
+        s["blocked"] = s["carrier"] in blocked
         out.append(s)
     out.sort(key=lambda s: (-s["reserve_rate"], -s["deliveries"]))
     return {"carriers": out}

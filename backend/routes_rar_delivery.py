@@ -76,6 +76,8 @@ async def start_delivery(order_id: str, body: dict = None, admin: dict = Depends
         raise HTTPException(status_code=400, detail="Commande déjà encaissée")
     otp = f"{random.randint(0, 999999):06d}"
     carrier = ((body or {}).get("carrier_name") or "LOGI'SCOP").strip()[:80]
+    if await db.rar_blocked_carriers.find_one({"carrier": carrier}):
+        raise HTTPException(status_code=400, detail=f"Transporteur « {carrier} » écarté par l'administration")
     await db.orders.update_one(
         {"id": order_id},
         {"$set": {"rar_status": "Livrée — réception à confirmer",
