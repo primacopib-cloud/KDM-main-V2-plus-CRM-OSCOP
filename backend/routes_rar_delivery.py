@@ -59,6 +59,7 @@ async def my_pending_deliveries(user: dict = Depends(get_current_user_checkout))
          "rar_disputed_cents": 1, "items": 1, "rar_delivery": 1}).sort("created_at", -1).to_list(20)
     for o in orders:
         o["awaiting_confirmation"] = o.get("rar_status") == "Livrée — réception à confirmer"
+        o["has_proof"] = bool(await db.delivery_proofs.find_one({"order_id": o["id"]}, {"_id": 1}))
         o["items"] = [{"product_id": i.get("product_id"), "product_name": i.get("product_name"),
                        "quantity": i.get("quantity")} for i in (o.get("items") or [])]
         (o.get("rar_delivery") or {}).pop("otp", None)
@@ -205,6 +206,95 @@ async def get_delivery_proof(order_id: str, user: dict = Depends(get_current_use
     if not proof:
         raise HTTPException(status_code=404, detail="Aucune preuve de livraison")
     return proof
+
+
+async def _order_and_proof(order_id: str, user: dict):
+    try:
+        order, _ = await get_order_with_access_check(order_id, user)
+    except HTTPException:
+        u = await db.users.find_one({"id": user["id"]}, {"_id": 0, "role": 1})
+        if (u or {}).get("role") not in ("SUPER_ADMIN", "ADMIN"):
+            raise
+        order = await db.orders.find_one({"id": order_id})
+        if not order:
+            raise HTTPException(status_code=404, detail="Commande introuvable")
+    proof = await db.delivery_proofs.find_one({"order_id": order_id}, {"_id": 0})
+    if not proof:
+        raise HTTPException(status_code=404, detail="Aucune preuve de livraison")
+    return order, proof
+
+
+@rar_delivery_router.get("/{order_id}/proof-pdf")
+async def delivery_proof_pdf(order_id: str, user: dict = Depends(get_current_user_checkout)):
+    from fastapi.responses import Response
+    order, proof = await _order_and_proof(order_id, user)
+    from pdf_delivery_note import build_delivery_note_pdf
+    pdf = build_delivery_note_pdf(order, proof)
+    return Response(content=pdf, media_type="application/pdf", headers={
+        "Content-Disposition": f"attachment; filename=bon-livraison-{order.get('order_number')}.pdf"})
+
+
+# ============ RÉSERVES : INSTRUCTION ADMIN ============
+
+@rar_delivery_router.get("/reserves/admin/list")
+async def admin_reserves(admin: dict = Depends(require_admin)):
+    orders = await db.orders.find(
+        {"rar": True, "rar_disputed_cents": {"$gt": 0}},
+        {"_id": 0, "id": 1, "order_number": 1, "org_id": 1, "total_ttc_cents": 1,
+         "rar_disputed_cents": 1, "cod_amount_due_cents": 1, "rar_status": 1,
+         "rar_proof_at": 1}).sort("rar_proof_at", -1).to_list(100)
+    for o in orders:
+        proof = await db.delivery_proofs.find_one({"order_id": o["id"]}, {"_id": 0, "reserves": 1, "receiver_name": 1})
+        o["reserves"] = (proof or {}).get("reserves", [])
+        o["receiver_name"] = (proof or {}).get("receiver_name")
+    return {"orders": orders}
+
+
+@rar_delivery_router.post("/reserves/{order_id}/resolve")
+async def admin_resolve_reserve(order_id: str, body: dict, admin: dict = Depends(require_admin)):
+    """RELEASE : réserve levée, montant redevient exigible. CREDIT : avoir définitif, plafond libéré d'autant."""
+    action = ((body or {}).get("action") or "").upper()
+    if action not in ("RELEASE", "CREDIT"):
+        raise HTTPException(status_code=400, detail="action RELEASE ou CREDIT requise")
+    order = await db.orders.find_one({"id": order_id})
+    if not order or not order.get("rar") or not order.get("rar_disputed_cents"):
+        raise HTTPException(status_code=404, detail="Aucune réserve à instruire sur cette commande")
+    disputed = order["rar_disputed_cents"]
+    note = ((body or {}).get("note") or "")[:500]
+    update = {"rar_disputed_cents": 0, "rar_status": "Règlement déclenché",
+              "rar_reserve_resolution": {"action": action, "note": note, "amount_cents": disputed,
+                                         "by": admin.get("email"), "at": datetime.utcnow()},
+              "updated_at": datetime.utcnow()}
+    if action == "RELEASE":
+        update["cod_amount_due_cents"] = (order.get("cod_amount_due_cents") or 0) + disputed
+    else:  # CREDIT : le montant contesté est crédité, le plafond mobilisé baisse d'autant
+        update["rar_credit_cents"] = (order.get("rar_credit_cents") or 0) + disputed
+        update["rar_reserved_cents"] = max(0, (order.get("rar_reserved_cents") or order["total_ttc_cents"]) - disputed)
+    await db.orders.update_one({"id": order_id}, {"$set": update})
+    client = await _order_client(order)
+    if client and client.get("email"):
+        try:
+            from brevo_service import send_email, _wrap_html
+            if action == "RELEASE":
+                subject = f"Réserves levées — commande {order['order_number']}"
+                body_html = (f"<p>Bonjour,</p><p>Après instruction, les réserves émises sur la commande "
+                             f"<b>{order['order_number']}</b> ont été levées. Le montant de "
+                             f"<b>{disputed / 100:.2f} € TTC</b> redevient exigible."
+                             f"{('<p>Note : ' + note + '</p>') if note else ''}")
+            else:
+                subject = f"Avoir accordé — commande {order['order_number']}"
+                body_html = (f"<p>Bonjour,</p><p>Suite à vos réserves sur la commande <b>{order['order_number']}</b>, "
+                             f"un avoir de <b>{disputed / 100:.2f} € TTC</b> vous est accordé. Cette valeur est "
+                             f"déduite définitivement et votre plafond est libéré d'autant."
+                             f"{('<p>Note : ' + note + '</p>') if note else ''}")
+            await send_email(to_email=client["email"], to_name=client.get("contact_name"), subject=subject,
+                             html_content=_wrap_html(subject, body_html), text_content=subject,
+                             tags=["rar_reserve_resolution"])
+        except Exception as exc:
+            logger.warning("Email résolution réserve non envoyé : %s", exc)
+    logger.info("Réserve %s commande %s : %s (%s cents)", action, order["order_number"], admin.get("email"), disputed)
+    return {"ok": True, "action": action, "amount_cents": disputed,
+            "payable_now_cents": update.get("cod_amount_due_cents", order.get("cod_amount_due_cents"))}
 
 
 @rar_delivery_router.get("/admin/list")

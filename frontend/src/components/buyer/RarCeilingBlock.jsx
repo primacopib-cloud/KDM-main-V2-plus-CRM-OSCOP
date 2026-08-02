@@ -96,12 +96,21 @@ export const RarCeilingBlock = () => {
                     <b>{o.order_number}</b> · {fmt(o.total_ttc_cents)}
                     <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/30">{o.rar_status}</span>
                   </span>
-                  {o.awaiting_confirmation && (
-                    <button type="button" onClick={() => setConfirmOrder(o)} data-testid={`rar-confirm-btn-${o.order_number}`}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-black bg-[#4FD1A5] hover:bg-[#3fc094] shrink-0">
-                      Confirmer la réception
-                    </button>
-                  )}
+                  <span className="flex items-center gap-1.5 shrink-0">
+                    {o.awaiting_confirmation && (
+                      <button type="button" onClick={() => setConfirmOrder(o)} data-testid={`rar-confirm-btn-${o.order_number}`}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-black bg-[#4FD1A5] hover:bg-[#3fc094]">
+                        Confirmer la réception
+                      </button>
+                    )}
+                    {o.has_proof && (
+                      <button type="button" data-testid={`rar-proof-pdf-${o.order_number}`}
+                        onClick={() => rarAPI.downloadProofPdf(o.id, o.order_number).catch((e) => toast.error(e.message))}
+                        className="px-2 py-1 rounded-lg text-[10px] font-bold text-white/70 border border-white/20 hover:text-white">
+                        📄 Bon de livraison PDF
+                      </button>
+                    )}
+                  </span>
                 </div>
               ))}
             </div>

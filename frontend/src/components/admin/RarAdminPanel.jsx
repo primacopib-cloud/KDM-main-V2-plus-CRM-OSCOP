@@ -11,6 +11,7 @@ export const RarAdminPanel = () => {
   const [options, setOptions] = useState([]);
   const [products, setProducts] = useState([]);
   const [deliveries, setDeliveries] = useState([]);
+  const [reserves, setReserves] = useState([]);
   const [ceilInput, setCeilInput] = useState({});
   const [newOpt, setNewOpt] = useState('');
 
@@ -19,6 +20,18 @@ export const RarAdminPanel = () => {
     rarAPI.adminPaymentOptions().then((d) => setOptions(d.options)).catch(() => {});
     rarAPI.adminProducts().then((d) => setProducts(d.products)).catch(() => {});
     rarAPI.adminDeliveries().then((d) => setDeliveries(d.orders || [])).catch(() => {});
+    rarAPI.adminReserves().then((d) => setReserves(d.orders || [])).catch(() => {});
+  };
+
+  const resolve = async (o, action) => {
+    const note = window.prompt(action === 'RELEASE'
+      ? 'Note de levée de réserve (le montant redevient exigible) :'
+      : 'Note d\'avoir (le montant est crédité et le plafond libéré) :') ?? '';
+    try {
+      await rarAPI.resolveReserve(o.id, action, note);
+      toast.success(action === 'RELEASE' ? 'Réserve levée — montant exigible' : 'Avoir accordé — plafond libéré');
+      load();
+    } catch (e) { toast.error(e.message); }
   };
   useEffect(() => { load(); }, []);
 
@@ -175,7 +188,45 @@ export const RarAdminPanel = () => {
                   💶 Paiement encaissé
                 </button>
               )}
+              {['Règlement déclenché', 'Réserves en cours de traitement', 'Plafond rétabli'].includes(o.rar_status) && (
+                <button type="button" data-testid={`rar-admin-proof-pdf-${o.order_number}`}
+                  onClick={() => rarAPI.downloadProofPdf(o.id, o.order_number).catch((e) => toast.error(e.message))}
+                  className="px-2 py-1 rounded text-[10px] text-white/60 border border-white/20 hover:text-white">
+                  📄 BL PDF
+                </button>
+              )}
             </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Réserves à instruire */}
+      <h4 className="text-xs uppercase tracking-wider text-white/50 font-bold mb-2 mt-5">Réserves en cours d'instruction</h4>
+      {reserves.length === 0 && <p className="text-xs text-white/40">Aucune réserve en attente.</p>}
+      <div className="space-y-1.5">
+        {reserves.map((o) => (
+          <div key={o.id} className="p-2.5 rounded-lg bg-amber-400/[0.04] border border-amber-400/25 text-xs" data-testid={`rar-reserve-${o.order_number}`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span>
+                <b className="text-white">{o.order_number}</b>
+                <span className="ml-2 text-amber-300 font-bold">{fmt(o.rar_disputed_cents)} suspendus</span>
+                <span className="ml-1.5 text-white/45">· exigible {fmt(o.cod_amount_due_cents)} / {fmt(o.total_ttc_cents)}</span>
+                {o.receiver_name && <span className="ml-1.5 text-white/40">· signé par {o.receiver_name}</span>}
+              </span>
+              <span className="flex gap-1.5">
+                <button type="button" onClick={() => resolve(o, 'RELEASE')} data-testid={`rar-release-${o.order_number}`}
+                  className="px-2 py-1 rounded text-[10px] font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/30">
+                  ✓ Lever la réserve
+                </button>
+                <button type="button" onClick={() => resolve(o, 'CREDIT')} data-testid={`rar-credit-${o.order_number}`}
+                  className="px-2 py-1 rounded text-[10px] font-bold text-sky-300 bg-sky-400/10 border border-sky-400/30">
+                  💳 Accorder un avoir
+                </button>
+              </span>
+            </div>
+            {(o.reserves || []).map((r, i) => (
+              <p key={i} className="mt-1 text-[10px] text-amber-200/70">• {r.product_name} — qté {r.qty} : {r.reason || 'sans motif'}</p>
+            ))}
           </div>
         ))}
       </div>

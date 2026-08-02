@@ -1,5 +1,5 @@
 // Règlement à Réception Pro — API client
-import { apiCall } from './http';
+import { apiCall, API, getAuthHeaders } from './http';
 
 export const rarAPI = {
   paymentOptions: () => apiCall('/rar/payment-options'),
@@ -24,4 +24,15 @@ export const rarAPI = {
   adminDeliveries: () => apiCall('/rar/delivery/admin/list'),
   adminStartDelivery: (orderId, carrierName) => apiCall(`/rar/delivery/${orderId}/start`, { method: 'POST', body: JSON.stringify({ carrier_name: carrierName }) }),
   adminMarkCollected: (orderId) => apiCall(`/admin/cod/orders/${orderId}/collected`, { method: 'POST', body: JSON.stringify({}) }),
+  // Réserves & PDF
+  adminReserves: () => apiCall('/rar/delivery/reserves/admin/list'),
+  resolveReserve: (orderId, action, note) => apiCall(`/rar/delivery/reserves/${orderId}/resolve`, { method: 'POST', body: JSON.stringify({ action, note }) }),
+  downloadProofPdf: async (orderId, orderNumber) => {
+    const r = await fetch(`${API}/rar/delivery/${orderId}/proof-pdf`, { credentials: 'include', headers: getAuthHeaders() });
+    if (!r.ok) throw new Error('Bon de livraison indisponible');
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = `bon-livraison-${orderNumber}.pdf`; a.click();
+    URL.revokeObjectURL(url);
+  },
 };
