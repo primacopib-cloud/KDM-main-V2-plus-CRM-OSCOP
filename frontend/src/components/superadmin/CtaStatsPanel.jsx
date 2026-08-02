@@ -6,6 +6,24 @@ import { API, getAuthHeaders } from '../../services/http';
 
 const eur = (cents) => (cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 
+const zoneName = (label) => label.replace('Voir les offres — ', '').replace(' (/kdmarche)', '');
+
+const DormantZones = ({ stats }) => {
+  const dormant = stats.filter((s) => s.dormant === true);
+  if (dormant.length === 0) return null;
+  return (
+    <div className="mb-4 rounded-xl px-3 py-2.5 border border-amber-400/30 bg-amber-400/[0.07]" data-testid="dormant-zones-alert">
+      <p className="text-[11px] font-bold text-amber-300 m-0">
+        💤 Zone{dormant.length > 1 ? 's' : ''} dormante{dormant.length > 1 ? 's' : ''} — aucune commande attribuée depuis 30 jours
+      </p>
+      <p className="text-[10.5px] text-white/60 m-0 mt-0.5">
+        {dormant.map((s) => zoneName(s.label)).join(' · ')}
+        <span className="text-white/40"> — pensez à relancer ces territoires (campagne, partage WhatsApp, promos locales).</span>
+      </p>
+    </div>
+  );
+};
+
 const ZoneBaskets = ({ stats }) => {
   const zones = stats
     .filter((s) => s.cta_id.startsWith('territoire_') && s.paid > 0 && s.avg_basket_cents)
@@ -168,6 +186,7 @@ export const CtaStatsPanel = () => {
             )}
           </div>
         )}
+        <DormantZones stats={data.stats} />
         <ZoneBaskets stats={data.stats} />
         <TrendChart points={trend} />
         <div className="space-y-2">

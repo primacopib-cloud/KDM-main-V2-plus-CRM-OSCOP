@@ -347,6 +347,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler RàR recovery report crashed: %s", exc)
         try:
+            from routes_cta_stats import check_dormant_zones
+            await check_dormant_zones(_db)
+        except Exception as exc:
+            logger.exception("Scheduler dormant zones crashed: %s", exc)
+        try:
             from order_sms import process_pickup_reminders
             await process_pickup_reminders(_db)
         except Exception as exc:

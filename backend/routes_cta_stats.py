@@ -49,6 +49,54 @@ TERRITORY_ZONES = {
 }
 
 
+async def _zone_has_recent_order(db_, cta_id, zone, cutoff):
+    async for o in db_.orders.find({"source_cta": cta_id, "zone_code": zone}, {"_id": 0, "created_at": 1}):
+        ca = o.get("created_at")
+        if isinstance(ca, str):
+            try:
+                ca = datetime.fromisoformat(ca.replace("Z", "+00:00"))
+            except ValueError:
+                continue
+        if not ca:
+            continue
+        if ca.tzinfo is None:
+            ca = ca.replace(tzinfo=timezone.utc)
+        if ca >= cutoff:
+            return True
+    return False
+
+
+async def check_dormant_zones(db_):
+    """Alerte les admins sur les territoires sans commande attribuée depuis 30 jours (max 1 alerte/zone/30 j)."""
+    try:
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(days=30)
+        to_alert = []
+        for cta_id, zone in TERRITORY_ZONES.items():
+            if await _zone_has_recent_order(db_, cta_id, zone, cutoff):
+                continue
+            flag = await db_.system_flags.find_one({"key": f"dormant_zone_alert_{zone}"}, {"_id": 0, "value": 1})
+            if flag and flag.get("value") and datetime.fromisoformat(flag["value"]) > cutoff:
+                continue
+            to_alert.append((cta_id, zone))
+        if not to_alert:
+            return
+        names = [CTA_LABELS[c].replace("Voir les offres — ", "").replace(" (/kdmarche)", "") for c, _ in to_alert]
+        from core_deps import create_notification
+        await create_notification(
+            "dormant_zone", "💤 Territoire(s) dormant(s) à relancer",
+            "Aucune commande attribuée depuis 30 jours pour : " + ", ".join(names) +
+            ". Pensez à relancer ces zones (campagne, partage WhatsApp, promos locales) — suivi de conversion dans le Super Admin.",
+            target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+            data={"link": "/superadmin", "zones": [z for _, z in to_alert]})
+        for _, zone in to_alert:
+            await db_.system_flags.update_one(
+                {"key": f"dormant_zone_alert_{zone}"}, {"$set": {"value": now.isoformat()}}, upsert=True)
+        logger.info("Alerte zones dormantes envoyée : %s", names)
+    except Exception as exc:
+        logger.warning("Vérification zones dormantes : %s", exc)
+
+
 async def _collect_stats():
     now = datetime.now(timezone.utc)
     d7 = (now - timedelta(days=7)).isoformat()
@@ -71,14 +119,16 @@ async def _collect_stats():
                             "sum": {"$sum": "$total_ttc_cents"}}}]).to_list(1)
             avg_basket = round(agg[0]["avg"]) if agg and agg[0].get("avg") else None
             revenue = int(agg[0]["sum"]) if agg else 0
+            dormant = not await _zone_has_recent_order(
+                db, cta_id, TERRITORY_ZONES[cta_id], now - timedelta(days=30))
         else:
             paid = await db.vendor_onboarding.count_documents(conv_q)
             paid30 = await db.vendor_onboarding.count_documents({**conv_q, "created_at": {"$gte": d30}})
-            avg_basket, revenue = None, 0
+            avg_basket, revenue, dormant = None, 0, None
         rate = round(paid / total * 100) if total else None
         stats.append({"cta_id": cta_id, "label": label, "total": total, "last7": last7,
                       "last30": last30, "paid": paid, "paid30": paid30, "rate": rate,
-                      "avg_basket_cents": avg_basket, "revenue_cents": revenue})
+                      "avg_basket_cents": avg_basket, "revenue_cents": revenue, "dormant": dormant})
     stats.sort(key=lambda s: s["total"], reverse=True)
     return stats
 
