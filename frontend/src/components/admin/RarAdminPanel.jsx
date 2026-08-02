@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ShieldCheck, Eye, EyeOff, Trash2, Plus, Check, X } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Trash2, Plus, Check, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
 
@@ -201,7 +201,21 @@ export const RarAdminPanel = () => {
       </div>
 
       {/* Réserves à instruire */}
-      <h4 className="text-xs uppercase tracking-wider text-white/50 font-bold mb-2 mt-5">Réserves en cours d'instruction</h4>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2 mt-5">
+        <h4 className="text-xs uppercase tracking-wider text-white/50 font-bold m-0">Réserves en cours d'instruction</h4>
+        <span className="flex gap-1.5">
+          <button type="button" data-testid="rar-export-litiges-btn"
+            onClick={() => rarAPI.downloadLitigationZip(false).then(() => toast.success('Export litiges téléchargé')).catch((e) => toast.error(e.message))}
+            className="px-2 py-1 rounded text-[10px] font-bold text-amber-300 bg-amber-400/10 border border-amber-400/30 flex items-center gap-1">
+            <Download className="w-3 h-3" /> Exporter les litiges (ZIP)
+          </button>
+          <button type="button" data-testid="rar-export-all-btn"
+            onClick={() => rarAPI.downloadLitigationZip(true).then(() => toast.success('Export livraisons téléchargé')).catch((e) => toast.error(e.message))}
+            className="px-2 py-1 rounded text-[10px] font-bold text-white/60 border border-white/20 hover:text-white flex items-center gap-1">
+            <Download className="w-3 h-3" /> Toutes les livraisons (ZIP)
+          </button>
+        </span>
+      </div>
       {reserves.length === 0 && <p className="text-xs text-white/40">Aucune réserve en attente.</p>}
       <div className="space-y-1.5">
         {reserves.map((o) => (

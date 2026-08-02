@@ -4,6 +4,7 @@ import { ShieldCheck, Loader2, PackageCheck, ChevronDown, ChevronUp, Truck } fro
 import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
 import { RarDeliveryConfirmDialog } from './RarDeliveryConfirmDialog';
+import { RarCeilingHistory } from './RarCeilingHistory';
 
 const fmt = (c) => `${((c || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 
@@ -87,6 +88,7 @@ export const RarCeilingBlock = () => {
           <p className="text-[10px] text-white/35 mt-2">
             Le plafond est rétabli après confirmation effective du paiement (encaissement définitif), non à la signature du bon de livraison.
           </p>
+          <RarCeilingHistory />
           {deliveries.length > 0 && (
             <div className="mt-3 space-y-1.5" data-testid="rar-deliveries-list">
               <p className="text-[11px] font-bold text-white/70 flex items-center gap-1.5"><Truck className="w-3.5 h-3.5 text-[#4FD1A5]" /> Mes commandes sans acompte</p>

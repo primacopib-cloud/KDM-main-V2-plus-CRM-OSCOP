@@ -28,12 +28,12 @@ export const rarAPI = {
   adminReserves: () => apiCall('/rar/delivery/reserves/admin/list'),
   resolveReserve: (orderId, action, note) => apiCall(`/rar/delivery/reserves/${orderId}/resolve`, { method: 'POST', body: JSON.stringify({ action, note }) }),
   ceilingHistory: () => apiCall('/rar/delivery/ceiling-history'),
-  downloadLitigationZip: async () => {
-    const r = await fetch(`${API}/rar/delivery/admin/litigation-export`, { credentials: 'include', headers: getAuthHeaders() });
+  downloadLitigationZip: async (all = false) => {
+    const r = await fetch(`${API}/rar/delivery/admin/litigation-export${all ? '?all=true' : ''}`, { credentials: 'include', headers: getAuthHeaders() });
     if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'Aucun litige à exporter');
     const url = URL.createObjectURL(await r.blob());
     const a = document.createElement('a');
-    a.href = url; a.download = 'litiges-rar.zip'; a.click();
+    a.href = url; a.download = all ? 'livraisons-rar.zip' : 'litiges-rar.zip'; a.click();
     URL.revokeObjectURL(url);
   },
   downloadProofPdf: async (orderId, orderNumber) => {
