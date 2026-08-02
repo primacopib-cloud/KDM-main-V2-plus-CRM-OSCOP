@@ -142,8 +142,26 @@ async def set_carrier_blocked(body: dict, admin: dict = Depends(require_admin)):
                       "blocked_at": datetime.utcnow()}}, upsert=True)
     else:
         await db.rar_blocked_carriers.delete_one({"carrier": carrier})
+    await db.rar_carrier_block_log.insert_one({
+        "carrier": carrier, "action": "BLOCK" if blocked else "UNBLOCK",
+        "reason": reason if blocked else "", "by": admin.get("email"), "at": datetime.utcnow()})
+    try:
+        from consultation_audit import audit
+        await audit("RAR_CARRIER_BLOCKED" if blocked else "RAR_CARRIER_UNBLOCKED",
+                    admin.get("email"), None, {"carrier": carrier, "reason": reason})
+    except Exception as exc:
+        logger.warning("Audit écartement transporteur non journalisé : %s", exc)
     logger.info("Transporteur %s %s par %s", carrier, "écarté" if blocked else "réintégré", admin.get("email"))
     return {"ok": True, "carrier": carrier, "blocked": blocked}
+
+
+@rar_stats_router.get("/admin/carrier-block-log")
+async def carrier_block_log(admin: dict = Depends(require_admin)):
+    """Journal d'audit des écartements et réintégrations de transporteurs."""
+    entries = await db.rar_carrier_block_log.find({}, {"_id": 0}).sort("at", -1).to_list(50)
+    for e in entries:
+        e["at"] = str(e.get("at") or "")[:16]
+    return {"entries": entries}
 
 
 @rar_stats_router.get("/admin/carrier-stats")

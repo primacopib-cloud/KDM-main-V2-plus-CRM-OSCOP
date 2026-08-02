@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Truck, Ban, RotateCcw } from 'lucide-react';
+import { Truck, Ban, RotateCcw, ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
 
@@ -8,11 +8,22 @@ const fmt = (c) => `${((c || 0) / 100).toLocaleString('fr-FR', { minimumFraction
 // Taux de réserves par transporteur (litiges) — panel admin RàR
 export const RarCarrierStats = () => {
   const [carriers, setCarriers] = useState([]);
+  const [logOpen, setLogOpen] = useState(false);
+  const [log, setLog] = useState(null);
 
   const load = () => {
     rarAPI.carrierStats().then((d) => setCarriers(d.carriers || [])).catch(() => {});
   };
+  const loadLog = () => {
+    rarAPI.carrierBlockLog().then((d) => setLog(d.entries || [])).catch(() => setLog([]));
+  };
   useEffect(() => { load(); }, []);
+
+  const toggleLog = () => {
+    const next = !logOpen;
+    setLogOpen(next);
+    if (next && log === null) loadLog();
+  };
 
   const toggleBlock = async (c) => {
     let reason = '';
@@ -27,6 +38,7 @@ export const RarCarrierStats = () => {
         ? `${c.carrier} écarté — il ne sera plus proposé`
         : `${c.carrier} réintégré dans les propositions`);
       load();
+      if (log !== null) loadLog();
     } catch (e) { toast.error(e.message); }
   };
 
@@ -89,6 +101,33 @@ export const RarCarrierStats = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      <button type="button" onClick={toggleLog} data-testid="rar-block-log-toggle"
+        className="mt-2 text-[10px] text-white/45 hover:text-white/70 flex items-center gap-1">
+        <ScrollText className="w-3 h-3" /> Journal des écartements
+        {logOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+      {logOpen && (
+        <div className="mt-1.5 space-y-1 max-h-48 overflow-y-auto pr-1" data-testid="rar-block-log-list">
+          {log && log.length === 0 && (
+            <p className="text-[10px] text-white/35">Aucun écartement enregistré pour le moment.</p>
+          )}
+          {(log || []).map((e, i) => (
+            <div key={i} className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.07] text-[10px]"
+              data-testid={`rar-block-log-${i}`}>
+              <span className="text-white/35">{(e.at || '').replace('T', ' ')}</span>
+              <span className={`px-1.5 py-0.5 rounded-full font-bold border ${
+                e.action === 'BLOCK'
+                  ? 'text-red-300 bg-red-400/10 border-red-400/30'
+                  : 'text-emerald-300 bg-emerald-400/10 border-emerald-400/30'}`}>
+                {e.action === 'BLOCK' ? 'Écarté' : 'Réintégré'}
+              </span>
+              <b className="text-white">{e.carrier}</b>
+              {e.reason && <span className="text-amber-200/70">— {e.reason}</span>}
+              <span className="text-white/35 ml-auto">par {e.by}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>

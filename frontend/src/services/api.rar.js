@@ -30,6 +30,7 @@ export const rarAPI = {
   ceilingHistory: () => apiCall('/rar/delivery/ceiling-history'),
   carrierStats: () => apiCall('/rar/stats/admin/carrier-stats'),
   setCarrierBlocked: (carrier, blocked, reason = '') => apiCall('/rar/stats/admin/blocked-carriers', { method: 'POST', body: JSON.stringify({ carrier, blocked, reason }) }),
+  carrierBlockLog: () => apiCall('/rar/stats/admin/carrier-block-log'),
   carrierScores: () => apiCall('/rar/stats/carrier-scores'),
   alertHistory: () => apiCall('/rar/stats/alert-history'),
   getAlertThreshold: () => apiCall('/rar/stats/alert-threshold'),
