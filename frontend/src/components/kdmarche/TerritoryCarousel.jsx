@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, MapPin, ArrowRight, Flame } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, ArrowRight, Flame, Share2, ShoppingBag, Users } from 'lucide-react';
+import { toast } from 'sonner';
 import { TERRITORIES } from '../../data/territories';
 
 const TOTAL = TERRITORIES.length;
@@ -11,13 +12,38 @@ export const TerritoryCarousel = () => {
   const trackRef = useRef(null);
   const [index, setIndex] = useState(0);
   const [topProducts, setTopProducts] = useState({});
+  const [zoneStats, setZoneStats] = useState({});
 
   useEffect(() => {
     fetch(`${API}/public/territory-top-products`)
       .then((r) => (r.ok ? r.json() : { zones: {} }))
-      .then((d) => setTopProducts(d.zones || {}))
+      .then((d) => { setTopProducts(d.zones || {}); setZoneStats(d.stats || {}); })
       .catch(() => {});
   }, []);
+
+  const share = async (t) => {
+    const url = `${window.location.origin}/catalogue?zone=${t.zoneCode}`;
+    const data = { title: `KDMARCHÉ — ${t.name}`, text: `Découvrez les offres ${t.name} (${t.tagline}) sur KDMARCHÉ, la centrale d'achat coopérative.`, url };
+    if (navigator.share) {
+      try { await navigator.share(data); return; } catch { /* partage annulé */ }
+    }
+    const text = `${data.text} ${url}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`Lien des offres ${t.name} copié — prêt à partager !`);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) toast.success(`Lien des offres ${t.name} copié — prêt à partager !`);
+      else toast.error('Copie impossible sur ce navigateur');
+    }
+  };
 
   const scrollToIndex = useCallback((i) => {
     const track = trackRef.current;
@@ -87,13 +113,31 @@ export const TerritoryCarousel = () => {
               <img src={t.image} alt={`Ambiance ${t.name}`} loading="lazy"
                 className="w-full h-full object-cover" data-testid={`territory-image-${t.id}`} />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(30,12,52,0.92), rgba(30,12,52,0.05))' }} aria-hidden="true" />
+              <button type="button" onClick={() => share(t)} data-testid={`territory-share-${t.id}`}
+                aria-label={`Partager les offres de la zone ${t.name}`}
+                title="Partager cette zone"
+                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/45 backdrop-blur border border-white/25 flex items-center justify-center text-white/85 hover:text-white hover:border-white/60 transition-colors">
+                <Share2 className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
               <div className="absolute bottom-2 left-4 flex items-center gap-2.5">
                 <span className="text-2xl drop-shadow" aria-hidden="true">{t.flag}</span>
                 <h3 className="font-display text-xl m-0 drop-shadow" style={{ color: t.color }}>{t.name}</h3>
               </div>
             </div>
             <div className="p-6 pt-4 flex flex-col flex-1">
-            <p className="text-xs text-white/55 mb-4">{t.tagline}</p>
+            <p className="text-xs text-white/55 mb-3">{t.tagline}</p>
+            {zoneStats[t.zoneCode]?.orders > 0 && (
+              <div className="flex items-center gap-3 mb-3 text-[11px] text-white/70" data-testid={`territory-stats-${t.id}`}>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
+                  <ShoppingBag className="w-3 h-3" style={{ color: t.color }} aria-hidden="true" />
+                  {zoneStats[t.zoneCode].orders} commande{zoneStats[t.zoneCode].orders > 1 ? 's' : ''}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
+                  <Users className="w-3 h-3" style={{ color: t.color }} aria-hidden="true" />
+                  {zoneStats[t.zoneCode].buyers} acheteur{zoneStats[t.zoneCode].buyers > 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
             <p className="text-[10px] uppercase tracking-wider text-white/40 mb-2 flex items-center gap-1.5">
               {real && real.length ? (
                 <>

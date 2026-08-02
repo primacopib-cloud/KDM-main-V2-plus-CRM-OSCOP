@@ -123,7 +123,13 @@ async def territory_top_products():
                 by_name = await db.products.find_one(
                     {"name": p["name"], "status": "ACTIVE"}, {"_id": 0, "id": 1})
                 p["id"] = (by_name or {}).get("id")
-    return {"zones": zones}
+    stats = {}
+    async for r in db.orders.aggregate([
+        {"$match": {"zone_code": {"$nin": [None, ""]}}},
+        {"$group": {"_id": "$zone_code", "orders": {"$sum": 1}, "buyers": {"$addToSet": "$org_id"}}},
+    ]):
+        stats[r["_id"]] = {"orders": r["orders"], "buyers": len([b for b in r["buyers"] if b])}
+    return {"zones": zones, "stats": stats}
 
 
 @public_stats_router.get("/kdmarche-stats")
