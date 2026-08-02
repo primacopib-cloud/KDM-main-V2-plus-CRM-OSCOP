@@ -1,14 +1,23 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, MapPin, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, ArrowRight, Flame } from 'lucide-react';
 import { TERRITORIES } from '../../data/territories';
 
 const TOTAL = TERRITORIES.length;
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 // Carrousel des territoires de la coopérative — page /kdmarche (#territoires)
 export const TerritoryCarousel = () => {
   const trackRef = useRef(null);
   const [index, setIndex] = useState(0);
+  const [topProducts, setTopProducts] = useState({});
+
+  useEffect(() => {
+    fetch(`${API}/public/territory-top-products`)
+      .then((r) => (r.ok ? r.json() : { zones: {} }))
+      .then((d) => setTopProducts(d.zones || {}))
+      .catch(() => {});
+  }, []);
 
   const scrollToIndex = useCallback((i) => {
     const track = trackRef.current;
@@ -67,7 +76,10 @@ export const TerritoryCarousel = () => {
         data-testid="territory-track"
         className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8CC63E]/60 rounded-xl [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: 'none' }}>
-        {TERRITORIES.map((t, i) => (
+        {TERRITORIES.map((t, i) => {
+          const real = topProducts[t.zoneCode];
+          const products = real && real.length ? real : t.products;
+          return (
           <article key={t.id} aria-roledescription="diapositive" aria-label={`${i + 1} sur ${TOTAL} : ${t.name}`}
             data-testid={`territory-card-${t.id}`}
             className="glass-panel-soft rounded-[20px] p-6 snap-start shrink-0 w-[86%] sm:w-[47%] lg:w-[31.5%] flex flex-col">
@@ -76,11 +88,22 @@ export const TerritoryCarousel = () => {
               <h3 className="font-display text-xl m-0" style={{ color: t.color }}>{t.name}</h3>
             </div>
             <p className="text-xs text-white/55 mb-4">{t.tagline}</p>
-            <p className="text-[10px] uppercase tracking-wider text-white/40 mb-2">Produits phares</p>
+            <p className="text-[10px] uppercase tracking-wider text-white/40 mb-2 flex items-center gap-1.5">
+              {real && real.length ? (
+                <>
+                  <Flame className="w-3 h-3 text-[#E67E22]" aria-hidden="true" />
+                  Les plus commandés de la zone
+                  <span data-testid={`territory-real-${t.id}`} className="sr-only">classement réel</span>
+                </>
+              ) : 'Produits phares'}
+            </p>
             <ul className="space-y-2 mb-5">
-              {t.products.map((p) => (
+              {products.map((p, rank) => (
                 <li key={p} className="text-sm text-white/75 flex gap-2">
-                  <span aria-hidden="true" style={{ color: t.color }}>•</span>{p}
+                  {real && real.length
+                    ? <span aria-hidden="true" className="font-mono font-bold" style={{ color: t.color }}>{rank + 1}.</span>
+                    : <span aria-hidden="true" style={{ color: t.color }}>•</span>}
+                  {p}
                 </li>
               ))}
             </ul>
@@ -91,7 +114,8 @@ export const TerritoryCarousel = () => {
               Voir les offres de la zone <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
             </Link>
           </article>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

@@ -98,6 +98,27 @@ async def community_stats():
     }
 
 
+@public_stats_router.get("/territory-top-products")
+async def territory_top_products():
+    """Top 3 des produits réellement les plus commandés par zone (cartes territoriales /kdmarche)."""
+    pipeline = [
+        {"$match": {"zone_code": {"$nin": [None, ""]}, "items.0": {"$exists": True}}},
+        {"$unwind": "$items"},
+        {"$group": {"_id": {"zone": "$zone_code", "name": "$items.product_name"},
+                    "qty": {"$sum": "$items.quantity"}}},
+        {"$sort": {"qty": -1}},
+    ]
+    zones = {}
+    async for row in db.orders.aggregate(pipeline):
+        zone, name = row["_id"]["zone"], row["_id"]["name"]
+        if not name:
+            continue
+        lst = zones.setdefault(zone, [])
+        if len(lst) < 3:
+            lst.append(name)
+    return {"zones": zones}
+
+
 @public_stats_router.get("/kdmarche-stats")
 async def kdmarche_stats():
     products = await db.products.count_documents({"status": "ACTIVE"})
