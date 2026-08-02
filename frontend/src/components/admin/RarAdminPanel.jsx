@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
 import { RarCarrierStats } from './RarCarrierStats';
 import { RarStartDeliveryDialog } from './RarStartDeliveryDialog';
+import { RarUnpaidPanel } from './RarUnpaidPanel';
 
 const fmt = (c) => `${((c || 0) / 100).toLocaleString('fr-FR')} €`;
 
@@ -251,6 +252,7 @@ export const RarAdminPanel = () => {
       {startOrder && (
         <RarStartDeliveryDialog order={startOrder} onClose={() => setStartOrder(null)} onDone={load} />
       )}
+      <RarUnpaidPanel />
       <RarCarrierStats />
     </div>
   );

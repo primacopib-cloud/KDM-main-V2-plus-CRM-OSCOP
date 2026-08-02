@@ -181,6 +181,40 @@ async def carrier_block_log_export(admin: dict = Depends(require_admin)):
         "Content-Disposition": "attachment; filename=journal-ecartements-transporteurs.csv"})
 
 
+@rar_stats_router.get("/admin/unpaid")
+async def unpaid_dashboard(admin: dict = Depends(require_admin)):
+    """Tableau de bord des impayés RàR : ancienneté, relances envoyées, statut du plafond."""
+    from datetime import datetime
+    now = datetime.utcnow()
+    orders = await db.orders.find(
+        {"rar": True, "payment_status": "cod_pending", "cod_amount_due_cents": {"$gt": 0}},
+        {"_id": 0, "id": 1, "order_number": 1, "org_id": 1, "cod_amount_due_cents": 1,
+         "total_ttc_cents": 1, "rar_proof_at": 1, "confirmed_at": 1, "rar_reminder_count": 1,
+         "rar_overdue_alert_sent": 1, "rar_suspension_done": 1, "rar_status": 1}
+    ).sort("confirmed_at", 1).to_list(100)
+    org_ids = list({o["org_id"] for o in orders if o.get("org_id")})
+    orgs = {x["id"]: x.get("legal_name") or x.get("name") for x in
+            await db.organizations.find({"id": {"$in": org_ids}}, {"id": 1, "legal_name": 1, "name": 1}).to_list(100)}
+    accounts = {a["org_id"]: a.get("status") for a in
+                await db.rar_accounts.find({"org_id": {"$in": org_ids}}, {"org_id": 1, "status": 1}).to_list(100)}
+    items = []
+    for o in orders:
+        ref = o.get("rar_proof_at") or o.get("confirmed_at")
+        items.append({
+            "order_number": o.get("order_number"), "org_name": orgs.get(o.get("org_id"), o.get("org_id")),
+            "due_cents": o.get("cod_amount_due_cents") or 0,
+            "age_days": (now - ref).days if ref else None,
+            "delivered": bool(o.get("rar_proof_at")),
+            "reminders": o.get("rar_reminder_count") or 0,
+            "final_notice": bool(o.get("rar_overdue_alert_sent")),
+            "suspended": bool(o.get("rar_suspension_done")),
+            "account_status": accounts.get(o.get("org_id"), "NONE"),
+            "rar_status": o.get("rar_status"),
+        })
+    items.sort(key=lambda i: -(i["age_days"] or 0))
+    return {"items": items, "count": len(items), "total_due_cents": sum(i["due_cents"] for i in items)}
+
+
 @rar_stats_router.get("/admin/annual-archive/runs")
 async def annual_archive_runs(admin: dict = Depends(require_admin)):
     """Historique des relevés annuels archivés dans la GEDESS (groupé par exercice)."""

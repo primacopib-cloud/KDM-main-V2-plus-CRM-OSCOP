@@ -121,3 +121,77 @@ async def run_rar_overdue_alerts(db) -> int:
     if sent:
         logger.info("Derniers rappels impayés RàR J+14 envoyés : %s", sent)
     return sent
+
+
+async def run_rar_auto_suspensions(db) -> int:
+    """72 h après le dernier rappel J+14 sans encaissement : suspension automatique du plafond."""
+    now = datetime.utcnow()
+    cutoff = now - timedelta(days=3)
+    orders = await db.orders.find({
+        "rar": True, "payment_status": "cod_pending",
+        "cod_amount_due_cents": {"$gt": 0},
+        "rar_overdue_alert_sent": True,
+        "rar_overdue_alert_at": {"$lt": cutoff},
+        "rar_suspension_done": {"$ne": True},
+    }).to_list(20)
+    if not orders:
+        return 0
+    from brevo_service import send_email, _wrap_html
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    admin_email = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
+    suspended = 0
+    for o in orders:
+        await db.orders.update_one({"id": o["id"]}, {"$set": {"rar_suspension_done": True}})
+        account = await db.rar_accounts.find_one({"org_id": o["org_id"]})
+        if not account or account.get("status") != "APPROVED":
+            continue
+        amount = (o.get("cod_amount_due_cents") or 0) / 100
+        await db.rar_accounts.update_one(
+            {"org_id": o["org_id"]},
+            {"$set": {"status": "SUSPENDED", "auto_suspended": True,
+                      "suspended_at": now,
+                      "suspended_reason": f"Impayé {o.get('order_number')} ({amount:.2f} €) — suspension automatique après dernier rappel"}})
+        org = await db.organizations.find_one({"id": o.get("org_id")}, {"legal_name": 1, "name": 1})
+        org_name = (org or {}).get("legal_name") or (org or {}).get("name") or o.get("org_id", "")
+        members = await db.org_memberships.find({"org_id": o["org_id"]}).to_list(3)
+        users = await db.users.find({"id": {"$in": [m["user_id"] for m in members]}},
+                                    {"email": 1, "contact_name": 1}).to_list(3)
+        subject = f"⛔ Plafond Règlement à Réception Pro suspendu — impayé {o.get('order_number')}"
+        body = (f"<p>Bonjour,</p><p>Malgré notre dernier rappel, le règlement de la commande "
+                f"<b>{o.get('order_number')}</b> (<b>{amount:.2f} € TTC</b>) n'a pas été encaissé.</p>"
+                f"<p>Conformément aux CGV, votre plafond Règlement à Réception Pro est "
+                f"<b>suspendu</b> : les nouvelles commandes sans acompte ne sont plus possibles.</p>"
+                f"<p>Le plafond pourra être réactivé par notre équipe après régularisation.</p>"
+                f"<p><a href='{base}/espace-acheteur?tab=invoices' style='background:#D9B35A;color:#000;"
+                f"padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:bold'>Régulariser maintenant</a></p>")
+        for u in users:
+            if not u.get("email"):
+                continue
+            try:
+                await send_email(to_email=u["email"], to_name=u.get("contact_name"), subject=subject,
+                                 html_content=_wrap_html(subject, body), text_content=subject,
+                                 tags=["rar_auto_suspension"])
+            except Exception as exc:
+                logger.warning("Email suspension RàR échoué %s : %s", u.get("email"), exc)
+        try:
+            admin_subject = f"⛔ Plafond suspendu automatiquement — {org_name} (impayé {o.get('order_number')}, {amount:.2f} €)"
+            admin_body = (f"<p>Le plafond RàR de <b>{org_name}</b> a été <b>suspendu automatiquement</b> : "
+                          f"la commande <b>{o.get('order_number')}</b> ({amount:.2f} € TTC) est restée impayée "
+                          f"plus de 72 h après le dernier rappel.</p>"
+                          f"<p>Réactivation possible depuis la console admin après régularisation.</p>"
+                          f"<p><a href='{base}/superadmin'>Ouvrir la console admin</a></p>")
+            await send_email(to_email=admin_email, to_name="Équipe KDMARCHÉ", subject=admin_subject,
+                             html_content=_wrap_html(admin_subject, admin_body), text_content=admin_subject,
+                             tags=["rar_auto_suspension_admin"])
+        except Exception as exc:
+            logger.warning("Alerte admin suspension RàR échouée : %s", exc)
+        try:
+            from consultation_audit import audit
+            await audit("RAR_ACCOUNT_AUTO_SUSPENDED", "scheduler", None,
+                        {"org_id": o["org_id"], "order_number": o.get("order_number"),
+                         "amount_cents": o.get("cod_amount_due_cents")})
+        except Exception:
+            pass
+        suspended += 1
+        logger.info("Plafond RàR suspendu automatiquement : org %s (impayé %s)", o["org_id"], o.get("order_number"))
+    return suspended

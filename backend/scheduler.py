@@ -329,9 +329,10 @@ async def _scheduler_loop():
         try:
             from routes_cod import process_cod_reminders
             await process_cod_reminders(_db)
-            from rar_reminders import run_rar_payment_reminders, run_rar_overdue_alerts
+            from rar_reminders import run_rar_payment_reminders, run_rar_overdue_alerts, run_rar_auto_suspensions
             await run_rar_payment_reminders(_db)
             await run_rar_overdue_alerts(_db)
+            await run_rar_auto_suspensions(_db)
         except Exception as exc:
             logger.exception("Scheduler COD reminders crashed: %s", exc)
         try:

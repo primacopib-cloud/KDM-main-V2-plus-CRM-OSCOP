@@ -29,6 +29,7 @@ export const rarAPI = {
   resolveReserve: (orderId, action, note) => apiCall(`/rar/delivery/reserves/${orderId}/resolve`, { method: 'POST', body: JSON.stringify({ action, note }) }),
   ceilingHistory: () => apiCall('/rar/delivery/ceiling-history'),
   carrierStats: () => apiCall('/rar/stats/admin/carrier-stats'),
+  adminUnpaid: () => apiCall('/rar/stats/admin/unpaid'),
   setCarrierBlocked: (carrier, blocked, reason = '') => apiCall('/rar/stats/admin/blocked-carriers', { method: 'POST', body: JSON.stringify({ carrier, blocked, reason }) }),
   carrierBlockLog: () => apiCall('/rar/stats/admin/carrier-block-log'),
   downloadBlockLogCsv: async () => {
