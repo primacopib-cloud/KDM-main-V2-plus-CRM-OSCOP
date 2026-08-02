@@ -7,6 +7,7 @@ export const TERRITORIES = [
     tagline: 'Épicerie & restauration',
     color: '#8CC63E',
     zoneCode: 'GUADELOUPE',
+    image: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/63d99c168d46193b268007603868e6a55016ef26ff835bd971c1597cb49f6360.jpeg',
     products: ['Riz parfumé 25 kg', 'Huile de tournesol 5 L', 'Sucre de canne 10 kg'],
   },
   {
@@ -16,6 +17,7 @@ export const TERRITORIES = [
     tagline: 'Hygiène & consommables',
     color: '#5B9BD5',
     zoneCode: 'MARTINIQUE',
+    image: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/721b66adf1af58832e7ba0729379f4d26c82eff6d73dad73721720e355bce790.jpeg',
     products: ['Gel hydroalcoolique 5 L', 'Essuie-tout professionnel ×6', 'Sacs kraft 26×32 ×500'],
   },
   {
@@ -25,6 +27,7 @@ export const TERRITORIES = [
     tagline: 'BTP & équipements',
     color: '#E67E22',
     zoneCode: 'GUYANE',
+    image: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/9e8c3045d9f4f74f673364a74f0fbf1af50f6dc06bcf8d74c26c994ce0eae240.jpeg',
     products: ['Ciment gris 35 kg', 'Gants nitrile chantier ×100', 'Bâche renforcée 4×6 m'],
   },
   {
@@ -43,6 +46,7 @@ export const TERRITORIES = [
     tagline: 'Produits essentiels',
     color: '#B58CD9',
     zoneCode: 'MAYOTTE',
+    image: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/604d72df83ff8fb12e7dadbe670a3f411d299e62442532ef91b16772e615aea2.jpeg',
     products: ['Lait en poudre 2,5 kg', 'Savon de Marseille 300 g ×24', 'Eau de source 1,5 L ×12'],
   },
   {
@@ -52,6 +56,7 @@ export const TERRITORIES = [
     tagline: 'Commerce & restauration — Saint-Martin et Saint-Barthélemy',
     color: '#6FA82E',
     zoneCode: 'CARIBBEAN',
+    image: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/dbbb690483ea18fb2fff95b0df629135b9d424244e623192f18459b783fd4aaf.jpeg',
     products: ['Barquettes traiteur ×250', 'Vaisselle compostable ×100', 'Sirops parfumés 1 L'],
   },
 ];

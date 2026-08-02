@@ -78,15 +78,21 @@ export const TerritoryCarousel = () => {
         style={{ scrollbarWidth: 'none' }}>
         {TERRITORIES.map((t, i) => {
           const real = topProducts[t.zoneCode];
-          const products = real && real.length ? real : t.products;
+          const products = real && real.length ? real : t.products.map((name) => ({ name, id: null }));
           return (
           <article key={t.id} aria-roledescription="diapositive" aria-label={`${i + 1} sur ${TOTAL} : ${t.name}`}
             data-testid={`territory-card-${t.id}`}
-            className="glass-panel-soft rounded-[20px] p-6 snap-start shrink-0 w-[86%] sm:w-[47%] lg:w-[31.5%] flex flex-col">
-            <div className="flex items-center gap-3 mb-1">
-              <span className="text-2xl" aria-hidden="true">{t.flag}</span>
-              <h3 className="font-display text-xl m-0" style={{ color: t.color }}>{t.name}</h3>
+            className="glass-panel-soft rounded-[20px] overflow-hidden snap-start shrink-0 w-[86%] sm:w-[47%] lg:w-[31.5%] flex flex-col">
+            <div className="relative h-28 shrink-0">
+              <img src={t.image} alt={`Ambiance ${t.name}`} loading="lazy"
+                className="w-full h-full object-cover" data-testid={`territory-image-${t.id}`} />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(30,12,52,0.92), rgba(30,12,52,0.05))' }} aria-hidden="true" />
+              <div className="absolute bottom-2 left-4 flex items-center gap-2.5">
+                <span className="text-2xl drop-shadow" aria-hidden="true">{t.flag}</span>
+                <h3 className="font-display text-xl m-0 drop-shadow" style={{ color: t.color }}>{t.name}</h3>
+              </div>
             </div>
+            <div className="p-6 pt-4 flex flex-col flex-1">
             <p className="text-xs text-white/55 mb-4">{t.tagline}</p>
             <p className="text-[10px] uppercase tracking-wider text-white/40 mb-2 flex items-center gap-1.5">
               {real && real.length ? (
@@ -99,11 +105,17 @@ export const TerritoryCarousel = () => {
             </p>
             <ul className="space-y-2 mb-5">
               {products.map((p, rank) => (
-                <li key={p} className="text-sm text-white/75 flex gap-2">
+                <li key={p.name} className="text-sm text-white/75 flex gap-2">
                   {real && real.length
                     ? <span aria-hidden="true" className="font-mono font-bold" style={{ color: t.color }}>{rank + 1}.</span>
                     : <span aria-hidden="true" style={{ color: t.color }}>•</span>}
-                  {p}
+                  {p.id ? (
+                    <Link to={`/catalogue?produit=${p.id}`} data-testid={`territory-product-link-${t.id}-${rank}`}
+                      className="hover:underline hover:text-white transition-colors"
+                      aria-label={`Voir la fiche du produit ${p.name}`}>
+                      {p.name}
+                    </Link>
+                  ) : p.name}
                 </li>
               ))}
             </ul>
@@ -113,6 +125,7 @@ export const TerritoryCarousel = () => {
               aria-label={`Voir les offres de la zone ${t.name}`}>
               Voir les offres de la zone <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
             </Link>
+            </div>
           </article>
           );
         })}

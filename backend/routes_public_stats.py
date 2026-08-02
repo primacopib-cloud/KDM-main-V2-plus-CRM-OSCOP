@@ -104,7 +104,7 @@ async def territory_top_products():
     pipeline = [
         {"$match": {"zone_code": {"$nin": [None, ""]}, "items.0": {"$exists": True}}},
         {"$unwind": "$items"},
-        {"$group": {"_id": {"zone": "$zone_code", "name": "$items.product_name"},
+        {"$group": {"_id": {"zone": "$zone_code", "pid": "$items.product_id", "name": "$items.product_name"},
                     "qty": {"$sum": "$items.quantity"}}},
         {"$sort": {"qty": -1}},
     ]
@@ -115,7 +115,14 @@ async def territory_top_products():
             continue
         lst = zones.setdefault(zone, [])
         if len(lst) < 3:
-            lst.append(name)
+            lst.append({"name": name, "id": row["_id"].get("pid")})
+    for lst in zones.values():
+        for p in lst:
+            exists = p["id"] and await db.products.find_one({"id": p["id"]}, {"_id": 1})
+            if not exists:
+                by_name = await db.products.find_one(
+                    {"name": p["name"], "status": "ACTIVE"}, {"_id": 0, "id": 1})
+                p["id"] = (by_name or {}).get("id")
     return {"zones": zones}
 
 
