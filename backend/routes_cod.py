@@ -35,7 +35,7 @@ async def cod_eligibility(current_user: dict = Depends(get_current_user_checkout
 @cod_router.post("/confirm-cod")
 async def confirm_cod(order_id: str = Query(...), current_user: dict = Depends(get_current_user_checkout)):
     if not await _is_cod_eligible(current_user):
-        raise HTTPException(status_code=403, detail="Paiement à la livraison réservé aux acheteurs Pro avec abonnement actif")
+        raise HTTPException(status_code=403, detail="Règlement à Réception Pro réservé aux acheteurs Pro avec abonnement actif")
     order, _ = await get_order_with_access_check(order_id, current_user)
     if order["status"] not in ["PENDING", "CONFIRMED"]:
         raise HTTPException(status_code=400, detail="Commande non éligible")
@@ -173,7 +173,7 @@ async def _send_cod_receipt(order_id: str, invoice_number: str = None) -> None:
         amount = (order.get("amount_paid_cents") or 0) / 100
         html = ("<div style='font-family:Arial,sans-serif;max-width:560px'>"
                 f"<p>Bonjour,</p><p>Nous confirmons l'encaissement de votre commande "
-                f"<b>{order.get('order_number')}</b> ({amount:.2f} € TTC, paiement à la livraison). "
+                f"<b>{order.get('order_number')}</b> ({amount:.2f} € TTC, Règlement à Réception Pro). "
                 "Vous trouverez votre reçu d'encaissement en pièce jointe.</p>"
                 "<p>Merci pour votre confiance,<br/>KDMARCHÉ × O'SCOP</p></div>")
         from brevo_service import send_email
@@ -210,7 +210,7 @@ async def process_cod_reminders(database) -> None:
         users = await database.users.find({"id": {"$in": [m["user_id"] for m in members]}},
                                           {"email": 1, "first_name": 1}).to_list(3)
         html = ("<div style='font-family:Arial,sans-serif;max-width:560px'>"
-                f"<p>Bonjour,</p><p>Votre commande <b>{o.get('order_number')}</b> en paiement à la livraison "
+                f"<p>Bonjour,</p><p>Votre commande <b>{o.get('order_number')}</b> en Règlement à Réception Pro "
                 f"reste à régler : <b>{amount:.2f} € TTC</b>. Merci de préparer le règlement pour la réception "
                 "de vos marchandises.</p>"
                 f"<p><a href='{base}/commandes' style='background:#5B2E8C;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none'>Voir ma commande</a></p>"
@@ -226,7 +226,7 @@ async def process_cod_reminders(database) -> None:
         try:
             await send_email(to_email=admin_email, to_name="Équipe KDMARCHÉ",
                              subject=f"⚠️ COD impayé J+7 — commande {o.get('order_number')} ({amount:.2f} €)",
-                             html_content=f"<p>La commande <b>{o.get('order_number')}</b> ({amount:.2f} € TTC, paiement à la livraison) est toujours impayée 7 jours après confirmation. Relance client envoyée.</p>",
+                             html_content=f"<p>La commande <b>{o.get('order_number')}</b> ({amount:.2f} € TTC, Règlement à Réception Pro) est toujours impayée 7 jours après confirmation. Relance client envoyée.</p>",
                              tags=["cod-reminder-admin"])
         except Exception:
             pass

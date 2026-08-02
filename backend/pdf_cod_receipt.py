@@ -54,7 +54,7 @@ def generate_cod_receipt_pdf(order: dict, org_name: str, invoice_number: str = N
         Paragraph(f"Reçu n° : <b>{receipt_num}</b>", normal),
         Paragraph(f"Date d'encaissement : {paid_at.strftime('%d/%m/%Y à %H:%M')}", normal),
         Paragraph(f"Client : <b>{org_name or 'N/A'}</b>", normal),
-        Paragraph("Mode de règlement : Paiement à la livraison (espèces / à réception)", normal),
+        Paragraph("Mode de règlement : Règlement à Réception Pro (espèces / à réception)", normal),
     ]
     if invoice_number:
         story.append(Paragraph(f"Facture associée : {invoice_number}", normal))

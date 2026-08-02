@@ -38,7 +38,7 @@ export const CodReceiptsSection = () => {
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <HandCoins className="w-4 h-4 text-[#D9B35A]" />
-          <h3 className="text-sm font-bold text-white">Reçus d'encaissement (paiement à la livraison)</h3>
+          <h3 className="text-sm font-bold text-white">Reçus d'encaissement (Règlement à Réception Pro)</h3>
           <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#D9B35A]/15 text-[#E9CF8E] border border-[#D9B35A]/40">{items.length}</span>
         </div>
         <div className="space-y-2">

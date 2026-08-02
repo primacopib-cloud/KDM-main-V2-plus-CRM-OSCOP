@@ -236,7 +236,7 @@ export default function CheckoutPage() {
         });
         if (!codResp.ok) {
           const err = await codResp.json().catch(() => ({}));
-          throw new Error(err.detail || 'Paiement à la livraison indisponible');
+          throw new Error(err.detail || 'Règlement à Réception Pro indisponible');
         }
         setOrderCreated(order);
         setPaymentSuccess(true);

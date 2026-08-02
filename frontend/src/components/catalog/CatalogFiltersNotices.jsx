@@ -107,10 +107,10 @@ export const CatalogFiltersNotices = ({
       </button>
     </div>
 
-    {/* Paiement à la livraison — phrase de séduction */}
+    {/* Règlement à Réception Pro — phrase de séduction */}
     <div className="mb-6 p-4 rounded-xl border border-[#D9B35A]/30" style={{ background: 'linear-gradient(90deg, rgba(217,179,90,0.16), rgba(217,179,90,0.03))' }} data-testid="cod-banner">
       <p className="text-sm text-white">
-        <strong className="text-[#D9B35A]">🛡️ Paiement à la livraison</strong> — Commandez en toute sérénité :
+        <strong className="text-[#D9B35A]">🛡️ Règlement à Réception Pro</strong> — Commandez en toute sérénité :
         en tant qu'acheteur Pro abonné, vous ne réglez vos marchandises qu'à réception. Zéro avance de trésorerie,
         100 % confiance coopérative.
       </p>

@@ -136,7 +136,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                           <div className="flex-1">
                             <p className="font-medium text-white flex items-center gap-2">
                               <Truck className="w-4 h-4 text-emerald-400" />
-                              Paiement à la livraison
+                              Règlement à Réception Pro
                             </p>
                             <p className="text-xs text-white/50 mt-1">
                               Commandez en toute sérénité : réglez uniquement à réception de vos marchandises. Avantage exclusif membres Pro abonnés.
@@ -156,7 +156,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                       <>
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                           <Truck className="w-4 h-4 text-emerald-400" />
-                          Règlement à la livraison
+                          Règlement à Réception Pro
                         </h3>
                         <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
                           Sans avance de trésorerie
