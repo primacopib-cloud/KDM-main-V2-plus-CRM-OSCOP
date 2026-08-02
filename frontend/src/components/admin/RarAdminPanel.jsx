@@ -3,6 +3,7 @@ import { ShieldCheck, Eye, EyeOff, Trash2, Plus, Check, X, Download } from 'luci
 import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
 import { RarCarrierStats } from './RarCarrierStats';
+import { RarStartDeliveryDialog } from './RarStartDeliveryDialog';
 
 const fmt = (c) => `${((c || 0) / 100).toLocaleString('fr-FR')} €`;
 
@@ -15,6 +16,7 @@ export const RarAdminPanel = () => {
   const [reserves, setReserves] = useState([]);
   const [ceilInput, setCeilInput] = useState({});
   const [newOpt, setNewOpt] = useState('');
+  const [startOrder, setStartOrder] = useState(null);
 
   const load = () => {
     rarAPI.adminAccounts().then((d) => setAccounts(d.accounts)).catch(() => {});
@@ -177,11 +179,7 @@ export const RarAdminPanel = () => {
             <span className="flex gap-1.5">
               {o.payment_status !== 'succeeded' && o.rar_status === 'Commande acceptée sous plafond' && (
                 <button type="button" data-testid={`rar-start-delivery-${o.order_number}`}
-                  onClick={async () => {
-                    const c = window.prompt('Transporteur pour cette livraison :', "LOGI'SCOP");
-                    if (c === null) return;
-                    try { await rarAPI.adminStartDelivery(o.id, c.trim() || "LOGI'SCOP"); toast.success('OTP envoyé au client'); load(); } catch (e) { toast.error(e.message); }
-                  }}
+                  onClick={() => setStartOrder(o)}
                   className="px-2 py-1 rounded text-[10px] font-bold text-sky-300 bg-sky-400/10 border border-sky-400/30">
                   🚚 Livrer (envoyer OTP)
                 </button>
@@ -250,6 +248,9 @@ export const RarAdminPanel = () => {
         ))}
       </div>
 
+      {startOrder && (
+        <RarStartDeliveryDialog order={startOrder} onClose={() => setStartOrder(null)} onDone={load} />
+      )}
       <RarCarrierStats />
     </div>
   );

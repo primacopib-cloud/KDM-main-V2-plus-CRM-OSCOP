@@ -30,6 +30,7 @@ export const rarAPI = {
   ceilingHistory: () => apiCall('/rar/delivery/ceiling-history'),
   carrierStats: () => apiCall('/rar/stats/admin/carrier-stats'),
   carrierScores: () => apiCall('/rar/stats/carrier-scores'),
+  alertHistory: () => apiCall('/rar/stats/alert-history'),
   getAlertThreshold: () => apiCall('/rar/stats/alert-threshold'),
   setAlertThreshold: (cents) => apiCall('/rar/stats/alert-threshold', { method: 'PUT', body: JSON.stringify({ threshold_cents: cents }) }),
   downloadCeilingStatement: async (month) => {
@@ -38,6 +39,14 @@ export const rarAPI = {
     const url = URL.createObjectURL(await r.blob());
     const a = document.createElement('a');
     a.href = url; a.download = `releve-plafond-${month}.pdf`; a.click();
+    URL.revokeObjectURL(url);
+  },
+  downloadAnnualStatement: async (year) => {
+    const r = await fetch(`${API}/rar/stats/ceiling-statement-annual-pdf?year=${year}`, { credentials: 'include', headers: getAuthHeaders() });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'Relevé annuel indisponible');
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = `releve-plafond-annuel-${year}.pdf`; a.click();
     URL.revokeObjectURL(url);
   },
   downloadLitigationZip: async (all = false) => {

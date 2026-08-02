@@ -82,3 +82,59 @@ def build_ceiling_statement_pdf(org_name: str, month: str, events: list, ceiling
         "effective du paiement (encaissement définitif), conformément aux CGV KDMARCHÉ.", sub)]
     doc.build(el)
     return buf.getvalue()
+
+
+def build_ceiling_annual_pdf(org_name: str, year: str, events: list, ceiling_cents: int) -> bytes:
+    """Relevé annuel : synthèse mensuelle des mouvements de plafond pour le bilan comptable."""
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=14 * mm, bottomMargin=14 * mm,
+                            leftMargin=16 * mm, rightMargin=16 * mm)
+    h1 = ParagraphStyle("h1", fontSize=15, textColor=DARK, fontName="Helvetica-Bold", spaceAfter=2)
+    sub = ParagraphStyle("sub", fontSize=8, textColor=colors.HexColor("#666666"))
+    h2 = ParagraphStyle("h2", fontSize=10.5, textColor=GOLD, fontName="Helvetica-Bold", spaceBefore=8, spaceAfter=3)
+    el = [
+        Paragraph("RELEVÉ ANNUEL DE PLAFOND — RÈGLEMENT À RÉCEPTION PRO", h1),
+        Paragraph("KDMARCHÉ × O'SCOP — document récapitulatif à joindre à votre bilan comptable", sub),
+        Paragraph("KDMARCHÉ, service exploité par PRIMACOP INTERNATIONAL BUSINESS — SIRET 433 230 703 00020", sub),
+        Spacer(1, 6),
+    ]
+    meta = [["Organisation", org_name], ["Exercice", year],
+            ["Plafond accordé en vigueur", _eur(ceiling_cents, signed=False)],
+            ["Mouvements sur l'exercice", str(len(events))]]
+    t = Table(meta, colWidths=[55 * mm, 115 * mm])
+    t.setStyle(TableStyle([
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("LINEBELOW", (0, 0), (-1, -2), 0.3, colors.HexColor("#DDDDDD")),
+    ]))
+    el += [t, Paragraph("Synthèse mensuelle des mouvements", h2)]
+
+    monthly = {f"{year}-{m:02d}": {k: 0 for k in TYPE_LABELS} for m in range(1, 13)}
+    for e in events:
+        mk = str(e["date"] or "")[:7]
+        if mk in monthly:
+            monthly[mk][e["type"]] = monthly[mk].get(e["type"], 0) + (e["amount_cents"] or 0)
+    rows = [["Mois", "Attributions", "Réservations", "Rétablissements", "Avoirs", "Net"]]
+    for mk in sorted(monthly):
+        tot = monthly[mk]
+        net = sum(tot.values())
+        rows.append([MONTHS_FR[int(mk[5:]) - 1].capitalize(), _eur(tot["GRANT"]), _eur(tot["RESERVE"]),
+                     _eur(tot["RESTORE"]), _eur(tot["CREDIT"]), _eur(net)])
+    year_tot = {k: sum(monthly[mk][k] for mk in monthly) for k in TYPE_LABELS}
+    rows.append(["TOTAL " + year, _eur(year_tot["GRANT"]), _eur(year_tot["RESERVE"]),
+                 _eur(year_tot["RESTORE"]), _eur(year_tot["CREDIT"]), _eur(sum(year_tot.values()))])
+    t = Table(rows, colWidths=[26 * mm, 29 * mm, 29 * mm, 31 * mm, 29 * mm, 30 * mm])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), DARK), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 8), ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#CCCCCC")),
+        ("ALIGN", (1, 0), (-1, -1), "RIGHT"), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+        ("LINEABOVE", (0, -1), (-1, -1), 0.6, GOLD),
+    ]))
+    el += [t, Spacer(1, 10), Paragraph(
+        "Réservations = commandes sans acompte confirmées · Rétablissements = paiements encaissés · "
+        "Avoirs = réserves instruites en faveur de l'acheteur. Le mouvement net traduit l'évolution du plafond "
+        "mobilisé sur l'exercice, conformément aux CGV KDMARCHÉ.", sub)]
+    doc.build(el)
+    return buf.getvalue()

@@ -48,6 +48,11 @@ export const RarCeilingHistory = () => {
             className="px-2 py-1 rounded text-[10px] font-bold text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/30 hover:bg-[#D9B35A]/20 flex items-center gap-1">
             <FileDown className="w-3 h-3" /> Relevé mensuel PDF
           </button>
+          <button type="button" data-testid="rar-annual-pdf-btn"
+            onClick={() => rarAPI.downloadAnnualStatement(month.slice(0, 4)).then(() => toast.success('Relevé annuel téléchargé')).catch((e) => toast.error(e.message))}
+            className="px-2 py-1 rounded text-[10px] font-bold text-white/60 border border-white/20 hover:text-white flex items-center gap-1">
+            <FileDown className="w-3 h-3" /> Relevé annuel {month.slice(0, 4)}
+          </button>
         </div>
       )}
       {open && (

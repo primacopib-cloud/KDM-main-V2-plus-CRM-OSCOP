@@ -37,6 +37,9 @@ async def check_ceiling_alert(db, org_id: str):
         return
     await db.rar_accounts.update_one(
         {"org_id": org_id}, {"$set": {"alert_active": True, "alert_sent_at": datetime.utcnow()}})
+    await db.rar_alert_log.insert_one({
+        "org_id": org_id, "threshold_cents": threshold, "available_cents": available,
+        "sent_at": datetime.utcnow()})
     from brevo_service import send_email, _wrap_html
     base = os.environ.get("FRONTEND_URL", "").rstrip("/")
     subject = "⚠️ Plafond Règlement à Réception Pro sous votre seuil d'alerte"

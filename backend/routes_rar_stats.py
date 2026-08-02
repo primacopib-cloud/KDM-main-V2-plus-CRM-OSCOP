@@ -90,6 +90,39 @@ async def carrier_scores(user: dict = Depends(get_current_user_checkout)):
     return {"carriers": out}
 
 
+@rar_stats_router.get("/alert-history")
+async def alert_history(user: dict = Depends(get_current_user_checkout)):
+    """Historique des alertes de plafond envoyées à l'organisation de l'acheteur."""
+    m = await db.org_memberships.find_one({"user_id": user["id"]})
+    if not m:
+        return {"alerts": []}
+    alerts = await db.rar_alert_log.find(
+        {"org_id": m["org_id"]}, {"_id": 0, "threshold_cents": 1, "available_cents": 1, "sent_at": 1}
+    ).sort("sent_at", -1).to_list(20)
+    return {"alerts": alerts}
+
+
+@rar_stats_router.get("/ceiling-statement-annual-pdf")
+async def ceiling_statement_annual_pdf(year: str, user: dict = Depends(get_current_user_checkout)):
+    """Relevé annuel PDF des mouvements de plafond (year=YYYY) — pour le bilan comptable."""
+    if not re.fullmatch(r"20\d{2}", year or ""):
+        raise HTTPException(status_code=400, detail="Format d'année attendu : YYYY")
+    m = await db.org_memberships.find_one({"user_id": user["id"]})
+    if not m:
+        raise HTTPException(status_code=404, detail="Aucune organisation associée")
+    from routes_rar_delivery import compute_ceiling_events
+    events = [e for e in await compute_ceiling_events(m["org_id"]) if str(e["date"] or "")[:4] == year]
+    org = await db.orgs.find_one({"id": m["org_id"]}, {"legal_name": 1, "name": 1}) or \
+        await db.organizations.find_one({"id": m["org_id"]}, {"legal_name": 1, "name": 1})
+    account = await db.rar_accounts.find_one({"org_id": m["org_id"]}, {"ceiling_cents": 1})
+    from pdf_ceiling_statement import build_ceiling_annual_pdf
+    pdf = build_ceiling_annual_pdf(
+        (org or {}).get("legal_name") or (org or {}).get("name") or m["org_id"],
+        year, events, (account or {}).get("ceiling_cents") or 0)
+    return Response(content=pdf, media_type="application/pdf", headers={
+        "Content-Disposition": f"attachment; filename=releve-plafond-annuel-{year}.pdf"})
+
+
 @rar_stats_router.get("/admin/carrier-stats")
 async def carrier_stats(admin: dict = Depends(require_admin)):
     """Taux de réserves par transporteur pour repérer les livraisons à problème."""
