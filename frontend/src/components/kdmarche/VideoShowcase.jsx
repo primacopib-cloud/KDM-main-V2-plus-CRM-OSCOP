@@ -105,7 +105,7 @@ export const VideoShowcase = () => {
   if (!videos.length) return null;
 
   return (
-    <section className="max-w-[1160px] mx-auto px-5 mb-14" data-testid="kdm-video-showcase">
+    <section id="spots-video" className="max-w-[1160px] mx-auto px-5 mb-14 scroll-mt-24" data-testid="kdm-video-showcase">
       <p className="text-center text-[11px] uppercase tracking-[0.2em] text-[#D9B35A] mb-2">
         <Sparkles className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />
         Studio IA Vendeurs

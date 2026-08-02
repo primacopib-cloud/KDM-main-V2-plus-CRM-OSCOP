@@ -21,9 +21,10 @@ const Header = () => {
 
   const navLinks = [
     { href: '/', label: i18n.t('nav.home') },
+    { href: '/#pros', label: 'Professionnels' },
+    { href: '/#particuliers', label: 'Particuliers' },
     { href: '/offres', label: i18n.t('footer.our_offers') },
-    ...(location.pathname === '/kdmarche' ? [{ href: '/kdmarche#territoires', label: 'Territoires' }] : []),
-    ...(location.pathname === '/' ? [{ href: '/#territoires', label: 'Territoires' }] : []),
+    { href: '/#territoires', label: 'Territoires' },
     { href: '/#contact', label: i18n.t('footer.contact') },
   ];
 

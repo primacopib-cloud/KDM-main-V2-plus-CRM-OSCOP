@@ -2292,3 +2292,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **Frontend** (`CtaStatsPanel.jsx`) : bandeau ambre « 💤 Zones dormantes — aucune commande attribuée depuis 30 jours » listant les zones (testid dormant-zones-alert), affiché entre le podium et le panier moyen.
 - Testé (/tmp/test_dormant_zones.py ✅) : notif groupée Guyane/Mayotte/Îles du Nord (Guadeloupe/Martinique/Réunion exclues car commandes démo récentes), dédup 2e appel, champ dormant API. Playwright : bandeau visible onglet Conventions.
 - Backlog restant : Résumé Hebdo Conversion (P2), Test Stripe LIVE 1 € (P2), Objectif CA Zone (idée).
+
+## 2026-08-02 — Fusion Accueil + KDMARCHÉ en une seule page (self-testé 3 captures Playwright)
+- **LandingPage.jsx** réécrite (293 l.) : hero « KDMARCHÉ, la Communityplace coopérative B2B2C » (+ bouton « Je suis un particulier » → #particuliers) → compteurs → Pourquoi Communityplace → **bandeau 🏢 « Pour les professionnels » (id=pros)** : piliers Vendeurs/Acheteurs (KdmPillarsSection), ServicesBlock, RàR Pro, API Coopérative, conditions d'accès, tarifs, logistique, conformité, partenaires → **bandeau 🛒 « Pour les particuliers & consommateurs » (id=particuliers)** : produits phares par zone, carrousel Territoires (id=territoires), carte LOLODRIVE, témoignages, défi parrainage, spots vidéo (id=spots-video) → CoopEssSection (catalogue + cadre ESS) → contact.
+- **Nouveaux composants** `components/landing/` : AudienceBanner.jsx, KdmPillarsSection.jsx, CoopEssSection.jsx, CooperativeApiSection.jsx (extrait de LandingPage, re-exporté).
+- **KdmarchePage.jsx** → simple `<Navigate>` : /kdmarche → /#pros, /kdmarche#territoires → /#territoires (aucun lien cassé).
+- **Navigation** : navItems.js — lien « KDMARCHÉ » remplacé par « Professionnels » (/#pros) et « Particuliers » (/#particuliers) ; Header.jsx même logique (plus de conditionnel kdmarche) ; CrediscopBadge « GALERIE SPOTS » → /#spots-video.
+- Vérifié Playwright : redirection /kdmarche→/#pros + scroll auto, bandeaux pros/particuliers visibles, hero OK, aucune erreur console. Tous fichiers <500 lignes.

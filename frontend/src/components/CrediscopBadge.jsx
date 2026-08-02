@@ -19,7 +19,7 @@ export const CrediscopBadge = ({ className = '' }) => {
   if (!isLoggedIn) {
     return (
       <Link
-        to="/kdmarche"
+        to="/#spots-video"
         data-testid="crediscop-nav-badge-public"
         title="Découvrez la galerie des spots vidéo KDMARCHÉ"
         className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full text-xs font-semibold transition-colors hover:brightness-110 ${className}`}

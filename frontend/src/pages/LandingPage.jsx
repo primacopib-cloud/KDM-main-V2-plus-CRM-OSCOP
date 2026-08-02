@@ -2,19 +2,7 @@ import Seo from '../components/Seo';
 import i18n from '@/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Download, 
-  ArrowRight, 
-  CheckCircle2,
-  XCircle,
-  Zap,
-  ShieldCheck,
-  Users,
-  Truck,
-  CreditCard,
-  Building2
-} from 'lucide-react';
-import { partners, logisticsSteps } from '../data/mock';
+import { ArrowRight, CheckCircle2, ShieldCheck, Building2, ShoppingBasket } from 'lucide-react';
 import { trackCta } from '../services/ctaTracking';
 import PricingSection from '../components/PricingSection';
 import PartnersSection from '../components/PartnersSection';
@@ -32,7 +20,14 @@ import { CommunityStatsStrip } from '../components/CommunityStatsStrip';
 import { PublicLolodriveMapSection } from '../components/landing/PublicLolodriveMapSection';
 import { ReceptionProSection } from '../components/landing/ReceptionProSection';
 import { TerritoryCarousel } from '../components/kdmarche/TerritoryCarousel';
+import { ServicesBlock } from '../components/kdmarche/ServicesBlock';
+import { VideoShowcase } from '../components/kdmarche/VideoShowcase';
+import { AudienceBanner } from '../components/landing/AudienceBanner';
+import { KdmPillarsSection } from '../components/landing/KdmPillarsSection';
+import { CoopEssSection } from '../components/landing/CoopEssSection';
+import { CooperativeApiSection } from '../components/landing/CooperativeApiSection';
 export { PublicLolodriveMapSection };
+export { CooperativeApiSection };
 
 const LandingPage = () => {
   return (
@@ -40,7 +35,7 @@ const LandingPage = () => {
       <Seo titleKey="seo.landing_title" descKey="seo.landing_desc" />
       <NavBar />
       <div className="pt-20 -mb-16"><FlashPromoBanner placement="landing" /></div>
-      
+
       {/* Hero Section */}
       <section className="pt-20 pb-8 px-5">
         <div className="max-w-[1160px] mx-auto">
@@ -58,15 +53,15 @@ const LandingPage = () => {
                   <span className="text-white/65">{i18n.t('landing.economie_sociale_et_solidaire')}</span>
                 </span>
               </div>
-              
+
               <h2 className="text-[40px] leading-[1.05] font-bold tracking-tight my-2.5">
-                Communityplace <span className="text-[#D9B35A]">{i18n.t('landing.cooperative_b2b2c')}</span>
+                KDMARCHÉ, la Communityplace <span className="text-[#D9B35A]">{i18n.t('landing.cooperative_b2b2c')}</span>
               </h2>
-              
+
               <p className="text-white/75 text-base max-w-[60ch] m-0">
                 {i18n.t('landing.official_statement')}
               </p>
-              
+
               {/* Actions */}
               <div className="flex gap-3 flex-wrap mt-5">
                 <Link to="/tarifs">
@@ -80,8 +75,11 @@ const LandingPage = () => {
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </Link>
+                <a href="#particuliers" className="btn-ghost inline-flex items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold" data-testid="hero-cta-particuliers">
+                  {`Je suis un particulier`}
+                </a>
               </div>
-              
+
               {/* Mini Stats */}
               <div className="grid grid-cols-3 gap-3 mt-5">
                 <div className="mini-card">
@@ -98,11 +96,11 @@ const LandingPage = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Side Card */}
             <div className="glass-panel-soft rounded-[26px] p-5 flex flex-col gap-3.5" style={{ boxShadow: '0 16px 50px rgba(0,0,0,0.35)' }}>
               <h3 className="text-sm tracking-wider uppercase text-white/75 font-semibold m-0">{i18n.t('landing.avantages_cles')}</h3>
-              
+
               {/* Callout */}
               <div className="callout-gold">
                 <strong className="text-white/90">{i18n.t('landing.prix_structurels_b2b')}</strong>
@@ -110,11 +108,11 @@ const LandingPage = () => {
                   {i18n.t('landing.il_ne_s_agit')}
                 </p>
               </div>
-              
+
               {/* List */}
               <ul className="grid gap-2.5 m-0 p-0 list-none">
                 {(i18n.t('landing.advantages', { returnObjects: true }) || []).map((advantage) => (
-                  <li 
+                  <li
                     key={`advantage-${advantage.slice(0, 32)}`}
                     className="flex gap-2.5 items-start p-2.5 px-3 rounded-2xl bg-white/[0.03] border border-white/[0.08]"
                   >
@@ -136,31 +134,30 @@ const LandingPage = () => {
       {/* Pourquoi Communityplace ? */}
       <WhyCommunityplaceSection />
 
+      {/* ============ PARTIE PROFESSIONNELS ============ */}
+      <AudienceBanner
+        id="pros" icon={Building2} color="#D9B35A" testId="audience-banner-pros"
+        kicker="Espace professionnels"
+        title="Pour les professionnels"
+        subtitle="Vendeurs référencés, acheteurs pro, services mutualisés, tarifs ESS et logistique B2B multi-territoires."
+      />
+
+      {/* Piliers Vendeurs / Acheteurs pro */}
+      <KdmPillarsSection />
+
+      {/* Les quatre services professionnels */}
+      <ServicesBlock />
+
       {/* Règlement à Réception Pro — bloc commercial */}
       <ReceptionProSection />
 
-      {/* Produits phares par territoire */}
-      <ZoneProductsShowcase />
-
-      {/* Partners Section */}
-      <PartnersSection />
-      <PartnerCarousel />
-
-      {/* Témoignages membres */}
-      <TestimonialsSection />
-
-      {/* Carrousel territorial — visiteurs grand public */}
-      <div className="py-8">
-        <TerritoryCarousel />
-      </div>
-
-      {/* Défi parrainage */}
-      <ReferralChallengeBanner />
+      {/* API Coopérative B2B2C — dispositif institutionnel */}
+      <CooperativeApiSection />
 
       {/* Access Condition */}
       <section className="py-8 px-5">
         <div className="max-w-[1160px] mx-auto">
-          <div 
+          <div
             className="rounded-[22px] p-6 text-center"
             style={{
               background: 'linear-gradient(180deg, rgba(217,179,90,0.12), rgba(255,255,255,0.02))',
@@ -174,7 +171,7 @@ const LandingPage = () => {
             <p className="text-white/75 mb-5 max-w-2xl mx-auto">
               {i18n.t('landing.acces_conditions_prefix')}<strong className="text-white">{i18n.t('landing.kdmarche_centrale_cooperative')}</strong>{i18n.t('landing.est_reserve_aux_membres')}<strong className="text-[#D4AF37]">{i18n.t('landing.adhesion_o_scop_active')}</strong>.
             </p>
-            
+
             <div className="inline-flex flex-wrap gap-4 justify-center p-4 rounded-2xl bg-black/20">
               {(i18n.t('landing.exclusions_list', { returnObjects: true }) || []).map((item) => (
                 <div key={`access-${item.slice(0, 32)}`} className="flex items-center gap-2 text-[#A9D96C] text-sm">
@@ -202,7 +199,7 @@ const LandingPage = () => {
               <p className="text-white/70 text-sm mt-1 m-0">{i18n.t('landing.le_partenariat_garantit_une')}</p>
             </div>
           </div>
-          
+
           <div className="grid md:grid-cols-2 gap-3.5">
             <div className="glass-panel-soft rounded-[18px] p-5">
               <h4 className="text-sm tracking-wider uppercase text-[#D4AF37] font-semibold mb-4 flex items-center gap-2">
@@ -218,7 +215,7 @@ const LandingPage = () => {
                 ))}
               </div>
             </div>
-            
+
             <div className="glass-panel-soft rounded-[18px] p-5">
               <h4 className="text-sm tracking-wider uppercase text-[#D9B35A] font-semibold mb-4 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4" />
@@ -237,11 +234,40 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Partners Section */}
+      <PartnersSection />
+      <PartnerCarousel />
+
+      {/* ============ PARTIE PARTICULIERS / CONSOMMATEURS ============ */}
+      <AudienceBanner
+        id="particuliers" icon={ShoppingBasket} color="#8CC63E" testId="audience-banner-particuliers"
+        kicker="Espace particuliers"
+        title="Pour les particuliers & consommateurs"
+        subtitle="Produits phares de votre territoire, points relais LOLODRIVE, PASS Vie Chère, parrainage et spots vidéo."
+      />
+
+      {/* Produits phares par territoire */}
+      <ZoneProductsShowcase />
+
+      {/* Carrousel territorial — visiteurs grand public */}
+      <div className="py-8">
+        <TerritoryCarousel />
+      </div>
+
       {/* Réseau LOLODRIVE — carte publique */}
       <PublicLolodriveMapSection />
 
-      {/* API Coopérative B2B2C — dispositif institutionnel */}
-      <CooperativeApiSection />
+      {/* Témoignages membres */}
+      <TestimonialsSection />
+
+      {/* Défi parrainage */}
+      <ReferralChallengeBanner />
+
+      {/* Galerie spots vidéo IA */}
+      <VideoShowcase />
+
+      {/* Catalogue + cadre coopératif ESS */}
+      <CoopEssSection />
 
       {/* Contact Section */}
       <section id="contact" className="py-8 px-5">
@@ -254,7 +280,7 @@ const LandingPage = () => {
             <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2">{i18n.t('landing.demande_de_devis')}</h3>
             <p className="text-white/70 text-sm">{i18n.t('landing.contactez_nous_pour_rejoindre')}</p>
           </div>
-          
+
           <ContactForm />
         </div>
       </section>
@@ -265,134 +291,3 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
-
-
-/* =================================================================
- * Section publique : dispositif API coopérative B2B2C
- * (Ancrage institutionnel — palette violet KD MARCHÉ Pro + or O'SCOP)
- * ================================================================= */
-export const CooperativeApiSection = () => {
-  return (
-    <section
-      id="cooperative-api"
-      className="on-dark py-16 px-5 relative"
-      style={{
-        background:
-          'radial-gradient(1000px 500px at 10% 0%, rgba(245,166,35,0.10), transparent 60%), ' +
-          'radial-gradient(800px 480px at 90% 100%, rgba(217,179,90,0.12), transparent 65%), ' +
-          'linear-gradient(180deg, #2a0c4a 0%, #4a1776 55%, #2a0c4a 100%)',
-      }}
-      data-testid="cooperative-api-section"
-    >
-      <div className="max-w-[1160px] mx-auto">
-        <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center">
-          {/* LEFT: message institutionnel */}
-          <div>
-            <span
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] uppercase tracking-[0.18em] font-bold mb-5"
-              style={{
-                background: 'rgba(245,166,35,0.14)',
-                border: '1px solid rgba(245,166,35,0.4)',
-                color: '#F5A623',
-              }}
-            >
-              <Zap className="w-3 h-3" />
-              {i18n.t('landing.api_cooperative_b2b2c')}
-            </span>
-            <h3
-              className="text-4xl lg:text-5xl font-serif font-semibold text-white leading-[1.05] mb-5"
-              style={{ fontFamily: '"Playfair Display", "Cormorant Garamond", serif' }}
-            >
-              {i18n.t('landing.acces_pro')} <span className="text-[#F5A623]">{i18n.t('landing.mutualise')}</span>
-            </h3>
-            <p className="text-white/80 text-base leading-relaxed mb-4">
-              {i18n.t('landing.api_p1_prefix')}
-              <strong className="text-white">{i18n.t('landing.acces_cooperatif')}</strong>{i18n.t('landing.api_p1_suffix')}
-            </p>
-            <p className="text-white/60 text-sm leading-relaxed mb-6">
-              {i18n.t('landing.api_p2')}<em>{i18n.t('landing.api_p2_em')}</em>
-            </p>
-
-            <div className="flex flex-wrap gap-3 mb-8">
-              <Link
-                to="/tarifs"
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-[#2a0c4a] shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #F5A623 0%, #D9B35A 100%)' }}
-                data-testid="coop-cta-tarifs"
-              >
-                {i18n.t('landing.acceder_api')} <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to="/adhesion-vendeur"
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white border border-white/25 hover:bg-white/5"
-                data-testid="coop-cta-adhesion"
-                onClick={() => trackCta('adherer_centrale_api')}
-              >
-                {i18n.t('landing.adherer_a_la_centrale')}
-              </Link>
-            </div>
-
-            {/* Pillars */}
-            <div className="grid grid-cols-2 gap-3 max-w-lg">
-              {[
-                { icon: ShieldCheck, label: i18n.t('landing.securise'), desc: i18n.t('landing.acces_authentifie_et_protege') },
-                { icon: Users, label: i18n.t('pricing.mutualise'), desc: i18n.t('landing.conditions_issues_du_collectif') },
-                { icon: CheckCircle2, label: i18n.t('landing.cooperatif'), desc: i18n.t('landing.modele_ethique_et_solidaire') },
-                { icon: Zap, label: i18n.t('landing.performant'), desc: i18n.t('landing.services_selectionnes') },
-              ].map((p) => {
-                const Icon = p.icon;
-                return (
-                  <div
-                    key={p.label}
-                    className="p-3 rounded-xl"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(245,166,35,0.2)',
-                    }}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <Icon className="w-4 h-4 text-[#F5A623]" />
-                      <p className="text-xs uppercase tracking-wider font-bold text-white">{p.label}</p>
-                    </div>
-                    <p className="text-[11px] text-white/55">{p.desc}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* RIGHT: visuel high-tech */}
-          <div className="relative">
-            <div
-              className="relative rounded-2xl overflow-hidden"
-              style={{
-                border: '1px solid rgba(245,166,35,0.35)',
-                boxShadow: '0 24px 64px rgba(74,23,118,0.5)',
-              }}
-              data-testid="api-hightech-visual"
-            >
-              <img
-                src="/images/api-hightech.webp"
-                alt="Plateforme API coopérative sécurisée KDMARCHE Pro"
-                className="w-full h-auto object-cover block"
-              />
-            </div>
-
-            {/* Legend below the visual */}
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-              {(i18n.t('landing.chips', { returnObjects: true }) || []).map((t) => (
-                <div
-                  key={t}
-                  className="px-2 py-2 rounded-lg text-[10px] uppercase tracking-wider text-white/60 font-medium"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  {t}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};

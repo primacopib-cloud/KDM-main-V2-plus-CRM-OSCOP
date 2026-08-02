@@ -25,8 +25,9 @@ export const getNavItems = (userRole, isAdmin, pathname = '/') => {
   const isPass = userRole === 'TITULAIRE_PASS';
   const baseItems = [
     { href: '/', label: 'nav.home', icon: Home, public: true },
-    { href: '/kdmarche', label: 'KDMARCHÉ', icon: Store, public: true, accent: '#D9B35A' },
-    { href: pathname === '/kdmarche' ? '/kdmarche#territoires' : '/#territoires', label: 'Territoires', icon: MapPin, public: true },
+    { href: '/#pros', label: 'Professionnels', icon: Store, public: true, accent: '#D9B35A' },
+    { href: '/#particuliers', label: 'Particuliers', icon: Users, public: true },
+    { href: '/#territoires', label: 'Territoires', icon: MapPin, public: true },
     { href: isPass ? '/catalogue-lolodrive' : '/catalogue', label: 'nav.catalog', icon: ShoppingCart, public: true },
     { href: '/tarifs', label: 'nav.pro_access', icon: CreditCard, public: true },
     { href: '/#contact', label: 'footer.contact', icon: Mail, public: true },
