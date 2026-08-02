@@ -39,6 +39,15 @@ CTA_LABELS = {
     "territoire_iles-du-nord": "Voir les offres — Îles du Nord (/kdmarche)",
 }
 
+TERRITORY_ZONES = {
+    "territoire_guadeloupe": "GUADELOUPE",
+    "territoire_martinique": "MARTINIQUE",
+    "territoire_guyane": "GUYANE",
+    "territoire_reunion": "REUNION",
+    "territoire_mayotte": "MAYOTTE",
+    "territoire_iles-du-nord": "CARIBBEAN",
+}
+
 
 async def _collect_stats():
     now = datetime.now(timezone.utc)
@@ -50,8 +59,15 @@ async def _collect_stats():
         last7 = await db.cta_clicks.count_documents({"cta_id": cta_id, "at": {"$gte": d7}})
         last30 = await db.cta_clicks.count_documents({"cta_id": cta_id, "at": {"$gte": d30}})
         conv_q = {"source_cta": cta_id, "status": {"$ne": "PAYMENT_PENDING"}}
-        paid = await db.vendor_onboarding.count_documents(conv_q)
-        paid30 = await db.vendor_onboarding.count_documents({**conv_q, "created_at": {"$gte": d30}})
+        if cta_id in TERRITORY_ZONES:
+            # Conversion territoire = commande passée dans la zone visitée après le clic
+            conv_q = {"source_cta": cta_id, "zone_code": TERRITORY_ZONES[cta_id]}
+            paid = await db.orders.count_documents(conv_q)
+            paid30 = await db.orders.count_documents(
+                {**conv_q, "created_at": {"$gte": datetime.utcnow() - timedelta(days=30)}})
+        else:
+            paid = await db.vendor_onboarding.count_documents(conv_q)
+            paid30 = await db.vendor_onboarding.count_documents({**conv_q, "created_at": {"$gte": d30}})
         rate = round(paid / total * 100) if total else None
         stats.append({"cta_id": cta_id, "label": label, "total": total, "last7": last7,
                       "last30": last30, "paid": paid, "paid30": paid30, "rate": rate})

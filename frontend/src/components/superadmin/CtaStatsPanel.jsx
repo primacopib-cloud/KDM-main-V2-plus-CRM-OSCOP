@@ -118,6 +118,7 @@ export const CtaStatsPanel = () => {
                     <p className="text-[10px] text-white/50 m-0">
                       {s[periodKey]} clic{s[periodKey] > 1 ? 's' : ''}
                       {podiumPeriod === '7j' ? ' sur 7 j' : podiumPeriod === '30j' ? ' sur 30 j' : ' au total'}
+                      {s.paid > 0 && <span className="text-[#7BC94E] font-bold"> · {s.paid} commande{s.paid > 1 ? 's' : ''}</span>}
                     </p>
                   </div>
                 </div>
@@ -153,6 +154,7 @@ export const CtaStatsPanel = () => {
           ))}
           <p className="text-[10px] text-white/35 pt-1">
             « Payées » = adhésions au paiement confirmé attribuées au dernier bouton cliqué (fenêtre de 24 h).
+            Pour les territoires : commandes passées dans la zone visitée après le clic (même fenêtre).
           </p>
         </div>
         </>

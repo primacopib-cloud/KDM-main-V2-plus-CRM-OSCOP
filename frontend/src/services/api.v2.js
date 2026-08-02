@@ -228,7 +228,7 @@ export const catalogAPI = {
 };
 
 export const ordersAPIV2 = {
-  create: async (cartId, pickupLocationId, notes = null, useInstallment = false) => {
+  create: async (cartId, pickupLocationId, notes = null, useInstallment = false, sourceCta = null) => {
     return apiCallV2('/orders', {
       method: 'POST',
       body: JSON.stringify({
@@ -236,6 +236,7 @@ export const ordersAPIV2 = {
         pickup_location_id: pickupLocationId,
         notes,
         use_installment: useInstallment,
+        source_cta: sourceCta,
       }),
     });
   },

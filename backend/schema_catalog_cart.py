@@ -78,6 +78,7 @@ class OrderCreate(BaseModel):
     pickup_location_id: str
     notes: Optional[str] = None
     use_installment: bool = False  # Request installment payment (4x)
+    source_cta: Optional[str] = None  # Attribution clic territoire (fenêtre 24 h)
 
 
 class OrderItemResponse(BaseModel):

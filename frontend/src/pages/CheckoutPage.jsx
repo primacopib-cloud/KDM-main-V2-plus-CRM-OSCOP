@@ -1,4 +1,10 @@
 import { getSessionToken } from '../services/http';
+import { getLastCta } from '../services/ctaTracking';
+
+const territoryCta = () => {
+  const c = getLastCta();
+  return c && c.startsWith('territoire_') ? c : null;
+};
 import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
@@ -236,7 +242,7 @@ export default function CheckoutPage() {
     
     try {
       if (paymentMethod === 'cod') {
-        const order = await ordersAPIV2.create(cart.id, selectedPickup, orderNotes, false);
+        const order = await ordersAPIV2.create(cart.id, selectedPickup, orderNotes, false, territoryCta());
         const codResp = await fetch(`${API_URL}/api/v2/checkout/confirm-cod?order_id=${order.id}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${getSessionToken()}` },
@@ -257,7 +263,8 @@ export default function CheckoutPage() {
         cart.id, 
         selectedPickup, 
         orderNotes, 
-        useInstallment && totals.totalHT >= MIN_INSTALLMENT_CENTS
+        useInstallment && totals.totalHT >= MIN_INSTALLMENT_CENTS,
+        territoryCta()
       );
       
       toast.info(i18n.t('checkout.toast_commande_creee_redirection', { number: order.order_number }));
@@ -358,7 +365,8 @@ export default function CheckoutPage() {
         cart.id, 
         selectedPickup, 
         orderNotes, 
-        useInstallment && totals.totalHT >= MIN_INSTALLMENT_CENTS
+        useInstallment && totals.totalHT >= MIN_INSTALLMENT_CENTS,
+        territoryCta()
       );
       
       setOrderCreated(order);

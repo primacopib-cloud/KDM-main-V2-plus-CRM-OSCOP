@@ -118,6 +118,7 @@ async def create_order(
         "tax_cents": cart["tax_cents"],
         "total_ttc_cents": cart["total_ttc_cents"],
         "notes": order_data.notes,
+        "source_cta": order_data.source_cta if (order_data.source_cta or "").startswith("territoire_") else None,
         "created_by_user_id": current_user["id"],
         "is_installment": False,
         "installment_plan": None,
