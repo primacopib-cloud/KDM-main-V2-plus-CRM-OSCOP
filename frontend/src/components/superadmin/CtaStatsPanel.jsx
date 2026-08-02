@@ -46,6 +46,10 @@ export const CtaStatsPanel = () => {
 
   if (!data) return null;
   const max = Math.max(...data.stats.map((s) => s.total), 1);
+  const podium = data.stats
+    .filter((s) => s.cta_id.startsWith('territoire_') && s.total > 0)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 3);
 
   const exportCsv = async () => {
     try {
@@ -79,6 +83,26 @@ export const CtaStatsPanel = () => {
         <p className="text-xs text-white/45">Aucun clic enregistré pour le moment.</p>
       ) : (
         <>
+        {podium.length > 0 && (
+          <div className="mb-4" data-testid="territory-podium">
+            <p className="text-[10px] uppercase tracking-wider text-white/35 mb-1.5">🏆 Territoires les plus cliqués (« Voir les offres de la zone »)</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {podium.map((s, i) => (
+                <div key={s.cta_id} data-testid={`territory-podium-${i}`}
+                  className={`flex items-center gap-2.5 rounded-xl px-3 py-2 border ${
+                    i === 0 ? 'bg-[#D9B35A]/10 border-[#D9B35A]/35' : 'bg-white/[0.04] border-white/10'}`}>
+                  <span className="text-xl" aria-hidden="true">{['🥇', '🥈', '🥉'][i]}</span>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-bold text-white truncate m-0">
+                      {s.label.replace('Voir les offres — ', '').replace(' (/kdmarche)', '')}
+                    </p>
+                    <p className="text-[10px] text-white/50 m-0">{s.total} clic{s.total > 1 ? 's' : ''} · {s.last7} sur 7 j</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <TrendChart points={trend} />
         <div className="space-y-2">
           <div className="flex items-center gap-3 text-[10px] uppercase tracking-wider text-white/35">

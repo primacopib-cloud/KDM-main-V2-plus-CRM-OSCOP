@@ -94,7 +94,7 @@ const NavBar = ({ variant = 'default' }) => {
     navigate('/');
   };
 
-  const nav = getNavItems(user?.role, isAdmin);
+  const nav = getNavItems(user?.role, isAdmin, location.pathname);
   const navItems = nav.topBar;
   const isPassHolder = user?.role === 'TITULAIRE_PASS';
   const unreadCount = notifications.filter(n => !n.is_read).length;

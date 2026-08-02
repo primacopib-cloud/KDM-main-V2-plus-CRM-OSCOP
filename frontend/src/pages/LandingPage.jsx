@@ -31,6 +31,7 @@ import { ReferralChallengeBanner } from '../components/ReferralChallengeBanner';
 import { CommunityStatsStrip } from '../components/CommunityStatsStrip';
 import { PublicLolodriveMapSection } from '../components/landing/PublicLolodriveMapSection';
 import { ReceptionProSection } from '../components/landing/ReceptionProSection';
+import { TerritoryCarousel } from '../components/kdmarche/TerritoryCarousel';
 export { PublicLolodriveMapSection };
 
 const LandingPage = () => {
@@ -147,6 +148,11 @@ const LandingPage = () => {
 
       {/* Témoignages membres */}
       <TestimonialsSection />
+
+      {/* Carrousel territorial — visiteurs grand public */}
+      <div className="py-8">
+        <TerritoryCarousel />
+      </div>
 
       {/* Défi parrainage */}
       <ReferralChallengeBanner />

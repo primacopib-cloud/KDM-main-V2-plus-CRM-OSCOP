@@ -19,13 +19,14 @@ export const isAdminUser = (user) =>
 export const getMySpace = (user) =>
   (isAdminUser(user) ? '/superadmin' : SPACE_BY_ROLE[user?.role] || '/espace-acheteur');
 
-export const getNavItems = (userRole, isAdmin) => {
+export const getNavItems = (userRole, isAdmin, pathname = '/') => {
   const mySpace = isAdmin ? '/superadmin' : SPACE_BY_ROLE[userRole] || '/espace-acheteur';
   // Top bar: keep it lean — 4 public + 2 member shortcuts.
   const isPass = userRole === 'TITULAIRE_PASS';
   const baseItems = [
     { href: '/', label: 'nav.home', icon: Home, public: true },
     { href: '/kdmarche', label: 'KDMARCHÉ', icon: Store, public: true, accent: '#D9B35A' },
+    { href: pathname === '/kdmarche' ? '/kdmarche#territoires' : '/#territoires', label: 'Territoires', icon: MapPin, public: true },
     { href: isPass ? '/catalogue-lolodrive' : '/catalogue', label: 'nav.catalog', icon: ShoppingCart, public: true },
     { href: '/tarifs', label: 'nav.pro_access', icon: CreditCard, public: true },
     { href: '/#contact', label: 'footer.contact', icon: Mail, public: true },
