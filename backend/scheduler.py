@@ -342,6 +342,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler RàR monthly statements crashed: %s", exc)
         try:
+            from rar_recovery_report import run_monthly_recovery_report
+            await run_monthly_recovery_report(_db)
+        except Exception as exc:
+            logger.exception("Scheduler RàR recovery report crashed: %s", exc)
+        try:
             from order_sms import process_pickup_reminders
             await process_pickup_reminders(_db)
         except Exception as exc:

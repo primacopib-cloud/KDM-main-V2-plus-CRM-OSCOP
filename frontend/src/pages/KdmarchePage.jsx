@@ -6,6 +6,9 @@ import { FlashPromoBanner } from '../components/FlashPromoBanner';
 import Footer from '../components/Footer';
 import CommunityplaceBadge from '../components/CommunityplaceBadge';
 import { VideoShowcase } from '../components/kdmarche/VideoShowcase';
+import { ServicesBlock } from '../components/kdmarche/ServicesBlock';
+import { TerritoryCarousel } from '../components/kdmarche/TerritoryCarousel';
+import { useLocation } from 'react-router-dom';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -36,11 +39,19 @@ const Pillar = ({ icon: Icon, title, items, color, testId }) => (
 
 export default function KdmarchePage() {
   const [stats, setStats] = useState(null);
+  const { hash } = useLocation();
 
   useEffect(() => {
     fetch(`${API}/public/kdmarche-stats`).then((r) => r.ok && r.json()).then((d) => d && setStats(d)).catch(() => {});
-    window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    if (hash === '#territoires') {
+      setTimeout(() => document.getElementById('territoires')?.scrollIntoView({ behavior: 'smooth' }), 150);
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [hash]);
 
   return (
     <div className="min-h-screen" data-testid="kdmarche-page">
@@ -103,6 +114,23 @@ export default function KdmarchePage() {
               'Livraison LOLODRIVE et points relais coopératifs',
             ]}
           />
+        </section>
+
+        {/* Bloc des quatre services professionnels */}
+        <ServicesBlock />
+
+        {/* Section territoriale + carrousel */}
+        <TerritoryCarousel />
+
+        {/* CTA Catalogue */}
+        <section className="max-w-[820px] mx-auto px-5 text-center mb-14" data-testid="kdm-catalog-cta">
+          <h2 className="font-display text-2xl mb-3">Explorez le catalogue coopératif</h2>
+          <p className="text-white/60 text-sm mb-5 max-w-[56ch] mx-auto">
+            Retrouvez l&apos;ensemble des références négociées collectivement, filtrables par territoire, catégorie et incoterm.
+          </p>
+          <Link to="/catalogue" className="btn-gold h-11 px-6 rounded-lg inline-flex items-center gap-2 text-sm font-semibold" data-testid="kdm-cta-catalog-full">
+            Accéder au catalogue <ArrowRight size={15} />
+          </Link>
         </section>
 
         {/* Galerie spots vidéo IA */}

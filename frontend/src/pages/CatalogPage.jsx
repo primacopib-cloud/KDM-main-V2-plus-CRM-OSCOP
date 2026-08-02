@@ -118,9 +118,10 @@ export default function CatalogPage() {
         const entitled = !isAuth ? null : (myZonesData?.is_admin ? null : (myZonesData?.entitled || []));
         setEntitledZones(entitled);
 
-        // Par défaut : TOUS les territoires affichés (onglet « Tous »)
+        // Par défaut : TOUS les territoires affichés (onglet « Tous »), sauf filtre ?zone= dans l'URL
         if (zonesData.length > 0) {
-          const defaultZone = 'ALL';
+          const zoneParam = new URLSearchParams(window.location.search).get('zone');
+          const defaultZone = zoneParam && zonesData.some((z) => z.code === zoneParam) ? zoneParam : 'ALL';
           setSelectedZone(defaultZone);
           
           // Load products and pickup locations for this zone
