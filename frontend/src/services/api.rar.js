@@ -28,6 +28,15 @@ export const rarAPI = {
   adminReserves: () => apiCall('/rar/delivery/reserves/admin/list'),
   resolveReserve: (orderId, action, note) => apiCall(`/rar/delivery/reserves/${orderId}/resolve`, { method: 'POST', body: JSON.stringify({ action, note }) }),
   ceilingHistory: () => apiCall('/rar/delivery/ceiling-history'),
+  carrierStats: () => apiCall('/rar/stats/admin/carrier-stats'),
+  downloadCeilingStatement: async (month) => {
+    const r = await fetch(`${API}/rar/stats/ceiling-statement-pdf?month=${month}`, { credentials: 'include', headers: getAuthHeaders() });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'Relevé indisponible');
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = `releve-plafond-${month}.pdf`; a.click();
+    URL.revokeObjectURL(url);
+  },
   downloadLitigationZip: async (all = false) => {
     const r = await fetch(`${API}/rar/delivery/admin/litigation-export${all ? '?all=true' : ''}`, { credentials: 'include', headers: getAuthHeaders() });
     if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'Aucun litige à exporter');

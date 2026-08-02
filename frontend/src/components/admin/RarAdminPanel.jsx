@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ShieldCheck, Eye, EyeOff, Trash2, Plus, Check, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
+import { RarCarrierStats } from './RarCarrierStats';
 
 const fmt = (c) => `${((c || 0) / 100).toLocaleString('fr-FR')} €`;
 
@@ -244,6 +245,8 @@ export const RarAdminPanel = () => {
           </div>
         ))}
       </div>
+
+      <RarCarrierStats />
     </div>
   );
 };

@@ -234,19 +234,15 @@ async def delivery_proof_pdf(order_id: str, user: dict = Depends(get_current_use
         "Content-Disposition": f"attachment; filename=bon-livraison-{order.get('order_number')}.pdf"})
 
 
-@rar_delivery_router.get("/ceiling-history")
-async def ceiling_history(user: dict = Depends(get_current_user_checkout)):
+async def compute_ceiling_events(org_id: str) -> list:
     """Mouvements de plafond dérivés : attribution, réservations, avoirs, rétablissements."""
-    m = await db.org_memberships.find_one({"user_id": user["id"]})
-    if not m:
-        return {"events": []}
     events = []
-    account = await db.rar_accounts.find_one({"org_id": m["org_id"]}, {"_id": 0})
+    account = await db.rar_accounts.find_one({"org_id": org_id}, {"_id": 0})
     if account and account.get("decided_at") and account.get("ceiling_cents"):
         events.append({"date": account["decided_at"], "type": "GRANT",
                        "label": "Plafond accordé" + (" (pack CREDI'SCOP)" if account.get("source") == "CREDISCOP_PACK" else ""),
                        "amount_cents": account["ceiling_cents"], "order_number": None})
-    async for o in db.orders.find({"org_id": m["org_id"], "rar": True},
+    async for o in db.orders.find({"org_id": org_id, "rar": True},
                                   {"_id": 0, "order_number": 1, "confirmed_at": 1, "paid_at": 1,
                                    "payment_status": 1, "total_ttc_cents": 1, "rar_reserved_cents": 1,
                                    "rar_reserve_resolution": 1}):
@@ -266,6 +262,15 @@ async def ceiling_history(user: dict = Depends(get_current_user_checkout)):
                            "amount_cents": o.get("rar_reserved_cents") or o.get("total_ttc_cents") or 0,
                            "order_number": n})
     events.sort(key=lambda e: str(e["date"] or ""), reverse=True)
+    return events
+
+
+@rar_delivery_router.get("/ceiling-history")
+async def ceiling_history(user: dict = Depends(get_current_user_checkout)):
+    m = await db.org_memberships.find_one({"user_id": user["id"]})
+    if not m:
+        return {"events": []}
+    events = await compute_ceiling_events(m["org_id"])
     return {"events": events[:50]}
 
 
