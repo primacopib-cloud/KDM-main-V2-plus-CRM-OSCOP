@@ -181,6 +181,28 @@ async def carrier_block_log_export(admin: dict = Depends(require_admin)):
         "Content-Disposition": "attachment; filename=journal-ecartements-transporteurs.csv"})
 
 
+@rar_stats_router.get("/admin/annual-archive/runs")
+async def annual_archive_runs(admin: dict = Depends(require_admin)):
+    """Historique des relevés annuels archivés dans la GEDESS (groupé par exercice)."""
+    years = {}
+    async for log in db.rar_statement_log.find({"month": {"$regex": "^ANNUEL-"}}, {"_id": 0}):
+        year = log["month"].replace("ANNUEL-", "")
+        y = years.setdefault(year, {"total": 0, "archived": 0})
+        y["total"] += 1
+        if log.get("ged_doc_id"):
+            y["archived"] += 1
+    runs = []
+    for year in sorted(years, reverse=True):
+        y = years[year]
+        runs.append({
+            "month": year, "rows": y["total"],
+            "status": "SUCCESS" if y["archived"] == y["total"] else "ERROR",
+            "error": None if y["archived"] == y["total"] else f"{y['archived']}/{y['total']} relevés archivés en GED",
+            "ged_filename": f"releve-plafond-annuel-{year}-*.pdf" if y["archived"] else None,
+        })
+    return {"runs": runs, "total": len(runs)}
+
+
 @rar_stats_router.get("/admin/carrier-stats")
 async def carrier_stats(admin: dict = Depends(require_admin)):
     """Taux de réserves par transporteur pour repérer les livraisons à problème."""

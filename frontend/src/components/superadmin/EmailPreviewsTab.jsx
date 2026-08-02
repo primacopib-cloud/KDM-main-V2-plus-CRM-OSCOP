@@ -226,6 +226,13 @@ export const EmailPreviewsTab = () => {
           title="Rapports de conformité archivés (GEDESS)"
           testId="compliance-archive-history"
         />
+        <EmailArchiveHistory
+          refreshKey={archiveRefresh}
+          endpoint="/rar/stats/admin/annual-archive/runs"
+          title="Relevés annuels de plafond archivés (GEDESS)"
+          testId="rar-annual-archive-history"
+          unitLabel="relevés"
+        />
         {categories.map((cat) => (
           <div key={cat} className="mb-3">
             <p className="text-[11px] uppercase tracking-wider text-white/50 mb-1.5">{cat}</p>
