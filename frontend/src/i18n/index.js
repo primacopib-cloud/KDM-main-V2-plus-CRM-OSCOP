@@ -38,7 +38,7 @@ i18n
     supportedLngs: ['fr', 'en', 'es', 'gcf'],
     interpolation: { escapeValue: false },
     detection: {
-      order: ['querystring', 'localStorage', 'navigator', 'htmlTag'],
+      order: ['querystring', 'localStorage', 'htmlTag'],
       lookupQuerystring: 'lang',
       caches: ['localStorage'],
     },

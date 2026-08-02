@@ -30,6 +30,7 @@ import { TestimonialsSection } from '../components/TestimonialsSection';
 import { ReferralChallengeBanner } from '../components/ReferralChallengeBanner';
 import { CommunityStatsStrip } from '../components/CommunityStatsStrip';
 import { PublicLolodriveMapSection } from '../components/landing/PublicLolodriveMapSection';
+import { ReceptionProSection } from '../components/landing/ReceptionProSection';
 export { PublicLolodriveMapSection };
 
 const LandingPage = () => {
@@ -133,6 +134,9 @@ const LandingPage = () => {
 
       {/* Pourquoi Communityplace ? */}
       <WhyCommunityplaceSection />
+
+      {/* Règlement à Réception Pro — bloc commercial */}
+      <ReceptionProSection />
 
       {/* Produits phares par territoire */}
       <ZoneProductsShowcase />

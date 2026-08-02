@@ -2206,3 +2206,20 @@ NOTE DEPLOIEMENT : un déploiement production a échoué le 17/07 (timeout readi
 ## 2026-08-02 — Renommage « Règlement à Réception Pro » (self-testé Playwright)
 - Toutes les mentions user-facing « Paiement à la livraison » renommées « Règlement à Réception Pro » : bannière catalogue (CatalogFiltersNotices, testid cod-banner), option + titre checkout (CheckoutPayment), message d'erreur (CheckoutPage), reçus acheteur (CodReceiptsSection), PDF reçu (pdf_cod_receipt.py), erreurs 403 + emails Brevo (routes_cod.py). Reste 1 log interne non visible.
 - L'« Erreur de chargement » vue par l'utilisateur sur /catalogue preview = redémarrage transitoire du pod (502 au réveil), pas un bug de code — vérifié : visiteur charge 11 produits sans erreur, sélecteur « Tous les territoires » par défaut OK.
+
+## 2026-08-02 — LOT A « Règlement à Réception Pro » : vitrine & contenu (self-testé Playwright)
+Grand chantier RàR Pro validé par l'utilisateur : ordre A→B→C→D→E, encaissement = solution démarrage simple (signature → facture → lien de paiement, plafond rétabli après encaissement confirmé). Identité juridique (point 12) : SKIPPÉE pour l'instant (l'utilisateur n'a pas fourni la dénomination sociale — À REDEMANDER avant factures/CGV définitives).
+- **`ReceptionProSection.jsx`** (nouveau) inséré sur l'accueil entre WhyCommunityplace et ZoneProductsShowcase (testid reception-pro-section) : badge « Accès sous réserve d'éligibilité et de plafond disponible », titre, promesse point 3, « Aucun paiement de la marchandise avant réception », bouton « Vérifier mon éligibilité » (→ /tarifs provisoire, à rebrancher au Lot C, testid reception-pro-eligibility-btn), mention légale sous le bouton, carte courte « Commandez maintenant. Réglez à réception. » + exemples de badges + mention sécurité EXW.
+- **LogisticsSection réécrite** : 2 parcours distincts — Parcours 1 EXW 6 étapes (testid journey-exw) / Parcours 2 RàR Pro 9 étapes (testid journey-rar) avec acteur LOGI'SCOP (vert #4FD1A5) ; données `exwJourney`/`rarJourney` dans data/mock.js (logisticsSteps conservé).
+- **Clause CGV 6 ter** « Règlement à Réception Pro (CLAUSE INTÉGRÉE) » ajoutée dans data/legal/cgv.js (texte point 13, highlight).
+- **Bannière catalogue** : version courte carte commerciale + mention éligibilité/EXW (testid cod-banner).
+- **Traduction catalogue** : cause = détection langue navigator + <html lang="en"> → i18n detection order sans 'navigator' (querystring > localStorage > htmlTag) + index.html lang="fr". Catalogue vérifié 100 % FR (Catalogue KDMARCHE, produits disponibles, Tous/Alimentaire/Boissons…, Tarifs réservés aux adhérents, Se connecter/Devenir adhérent). Les visiteurs ayant déjà 'en' en localStorage gardent leur choix (sélecteur de langue dispo).
+- ⚠️ **INCIDENT ENV RÉSOLU** : frontend 502 ENOSPC (watchers inotify épuisés, sysctl interdit) → ajout `WATCHPACK_POLLING=true` + `CHOKIDAR_USEPOLLING=true` dans frontend/.env. NE PAS retirer ces clés.
+- Testé Playwright : bloc RàR Pro (4 textes clés ✓), parcours EXW + RàR avec LOGI'SCOP et réouverture plafond ✓, clause CGV ✓, catalogue FR ✓. REDÉPLOYER pour la production.
+
+### Backlog RàR Pro restant
+- LOT B : paramètres produit (éligible O/N, territoires, mode livraison, plafond minimal, délai, déclenchement, frais logistiques, douane) + badges catalogue.
+- LOT C : demande d'éligibilité + validation admin + plafond + bloc « Mon plafond à réception » (5 montants) + 11 statuts.
+- LOT D : panier 2 options + « Confirmer ma commande sans acompte » + réservation plafond.
+- LOT E : preuve de livraison LOGI'SCOP (signature, OTP/QR, photos, réserves partielles = suspension partielle) + facture + lien paiement + réouverture plafond après encaissement.
+- Point 12 : identité juridique « KDMARCHÉ, service exploité par [X] » (footer, mentions légales, CGV, bons, factures) — attendre la dénomination de l'utilisateur.

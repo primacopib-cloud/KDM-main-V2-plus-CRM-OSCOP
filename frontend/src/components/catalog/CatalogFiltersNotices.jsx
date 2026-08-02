@@ -107,12 +107,16 @@ export const CatalogFiltersNotices = ({
       </button>
     </div>
 
-    {/* Règlement à Réception Pro — phrase de séduction */}
+    {/* Règlement à Réception Pro — carte commerciale (version courte) */}
     <div className="mb-6 p-4 rounded-xl border border-[#D9B35A]/30" style={{ background: 'linear-gradient(90deg, rgba(217,179,90,0.16), rgba(217,179,90,0.03))' }} data-testid="cod-banner">
       <p className="text-sm text-white">
-        <strong className="text-[#D9B35A]">🛡️ Règlement à Réception Pro</strong> — Commandez en toute sérénité :
-        en tant qu'acheteur Pro abonné, vous ne réglez vos marchandises qu'à réception. Zéro avance de trésorerie,
-        100 % confiance coopérative.
+        <strong className="text-[#D9B35A]">🛡️ Commandez maintenant. Réglez à réception.</strong> —
+        Aucun acompte sur les marchandises éligibles. Le règlement est déclenché après confirmation
+        électronique de la livraison.
+      </p>
+      <p className="text-[11px] text-white/45 mt-1.5">
+        Accès sous réserve d'éligibilité et de plafond disponible. Les commandes EXW restent payables
+        à la mise à disposition ou à l'enlèvement.
       </p>
     </div>
 

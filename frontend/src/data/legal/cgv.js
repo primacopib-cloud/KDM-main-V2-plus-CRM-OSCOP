@@ -54,6 +54,22 @@ La rémunération de KDMARCHE n'est ni indexée sur les abonnements O'SCOP, ni s
 Il n'existe **aucune subvention croisée** entre KDMARCHE et O'SCOP, ni aucun mécanisme de compensation financière visant à financer une réduction de prix des marchandises.`
     },
     {
+      number: "6 ter",
+      title: "Règlement à Réception Pro (CLAUSE INTÉGRÉE)",
+      highlight: true,
+      content: `Certaines commandes peuvent, après validation expresse par KDMARCHÉ, bénéficier du dispositif **« Règlement à Réception Pro »**. Ce dispositif permet à l'Acheteur professionnel de commander les marchandises éligibles sans versement préalable d'un acompte sur leur prix.
+
+Le prix devient exigible à la réception effective des marchandises au lieu de livraison convenu, matérialisée par la signature électronique du bon de livraison, la validation d'un code sécurisé ou toute preuve électronique équivalente.
+
+L'Acheteur autorise KDMARCHÉ à déclencher le moyen de paiement enregistré immédiatement après cette confirmation.
+
+En cas de réserve précise, circonstanciée et portée sur le bon de livraison, seule la valeur des marchandises directement concernées peut être temporairement suspendue. La valeur des marchandises reçues sans réserve demeure exigible.
+
+L'accès au dispositif est **personnel, révocable** et subordonné au maintien d'une adhésion O'SCOP active, à la validation préalable de KDMARCHÉ, à l'existence d'un moyen de paiement valide, à l'absence d'incident et à la disponibilité du plafond attribué.
+
+KDMARCHÉ peut réduire, suspendre ou supprimer le plafond en cas d'incident de paiement, de modification de la situation économique de l'Acheteur ou d'utilisation non conforme du dispositif.`
+    },
+    {
       number: "7",
       title: "Retours / Avoirs / Remboursements (B2B)",
       content: `Les retours sont encadrés B2B : conditions, délais, état produit, preuve d'achat, et conditions particulières liées aux DLC. KDMARCHE peut proposer un avoir ou un remboursement selon la politique applicable.`

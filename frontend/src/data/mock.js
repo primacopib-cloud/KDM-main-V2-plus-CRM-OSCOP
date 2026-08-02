@@ -99,6 +99,27 @@ export const logisticsSteps = [
   { step: "Transport (EXW)", responsible: "Client" }
 ];
 
+export const exwJourney = [
+  { step: "Accès et abonnement", responsible: "O'SCOP" },
+  { step: "Catalogue et prix", responsible: "KDMARCHE" },
+  { step: "Commande", responsible: "KDMARCHE" },
+  { step: "Mise à disposition au point convenu", responsible: "KDMARCHE" },
+  { step: "Règlement à l'enlèvement", responsible: "Client" },
+  { step: "Transport organisé par l'acheteur", responsible: "Client" }
+];
+
+export const rarJourney = [
+  { step: "Adhésion active", responsible: "O'SCOP" },
+  { step: "Éligibilité et plafond", responsible: "KDMARCHE" },
+  { step: "Commande sans acompte", responsible: "Client" },
+  { step: "Réservation du montant sur le plafond disponible", responsible: "KDMARCHE" },
+  { step: "Préparation et expédition", responsible: "KDMARCHE" },
+  { step: "Livraison", responsible: "LOGI'SCOP" },
+  { step: "Validation électronique de la réception", responsible: "Client" },
+  { step: "Facturation et déclenchement du règlement", responsible: "KDMARCHE" },
+  { step: "Réouverture du plafond après encaissement définitif", responsible: "KDMARCHE" }
+];
+
 export const walletCreditsUsage = [
   "L'usage intensif",
   "L'accès prioritaire",
