@@ -17,4 +17,11 @@ export const rarAPI = {
   adminDeleteOption: (code) => apiCall(`/rar/admin/payment-options/${code}`, { method: 'DELETE' }),
   adminProducts: () => apiCall('/rar/admin/products'),
   adminSetProduct: (productId, payload) => apiCall(`/rar/admin/products/${productId}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  // Livraison LOGI'SCOP (Lot E)
+  myPendingDeliveries: () => apiCall('/rar/delivery/my-pending'),
+  confirmDelivery: (orderId, payload) => apiCall(`/rar/delivery/${orderId}/confirm`, { method: 'POST', body: JSON.stringify(payload) }),
+  deliveryProof: (orderId) => apiCall(`/rar/delivery/${orderId}/proof`),
+  adminDeliveries: () => apiCall('/rar/delivery/admin/list'),
+  adminStartDelivery: (orderId, carrierName) => apiCall(`/rar/delivery/${orderId}/start`, { method: 'POST', body: JSON.stringify({ carrier_name: carrierName }) }),
+  adminMarkCollected: (orderId) => apiCall(`/admin/cod/orders/${orderId}/collected`, { method: 'POST', body: JSON.stringify({}) }),
 };

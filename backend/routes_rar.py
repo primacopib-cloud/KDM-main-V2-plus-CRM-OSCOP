@@ -244,6 +244,33 @@ async def admin_rar_decide(body: dict, admin: dict = Depends(require_admin)):
         update["ceiling_cents"] = ceiling
     r = await db.rar_accounts.update_one({"org_id": org_id}, {"$set": update}, upsert=True)
     logger.info("RàR %s pour org %s par %s", update["status"], org_id, admin.get("email"))
+    # Email de décision à l'acheteur
+    account = await db.rar_accounts.find_one({"org_id": org_id}, {"_id": 0, "requested_by": 1})
+    requester = await db.users.find_one({"id": (account or {}).get("requested_by")},
+                                        {"_id": 0, "email": 1, "contact_name": 1}) if account else None
+    if requester and requester.get("email"):
+        try:
+            from brevo_service import send_email, _wrap_html
+            if approve:
+                subject = "✅ Règlement à Réception Pro — votre accès est validé"
+                body_html = (f"<p>Bonjour,</p><p>Votre demande d'accès au dispositif <b>Règlement à Réception Pro</b> "
+                             f"a été validée par KDMARCHÉ.</p><p>Plafond accordé : "
+                             f"<b style='font-size:18px'>{update['ceiling_cents'] / 100:.2f} €</b></p>"
+                             f"<p>Vous pouvez désormais commander les marchandises éligibles sans acompte — "
+                             f"le règlement sera déclenché après validation électronique de la réception.</p>"
+                             f"<p style='font-size:11px;color:#888'>Accès personnel et révocable, sous réserve du plafond disponible.</p>")
+            else:
+                subject = "Règlement à Réception Pro — décision sur votre demande"
+                body_html = (f"<p>Bonjour,</p><p>Après instruction, votre demande d'accès au dispositif "
+                             f"Règlement à Réception Pro n'a pas été retenue à ce stade."
+                             f"{('<p>Motif : ' + update['notes'] + '</p>') if update.get('notes') else ''}"
+                             f"<p>Vous pouvez renouveler votre demande ultérieurement ou obtenir une éligibilité "
+                             f"immédiate via l'acquisition d'un pack CREDI'SCOP.</p>")
+            await send_email(to_email=requester["email"], to_name=requester.get("contact_name"),
+                             subject=subject, html_content=_wrap_html(subject, body_html),
+                             text_content=subject, tags=["rar_decision"])
+        except Exception as exc:
+            logger.warning("Email décision RàR non envoyé : %s", exc)
     return {"ok": True, "status": update["status"], "matched": r.matched_count}
 
 

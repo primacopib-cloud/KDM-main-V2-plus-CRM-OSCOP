@@ -11,7 +11,9 @@ export const cgvKdmarcheContent = {
     {
       number: "1",
       title: "Champ d'application",
-      content: `Les présentes CGV s'appliquent aux ventes de marchandises réalisées par KDMARCHE auprès de clients professionnels disposant d'un accès B2B valide.`
+      content: `Les présentes CGV s'appliquent aux ventes de marchandises réalisées par KDMARCHE auprès de clients professionnels disposant d'un accès B2B valide.
+
+**Identité du vendeur** : KDMARCHÉ, service exploité par **PRIMACOP INTERNATIONAL BUSINESS** — SIRET 433 230 703 00020. Cette identité figure sur les bons de commande, bons de livraison et factures.`
     },
     {
       number: "2",

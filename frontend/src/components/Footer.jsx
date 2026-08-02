@@ -254,9 +254,14 @@ const Footer = () => {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-white/50 text-xs">
-            {t('footer.copyright')}
-          </p>
+          <div>
+            <p className="text-white/50 text-xs">
+              {t('footer.copyright')}
+            </p>
+            <p className="text-white/40 text-[11px] mt-1" data-testid="footer-legal-entity">
+              KDMARCHÉ, service exploité par PRIMACOP INTERNATIONAL BUSINESS — SIRET 433 230 703 00020
+            </p>
+          </div>
           <div className="flex gap-6">
             <Link to="/legal/cgv-kdmarche" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.legal_notice')}</Link>
             <Link to="/documents/politique-confidentialite" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.privacy')}</Link>

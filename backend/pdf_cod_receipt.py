@@ -50,6 +50,7 @@ def generate_cod_receipt_pdf(order: dict, org_name: str, invoice_number: str = N
     story = [
         Paragraph("REÇU D'ENCAISSEMENT", title),
         Paragraph("KDMARCHÉ × O'SCOP — Communityplace B2B ESS des Outre-mer", sub),
+        Paragraph("KDMARCHÉ, service exploité par PRIMACOP INTERNATIONAL BUSINESS — SIRET 433 230 703 00020", sub),
         Spacer(1, 8 * mm),
         Paragraph(f"Reçu n° : <b>{receipt_num}</b>", normal),
         Paragraph(f"Date d'encaissement : {paid_at.strftime('%d/%m/%Y à %H:%M')}", normal),

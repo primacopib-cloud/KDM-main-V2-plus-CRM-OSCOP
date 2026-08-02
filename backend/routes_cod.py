@@ -143,6 +143,7 @@ async def collect_order_core(order_id: str, body: dict, actor: str) -> dict:
         {"id": order_id},
         {"$set": {"payment_status": "succeeded", "amount_paid_cents": amount,
                   "cod_receipt_number": receipt_number, **extra,
+                  **({"rar_status": "Plafond rétabli"} if order.get("rar") else {}),
                   "paid_at": datetime.utcnow(), "updated_at": datetime.utcnow()}})
     invoice_number = None
     try:

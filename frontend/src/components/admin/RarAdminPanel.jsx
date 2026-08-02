@@ -10,6 +10,7 @@ export const RarAdminPanel = () => {
   const [accounts, setAccounts] = useState([]);
   const [options, setOptions] = useState([]);
   const [products, setProducts] = useState([]);
+  const [deliveries, setDeliveries] = useState([]);
   const [ceilInput, setCeilInput] = useState({});
   const [newOpt, setNewOpt] = useState('');
 
@@ -17,6 +18,7 @@ export const RarAdminPanel = () => {
     rarAPI.adminAccounts().then((d) => setAccounts(d.accounts)).catch(() => {});
     rarAPI.adminPaymentOptions().then((d) => setOptions(d.options)).catch(() => {});
     rarAPI.adminProducts().then((d) => setProducts(d.products)).catch(() => {});
+    rarAPI.adminDeliveries().then((d) => setDeliveries(d.orders || [])).catch(() => {});
   };
   useEffect(() => { load(); }, []);
 
@@ -144,6 +146,37 @@ export const RarAdminPanel = () => {
               ? <span className="text-[9px] text-emerald-300">✓ Éligible · {p.rar_delivery_mode || "LOGI'SCOP"}</span>
               : <span className="text-[9px] text-sky-300">EXW — à l'enlèvement</span>}
           </label>
+        ))}
+      </div>
+      {/* Livraisons RàR (Lot E) */}
+      <h4 className="text-xs uppercase tracking-wider text-white/50 font-bold mb-2 mt-5">Livraisons LOGI'SCOP — commandes sans acompte</h4>
+      {deliveries.length === 0 && <p className="text-xs text-white/40 mb-3">Aucune commande RàR.</p>}
+      <div className="space-y-1.5">
+        {deliveries.map((o) => (
+          <div key={o.id} className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-lg bg-white/[0.02] border border-white/[0.07] text-xs" data-testid={`rar-admin-delivery-${o.order_number}`}>
+            <span>
+              <b className="text-white">{o.order_number}</b> · {fmt(o.total_ttc_cents)}
+              {o.rar_disputed_cents > 0 && <span className="ml-1.5 text-amber-300">({fmt(o.rar_disputed_cents)} sous réserves)</span>}
+              <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/30">{o.rar_status}</span>
+              {o.payment_status === 'succeeded' && <span className="ml-1 text-[9px] text-emerald-300">✓ encaissé</span>}
+            </span>
+            <span className="flex gap-1.5">
+              {o.payment_status !== 'succeeded' && o.rar_status === 'Commande acceptée sous plafond' && (
+                <button type="button" data-testid={`rar-start-delivery-${o.order_number}`}
+                  onClick={async () => { try { await rarAPI.adminStartDelivery(o.id, "LOGI'SCOP"); toast.success('OTP envoyé au client'); load(); } catch (e) { toast.error(e.message); } }}
+                  className="px-2 py-1 rounded text-[10px] font-bold text-sky-300 bg-sky-400/10 border border-sky-400/30">
+                  🚚 Livrer (envoyer OTP)
+                </button>
+              )}
+              {o.payment_status !== 'succeeded' && ['Règlement déclenché', 'Réserves en cours de traitement'].includes(o.rar_status) && (
+                <button type="button" data-testid={`rar-collect-${o.order_number}`}
+                  onClick={async () => { try { await rarAPI.adminMarkCollected(o.id); toast.success('Encaissement confirmé — plafond rétabli'); load(); } catch (e) { toast.error(e.message); } }}
+                  className="px-2 py-1 rounded text-[10px] font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/30">
+                  💶 Paiement encaissé
+                </button>
+              )}
+            </span>
+          </div>
         ))}
       </div>
     </div>

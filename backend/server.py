@@ -645,6 +645,9 @@ app.include_router(cod_admin_router)
 from routes_rar import rar_router, set_rar_database
 set_rar_database(db)
 app.include_router(rar_router)
+from routes_rar_delivery import rar_delivery_router, set_rar_delivery_database
+set_rar_delivery_database(db)
+app.include_router(rar_delivery_router)
 from ventia_service import ventia_router, set_ventia_database
 set_ventia_database(db)
 app.include_router(ventia_router)

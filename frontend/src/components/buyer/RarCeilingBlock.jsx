@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Loader2, PackageCheck, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShieldCheck, Loader2, PackageCheck, ChevronDown, ChevronUp, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
+import { RarDeliveryConfirmDialog } from './RarDeliveryConfirmDialog';
 
 const fmt = (c) => `${((c || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 
@@ -11,8 +12,13 @@ export const RarCeilingBlock = () => {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
   const [showStatuses, setShowStatuses] = useState(false);
+  const [deliveries, setDeliveries] = useState([]);
+  const [confirmOrder, setConfirmOrder] = useState(null);
 
-  const load = () => rarAPI.myStatus().then(setData).catch(() => {});
+  const load = () => {
+    rarAPI.myStatus().then(setData).catch(() => {});
+    rarAPI.myPendingDeliveries().then((d) => setDeliveries(d.orders || [])).catch(() => {});
+  };
   useEffect(() => { load(); }, []);
 
   const request = async () => {
@@ -81,6 +87,28 @@ export const RarCeilingBlock = () => {
           <p className="text-[10px] text-white/35 mt-2">
             Le plafond est rétabli après confirmation effective du paiement (encaissement définitif), non à la signature du bon de livraison.
           </p>
+          {deliveries.length > 0 && (
+            <div className="mt-3 space-y-1.5" data-testid="rar-deliveries-list">
+              <p className="text-[11px] font-bold text-white/70 flex items-center gap-1.5"><Truck className="w-3.5 h-3.5 text-[#4FD1A5]" /> Mes commandes sans acompte</p>
+              {deliveries.map((o) => (
+                <div key={o.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white/[0.04] border border-white/10 text-xs" data-testid={`rar-delivery-${o.order_number}`}>
+                  <span>
+                    <b>{o.order_number}</b> · {fmt(o.total_ttc_cents)}
+                    <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full text-[#D9B35A] bg-[#D9B35A]/10 border border-[#D9B35A]/30">{o.rar_status}</span>
+                  </span>
+                  {o.awaiting_confirmation && (
+                    <button type="button" onClick={() => setConfirmOrder(o)} data-testid={`rar-confirm-btn-${o.order_number}`}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-black bg-[#4FD1A5] hover:bg-[#3fc094] shrink-0">
+                      Confirmer la réception
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {confirmOrder && (
+            <RarDeliveryConfirmDialog order={confirmOrder} onClose={() => setConfirmOrder(null)} onDone={load} />
+          )}
         </>
       ) : data.status === 'PENDING' ? (
         <p className="text-xs text-white/60">

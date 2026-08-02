@@ -52,7 +52,7 @@ def build_invoice_pdf(inv: dict) -> bytes:
     ]], colWidths=[100 * mm, 70 * mm])
     head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     parties = Table([[
-        Paragraph("<b>Émetteur</b><br/>SCIC SAS OBJECTIF SCOP OUTREMER (O'SCOP)<br/>Communityplace KDMARCHE<br/>contact@objectifscopoutremer.com", st),
+        Paragraph("<b>Émetteur</b><br/>SCIC SAS OBJECTIF SCOP OUTREMER (O'SCOP)<br/>Communityplace KDMARCHE<br/>KDMARCHÉ, service exploité par PRIMACOP INTERNATIONAL BUSINESS — SIRET 433 230 703 00020<br/>contact@objectifscopoutremer.com", st),
         Paragraph(f"<b>Client</b><br/>{inv['company']}{(' — ' + inv['legal_form']) if inv.get('legal_form') else ''}<br/>"
                   f"SIRET : {inv.get('siret') or '—'}<br/>Pays : {inv.get('country') or '—'}<br/>{inv.get('email')}", st),
     ]], colWidths=[85 * mm, 85 * mm])
