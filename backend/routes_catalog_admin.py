@@ -398,3 +398,64 @@ async def get_catalog_stats():
     except Exception as e:
         logger.error(f"Error getting stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class BulkActionPayload(BaseModel):
+    product_ids: List[str]
+    action: str  # publish | draft | pro_on | pro_off | lolodrive_on | lolodrive_off | set_category | delete
+    category: Optional[str] = None
+    subcategory: Optional[str] = None
+
+
+@catalog_admin_router.post("/products/bulk-action")
+async def bulk_products_action(payload: BulkActionPayload):
+    """Actions groupées sur les produits du catalogue (sélection unitaire ou en masse)."""
+    if not payload.product_ids:
+        raise HTTPException(status_code=400, detail="Aucun produit sélectionné")
+    valid = {"publish", "draft", "pro_on", "pro_off", "lolodrive_on", "lolodrive_off", "set_category", "delete"}
+    if payload.action not in valid:
+        raise HTTPException(status_code=400, detail=f"Action invalide ({', '.join(sorted(valid))})")
+    now = datetime.now(timezone.utc)
+    q = {"id": {"$in": payload.product_ids}}
+    if payload.action == "publish":
+        r = await db.catalog_products.update_many(q, {"$set": {"status": "approved", "approved_at": now, "updated_at": now}})
+        affected = r.modified_count
+    elif payload.action == "draft":
+        r = await db.catalog_products.update_many(q, {"$set": {"status": "draft", "updated_at": now}})
+        affected = r.modified_count
+    elif payload.action in ("pro_on", "pro_off"):
+        r = await db.catalog_products.update_many(q, {"$set": {"is_active": payload.action == "pro_on", "updated_at": now}})
+        affected = r.modified_count
+    elif payload.action == "set_category":
+        if not payload.category:
+            raise HTTPException(status_code=400, detail="Catégorie requise")
+        r = await db.catalog_products.update_many(
+            q, {"$set": {"category": payload.category, "subcategory": payload.subcategory or None, "updated_at": now}})
+        affected = r.modified_count
+    elif payload.action == "delete":
+        r = await db.catalog_products.delete_many(q)
+        affected = r.deleted_count
+    else:
+        products = await db.catalog_products.find(q, {"_id": 0}).to_list(500)
+        skus = [p["sku"] for p in products if p.get("sku")]
+        if payload.action == "lolodrive_off":
+            r = await db.lolodrive_products.delete_many({"sku": {"$in": skus}})
+            affected = r.deleted_count
+        else:
+            affected = 0
+            for p in products:
+                pricing = p.get("pricing") or {}
+                tva = pricing.get("tva_rate", 8.5)
+                ttc = round((pricing.get("price_ht_cents") or 0) * (1 + tva / 100))
+                doc = {"sku": p["sku"], "name": p["name"], "brand": p.get("brand"),
+                       "category": p.get("category"), "subcategory": p.get("subcategory"),
+                       "image_url": p.get("image_url"), "tva_rate": tva,
+                       "price_public_cents": ttc, "price_pass_cents": ttc,
+                       "catalog_type": "NORMAL", "is_active": True, "updated_at": now}
+                await db.lolodrive_products.update_one(
+                    {"sku": p["sku"]},
+                    {"$set": doc, "$setOnInsert": {"id": str(uuid.uuid4()), "territories": [], "stock_qty": 0, "created_at": now}},
+                    upsert=True)
+                affected += 1
+    logger.info("Bulk catalog action %s sur %s produit(s)", payload.action, affected)
+    return {"success": True, "action": payload.action, "affected": affected}

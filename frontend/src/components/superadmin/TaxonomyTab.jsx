@@ -69,8 +69,16 @@ export const TaxonomyTab = () => {
 
   const del = async (url, okMsg) => {
     const r = await fetch(`${API}${url}`, { method: 'DELETE', credentials: 'include' });
-    if (r.ok) { toast.success(okMsg); refresh(); }
-    else toast.error('Suppression impossible');
+    if (r.ok) { toast.success(okMsg); refresh(); return; }
+    if (r.status === 409) {
+      const data = await r.json().catch(() => ({}));
+      if (window.confirm(`⚠️ ${data.detail || 'Élément encore utilisé.'}`)) {
+        const sep = url.includes('?') ? '&' : '?';
+        const r2 = await fetch(`${API}${url}${sep}force=true`, { method: 'DELETE', credentials: 'include' });
+        if (r2.ok) { toast.success(okMsg); refresh(); return; }
+      } else { return; }
+    }
+    toast.error('Suppression impossible');
   };
 
   return (

@@ -332,6 +332,7 @@ export default function AdminV2Page() {
             organizations={organizations}
             orgStatusFilter={orgStatusFilter}
             setOrgStatusFilter={setOrgStatusFilter}
+            reload={loadData}
           />
 
           <ExportTab

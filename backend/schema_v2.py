@@ -91,6 +91,7 @@ class OrgResponse(BaseModel):
     status: str
     status_reason_code: Optional[str] = None
     status_comment: Optional[str] = None
+    hidden: Optional[bool] = None
     created_at: datetime
     updated_at: datetime
 

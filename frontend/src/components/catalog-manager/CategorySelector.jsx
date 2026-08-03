@@ -71,11 +71,23 @@ export const CategorySelector = ({ formData, handleChange }) => {
   const deleteCategory = async () => {
     if (!selectedCat) return;
     if (!window.confirm(`Supprimer la catégorie « ${selectedCat.label} » ?`)) return;
-    if (await call(`/taxonomy/categories/${selectedCat.id}`, 'DELETE')) {
+    const doDelete = async (force) => fetch(`${API}/taxonomy/categories/${selectedCat.id}${force ? '?force=true' : ''}`, {
+      method: 'DELETE', credentials: 'include', headers: getAuthHeaders(),
+    });
+    let r = await doDelete(false);
+    if (r.status === 409) {
+      const data = await r.json().catch(() => ({}));
+      if (!window.confirm(`⚠️ ${data.detail || 'Catégorie encore utilisée par des produits.'}`)) return;
+      r = await doDelete(true);
+    }
+    if (r.ok) {
       toast.success('Catégorie supprimée');
       handleChange('category', '');
       handleChange('subcategory', '');
       refresh();
+    } else {
+      const data = await r.json().catch(() => ({}));
+      toast.error(typeof data.detail === 'string' ? data.detail : 'Erreur');
     }
   };
 

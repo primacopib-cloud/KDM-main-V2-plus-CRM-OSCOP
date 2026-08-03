@@ -306,6 +306,26 @@ export const adminAPIV2 = {
     });
   },
 
+  createOrg: async (payload) => {
+    return apiCallV2('/admin/orgs', { method: 'POST', body: JSON.stringify(payload) });
+  },
+
+  updateOrg: async (orgId, payload) => {
+    return apiCallV2(`/admin/orgs/${orgId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+  },
+
+  deleteOrg: async (orgId) => {
+    return apiCallV2(`/admin/orgs/${orgId}`, { method: 'DELETE' });
+  },
+
+  setOrgVisibility: async (orgId, hidden) => {
+    return apiCallV2(`/admin/orgs/${orgId}/visibility`, { method: 'POST', body: JSON.stringify({ hidden }) });
+  },
+
+  bulkOrgs: async (action, orgIds) => {
+    return apiCallV2('/admin/orgs/bulk', { method: 'POST', body: JSON.stringify({ action, org_ids: orgIds }) });
+  },
+
   getAuditLog: async (orgId = null, action = null, limit = 100) => {
     const params = new URLSearchParams({ limit });
     if (orgId) params.append('org_id', orgId);

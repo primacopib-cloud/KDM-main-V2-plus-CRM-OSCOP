@@ -85,11 +85,18 @@ async def add_category(payload: CategoryPayload, admin: dict = Depends(_admin)):
 
 
 @taxonomy_router.delete("/categories/{category_id}")
-async def delete_category(category_id: str, _: dict = Depends(_admin)):
-    result = await db.product_categories.delete_one({"id": category_id})
-    if result.deleted_count == 0:
+async def delete_category(category_id: str, force: bool = False, _: dict = Depends(_admin)):
+    cat = await db.product_categories.find_one({"id": category_id}, {"_id": 0})
+    if not cat:
         raise HTTPException(status_code=404, detail="Catégorie introuvable")
-    return {"status": "SUCCESS"}
+    used = await db.catalog_products.count_documents({"category": cat["value"]})
+    used += await db.vendor_products.count_documents({"category": cat["value"]})
+    if used and not force:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Catégorie « {cat['label']} » encore utilisée par {used} produit(s). Confirmez pour la supprimer quand même.")
+    await db.product_categories.delete_one({"id": category_id})
+    return {"status": "SUCCESS", "was_used_by": used}
 
 
 @taxonomy_router.post("/categories/{category_id}/subcategories")

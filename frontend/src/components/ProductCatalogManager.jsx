@@ -15,6 +15,8 @@ import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { toast } from 'sonner';
 import { CATEGORIES, ZONES, COUNTRIES, getEmptyProduct, formatPrice } from './catalog-manager/constants';
 import { BasicTab, PricingTab } from './catalog-manager/BasicPricingTabs';
+import { BulkProductActions } from './catalog-manager/BulkProductActions';
+import { ProductRow } from './catalog-manager/ProductRow';
 import { FoodTab, TechnicalTab, LogisticsTab } from './catalog-manager/SpecializedTabs';
 import { AiProductAssistant } from './catalog-manager/AiProductAssistant';
 import { BulkEanImport } from './catalog-manager/BulkEanImport';
@@ -284,18 +286,6 @@ export default function ProductCatalogManager({ onProductSaved }) {
 
   const toggleSelect = (id) => setSelected((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
 
-  const publishSelected = async () => {
-    const res = await fetch(`${API_URL}/api/catalog/admin/products/publish-bulk`, {
-      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: selected }),
-    });
-    const d = await res.json();
-    if (!res.ok) return toast.error(d.detail || 'Publication échouée');
-    toast.success(`${d.published} fiche(s) publiée(s) au catalogue ✓`);
-    setSelected([]);
-    fetchProducts();
-  };
-
   const publishProduct = async (product) => {
     const res = await fetch(`${API_URL}/api/catalog/admin/products/${product.id}/publish`, {
       method: 'POST', credentials: 'include',
@@ -345,12 +335,6 @@ export default function ProductCatalogManager({ onProductSaved }) {
           <p className="text-sm text-white/50">{products.length} produits</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {selected.length > 0 && (
-            <Button onClick={publishSelected} data-testid="publish-selected-btn"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              <Rocket className="w-4 h-4 mr-2" /> Publier la sélection ({selected.length})
-            </Button>
-          )}
           <MarginSettings />
           <TranslateCatalogButton />
           <AiPriceDraftsButton products={products} onDone={fetchProducts} />
@@ -398,6 +382,10 @@ export default function ProductCatalogManager({ onProductSaved }) {
         </Select>
       </div>
 
+      {/* Actions groupées */}
+      <BulkProductActions selected={selected} setSelected={setSelected}
+        allIds={filteredProducts.map((p) => p.id)} onDone={fetchProducts} />
+
       {/* Products List */}
       <div className="space-y-3">
         {loading ? (
@@ -412,79 +400,10 @@ export default function ProductCatalogManager({ onProductSaved }) {
           </div>
         ) : (
           filteredProducts.map(product => (
-            <div 
-              key={product.id}
-              className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] flex items-center gap-4 hover:bg-white/[0.04] transition-colors"
-            >
-              {/* Sélection (brouillons) */}
-              {product.status === 'draft' && (
-                <input type="checkbox" checked={selected.includes(product.id)} onChange={() => toggleSelect(product.id)}
-                  data-testid={`product-select-${product.id}`}
-                  className="w-4 h-4 accent-[#D9B35A] flex-shrink-0 cursor-pointer" />
-              )}
-              {/* Image */}
-              <div className="w-16 h-16 rounded-xl bg-white/[0.04] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {product.image_url
-                  ? <img src={`${API_URL}${product.image_url}`} alt={product.name} className="w-full h-full object-cover" />
-                  : <Package className="w-6 h-6 text-white/20" />}
-              </div>
-              
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs">{CATEGORIES.find(c => c.value === product.category)?.icon}</span>
-                  <p className="font-semibold text-white truncate">{product.name}</p>
-                  {product.is_new && <Badge className="bg-blue-500/20 text-blue-400 border-0 text-xs">Nouveau</Badge>}
-                </div>
-                <div className="flex items-center gap-3 text-xs text-white/50">
-                  <span className="font-mono">{product.sku}</span>
-                  {product.ean && <span>EAN: {product.ean}</span>}
-                  <span>{product.brand}</span>
-                </div>
-              </div>
-              
-              {/* Price */}
-              <div className="text-right">
-                <p className="font-bold text-[#D9B35A]">{formatPrice(product.pricing?.price_ht_cents)}</p>
-                <p className="text-xs text-white/50">HT · TVA {product.pricing?.tva_rate}%</p>
-              </div>
-              
-              {/* Status */}
-              <Badge 
-                variant="outline" 
-                className={
-                  product.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                  product.status === 'draft' ? 'bg-gray-500/20 text-gray-400 border-gray-500/30' :
-                  'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                }
-              >
-                {product.status === 'approved' ? 'Approuvé' : product.status === 'draft' ? 'Brouillon' : 'En attente'}
-              </Badge>
-              
-              {/* Actions */}
-              <div className="flex gap-2">
-                {product.status === 'draft' && (
-                  <>
-                    <Button size="sm" onClick={() => suggestPrice(product)} disabled={pricingId === product.id}
-                      data-testid={`product-ai-price-${product.id}`} title="Prix suggéré par l'IA (marché Outre-mer)"
-                      className="bg-white/[0.06] border border-[#D9B35A]/30 text-[#E9CF8E] hover:bg-[#D9B35A]/15 h-8 px-2 text-xs">
-                      <Sparkles className={`w-3.5 h-3.5 mr-1 ${pricingId === product.id ? 'animate-spin' : ''}`} /> Prix IA
-                    </Button>
-                    <Button size="sm" onClick={() => publishProduct(product)}
-                      data-testid={`product-publish-${product.id}`} title="Publier cette fiche au catalogue"
-                      className="bg-[#D9B35A] hover:bg-[#c9a34a] text-black h-8 px-2 text-xs font-bold">
-                      <Rocket className="w-3.5 h-3.5 mr-1" /> Publier
-                    </Button>
-                  </>
-                )}
-                <Button size="sm" variant="ghost" onClick={() => openEditProduct(product)} className="text-white/60 hover:text-white">
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => handleDelete(product.id)} className="text-white/60 hover:text-red-400">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            <ProductRow key={product.id} product={product}
+              checked={selected.includes(product.id)} onToggle={() => toggleSelect(product.id)}
+              pricingId={pricingId} suggestPrice={suggestPrice} publishProduct={publishProduct}
+              openEditProduct={openEditProduct} handleDelete={handleDelete} />
           ))
         )}
       </div>

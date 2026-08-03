@@ -64,15 +64,18 @@ app.include_router(orgs_core_router)
 from routes_v2 import api_v2_router, set_database
 from routes_v2_applications import applications_v2_router, set_applications_v2_database
 from routes_v2_billing import billing_v2_router, set_billing_v2_database
+from routes_admin_orgs import admin_orgs_router, set_admin_orgs_database
 set_database(db)
 set_applications_v2_database(db)
 set_billing_v2_database(db)
+set_admin_orgs_database(db)
 app.include_router(api_v2_router)
 app.include_router(applications_v2_router)
 from routes_adhesion_reminders import adhesion_reminders_router, set_adhesion_reminders_database
 set_adhesion_reminders_database(db)
 app.include_router(adhesion_reminders_router)
 app.include_router(billing_v2_router)
+app.include_router(admin_orgs_router)
 
 # Import and include catalog routes (cart & orders split into dedicated modules)
 from routes_catalog import catalog_router, set_catalog_database
