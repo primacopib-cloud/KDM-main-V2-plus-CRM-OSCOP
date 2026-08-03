@@ -53,6 +53,10 @@ class CategoryPayload(BaseModel):
     label: str
 
 
+class SubcategoryPayload(BaseModel):
+    label: str
+
+
 class TvaPayload(BaseModel):
     value: float
     label: str
@@ -85,6 +89,31 @@ async def delete_category(category_id: str, _: dict = Depends(_admin)):
     result = await db.product_categories.delete_one({"id": category_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Catégorie introuvable")
+    return {"status": "SUCCESS"}
+
+
+@taxonomy_router.post("/categories/{category_id}/subcategories")
+async def add_subcategory(category_id: str, payload: SubcategoryPayload, admin: dict = Depends(_admin)):
+    label = payload.label.strip()
+    if not label:
+        raise HTTPException(status_code=400, detail="Libellé requis")
+    cat = await db.product_categories.find_one({"id": category_id}, {"_id": 0})
+    if not cat:
+        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+    if any(s.get("label", "").lower() == label.lower() for s in cat.get("subcategories", [])):
+        raise HTTPException(status_code=409, detail="Cette sous-catégorie existe déjà")
+    sub = {"id": str(uuid.uuid4()), "label": label, "created_by": admin["email"],
+           "created_at": datetime.now(timezone.utc).isoformat()}
+    await db.product_categories.update_one({"id": category_id}, {"$push": {"subcategories": sub}})
+    return {"status": "SUCCESS", "subcategory": sub}
+
+
+@taxonomy_router.delete("/categories/{category_id}/subcategories/{sub_id}")
+async def delete_subcategory(category_id: str, sub_id: str, _: dict = Depends(_admin)):
+    result = await db.product_categories.update_one(
+        {"id": category_id}, {"$pull": {"subcategories": {"id": sub_id}}})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Sous-catégorie introuvable")
     return {"status": "SUCCESS"}
 
 

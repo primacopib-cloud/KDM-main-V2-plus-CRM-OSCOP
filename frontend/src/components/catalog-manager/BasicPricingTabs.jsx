@@ -11,7 +11,8 @@ import {
 import { TabsContent } from '../ui/tabs';
 import { CountryFlag } from './CountryFlag';
 import { FormSection, TagInput } from './FormInputs';
-import { CATEGORIES, UNITS, TVA_RATES, COUNTRIES, formatPrice } from './constants';
+import { CategorySelector } from './CategorySelector';
+import { UNITS, TVA_RATES, COUNTRIES, formatPrice } from './constants';
 
 export const BasicTab = ({ formData, handleChange }) => (
             <TabsContent value="basic" className="space-y-4">
@@ -77,30 +78,7 @@ export const BasicTab = ({ formData, handleChange }) => (
                       className="mt-1 bg-white/[0.04] border-white/10 text-white text-sm"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-white/70 text-xs">Catégorie *</Label>
-                      <Select value={formData.category} onValueChange={(v) => handleChange('category', v)}>
-                        <SelectTrigger className="mt-1 bg-white/[0.04] border-white/10">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CATEGORIES.map(c => (
-                            <SelectItem key={c.value} value={c.value}>{c.icon} {c.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-white/70 text-xs">Sous-catégorie</Label>
-                      <Input
-                        value={formData.subcategory}
-                        onChange={(e) => handleChange('subcategory', e.target.value)}
-                        placeholder="Ex: Féculents, Froid..."
-                        className="mt-1 bg-white/[0.04] border-white/10 text-white text-sm"
-                      />
-                    </div>
-                  </div>
+                  <CategorySelector formData={formData} handleChange={handleChange} />
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-white/70 text-xs">Marque</Label>
