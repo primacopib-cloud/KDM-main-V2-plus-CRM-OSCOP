@@ -26,6 +26,7 @@ import { AudienceBanner } from '../components/landing/AudienceBanner';
 import { KdmPillarsSection } from '../components/landing/KdmPillarsSection';
 import { CoopEssSection } from '../components/landing/CoopEssSection';
 import { CooperativeApiSection } from '../components/landing/CooperativeApiSection';
+import { FloatingToc } from '../components/landing/FloatingToc';
 export { PublicLolodriveMapSection };
 export { CooperativeApiSection };
 
@@ -34,6 +35,7 @@ const LandingPage = () => {
     <div className="min-h-screen">
       <Seo titleKey="seo.landing_title" descKey="seo.landing_desc" />
       <NavBar />
+      <FloatingToc />
       <div className="pt-20 -mb-16"><FlashPromoBanner placement="landing" /></div>
 
       {/* Hero Section */}

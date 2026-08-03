@@ -2299,3 +2299,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **KdmarchePage.jsx** → simple `<Navigate>` : /kdmarche → /#pros, /kdmarche#territoires → /#territoires (aucun lien cassé).
 - **Navigation** : navItems.js — lien « KDMARCHÉ » remplacé par « Professionnels » (/#pros) et « Particuliers » (/#particuliers) ; Header.jsx même logique (plus de conditionnel kdmarche) ; CrediscopBadge « GALERIE SPOTS » → /#spots-video.
 - Vérifié Playwright : redirection /kdmarche→/#pros + scroll auto, bandeaux pros/particuliers visibles, hero OK, aucune erreur console. Tous fichiers <500 lignes.
+
+## 2026-08-03 — Sommaire Flottant Accueil (self-testé capture Playwright)
+- Nouveau `components/landing/FloatingToc.jsx` monté dans LandingPage : nav verticale fixe à droite (desktop lg+, masquée mobile), 7 entrées — Accueil (top), Professionnels (#pros), Tarifs (#offres), Particuliers (#particuliers), Territoires (#territoires), Points relais (#reseau-lolodrive), Contact (#contact). Apparition après 350 px de scroll (fade+slide), item actif surligné or via listener scroll, tooltip label au hover, clic = scrollIntoView smooth. Testids floating-toc, toc-link-{id}.
+- Vérifié Playwright : apparition au scroll, clic « Particuliers » saute au bandeau (top 95 px), aria-current posé, tooltip hover OK.
