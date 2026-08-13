@@ -73,7 +73,9 @@ async def add_category(payload: CategoryPayload, admin: dict = Depends(_admin)):
     label = payload.label.strip()
     if not label:
         raise HTTPException(status_code=400, detail="Libellé requis")
-    value = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")
+    import unicodedata
+    norm = unicodedata.normalize("NFKD", label).encode("ascii", "ignore").decode()
+    value = re.sub(r"[^a-z0-9]+", "-", norm.lower()).strip("-")
     if not value:
         raise HTTPException(status_code=400, detail="Libellé invalide")
     if await db.product_categories.find_one({"value": value}):

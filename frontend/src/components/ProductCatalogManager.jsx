@@ -39,6 +39,14 @@ export default function ProductCatalogManager({ onProductSaved }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [taxCategories, setTaxCategories] = useState([]);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/taxonomy/categories`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setTaxCategories(d.categories || []))
+      .catch(() => {});
+  }, []);
 
   // Fetch products
   const fetchProducts = async () => {
@@ -364,8 +372,10 @@ export default function ProductCatalogManager({ onProductSaved }) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Toutes catégories</SelectItem>
-            {CATEGORIES.map(c => (
-              <SelectItem key={c.value} value={c.value}>{c.icon} {c.label}</SelectItem>
+            {(taxCategories.length ? taxCategories : CATEGORIES).map(c => (
+              <SelectItem key={c.value} value={c.value} data-testid={`catalog-filter-cat-${c.value}`}>
+                {CATEGORIES.find((s) => s.value === c.value)?.icon} {c.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>

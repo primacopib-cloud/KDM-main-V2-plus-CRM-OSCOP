@@ -96,7 +96,15 @@ async def list_catalog_products(
         
         cursor = db.catalog_products.find(query, {"_id": 0}).skip(skip).limit(limit).sort("created_at", -1)
         products = await cursor.to_list(limit)
-        
+
+        skus = [p["sku"] for p in products if p.get("sku")]
+        lolo_skus = set()
+        if skus:
+            async for d in db.lolodrive_products.find({"sku": {"$in": skus}}, {"_id": 0, "sku": 1}):
+                lolo_skus.add(d["sku"])
+        for p in products:
+            p["in_lolodrive"] = p.get("sku") in lolo_skus
+
         total = await db.catalog_products.count_documents(query)
         
         return {

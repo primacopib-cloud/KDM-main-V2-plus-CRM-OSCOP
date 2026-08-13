@@ -24,6 +24,7 @@ export const ProductRow = ({
         <p className="font-semibold text-white truncate">{product.name}</p>
         {product.is_new && <Badge className="bg-blue-500/20 text-blue-400 border-0 text-xs">Nouveau</Badge>}
         {product.is_active === false && <Badge className="bg-slate-500/25 text-slate-300 border-0 text-xs" data-testid={`product-pro-off-${product.id}`}>Hors cat. pro</Badge>}
+        {product.in_lolodrive && <Badge className="bg-[#8CC63E]/20 text-[#b5e07a] border-0 text-xs" data-testid={`product-lolo-badge-${product.id}`}>LOLODRIVE</Badge>}
       </div>
       <div className="flex items-center gap-3 text-xs text-white/50">
         <span className="font-mono">{product.sku}</span>
