@@ -403,3 +403,19 @@
   .vitrine .hero-stagger > *, .vitrine .hero-enter-delayed { animation: none !important; }
   .parallax-orb { display: none; }
 }
+
+/* Ticker activité live */
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 35s linear infinite;
+  will-change: transform;
+}
+.ticker-track:hover { animation-play-state: paused; }
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation: none; }
+}

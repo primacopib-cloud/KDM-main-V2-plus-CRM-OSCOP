@@ -417,6 +417,9 @@ set_team_roles_database(db)
 app.include_router(team_router)
 from routes_taxonomy import taxonomy_router, set_taxonomy_database, seed_taxonomy
 set_taxonomy_database(db)
+from routes_activity_ticker import activity_ticker_router, set_activity_ticker_database
+set_activity_ticker_database(db)
+app.include_router(activity_ticker_router)
 app.include_router(taxonomy_router)
 from routes_team_space import team_space_router, admin_buyers_router, set_team_space_database
 set_team_space_database(db)

@@ -29,6 +29,8 @@ import { CooperativeApiSection } from '../components/landing/CooperativeApiSecti
 import { FloatingToc } from '../components/landing/FloatingToc';
 import { Reveal } from '../components/landing/Reveal';
 import { ParallaxOrbs } from '../components/landing/ParallaxOrbs';
+import { ScrollProgressBar } from '../components/landing/ScrollProgressBar';
+import { ActivityTicker } from '../components/landing/ActivityTicker';
 export { PublicLolodriveMapSection };
 export { CooperativeApiSection };
 
@@ -36,6 +38,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen vitrine relative" style={{ isolation: 'isolate', overflowX: 'clip' }}>
       <ParallaxOrbs />
+      <ScrollProgressBar />
       <Seo titleKey="seo.landing_title" descKey="seo.landing_desc" />
       <NavBar />
       <FloatingToc />
@@ -132,6 +135,9 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Ticker d'activité en direct */}
+      <ActivityTicker />
 
       {/* Compteurs publics de la coopérative */}
       <Reveal variant="zoom"><CommunityStatsStrip /></Reveal>
