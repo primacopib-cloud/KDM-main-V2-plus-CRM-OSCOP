@@ -2327,3 +2327,11 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **Filtre dynamique** : le Select « Toutes catégories » de la liste produits (ProductCatalogManager) charge /api/taxonomy/categories (fallback constante statique si vide) — les catégories créées en direct apparaissent immédiatement (testid catalog-filter-cat-{value}). Bonus : slugs désormais désaccentués (« Épicerie Fine » → epicerie-fine, unicodedata NFKD dans routes_taxonomy.add_category).
 - **Badge LOLODRIVE** : GET /api/catalog/admin/products enrichit chaque produit d'un flag `in_lolodrive` (présence du SKU dans lolodrive_products) ; ProductRow affiche un badge vert « LOLODRIVE » (testid product-lolo-badge-{id}).
 - Testé curl (flag true/false selon bulk lolodrive_on/off, slug corrigé) + Playwright (badge visible, « Épicerie Fine » dans le filtre). Données de démo nettoyées après test.
+
+## 2026-08-16 — Vitrine publique ultra dynamique (self-testé capture Playwright + checks opacité)
+- **Reveal au scroll** : nouveau `landing/Reveal.jsx` (IntersectionObserver, variantes up/left/right/zoom, delay) — toutes les sections de LandingPage enveloppées (stats zoom, bandeau pros left, particuliers right, API/carrousel/parrainage/contact zoom, autres up).
+- **Parallaxe** : `landing/ParallaxOrbs.jsx` — 5 orbes flous (or/violet/vert) en absolu z-−1 (root .vitrine isolate + overflowX clip), translation à vitesses différentes au scroll (rAF, passive).
+- **Compteurs animés** : CommunityStatsStrip — count-up déclenché seulement quand la bande devient visible (IO threshold 0.3, prop start).
+- **Hero** : entrée en cascade (.hero-stagger nth-child délais 0.05→0.49s) + carte avantages .hero-enter-delayed.
+- **Hover** (CSS App.css scopé .vitrine) : lift -5px + glow doré sur glass-panel(-soft), mini-cards, zoom images 1.035 dans les cartes, boutons gold/ghost -2px + ombre. prefers-reduced-motion : tout désactivé.
+- Vérifié Playwright : orbes présents, compteur 7 après apparition, reveal opacité 1 (bandeau pros visible) / 0 (sections basses non atteintes), aucune erreur console.

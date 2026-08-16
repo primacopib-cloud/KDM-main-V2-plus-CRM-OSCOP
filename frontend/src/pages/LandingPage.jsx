@@ -27,12 +27,15 @@ import { KdmPillarsSection } from '../components/landing/KdmPillarsSection';
 import { CoopEssSection } from '../components/landing/CoopEssSection';
 import { CooperativeApiSection } from '../components/landing/CooperativeApiSection';
 import { FloatingToc } from '../components/landing/FloatingToc';
+import { Reveal } from '../components/landing/Reveal';
+import { ParallaxOrbs } from '../components/landing/ParallaxOrbs';
 export { PublicLolodriveMapSection };
 export { CooperativeApiSection };
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen vitrine relative" style={{ isolation: 'isolate', overflowX: 'clip' }}>
+      <ParallaxOrbs />
       <Seo titleKey="seo.landing_title" descKey="seo.landing_desc" />
       <NavBar />
       <FloatingToc />
@@ -100,7 +103,7 @@ const LandingPage = () => {
             </div>
 
             {/* Side Card */}
-            <div className="glass-panel-soft rounded-[26px] p-5 flex flex-col gap-3.5" style={{ boxShadow: '0 16px 50px rgba(0,0,0,0.35)' }}>
+            <div className="glass-panel-soft rounded-[26px] p-5 flex flex-col gap-3.5 hero-enter-delayed" style={{ boxShadow: '0 16px 50px rgba(0,0,0,0.35)' }}>
               <h3 className="text-sm tracking-wider uppercase text-white/75 font-semibold m-0">{i18n.t('landing.avantages_cles')}</h3>
 
               {/* Callout */}
@@ -131,32 +134,35 @@ const LandingPage = () => {
       </section>
 
       {/* Compteurs publics de la coopérative */}
-      <CommunityStatsStrip />
+      <Reveal variant="zoom"><CommunityStatsStrip /></Reveal>
 
       {/* Pourquoi Communityplace ? */}
-      <WhyCommunityplaceSection />
+      <Reveal><WhyCommunityplaceSection /></Reveal>
 
       {/* ============ PARTIE PROFESSIONNELS ============ */}
+      <Reveal variant="left">
       <AudienceBanner
         id="pros" icon={Building2} color="#D9B35A" testId="audience-banner-pros"
         kicker="Espace professionnels"
         title="Pour les professionnels"
         subtitle="Vendeurs référencés, acheteurs pro, services mutualisés, tarifs ESS et logistique B2B multi-territoires."
       />
+      </Reveal>
 
       {/* Piliers Vendeurs / Acheteurs pro */}
-      <KdmPillarsSection />
+      <Reveal><KdmPillarsSection /></Reveal>
 
       {/* Les quatre services professionnels */}
-      <ServicesBlock />
+      <Reveal delay={80}><ServicesBlock /></Reveal>
 
       {/* Règlement à Réception Pro — bloc commercial */}
-      <ReceptionProSection />
+      <Reveal><ReceptionProSection /></Reveal>
 
       {/* API Coopérative B2B2C — dispositif institutionnel */}
-      <CooperativeApiSection />
+      <Reveal variant="zoom"><CooperativeApiSection /></Reveal>
 
       {/* Access Condition */}
+      <Reveal>
       <section className="py-8 px-5">
         <div className="max-w-[1160px] mx-auto">
           <div
@@ -185,14 +191,16 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* Pricing Section */}
-      <PricingSection />
+      <Reveal><PricingSection /></Reveal>
 
       {/* Logistics Section */}
-      <LogisticsSection />
+      <Reveal variant="right"><LogisticsSection /></Reveal>
 
       {/* Compliance Section */}
+      <Reveal>
       <section className="py-8 px-5">
         <div className="max-w-[1160px] mx-auto">
           <div className="section-title mb-4">
@@ -235,44 +243,52 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* Partners Section */}
+      <Reveal>
       <PartnersSection />
       <PartnerCarousel />
+      </Reveal>
 
       {/* ============ PARTIE PARTICULIERS / CONSOMMATEURS ============ */}
+      <Reveal variant="right">
       <AudienceBanner
         id="particuliers" icon={ShoppingBasket} color="#8CC63E" testId="audience-banner-particuliers"
         kicker="Espace particuliers"
         title="Pour les particuliers & consommateurs"
         subtitle="Produits phares de votre territoire, points relais LOLODRIVE, PASS Vie Chère, parrainage et spots vidéo."
       />
+      </Reveal>
 
       {/* Produits phares par territoire */}
-      <ZoneProductsShowcase />
+      <Reveal><ZoneProductsShowcase /></Reveal>
 
       {/* Carrousel territorial — visiteurs grand public */}
+      <Reveal variant="zoom">
       <div className="py-8">
         <TerritoryCarousel />
       </div>
+      </Reveal>
 
       {/* Réseau LOLODRIVE — carte publique */}
-      <PublicLolodriveMapSection />
+      <Reveal><PublicLolodriveMapSection /></Reveal>
 
       {/* Témoignages membres */}
-      <TestimonialsSection />
+      <Reveal variant="left"><TestimonialsSection /></Reveal>
 
       {/* Défi parrainage */}
-      <ReferralChallengeBanner />
+      <Reveal variant="zoom"><ReferralChallengeBanner /></Reveal>
 
       {/* Galerie spots vidéo IA */}
-      <VideoShowcase />
+      <Reveal><VideoShowcase /></Reveal>
 
       {/* Catalogue + cadre coopératif ESS */}
-      <CoopEssSection />
+      <Reveal><CoopEssSection /></Reveal>
 
       {/* Contact Section */}
-      <section id="contact" className="py-8 px-5">
+      <Reveal variant="zoom">
+      <section id="contact" className="py-8 px-5 scroll-mt-24">
         <div className="max-w-[800px] mx-auto">
           <div className="text-center mb-6">
             <span className="badge-status mb-4 inline-flex">
@@ -286,6 +302,7 @@ const LandingPage = () => {
           <ContactForm />
         </div>
       </section>
+      </Reveal>
 
       <Footer />
     </div>

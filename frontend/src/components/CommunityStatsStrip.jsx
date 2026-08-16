@@ -4,11 +4,11 @@ import { Users, MapPin, Package, Store, ShoppingBag } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
-const useCountUp = (target, duration = 1200) => {
+const useCountUp = (target, start, duration = 1400) => {
   const [value, setValue] = useState(0);
   const started = useRef(false);
   useEffect(() => {
-    if (!target || started.current) return;
+    if (!target || !start || started.current) return;
     started.current = true;
     const t0 = performance.now();
     const tick = (now) => {
@@ -17,12 +17,12 @@ const useCountUp = (target, duration = 1200) => {
       if (p < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-  }, [target, duration]);
+  }, [target, start, duration]);
   return value;
 };
 
-const StatItem = ({ icon: Icon, value, label, testId }) => {
-  const display = useCountUp(value);
+const StatItem = ({ icon: Icon, value, label, testId, start }) => {
+  const display = useCountUp(value, start);
   return (
     <div className="flex flex-col items-center gap-1 px-4 py-2" data-testid={testId}>
       <Icon className="w-5 h-5 text-[#D9B35A]" />
@@ -34,6 +34,8 @@ const StatItem = ({ icon: Icon, value, label, testId }) => {
 
 export const CommunityStatsStrip = () => {
   const [stats, setStats] = useState(null);
+  const [start, setStart] = useState(false);
+  const sectionRef = useRef(null);
 
   useEffect(() => {
     fetch(`${API}/api/public/community-stats`)
@@ -42,10 +44,20 @@ export const CommunityStatsStrip = () => {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') { setStart(true); return undefined; }
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setStart(true); obs.disconnect(); }
+    }, { threshold: 0.3 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [stats]);
+
   if (!stats) return null;
 
   return (
-    <section className="py-6 px-5" data-testid="community-stats-strip">
+    <section ref={sectionRef} className="py-6 px-5" data-testid="community-stats-strip">
       <div className="max-w-[1160px] mx-auto">
         <div
           className="rounded-[22px] py-5 px-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"
@@ -54,15 +66,15 @@ export const CommunityStatsStrip = () => {
             border: '1px solid rgba(217,179,90,0.22)',
           }}
         >
-          <StatItem icon={Users} value={stats.members} testId="stat-members"
+          <StatItem icon={Users} value={stats.members} start={start} testId="stat-members"
             label={i18n.t('landing.stat_adherents', 'Adhérents professionnels')} />
-          <StatItem icon={MapPin} value={stats.territories} testId="stat-territories"
+          <StatItem icon={MapPin} value={stats.territories} start={start} testId="stat-territories"
             label={i18n.t('landing.stat_territoires', 'Territoires couverts')} />
-          <StatItem icon={ShoppingBag} value={stats.orders} testId="stat-orders"
+          <StatItem icon={ShoppingBag} value={stats.orders} start={start} testId="stat-orders"
             label={i18n.t('landing.stat_commandes', 'Commandes traitées')} />
-          <StatItem icon={Package} value={stats.products} testId="stat-products"
+          <StatItem icon={Package} value={stats.products} start={start} testId="stat-products"
             label={i18n.t('landing.stat_produits', 'Produits au catalogue')} />
-          <StatItem icon={Store} value={stats.lolo_points} testId="stat-lolo-points"
+          <StatItem icon={Store} value={stats.lolo_points} start={start} testId="stat-lolo-points"
             label={i18n.t('landing.stat_points', 'Points relais LOLO')} />
         </div>
       </div>
