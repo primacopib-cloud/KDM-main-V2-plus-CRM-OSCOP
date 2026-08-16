@@ -2340,3 +2340,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **ScrollProgressBar.jsx** : barre dorée 3 px fixe en haut (z-60, au-dessus de la navbar), remplissage scaleX = progression du scroll (rAF, dégradé or→orange + glow). Montée dans LandingPage.
 - **Ticker live** : backend `routes_activity_ticker.py` (GET /api/public/activity-ticker, monté server.py) — 10 dernières commandes (zone_code, total_ttc_cents) + 6 dernières orgs non masquées (territory), anonymisé (aucun nom), tri desc, 14 max, created_at normalisé iso. Frontend `ActivityTicker.jsx` sous le hero : pastille « ● EN DIRECT », marquee CSS infini (.ticker-track 35 s, contenu dupliqué, pause au hover, prefers-reduced-motion off), refresh 60 s, temps relatif fr (min/h/j), montants € fr.
 - Vérifié : API 14 items, Playwright (barre scaleX 0.45 à mi-page, ticker défile −383→−738 px en 2 s, libellés corrects).
+
+## 2026-08-16 — Bouton Retour Haut (self-testé Playwright)
+- `landing/BackToTop.jsx` monté dans LandingPage : bouton rond discret fixe bas-droite (bottom-6, right-4 / lg:right-20 sous le sommaire flottant), glassmorphism violet + bord doré, flèche ↑, apparaît après 900 px de scroll (fade+slide), clic = scrollTo top smooth. Testid back-to-top-btn.
+- Vérifié Playwright : opacité 0 en haut, 1 après scroll, scrollY 0 après clic, pas de chevauchement avec le sommaire ni le bouton WhatsApp (bas-gauche).

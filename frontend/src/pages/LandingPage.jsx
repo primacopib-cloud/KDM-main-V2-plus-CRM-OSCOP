@@ -31,6 +31,7 @@ import { Reveal } from '../components/landing/Reveal';
 import { ParallaxOrbs } from '../components/landing/ParallaxOrbs';
 import { ScrollProgressBar } from '../components/landing/ScrollProgressBar';
 import { ActivityTicker } from '../components/landing/ActivityTicker';
+import { BackToTop } from '../components/landing/BackToTop';
 export { PublicLolodriveMapSection };
 export { CooperativeApiSection };
 
@@ -39,6 +40,7 @@ const LandingPage = () => {
     <div className="min-h-screen vitrine relative" style={{ isolation: 'isolate', overflowX: 'clip' }}>
       <ParallaxOrbs />
       <ScrollProgressBar />
+      <BackToTop />
       <Seo titleKey="seo.landing_title" descKey="seo.landing_desc" />
       <NavBar />
       <FloatingToc />
