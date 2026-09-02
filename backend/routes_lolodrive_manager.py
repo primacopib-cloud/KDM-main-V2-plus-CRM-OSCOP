@@ -61,12 +61,9 @@ async def upload_my_point_photo(file: UploadFile = File(...), user: dict = Depen
     data = await file.read()
     if len(data) > 4 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image trop lourde (max 4 Mo)")
-    up_dir = os.path.join(os.path.dirname(__file__), "uploads", "relays")
-    os.makedirs(up_dir, exist_ok=True)
     fname = f"relay-{point['code'].lower()}-{uuid.uuid4().hex[:8]}.{ext}"
-    with open(os.path.join(up_dir, fname), "wb") as f:
-        f.write(data)
-    url = f"/api/uploads/relays/{fname}"
+    from upload_storage import save_upload, mime_for_ext
+    url = await save_upload(f"relays/{fname}", data, mime_for_ext(ext))
     await db.lolodrive_points.update_one({"id": point["id"]}, {"$set": {"photo_url": url, "updated_at": datetime.utcnow()}})
     return {"ok": True, "photo_url": url}
 

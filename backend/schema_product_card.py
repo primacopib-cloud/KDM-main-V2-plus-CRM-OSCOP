@@ -14,11 +14,6 @@ from schema_product_card_parts import (  # noqa: F401 — ré-exports
     NutritionInfo, Allergens, Conservation, TechnicalSpecs,
     Warranty, Compliance, Media, Logistics,
 )
-from schema_product_card_parts import (
-    ProductCategory, ProductStatus, UnitType, TemperatureRange, HazardClass,
-    Dimensions, Weight, Pricing, Stock, Packaging, Origin, NutritionInfo,
-    Allergens, Conservation, TechnicalSpecs, Warranty, Compliance, Media, Logistics,
-)
 
 # ============== MAIN PRODUCT MODEL ==============
 

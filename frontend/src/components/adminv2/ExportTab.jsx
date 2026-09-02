@@ -1,5 +1,5 @@
 import i18n from '@/i18n';
-import { Calendar, Download, Filter, Loader2, Building2, FileText, Package, Wallet, Eye, Users } from 'lucide-react';
+import { Calendar, Download, Filter, Loader2, Building2, FileText, Package, Wallet, Eye, Users, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';

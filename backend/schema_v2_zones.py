@@ -5,6 +5,10 @@ from datetime import datetime
 import uuid
 
 from schema_v2_enums import *  # noqa: F401,F403
+from enum import Enum
+from schema_v2_enums import (
+    ZoneKind, BillingPeriod, EntitlementSource, EntitlementStatus, PartnerProvisionStatus,
+)
 
 # ============== PHASE 4: ZONES & ENTITLEMENTS ==============
 

@@ -420,6 +420,9 @@ set_taxonomy_database(db)
 from routes_activity_ticker import activity_ticker_router, set_activity_ticker_database
 set_activity_ticker_database(db)
 app.include_router(activity_ticker_router)
+from routes_admin_payment_links import payment_links_router, set_payment_links_database
+set_payment_links_database(db)
+app.include_router(payment_links_router)
 app.include_router(taxonomy_router)
 from routes_team_space import team_space_router, admin_buyers_router, set_team_space_database
 set_team_space_database(db)
@@ -442,10 +445,28 @@ from routes_credit_packs import credit_packs_router, credit_analytics_router, se
 set_credit_packs_database(db)
 app.include_router(credit_packs_router)
 app.include_router(credit_analytics_router)
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import Response as _FileResp
+from fastapi import HTTPException
 _uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(os.path.join(_uploads_dir, "products"), exist_ok=True)
-app.mount("/api/uploads", StaticFiles(directory=_uploads_dir), name="uploads")
+
+
+@app.get("/api/uploads/{upload_path:path}")
+async def serve_upload(upload_path: str):
+    """Sert les fichiers uploadés : object storage (nouveaux) avec fallback disque (anciens)."""
+    from upload_storage import fetch_upload, mime_for_ext
+    safe = os.path.normpath(upload_path).lstrip("/")
+    if safe.startswith(".."):
+        raise HTTPException(status_code=404, detail="Fichier non trouvé")
+    local = os.path.join(_uploads_dir, safe)
+    if os.path.isfile(local):
+        with open(local, "rb") as fh:
+            return _FileResp(content=fh.read(), media_type=mime_for_ext(safe.rsplit(".", 1)[-1]))
+    try:
+        data, ctype = await fetch_upload(safe)
+        return _FileResp(content=data, media_type=ctype)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Fichier non trouvé")
 
 # Alertes favoris (restock/promo) + routes admin stock & prix
 from favorites_alerts import set_favorites_alerts_database

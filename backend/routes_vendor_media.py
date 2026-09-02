@@ -44,14 +44,12 @@ async def upload_product_image(
                           category=product.get("category"), territory=(_zones[0] if _zones else None))
 
     ext = "png" if file.content_type == "image/png" else "jpg"
-    upload_dir = os.path.join(os.path.dirname(__file__), "uploads", "products")
-    os.makedirs(upload_dir, exist_ok=True)
     filename = f"{product_id}-{uuid.uuid4().hex[:8]}.{ext}"
-    with open(os.path.join(upload_dir, filename), "wb") as f:
-        f.write(content)
+    from upload_storage import save_upload
+    url = await save_upload(f"products/{filename}", content, file.content_type or "image/jpeg")
 
     image = {
-        "url": f"/api/uploads/products/{filename}",
+        "url": url,
         "is_primary": is_primary or not (product.get("images") or []),
         "added_at": datetime.now(timezone.utc).isoformat(),
     }

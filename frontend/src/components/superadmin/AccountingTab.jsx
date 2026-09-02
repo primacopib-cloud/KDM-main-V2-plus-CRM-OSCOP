@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { RevenueChart, FiscalRegisterSection } from './FiscalRegisterSection';
 import { TreasuryConsolidatedPanel } from './TreasuryConsolidatedPanel';
+import { PaymentLinksPanel } from './PaymentLinksPanel';
 
 const eur = (cents) => `${(cents / 100).toFixed(2).replace('.', ',')} €`;
 
@@ -35,14 +36,14 @@ export const AccountingTab = () => {
       .finally(() => setLoading(false));
   }, [days, opType, dateFrom]);
 
-  const exportCsv = async () => {
+  const exportFile = async (kind) => {
     try {
-      const r = await fetch(`${API}/admin/accounting/export.csv?date_from=${dateFrom(days)}`,
+      const r = await fetch(`${API}/admin/accounting/export.${kind}?date_from=${dateFrom(days)}`,
         { headers: getAuthHeaders(), credentials: 'include' });
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'journal-comptable.csv'; a.click();
+      a.href = url; a.download = `journal-comptable.${kind}`; a.click();
       URL.revokeObjectURL(url);
     } catch { toast.error("Échec de l'export"); }
   };
@@ -50,6 +51,7 @@ export const AccountingTab = () => {
   const labels = data?.kind_labels || {};
   return (
     <div className="space-y-4" data-testid="accounting-tab">
+      <PaymentLinksPanel />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-white flex items-center gap-2">
           <Calculator className="w-4 h-4 text-[#D9B35A]" /> Comptabilité analytique

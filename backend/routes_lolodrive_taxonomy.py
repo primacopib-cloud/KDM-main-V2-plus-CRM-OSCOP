@@ -339,12 +339,9 @@ async def admin_set_product_photo(sku: str, file: UploadFile = File(...), admin:
     data = await file.read()
     if len(data) > 4 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image trop lourde (max 4 Mo)")
-    up_dir = os.path.join(os.path.dirname(__file__), "uploads", "products")
-    os.makedirs(up_dir, exist_ok=True)
     fname = f"product-admin-{uuid.uuid4().hex[:8]}.{ext}"
-    with open(os.path.join(up_dir, fname), "wb") as f:
-        f.write(data)
-    image_url = f"/api/uploads/products/{fname}"
+    from upload_storage import save_upload, mime_for_ext
+    image_url = await save_upload(f"products/{fname}", data, mime_for_ext(ext))
     await db.lolodrive_products.update_one({"sku": sku}, {"$set": {"image_url": image_url}})
     return {"ok": True, "sku": sku, "image_url": image_url}
 

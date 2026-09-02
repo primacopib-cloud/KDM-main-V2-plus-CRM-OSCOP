@@ -136,12 +136,10 @@ async def upload_promo_image(file: UploadFile = File(...), _: dict = Depends(_ad
     data = await file.read()
     if len(data) > 4 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image trop lourde (max 4 Mo)")
-    up_dir = os.path.join(os.path.dirname(__file__), "uploads", "promos")
-    os.makedirs(up_dir, exist_ok=True)
     fname = f"promo-{uuid.uuid4().hex[:10]}.{ext}"
-    with open(os.path.join(up_dir, fname), "wb") as f:
-        f.write(data)
-    return {"url": f"/api/uploads/promos/{fname}"}
+    from upload_storage import save_upload, mime_for_ext
+    url = await save_upload(f"promos/{fname}", data, mime_for_ext(ext))
+    return {"url": url}
 
 
 @promotions_router.get("")
@@ -197,7 +195,6 @@ async def delete_promotion(promo_id: str, _: dict = Depends(_admin)):
 @promotions_router.post("/{promo_id}/send-campaign")
 async def send_promotion_campaign(promo_id: str, admin: dict = Depends(_admin)):
     """Envoie la promotion par email aux destinataires édités (campagne Brevo)."""
-    import os
     promo = await db.credit_promotions.find_one({"id": promo_id}, {"_id": 0})
     if not promo:
         raise HTTPException(status_code=404, detail="Promotion introuvable")
@@ -234,7 +231,6 @@ async def send_promotion_campaign(promo_id: str, admin: dict = Depends(_admin)):
 @promotions_router.get("/{promo_id}/campaign-stats")
 async def campaign_stats(promo_id: str, admin: dict = Depends(_admin)):
     """Statistiques Brevo (envois, ouvertures, clics) de la campagne de cette promotion."""
-    import os
     import httpx
     promo = await db.credit_promotions.find_one({"id": promo_id}, {"_id": 0})
     if not promo:

@@ -99,12 +99,9 @@ async def upload_license_logo(license_id: str, file: UploadFile = File(...), adm
     if len(content) > 3 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Logo trop lourd (max 3 Mo)")
     ext = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/svg+xml": "svg"}[file.content_type]
-    upload_dir = os.path.join(os.path.dirname(__file__), "uploads", "licenses")
-    os.makedirs(upload_dir, exist_ok=True)
     filename = f"{license_id}-{uuid.uuid4().hex[:8]}.{ext}"
-    with open(os.path.join(upload_dir, filename), "wb") as f:
-        f.write(content)
-    logo_url = f"/api/uploads/licenses/{filename}"
+    from upload_storage import save_upload
+    logo_url = await save_upload(f"licenses/{filename}", content, file.content_type)
     await db.licenses.update_one({"id": license_id}, {"$set": {"logo_url": logo_url}})
     return {"ok": True, "logo_url": logo_url}
 

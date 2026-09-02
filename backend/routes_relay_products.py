@@ -139,12 +139,10 @@ async def upload_product_photo(file: UploadFile = File(...), user: dict = Depend
     data = await file.read()
     if len(data) > 4 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image trop lourde (max 4 Mo)")
-    up_dir = os.path.join(os.path.dirname(__file__), "uploads", "products")
-    os.makedirs(up_dir, exist_ok=True)
     fname = f"product-{point['code'].lower()}-{uuid.uuid4().hex[:8]}.{ext}"
-    with open(os.path.join(up_dir, fname), "wb") as f:
-        f.write(data)
-    return {"ok": True, "image_url": f"/api/uploads/products/{fname}"}
+    from upload_storage import save_upload, mime_for_ext
+    image_url = await save_upload(f"products/{fname}", data, mime_for_ext(ext))
+    return {"ok": True, "image_url": image_url}
 
 
 async def _notify_admins_new_product(product: dict):

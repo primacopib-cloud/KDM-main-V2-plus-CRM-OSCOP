@@ -124,6 +124,9 @@ async def assign_carrier(order_id: str, payload: CarrierAssign, user_id: str = D
                 f"<td style='padding:6px 10px;color:rgba(255,255,255,0.6);font-size:13px;'>{i['quantity']} × {i['unit']}</td></tr>"
                 for i in order.get("items", [])
             )
+            import os as _os
+            _base = (_os.environ.get("PUBLIC_BASE_URL") or "").rstrip("/")
+            mission_url = f"{_base}/api/cooper/mission/{mission_token}"
             body = f"""
               <h2 style=\"color:#D9B35A;margin:0 0 12px;font-size:18px;\">Nouvelle mission de transport LOGI'SCOP</h2>
               <p style=\"color:rgba(255,255,255,0.8);font-size:14px;\">

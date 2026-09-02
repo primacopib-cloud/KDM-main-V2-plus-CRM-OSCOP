@@ -2344,3 +2344,24 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-08-16 — Bouton Retour Haut (self-testé Playwright)
 - `landing/BackToTop.jsx` monté dans LandingPage : bouton rond discret fixe bas-droite (bottom-6, right-4 / lg:right-20 sous le sommaire flottant), glassmorphism violet + bord doré, flèche ↑, apparaît après 900 px de scroll (fade+slide), clic = scrollTo top smooth. Testid back-to-top-btn.
 - Vérifié Playwright : opacité 0 en haut, 1 après scroll, scrollY 0 après clic, pas de chevauchement avec le sommaire ni le bouton WhatsApp (bas-gauche).
+
+## 2026-09-02 — Liens de paiement Stripe admin (self-testé curl LIVE + capture Playwright)
+- **Backend** nouveau `routes_admin_payment_links.py` (/api/admin/payment-links, monté server.py, guard _admin = get_current_user_id + require_admin) :
+  - POST : {email, amount_eur (0<x≤50000), account_type VENDOR_PRO|BUYER_PRO|SPONSOR, description?} → crée Price + **Stripe PaymentLink** (compte OSCOP, usage unique via restrictions completed_sessions limit 1, metadata kind=ADMIN_PAYMENT_LINK) → URL retournée avec ?prefilled_email=. Stocké dans db.admin_payment_links (status pending).
+  - GET liste (50 derniers) ; POST /{id}/refresh (poll checkout.Session.list par payment_link → status paid + paid_at) ; POST /{id}/deactivate (PaymentLink.modify active=False → status deactivated).
+- **Frontend** `superadmin/PaymentLinksPanel.jsx` monté en tête de l'onglet **Comptabilité** : formulaire email/montant/type (Vendeur Pro, Acheteur Pro, Sponsor)/description + « Générer le lien » (copie auto dans le presse-papier), tableau des liens (statut En attente/Payé ✓/Désactivé, actions : copier, envoyer par email (mailto pré-rempli), vérifier paiement, désactiver). Testids paylink-*.
+- Testé en **LIVE Stripe** : lien réel buy.stripe.com créé (1 € Sponsor), 401 sans auth, 400 type invalide, refresh pending, liste, désactivation OK ; Playwright : panel + formulaire + ligne « Désactivé » visibles dans Comptabilité.
+- Piège rencontré : `require_admin(user_id)` n'est PAS un Depends direct — toujours passer par le wrapper `_admin(user_id=Depends(get_current_user_id))`.
+
+## 2026-09-02 — Correction lint bloquant + migration uploads vers Emergent Object Storage (self-testé curl E2E)
+### Corrections lint (bloquaient le finish)
+- AccountingTab.jsx : exportCsv → exportFile(kind) (boutons CSV/Excel appelaient une fonction inexistante) ; ExportTab.jsx : icône X manquante dans l'import lucide.
+- routes_cooper.py : `mission_url` non défini dans l'email transporteur (NameError silencieux → email jamais envoyé) → défini via PUBLIC_BASE_URL + /api/cooper/mission/{token}.
+- routes_superadmin.py export_summary : `get_alerts()` inexistant (500) → alerts: [].
+- Doublons/redéfinitions supprimés : routes_cart_v2 (ensure_member_active ×2), routes_user_prefs (Request), routes_stripe_health (get_stripe_key local), schema_product_card (bloc import dupliqué), credit_promotions (import os locaux).
+- schema_v2_billing / schema_v2_zones : imports explicites des enums ajoutés à côté du star import (F405).
+### Object Storage (8 routes d'upload migrées — fichiers persistants en déploiement)
+- Nouveau `upload_storage.py` : init lazy (EMERGENT_LLM_KEY + INTEGRATION_PROXY_URL), `save_upload(rel_path, bytes, mime)` → bucket kdmarche/uploads/…, retourne /api/uploads/{rel_path} (convention frontend inchangée) ; `fetch_upload` ; retry init force sur 404 storage_key ; run_in_threadpool.
+- server.py : le mount StaticFiles /api/uploads remplacé par route GET /api/uploads/{path} → fallback disque local (anciens fichiers) puis object storage (nouveaux). Protection path traversal.
+- Migrés : routes_vendor_media (photos produits vendeur), routes_v2_applications (documents adhésion — file_path préfixé `objstore:`, /api/v2/files/{doc_id} gère les 2 modes), routes_showcase (logos partenaires), routes_lolodrive_manager (photos relais), routes_lolodrive_taxonomy (images produits admin), routes_licenses (logos licences), credit_promotions (visuels promo), routes_relay_products (photos produits gérant).
+- Testé E2E : upload promo PNG → /api/uploads/promos/… (rien sur disque) → GET 200 image/png depuis l'object storage ; anciens fichiers locaux toujours servis 200 (fallback).

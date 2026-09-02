@@ -34,7 +34,7 @@ user_prefs_router = APIRouter(prefix="/user-prefs", tags=["User Preferences"])
 
 # ============== SHORTCUTS API ==============
 
-from fastapi import Header, Request
+from fastapi import Header
 
 @user_prefs_router.get("/shortcuts", response_model=ShortcutsResponse)
 async def get_shortcuts(request: Request):

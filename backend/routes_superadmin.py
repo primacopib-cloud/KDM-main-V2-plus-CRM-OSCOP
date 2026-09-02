@@ -375,13 +375,11 @@ async def reject_product(product_id: str, reason: str = ""):
 async def export_summary():
     """Export summary data for reporting"""
     kpis = await get_kpis("all")
-    alerts = await get_alerts()
-    
     return {
         "report_type": "summary",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "kpis": kpis,
-        "alerts": alerts["alerts"],
+        "alerts": [],
         "platform": "KDMARCHE × O'SCOP B2B ESS"
     }
 

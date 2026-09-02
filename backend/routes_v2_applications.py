@@ -179,10 +179,10 @@ async def upload_document_file(
         raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 10 Mo)")
 
     doc_id = str(uuid.uuid4())
-    os.makedirs(f"{UPLOAD_DIR}/{app_id}", exist_ok=True)
-    file_path = f"{UPLOAD_DIR}/{app_id}/{doc_id}{ext}"
-    with open(file_path, "wb") as fh:
-        fh.write(content)
+    from upload_storage import save_upload, mime_for_ext
+    storage_rel = f"applications/{app_id}/{doc_id}{ext}"
+    await save_upload(storage_rel, content, file.content_type or mime_for_ext(ext))
+    file_path = f"objstore:{storage_rel}"
 
     document = DocumentInDB(
         id=doc_id,
@@ -203,13 +203,26 @@ async def upload_document_file(
 async def get_document_file(doc_id: str, current_user: dict = Depends(get_current_user_v2)):
     """Serve an uploaded application document (admin or org member)"""
     doc = await db.application_documents.find_one({"id": doc_id})
-    if not doc or not doc.get("file_path") or not os.path.exists(doc["file_path"]):
+    if not doc or not doc.get("file_path"):
         raise HTTPException(status_code=404, detail="Fichier non trouvé")
     if not current_user.get("is_admin"):
         membership = await get_user_membership(current_user["id"], doc["org_id"])
         if not membership:
             raise HTTPException(status_code=403, detail="Accès refusé")
-    return FileResponse(doc["file_path"], filename=doc.get("file_name") or "document",
+    fp = doc["file_path"]
+    if fp.startswith("objstore:"):
+        from upload_storage import fetch_upload
+        from fastapi.responses import Response
+        try:
+            data, ctype = await fetch_upload(fp.split(":", 1)[1])
+        except Exception:
+            raise HTTPException(status_code=404, detail="Fichier non trouvé")
+        fname = doc.get("file_name") or "document"
+        return Response(content=data, media_type=ctype,
+                        headers={"Content-Disposition": f'inline; filename="{fname}"'})
+    if not os.path.exists(fp):
+        raise HTTPException(status_code=404, detail="Fichier non trouvé")
+    return FileResponse(fp, filename=doc.get("file_name") or "document",
                         content_disposition_type="inline")
 
 

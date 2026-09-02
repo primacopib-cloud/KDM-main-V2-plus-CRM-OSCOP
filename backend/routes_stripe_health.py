@@ -133,8 +133,6 @@ async def stripe_live_health(user_id: str = Depends(get_current_user_id)):
     """
     await _require_admin(user_id)
 
-    from stripe_accounts import get_stripe_key  # local import — module-scoped side effects  # noqa: WPS433
-
     now_utc = datetime.now(timezone.utc)
     window_start = now_utc - timedelta(hours=24)
     stale_threshold = now_utc - timedelta(minutes=15)
