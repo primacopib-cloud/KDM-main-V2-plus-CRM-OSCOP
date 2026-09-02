@@ -18,6 +18,33 @@ const STATUS = {
 const eur = (c) => (c / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 const inputCls = 'mt-1 bg-white/[0.04] border-white/10 text-white text-sm h-9';
 
+// Parse un montant saisi à la française ou à l'anglaise : "1 000", "1.000,50", "1,000.50", "1000.5", "150,00 €"
+export const parseAmount = (raw) => {
+  let s = String(raw).replace(/[\s\u00a0€]/g, '');
+  if (!s) return NaN;
+  const lastComma = s.lastIndexOf(',');
+  const lastDot = s.lastIndexOf('.');
+  if (lastComma > -1 && lastDot > -1) {
+    if (lastComma > lastDot) {
+      s = s.replace(/\./g, '');
+      const c = s.lastIndexOf(',');
+      s = `${s.slice(0, c).replace(/,/g, '')}.${s.slice(c + 1)}`;
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (lastComma > -1) {
+    const decimals = s.length - lastComma - 1;
+    const manyCommas = (s.match(/,/g) || []).length > 1;
+    s = manyCommas || decimals === 3 ? s.replace(/,/g, '') : s.replace(',', '.');
+  } else if (lastDot > -1) {
+    const decimals = s.length - lastDot - 1;
+    const manyDots = (s.match(/\./g) || []).length > 1;
+    if (manyDots || decimals === 3) s = s.replace(/\./g, '');
+  }
+  if (!/^\d+(\.\d+)?$/.test(s)) return NaN;
+  return Math.round(parseFloat(s) * 100) / 100;
+};
+
 export const PaymentLinksPanel = () => {
   const [links, setLinks] = useState([]);
   const [form, setForm] = useState({ email: '', amount: '', type: 'VENDOR_PRO', description: '' });
@@ -34,12 +61,24 @@ export const PaymentLinksPanel = () => {
 
   useEffect(() => { load(); }, [load]);
 
-  const copy = (url) => { navigator.clipboard.writeText(url); toast.success('Lien copié'); };
+  const copy = (url) => {
+    try {
+      const p = navigator.clipboard?.writeText(url);
+      if (p?.then) {
+        p.then(() => toast.success('Lien copié'))
+          .catch(() => toast.info('Copie automatique impossible — utilisez le bouton copier'));
+      } else {
+        toast.info('Copie automatique impossible — utilisez le bouton copier');
+      }
+    } catch {
+      toast.info('Copie automatique impossible — utilisez le bouton copier');
+    }
+  };
 
   const create = async () => {
-    const amount = parseFloat(String(form.amount).replace(',', '.'));
+    const amount = parseAmount(form.amount);
     if (!form.email.includes('@')) { toast.error('Email invalide'); return; }
-    if (!amount || amount <= 0) { toast.error('Montant invalide'); return; }
+    if (!Number.isFinite(amount) || amount <= 0) { toast.error('Montant invalide'); return; }
     setBusy(true);
     try {
       const r = await fetch(`${API}/admin/payment-links`, {
@@ -85,6 +124,13 @@ export const PaymentLinksPanel = () => {
           <Label className="text-white/70 text-xs">Montant (€) *</Label>
           <Input value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}
             placeholder="150.00" data-testid="paylink-amount" className={inputCls} />
+          {form.amount && (
+            <p className="text-[10.5px] m-0 mt-0.5" data-testid="paylink-amount-preview">
+              {Number.isFinite(parseAmount(form.amount)) && parseAmount(form.amount) > 0
+                ? <span className="text-[#8CC63E]">= {eur(Math.round(parseAmount(form.amount) * 100))}</span>
+                : <span className="text-red-400">Montant invalide</span>}
+            </p>
+          )}
         </div>
         <div>
           <Label className="text-white/70 text-xs">Type de compte *</Label>

@@ -2365,3 +2365,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - server.py : le mount StaticFiles /api/uploads remplacé par route GET /api/uploads/{path} → fallback disque local (anciens fichiers) puis object storage (nouveaux). Protection path traversal.
 - Migrés : routes_vendor_media (photos produits vendeur), routes_v2_applications (documents adhésion — file_path préfixé `objstore:`, /api/v2/files/{doc_id} gère les 2 modes), routes_showcase (logos partenaires), routes_lolodrive_manager (photos relais), routes_lolodrive_taxonomy (images produits admin), routes_licenses (logos licences), credit_promotions (visuels promo), routes_relay_products (photos produits gérant).
 - Testé E2E : upload promo PNG → /api/uploads/promos/… (rien sur disque) → GET 200 image/png depuis l'object storage ; anciens fichiers locaux toujours servis 200 (fallback).
+
+## 2026-09-02 — BUGFIX montant erroné liens de paiement (validé testing_agent iteration_74.json 100%)
+- Cause : parseFloat coupait au séparateur de milliers français — « 1 000 » ou « 1.000 » → 1 € au lieu de 1 000 €.
+- Fix PaymentLinksPanel.jsx : fonction `parseAmount` robuste (espaces/nbsp/€, virgule décimale fr, points/virgules de milliers, formats mixtes 1.000,50 et 1,000.50, rejet non numérique) + **aperçu en direct** sous le champ (testid paylink-amount-preview : « = 1 000,00 € » vert / « Montant invalide » rouge).
+- Fix additionnel signalé par le testing agent : copy() presse-papiers protégé (catch → toast info) — plus d'overlay « Uncaught runtime errors » quand le navigateur refuse la permission clipboard.
+- Testing agent : 7/7 cas d'aperçu OK, création E2E « 1 000 » → ligne 1 000,00 € + amount_cents=100000 en base, lien LIVE de test désactivé (nettoyage fait). Vérif finale screenshot : aperçu OK, pas d'overlay.
+- ℹ️ Les 2 liens réels de l'utilisateur (piperolfelixia@gmail.com : 1,00 € et 100,00 €, En attente) datent d'avant le fix — celui à 1,00 € est probablement erroné, à désactiver/recréer par l'admin.

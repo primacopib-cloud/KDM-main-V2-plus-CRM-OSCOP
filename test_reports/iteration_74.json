@@ -1,0 +1,30 @@
+{
+  "summary": "Test cible du correctif parseAmount dans Super Admin → Comptabilité → « Liens de paiement Stripe ». Connexion admin via /admin/connexion OK, onglet Comptabilité OK, panneau payment-links-panel visible. Les 7 cas d'aperçu (paylink-amount-preview) passent tous : '1 000'→1 000,00 €, '1.000'→1 000,00 €, '1.000,50'→1 000,50 €, '150,50'→150,50 €, '150.50'→150,50 €, '25'→25,00 €, 'abc'→« Montant invalide ». Création E2E d'un lien (test-fix-montant@example.com, 1 000, Sponsor) réussie : nouvelle ligne affichée à 1 000,00 € (et non 1,00 €). Vérification backend : GET /api/admin/payment-links → amount_cents=100000 ✓. Nettoyage effectué : POST /api/admin/payment-links/{id}/deactivate → 200 SUCCESS et statut 'deactivated' confirmé (lien Stripe LIVE désactivé).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PaymentLinksPanel.copy()", "issue": "navigator.clipboard.writeText() n'est ni awaité ni protégé par try/catch : quand le navigateur refuse la permission d'écriture presse-papiers (headless/Firefox/iframe sans permission), une NotAllowedError non capturée déclenche l'overlay « Uncaught runtime errors » plein écran de CRA juste après la création du lien, masquant le tableau. Le lien est bien créé côté backend, mais l'UX est cassée. Correctif suggéré : navigator.clipboard?.writeText(url).then(()=>toast.success('Lien copié')).catch(()=>toast.info('Copie automatique impossible — copiez le lien manuellement'))", "selector": "[data-testid=\"paylink-create-btn\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/superadmin (console)", "issues": ["Warnings récurrents Recharts « width(-1) and height(-1) of chart should be greater than 0 » (conteneur non dimensionné à l'initialisation)", "WebSocket /ws/notifications échoue systématiquement (closed before connection established) → erreur console à chaque chargement"]}
+    ]
+  },
+  "test_report_links": ["/tmp/verify_paylink.py"],
+  "action_items": [
+    "Protéger la copie presse-papiers (try/catch + fallback toast) dans PaymentLinksPanel.copy() pour éviter l'overlay d'erreur runtime après création d'un lien",
+    "Optionnel : investiguer l'échec de connexion WebSocket /ws/notifications et les warnings Recharts sur /superadmin"
+  ],
+  "critical_code_review_comments": [
+    "parseAmount gère correctement séparateurs fr/en ; cohérent avec le backend (amount_cents = round(amount_eur*100)) — vérifié à 100000 pour '1 000'.",
+    "copy() effectue un appel asynchrone non géré : promesse rejetée non capturée = crash overlay en dev."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100% (fonctionnel montant) — 1 défaut UX secondaire (clipboard)"},
+  "seed_data_creation": "1 lien de paiement Stripe LIVE créé pour test-fix-montant@example.com (1 000,00 €, id 7d6e818a-219d-4d49-9feb-a69996982b2f) puis DÉSACTIVÉ (statut 'deactivated') — nettoyage obligatoire réalisé.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal: admin)",
+  "context_for_next_testing_agent": "Le bug de montant (parseAmount) est corrigé et validé UI + backend. Ne pas recréer de lien Stripe inutilement (mode LIVE) ; si création nécessaire, désactiver immédiatement via POST /api/admin/payment-links/{id}/deactivate. Note : le login API renvoie 'access_token' (pas 'token').",
+  "rca_of_the_issue": "Bug d'origine : parseFloat('1 000') → 1. Corrigé par parseAmount qui normalise espaces/insécables/€, détecte séparateur décimal vs milliers (dernier ',' ou '.', nb de décimales, occurrences multiples). Validé : amount_cents=100000 pour la saisie '1 000'."
+}
