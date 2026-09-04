@@ -22,6 +22,8 @@ DOC_TYPES = {
                        "issuer": "F.O.G.E.D.O.M — rapport de suivi (ni prêteur, ni banque, ni assureur, ni garant)"},
     "CLIENT_INVOICE": {"prefix": "FAC", "title": "FACTURE — VENTE DIRECTE O'SCOP",
                        "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER — Vendeur, émetteur et bénéficiaire du paiement"},
+    "FREIGHT_QUOTE": {"prefix": "DF", "title": "DEVIS DE FRET MARITIME LOGI'SCOP",
+                      "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER, agissant par son établissement LOGI'SCOP"},
 }
 
 

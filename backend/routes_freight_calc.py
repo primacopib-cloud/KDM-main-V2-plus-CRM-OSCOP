@@ -102,6 +102,34 @@ async def compute_quote(payload: QuoteRequest):
     }
 
 
+@freight_router.post("/public/freight/quote-pdf")
+async def quote_pdf(payload: QuoteRequest):
+    """Devis fret PDF LOGI'SCOP numéroté (DF-YYYY-xxxx)."""
+    from fastapi.responses import Response
+    from operation_docs_pdf import build_operation_pdf, next_doc_number
+    quote = await compute_quote(payload)
+    number = await next_doc_number(db, "FREIGHT_QUOTE")
+    eur = lambda v: f"{v:,.2f} EUR".replace(",", " ").replace(".", ",")
+    b = quote["breakdown"]
+    sections = [
+        ("Route maritime", quote["route"]),
+        ("Unité", f"{quote['container']} × {quote['quantity']}"),
+        ("Fret de base", eur(b["base_freight"])),
+        ("Surcharge BAF", eur(b["baf_surcharge"])),
+        ("THC / manutention", eur(b["thc_handling"])),
+        ("Assurance transport", eur(b["transport_insurance"])),
+        ("Total HT", eur(quote["total_ex_vat"])),
+        ("Transit estimé", f"{quote['transit_days_estimate']} jours"),
+        ("Validité", "Estimation indicative — devis contractuel confirmé avant tout engagement"),
+    ]
+    doc = {"doc_type": "FREIGHT_QUOTE", "doc_number": number,
+           "sections": sections, "created_at": quote["generated_at"]}
+    await db.freight_quotes.insert_one({**doc, "id": number})
+    pdf = build_operation_pdf(doc)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{number}.pdf"'})
+
+
 @freight_router.put("/admin/freight/routes/{route_id}")
 async def update_rate(route_id: str, payload: RateUpdate, admin: dict = Depends(_admin)):
     updates = {k: v for k, v in payload.dict().items() if v is not None}

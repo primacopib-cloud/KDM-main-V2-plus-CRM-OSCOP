@@ -70,6 +70,20 @@ export const InvestorLiveDashboard = () => {
               ))}
             </>
           )}
+          <p className="text-xs font-semibold text-white/70 uppercase mt-3 mb-1.5">Suivi logistique des opérations financées</p>
+          {(!d.shipments || d.shipments.length === 0) && <p className="text-white/40 text-xs">Aucune expédition en cours.</p>}
+          {(d.shipments || []).map((s) => (
+            <div key={s.id} className="p-2 rounded bg-sky-500/10 border border-sky-400/15 mb-1.5 text-[11px]" data-testid={`investor-shipment-${s.shipment_number}`}>
+              <div className="flex justify-between text-white/85">
+                <span>{s.operation_reference} · {s.shipment_number}</span>
+                <Badge className="bg-sky-500/20 text-sky-300 border-0 text-[8px]">{s.status}</Badge>
+              </div>
+              <p className="text-white/50">{s.origin} → {s.destination} · {s.transport_mode}</p>
+              {s.milestones.map((m, i) => (
+                <p key={i} className="text-white/45">• {m.milestone} — {m.created_at?.slice(0, 16).replace('T', ' ')}</p>
+              ))}
+            </div>
+          ))}
           <p className="text-amber-200/80 text-[10px] mt-3 p-2 rounded bg-amber-500/10 border border-amber-400/20">{d.disclaimer}</p>
         </div>
       </div>
