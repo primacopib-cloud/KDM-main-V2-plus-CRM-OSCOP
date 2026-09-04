@@ -352,3 +352,46 @@ async def create_disbursement(operation_id: str, payload: DisbursementCreate, ad
     await db.purchase_resale_operations.update_one({"id": operation_id}, {"$inc": {inc_field: payload.amount}})
     await _audit("DISBURSEMENT", operation_id, admin, {"category": payload.payee_category, "amount": payload.amount, "internal": is_internal})
     return disb
+
+
+class DocumentCreate(BaseModel):
+    doc_type: str
+    extra: Optional[Dict] = None
+
+
+@pr_router.post("/admin/purchase-resale/operations/{operation_id}/documents")
+async def generate_document(operation_id: str, payload: DocumentCreate, admin: dict = Depends(_admin)):
+    from operation_docs_pdf import DOC_TYPES, next_doc_number, doc_sections
+    if payload.doc_type not in DOC_TYPES:
+        raise HTTPException(status_code=400, detail=f"Type invalide : {list(DOC_TYPES)}")
+    op = await _get_op(operation_id)
+    number = await next_doc_number(db, payload.doc_type)
+    doc = {
+        "id": str(uuid.uuid4()), "operation_id": operation_id,
+        "doc_type": payload.doc_type, "doc_number": number,
+        "sections": doc_sections(payload.doc_type, op, payload.extra or {}),
+        "created_by": admin.get("email"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.operation_documents.insert_one(dict(doc))
+    await _audit("DOCUMENT_GENERATED", operation_id, admin, {"doc_number": number, "type": payload.doc_type})
+    return doc
+
+
+@pr_router.get("/admin/purchase-resale/operations/{operation_id}/documents")
+async def list_documents(operation_id: str, admin: dict = Depends(_admin)):
+    docs = await db.operation_documents.find(
+        {"operation_id": operation_id}, {"_id": 0, "sections": 0}).sort("created_at", -1).to_list(100)
+    return {"documents": docs}
+
+
+@pr_router.get("/admin/purchase-resale/documents/{doc_id}/pdf")
+async def download_document_pdf(doc_id: str, admin: dict = Depends(_admin)):
+    from fastapi.responses import Response
+    from operation_docs_pdf import build_operation_pdf
+    doc = await db.operation_documents.find_one({"id": doc_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document introuvable")
+    pdf = build_operation_pdf(doc)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{doc["doc_number"]}.pdf"'})

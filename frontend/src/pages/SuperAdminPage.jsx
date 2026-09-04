@@ -27,6 +27,7 @@ import { CoopersConventionsTab } from '../components/superadmin/CoopersConventio
 import { VendorAdhesionsPanel } from '../components/superadmin/VendorAdhesionsPanel';
 import { AccountingTab } from '../components/superadmin/AccountingTab';
 import { PurchaseResaleTab } from '../components/superadmin/PurchaseResaleTab';
+import { ServiceCreditsPanel } from '../components/superadmin/ServiceCreditsPanel';
 import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
 import { AnnouncementsTab } from '../components/superadmin/AnnouncementsTab';
 import { FlashPromosTab } from '../components/superadmin/FlashPromosTab';
@@ -258,6 +259,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="cpc">
             <CpcAdminTab />
+            <ServiceCreditsPanel />
           </TabsContent>
 
           <TabsContent value="consultations">

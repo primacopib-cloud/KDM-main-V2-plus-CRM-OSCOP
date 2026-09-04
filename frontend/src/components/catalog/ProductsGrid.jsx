@@ -10,6 +10,7 @@ import { ProductReviewsModal, Stars } from './ProductReviewsModal';
 import { ProductShareButtons } from './ProductShareButtons';
 import { useCatalogPromos, bestPromos, PromoPriceBlock } from './ProductPromoBadges';
 import { SaleModelBadge } from './SaleModelBadge';
+import { OscopBuyDialog } from './OscopBuyDialog';
 
 const ProductImageCarousel = ({ product, onZoom }) => {
   const [idx, setIdx] = useState(0);
@@ -109,6 +110,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
   const [videoProduct, setVideoProduct] = useState(null);
   const [zoom, setZoom] = useState(null);
   const [reviewsProduct, setReviewsProduct] = useState(null);
+  const [oscopBuyProduct, setOscopBuyProduct] = useState(null);
   const promos = useCatalogPromos();
   const lang = (i18n.language || 'fr').slice(0, 2);
   const tr = (p) => (lang !== 'fr' && p.translations?.[lang]) || {};
@@ -163,6 +165,16 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               </Badge>
               
               <SaleModelBadge product={product} />
+              {product.sale_model === 'OSCOP_DIRECT_RESALE' && product.oscop_price_ht_cents > 0 && (
+                <Button
+                  size="sm"
+                  onClick={(e) => { e.stopPropagation(); setOscopBuyProduct(product); }}
+                  data-testid={`oscop-buy-btn-${product.sku}`}
+                  className="mb-2 w-fit h-7 text-[11px] bg-amber-500/20 hover:bg-amber-500/35 text-amber-200 border border-amber-400/40"
+                >
+                  Acheter à O'SCOP — {(product.oscop_price_ht_cents / 100).toFixed(2).replace('.', ',')} € HT
+                </Button>
+              )}
 
               {/* Product info */}
               <h3 className="font-medium text-white/90 mb-1 line-clamp-2">{tr(product).name || product.name}</h3>
@@ -270,6 +282,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
           </div>
         )}
         {videoProduct && <ProductVideoModal product={videoProduct} onClose={() => setVideoProduct(null)} />}
+        {oscopBuyProduct && <OscopBuyDialog product={oscopBuyProduct} onClose={() => setOscopBuyProduct(null)} />}
         {reviewsProduct && <ProductReviewsModal product={reviewsProduct} onClose={() => setReviewsProduct(null)} />}
         {zoom && <ProductLightbox key={`${zoom.product.id}-${zoom.index}`} zoom={zoom} onClose={() => setZoom(null)} />}
   </>
