@@ -11,7 +11,7 @@
     "why_cp_card3_title": "Cooperative",
     "why_cp_card3_desc": "1 person = 1 vote. SSE governance, capped margins and profits redistributed to support local purchasing power.",
     "hero_badge": "B2B2C cooperative communityplace",
-    "hero_h1": "The cooperative ecosystem of the overseas territories",
+    "hero_h1": "The cooperative purchasing central of the overseas territories",
     "hero_subtitle": "Cost-of-Living PASS, LOLODRIVE network, SSE governance — making essentials accessible to everyone.",
     "cta_register": "Create my account",
     "cta_signin": "Sign in",
@@ -116,9 +116,9 @@
   },
   "partners": {
     "badge": "Partnership logic",
-    "title": "Strict separation of functions",
-    "subtitle": "One sells the products (KDMARCHE) • The other sells nothing (O'SCOP)",
-    "note": "This separation is deliberate, contractual and enforceable.",
+    "title": "Two transparent circuits",
+    "subtitle": "Two transparent circuits: direct partner sale • O'SCOP buy-and-resell",
+    "note": "The seller-invoicer is identified on every offer before any purchase: a \"Sold and invoiced by…\" badge and role breakdown are displayed.",
     "kdm_badge": "B2B Operations",
     "oscop_badge": "SSE Engineering",
     "kdm_role": "B2B commercial and logistics operator",
@@ -126,7 +126,7 @@
     "role_label": "Role",
     "role_exclusive": "Exclusive role",
     "kdm_assumes": "KDMARCHE alone assumes",
-    "oscop_not": "O'SCOP does not",
+    "oscop_not": "O'SCOP, two distinct roles",
     "kdm_responsibilities": [
       "B2B sales operator",
       "Product catalog manager",
@@ -151,10 +151,10 @@
       "Guarantor of the SSE cooperative framework"
     ],
     "oscop_restrictions": [
-      "Does not sell",
-      "Does not invoice products",
-      "Receives no supplier payments",
-      "Takes no commission on sales"
+      "Sells and invoices directly only on the O'SCOP buy-and-resell circuit",
+      "Never collects payments for partner sellers' sales",
+      "Provides the agreed cooperative services on the partner circuit",
+      "Displays the seller-invoicer on every offer"
     ]
   },
   "logistics": {

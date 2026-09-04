@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"6b9b807247054b08a55673fc1a26a92a","collectionName":"nominative_attestations","type":"collection"}

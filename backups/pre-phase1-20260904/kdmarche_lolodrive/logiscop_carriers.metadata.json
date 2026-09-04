@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"b764673433cb4997a3b6afa3a1ee334a","collectionName":"logiscop_carriers","type":"collection"}

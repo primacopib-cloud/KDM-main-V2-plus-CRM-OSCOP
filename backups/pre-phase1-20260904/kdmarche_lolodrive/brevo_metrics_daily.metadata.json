@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"date":{"$numberInt":"1"},"event":{"$numberInt":"1"}},"name":"date_1_event_1","unique":true}],"uuid":"19f924ebfe454761a4b4028900281dca","collectionName":"brevo_metrics_daily","type":"collection"}

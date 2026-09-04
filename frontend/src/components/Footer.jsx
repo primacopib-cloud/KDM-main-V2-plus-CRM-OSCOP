@@ -6,6 +6,7 @@ import { Mail, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf, Stor
 import ContactForm from './ContactForm';
 import { PartnerForm } from './PartnerForm';
 import { PARTNER_L10N, partnerLang } from './partnerFormI18n';
+import { FooterLegalEntities } from './FooterLegalEntities';
 
 const Footer = () => {
   const { t, i18n } = useTranslation();
@@ -258,9 +259,7 @@ const Footer = () => {
             <p className="text-white/50 text-xs">
               {t('footer.copyright')}
             </p>
-            <p className="text-white/40 text-[11px] mt-1" data-testid="footer-legal-entity">
-              KDMARCHÉ, service exploité par PRIMACOP INTERNATIONAL BUSINESS — SIRET 433 230 703 00020
-            </p>
+            <FooterLegalEntities />
           </div>
           <div className="flex gap-6">
             <Link to="/legal/cgv-kdmarche" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.legal_notice')}</Link>

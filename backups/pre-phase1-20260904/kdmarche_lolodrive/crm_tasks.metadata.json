@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"id":{"$numberInt":"1"}},"name":"id_1","unique":true},{"v":{"$numberInt":"2"},"key":{"due_at":{"$numberInt":"1"}},"name":"due_at_1"}],"uuid":"2481b9e7cfeb44d1b6b6f30b592a3f00","collectionName":"crm_tasks","type":"collection"}

@@ -35,10 +35,10 @@ export const partners = {
       "Garant du cadre ESS et coopératif"
     ],
     restrictions: [
-      "Ne vend pas",
-      "Ne facture pas les produits",
-      "Ne perçoit aucun paiement fournisseur",
-      "Ne prend aucune commission sur les ventes"
+      "Vend et facture en direct uniquement sur le circuit achat-revente O'SCOP",
+      "N'encaisse jamais les ventes des partenaires vendeurs",
+      "Assure les services coopératifs prévus sur le circuit partenaire",
+      "Affiche le vendeur-facturier sur chaque offre"
     ]
   }
 };

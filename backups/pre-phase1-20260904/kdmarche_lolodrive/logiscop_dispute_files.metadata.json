@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"45abc6d5c3624ac8a9e206ed276a0060","collectionName":"logiscop_dispute_files","type":"collection"}

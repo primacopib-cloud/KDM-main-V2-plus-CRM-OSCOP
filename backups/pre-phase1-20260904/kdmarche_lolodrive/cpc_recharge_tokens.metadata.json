@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"532afdce6d1e46d385d7937b411f9bc5","collectionName":"cpc_recharge_tokens","type":"collection"}

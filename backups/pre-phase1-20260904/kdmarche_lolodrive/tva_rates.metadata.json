@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"afc4c02f052f4f7b8662d5b38d77e33d","collectionName":"tva_rates","type":"collection"}

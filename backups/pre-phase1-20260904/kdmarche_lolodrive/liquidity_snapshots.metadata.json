@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"11df48bea40246df98e1d6f5b9e73181","collectionName":"liquidity_snapshots","type":"collection"}

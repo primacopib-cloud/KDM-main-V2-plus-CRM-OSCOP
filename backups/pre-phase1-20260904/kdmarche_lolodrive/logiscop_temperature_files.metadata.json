@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"bb1e5d1f3c0549ad873309b548dabca0","collectionName":"logiscop_temperature_files","type":"collection"}

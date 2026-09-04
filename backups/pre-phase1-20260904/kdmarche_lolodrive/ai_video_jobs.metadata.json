@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"57d2b19219af4f299ddc92ce526f242a","collectionName":"ai_video_jobs","type":"collection"}

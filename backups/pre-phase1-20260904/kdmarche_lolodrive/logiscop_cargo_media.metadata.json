@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"3b320ebd40854264af7ed386974470f8","collectionName":"logiscop_cargo_media","type":"collection"}

@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"1bca3ed6c6184a42a8c00092374206b1","collectionName":"freight_rates","type":"collection"}

@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"b6fc687947924ffe84a687d9c38d63dc","collectionName":"logiscop_transport_credits","type":"collection"}

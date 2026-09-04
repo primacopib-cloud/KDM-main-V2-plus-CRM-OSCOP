@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"79639f3f885a4e2dab810309ad5290de","collectionName":"rar_blocked_carriers","type":"collection"}

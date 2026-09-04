@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"id":{"$numberInt":"1"}},"name":"id_1","unique":true},{"v":{"$numberInt":"2"},"key":{"type_dossier":{"$numberInt":"1"}},"name":"type_dossier_1"}],"uuid":"6f0d5b9e46ee4ba7abcabbef6e34d76f","collectionName":"crm_dossiers","type":"collection"}

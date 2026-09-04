@@ -11,7 +11,7 @@
     "why_cp_card3_title": "Coopérative",
     "why_cp_card3_desc": "1 personne = 1 voix. Gouvernance ESS, marges plafonnées et bénéfices redistribués au service du pouvoir d'achat local.",
     "hero_badge": "Communityplace coopérative B2B2C",
-    "hero_h1": "L'écosystème coopératif des Outre-mer",
+    "hero_h1": "La centrale coopérative des Outre-mer",
     "hero_subtitle": "PASS Vie Chère, Réseau LOLODRIVE, gouvernance ESS — pour rendre l'essentiel accessible à tous.",
     "cta_register": "Créer mon compte",
     "cta_signin": "Se connecter",
@@ -116,9 +116,9 @@
   },
   "partners": {
     "badge": "Logique du partenariat",
-    "title": "Séparation stricte des fonctions",
-    "subtitle": "Un seul vend les produits (KDMARCHE) • L'autre ne vend rien (O'SCOP)",
-    "note": "Ce cloisonnement est volontaire, contractuel et opposable.",
+    "title": "Deux circuits transparents",
+    "subtitle": "Deux circuits transparents : vente partenaire directe • achat-revente O'SCOP",
+    "note": "Le vendeur-facturier est identifié sur chaque offre avant tout achat : badge « Vendu et facturé par… » et répartition des rôles affichés.",
     "kdm_badge": "B2B Opérationnel",
     "oscop_badge": "Ingénierie ESS",
     "kdm_role": "Opérateur commercial et logistique B2B",
@@ -126,7 +126,7 @@
     "role_label": "Rôle",
     "role_exclusive": "Rôle exclusif",
     "kdm_assumes": "KDMARCHE assume seul",
-    "oscop_not": "O'SCOP ne fait pas",
+    "oscop_not": "O'SCOP, deux rôles distincts",
     "kdm_responsibilities": [
       "Opérateur de vente B2B",
       "Gestionnaire des catalogues produits",
@@ -151,10 +151,10 @@
       "Garant du cadre ESS et coopératif"
     ],
     "oscop_restrictions": [
-      "Ne vend pas",
-      "Ne facture pas les produits",
-      "Ne perçoit aucun paiement fournisseur",
-      "Ne prend aucune commission sur les ventes"
+      "Vend et facture en direct uniquement sur le circuit achat-revente O'SCOP",
+      "N'encaisse jamais les ventes des partenaires vendeurs",
+      "Assure les services coopératifs prévus sur le circuit partenaire",
+      "Affiche le vendeur-facturier sur chaque offre"
     ]
   },
   "logistics": {

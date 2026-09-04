@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"cache_key":{"$numberInt":"1"}},"name":"cache_key_1","unique":true}],"uuid":"2a222415908b47bc81f6f4af2ba6c9a1","collectionName":"kdm_opa_cache","type":"collection"}

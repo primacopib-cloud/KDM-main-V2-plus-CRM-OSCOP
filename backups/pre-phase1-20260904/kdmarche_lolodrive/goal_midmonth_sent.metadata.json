@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"dd1521927b5046e894ccb5015cd4ea6e","collectionName":"goal_midmonth_sent","type":"collection"}

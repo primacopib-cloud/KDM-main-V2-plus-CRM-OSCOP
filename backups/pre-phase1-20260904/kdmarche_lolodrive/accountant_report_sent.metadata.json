@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"cd416912e40a4ce7a9dda976359bee14","collectionName":"accountant_report_sent","type":"collection"}

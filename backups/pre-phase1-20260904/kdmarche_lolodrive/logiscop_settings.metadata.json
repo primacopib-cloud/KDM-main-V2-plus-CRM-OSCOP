@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"873058f616a8456d96c64ea71cbe84df","collectionName":"logiscop_settings","type":"collection"}

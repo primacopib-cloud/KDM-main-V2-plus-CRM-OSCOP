@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"ee554ac00ffe4c2b9ea9f2217949b6e4","collectionName":"cpc_packs","type":"collection"}

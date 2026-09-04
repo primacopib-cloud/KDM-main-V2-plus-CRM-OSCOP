@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"id":{"$numberInt":"1"}},"name":"id_1","unique":true},{"v":{"$numberInt":"2"},"key":{"pipeline_stage":{"$numberInt":"1"}},"name":"pipeline_stage_1"}],"uuid":"00f97fca5fdb4e37bf119ad19f5c032a","collectionName":"crm_opportunities","type":"collection"}
