@@ -2473,3 +2473,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Rapport F.O.G.E.D.O.M: doc_type FOGEDOM_REPORT (RF-YYYY-xxxx), sections fournisseur/marge/logistique/risques (blockers auto) + mention « ni prêteur, ni banque, ni assureur, ni garant ». Bouton dans OperationDetail
 - Calculateur fret maritime: routes_freight_calc.py — 7 routes Outre-mer seedées (barème INTERNE administrable PUT admin, PAS d'API marché externe), conteneurs 20DV/40DV/40HC/LCL, BAF+THC+assurance 0,6%. Page publique /calculateur-fret (FreightCalculatorPage.jsx)
 - Tests: /app/tests_manual/test_phase2e.py ALL PASSED
+
+## Phase 2f — Fret→Opération, Barème admin, Compte investisseur, Registre ventilations (04/06/2026) ✅ (3/3 tests PASSED)
+- Fret vers opération: FreightToOperation.jsx dans FreightCalculatorPage (visible si connecté admin) — fusionne cost_lines.main_freight (+transport_insurance séparée) via PATCH existant, coût de revient recalculé
+- Barème fret admin: FreightRatesPanel.jsx (onglet LOGICOOP) — édition inline prix 20DV/40DV/40HC/LCL, BAF %, transit jours (PUT /api/admin/freight/routes/{id})
+- Compte investisseur dédié: POST /api/investor/apply (public, password hashé dès la candidature via auth.get_password_hash, jamais stocké en clair, non exposé dans GET admin), GET /api/investor/applications + POST /{id}/decision (approve → crée user role=buyer is_investor=true avec champs requis login: siret/subscription/credits obligatoires sinon KeyError au login). UI: InvestorApplyForm.jsx (espace investisseur, masqué si connecté) + InvestorApplicationsPanel.jsx (onglet Achat-Revente). Flux testé: refus login avant validation → login OK après
+- Registre ventilations: GET /api/admin/purchase-resale/settlements-register?format=csv (CSV ; BOM UTF-8, colonnes cascade complètes). Bouton « Ventilations » dans AccountingTab
+- Tests: /app/tests_manual/test_phase2f.py ALL PASSED

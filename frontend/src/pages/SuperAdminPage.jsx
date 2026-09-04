@@ -31,6 +31,8 @@ import { ServiceCreditsPanel } from '../components/superadmin/ServiceCreditsPane
 import { LegalPagesPanel } from '../components/superadmin/LegalPagesPanel';
 import { FogedomPanelWithOps } from '../components/superadmin/FogedomPanelWithOps';
 import { StaffRolesPanel } from '../components/superadmin/StaffRolesPanel';
+import { InvestorApplicationsPanel } from '../components/superadmin/InvestorApplicationsPanel';
+import { FreightRatesPanel } from '../components/superadmin/FreightRatesPanel';
 import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
 import { AnnouncementsTab } from '../components/superadmin/AnnouncementsTab';
 import { FlashPromosTab } from '../components/superadmin/FlashPromosTab';
@@ -210,6 +212,7 @@ export default function SuperAdminPage() {
             <LogicoopPanel />
             <LoloPointsContactPanel />
             <LogiscopTransportAdminPanel />
+            <FreightRatesPanel />
             <PartnerApplicationsPanel />
           </TabsContent>
 
@@ -234,6 +237,7 @@ export default function SuperAdminPage() {
           <TabsContent value="achat-revente">
             <PurchaseResaleTab />
             <FogedomPanelWithOps />
+            <InvestorApplicationsPanel />
           </TabsContent>
 
           <TabsContent value="partnerships">
