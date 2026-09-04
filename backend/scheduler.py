@@ -352,6 +352,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler dormant zones crashed: %s", exc)
         try:
+            from routes_admin_payment_links import check_pending_payment_links
+            await check_pending_payment_links(_db)
+        except Exception as exc:
+            logger.exception("Scheduler payment links crashed: %s", exc)
+        try:
             from order_sms import process_pickup_reminders
             await process_pickup_reminders(_db)
         except Exception as exc:

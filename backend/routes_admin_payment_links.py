@@ -55,18 +55,19 @@ class CreateLinkPayload(BaseModel):
 STRIPE_MAX_CENTS = 99_999_999  # 999 999,99 € — plafond Stripe par transaction
 
 
-@payment_links_router.post("")
-async def create_payment_link(payload: CreateLinkPayload, admin: dict = Depends(_admin)):
-    if payload.account_type not in ACCOUNT_TYPES:
-        raise HTTPException(status_code=400, detail="Type de compte invalide (VENDOR_PRO, BUYER_PRO, SPONSOR)")
-    amount_cents = int(round(payload.amount_eur * 100))
-    if amount_cents > STRIPE_MAX_CENTS:
-        raise HTTPException(
-            status_code=400,
-            detail="Montant maximum Stripe : 999 999,99 € par lien. Pour un total supérieur (ex : 1 000 000 €), créez plusieurs liens.")
+class SplitPayload(BaseModel):
+    email: EmailStr
+    total_eur: float = Field(..., gt=0)
+    installments: int = Field(..., ge=2, le=12)
+    account_type: str
+    description: Optional[str] = None
+
+
+async def _create_one_link(email: str, amount_cents: int, account_type: str,
+                           description: Optional[str], admin_email: Optional[str]) -> dict:
     key = _stripe_key()
-    label = ACCOUNT_TYPES[payload.account_type]
-    product_name = f"KDMARCHÉ × O'SCOP — {label}" + (f" — {payload.description.strip()}" if payload.description else "")
+    label = ACCOUNT_TYPES[account_type]
+    product_name = f"KDMARCHÉ × O'SCOP — {label}" + (f" — {description.strip()}" if description else "")
     link_id = str(uuid.uuid4())
     try:
         price = stripe.Price.create(
@@ -77,20 +78,57 @@ async def create_payment_link(payload: CreateLinkPayload, admin: dict = Depends(
             line_items=[{"price": price.id, "quantity": 1}],
             restrictions={"completed_sessions": {"limit": 1}},
             metadata={"kind": "ADMIN_PAYMENT_LINK", "link_db_id": link_id,
-                      "account_type": payload.account_type, "email": payload.email})
+                      "account_type": account_type, "email": email})
     except stripe.error.StripeError as exc:
         logger.error("Création lien Stripe échouée : %s", exc)
         raise HTTPException(status_code=502, detail=f"Erreur Stripe : {getattr(exc, 'user_message', None) or str(exc)}")
-    url = f"{plink.url}?prefilled_email={quote(payload.email)}"
+    url = f"{plink.url}?prefilled_email={quote(email)}"
     doc = {
-        "id": link_id, "email": payload.email, "amount_cents": amount_cents,
-        "account_type": payload.account_type, "description": payload.description,
+        "id": link_id, "email": email, "amount_cents": amount_cents,
+        "account_type": account_type, "description": description,
         "stripe_payment_link_id": plink.id, "url": url, "status": "pending",
-        "created_by": admin.get("email"), "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": admin_email, "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.admin_payment_links.insert_one({**doc})
-    logger.info("Lien de paiement admin créé : %s € pour %s (%s)", payload.amount_eur, payload.email, label)
     return doc
+
+
+@payment_links_router.post("")
+async def create_payment_link(payload: CreateLinkPayload, admin: dict = Depends(_admin)):
+    if payload.account_type not in ACCOUNT_TYPES:
+        raise HTTPException(status_code=400, detail="Type de compte invalide (VENDOR_PRO, BUYER_PRO, SPONSOR)")
+    amount_cents = int(round(payload.amount_eur * 100))
+    if amount_cents > STRIPE_MAX_CENTS:
+        raise HTTPException(
+            status_code=400,
+            detail="Montant maximum Stripe : 999 999,99 € par lien. Pour un total supérieur (ex : 1 000 000 €), créez plusieurs liens.")
+    doc = await _create_one_link(payload.email, amount_cents, payload.account_type,
+                                 payload.description, admin.get("email"))
+    logger.info("Lien de paiement admin créé : %s € pour %s", payload.amount_eur, payload.email)
+    return doc
+
+
+@payment_links_router.post("/split")
+async def create_split_links(payload: SplitPayload, admin: dict = Depends(_admin)):
+    """Découpe un montant total en N liens de paiement (échéances) générés d'un coup."""
+    if payload.account_type not in ACCOUNT_TYPES:
+        raise HTTPException(status_code=400, detail="Type de compte invalide (VENDOR_PRO, BUYER_PRO, SPONSOR)")
+    total_cents = int(round(payload.total_eur * 100))
+    n = payload.installments
+    base = total_cents // n
+    if base < 1:
+        raise HTTPException(status_code=400, detail="Montant total trop faible pour ce nombre d'échéances")
+    amounts = [base + (total_cents - base * n if i == 0 else 0) for i in range(n)]
+    if max(amounts) > STRIPE_MAX_CENTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Chaque échéance dépasse le plafond Stripe (999 999,99 €). Augmentez le nombre d'échéances (min {(total_cents // STRIPE_MAX_CENTS) + 1}).")
+    created = []
+    for i, cents in enumerate(amounts):
+        suffix = f"Échéance {i + 1}/{n}" + (f" — {payload.description.strip()}" if payload.description else "")
+        created.append(await _create_one_link(payload.email, cents, payload.account_type, suffix, admin.get("email")))
+    logger.info("Paiement échelonné : %s liens créés pour %s (total %s cents)", n, payload.email, total_cents)
+    return {"links": created, "total_cents": total_cents, "installments": n}
 
 
 @payment_links_router.get("")
@@ -133,3 +171,47 @@ async def deactivate_payment_link(link_id: str, _: dict = Depends(_admin)):
         raise HTTPException(status_code=502, detail=f"Erreur Stripe : {exc}")
     await db.admin_payment_links.update_one({"id": link_id}, {"$set": {"status": "deactivated"}})
     return {"status": "SUCCESS"}
+
+
+async def check_pending_payment_links(db_):
+    """Cron : détecte les liens payés et notifie les admins automatiquement (pas de clic « vérifier »)."""
+    try:
+        links = await db_.admin_payment_links.find(
+            {"status": "pending"}, {"_id": 0}).sort("created_at", -1).to_list(20)
+        if not links:
+            return
+        key = get_stripe_key("oscop")
+        if not key:
+            return
+        stripe.api_base = "https://api.stripe.com"
+        from starlette.concurrency import run_in_threadpool
+        for link in links:
+            try:
+                sessions = await run_in_threadpool(
+                    lambda pl=link["stripe_payment_link_id"]: stripe.checkout.Session.list(
+                        api_key=key, payment_link=pl, limit=5))
+            except stripe.error.StripeError as exc:
+                logger.warning("Poll lien %s : %s", link["id"], exc)
+                continue
+            paid = next((s for s in sessions.data if s.payment_status == "paid"), None)
+            if not paid:
+                continue
+            claim = await db_.admin_payment_links.update_one(
+                {"id": link["id"], "status": "pending"},
+                {"$set": {"status": "paid", "paid_at": datetime.now(timezone.utc).isoformat(),
+                          "stripe_session_id": paid.id, "detected_by": "cron"}})
+            if claim.modified_count != 1:
+                continue
+            amount = f"{link['amount_cents'] / 100:,.2f}".replace(",", " ").replace(".", ",")
+            label = ACCOUNT_TYPES.get(link["account_type"], link["account_type"])
+            desc = f" ({link['description']})" if link.get("description") else ""
+            from core_deps import create_notification
+            await create_notification(
+                "payment_link_paid", "💶 Paiement reçu via lien Stripe",
+                f"{amount} € réglés par {link['email']} — {label}{desc}. Le statut est passé à « Payé » dans Comptabilité.",
+                target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+                data={"link": "/superadmin", "payment_link_id": link["id"],
+                      "amount_cents": link["amount_cents"], "email": link["email"]})
+            logger.info("Paiement détecté automatiquement : lien %s (%s €)", link["id"], link["amount_cents"] / 100)
+    except Exception as exc:
+        logger.warning("check_pending_payment_links : %s", exc)

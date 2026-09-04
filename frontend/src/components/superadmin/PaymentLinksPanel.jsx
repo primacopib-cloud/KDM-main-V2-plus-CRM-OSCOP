@@ -47,7 +47,7 @@ export const parseAmount = (raw) => {
 
 export const PaymentLinksPanel = () => {
   const [links, setLinks] = useState([]);
-  const [form, setForm] = useState({ email: '', amount: '', type: 'VENDOR_PRO', description: '' });
+  const [form, setForm] = useState({ email: '', amount: '', type: 'VENDOR_PRO', description: '', installments: 1 });
   const [busy, setBusy] = useState(false);
 
   const headers = { 'Content-Type': 'application/json', ...getAuthHeaders() };
@@ -77,14 +77,20 @@ export const PaymentLinksPanel = () => {
 
   const create = async () => {
     const amount = parseAmount(form.amount);
+    const n = Number(form.installments) || 1;
     if (!form.email.includes('@')) { toast.error('Email invalide'); return; }
     if (!Number.isFinite(amount) || amount <= 0) { toast.error('Montant invalide'); return; }
-    if (amount > 999999.99) { toast.error('Maximum Stripe : 999 999,99 € par lien. Pour un total supérieur, créez plusieurs liens.'); return; }
+    if (amount / n > 999999.99) { toast.error(`Chaque échéance dépasse le plafond Stripe (999 999,99 €). Augmentez le nombre d'échéances.`); return; }
+    if (n === 1 && amount > 999999.99) { toast.error('Maximum Stripe : 999 999,99 € par lien. Utilisez plusieurs échéances.'); return; }
     setBusy(true);
     try {
-      const r = await fetch(`${API}/admin/payment-links`, {
+      const isSplit = n > 1;
+      const body = isSplit
+        ? { email: form.email.trim(), total_eur: amount, installments: n, account_type: form.type, description: form.description.trim() || null }
+        : { email: form.email.trim(), amount_eur: amount, account_type: form.type, description: form.description.trim() || null };
+      const r = await fetch(`${API}/admin/payment-links${isSplit ? '/split' : ''}`, {
         method: 'POST', headers, credentials: 'include',
-        body: JSON.stringify({ email: form.email.trim(), amount_eur: amount, account_type: form.type, description: form.description.trim() || null }),
+        body: JSON.stringify(body),
       });
       const d = await r.json();
       if (!r.ok) {
@@ -93,9 +99,13 @@ export const PaymentLinksPanel = () => {
         toast.error(msg);
         return;
       }
-      toast.success('Lien de paiement créé');
-      copy(d.url);
-      setForm({ email: '', amount: '', type: 'VENDOR_PRO', description: '' });
+      if (isSplit) {
+        toast.success(`${n} liens d'échéance créés (total ${eur(d.total_cents)})`);
+      } else {
+        toast.success('Lien de paiement créé');
+        copy(d.url);
+      }
+      setForm({ email: '', amount: '', type: 'VENDOR_PRO', description: '', installments: 1 });
       load();
     } finally { setBusy(false); }
   };
@@ -120,7 +130,7 @@ export const PaymentLinksPanel = () => {
         <h3 className="text-sm uppercase tracking-wider text-white/75 font-semibold m-0">Liens de paiement Stripe</h3>
       </div>
 
-      <div className="grid md:grid-cols-[1.3fr_0.7fr_1fr_1.3fr_auto] gap-3 items-end mb-5">
+      <div className="grid md:grid-cols-[1.2fr_0.7fr_0.9fr_0.6fr_1.1fr_auto] gap-3 items-end mb-5">
         <div>
           <Label className="text-white/70 text-xs">Email du destinataire *</Label>
           <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -133,7 +143,9 @@ export const PaymentLinksPanel = () => {
           {form.amount && (
             <p className="text-[10.5px] m-0 mt-0.5" data-testid="paylink-amount-preview">
               {Number.isFinite(parseAmount(form.amount)) && parseAmount(form.amount) > 0
-                ? <span className="text-[#8CC63E]">= {eur(Math.round(parseAmount(form.amount) * 100))}</span>
+                ? (Number(form.installments) > 1
+                  ? <span className="text-[#8CC63E]">= {form.installments} × {eur(Math.round(parseAmount(form.amount) * 100 / Number(form.installments)))}</span>
+                  : <span className="text-[#8CC63E]">= {eur(Math.round(parseAmount(form.amount) * 100))}</span>)
                 : <span className="text-red-400">Montant invalide</span>}
             </p>
           )}
@@ -144,6 +156,16 @@ export const PaymentLinksPanel = () => {
             data-testid="paylink-type"
             className="mt-1 w-full h-9 rounded-md bg-white/[0.04] border border-white/10 text-white text-sm px-2">
             {TYPES.map(([v, l]) => <option key={v} value={v} className="bg-[#2A1045]">{l}</option>)}
+          </select>
+        </div>
+        <div>
+          <Label className="text-white/70 text-xs">Échéances</Label>
+          <select value={form.installments} onChange={(e) => setForm({ ...form, installments: Number(e.target.value) })}
+            data-testid="paylink-installments" title="Découpe le montant total en plusieurs liens"
+            className="mt-1 w-full h-9 rounded-md bg-white/[0.04] border border-white/10 text-white text-sm px-2">
+            {[1, 2, 3, 4, 5, 6, 8, 10, 12].map((k) => (
+              <option key={k} value={k} className="bg-[#2A1045]">{k === 1 ? '1 (unique)' : `${k}×`}</option>
+            ))}
           </select>
         </div>
         <div>
@@ -175,7 +197,10 @@ export const PaymentLinksPanel = () => {
                 const [label, cls] = STATUS[l.status] || STATUS.pending;
                 return (
                   <tr key={l.id} className="border-b border-white/[0.05]" data-testid={`paylink-row-${l.id}`}>
-                    <td className="py-2 pr-3 text-white/80">{l.email}</td>
+                    <td className="py-2 pr-3 text-white/80">
+                      {l.email}
+                      {l.description && <span className="block text-[10px] text-white/40">{l.description}</span>}
+                    </td>
                     <td className="py-2 pr-3 font-bold text-[#E9CF8E]">{eur(l.amount_cents)}</td>
                     <td className="py-2 pr-3 text-white/60">{(TYPES.find(([v]) => v === l.account_type) || [])[1] || l.account_type}</td>
                     <td className="py-2 pr-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${cls}`}>{label}</span></td>

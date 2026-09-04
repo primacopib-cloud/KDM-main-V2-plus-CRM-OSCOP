@@ -2378,3 +2378,13 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Fix backend : limite portée au **plafond Stripe 999 999,99 €** (99 999 999 cents) avec message 400 explicite « Montant maximum Stripe : 999 999,99 € par lien… créez plusieurs liens ». Fix frontend : validation avant envoi + affichage des erreurs 422 Pydantic (detail liste → messages joints).
 - Vérifié : 999 999,99 € → lien Stripe LIVE créé (puis désactivé) ; 1 000 000 € → 400 + toast clair en UI ; aperçu « = 1 000 000,00 € » correct.
 - ⚠️ 1 000 000 € en un seul lien reste IMPOSSIBLE (plafond Stripe par transaction) — l'admin doit scinder (ex : 2 × 500 000 €).
+
+## 2026-09-04 — Paiement Échelonné + Notification Paiement Reçu (self-testés curl LIVE + mock + Playwright)
+### Paiement échelonné
+- Backend : refactor `_create_one_link()` partagé ; POST /api/admin/payment-links/split {email, total_eur, installments 2-12, account_type, description?} → N liens Stripe (montants égaux au centime près, reste sur la 1re échéance ; description « Échéance i/N — … » ; 400 si une échéance > plafond Stripe avec nb min d'échéances suggéré).
+- Frontend PaymentLinksPanel : select « Échéances » (1/2/3/4/5/6/8/10/12×, testid paylink-installments), aperçu « = 4 × 250 000,00 € », toast récap, description affichée sous l'email dans le tableau.
+- Testé LIVE : 10 € en 3 → [334, 333, 333] cents « Échéance i/3 » (liens désactivés après) ; 2 M€ en 2 → 400 « min 3 » ; UI aperçu 4 × 250 000 € OK.
+### Notification paiement reçu (auto)
+- `check_pending_payment_links(db)` dans routes_admin_payment_links.py, branchée au cron 10 min de scheduler.py : poll Stripe (max 20 liens pending, run_in_threadpool), claim atomique {status: pending}→paid (detected_by: cron) puis `create_notification` type `payment_link_paid` aux admins (montant fr, email, type, description).
+- Testé avec mock stripe.checkout.Session.list : statut→paid, notification correcte (« 250 000,00 € réglés par… »), claim atomique = 1 notif max par lien.
+- ⚠️ Incident de test réparé : le mock avait marqué « payé » le vrai lien 100 € (piperolfelixia) → remis à pending + fausse notif supprimée + vérité confirmée par refresh Stripe réel (pending). Leçon : ne jamais mocker Stripe sur la base réelle sans filtrer les ids de test.
