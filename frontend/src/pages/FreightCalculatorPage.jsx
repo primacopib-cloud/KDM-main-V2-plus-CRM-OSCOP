@@ -118,6 +118,34 @@ export default function FreightCalculatorPage() {
                     </div>
                   </div>
                   <p className="text-white/40 text-[10px] pt-2">{quote.note}</p>
+                  <Button
+                    size="sm"
+                    data-testid="freight-pdf-btn"
+                    className="mt-2 w-full bg-white/10 hover:bg-white/20 text-white text-xs"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`${API}/public/freight/quote-pdf`, {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            route_id: form.route_id, container_type: form.container_type,
+                            quantity: parseFloat(String(form.quantity).replace(',', '.')) || 1,
+                            insurance: form.insurance,
+                            goods_value_ex_vat: parseFloat(String(form.goods_value).replace(',', '.')) || 0,
+                          }),
+                        });
+                        if (!res.ok) throw new Error('PDF indisponible');
+                        const blob = await res.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = (res.headers.get('Content-Disposition') || '').split('"')[1] || 'devis-fret.pdf';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch (e) { toast.error(String(e.message || e)); }
+                    }}
+                  >
+                    Télécharger le devis PDF LOGI'SCOP
+                  </Button>
                   <FreightToOperation quote={quote} />
                 </div>
               )}

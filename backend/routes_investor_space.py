@@ -79,6 +79,26 @@ async def decide_application(app_id: str, payload: dict, admin: dict = Depends(_
         {"id": app_id},
         {"$set": {"status": "approved" if decision == "approve" else "rejected",
                   "decided_by": admin.get("email"), "decided_at": now}})
+    try:
+        from brevo_service import send_email, _wrap_html
+        if decision == "approve":
+            html = _wrap_html("Votre compte investisseur O'SCOP est ouvert", (
+                f"<p style='font-size:14px;'>Bonjour {app_doc['name']},</p>"
+                "<p style='font-size:14px;'>Votre candidature a été <b>approuvée</b> par l'équipe O'SCOP. "
+                "Connectez-vous avec votre email et le mot de passe choisi lors de votre candidature, "
+                "puis accédez à votre espace investisseur (engagements, remboursements, CREDI'SCOP-I).</p>"
+                "<p style='font-size:12px;color:#B8A98F;'>Les CREDI'SCOP-I sont des unités internes de services : "
+                "ils ne constituent ni un solde financier, ni le montant investi, ni un moyen de paiement du fournisseur.</p>"))
+            subject = "Compte investisseur O'SCOP approuvé"
+        else:
+            html = _wrap_html("Votre candidature investisseur O'SCOP", (
+                f"<p style='font-size:14px;'>Bonjour {app_doc['name']},</p>"
+                "<p style='font-size:14px;'>Après examen, votre candidature n'a pas été retenue à ce stade. "
+                "Vous pouvez contacter l'équipe O'SCOP pour compléter votre dossier.</p>"))
+            subject = "Candidature investisseur O'SCOP — décision"
+        await send_email(app_doc["email"], app_doc["name"], subject, html, tags=["investisseur"])
+    except Exception:
+        pass
     return {"success": True, "status": decision}
 
 
@@ -122,6 +142,12 @@ async def investor_dashboard(current_user: dict = Depends(get_current_user_v2)):
     if account:
         ledger = await db.service_credit_ledger.find(
             {"account_id": account["id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    shipments = await db.logiscop_shipments.find(
+        {"operation_id": {"$in": op_ids}}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    for s in shipments:
+        s["operation_reference"] = ops_map.get(s["operation_id"], {}).get("reference")
+        s["milestones"] = await db.logiscop_milestones.find(
+            {"shipment_id": s["id"]}, {"_id": 0, "milestone": 1, "created_at": 1}).sort("created_at", 1).to_list(50)
     return {
         "email": email,
         "commitments": commitments,
@@ -134,5 +160,6 @@ async def investor_dashboard(current_user: dict = Depends(get_current_user_v2)):
                         "remuneration": s["breakdown"].get("remuneration", 0),
                         "created_at": s["created_at"]} for s in settlements],
         "service_credits": {"account": account, "ledger": ledger},
+        "shipments": shipments,
         "disclaimer": DISCLAIMER,
     }

@@ -2480,3 +2480,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Compte investisseur dédié: POST /api/investor/apply (public, password hashé dès la candidature via auth.get_password_hash, jamais stocké en clair, non exposé dans GET admin), GET /api/investor/applications + POST /{id}/decision (approve → crée user role=buyer is_investor=true avec champs requis login: siret/subscription/credits obligatoires sinon KeyError au login). UI: InvestorApplyForm.jsx (espace investisseur, masqué si connecté) + InvestorApplicationsPanel.jsx (onglet Achat-Revente). Flux testé: refus login avant validation → login OK après
 - Registre ventilations: GET /api/admin/purchase-resale/settlements-register?format=csv (CSV ; BOM UTF-8, colonnes cascade complètes). Bouton « Ventilations » dans AccountingTab
 - Tests: /app/tests_manual/test_phase2f.py ALL PASSED
+
+## Phase 2g — Email décision investisseur, Devis fret PDF, Suivi logistique investisseur, Alerte marge (04/06/2026) ✅ (4/4 tests PASSED)
+- Email décision investisseur: decide_application envoie email Brevo au candidat (approve: instructions connexion + disclaimer CREDI'SCOP-I ; reject: message courtois), best-effort (Brevo 201 vérifié)
+- Devis fret PDF: POST /api/public/freight/quote-pdf → PDF numéroté DF-YYYY-xxxx (DOC_TYPES FREIGHT_QUOTE, archivé collection freight_quotes). Bouton « Télécharger le devis PDF LOGI'SCOP » dans le calculateur
+- Suivi logistique investisseur: dashboard investisseur inclut shipments+milestones des opérations financées (matche op_ids des tranches). UI: bloc « Suivi logistique des opérations financées » dans InvestorLiveDashboard
+- Alerte marge réelle: au settlement, si encaissements ≥ 99% du TTC attendu et écart marge réalisée vs prévisionnelle > 10% → notify_admins « Alerte marge réelle » (notification + email)
+- Tests: /app/tests_manual/test_phase2g.py ALL PASSED

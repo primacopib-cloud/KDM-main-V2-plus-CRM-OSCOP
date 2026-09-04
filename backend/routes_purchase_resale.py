@@ -537,6 +537,17 @@ async def settle_collection(operation_id: str, payload: SettlementCreate, admin:
                   "investor_repaid_amount": repaid},
          "$set": {"realized_margin_ex_vat": round(float(op.get("realized_margin_ex_vat") or 0) + breakdown["oscop_margin"], 2)}})
     await _audit("CASH_SETTLEMENT", operation_id, admin, breakdown)
+    new_realized = round(float(op.get("realized_margin_ex_vat") or 0) + breakdown["oscop_margin"], 2)
+    expected = float(op.get("expected_margin_ex_vat") or 0)
+    collected_total = float(op.get("client_collected_amount", 0)) + payload.collected_amount_ttc
+    resale_ttc = float(op.get("resale_total_ex_vat", 0)) * (1 + vat_rate / 100)
+    if expected > 0 and resale_ttc > 0 and collected_total >= resale_ttc * 0.99:
+        deviation = (new_realized - expected) / expected * 100
+        if abs(deviation) > 10:
+            await notify_admins(
+                f"Alerte marge réelle — {op['reference']}",
+                f"Marge réalisée {new_realized:,.2f} € vs prévisionnelle {expected:,.2f} € "
+                f"(écart {deviation:+.1f} %). Vérification recommandée.")
     if repaid > 0:
         await notify_admins(f"Remboursement investisseur — {op['reference']}",
                             f"Cascade appliquée : principal marchandises {goods_principal:,.2f} €, principal logistique {logistics_principal:,.2f} €, rémunération {remuneration:,.2f} €.")
