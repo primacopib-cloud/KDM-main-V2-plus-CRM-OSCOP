@@ -2443,3 +2443,11 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - P0 : checkout client O'SCOP direct (facture O'SCOP, encaissement Stripe O'SCOP, choix marchandises/logistique), documents PDF (§19), espaces /espace-logiscop, /espace-fournisseur (§16)
 - P1 : CREDI'SCOP-I ledger + catalogue fermé administrable (§9), FOGEDOM-SCIC (§14), cascade remboursement (§12-13.6), plans logistiques détaillés (LogisticsLeg, Shipment, POD)
 - P2 : 9 pages juridiques (§20), notifications (§23), rôles serveur granulaires (§18), vue 360°
+
+## Phase 2b — Checkout O'SCOP, PDF, CREDI'SCOP-I, LOGI'SCOP (04/06/2026) ✅ (8/8 tests manuels)
+- Checkout O'SCOP direct: /app/backend/routes_oscop_checkout.py — offre OSCOP_DIRECT_RESALE (champs oscop_price_ht_cents/oscop_logistics_price_ht_cents/oscop_vat_rate/oscop_logistics_available via PATCH sale-model), session Stripe compte O'SCOP (get_stripe_key("oscop")), choix marchandises seules ou + logistique LOGI'SCOP, facture FAC-OSCOP-YYYY-xxxx au paiement, snapshot rôles, CREDI'SCOP refusé comme paiement (409). UI: OscopBuyDialog.jsx + bouton dans ProductsGrid + page /oscop-checkout/retour
+- PDF opérations: operation_docs_pdf.py + endpoints dans routes_purchase_resale.py — BCF-/BE-/EM-YYYY-xxxx numérotés séquentiellement, snapshot archivé (collection operation_documents), régénération PDF au téléchargement. Boutons dans OperationDetail.jsx
+- CREDI'SCOP-I: routes_service_credits.py — catalogue fermé 11 services §9.3 seedé au startup, barème administrable, comptes/ledger (6 types d'écriture), interdictions techniques: euro_value→422 (extra=forbid), débit exige item catalogue + unités exactes, pas de transfert, solde jamais négatif. UI: ServiceCreditsPanel.jsx dans onglet CREDI'SCOP
+- Espace LOGI'SCOP: routes_logiscop_ops.py (préfixe /api/admin/logiscop-ops, NB: routes_logiscop.py existait déjà pour LOGICOOP transport) — expéditions EXP-, jalons (statuts logistiques), stockage IN/OUT, POD- → logistics_status POD_VALIDATED. Page /espace-logiscop (LogiscopSpacePage.jsx, admin requis)
+- Tests: /app/tests_manual/test_four_modules.py 8/8 PASSED (session Stripe réelle test créée puis nettoyée)
+- NOTE: flows UI (dialog achat, génération PDF via boutons) vérifiés par endpoints + smoke screenshots, pas de clics e2e complets

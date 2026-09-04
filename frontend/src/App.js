@@ -24,6 +24,8 @@ import OrderPreviewPage from "./pages/OrderPreviewPage";
 import SignatureDemoPage from "./pages/SignatureDemoPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import InvestorSpacePage from "./pages/InvestorSpacePage";
+import LogiscopSpacePage from "./pages/LogiscopSpacePage";
+import OscopCheckoutReturnPage from "./pages/OscopCheckoutReturnPage";
 import TenantPage from "./pages/TenantPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import PartnerDevPage from "./pages/PartnerDevPage";
@@ -168,6 +170,8 @@ function App() {
           <Route path="/super-admin" element={<SuperAdminPage />} />
           <Route path="/superadmin" element={<SuperAdminPage />} />
           <Route path="/espace-investisseur" element={<InvestorSpacePage />} />
+          <Route path="/espace-logiscop" element={<LogiscopSpacePage />} />
+          <Route path="/oscop-checkout/retour" element={<OscopCheckoutReturnPage />} />
           <Route path="/t/:slug" element={<TenantPage />} />
           <Route path="/docs-api" element={<ApiDocsPage />} />
           <Route path="/espace-developpeur" element={<PartnerDevPage />} />

@@ -67,12 +67,18 @@ from routes_v2_billing import billing_v2_router, set_billing_v2_database
 from routes_admin_orgs import admin_orgs_router, set_admin_orgs_database
 from routes_sale_model import sale_model_router, set_sale_model_database, migrate_sale_model
 from routes_purchase_resale import pr_router, set_purchase_resale_database
+from routes_oscop_checkout import oscop_checkout_router, set_oscop_checkout_database
+from routes_service_credits import sc_router, set_service_credits_database, seed_service_catalog
+from routes_logiscop_ops import logiscop_ops_router, set_logiscop_ops_database
 set_database(db)
 set_applications_v2_database(db)
 set_billing_v2_database(db)
 set_admin_orgs_database(db)
 set_sale_model_database(db)
 set_purchase_resale_database(db)
+set_oscop_checkout_database(db)
+set_service_credits_database(db)
+set_logiscop_ops_database(db)
 app.include_router(api_v2_router)
 app.include_router(applications_v2_router)
 from routes_adhesion_reminders import adhesion_reminders_router, set_adhesion_reminders_database
@@ -82,6 +88,9 @@ app.include_router(billing_v2_router)
 app.include_router(admin_orgs_router)
 app.include_router(sale_model_router)
 app.include_router(pr_router)
+app.include_router(oscop_checkout_router)
+app.include_router(sc_router)
+app.include_router(logiscop_ops_router)
 
 # Import and include catalog routes (cart & orders split into dedicated modules)
 from routes_catalog import catalog_router, set_catalog_database
@@ -782,6 +791,7 @@ app.add_middleware(
 async def startup_db_client():
     """Create indexes on startup."""
     await migrate_sale_model(db)
+    await seed_service_catalog(db)
     # Create unique index on email
     await db.users.create_index("email", unique=True)
     await db.users.create_index("id", unique=True)

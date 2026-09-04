@@ -16,13 +16,41 @@ const Row = ({ label, value, accent }) => (
 
 export const OperationDetail = ({ operationId, meta, onChanged }) => {
   const [detail, setDetail] = useState(null);
+  const [docs, setDocs] = useState([]);
   const [tranche, setTranche] = useState({ financing_tranche: 'GOODS', investor_name: '', approved_amount: '' });
   const [disb, setDisb] = useState({ financing_tranche: 'GOODS', payee_category: 'SUPPLIER_GOODS', payee_name: '', amount: '', method: 'OSCOP_BANK_TRANSFER' });
 
   const load = useCallback(async () => {
-    const res = await fetch(`${API}/admin/purchase-resale/operations/${operationId}`, { headers: getAuthHeaders() });
+    const [res, dres] = await Promise.all([
+      fetch(`${API}/admin/purchase-resale/operations/${operationId}`, { headers: getAuthHeaders() }),
+      fetch(`${API}/admin/purchase-resale/operations/${operationId}/documents`, { headers: getAuthHeaders() }),
+    ]);
     if (res.ok) setDetail(await res.json());
+    if (dres.ok) setDocs((await dres.json()).documents || []);
   }, [operationId]);
+
+  const genDoc = async (docType) => {
+    const res = await fetch(`${API}/admin/purchase-resale/operations/${operationId}/documents`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ doc_type: docType }),
+    });
+    if (!res.ok) { toast.error('Génération impossible'); return; }
+    const doc = await res.json();
+    toast.success(`Document ${doc.doc_number} généré et archivé`);
+    load();
+  };
+
+  const downloadDoc = async (doc) => {
+    const res = await fetch(`${API}/admin/purchase-resale/documents/${doc.id}/pdf`, { headers: getAuthHeaders() });
+    if (!res.ok) { toast.error('Téléchargement impossible'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${doc.doc_number}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => { load(); }, [load]);
 
@@ -78,12 +106,28 @@ export const OperationDetail = ({ operationId, meta, onChanged }) => {
             {meta.statuses.map((s) => <option key={s} value={s} className="bg-[#2A1045]">{s}</option>)}
           </select>
         </div>
+        <div className="mt-3">
+          <p className="text-[11px] font-semibold text-white/70 uppercase mb-1">Documents PDF numérotés</p>
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            <Button size="sm" data-testid="gen-doc-supplier-po" className="h-6 text-[10px] bg-white/10 hover:bg-white/20 text-white"
+              onClick={() => genDoc('SUPPLIER_PO')}>+ Bon commande fournisseur</Button>
+            <Button size="sm" data-testid="gen-doc-commitment" className="h-6 text-[10px] bg-white/10 hover:bg-white/20 text-white"
+              onClick={() => genDoc('INVESTOR_COMMITMENT')}>+ Bon d'Engagement</Button>
+            <Button size="sm" data-testid="gen-doc-margin" className="h-6 text-[10px] bg-white/10 hover:bg-white/20 text-white"
+              onClick={() => genDoc('MARGIN_STATEMENT')}>+ État de marge</Button>
+          </div>
+          {docs.map((d) => (
+            <button key={d.id} type="button" onClick={() => downloadDoc(d)} data-testid={`download-doc-${d.doc_number}`}
+              className="block text-[11px] text-[#D9B35A] hover:underline">
+              ⬇ {d.doc_number} — {d.created_at.slice(0, 10)}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div>
         <p className="text-[11px] font-semibold text-white/70 uppercase mb-1.5">Tranches de financement</p>
-        {detail.tranches.length === 0 && <p className="text-white/40 text-xs">Aucune tranche approuvée.</p>}
-        {detail.tranches.map((t) => (
+        {detail.tranches.length === 0 && <p className="text-white/40 text-xs">Aucune tranche approuvée.</p>}        {detail.tranches.map((t) => (
           <div key={t.id} className="p-2 rounded bg-white/5 mb-1.5 text-[11px]">
             <div className="flex justify-between text-white/85"><span>{t.financing_tranche} — {t.investor_name}</span><span>{eur(t.approved_amount)}</span></div>
             <div className="flex justify-between text-white/50">
