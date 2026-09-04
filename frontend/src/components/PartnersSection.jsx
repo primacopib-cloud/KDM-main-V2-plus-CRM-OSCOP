@@ -111,12 +111,12 @@ const PartnersSection = () => {
                 </ul>
               </div>
               
-              <div className="p-3.5 rounded-2xl" style={{ background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.15)' }}>
-                <h5 className="text-xs uppercase tracking-wider text-[#FF6B6B] mb-2">{i18n.t('partners.oscop_not')}</h5>
+              <div className="p-3.5 rounded-2xl" style={{ background: 'rgba(217,179,90,0.06)', border: '1px solid rgba(217,179,90,0.2)' }}>
+                <h5 className="text-xs uppercase tracking-wider text-[#D9B35A] mb-2">{i18n.t('partners.oscop_not')}</h5>
                 <ul className="space-y-1.5">
                   {(Array.isArray(oscopRestrictions) ? oscopRestrictions : []).map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-[#FF6B6B]/80 text-sm">
-                      <div className="cross-icon" style={{ width: '14px', height: '14px' }}></div>
+                    <li key={item} className="flex items-start gap-2 text-white/75 text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#D9B35A] mt-1.5 shrink-0"></span>
                       <span>{item}</span>
                     </li>
                   ))}
@@ -125,6 +125,26 @@ const PartnersSection = () => {
             </div>
           </div>
         </div>
+
+        {/* Carte 3 : LOGI'SCOP */}
+        <div className="glass-panel-soft rounded-[22px] p-5 mt-3.5 relative overflow-hidden" data-testid="logiscop-card">
+          <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, #4FC3F7, #81D4FA)' }}></div>
+          <h4 className="text-base font-bold text-white/95 mb-1.5">Logistique intégrée et finançable avec LOGI'SCOP</h4>
+          <p className="text-white/70 text-sm">
+            O'SCOP peut intégrer au devis le transport, le fret, le transit, le stockage, la préparation de commandes
+            et la livraison. L'investisseur peut financer une tranche logistique distincte, suivie par LOGI'SCOP.
+          </p>
+          <p className="text-white/45 text-xs mt-2">
+            LOGI'SCOP est l'établissement logistique de la SCIC SAS OBJECTIF SCOP OUTREMER. Les engagements
+            contractuels et factures sont émis par la SCIC SAS OBJECTIF SCOP OUTREMER, agissant par son
+            établissement LOGI'SCOP.
+          </p>
+        </div>
+
+        <p className="text-center text-white/55 text-xs mt-4" data-testid="circuit-mention">
+          Le circuit applicable est indiqué avant toute commande et demeure enregistré dans le contrat, la facture
+          et l'historique de l'opération.
+        </p>
       </div>
     </section>
   );

@@ -66,11 +66,13 @@ from routes_v2_applications import applications_v2_router, set_applications_v2_d
 from routes_v2_billing import billing_v2_router, set_billing_v2_database
 from routes_admin_orgs import admin_orgs_router, set_admin_orgs_database
 from routes_sale_model import sale_model_router, set_sale_model_database, migrate_sale_model
+from routes_purchase_resale import pr_router, set_purchase_resale_database
 set_database(db)
 set_applications_v2_database(db)
 set_billing_v2_database(db)
 set_admin_orgs_database(db)
 set_sale_model_database(db)
+set_purchase_resale_database(db)
 app.include_router(api_v2_router)
 app.include_router(applications_v2_router)
 from routes_adhesion_reminders import adhesion_reminders_router, set_adhesion_reminders_database
@@ -79,6 +81,7 @@ app.include_router(adhesion_reminders_router)
 app.include_router(billing_v2_router)
 app.include_router(admin_orgs_router)
 app.include_router(sale_model_router)
+app.include_router(pr_router)
 
 # Import and include catalog routes (cart & orders split into dedicated modules)
 from routes_catalog import catalog_router, set_catalog_database

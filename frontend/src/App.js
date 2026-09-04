@@ -23,6 +23,7 @@ import LegalPage from "./pages/LegalPage";
 import OrderPreviewPage from "./pages/OrderPreviewPage";
 import SignatureDemoPage from "./pages/SignatureDemoPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
+import InvestorSpacePage from "./pages/InvestorSpacePage";
 import TenantPage from "./pages/TenantPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import PartnerDevPage from "./pages/PartnerDevPage";
@@ -166,6 +167,7 @@ function App() {
           {/* Super Admin Dashboard */}
           <Route path="/super-admin" element={<SuperAdminPage />} />
           <Route path="/superadmin" element={<SuperAdminPage />} />
+          <Route path="/espace-investisseur" element={<InvestorSpacePage />} />
           <Route path="/t/:slug" element={<TenantPage />} />
           <Route path="/docs-api" element={<ApiDocsPage />} />
           <Route path="/espace-developpeur" element={<PartnerDevPage />} />
