@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { OperationFormDialog } from './purchase-resale/OperationFormDialog';
 import { OperationDetail } from './purchase-resale/OperationDetail';
+import { Operation360 } from './purchase-resale/Operation360';
 
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 
@@ -24,6 +25,7 @@ export const PurchaseResaleTab = () => {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [view360, setView360] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -96,6 +98,14 @@ export const PurchaseResaleTab = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-xs text-white/60">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setView360(op.id); }}
+                      data-testid={`view360-btn-${op.reference}`}
+                      className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white/80 text-[10px] font-semibold"
+                    >
+                      Vue 360°
+                    </button>
                     <span>{op.client_name}</span>
                     <span>Achat {eur(op.purchase_amount_ex_vat)}</span>
                     <span>Revente {eur(op.resale_total_ex_vat)}</span>
@@ -114,6 +124,7 @@ export const PurchaseResaleTab = () => {
       )}
 
       <OperationFormDialog open={formOpen} onClose={() => setFormOpen(false)} onCreated={load} />
+      {view360 && <Operation360 operationId={view360} onClose={() => setView360(null)} />}
     </div>
   );
 };

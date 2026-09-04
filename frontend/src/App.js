@@ -27,6 +27,7 @@ import InvestorSpacePage from "./pages/InvestorSpacePage";
 import LogiscopSpacePage from "./pages/LogiscopSpacePage";
 import OscopCheckoutReturnPage from "./pages/OscopCheckoutReturnPage";
 import LegalDynamicPage from "./pages/LegalDynamicPage";
+import SupplierOscopOrdersPage from "./pages/SupplierOscopOrdersPage";
 import TenantPage from "./pages/TenantPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import PartnerDevPage from "./pages/PartnerDevPage";
@@ -172,6 +173,7 @@ function App() {
           <Route path="/superadmin" element={<SuperAdminPage />} />
           <Route path="/espace-investisseur" element={<InvestorSpacePage />} />
           <Route path="/espace-logiscop" element={<LogiscopSpacePage />} />
+          <Route path="/espace-fournisseur/commandes-oscop" element={<SupplierOscopOrdersPage />} />
           <Route path="/oscop-checkout/retour" element={<OscopCheckoutReturnPage />} />
           {["conditions-vente-oscop", "conditions-offres-partenaires", "conditions-credi-scop-investissement",
             "convention-investisseur", "conditions-fournisseurs-oscop", "politique-paiement-et-remboursement",

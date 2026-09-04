@@ -36,7 +36,7 @@ const MODES = [
 export const OperationFormDialog = ({ open, onClose, onCreated }) => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    client_name: '', supplier_name: '', investor_name: '',
+    client_name: '', supplier_name: '', supplier_email: '', investor_name: '',
     purchase_amount_ex_vat: '', resale_amount_ex_vat: '', vat_rate: '8.5',
     logistics_mode: 'CUSTOMER_HANDLED', logistics_budget_ex_vat: '',
     logistics_resale_price_ex_vat: '', min_margin_rate: '0',
@@ -59,6 +59,7 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
         body: JSON.stringify({
           client_name: form.client_name,
           supplier_name: form.supplier_name,
+          supplier_email: form.supplier_email ? form.supplier_email.toLowerCase() : null,
           investor_name: form.investor_name || null,
           purchase_amount_ex_vat: num(form.purchase_amount_ex_vat),
           resale_amount_ex_vat: num(form.resale_amount_ex_vat),
@@ -99,6 +100,7 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
         <div className="grid grid-cols-2 gap-3">
           {field('Client', 'client_name', 'Nom du client')}
           {field('Fournisseur', 'supplier_name', 'Nom du fournisseur')}
+          {field('Email fournisseur (espace fournisseur)', 'supplier_email', 'fournisseur@exemple.fr')}
           {field('Investisseur (optionnel)', 'investor_name', 'Nom')}
           {field('Prix fournisseur HT (€)', 'purchase_amount_ex_vat')}
           {field('Prix de revente marchandises HT (€)', 'resale_amount_ex_vat')}

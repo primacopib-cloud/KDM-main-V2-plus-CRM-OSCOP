@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from routes_v2 import get_current_user_v2
+from routes_staff_roles import require_reader, require_finance
 
 logger = logging.getLogger(__name__)
 pr_router = APIRouter(prefix="/api", tags=["Achat-Revente"])
@@ -67,6 +68,7 @@ class OperationCreate(BaseModel):
     territory_id: Optional[str] = None
     client_name: str
     supplier_name: str
+    supplier_email: Optional[str] = None
     investor_name: Optional[str] = None
     currency: str = "EUR"
     purchase_amount_ex_vat: float = Field(ge=0)
@@ -91,6 +93,7 @@ class OperationUpdate(BaseModel):
     min_margin_rate: Optional[float] = None
     client_name: Optional[str] = None
     supplier_name: Optional[str] = None
+    supplier_email: Optional[str] = None
     investor_name: Optional[str] = None
     funding_instrument: Optional[str] = None
     logistics_status: Optional[str] = None
@@ -211,6 +214,15 @@ async def notify_admins(title: str, message: str, category: str = "achat_revente
         "action_url": "/super-admin", "metadata": {}, "is_read": False,
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
+    try:
+        from brevo_service import send_email, _wrap_html
+        admins = await db.users.find({"is_admin": True}, {"_id": 0, "email": 1}).to_list(5)
+        html = _wrap_html(title, f"<p style='font-size:14px;'>{message}</p><p style='font-size:12px;color:#B8A98F;'>Retrouvez le détail dans le back-office, onglet Achat-Revente.</p>")
+        for a in admins:
+            if a.get("email"):
+                await send_email(a["email"], "Admin O'SCOP", f"[O'SCOP] {title}", html, tags=["achat_revente"])
+    except Exception as exc:
+        logger.warning(f"Email notification achat-revente non envoyé: {exc}")
 
 
 @pr_router.get("/public/logiscop/notice")
@@ -244,7 +256,7 @@ async def create_operation(payload: OperationCreate, admin: dict = Depends(_admi
 
 
 @pr_router.get("/admin/purchase-resale/operations")
-async def list_operations(admin: dict = Depends(_admin)):
+async def list_operations(admin: dict = Depends(require_reader)):
     ops = await db.purchase_resale_operations.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
     for op in ops:
         op["blockers"] = authorization_blockers(op)
@@ -255,7 +267,7 @@ async def list_operations(admin: dict = Depends(_admin)):
 
 
 @pr_router.get("/admin/purchase-resale/operations/{operation_id}")
-async def get_operation(operation_id: str, admin: dict = Depends(_admin)):
+async def get_operation(operation_id: str, admin: dict = Depends(require_reader)):
     op = await _get_op(operation_id)
     tranches = await db.logistics_financing_tranches.find({"operation_id": operation_id}, {"_id": 0}).to_list(100)
     disbursements = await db.operation_disbursements.find({"operation_id": operation_id}, {"_id": 0}).to_list(200)
@@ -281,7 +293,7 @@ async def update_operation(operation_id: str, payload: OperationUpdate, admin: d
 
 
 @pr_router.post("/admin/purchase-resale/operations/{operation_id}/status")
-async def change_status(operation_id: str, payload: StatusChange, admin: dict = Depends(_admin)):
+async def change_status(operation_id: str, payload: StatusChange, admin: dict = Depends(require_finance)):
     if payload.status not in OPERATION_STATUSES:
         raise HTTPException(status_code=400, detail="Statut invalide")
     op = await _get_op(operation_id)
@@ -305,7 +317,7 @@ async def change_status(operation_id: str, payload: StatusChange, admin: dict = 
 
 
 @pr_router.post("/admin/purchase-resale/operations/{operation_id}/tranches")
-async def create_tranche(operation_id: str, payload: TrancheCreate, admin: dict = Depends(_admin)):
+async def create_tranche(operation_id: str, payload: TrancheCreate, admin: dict = Depends(require_finance)):
     if payload.financing_tranche not in TRANCHES:
         raise HTTPException(status_code=400, detail="Tranche invalide")
     op = await _get_op(operation_id)
@@ -328,7 +340,7 @@ async def create_tranche(operation_id: str, payload: TrancheCreate, admin: dict 
 
 
 @pr_router.post("/admin/purchase-resale/operations/{operation_id}/disbursements")
-async def create_disbursement(operation_id: str, payload: DisbursementCreate, admin: dict = Depends(_admin)):
+async def create_disbursement(operation_id: str, payload: DisbursementCreate, admin: dict = Depends(require_finance)):
     if payload.financing_tranche not in TRANCHES:
         raise HTTPException(status_code=400, detail="Tranche invalide")
     if payload.payee_category not in PAYEE_CATEGORIES:
@@ -406,14 +418,14 @@ async def generate_document(operation_id: str, payload: DocumentCreate, admin: d
 
 
 @pr_router.get("/admin/purchase-resale/operations/{operation_id}/documents")
-async def list_documents(operation_id: str, admin: dict = Depends(_admin)):
+async def list_documents(operation_id: str, admin: dict = Depends(require_reader)):
     docs = await db.operation_documents.find(
         {"operation_id": operation_id}, {"_id": 0, "sections": 0}).sort("created_at", -1).to_list(100)
     return {"documents": docs}
 
 
 @pr_router.get("/admin/purchase-resale/documents/{doc_id}/pdf")
-async def download_document_pdf(doc_id: str, admin: dict = Depends(_admin)):
+async def download_document_pdf(doc_id: str, admin: dict = Depends(require_reader)):
     from fastapi.responses import Response
     from operation_docs_pdf import build_operation_pdf
     doc = await db.operation_documents.find_one({"id": doc_id}, {"_id": 0})
@@ -422,3 +434,41 @@ async def download_document_pdf(doc_id: str, admin: dict = Depends(_admin)):
     pdf = build_operation_pdf(doc)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{doc["doc_number"]}.pdf"'})
+
+
+OSCOP_BUYER = "SCIC SAS OBJECTIF SCOP OUTREMER"
+
+
+@pr_router.get("/supplier/oscop-orders")
+async def supplier_oscop_orders(current_user: dict = Depends(get_current_user_v2)):
+    """Espace fournisseur : commandes d'achat O'SCOP liées à l'email du fournisseur connecté."""
+    email = (current_user.get("email") or "").lower()
+    ops = await db.purchase_resale_operations.find(
+        {"supplier_email": email},
+        {"_id": 0, "id": 1, "reference": 1, "status": 1, "purchase_amount_ex_vat": 1,
+         "currency": 1, "logistics_mode": 1, "supplier_paid_amount": 1,
+         "client_name": 1, "created_at": 1, "supplier_name": 1},
+    ).sort("created_at", -1).to_list(100)
+    for op in ops:
+        op["buyer"] = OSCOP_BUYER
+        op["payer_mention"] = "O'SCOP ou investisseur pour le compte d'O'SCOP"
+        op["recipient"] = "O'SCOP ou client final désigné"
+    return {"orders": ops, "buyer": OSCOP_BUYER}
+
+
+@pr_router.get("/admin/purchase-resale/operations/{operation_id}/view360")
+async def view_360(operation_id: str, admin: dict = Depends(require_reader)):
+    """Vue 360° : client, fournisseur, financement, logistique, documents, marge, FOGEDOM, audit."""
+    op = await _get_op(operation_id)
+    tranches = await db.logistics_financing_tranches.find({"operation_id": operation_id}, {"_id": 0}).to_list(100)
+    op["blockers"] = financing_blockers(op, tranches)
+    disbursements = await db.operation_disbursements.find({"operation_id": operation_id}, {"_id": 0}).to_list(200)
+    documents = await db.operation_documents.find({"operation_id": operation_id}, {"_id": 0, "sections": 0}).to_list(100)
+    shipments = await db.logiscop_shipments.find({"operation_id": operation_id}, {"_id": 0}).to_list(50)
+    pods = await db.logiscop_pods.find({"operation_id": operation_id}, {"_id": 0}).to_list(50)
+    warehouse = await db.logiscop_warehouse.find({"operation_id": operation_id}, {"_id": 0}).to_list(100)
+    fogedom = await db.fogedom_decisions.find({"operation_id": operation_id}, {"_id": 0}).to_list(50)
+    audit = await db.purchase_resale_audit.find({"operation_id": operation_id}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    return {"operation": op, "tranches": tranches, "disbursements": disbursements,
+            "documents": documents, "shipments": shipments, "pods": pods,
+            "warehouse": warehouse, "fogedom": fogedom, "audit": audit}
