@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import React from 'react';
 import { toast } from 'sonner';
-import { Link2, Copy, RefreshCw, Ban, Loader2, Mail, MessageSquare, History } from 'lucide-react';
+import { Link2, Copy, RefreshCw, Ban, Loader2, Mail, MessageSquare, History, FileDown } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { API, getAuthHeaders } from '../../services/http';
@@ -133,6 +133,16 @@ export const PaymentLinksPanel = () => {
     if (r.ok) { toast.success('Lien désactivé'); load(); } else toast.error('Échec de la désactivation');
   };
 
+  const downloadReceipt = async (l) => {
+    const r = await fetch(`${API}/admin/payment-links/${l.id}/receipt.pdf`, { headers: getAuthHeaders(), credentials: 'include' });
+    if (!r.ok) { toast.error('Reçu indisponible'); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `recu-${l.receipt_number || l.id.slice(0, 8)}.pdf`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const mailto = (l) => `mailto:${l.email}?subject=${encodeURIComponent('Votre lien de paiement KDMARCHÉ × O\'SCOP')}&body=${encodeURIComponent(`Bonjour,\n\nVoici votre lien de paiement sécurisé (${eur(l.amount_cents)}) :\n${l.url}\n\nCordialement,\nL'équipe KDMARCHÉ × O'SCOP`)}`;
 
   return (
@@ -243,6 +253,13 @@ export const PaymentLinksPanel = () => {
                           className="p-1.5 rounded-lg bg-[#5B9BD5]/10 border border-[#5B9BD5]/25 text-[#8fc1ec] hover:bg-[#5B9BD5]/20">
                           <Mail size={13} />
                         </a>
+                        {l.status === 'paid' && (
+                          <button type="button" title={`Télécharger le reçu PDF${l.receipt_number ? ` ${l.receipt_number}` : ''}`}
+                            onClick={() => downloadReceipt(l)} data-testid={`paylink-receipt-${l.id}`}
+                            className="p-1.5 rounded-lg bg-[#D9B35A]/10 border border-[#D9B35A]/30 text-[#E9CF8E] hover:bg-[#D9B35A]/20">
+                            <FileDown size={13} />
+                          </button>
+                        )}
                         {l.status === 'pending' && (
                           <button type="button" title={l.sms_sent_at ? `SMS déjà envoyé au ${l.sms_to}` : 'Envoyer par SMS'}
                             onClick={() => setSmsLink(l)} data-testid={`paylink-sms-${l.id}`}

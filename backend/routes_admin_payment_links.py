@@ -174,6 +174,12 @@ async def _send_client_receipt(db_, link: dict) -> None:
     """Email de reçu envoyé au client dès que son paiement est détecté."""
     try:
         from brevo_service import send_email, _wrap_html
+        from payment_receipt_pdf import build_receipt_pdf, next_receipt_number
+        import base64
+        receipt_number = link.get("receipt_number") or await next_receipt_number(db_)
+        pdf_bytes = build_receipt_pdf({**link, "paid_at": datetime.now(timezone.utc).isoformat()},
+                                      receipt_number, ACCOUNT_TYPES)
+        attachments = [{"content": base64.b64encode(pdf_bytes).decode(), "name": f"recu-{receipt_number}.pdf"}]
         amount = f"{link['amount_cents'] / 100:,.2f}".replace(",", " ").replace(".", ",")
         label = ACCOUNT_TYPES.get(link["account_type"], link["account_type"])
         desc = (f"<tr><td style='padding:4px 14px 4px 0;color:#777;'>Détail</td>"
@@ -184,23 +190,25 @@ async def _send_client_receipt(db_, link: dict) -> None:
           <p>Bonjour,</p>
           <p>Nous confirmons la <strong>bonne réception de votre paiement</strong> :</p>
           <table style=\"border-collapse:collapse;margin:14px 0;font-size:14px;\">
+            <tr><td style=\"padding:4px 14px 4px 0;color:#777;\">N° de reçu</td><td style=\"padding:4px 0;font-family:monospace;\">{receipt_number}</td></tr>
             <tr><td style=\"padding:4px 14px 4px 0;color:#777;\">Montant</td><td style=\"padding:4px 0;font-weight:bold;font-size:16px;\">{amount} €</td></tr>
             <tr><td style=\"padding:4px 14px 4px 0;color:#777;\">Objet</td><td style=\"padding:4px 0;\">{label}</td></tr>
             {desc}
             <tr><td style=\"padding:4px 14px 4px 0;color:#777;\">Date</td><td style=\"padding:4px 0;\">{now.strftime('%d/%m/%Y')}</td></tr>
             <tr><td style=\"padding:4px 14px 4px 0;color:#777;\">Référence</td><td style=\"padding:4px 0;font-family:monospace;\">{link['id'][:8].upper()}</td></tr>
           </table>
-          <p>Ce message vaut confirmation de paiement. Conservez-le comme justificatif.</p>
+          <p>Ce message vaut confirmation de paiement. <strong>Votre reçu officiel PDF (n° {receipt_number}) est joint</strong> à cet email pour votre comptabilité.</p>
           <p style=\"margin-top:16px;\">Merci pour votre confiance,<br/>L'équipe KDMARCHÉ × O'SCOP</p>
         """
         res = await send_email(
             link["email"], None,
             f"Reçu de paiement — {amount} € — KDMARCHÉ × O'SCOP",
-            _wrap_html("Reçu de paiement", body), tags=["payment_link_receipt"])
+            _wrap_html("Reçu de paiement", body), tags=["payment_link_receipt"],
+            attachments=attachments)
         if res is not None:
             await db_.admin_payment_links.update_one(
                 {"id": link["id"]},
-                {"$set": {"receipt_sent_at": now.isoformat()},
+                {"$set": {"receipt_sent_at": now.isoformat(), "receipt_number": receipt_number},
                  "$push": {"send_history": {"channel": "email", "to": link["email"],
                                             "at": now.isoformat(), "by": "reçu automatique"}}})
             logger.info("Reçu client envoyé à %s (lien %s)", link["email"], link["id"])
@@ -312,3 +320,22 @@ async def log_link_send(link_id: str, payload: LogSendPayload, admin: dict = Dep
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Lien introuvable")
     return {"status": "SUCCESS", "entry": entry}
+
+
+@payment_links_router.get("/{link_id}/receipt.pdf")
+async def download_receipt_pdf(link_id: str, _: dict = Depends(_admin)):
+    """Télécharge le reçu PDF officiel d'un lien payé (numérotation conservée)."""
+    from fastapi.responses import Response
+    from payment_receipt_pdf import build_receipt_pdf, next_receipt_number
+    link = await db.admin_payment_links.find_one({"id": link_id}, {"_id": 0})
+    if not link:
+        raise HTTPException(status_code=404, detail="Lien introuvable")
+    if link["status"] != "paid":
+        raise HTTPException(status_code=400, detail="Le reçu n'est disponible que pour un lien payé")
+    receipt_number = link.get("receipt_number")
+    if not receipt_number:
+        receipt_number = await next_receipt_number(db)
+        await db.admin_payment_links.update_one({"id": link_id}, {"$set": {"receipt_number": receipt_number}})
+    pdf_bytes = build_receipt_pdf(link, receipt_number, ACCOUNT_TYPES)
+    return Response(content=pdf_bytes, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="recu-{receipt_number}.pdf"'})
