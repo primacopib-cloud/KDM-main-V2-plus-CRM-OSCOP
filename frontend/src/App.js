@@ -26,6 +26,7 @@ import SuperAdminPage from "./pages/SuperAdminPage";
 import InvestorSpacePage from "./pages/InvestorSpacePage";
 import LogiscopSpacePage from "./pages/LogiscopSpacePage";
 import OscopCheckoutReturnPage from "./pages/OscopCheckoutReturnPage";
+import LegalDynamicPage from "./pages/LegalDynamicPage";
 import TenantPage from "./pages/TenantPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import PartnerDevPage from "./pages/PartnerDevPage";
@@ -172,6 +173,11 @@ function App() {
           <Route path="/espace-investisseur" element={<InvestorSpacePage />} />
           <Route path="/espace-logiscop" element={<LogiscopSpacePage />} />
           <Route path="/oscop-checkout/retour" element={<OscopCheckoutReturnPage />} />
+          {["conditions-vente-oscop", "conditions-offres-partenaires", "conditions-credi-scop-investissement",
+            "convention-investisseur", "conditions-fournisseurs-oscop", "politique-paiement-et-remboursement",
+            "role-fogedom-scic", "conditions-logistiques-logiscop", "financement-logistique-investisseur"].map((slug) => (
+            <Route key={slug} path={`/${slug}`} element={<LegalDynamicPage />} />
+          ))}
           <Route path="/t/:slug" element={<TenantPage />} />
           <Route path="/docs-api" element={<ApiDocsPage />} />
           <Route path="/espace-developpeur" element={<PartnerDevPage />} />

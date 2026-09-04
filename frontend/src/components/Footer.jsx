@@ -263,6 +263,7 @@ const Footer = () => {
           </div>
           <div className="flex gap-6">
             <Link to="/legal/cgv-kdmarche" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.legal_notice')}</Link>
+            <Link to="/conditions-vente-oscop" className="text-white/50 hover:text-white/80 text-xs transition-colors" data-testid="footer-cgv-oscop">CGV O'SCOP</Link>
             <Link to="/documents/politique-confidentialite" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.privacy')}</Link>
             <Link to="/legal/charte-ess" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.ess_charter')}</Link>
           </div>

@@ -157,4 +157,8 @@ async def validate_pod(shipment_id: str, payload: PodCreate, admin: dict = Depen
     await db.logiscop_shipments.update_one({"id": shipment_id}, {"$set": {"status": "POD_VALIDATED"}})
     await db.purchase_resale_operations.update_one(
         {"id": shp["operation_id"]}, {"$set": {"logistics_status": "POD_VALIDATED"}})
+    from routes_purchase_resale import notify_admins
+    op = await db.purchase_resale_operations.find_one({"id": shp["operation_id"]}, {"_id": 0, "reference": 1})
+    await notify_admins(f"Livraison confirmée — {(op or {}).get('reference', '')}",
+                        f"Preuve de livraison {pod['pod_number']} validée (reçu par {payload.received_by}).")
     return pod

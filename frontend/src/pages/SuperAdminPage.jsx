@@ -28,6 +28,8 @@ import { VendorAdhesionsPanel } from '../components/superadmin/VendorAdhesionsPa
 import { AccountingTab } from '../components/superadmin/AccountingTab';
 import { PurchaseResaleTab } from '../components/superadmin/PurchaseResaleTab';
 import { ServiceCreditsPanel } from '../components/superadmin/ServiceCreditsPanel';
+import { LegalPagesPanel } from '../components/superadmin/LegalPagesPanel';
+import { FogedomPanelWithOps } from '../components/superadmin/FogedomPanelWithOps';
 import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
 import { AnnouncementsTab } from '../components/superadmin/AnnouncementsTab';
 import { FlashPromosTab } from '../components/superadmin/FlashPromosTab';
@@ -229,6 +231,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="achat-revente">
             <PurchaseResaleTab />
+            <FogedomPanelWithOps />
           </TabsContent>
 
           <TabsContent value="partnerships">
@@ -243,6 +246,7 @@ export default function SuperAdminPage() {
             <ShowcasePartnersPanel />
             <SharePreviewTester />
             <LicensesPanel />
+            <LegalPagesPanel />
           </TabsContent>
 
           <TabsContent value="api-erp">
