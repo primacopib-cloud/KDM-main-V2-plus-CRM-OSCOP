@@ -2495,3 +2495,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Journal audit global: GET /api/admin/purchase-resale/audit-register (filtres action + référence, format=csv, require_reader). UI: AuditRegisterPanel (onglet Achat-Revente)
 - Composants regroupés dans /app/frontend/src/components/superadmin/PurchaseResaleExtras.jsx
 - Tests: /app/tests_manual/test_phase2h.py ALL PASSED (relance testée par exécution directe de la tâche, unicité vérifiée)
+
+## Phase 2i — Rappels multiples, Meilleure route auto, Marges par territoire (04/06/2026) ✅ (3/3 tests PASSED)
+- Rappels multiples: run_oscop_payment_reminders réécrit — 3 relances max espacées de delay_hours chacune (tons croissants REMINDER_TONES), ancrage last_reminder_at, puis 4e passage → statut disputed + notification admin « Commande en litige ». Testé cycle complet 1→2→3→litige
+- Meilleure route auto: OperationFormDialog fetch /api/public/freight/compare quand logistics_mode ≠ CUSTOMER_HANDLED → bandeau vert « Route la plus économique » + bouton Utiliser (préremplit main_freight, base 20DV×1)
+- Marges par territoire: champ territory_id ajouté au formulaire d'opération ; MarginsChart agrège désormais expected/realized par territoire (barres triées, « Non renseigné » pour les anciennes)
+- Tests: /app/tests_manual/test_phase2i.py ALL PASSED

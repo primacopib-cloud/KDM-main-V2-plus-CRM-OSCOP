@@ -11,10 +11,21 @@ export const MarginsChart = () => {
   const [ops, setOps] = useState([]);
   useEffect(() => {
     fetch(`${API}/admin/purchase-resale/operations`, { headers: getAuthHeaders() })
-      .then((r) => r.json()).then((d) => setOps((d.operations || []).slice(0, 12))).catch(() => {});
+      .then((r) => r.json()).then((d) => setOps(d.operations || [])).catch(() => {});
   }, []);
   if (ops.length === 0) return null;
-  const max = Math.max(...ops.map((o) => Math.max(o.expected_margin_ex_vat || 0, o.realized_margin_ex_vat || 0, 1)));
+  const shown = ops.slice(0, 12);
+  const max = Math.max(...shown.map((o) => Math.max(o.expected_margin_ex_vat || 0, o.realized_margin_ex_vat || 0, 1)));
+  const byTerritory = {};
+  ops.forEach((o) => {
+    const t = o.territory_id || 'Non renseigné';
+    byTerritory[t] = byTerritory[t] || { expected: 0, realized: 0, count: 0 };
+    byTerritory[t].expected += o.expected_margin_ex_vat || 0;
+    byTerritory[t].realized += o.realized_margin_ex_vat || 0;
+    byTerritory[t].count += 1;
+  });
+  const territories = Object.entries(byTerritory).sort((a, b) => b[1].expected - a[1].expected);
+  const tMax = Math.max(...territories.map(([, v]) => Math.max(v.expected, v.realized, 1)));
   return (
     <div className="glass-panel-soft rounded-[18px] p-4 mt-5" data-testid="margins-chart">
       <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
@@ -25,7 +36,7 @@ export const MarginsChart = () => {
         <span><span className="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-400 mr-1"></span>Réalisée</span>
       </div>
       <div className="space-y-2">
-        {ops.map((o) => (
+        {shown.map((o) => (
           <div key={o.id} data-testid={`margin-row-${o.reference}`}>
             <div className="flex justify-between text-[10px] text-white/60 mb-0.5">
               <span>{o.reference} · {o.client_name}</span>
@@ -36,6 +47,23 @@ export const MarginsChart = () => {
             </div>
             <div className="h-2 bg-white/5 rounded overflow-hidden">
               <div className="h-full bg-emerald-400" style={{ width: `${Math.max((o.realized_margin_ex_vat || 0) / max * 100, 0)}%` }}></div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs font-semibold text-white/70 uppercase mt-4 mb-2">Marges par territoire</p>
+      <div className="space-y-2" data-testid="margins-by-territory">
+        {territories.map(([t, v]) => (
+          <div key={t} data-testid={`territory-margin-${t}`}>
+            <div className="flex justify-between text-[10px] text-white/60 mb-0.5">
+              <span>{t} ({v.count} op.)</span>
+              <span>{eur(v.expected)} / {eur(v.realized)}</span>
+            </div>
+            <div className="h-2 bg-white/5 rounded overflow-hidden mb-0.5">
+              <div className="h-full bg-[#D9B35A]" style={{ width: `${Math.max(v.expected / tMax * 100, 0)}%` }}></div>
+            </div>
+            <div className="h-2 bg-white/5 rounded overflow-hidden">
+              <div className="h-full bg-emerald-400" style={{ width: `${Math.max(v.realized / tMax * 100, 0)}%` }}></div>
             </div>
           </div>
         ))}
