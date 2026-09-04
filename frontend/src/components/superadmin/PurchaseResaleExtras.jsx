@@ -51,7 +51,21 @@ export const MarginsChart = () => {
           </div>
         ))}
       </div>
-      <p className="text-xs font-semibold text-white/70 uppercase mt-4 mb-2">Marges par territoire</p>
+      <div className="flex items-center justify-between flex-wrap gap-2 mt-4 mb-2">
+        <p className="text-xs font-semibold text-white/70 uppercase">Marges par territoire</p>
+        <Button size="sm" data-testid="territory-margins-csv"
+          className="h-6 text-[10px] bg-white/10 hover:bg-white/20 text-white"
+          onClick={async () => {
+            const r = await fetch(`${API}/admin/purchase-resale/margins-by-territory?format=csv`, { headers: getAuthHeaders() });
+            const blob = await r.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'marges-par-territoire.csv'; a.click();
+            URL.revokeObjectURL(url);
+          }}>
+          <Download className="w-3 h-3 mr-1" /> Export CSV
+        </Button>
+      </div>
       <div className="space-y-2" data-testid="margins-by-territory">
         {territories.map(([t, v]) => (
           <div key={t} data-testid={`territory-margin-${t}`}>
@@ -68,6 +82,48 @@ export const MarginsChart = () => {
           </div>
         ))}
       </div>
+    </div>
+  );
+};
+
+export const DisputedOrdersPanel = () => {
+  const [orders, setOrders] = useState(null);
+  const load = useCallback(async () => {
+    const res = await fetch(`${API}/oscop-checkout/disputed-orders`, { headers: getAuthHeaders() });
+    if (res.ok) setOrders((await res.json()).orders);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const act = async (id, action) => {
+    const res = await fetch(`${API}/oscop-checkout/orders/${id}/dispute-action`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ action }),
+    });
+    const json = await res.json();
+    if (!res.ok) { toast.error(typeof json.detail === 'string' ? json.detail : 'Erreur'); return; }
+    toast.success(action === 'remind' ? 'Relance manuelle envoyée — commande réactivée' : 'Commande annulée, client informé');
+    load();
+  };
+
+  if (!orders || orders.length === 0) return null;
+  return (
+    <div className="glass-panel-soft rounded-[18px] p-4 mt-5" data-testid="disputed-orders-panel">
+      <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-2">
+        <BellRing className="w-5 h-5 text-red-300" /> Commandes en litige ({orders.length})
+      </h3>
+      {orders.map((o) => (
+        <div key={o.id} className="flex items-center justify-between gap-2 bg-red-500/10 border border-red-400/20 rounded px-2.5 py-2 mb-1 text-xs flex-wrap" data-testid={`disputed-${o.order_number}`}>
+          <span className="text-white/85">{o.order_number} · {o.customer_name} ({o.customer_email}) · {eur((o.total_ttc_cents || 0) / 100)} TTC</span>
+          <div className="flex gap-1.5">
+            <Button size="sm" data-testid={`dispute-remind-${o.order_number}`}
+              className="h-6 text-[10px] bg-white/10 hover:bg-white/20 text-white"
+              onClick={() => act(o.id, 'remind')}>Relancer</Button>
+            <Button size="sm" data-testid={`dispute-cancel-${o.order_number}`}
+              className="h-6 text-[10px] bg-red-600/40 hover:bg-red-600/60 text-white"
+              onClick={() => act(o.id, 'cancel')}>Annuler</Button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

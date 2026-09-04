@@ -43,14 +43,15 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
   });
   const [costs, setCosts] = useState({});
   const [bestRoute, setBestRoute] = useState(null);
+  const [suggestContainer, setSuggestContainer] = useState('20DV');
 
   useEffect(() => {
     if (form.logistics_mode === 'CUSTOMER_HANDLED') { setBestRoute(null); return; }
     fetch(`${API}/public/freight/compare`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ route_id: 'auto', container_type: '20DV', quantity: 1 }),
+      body: JSON.stringify({ route_id: 'auto', container_type: suggestContainer, quantity: 1 }),
     }).then((r) => r.json()).then((d) => setBestRoute(d.results?.[0] || null)).catch(() => {});
-  }, [form.logistics_mode]);
+  }, [form.logistics_mode, suggestContainer]);
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const num = (v) => parseFloat(String(v).replace(',', '.')) || 0;
@@ -129,15 +130,24 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
           {field('Territoire', 'territory_id', 'ex: Martinique')}
         </div>
         {bestRoute && (
-          <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-400/25" data-testid="best-route-suggestion">
+          <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-400/25 flex-wrap" data-testid="best-route-suggestion">
             <p className="text-emerald-200 text-xs">
-              Route la plus économique : <b>{bestRoute.route}</b> — {Number(bestRoute.total_ex_vat).toLocaleString('fr-FR')} € HT (20' Dry, ≈ {bestRoute.transit_days} j)
+              Route la plus économique : <b>{bestRoute.route}</b> — {Number(bestRoute.total_ex_vat).toLocaleString('fr-FR')} € HT (≈ {bestRoute.transit_days} j)
             </p>
-            <Button size="sm" type="button" data-testid="use-best-route-btn"
-              className="h-6 text-[10px] bg-emerald-600/40 hover:bg-emerald-600/60 text-white shrink-0"
-              onClick={() => setCosts({ ...costs, main_freight: String(bestRoute.total_ex_vat) })}>
-              Utiliser
-            </Button>
+            <div className="flex gap-1.5 items-center shrink-0">
+              <select value={suggestContainer} onChange={(e) => setSuggestContainer(e.target.value)}
+                data-testid="suggest-container-select"
+                className="bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-[10px] text-white">
+                {[['20DV', "20' Dry"], ['40DV', "40' Dry"], ['40HC', "40' HC"], ['LCL', 'Groupage m³']].map(([v, l]) => (
+                  <option key={v} value={v} className="bg-[#2A1045]">{l}</option>
+                ))}
+              </select>
+              <Button size="sm" type="button" data-testid="use-best-route-btn"
+                className="h-6 text-[10px] bg-emerald-600/40 hover:bg-emerald-600/60 text-white"
+                onClick={() => setCosts({ ...costs, main_freight: String(bestRoute.total_ex_vat) })}>
+                Utiliser
+              </Button>
+            </div>
           </div>
         )}
         <p className="text-xs text-white/50 font-semibold uppercase tracking-wide mt-2">Coûts directs (coût de revient complet)</p>
