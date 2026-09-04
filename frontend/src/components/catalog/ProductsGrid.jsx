@@ -9,6 +9,7 @@ import { ProductVideoModal } from './ProductVideoModal';
 import { ProductReviewsModal, Stars } from './ProductReviewsModal';
 import { ProductShareButtons } from './ProductShareButtons';
 import { useCatalogPromos, bestPromos, PromoPriceBlock } from './ProductPromoBadges';
+import { SaleModelBadge } from './SaleModelBadge';
 
 const ProductImageCarousel = ({ product, onZoom }) => {
   const [idx, setIdx] = useState(0);
@@ -161,6 +162,8 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                 {tData(product.category_name) || tData('Produit')}
               </Badge>
               
+              <SaleModelBadge product={product} />
+
               {/* Product info */}
               <h3 className="font-medium text-white/90 mb-1 line-clamp-2">{tr(product).name || product.name}</h3>
               {(tr(product).short_description || tr(product).description || product.description) && (

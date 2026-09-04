@@ -133,6 +133,16 @@ export const PaymentLinksPanel = () => {
     if (r.ok) { toast.success('Lien désactivé'); load(); } else toast.error('Échec de la désactivation');
   };
 
+  const exportRegister = async (register) => {
+    const r = await fetch(`${API}/admin/payment-links/export.csv?register=${register}`, { headers: getAuthHeaders(), credentials: 'include' });
+    if (!r.ok) { toast.error('Export échoué'); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `registre-${register === 'receipts' ? 'recus' : 'sponsors'}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const downloadReceipt = async (l) => {
     const r = await fetch(`${API}/admin/payment-links/${l.id}/receipt.pdf`, { headers: getAuthHeaders(), credentials: 'include' });
     if (!r.ok) { toast.error('Reçu indisponible'); return; }
@@ -150,6 +160,16 @@ export const PaymentLinksPanel = () => {
       <div className="flex items-center gap-2 mb-4">
         <Link2 className="w-4 h-4 text-[#D9B35A]" />
         <h3 className="text-sm uppercase tracking-wider text-white/75 font-semibold m-0">Liens de paiement Stripe</h3>
+        <div className="ml-auto flex gap-2">
+          <button type="button" onClick={() => exportRegister('receipts')} data-testid="export-receipts-btn"
+            className="h-8 px-3 rounded-lg text-xs font-bold bg-[#D9B35A]/12 border border-[#D9B35A]/35 text-[#E9CF8E] hover:bg-[#D9B35A]/25 inline-flex items-center gap-1.5">
+            <FileDown size={12} /> Registre des reçus (CSV)
+          </button>
+          <button type="button" onClick={() => exportRegister('sponsors')} data-testid="export-sponsors-btn"
+            className="h-8 px-3 rounded-lg text-xs font-bold bg-white/[0.06] border border-white/15 text-white/70 hover:bg-white/10 inline-flex items-center gap-1.5">
+            <FileDown size={12} /> Registre des sponsors (CSV)
+          </button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-[1.2fr_0.7fr_0.9fr_0.6fr_1.1fr_auto] gap-3 items-end mb-5">

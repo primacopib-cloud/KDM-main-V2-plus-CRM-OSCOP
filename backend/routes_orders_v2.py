@@ -48,6 +48,7 @@ def set_orders_database(database):
     db = database
 
 from routes_catalog import get_current_user_catalog, get_user_org_context, check_price_access, get_selected_zone, ensure_member_active
+from routes_sale_model import build_roles_snapshot
 from role_guards import ensure_can_buy
 
 # ============== ORDERS ==============
@@ -114,6 +115,7 @@ async def create_order(
         "pickup_location_id": order_data.pickup_location_id,
         "items": cart["items"],
         "items_count": len(cart["items"]),
+        "roles_snapshot": await build_roles_snapshot(db, cart["items"]),
         "subtotal_ht_cents": cart["subtotal_ht_cents"],
         "tax_cents": cart["tax_cents"],
         "total_ttc_cents": cart["total_ttc_cents"],

@@ -119,9 +119,9 @@ def generate_offer_pdf() -> BytesIO:
     story.append(Spacer(1, 15))
     
     story.append(Paragraph(
-        "<b>→ Un seul vend les produits (KDMARCHE)</b><br/>"
-        "<b>→ L'autre ne vend rien (O'SCOP)</b><br/><br/>"
-        "Ce cloisonnement est volontaire, contractuel et opposable.",
+        "<b>→ Circuit vente partenaire directe : le partenaire vend, facture et encaisse.</b><br/>"
+        "<b>→ Circuit achat-revente O'SCOP : O'SCOP achète, revend, facture et encaisse.</b><br/><br/>"
+        "Le vendeur-facturier est identifié sur chaque offre avant tout achat.",
         body_style
     ))
     
@@ -166,8 +166,9 @@ def generate_offer_pdf() -> BytesIO:
     
     story.append(Spacer(1, 10))
     story.append(Paragraph(
-        "<b>O'SCOP ne vend pas, ne facture pas les produits, ne perçoit aucun paiement "
-        "fournisseur, ne prend aucune commission sur les ventes.</b>",
+        "<b>Sur le circuit vente partenaire directe, O'SCOP n'encaisse jamais les ventes et assure "
+        "uniquement les services coopératifs prévus. Sur le circuit achat-revente O'SCOP, O'SCOP vend, "
+        "facture et encaisse en son nom propre.</b>",
         body_style
     ))
     

@@ -339,3 +339,36 @@ async def download_receipt_pdf(link_id: str, _: dict = Depends(_admin)):
     pdf_bytes = build_receipt_pdf(link, receipt_number, ACCOUNT_TYPES)
     return Response(content=pdf_bytes, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="recu-{receipt_number}.pdf"'})
+
+
+@payment_links_router.get("/export.csv")
+async def export_payment_links_csv(register: str = "receipts", _: dict = Depends(_admin)):
+    """Registres comptables : reçus émis ou sponsors — export CSV pour l'expert-comptable."""
+    from fastapi.responses import Response
+    if register not in ("receipts", "sponsors"):
+        raise HTTPException(status_code=400, detail="Registre invalide (receipts, sponsors)")
+    q = {"status": "paid"} if register == "receipts" else {"account_type": "SPONSOR"}
+    links = await db.admin_payment_links.find(q, {"_id": 0}).sort("created_at", 1).to_list(1000)
+    st_fr = {"pending": "En attente", "paid": "Payé", "deactivated": "Désactivé"}
+    if register == "receipts":
+        lines = ["N° reçu;Date paiement;Client;Montant (EUR);Type;Description;Référence lien;Détection"]
+        for l in links:
+            amt = f"{l['amount_cents'] / 100:.2f}".replace(".", ",")
+            lines.append(";".join([
+                l.get("receipt_number") or "", (l.get("paid_at") or "")[:10], l["email"], amt,
+                ACCOUNT_TYPES.get(l["account_type"], l["account_type"]),
+                (l.get("description") or "").replace(";", ","), l["id"][:8].upper(),
+                l.get("detected_by") or ""]))
+        fname = "registre-recus.csv"
+    else:
+        lines = ["Date création;Sponsor (email);Montant (EUR);Statut;Date paiement;N° reçu;Description;Référence lien"]
+        for l in links:
+            amt = f"{l['amount_cents'] / 100:.2f}".replace(".", ",")
+            lines.append(";".join([
+                (l.get("created_at") or "")[:10], l["email"], amt, st_fr.get(l["status"], l["status"]),
+                (l.get("paid_at") or "")[:10], l.get("receipt_number") or "",
+                (l.get("description") or "").replace(";", ","), l["id"][:8].upper()]))
+        fname = "registre-sponsors.csv"
+    csv = "\ufeff" + "\n".join(lines)
+    return Response(content=csv, media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{fname}"'})

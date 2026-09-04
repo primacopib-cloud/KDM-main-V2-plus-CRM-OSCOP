@@ -2410,3 +2410,22 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Reçu email : PDF joint (base64, recu-REC-….pdf), n° affiché dans le corps, `receipt_number` persisté sur le lien (numéro stable, jamais re-généré).
 - GET /api/admin/payment-links/{id}/receipt.pdf (admin) : 400 si non payé, attribue un numéro aux anciens liens payés sans numéro, Content-Disposition attachment. Frontend : bouton 📥 FileDown sur lignes « Payé ✓ » (testid paylink-receipt-{id}, tooltip avec le n°), téléchargement via fetch blob.
 - Testé : %PDF + filename recu-REC-2026-0001.pdf, numéro stable au 2e appel, incrément 0002 pour le 2e lien, 400 pending, contenu pypdf (n°, 250 000,00 EUR, Sponsoring, destinataire) ; mock cron → email avec pièce jointe PDF valide + receipt_number stocké ; Playwright bouton visible. Données de test supprimées.
+
+## 2026-09-04 — Registres Reçus & Sponsors (self-testé curl + Playwright)
+- GET /api/admin/payment-links/export.csv?register=receipts|sponsors (admin, BOM UTF-8 Excel, ; séparateur) : registre des reçus (liens payés : n° reçu, date paiement, client, montant fr, type, description, réf, détection) et registre des sponsors (tous liens SPONSOR : date création, email, montant, statut fr, date paiement, n° reçu, description, réf). 400 registre invalide, 401 sans auth.
+- 2 boutons dans l'en-tête du panneau Liens de paiement (testids export-receipts-btn / export-sponsors-btn), téléchargement blob.
+- Testé curl (2 CSV corrects, 400, 401) + Playwright (boutons visibles, layout OK).
+- ⚠️ EN ATTENTE UTILISATEUR : énorme cahier des charges « Réseau Partenaires & Sponsors » pour www.objectifscopoutremer.com (SITE VITRINE DISTINCT de cette app — cette app = centrale.objectifscopoutremer.com). ask_human envoyé : (a) autre projet Emergent → coller le cahier des charges là-bas ; (b) construire le module sponsors DANS cette app ; (c) préciser. Si (b) : V1 = annuaire public /partenaires-sponsors + fiche :slug + /devenir-sponsor (formulaire candidature RGPD 2 cases) + admin sponsors (statuts, CSV) + bloc accueil ; V2 = espace sponsor privé, placements, rapports d'impact.
+
+## Phase 1 Achat-revente — Fondations juridiques visibles (04/06/2026) ✅
+- Sauvegarde mongodump: /app/backups/pre-phase1-20260904 (455 fichiers)
+- Backend /app/backend/routes_sale_model.py: enum SaleModel (OSCOP_DIRECT_RESALE / PARTNER_DIRECT_SALE), migration idempotente au startup (11 products + 2 catalog_products → PARTNER_DIRECT_SALE, journal db.migration_logs, rollback = unset), GET /api/public/sale-model/config, PUT /api/admin/sale-model/legal (bloc juridique administrable, collection legal_settings), PATCH /api/admin/sale-model/products/{id} (testé: 200 admin, 401 sans auth)
+- Snapshot immuable roles_snapshot à la création de commande (routes_orders_v2.py, build_roles_snapshot testé)
+- Frontend: SaleModelBadge.jsx (badge VENDU ET FACTURÉ PAR… + bloc Répartition des rôles dépliable) intégré dans ProductsGrid.jsx; FooterLegalEntities.jsx (double entité administrable via API) dans Footer.jsx
+- Textes corrigés: hero_h1 «La centrale coopérative des Outre-mer», section «Deux circuits transparents», suppression de toutes les mentions «O'SCOP ne vend rien» (fr-site.json, en-site.json, mock.js, pdf_generator.py). logiscop.js non touché (concerne LOGI'SCOP, entité distincte)
+- Vérifié: curl config OK, migration journalisée, screenshot accueil/footer OK
+
+### Phases restantes (voir /app/memory/ROADMAP-achat-revente.md)
+- Phase 2: module achat-revente complet (opérations, 23 statuts, coût de revient/marge, checkout O'SCOP direct, PDF)
+- Phase 3: espace investisseur + CREDI'SCOP-I (unités de services non monétaires, ledger)
+- Phase 4: FOGEDOM/FOGEDOM-SCIC, 7 pages juridiques, rôles serveur, vue 360°, audit
