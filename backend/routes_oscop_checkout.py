@@ -212,6 +212,76 @@ async def _send_invoice_email(order: dict):
         logger.warning(f"Email facture O'SCOP non envoyé: {exc}")
 
 
+DEFAULT_REMINDER = {"id": "payment_reminder", "delay_hours": 48, "enabled": True}
+
+
+async def run_oscop_payment_reminders(database):
+    """Relance les commandes O'SCOP impayées après le délai paramétré (une seule relance)."""
+    settings = await database.oscop_settings.find_one({"id": "payment_reminder"}) or dict(DEFAULT_REMINDER)
+    if not settings.get("enabled"):
+        return 0
+    from datetime import timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=float(settings.get("delay_hours", 48)))).isoformat()
+    pending = await database.oscop_client_orders.find(
+        {"status": "pending_payment", "created_at": {"$lt": cutoff},
+         "reminder_sent": {"$ne": True}}, {"_id": 0}).to_list(50)
+    sent = 0
+    for order in pending:
+        try:
+            from brevo_service import send_email, _wrap_html
+            key = get_stripe_key("oscop")
+            url = None
+            try:
+                session = stripe.checkout.Session.retrieve(order["stripe_session_id"], api_key=key)
+                if session.payment_status == "paid":
+                    continue
+                url = session.url
+            except stripe.error.StripeError:
+                pass
+            html = _wrap_html("Rappel — votre commande O'SCOP est en attente de paiement", (
+                f"<p style='font-size:14px;'>Bonjour {order.get('customer_name')},</p>"
+                f"<p style='font-size:14px;'>Votre commande <b>{order.get('order_number')}</b> "
+                f"({(order.get('total_ttc_cents', 0) / 100):.2f} € TTC) auprès de la SCIC SAS OBJECTIF SCOP OUTREMER "
+                "est toujours en attente de règlement.</p>"
+                + (f"<p style='font-size:14px;'><a href='{url}' style='color:#D9B35A;'>Finaliser mon paiement</a></p>" if url else "")))
+            await send_email(order["customer_email"], order.get("customer_name"),
+                             f"Rappel de paiement — commande {order.get('order_number')}", html, tags=["oscop_reminder"])
+            await database.oscop_client_orders.update_one(
+                {"id": order["id"]},
+                {"$set": {"reminder_sent": True, "reminder_sent_at": datetime.now(timezone.utc).isoformat()}})
+            sent += 1
+        except Exception as exc:
+            logger.warning(f"Relance paiement O'SCOP échouée pour {order.get('id')}: {exc}")
+    return sent
+
+
+from fastapi import Depends
+from routes_v2 import get_current_user_v2
+
+
+async def _admin_only(current_user: dict = Depends(get_current_user_v2)) -> dict:
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin requis")
+    return current_user
+
+
+@oscop_checkout_router.get("/reminder-settings")
+async def get_reminder_settings(admin: dict = Depends(_admin_only)):
+    s = await db.oscop_settings.find_one({"id": "payment_reminder"}, {"_id": 0})
+    return s or dict(DEFAULT_REMINDER)
+
+
+@oscop_checkout_router.put("/reminder-settings")
+async def update_reminder_settings(payload: dict, admin: dict = Depends(_admin_only)):
+    delay = float(payload.get("delay_hours", 48))
+    if delay < 1 or delay > 720:
+        raise HTTPException(status_code=400, detail="Délai entre 1 et 720 heures")
+    await db.oscop_settings.update_one(
+        {"id": "payment_reminder"},
+        {"$set": {"delay_hours": delay, "enabled": bool(payload.get("enabled", True))}}, upsert=True)
+    return {"success": True, "delay_hours": delay, "enabled": bool(payload.get("enabled", True))}
+
+
 @oscop_checkout_router.get("/invoice/{order_id}/pdf")
 async def download_invoice_pdf(order_id: str):
     from fastapi.responses import Response

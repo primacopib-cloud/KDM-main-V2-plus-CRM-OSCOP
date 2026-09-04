@@ -589,3 +589,34 @@ async def settlements_register(format: str = "json", admin: dict = Depends(requi
         return Response(content="\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
                         headers={"Content-Disposition": 'attachment; filename="registre-ventilations.csv"'})
     return {"rows": rows, "count": len(rows)}
+
+
+@pr_router.get("/admin/purchase-resale/audit-register")
+async def audit_register(action: Optional[str] = None, operation: Optional[str] = None,
+                         format: str = "json", admin: dict = Depends(require_reader)):
+    """Journal d'audit global achat-revente, filtrable et exportable CSV."""
+    query = {}
+    if action:
+        query["action"] = action
+    entries = await db.purchase_resale_audit.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    refs = {o["id"]: o.get("reference") for o in await db.purchase_resale_operations.find(
+        {}, {"_id": 0, "id": 1, "reference": 1}).to_list(1000)}
+    rows = []
+    for e in entries:
+        ref = refs.get(e["operation_id"], e["operation_id"][:8])
+        if operation and operation.lower() not in (ref or "").lower():
+            continue
+        rows.append({"date": e["created_at"][:19], "operation": ref, "action": e["action"],
+                     "par": e.get("by", ""), "detail": str(e.get("detail", ""))[:200]})
+    actions = sorted({e["action"] for e in entries})
+    if format == "csv":
+        from fastapi.responses import Response
+        import csv
+        import io
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=["date", "operation", "action", "par", "detail"], delimiter=";")
+        writer.writeheader()
+        writer.writerows(rows)
+        return Response(content="\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": 'attachment; filename="journal-audit-achat-revente.csv"'})
+    return {"rows": rows[:300], "count": len(rows), "actions": actions}

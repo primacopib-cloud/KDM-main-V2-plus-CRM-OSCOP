@@ -14,7 +14,27 @@ export default function FreightCalculatorPage() {
   const [data, setData] = useState(null);
   const [form, setForm] = useState({ route_id: '', container_type: '20DV', quantity: '1', insurance: false, goods_value: '' });
   const [quote, setQuote] = useState(null);
+  const [comparison, setComparison] = useState(null);
   const [busy, setBusy] = useState(false);
+
+  const compare = async () => {
+    try {
+      const res = await fetch(`${API}/public/freight/compare`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          route_id: form.route_id, container_type: form.container_type,
+          quantity: parseFloat(String(form.quantity).replace(',', '.')) || 1,
+          insurance: form.insurance,
+          goods_value_ex_vat: parseFloat(String(form.goods_value).replace(',', '.')) || 0,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.detail || 'Erreur');
+      setComparison(json);
+    } catch (e) {
+      toast.error(String(e.message || e));
+    }
+  };
 
   useEffect(() => {
     fetch(`${API}/public/freight/routes`).then((r) => r.json()).then((d) => {
@@ -97,6 +117,10 @@ export default function FreightCalculatorPage() {
                 className="w-full bg-[#D9B35A] text-[#2A1045] hover:bg-[#F2D07A] font-semibold">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Calculer le tarif'}
               </Button>
+              <Button onClick={compare} data-testid="freight-compare-btn"
+                className="w-full bg-white/10 hover:bg-white/20 text-white text-xs">
+                Comparer toutes les routes
+              </Button>
             </div>
             <div className="glass-panel-soft rounded-[20px] p-5">
               <p className="text-xs font-semibold text-white/70 uppercase tracking-wide mb-3 flex items-center gap-1.5">
@@ -149,6 +173,38 @@ export default function FreightCalculatorPage() {
                   <FreightToOperation quote={quote} />
                 </div>
               )}
+            </div>
+          </div>
+        )}
+        {comparison && (
+          <div className="glass-panel-soft rounded-[20px] p-5 mt-5" data-testid="freight-comparison">
+            <p className="text-sm font-bold text-white mb-2">
+              Comparaison — {comparison.container} × {comparison.quantity}
+              <span className="text-emerald-300 text-xs font-normal ml-2">Plus économique : {comparison.cheapest}</span>
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-white/50 text-left">
+                    <th className="py-1.5 pr-2">Route</th><th className="py-1.5 pr-2">Fret</th>
+                    <th className="py-1.5 pr-2">BAF</th><th className="py-1.5 pr-2">THC</th>
+                    <th className="py-1.5 pr-2">Total HT</th><th className="py-1.5">Transit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparison.results.map((r, i) => (
+                    <tr key={r.route_id} className={`border-t border-white/10 ${i === 0 ? 'text-emerald-300' : 'text-white/75'}`}
+                      data-testid={`compare-row-${i}`}>
+                      <td className="py-1.5 pr-2">{r.route}</td>
+                      <td className="py-1.5 pr-2">{eur(r.breakdown.base_freight)}</td>
+                      <td className="py-1.5 pr-2">{eur(r.breakdown.baf_surcharge)}</td>
+                      <td className="py-1.5 pr-2">{eur(r.breakdown.thc_handling)}</td>
+                      <td className="py-1.5 pr-2 font-bold">{eur(r.total_ex_vat)}</td>
+                      <td className="py-1.5">≈ {r.transit_days} j</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

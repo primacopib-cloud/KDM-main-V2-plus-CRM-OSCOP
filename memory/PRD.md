@@ -2487,3 +2487,11 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Suivi logistique investisseur: dashboard investisseur inclut shipments+milestones des opérations financées (matche op_ids des tranches). UI: bloc « Suivi logistique des opérations financées » dans InvestorLiveDashboard
 - Alerte marge réelle: au settlement, si encaissements ≥ 99% du TTC attendu et écart marge réalisée vs prévisionnelle > 10% → notify_admins « Alerte marge réelle » (notification + email)
 - Tests: /app/tests_manual/test_phase2g.py ALL PASSED
+
+## Phase 2h — Relance paiement, Tableau marges, Comparateur fret, Journal audit (04/06/2026) ✅ (4/4 tests PASSED)
+- Relance paiement client: run_oscop_payment_reminders (routes_oscop_checkout.py) branchée au scheduler — commandes pending_payment plus vieilles que delay_hours (db.oscop_settings id=payment_reminder, GET/PUT /api/oscop-checkout/reminder-settings admin, bornes 1-720h), une seule relance (flag reminder_sent), email Brevo avec lien Stripe de reprise. UI: ReminderSettings (onglet Achat-Revente)
+- Tableau bord marges: MarginsChart (barres CSS prévisionnelle/dorée vs réalisée/verte, 12 dernières opérations) dans l'onglet Achat-Revente
+- Comparateur fret multi-routes: POST /api/public/freight/compare (7 routes triées par total, cheapest identifié). UI: bouton « Comparer toutes les routes » + tableau (1re ligne verte)
+- Journal audit global: GET /api/admin/purchase-resale/audit-register (filtres action + référence, format=csv, require_reader). UI: AuditRegisterPanel (onglet Achat-Revente)
+- Composants regroupés dans /app/frontend/src/components/superadmin/PurchaseResaleExtras.jsx
+- Tests: /app/tests_manual/test_phase2h.py ALL PASSED (relance testée par exécution directe de la tâche, unicité vérifiée)
