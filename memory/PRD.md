@@ -2501,3 +2501,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Meilleure route auto: OperationFormDialog fetch /api/public/freight/compare quand logistics_mode ≠ CUSTOMER_HANDLED → bandeau vert « Route la plus économique » + bouton Utiliser (préremplit main_freight, base 20DV×1)
 - Marges par territoire: champ territory_id ajouté au formulaire d'opération ; MarginsChart agrège désormais expected/realized par territoire (barres triées, « Non renseigné » pour les anciennes)
 - Tests: /app/tests_manual/test_phase2i.py ALL PASSED
+
+## Phase 2k — Litiges, Choix conteneur suggestion, Export marges territoire (04/06/2026) ✅ (3/3 tests PASSED)
+- Litiges: GET /api/oscop-checkout/disputed-orders + POST /orders/{id}/dispute-action (remind: email ton final + retour pending_payment avec nouvel ancrage ; cancel: statut cancelled + email client). UI: DisputedOrdersPanel (onglet Achat-Revente, masqué si aucun litige)
+- Choix conteneur suggestion: sélecteur 20DV/40DV/40HC/LCL dans le bandeau meilleure route (OperationFormDialog), refetch compare à chaque changement
+- Export marges territoire: GET /api/admin/purchase-resale/margins-by-territory (json/csv, agrégation expected/realized/revente par territoire). Bouton Export CSV dans MarginsChart
+- Tests: /app/tests_manual/test_phase2j.py ALL PASSED

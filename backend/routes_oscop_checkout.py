@@ -315,6 +315,64 @@ async def update_reminder_settings(payload: dict, admin: dict = Depends(_admin_o
     return {"success": True, "delay_hours": delay, "enabled": bool(payload.get("enabled", True))}
 
 
+@oscop_checkout_router.get("/disputed-orders")
+async def list_disputed_orders(admin: dict = Depends(_admin_only)):
+    orders = await db.oscop_client_orders.find(
+        {"status": "disputed"}, {"_id": 0}).sort("disputed_at", -1).to_list(100)
+    return {"orders": orders}
+
+
+@oscop_checkout_router.post("/orders/{order_id}/dispute-action")
+async def dispute_action(order_id: str, payload: dict, admin: dict = Depends(_admin_only)):
+    action = payload.get("action")
+    if action not in ("remind", "cancel"):
+        raise HTTPException(status_code=400, detail="action: remind ou cancel")
+    order = await db.oscop_client_orders.find_one({"id": order_id, "status": "disputed"}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande en litige introuvable")
+    now = datetime.now(timezone.utc).isoformat()
+    if action == "cancel":
+        await db.oscop_client_orders.update_one(
+            {"id": order_id}, {"$set": {"status": "cancelled", "cancelled_at": now, "cancelled_by": admin.get("email")}})
+        try:
+            from brevo_service import send_email, _wrap_html
+            html = _wrap_html("Annulation de votre commande O'SCOP", (
+                f"<p style='font-size:14px;'>Bonjour {order.get('customer_name')},</p>"
+                f"<p style='font-size:14px;'>Faute de règlement, votre commande <b>{order.get('order_number')}</b> "
+                "a été annulée par la SCIC SAS OBJECTIF SCOP OUTREMER. Vous pouvez repasser commande à tout moment.</p>"))
+            await send_email(order["customer_email"], order.get("customer_name"),
+                             f"Commande {order.get('order_number')} annulée", html, tags=["oscop_reminder"])
+        except Exception:
+            pass
+        return {"success": True, "status": "cancelled"}
+    # remind : relance manuelle (repasse en pending, compteur figé à 3, nouvel ancrage)
+    url = None
+    try:
+        session = stripe.checkout.Session.retrieve(order["stripe_session_id"], api_key=get_stripe_key("oscop"))
+        if session.payment_status == "paid":
+            raise HTTPException(status_code=409, detail="Cette commande est déjà payée — utilisez la vérification de statut")
+        url = session.url
+    except stripe.error.StripeError:
+        pass
+    try:
+        from brevo_service import send_email, _wrap_html
+        subject, body_line = REMINDER_TONES[2]
+        html = _wrap_html(subject, (
+            f"<p style='font-size:14px;'>Bonjour {order.get('customer_name')},</p>"
+            f"<p style='font-size:14px;'>Votre commande <b>{order.get('order_number')}</b> "
+            f"({(order.get('total_ttc_cents', 0) / 100):.2f} € TTC) {body_line}</p>"
+            + (f"<p style='font-size:14px;'><a href='{url}' style='color:#D9B35A;'>Finaliser mon paiement</a></p>" if url else "")))
+        await send_email(order["customer_email"], order.get("customer_name"),
+                         f"{subject} — {order.get('order_number')}", html, tags=["oscop_reminder"])
+    except Exception:
+        pass
+    await db.oscop_client_orders.update_one(
+        {"id": order_id},
+        {"$set": {"status": "pending_payment", "last_reminder_at": now,
+                  "manual_remind_by": admin.get("email")}})
+    return {"success": True, "status": "pending_payment"}
+
+
 @oscop_checkout_router.get("/invoice/{order_id}/pdf")
 async def download_invoice_pdf(order_id: str):
     from fastapi.responses import Response

@@ -591,6 +591,34 @@ async def settlements_register(format: str = "json", admin: dict = Depends(requi
     return {"rows": rows, "count": len(rows)}
 
 
+@pr_router.get("/admin/purchase-resale/margins-by-territory")
+async def margins_by_territory(format: str = "json", admin: dict = Depends(require_reader)):
+    ops = await db.purchase_resale_operations.find({}, {"_id": 0}).to_list(1000)
+    agg = {}
+    for o in ops:
+        t = o.get("territory_id") or "Non renseigné"
+        a = agg.setdefault(t, {"territoire": t, "operations": 0, "marge_previsionnelle": 0.0,
+                               "marge_realisee": 0.0, "revente_ht": 0.0})
+        a["operations"] += 1
+        a["marge_previsionnelle"] += float(o.get("expected_margin_ex_vat") or 0)
+        a["marge_realisee"] += float(o.get("realized_margin_ex_vat") or 0)
+        a["revente_ht"] += float(o.get("resale_total_ex_vat") or 0)
+    rows = sorted([{k: (round(v, 2) if isinstance(v, float) else v) for k, v in a.items()}
+                   for a in agg.values()], key=lambda r: -r["marge_previsionnelle"])
+    if format == "csv":
+        from fastapi.responses import Response
+        import csv
+        import io
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=["territoire", "operations", "revente_ht",
+                                                 "marge_previsionnelle", "marge_realisee"], delimiter=";")
+        writer.writeheader()
+        writer.writerows(rows)
+        return Response(content="\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": 'attachment; filename="marges-par-territoire.csv"'})
+    return {"rows": rows}
+
+
 @pr_router.get("/admin/purchase-resale/audit-register")
 async def audit_register(action: Optional[str] = None, operation: Optional[str] = None,
                          format: str = "json", admin: dict = Depends(require_reader)):
