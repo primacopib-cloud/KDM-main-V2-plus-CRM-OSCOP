@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from routes_v2 import get_current_user_v2
+from routes_staff_roles import require_reader, require_logiscop
 from routes_purchase_resale import LOGISTICS_STATUSES, LOGISCOP_NOTICE
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ async def _get_op(operation_id: str) -> dict:
 
 
 @logiscop_ops_router.get("/operations")
-async def list_logistics_operations(admin: dict = Depends(_admin)):
+async def list_logistics_operations(admin: dict = Depends(require_reader)):
     ops = await db.purchase_resale_operations.find(
         {"logistics_mode": {"$ne": "CUSTOMER_HANDLED"}}, {"_id": 0}).sort("created_at", -1).to_list(200)
     result = []
@@ -85,7 +86,7 @@ async def list_logistics_operations(admin: dict = Depends(_admin)):
 
 
 @logiscop_ops_router.get("/operations/{operation_id}")
-async def get_logistics_detail(operation_id: str, admin: dict = Depends(_admin)):
+async def get_logistics_detail(operation_id: str, admin: dict = Depends(require_reader)):
     op = await _get_op(operation_id)
     shipments = await db.logiscop_shipments.find({"operation_id": operation_id}, {"_id": 0}).to_list(50)
     for s in shipments:
@@ -96,7 +97,7 @@ async def get_logistics_detail(operation_id: str, admin: dict = Depends(_admin))
 
 
 @logiscop_ops_router.post("/operations/{operation_id}/shipments")
-async def create_shipment(operation_id: str, payload: ShipmentCreate, admin: dict = Depends(_admin)):
+async def create_shipment(operation_id: str, payload: ShipmentCreate, admin: dict = Depends(require_logiscop)):
     op = await _get_op(operation_id)
     if op.get("logistics_mode") == "CUSTOMER_HANDLED":
         raise HTTPException(status_code=409, detail="Logistique gérée par le client sur cette opération")
@@ -114,7 +115,7 @@ async def create_shipment(operation_id: str, payload: ShipmentCreate, admin: dic
 
 
 @logiscop_ops_router.post("/shipments/{shipment_id}/milestones")
-async def add_milestone(shipment_id: str, payload: MilestoneCreate, admin: dict = Depends(_admin)):
+async def add_milestone(shipment_id: str, payload: MilestoneCreate, admin: dict = Depends(require_logiscop)):
     if payload.milestone not in LOGISTICS_STATUSES:
         raise HTTPException(status_code=400, detail="Jalon invalide")
     shp = await db.logiscop_shipments.find_one({"id": shipment_id}, {"_id": 0})
@@ -132,7 +133,7 @@ async def add_milestone(shipment_id: str, payload: MilestoneCreate, admin: dict 
 
 
 @logiscop_ops_router.post("/operations/{operation_id}/warehouse")
-async def add_warehouse_record(operation_id: str, payload: WarehouseCreate, admin: dict = Depends(_admin)):
+async def add_warehouse_record(operation_id: str, payload: WarehouseCreate, admin: dict = Depends(require_logiscop)):
     await _get_op(operation_id)
     if payload.movement not in MOVEMENTS:
         raise HTTPException(status_code=400, detail="Mouvement invalide (IN/OUT)")
@@ -144,7 +145,7 @@ async def add_warehouse_record(operation_id: str, payload: WarehouseCreate, admi
 
 
 @logiscop_ops_router.post("/shipments/{shipment_id}/pod")
-async def validate_pod(shipment_id: str, payload: PodCreate, admin: dict = Depends(_admin)):
+async def validate_pod(shipment_id: str, payload: PodCreate, admin: dict = Depends(require_logiscop)):
     shp = await db.logiscop_shipments.find_one({"id": shipment_id}, {"_id": 0})
     if not shp:
         raise HTTPException(status_code=404, detail="Expédition introuvable")

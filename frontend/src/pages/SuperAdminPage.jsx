@@ -30,6 +30,7 @@ import { PurchaseResaleTab } from '../components/superadmin/PurchaseResaleTab';
 import { ServiceCreditsPanel } from '../components/superadmin/ServiceCreditsPanel';
 import { LegalPagesPanel } from '../components/superadmin/LegalPagesPanel';
 import { FogedomPanelWithOps } from '../components/superadmin/FogedomPanelWithOps';
+import { StaffRolesPanel } from '../components/superadmin/StaffRolesPanel';
 import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
 import { AnnouncementsTab } from '../components/superadmin/AnnouncementsTab';
 import { FlashPromosTab } from '../components/superadmin/FlashPromosTab';
@@ -188,6 +189,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="roles">
             <TeamRolesTab />
+            <StaffRolesPanel />
           </TabsContent>
 
           <TabsContent value="buyers">

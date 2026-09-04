@@ -72,6 +72,7 @@ from routes_service_credits import sc_router, set_service_credits_database, seed
 from routes_logiscop_ops import logiscop_ops_router, set_logiscop_ops_database
 from routes_legal_pages import legal_pages_router, set_legal_pages_database, seed_legal_pages
 from routes_fogedom import fogedom_router, set_fogedom_database
+from routes_staff_roles import staff_roles_router, set_staff_roles_database
 set_database(db)
 set_applications_v2_database(db)
 set_billing_v2_database(db)
@@ -83,6 +84,7 @@ set_service_credits_database(db)
 set_logiscop_ops_database(db)
 set_legal_pages_database(db)
 set_fogedom_database(db)
+set_staff_roles_database(db)
 app.include_router(api_v2_router)
 app.include_router(applications_v2_router)
 from routes_adhesion_reminders import adhesion_reminders_router, set_adhesion_reminders_database
@@ -97,6 +99,7 @@ app.include_router(sc_router)
 app.include_router(logiscop_ops_router)
 app.include_router(legal_pages_router)
 app.include_router(fogedom_router)
+app.include_router(staff_roles_router)
 
 # Import and include catalog routes (cart & orders split into dedicated modules)
 from routes_catalog import catalog_router, set_catalog_database
