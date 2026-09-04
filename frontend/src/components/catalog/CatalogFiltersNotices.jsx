@@ -9,9 +9,28 @@ import { IncotermAlertBell } from './IncotermAlertBell';
 export const CatalogFiltersNotices = ({
   categories, selectedCategory, setSelectedCategory, products, user, navigate,
   selectedIncoterm, setSelectedIncoterm, minRating, setMinRating, sortByRating, setSortByRating,
-  zoneName,
+  zoneName, saleFilter, setSaleFilter,
 }) => (
   <>
+    {/* Filtre circuit de vente */}
+    {setSaleFilter && (
+      <div className="flex gap-2 mb-3 flex-wrap" data-testid="sale-model-filter">
+        {[['all', 'Tous les circuits'], ['OSCOP_DIRECT_RESALE', "Vendu par O'SCOP"], ['PARTNER_DIRECT_SALE', 'Vendu par les partenaires']].map(([v, label]) => (
+          <button
+            key={v}
+            onClick={() => setSaleFilter(v)}
+            data-testid={`sale-filter-${v}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              saleFilter === v
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
+                : 'bg-white/[0.04] text-white/55 hover:text-white border border-white/[0.08]'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    )}
     {/* Categories */}
     <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
       <button

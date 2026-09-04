@@ -70,6 +70,8 @@ from routes_purchase_resale import pr_router, set_purchase_resale_database
 from routes_oscop_checkout import oscop_checkout_router, set_oscop_checkout_database
 from routes_service_credits import sc_router, set_service_credits_database, seed_service_catalog
 from routes_logiscop_ops import logiscop_ops_router, set_logiscop_ops_database
+from routes_legal_pages import legal_pages_router, set_legal_pages_database, seed_legal_pages
+from routes_fogedom import fogedom_router, set_fogedom_database
 set_database(db)
 set_applications_v2_database(db)
 set_billing_v2_database(db)
@@ -79,6 +81,8 @@ set_purchase_resale_database(db)
 set_oscop_checkout_database(db)
 set_service_credits_database(db)
 set_logiscop_ops_database(db)
+set_legal_pages_database(db)
+set_fogedom_database(db)
 app.include_router(api_v2_router)
 app.include_router(applications_v2_router)
 from routes_adhesion_reminders import adhesion_reminders_router, set_adhesion_reminders_database
@@ -91,6 +95,8 @@ app.include_router(pr_router)
 app.include_router(oscop_checkout_router)
 app.include_router(sc_router)
 app.include_router(logiscop_ops_router)
+app.include_router(legal_pages_router)
+app.include_router(fogedom_router)
 
 # Import and include catalog routes (cart & orders split into dedicated modules)
 from routes_catalog import catalog_router, set_catalog_database
@@ -792,6 +798,7 @@ async def startup_db_client():
     """Create indexes on startup."""
     await migrate_sale_model(db)
     await seed_service_catalog(db)
+    await seed_legal_pages(db)
     # Create unique index on email
     await db.users.create_index("email", unique=True)
     await db.users.create_index("id", unique=True)

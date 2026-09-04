@@ -145,6 +145,13 @@ class ProductResponse(BaseModel):
     # Avis adhérents
     rating_avg: Optional[float] = None
     rating_count: int = 0
+    # Circuit de vente (Phase achat-revente)
+    sale_model: Optional[str] = None
+    seller_name: Optional[str] = None
+    oscop_price_ht_cents: Optional[int] = None
+    oscop_logistics_price_ht_cents: Optional[int] = None
+    oscop_vat_rate: Optional[float] = None
+    oscop_logistics_available: Optional[bool] = None
 
     class Config:
         from_attributes = True

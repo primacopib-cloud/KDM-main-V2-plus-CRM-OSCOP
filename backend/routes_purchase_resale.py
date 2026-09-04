@@ -194,6 +194,25 @@ async def _audit(action: str, op_id: str, admin: dict, detail: dict = None):
     })
 
 
+NOTIFY_STATUSES = {
+    "INVESTOR_COMMITTED": "Engagement investisseur confirmé",
+    "SUPPLIER_PAID": "Fournisseur payé",
+    "DELIVERED_TO_CLIENT": "Livraison au client confirmée",
+    "CLIENT_PAID": "Paiement client reçu",
+    "INVESTOR_REPAID": "Remboursement investisseur réalisé",
+    "CLOSED": "Marge arrêtée — opération clôturée",
+}
+
+
+async def notify_admins(title: str, message: str, category: str = "achat_revente"):
+    await db.admin_notifications.insert_one({
+        "id": str(uuid.uuid4()), "title": title, "message": message,
+        "type": "info", "category": category, "target_user_id": None,
+        "action_url": "/super-admin", "metadata": {}, "is_read": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+
 @pr_router.get("/public/logiscop/notice")
 async def get_logiscop_notice():
     return {"notice": LOGISCOP_NOTICE, "logistics_modes": LOGISTICS_MODES}
@@ -279,6 +298,9 @@ async def change_status(operation_id: str, payload: StatusChange, admin: dict = 
          "$push": {"status_history": {"status": payload.status, "at": now, "by": admin.get("email"), "comment": payload.comment}}},
     )
     await _audit("STATUS_CHANGED", operation_id, admin, {"to": payload.status})
+    if payload.status in NOTIFY_STATUSES:
+        await notify_admins(f"{NOTIFY_STATUSES[payload.status]} — {op['reference']}",
+                            f"Opération {op['reference']} ({op.get('client_name')}) : statut {payload.status}.")
     return {"success": True, "status": payload.status}
 
 
@@ -300,6 +322,8 @@ async def create_tranche(operation_id: str, payload: TrancheCreate, admin: dict 
     }
     await db.logistics_financing_tranches.insert_one(dict(tranche))
     await _audit("TRANCHE_APPROVED", operation_id, admin, {"tranche": payload.financing_tranche, "amount": payload.approved_amount})
+    await notify_admins(f"Engagement signé — {op['reference']}",
+                        f"Tranche {payload.financing_tranche} de {payload.approved_amount:,.2f} {payload.currency} approuvée par {payload.investor_name} ({payload.legal_instrument}).")
     return tranche
 
 
@@ -351,6 +375,9 @@ async def create_disbursement(operation_id: str, payload: DisbursementCreate, ad
         "supplier_paid_amount" if payload.payee_category == "SUPPLIER_GOODS" else "logistics_external_paid_amount")
     await db.purchase_resale_operations.update_one({"id": operation_id}, {"$inc": {inc_field: payload.amount}})
     await _audit("DISBURSEMENT", operation_id, admin, {"category": payload.payee_category, "amount": payload.amount, "internal": is_internal})
+    if payload.payee_category == "SUPPLIER_GOODS":
+        await notify_admins(f"Fournisseur payé — {op['reference']}",
+                            f"Paiement fournisseur de {payload.amount:,.2f} {op.get('currency', 'EUR')} ({payload.method}) enregistré.")
     return disb
 
 

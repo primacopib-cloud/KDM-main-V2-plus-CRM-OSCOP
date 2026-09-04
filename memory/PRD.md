@@ -2451,3 +2451,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Espace LOGI'SCOP: routes_logiscop_ops.py (préfixe /api/admin/logiscop-ops, NB: routes_logiscop.py existait déjà pour LOGICOOP transport) — expéditions EXP-, jalons (statuts logistiques), stockage IN/OUT, POD- → logistics_status POD_VALIDATED. Page /espace-logiscop (LogiscopSpacePage.jsx, admin requis)
 - Tests: /app/tests_manual/test_four_modules.py 8/8 PASSED (session Stripe réelle test créée puis nettoyée)
 - NOTE: flows UI (dialog achat, génération PDF via boutons) vérifiés par endpoints + smoke screenshots, pas de clics e2e complets
+
+## Phase 2c — Pages juridiques, FOGEDOM-SCIC, Notifications, Filtre circuit (04/06/2026) ✅ (tests manuels PASSED)
+- Pages juridiques §20: routes_legal_pages.py — 9 pages seedées au startup (re-seed auto si supprimée), GET public /api/public/legal-pages[/{slug}], PUT admin. Frontend: LegalDynamicPage.jsx sur les 9 slugs exacts du cahier + LegalPagesPanel.jsx (éditeur) dans onglet Vitrine & Licences + lien footer « CGV O'SCOP »
+- FOGEDOM-SCIC §14: routes_fogedom.py — registre fogedom_decisions, 7 objets fermés, formulations interdites (garanti/assurance/remboursement automatique)→409, approbation exige available_resources_checked + plafond montant demandé, imputation op.fogedom_support_amount, disclaimer obligatoire partout. UI: FogedomPanel(+WithOps).jsx sous l'onglet Achat-Revente
+- Notifications §23 (partiel): notify_admins() dans routes_purchase_resale → admin_notifications (catégorie achat_revente) sur: tranche approuvée (engagement signé), décaissement SUPPLIER_GOODS (fournisseur payé), statuts INVESTOR_COMMITTED/SUPPLIER_PAID/DELIVERED_TO_CLIENT/CLIENT_PAID/INVESTOR_REPAID/CLOSED (marge arrêtée), POD validée (livraison confirmée, routes_logiscop_ops)
+- Filtre circuit catalogue: sale_model + champs oscop_* ajoutés à ProductResponse (schema_catalog.py) et _build_product_response (routes_catalog.py, vérifié sur /api/v2/catalog/products). UI: 3 boutons filtre (Tous/O'SCOP/Partenaires) dans CatalogFiltersNotices + filtrage client-side CatalogPage
+- Tests: /app/tests_manual/test_phase2c.py ALL PASSED

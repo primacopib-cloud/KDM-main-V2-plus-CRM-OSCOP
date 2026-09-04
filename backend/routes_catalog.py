@@ -408,6 +408,12 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
         incoterms=product.get("incoterms") or None,
         rating_avg=product.get("rating_avg"),
         rating_count=product.get("rating_count") or 0,
+        sale_model=product.get("sale_model", "PARTNER_DIRECT_SALE"),
+        seller_name=product.get("seller_name"),
+        oscop_price_ht_cents=product.get("oscop_price_ht_cents"),
+        oscop_logistics_price_ht_cents=product.get("oscop_logistics_price_ht_cents"),
+        oscop_vat_rate=product.get("oscop_vat_rate"),
+        oscop_logistics_available=product.get("oscop_logistics_available"),
     )
     
     # Add pricing if authorized
