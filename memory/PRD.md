@@ -2507,3 +2507,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Choix conteneur suggestion: sélecteur 20DV/40DV/40HC/LCL dans le bandeau meilleure route (OperationFormDialog), refetch compare à chaque changement
 - Export marges territoire: GET /api/admin/purchase-resale/margins-by-territory (json/csv, agrégation expected/realized/revente par territoire). Bouton Export CSV dans MarginsChart
 - Tests: /app/tests_manual/test_phase2j.py ALL PASSED
+
+## Correctif lisibilité boutons dorés (04/06/2026) ✅
+- Cause: overrides thème light remappaient text-[#2A1045] → #CDB4F0 (clair) → illisible sur fonds dorés bg-[#D9B35A]
+- Fix global index.css: color #2A1045 !important sur bg-[#D9B35A]/[#F2D07A]/[#D4AF37]/[#E6C25A]/amber-400/500/yellow-400/500 et descendants
+- Vérifié par capture: « Créer l'opération » et « Nouvelle opération » en violet sombre rgb(42,16,69) sur or
