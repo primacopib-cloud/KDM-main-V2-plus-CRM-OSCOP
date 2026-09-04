@@ -547,3 +547,34 @@ async def settle_collection(operation_id: str, payload: SettlementCreate, admin:
 async def list_settlements(operation_id: str, admin: dict = Depends(require_reader)):
     s = await db.cash_settlements.find({"operation_id": operation_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
     return {"settlements": s}
+
+
+@pr_router.get("/admin/purchase-resale/settlements-register")
+async def settlements_register(format: str = "json", admin: dict = Depends(require_reader)):
+    """Registre des ventilations d'encaissement (cascade §13.6), exportable CSV."""
+    settlements = await db.cash_settlements.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    refs = {o["id"]: o.get("reference") for o in await db.purchase_resale_operations.find(
+        {"id": {"$in": list({s["operation_id"] for s in settlements})}}, {"_id": 0, "id": 1, "reference": 1}).to_list(500)}
+    rows = []
+    for s in settlements:
+        b = s["breakdown"]
+        rows.append({"date": s["created_at"][:19], "operation": refs.get(s["operation_id"], s["operation_id"]),
+                     "encaisse_ttc": s["collected_amount_ttc"], "reserve_tva": b.get("vat_reserve", 0),
+                     "couts_externes": b.get("external_costs", 0), "principal_marchandises": b.get("goods_principal", 0),
+                     "principal_logistique": b.get("logistics_principal", 0), "remuneration": b.get("remuneration", 0),
+                     "fogedom": b.get("fogedom_allocation", 0), "marge_oscop": b.get("oscop_margin", 0),
+                     "par": s.get("created_by", "")})
+    if format == "csv":
+        from fastapi.responses import Response
+        import csv
+        import io
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=list(rows[0].keys()) if rows else
+                                ["date", "operation", "encaisse_ttc", "reserve_tva", "couts_externes",
+                                 "principal_marchandises", "principal_logistique", "remuneration",
+                                 "fogedom", "marge_oscop", "par"], delimiter=";")
+        writer.writeheader()
+        writer.writerows(rows)
+        return Response(content="\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": 'attachment; filename="registre-ventilations.csv"'})
+    return {"rows": rows, "count": len(rows)}

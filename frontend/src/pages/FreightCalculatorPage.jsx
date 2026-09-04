@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { FreightToOperation } from '../components/freight/FreightToOperation';
 
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 
@@ -117,6 +118,7 @@ export default function FreightCalculatorPage() {
                     </div>
                   </div>
                   <p className="text-white/40 text-[10px] pt-2">{quote.note}</p>
+                  <FreightToOperation quote={quote} />
                 </div>
               )}
             </div>

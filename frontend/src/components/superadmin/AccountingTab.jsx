@@ -48,6 +48,19 @@ export const AccountingTab = () => {
     } catch { toast.error("Échec de l'export"); }
   };
 
+  const exportSettlements = async () => {
+    try {
+      const r = await fetch(`${API}/admin/purchase-resale/settlements-register?format=csv`,
+        { headers: getAuthHeaders(), credentials: 'include' });
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'registre-ventilations.csv'; a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Registre des ventilations exporté');
+    } catch { toast.error("Échec de l'export"); }
+  };
+
   const labels = data?.kind_labels || {};
   return (
     <div className="space-y-4" data-testid="accounting-tab">
@@ -74,6 +87,12 @@ export const AccountingTab = () => {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold"
             style={{ background: 'rgba(123,201,78,0.15)', color: '#A5E27B', border: '1px solid rgba(123,201,78,0.4)' }}>
             <FileSpreadsheet className="w-3.5 h-3.5" /> Excel
+          </button>
+          <button type="button" onClick={exportSettlements} data-testid="acct-export-settlements"
+            title="Registre des ventilations d'encaissement (cascade achat-revente §13.6)"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold"
+            style={{ background: 'rgba(79,195,247,0.15)', color: '#9FDCF9', border: '1px solid rgba(79,195,247,0.4)' }}>
+            <Download className="w-3.5 h-3.5" /> Ventilations
           </button>
         </div>
       </div>
