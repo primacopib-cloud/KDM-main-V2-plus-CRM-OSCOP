@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { toast } from 'sonner';
-import { Link2, Copy, RefreshCw, Ban, Loader2, Mail, MessageSquare } from 'lucide-react';
+import { Link2, Copy, RefreshCw, Ban, Loader2, Mail, MessageSquare, History } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { API, getAuthHeaders } from '../../services/http';
@@ -51,6 +52,15 @@ export const PaymentLinksPanel = () => {
   const [form, setForm] = useState({ email: '', amount: '', type: 'VENDOR_PRO', description: '', installments: 1 });
   const [busy, setBusy] = useState(false);
   const [smsLink, setSmsLink] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
+
+  const logSend = (l, channel, to) => {
+    fetch(`${API}/admin/payment-links/${l.id}/log-send`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ channel, to }),
+    }).then(() => load()).catch(() => {});
+  };
 
   const headers = { 'Content-Type': 'application/json', ...getAuthHeaders() };
 
@@ -197,8 +207,10 @@ export const PaymentLinksPanel = () => {
             <tbody>
               {links.map((l) => {
                 const [label, cls] = STATUS[l.status] || STATUS.pending;
+                const history = l.send_history || [];
                 return (
-                  <tr key={l.id} className="border-b border-white/[0.05]" data-testid={`paylink-row-${l.id}`}>
+                  <React.Fragment key={l.id}>
+                  <tr className="border-b border-white/[0.05]" data-testid={`paylink-row-${l.id}`}>
                     <td className="py-2 pr-3 text-white/80">
                       {l.email}
                       {l.description && <span className="block text-[10px] text-white/40">{l.description}</span>}
@@ -209,11 +221,25 @@ export const PaymentLinksPanel = () => {
                     <td className="py-2 pr-3 text-white/45 text-xs">{new Date(l.created_at).toLocaleDateString('fr-FR')}</td>
                     <td className="py-2">
                       <div className="flex justify-end gap-1.5">
+                        <button type="button" data-testid={`paylink-history-${l.id}`}
+                          title={history.length ? `${history.length} envoi(s) — voir l'historique` : 'Aucun envoi tracé'}
+                          onClick={() => setExpandedId(expandedId === l.id ? null : l.id)}
+                          className={`relative p-1.5 rounded-lg border ${expandedId === l.id
+                            ? 'bg-[#D9B35A]/25 border-[#D9B35A]/60 text-[#E9CF8E]'
+                            : 'bg-white/[0.05] border-white/10 text-white/50 hover:bg-white/10'}`}>
+                          <History size={13} />
+                          {history.length > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#D9B35A] text-black text-[9px] font-bold flex items-center justify-center">
+                              {history.length}
+                            </span>
+                          )}
+                        </button>
                         <button type="button" title="Copier le lien" onClick={() => copy(l.url)} data-testid={`paylink-copy-${l.id}`}
                           className="p-1.5 rounded-lg bg-white/[0.05] border border-white/10 text-white/60 hover:bg-white/10">
                           <Copy size={13} />
                         </button>
                         <a href={mailto(l)} title="Envoyer par email" data-testid={`paylink-mail-${l.id}`}
+                          onClick={() => logSend(l, 'email', l.email)}
                           className="p-1.5 rounded-lg bg-[#5B9BD5]/10 border border-[#5B9BD5]/25 text-[#8fc1ec] hover:bg-[#5B9BD5]/20">
                           <Mail size={13} />
                         </a>
@@ -241,6 +267,33 @@ export const PaymentLinksPanel = () => {
                       </div>
                     </td>
                   </tr>
+                  {expandedId === l.id && (
+                    <tr className="border-b border-white/[0.05] bg-white/[0.02]" data-testid={`paylink-history-row-${l.id}`}>
+                      <td colSpan={6} className="py-2 px-3">
+                        {history.length === 0
+                          ? <span className="text-[11px] text-white/40">Aucun envoi tracé pour ce lien.</span>
+                          : (
+                            <div className="space-y-1">
+                              <p className="text-[10px] uppercase tracking-wider text-white/40 m-0">Historique des envois</p>
+                              {[...history].reverse().map((h, i) => (
+                                <p key={i} className="text-[11.5px] text-white/70 m-0 flex items-center gap-2">
+                                  {h.channel === 'sms'
+                                    ? <MessageSquare size={11} className="text-[#8CC63E]" />
+                                    : <Mail size={11} className="text-[#8fc1ec]" />}
+                                  <span className="font-semibold">{h.channel === 'sms' ? 'SMS' : 'Email'}</span>
+                                  <span>→ {h.to}</span>
+                                  <span className="text-white/40">
+                                    — {new Date(h.at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
+                                    {h.by ? ` · par ${h.by}` : ''}
+                                  </span>
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 );
               })}
             </tbody>

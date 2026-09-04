@@ -243,6 +243,27 @@ async def send_link_sms(link_id: str, payload: SmsPayload, admin: dict = Depends
         raise HTTPException(status_code=502, detail="Envoi SMS échoué (Brevo) — vérifiez le numéro")
     await db.admin_payment_links.update_one(
         {"id": link_id},
-        {"$set": {"sms_sent_at": datetime.now(timezone.utc).isoformat(), "sms_to": phone}})
+        {"$set": {"sms_sent_at": datetime.now(timezone.utc).isoformat(), "sms_to": phone},
+         "$push": {"send_history": {"channel": "sms", "to": phone,
+                                    "at": datetime.now(timezone.utc).isoformat(),
+                                    "by": admin.get("email")}}})
     logger.info("Lien de paiement %s envoyé par SMS à %s par %s", link_id, phone, admin.get("email"))
     return {"status": "SUCCESS", "sent_to": phone}
+
+
+class LogSendPayload(BaseModel):
+    channel: str
+    to: str
+
+
+@payment_links_router.post("/{link_id}/log-send")
+async def log_link_send(link_id: str, payload: LogSendPayload, admin: dict = Depends(_admin)):
+    """Trace un envoi manuel (ex : email via mailto) dans l'historique du lien."""
+    if payload.channel not in ("email", "sms"):
+        raise HTTPException(status_code=400, detail="Canal invalide (email, sms)")
+    entry = {"channel": payload.channel, "to": payload.to.strip(),
+             "at": datetime.now(timezone.utc).isoformat(), "by": admin.get("email")}
+    result = await db.admin_payment_links.update_one({"id": link_id}, {"$push": {"send_history": entry}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Lien introuvable")
+    return {"status": "SUCCESS", "entry": entry}
