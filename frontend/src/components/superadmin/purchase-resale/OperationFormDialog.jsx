@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../../services/http';
@@ -39,9 +39,18 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
     client_name: '', supplier_name: '', supplier_email: '', investor_name: '',
     purchase_amount_ex_vat: '', resale_amount_ex_vat: '', vat_rate: '8.5',
     logistics_mode: 'CUSTOMER_HANDLED', logistics_budget_ex_vat: '',
-    logistics_resale_price_ex_vat: '', min_margin_rate: '0',
+    logistics_resale_price_ex_vat: '', min_margin_rate: '0', territory_id: '',
   });
   const [costs, setCosts] = useState({});
+  const [bestRoute, setBestRoute] = useState(null);
+
+  useEffect(() => {
+    if (form.logistics_mode === 'CUSTOMER_HANDLED') { setBestRoute(null); return; }
+    fetch(`${API}/public/freight/compare`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ route_id: 'auto', container_type: '20DV', quantity: 1 }),
+    }).then((r) => r.json()).then((d) => setBestRoute(d.results?.[0] || null)).catch(() => {});
+  }, [form.logistics_mode]);
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const num = (v) => parseFloat(String(v).replace(',', '.')) || 0;
@@ -68,6 +77,7 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
           logistics_budget_ex_vat: num(form.logistics_budget_ex_vat),
           logistics_resale_price_ex_vat: num(form.logistics_resale_price_ex_vat),
           min_margin_rate: num(form.min_margin_rate),
+          territory_id: form.territory_id || null,
           cost_lines: Object.fromEntries(Object.entries(costs).map(([k, v]) => [k, num(v)])),
         }),
       });
@@ -116,7 +126,20 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
           {field('Budget logistique HT (€)', 'logistics_budget_ex_vat')}
           {field('Prix de revente logistique HT (€)', 'logistics_resale_price_ex_vat')}
           {field('Seuil de marge minimal (%)', 'min_margin_rate')}
+          {field('Territoire', 'territory_id', 'ex: Martinique')}
         </div>
+        {bestRoute && (
+          <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-400/25" data-testid="best-route-suggestion">
+            <p className="text-emerald-200 text-xs">
+              Route la plus économique : <b>{bestRoute.route}</b> — {Number(bestRoute.total_ex_vat).toLocaleString('fr-FR')} € HT (20' Dry, ≈ {bestRoute.transit_days} j)
+            </p>
+            <Button size="sm" type="button" data-testid="use-best-route-btn"
+              className="h-6 text-[10px] bg-emerald-600/40 hover:bg-emerald-600/60 text-white shrink-0"
+              onClick={() => setCosts({ ...costs, main_freight: String(bestRoute.total_ex_vat) })}>
+              Utiliser
+            </Button>
+          </div>
+        )}
         <p className="text-xs text-white/50 font-semibold uppercase tracking-wide mt-2">Coûts directs (coût de revient complet)</p>
         <div className="grid grid-cols-2 gap-2">
           {Object.entries(COST_LABELS).map(([k, label]) => (

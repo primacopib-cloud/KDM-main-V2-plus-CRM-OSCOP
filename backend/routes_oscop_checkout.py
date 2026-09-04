@@ -215,40 +215,73 @@ async def _send_invoice_email(order: dict):
 DEFAULT_REMINDER = {"id": "payment_reminder", "delay_hours": 48, "enabled": True}
 
 
+REMINDER_TONES = [
+    ("Rappel — votre commande O'SCOP est en attente de paiement",
+     "est toujours en attente de règlement. Vous pouvez finaliser votre paiement en toute simplicité."),
+    ("2e rappel — règlement attendu pour votre commande O'SCOP",
+     "reste impayée malgré notre premier rappel. Merci de procéder au règlement rapidement afin de maintenir votre commande."),
+    ("Dernier rappel avant litige — commande O'SCOP impayée",
+     "demeure impayée. Sans règlement sous le délai indiqué, la commande sera signalée en litige et pourra être annulée."),
+]
+
+
 async def run_oscop_payment_reminders(database):
-    """Relance les commandes O'SCOP impayées après le délai paramétré (une seule relance)."""
+    """Relances échelonnées (3 max, ton croissant) puis signalement en litige."""
     settings = await database.oscop_settings.find_one({"id": "payment_reminder"}) or dict(DEFAULT_REMINDER)
     if not settings.get("enabled"):
         return 0
     from datetime import timedelta
-    cutoff = (datetime.now(timezone.utc) - timedelta(hours=float(settings.get("delay_hours", 48)))).isoformat()
+    delay = timedelta(hours=float(settings.get("delay_hours", 48)))
+    now = datetime.now(timezone.utc)
     pending = await database.oscop_client_orders.find(
-        {"status": "pending_payment", "created_at": {"$lt": cutoff},
-         "reminder_sent": {"$ne": True}}, {"_id": 0}).to_list(50)
+        {"status": "pending_payment"}, {"_id": 0}).to_list(200)
     sent = 0
     for order in pending:
+        count = int(order.get("reminder_count", 0) or (1 if order.get("reminder_sent") else 0))
+        anchor = order.get("last_reminder_at") or order.get("created_at")
         try:
-            from brevo_service import send_email, _wrap_html
-            key = get_stripe_key("oscop")
-            url = None
-            try:
-                session = stripe.checkout.Session.retrieve(order["stripe_session_id"], api_key=key)
-                if session.payment_status == "paid":
-                    continue
-                url = session.url
-            except stripe.error.StripeError:
-                pass
-            html = _wrap_html("Rappel — votre commande O'SCOP est en attente de paiement", (
-                f"<p style='font-size:14px;'>Bonjour {order.get('customer_name')},</p>"
-                f"<p style='font-size:14px;'>Votre commande <b>{order.get('order_number')}</b> "
-                f"({(order.get('total_ttc_cents', 0) / 100):.2f} € TTC) auprès de la SCIC SAS OBJECTIF SCOP OUTREMER "
-                "est toujours en attente de règlement.</p>"
-                + (f"<p style='font-size:14px;'><a href='{url}' style='color:#D9B35A;'>Finaliser mon paiement</a></p>" if url else "")))
-            await send_email(order["customer_email"], order.get("customer_name"),
-                             f"Rappel de paiement — commande {order.get('order_number')}", html, tags=["oscop_reminder"])
+            anchor_dt = datetime.fromisoformat(anchor.replace("Z", "+00:00"))
+        except Exception:
+            continue
+        if anchor_dt.tzinfo is None:
+            anchor_dt = anchor_dt.replace(tzinfo=timezone.utc)
+        if now - anchor_dt < delay:
+            continue
+        key = get_stripe_key("oscop")
+        url = None
+        try:
+            session = stripe.checkout.Session.retrieve(order["stripe_session_id"], api_key=key)
+            if session.payment_status == "paid":
+                continue
+            url = session.url
+        except stripe.error.StripeError:
+            pass
+        if count >= 3:
             await database.oscop_client_orders.update_one(
                 {"id": order["id"]},
-                {"$set": {"reminder_sent": True, "reminder_sent_at": datetime.now(timezone.utc).isoformat()}})
+                {"$set": {"status": "disputed", "disputed_at": now.isoformat()}})
+            await database.admin_notifications.insert_one({
+                "id": str(uuid.uuid4()), "title": f"Commande en litige — {order.get('order_number')}",
+                "message": f"Impayée après 3 relances : {order.get('customer_name')} ({order.get('customer_email')}), "
+                           f"{(order.get('total_ttc_cents', 0) / 100):.2f} € TTC.",
+                "type": "warning", "category": "achat_revente", "target_user_id": None,
+                "action_url": "/super-admin", "metadata": {}, "is_read": False,
+                "created_at": now.isoformat()})
+            continue
+        subject, body_line = REMINDER_TONES[count]
+        try:
+            from brevo_service import send_email, _wrap_html
+            html = _wrap_html(subject, (
+                f"<p style='font-size:14px;'>Bonjour {order.get('customer_name')},</p>"
+                f"<p style='font-size:14px;'>Votre commande <b>{order.get('order_number')}</b> "
+                f"({(order.get('total_ttc_cents', 0) / 100):.2f} € TTC) auprès de la SCIC SAS OBJECTIF SCOP OUTREMER {body_line}</p>"
+                + (f"<p style='font-size:14px;'><a href='{url}' style='color:#D9B35A;'>Finaliser mon paiement</a></p>" if url else "")))
+            await send_email(order["customer_email"], order.get("customer_name"),
+                             f"{subject} — {order.get('order_number')}", html, tags=["oscop_reminder"])
+            await database.oscop_client_orders.update_one(
+                {"id": order["id"]},
+                {"$set": {"reminder_count": count + 1, "reminder_sent": True,
+                          "last_reminder_at": now.isoformat()}})
             sent += 1
         except Exception as exc:
             logger.warning(f"Relance paiement O'SCOP échouée pour {order.get('id')}: {exc}")
