@@ -2429,3 +2429,17 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Phase 2: module achat-revente complet (opérations, 23 statuts, coût de revient/marge, checkout O'SCOP direct, PDF)
 - Phase 3: espace investisseur + CREDI'SCOP-I (unités de services non monétaires, ledger)
 - Phase 4: FOGEDOM/FOGEDOM-SCIC, 7 pages juridiques, rôles serveur, vue 360°, audit
+
+## Phase 2 Achat-revente + LOGI'SCOP — Noyau (04/06/2026) ✅
+- Backend /app/backend/routes_purchase_resale.py : 23 statuts opération + 16 statuts logistiques, PurchaseResaleOperation (coûts §11 : 17 lignes de coût → coût de revient complet, marges marchandises/logistique/consolidée, taux majoration), tranches GOODS/LOGISTICS/TAXES_INSURANCE plafonnées, décaissements (9 catégories payee, 7 méthodes dont INVESTOR_*_ON_BEHALF_OF_OSCOP → on_behalf_of="SCIC SAS OBJECTIF SCOP OUTREMER"), LOGISCOP_INTERNAL_ALLOCATION = allocation analytique sans facture (409 si invoice_reference), blocages statut (marge négative, seuil, financement absent, budget logistique), audit purchase_resale_audit
+- GET /api/public/logiscop/notice (établissement interne, jamais entité séparée)
+- Accueil §2 conforme : titre «La centrale coopérative d'achat, de référencement et de distribution», nouveau official_statement fr+en, 3 boutons (Découvrir les offres, Accès acheteurs professionnels, Espace investisseurs), carte 3 LOGI'SCOP + mention circuit, bloc «O'SCOP, deux rôles distincts» restylé
+- Page /espace-investisseur (4 blocs §17 + notice CREDI'SCOP-I obligatoire)
+- Onglet superadmin «Achat-Revente» : PurchaseResaleTab.jsx + purchase-resale/OperationFormDialog.jsx + OperationDetail.jsx (création, marge, blocages, statuts, tranches, décaissements)
+- Tests : /app/tests_manual/test_purchase_resale.py — 9/9 PASSED (exemple §26 : 580k coût, tranches 500k+80k, alloc interne 25k, externes 55k, plafond, on_behalf_of)
+- MOCKED/DÉMO : aucun PSP réel branché sur ce module (décaissements = enregistrements comptables, pas de paiement Stripe réel)
+
+### Restant cahier des charges achat-revente
+- P0 : checkout client O'SCOP direct (facture O'SCOP, encaissement Stripe O'SCOP, choix marchandises/logistique), documents PDF (§19), espaces /espace-logiscop, /espace-fournisseur (§16)
+- P1 : CREDI'SCOP-I ledger + catalogue fermé administrable (§9), FOGEDOM-SCIC (§14), cascade remboursement (§12-13.6), plans logistiques détaillés (LogisticsLeg, Shipment, POD)
+- P2 : 9 pages juridiques (§20), notifications (§23), rôles serveur granulaires (§18), vue 360°

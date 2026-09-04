@@ -26,6 +26,7 @@ import { AuditJournalPanel } from '../components/superadmin/AuditJournalPanel';
 import { CoopersConventionsTab } from '../components/superadmin/CoopersConventionsTab';
 import { VendorAdhesionsPanel } from '../components/superadmin/VendorAdhesionsPanel';
 import { AccountingTab } from '../components/superadmin/AccountingTab';
+import { PurchaseResaleTab } from '../components/superadmin/PurchaseResaleTab';
 import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
 import { AnnouncementsTab } from '../components/superadmin/AnnouncementsTab';
 import { FlashPromosTab } from '../components/superadmin/FlashPromosTab';
@@ -223,6 +224,10 @@ export default function SuperAdminPage() {
 
           <TabsContent value="accounting">
             <AccountingTab />
+          </TabsContent>
+
+          <TabsContent value="achat-revente">
+            <PurchaseResaleTab />
           </TabsContent>
 
           <TabsContent value="partnerships">

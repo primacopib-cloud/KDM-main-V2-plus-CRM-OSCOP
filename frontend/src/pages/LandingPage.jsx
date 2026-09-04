@@ -64,8 +64,8 @@ const LandingPage = () => {
                 </span>
               </div>
 
-              <h2 className="text-[40px] leading-[1.05] font-bold tracking-tight my-2.5">
-                KDMARCHÉ, la Communityplace <span className="text-[#D9B35A]">{i18n.t('landing.cooperative_b2b2c')}</span>
+              <h2 className="text-[36px] leading-[1.08] font-bold tracking-tight my-2.5" data-testid="hero-title">
+                La centrale coopérative <span className="text-[#D9B35A]">d'achat, de référencement et de distribution</span>
               </h2>
 
               <p className="text-white/75 text-base max-w-[60ch] m-0">
@@ -74,20 +74,29 @@ const LandingPage = () => {
 
               {/* Actions */}
               <div className="flex gap-3 flex-wrap mt-5">
-                <Link to="/tarifs">
+                <Link to="/catalogue">
                   <button
                     className="force-white inline-flex items-center justify-center gap-2.5 rounded-[14px] px-4 py-3 text-sm font-semibold text-white shadow-lg"
                     style={{ background: 'linear-gradient(135deg, #5B2E8C 0%, #2A1045 100%)' }}
-                    data-testid="hero-cta-acces-pro"
-                    onClick={() => trackCta('hero_acces_pro')}
+                    data-testid="hero-cta-offres"
+                    onClick={() => trackCta('hero_offres')}
                   >
-                    {i18n.t('landing.decouvrir_l_acces_pro')}
+                    Découvrir les offres
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </Link>
-                <a href="#particuliers" className="btn-ghost inline-flex items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold" data-testid="hero-cta-particuliers">
-                  {`Je suis un particulier`}
-                </a>
+                <Link to="/tarifs">
+                  <button
+                    className="btn-ghost inline-flex items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold"
+                    data-testid="hero-cta-acces-pro"
+                    onClick={() => trackCta('hero_acces_pro')}
+                  >
+                    Accès acheteurs professionnels
+                  </button>
+                </Link>
+                <Link to="/espace-investisseur" className="btn-ghost inline-flex items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold" data-testid="hero-cta-investisseurs">
+                  Espace investisseurs
+                </Link>
               </div>
 
               {/* Mini Stats */}
