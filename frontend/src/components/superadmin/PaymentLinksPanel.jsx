@@ -79,6 +79,7 @@ export const PaymentLinksPanel = () => {
     const amount = parseAmount(form.amount);
     if (!form.email.includes('@')) { toast.error('Email invalide'); return; }
     if (!Number.isFinite(amount) || amount <= 0) { toast.error('Montant invalide'); return; }
+    if (amount > 999999.99) { toast.error('Maximum Stripe : 999 999,99 € par lien. Pour un total supérieur, créez plusieurs liens.'); return; }
     setBusy(true);
     try {
       const r = await fetch(`${API}/admin/payment-links`, {
@@ -86,7 +87,12 @@ export const PaymentLinksPanel = () => {
         body: JSON.stringify({ email: form.email.trim(), amount_eur: amount, account_type: form.type, description: form.description.trim() || null }),
       });
       const d = await r.json();
-      if (!r.ok) { toast.error(typeof d.detail === 'string' ? d.detail : 'Erreur'); return; }
+      if (!r.ok) {
+        const msg = typeof d.detail === 'string' ? d.detail
+          : Array.isArray(d.detail) ? d.detail.map((e) => e.msg || '').join(' — ') : 'Erreur';
+        toast.error(msg);
+        return;
+      }
       toast.success('Lien de paiement créé');
       copy(d.url);
       setForm({ email: '', amount: '', type: 'VENDOR_PRO', description: '' });

@@ -47,20 +47,27 @@ def _stripe_key() -> str:
 
 class CreateLinkPayload(BaseModel):
     email: EmailStr
-    amount_eur: float = Field(..., gt=0, le=50000)
+    amount_eur: float = Field(..., gt=0)
     account_type: str
     description: Optional[str] = None
+
+
+STRIPE_MAX_CENTS = 99_999_999  # 999 999,99 € — plafond Stripe par transaction
 
 
 @payment_links_router.post("")
 async def create_payment_link(payload: CreateLinkPayload, admin: dict = Depends(_admin)):
     if payload.account_type not in ACCOUNT_TYPES:
         raise HTTPException(status_code=400, detail="Type de compte invalide (VENDOR_PRO, BUYER_PRO, SPONSOR)")
+    amount_cents = int(round(payload.amount_eur * 100))
+    if amount_cents > STRIPE_MAX_CENTS:
+        raise HTTPException(
+            status_code=400,
+            detail="Montant maximum Stripe : 999 999,99 € par lien. Pour un total supérieur (ex : 1 000 000 €), créez plusieurs liens.")
     key = _stripe_key()
     label = ACCOUNT_TYPES[payload.account_type]
     product_name = f"KDMARCHÉ × O'SCOP — {label}" + (f" — {payload.description.strip()}" if payload.description else "")
     link_id = str(uuid.uuid4())
-    amount_cents = int(round(payload.amount_eur * 100))
     try:
         price = stripe.Price.create(
             api_key=key, currency="eur", unit_amount=amount_cents,

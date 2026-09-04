@@ -2372,3 +2372,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Fix additionnel signalé par le testing agent : copy() presse-papiers protégé (catch → toast info) — plus d'overlay « Uncaught runtime errors » quand le navigateur refuse la permission clipboard.
 - Testing agent : 7/7 cas d'aperçu OK, création E2E « 1 000 » → ligne 1 000,00 € + amount_cents=100000 en base, lien LIVE de test désactivé (nettoyage fait). Vérif finale screenshot : aperçu OK, pas d'overlay.
 - ℹ️ Les 2 liens réels de l'utilisateur (piperolfelixia@gmail.com : 1,00 € et 100,00 €, En attente) datent d'avant le fix — celui à 1,00 € est probablement erroné, à désactiver/recréer par l'admin.
+
+## 2026-09-04 — Gros montants liens de paiement (self-testé curl + Playwright)
+- Problème utilisateur : impossible de générer un lien de 1 000 000 € — l'ancienne limite Pydantic le=50000 renvoyait un 422 illisible (toast « Erreur » générique).
+- Fix backend : limite portée au **plafond Stripe 999 999,99 €** (99 999 999 cents) avec message 400 explicite « Montant maximum Stripe : 999 999,99 € par lien… créez plusieurs liens ». Fix frontend : validation avant envoi + affichage des erreurs 422 Pydantic (detail liste → messages joints).
+- Vérifié : 999 999,99 € → lien Stripe LIVE créé (puis désactivé) ; 1 000 000 € → 400 + toast clair en UI ; aperçu « = 1 000 000,00 € » correct.
+- ⚠️ 1 000 000 € en un seul lien reste IMPOSSIBLE (plafond Stripe par transaction) — l'admin doit scinder (ex : 2 × 500 000 €).
