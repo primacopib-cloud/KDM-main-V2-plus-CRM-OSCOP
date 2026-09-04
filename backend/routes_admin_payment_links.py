@@ -215,3 +215,34 @@ async def check_pending_payment_links(db_):
             logger.info("Paiement détecté automatiquement : lien %s (%s €)", link["id"], link["amount_cents"] / 100)
     except Exception as exc:
         logger.warning("check_pending_payment_links : %s", exc)
+
+
+class SmsPayload(BaseModel):
+    phone: str
+
+
+@payment_links_router.post("/{link_id}/send-sms")
+async def send_link_sms(link_id: str, payload: SmsPayload, admin: dict = Depends(_admin)):
+    """Envoie le lien de paiement par SMS international (Brevo)."""
+    import re
+    link = await db.admin_payment_links.find_one({"id": link_id}, {"_id": 0})
+    if not link:
+        raise HTTPException(status_code=404, detail="Lien introuvable")
+    if link["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Ce lien n'est plus en attente de paiement")
+    phone = re.sub(r"[^\d+]", "", payload.phone or "")
+    if not re.fullmatch(r"\+\d{8,15}", phone):
+        raise HTTPException(status_code=400, detail="Numéro international invalide (ex : +590 690 12 34 56)")
+    amount = f"{link['amount_cents'] / 100:,.2f}".replace(",", " ").replace(".", ",")
+    label = ACCOUNT_TYPES.get(link["account_type"], link["account_type"])
+    short_url = link["url"].split("?")[0]
+    msg = f"KDMARCHE x O'SCOP - Lien de paiement {label} : {amount} EUR. Payez en securite ici : {short_url}"
+    from brevo_service import send_sms
+    res = await send_sms(phone, msg, tag="payment_link")
+    if res is None:
+        raise HTTPException(status_code=502, detail="Envoi SMS échoué (Brevo) — vérifiez le numéro")
+    await db.admin_payment_links.update_one(
+        {"id": link_id},
+        {"$set": {"sms_sent_at": datetime.now(timezone.utc).isoformat(), "sms_to": phone}})
+    logger.info("Lien de paiement %s envoyé par SMS à %s par %s", link_id, phone, admin.get("email"))
+    return {"status": "SUCCESS", "sent_to": phone}

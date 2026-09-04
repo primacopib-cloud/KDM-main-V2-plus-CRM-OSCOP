@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Link2, Copy, RefreshCw, Ban, Loader2, Mail } from 'lucide-react';
+import { Link2, Copy, RefreshCw, Ban, Loader2, Mail, MessageSquare } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { API, getAuthHeaders } from '../../services/http';
+import { PaymentLinkSmsDialog } from './PaymentLinkSmsDialog';
 
 const TYPES = [
   ['VENDOR_PRO', 'Vendeur Pro'],
@@ -49,6 +50,7 @@ export const PaymentLinksPanel = () => {
   const [links, setLinks] = useState([]);
   const [form, setForm] = useState({ email: '', amount: '', type: 'VENDOR_PRO', description: '', installments: 1 });
   const [busy, setBusy] = useState(false);
+  const [smsLink, setSmsLink] = useState(null);
 
   const headers = { 'Content-Type': 'application/json', ...getAuthHeaders() };
 
@@ -216,6 +218,15 @@ export const PaymentLinksPanel = () => {
                           <Mail size={13} />
                         </a>
                         {l.status === 'pending' && (
+                          <button type="button" title={l.sms_sent_at ? `SMS déjà envoyé au ${l.sms_to}` : 'Envoyer par SMS'}
+                            onClick={() => setSmsLink(l)} data-testid={`paylink-sms-${l.id}`}
+                            className={`p-1.5 rounded-lg border ${l.sms_sent_at
+                              ? 'bg-[#8CC63E]/20 border-[#8CC63E]/50 text-[#b5e07a]'
+                              : 'bg-[#8CC63E]/10 border-[#8CC63E]/25 text-[#b5e07a] hover:bg-[#8CC63E]/20'}`}>
+                            <MessageSquare size={13} />
+                          </button>
+                        )}
+                        {l.status === 'pending' && (
                           <>
                             <button type="button" title="Vérifier le paiement" onClick={() => refresh(l.id)} data-testid={`paylink-refresh-${l.id}`}
                               className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20">
@@ -237,6 +248,7 @@ export const PaymentLinksPanel = () => {
         </div>
       )}
       {links.length === 0 && <p className="text-white/40 text-xs m-0">Aucun lien créé pour l&apos;instant. Le lien est copié automatiquement après création.</p>}
+      {smsLink && <PaymentLinkSmsDialog link={smsLink} onClose={() => setSmsLink(null)} onSent={load} />}
     </div>
   );
 };
