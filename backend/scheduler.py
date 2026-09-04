@@ -152,6 +152,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler pro expiry alerts crashed: %s", exc)
         try:
+            from routes_oscop_checkout import run_oscop_payment_reminders
+            await run_oscop_payment_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler oscop payment reminders crashed: %s", exc)
+        try:
             from cash_closeout import run_cash_closeout
             await run_cash_closeout(_db)
         except Exception as exc:

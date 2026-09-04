@@ -130,6 +130,31 @@ async def quote_pdf(payload: QuoteRequest):
                     headers={"Content-Disposition": f'attachment; filename="{number}.pdf"'})
 
 
+@freight_router.post("/public/freight/compare")
+async def compare_routes(payload: QuoteRequest):
+    """Comparateur : devis sur toutes les routes actives pour un même chargement."""
+    routes = await db.freight_rates.find({"active": True}, {"_id": 0}).to_list(50)
+    results = []
+    for route in routes:
+        base_unit = float(route["base_prices"].get(payload.container_type, 0))
+        if base_unit <= 0:
+            continue
+        base = base_unit * payload.quantity
+        baf = round(base * float(route.get("baf_rate", BAF_RATE)) / 100, 2)
+        thc = round(float(route.get("thc", THC).get(payload.container_type, 0)) * payload.quantity, 2)
+        insurance = round(max((payload.goods_value_ex_vat or 0) * 0.006, 45.0), 2) if payload.insurance else 0.0
+        results.append({
+            "route_id": route["id"], "route": f"{route['origin']} → {route['destination']}",
+            "total_ex_vat": round(base + baf + thc + insurance, 2),
+            "transit_days": route.get("transit_days"),
+            "breakdown": {"base_freight": round(base, 2), "baf_surcharge": baf,
+                          "thc_handling": thc, "transport_insurance": insurance},
+        })
+    results.sort(key=lambda r: r["total_ex_vat"])
+    return {"container": CONTAINERS.get(payload.container_type), "quantity": payload.quantity,
+            "results": results, "cheapest": results[0]["route"] if results else None}
+
+
 @freight_router.put("/admin/freight/routes/{route_id}")
 async def update_rate(route_id: str, payload: RateUpdate, admin: dict = Depends(_admin)):
     updates = {k: v for k, v in payload.dict().items() if v is not None}
