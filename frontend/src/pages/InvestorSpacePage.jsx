@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { TrendingUp, Ticket, Euro, Truck, ShieldAlert } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { InvestorLiveDashboard } from '../components/investor/InvestorLiveDashboard';
 
 const blocks = [
   {
@@ -36,6 +37,7 @@ export default function InvestorSpacePage() {
           L'espace investisseur O'SCOP sépare strictement l'abonnement, le compteur CREDI'SCOP-I, les
           investissements réels et le financement logistique LOGI'SCOP.
         </p>
+        <InvestorLiveDashboard />
         <div className="grid md:grid-cols-2 gap-4 mb-8">
           {blocks.map((b) => (
             <div key={b.title} className="glass-panel-soft rounded-[22px] p-5">

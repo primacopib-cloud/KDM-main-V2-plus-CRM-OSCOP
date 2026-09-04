@@ -167,4 +167,58 @@ async def get_order_status(order_id: str):
                 {"$set": {"status": "paid", "invoice_number": invoice_number, "paid_at": now,
                           "psp_reference": session.payment_intent}})
             order.update({"status": "paid", "invoice_number": invoice_number, "paid_at": now})
+            await _send_invoice_email(order)
     return order
+
+
+def _invoice_doc(order: dict) -> dict:
+    eur = lambda c: f"{(c or 0) / 100:,.2f} EUR".replace(",", " ").replace(".", ",")
+    sections = [
+        ("Client", f"{order.get('customer_name')} — {order.get('customer_email')}"),
+        ("Commande", order.get("order_number")),
+        ("Vendeur juridique", OSCOP_SELLER),
+        ("Produit", f"{order.get('product_name')} × {order.get('quantity')}"),
+        ("Marchandises HT", eur(order.get("goods_ht_cents"))),
+    ]
+    if order.get("include_logistics"):
+        sections.append(("Logistique intégrée LOGI'SCOP HT", eur(order.get("logistics_ht_cents"))))
+    sections += [
+        (f"TVA ({order.get('vat_rate')} %)", eur(order.get("vat_cents"))),
+        ("Total TTC réglé", eur(order.get("total_ttc_cents"))),
+        ("Référence PSP", order.get("psp_reference") or "-"),
+        ("CGV applicables", "Conditions Générales de Vente O'SCOP (/conditions-vente-oscop)"),
+    ]
+    return {"doc_type": "CLIENT_INVOICE", "doc_number": order["invoice_number"],
+            "sections": sections, "created_at": order.get("paid_at", "")}
+
+
+async def _send_invoice_email(order: dict):
+    try:
+        import base64
+        from operation_docs_pdf import build_operation_pdf
+        from brevo_service import send_email, _wrap_html
+        pdf = build_operation_pdf(_invoice_doc(order))
+        html = _wrap_html("Votre facture O'SCOP", (
+            f"<p style='font-size:14px;'>Bonjour {order.get('customer_name')},</p>"
+            f"<p style='font-size:14px;'>Votre paiement de la commande <b>{order.get('order_number')}</b> est confirmé. "
+            f"Votre facture officielle <b>{order['invoice_number']}</b>, émise par la SCIC SAS OBJECTIF SCOP OUTREMER, est jointe en PDF.</p>"
+            f"<p style='font-size:12px;color:#B8A98F;'>Vendeur, émetteur de la facture et bénéficiaire du paiement : SCIC SAS OBJECTIF SCOP OUTREMER.</p>"))
+        await send_email(order["customer_email"], order.get("customer_name"),
+                         f"Facture O'SCOP {order['invoice_number']} — paiement confirmé", html,
+                         tags=["oscop_invoice"],
+                         attachments=[{"content": base64.b64encode(pdf).decode(), "name": f"{order['invoice_number']}.pdf"}])
+        await db.oscop_client_orders.update_one({"id": order["id"]}, {"$set": {"invoice_email_sent": True}})
+    except Exception as exc:
+        logger.warning(f"Email facture O'SCOP non envoyé: {exc}")
+
+
+@oscop_checkout_router.get("/invoice/{order_id}/pdf")
+async def download_invoice_pdf(order_id: str):
+    from fastapi.responses import Response
+    from operation_docs_pdf import build_operation_pdf
+    order = await db.oscop_client_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order or order.get("status") != "paid":
+        raise HTTPException(status_code=404, detail="Facture indisponible")
+    pdf = build_operation_pdf(_invoice_doc(order))
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{order["invoice_number"]}.pdf"'})

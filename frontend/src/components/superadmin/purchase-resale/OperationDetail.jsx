@@ -19,13 +19,19 @@ export const OperationDetail = ({ operationId, meta, onChanged }) => {
   const [docs, setDocs] = useState([]);
   const [tranche, setTranche] = useState({ financing_tranche: 'GOODS', investor_name: '', approved_amount: '' });
   const [disb, setDisb] = useState({ financing_tranche: 'GOODS', payee_category: 'SUPPLIER_GOODS', payee_name: '', amount: '', method: 'OSCOP_BANK_TRANSFER' });
+  const [settle, setSettle] = useState({ amount: '', rate: '0' });
 
   const load = useCallback(async () => {
-    const [res, dres] = await Promise.all([
+    const [res, dres, sres] = await Promise.all([
       fetch(`${API}/admin/purchase-resale/operations/${operationId}`, { headers: getAuthHeaders() }),
       fetch(`${API}/admin/purchase-resale/operations/${operationId}/documents`, { headers: getAuthHeaders() }),
+      fetch(`${API}/admin/purchase-resale/operations/${operationId}/settlements`, { headers: getAuthHeaders() }),
     ]);
-    if (res.ok) setDetail(await res.json());
+    if (res.ok) {
+      const det = await res.json();
+      if (sres.ok) det.settlements = (await sres.json()).settlements || [];
+      setDetail(det);
+    }
     if (dres.ok) setDocs((await dres.json()).documents || []);
   }, [operationId]);
 
@@ -115,6 +121,8 @@ export const OperationDetail = ({ operationId, meta, onChanged }) => {
               onClick={() => genDoc('INVESTOR_COMMITMENT')}>+ Bon d'Engagement</Button>
             <Button size="sm" data-testid="gen-doc-margin" className="h-6 text-[10px] bg-white/10 hover:bg-white/20 text-white"
               onClick={() => genDoc('MARGIN_STATEMENT')}>+ État de marge</Button>
+            <Button size="sm" data-testid="gen-doc-fogedom" className="h-6 text-[10px] bg-white/10 hover:bg-white/20 text-white"
+              onClick={() => genDoc('FOGEDOM_REPORT')}>+ Rapport F.O.G.E.D.O.M</Button>
           </div>
           {docs.map((d) => (
             <button key={d.id} type="button" onClick={() => downloadDoc(d)} data-testid={`download-doc-${d.doc_number}`}
@@ -180,6 +188,22 @@ export const OperationDetail = ({ operationId, meta, onChanged }) => {
             Enregistrer le décaissement
           </Button>
         </div>
+        <p className="text-[11px] font-semibold text-white/70 uppercase mt-3 mb-1">Encaissement client → cascade §13.6</p>
+        <div className="flex gap-1.5">
+          <Input placeholder="Montant TTC encaissé" value={settle.amount} data-testid="settle-amount-input"
+            onChange={(e) => setSettle({ ...settle, amount: e.target.value })} className="flex-1 bg-white/5 border-white/15 text-white h-8 text-xs" />
+          <Input placeholder="Rému %" value={settle.rate} data-testid="settle-rate-input"
+            onChange={(e) => setSettle({ ...settle, rate: e.target.value })} className="w-16 bg-white/5 border-white/15 text-white h-8 text-xs" />
+          <Button size="sm" data-testid="settle-submit-btn" className="bg-emerald-600/40 hover:bg-emerald-600/60 text-white text-xs h-8"
+            onClick={() => post('settlement', { collected_amount_ttc: num(settle.amount), remuneration_rate: num(settle.rate) }, 'Encaissement ventilé')}>
+            Ventiler
+          </Button>
+        </div>
+        {detail.settlements?.map((s) => (
+          <div key={s.id} className="p-2 rounded bg-emerald-500/10 border border-emerald-400/20 mt-1.5 text-[10px] text-white/70" data-testid={`settlement-${s.id}`}>
+            {eur(s.collected_amount_ttc)} TTC → TVA {eur(s.breakdown.vat_reserve)} · march. {eur(s.breakdown.goods_principal)} · logi. {eur(s.breakdown.logistics_principal)} · rému {eur(s.breakdown.remuneration)} · <b className="text-emerald-300">marge {eur(s.breakdown.oscop_margin)}</b>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -108,9 +108,17 @@ class StatusChange(BaseModel):
 class TrancheCreate(BaseModel):
     financing_tranche: str
     investor_name: str
+    investor_email: Optional[str] = None
     approved_amount: float = Field(gt=0)
     legal_instrument: str = "Bon d'Engagement"
     currency: str = "EUR"
+
+
+class SettlementCreate(BaseModel):
+    collected_amount_ttc: float = Field(gt=0)
+    external_costs_due: float = Field(default=0.0, ge=0)
+    remuneration_rate: float = Field(default=0.0, ge=0, le=100)
+    fogedom_allocation: float = Field(default=0.0, ge=0)
 
 
 class DisbursementCreate(BaseModel):
@@ -326,6 +334,7 @@ async def create_tranche(operation_id: str, payload: TrancheCreate, admin: dict 
     tranche = {
         "id": str(uuid.uuid4()), "operation_id": operation_id,
         **payload.dict(),
+        "investor_email": (payload.investor_email or "").lower() or None,
         "committed_amount": payload.approved_amount,
         "external_disbursed_amount": 0.0, "internal_allocated_amount": 0.0,
         "remaining_amount": payload.approved_amount,
@@ -405,10 +414,13 @@ async def generate_document(operation_id: str, payload: DocumentCreate, admin: d
         raise HTTPException(status_code=400, detail=f"Type invalide : {list(DOC_TYPES)}")
     op = await _get_op(operation_id)
     number = await next_doc_number(db, payload.doc_type)
+    extra = payload.extra or {}
+    if payload.doc_type == "FOGEDOM_REPORT":
+        extra.setdefault("blockers", authorization_blockers(op))
     doc = {
         "id": str(uuid.uuid4()), "operation_id": operation_id,
         "doc_type": payload.doc_type, "doc_number": number,
-        "sections": doc_sections(payload.doc_type, op, payload.extra or {}),
+        "sections": doc_sections(payload.doc_type, op, extra),
         "created_by": admin.get("email"),
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -472,3 +484,66 @@ async def view_360(operation_id: str, admin: dict = Depends(require_reader)):
     return {"operation": op, "tranches": tranches, "disbursements": disbursements,
             "documents": documents, "shipments": shipments, "pods": pods,
             "warehouse": warehouse, "fogedom": fogedom, "audit": audit}
+
+
+@pr_router.post("/admin/purchase-resale/operations/{operation_id}/settlement")
+async def settle_collection(operation_id: str, payload: SettlementCreate, admin: dict = Depends(require_finance)):
+    """Cascade §13.6 : réserve TVA → coûts externes dus → principal marchandises → principal logistique → rémunération → marge O'SCOP (→ FOGEDOM-SCIC optionnel)."""
+    op = await _get_op(operation_id)
+    vat_rate = float(op.get("vat_rate", 0))
+    vat_reserve = round(payload.collected_amount_ttc * vat_rate / (100 + vat_rate), 2) if vat_rate else 0.0
+    remaining = payload.collected_amount_ttc - vat_reserve
+    breakdown = {"vat_reserve": vat_reserve}
+
+    external_costs = min(payload.external_costs_due, remaining)
+    breakdown["external_costs"] = round(external_costs, 2)
+    remaining -= external_costs
+
+    tranches = await db.logistics_financing_tranches.find({"operation_id": operation_id}, {"_id": 0}).to_list(50)
+    already = float(op.get("investor_repaid_amount", 0))
+    goods_due = max(sum(t["approved_amount"] - t["remaining_amount"] for t in tranches if t["financing_tranche"] == "GOODS") - already, 0)
+    goods_principal = min(goods_due, remaining)
+    breakdown["goods_principal"] = round(goods_principal, 2)
+    remaining -= goods_principal
+
+    logi_due = max(sum(t["approved_amount"] - t["remaining_amount"] for t in tranches if t["financing_tranche"] == "LOGISTICS") - max(already - goods_due, 0), 0)
+    logistics_principal = min(logi_due, remaining)
+    breakdown["logistics_principal"] = round(logistics_principal, 2)
+    remaining -= logistics_principal
+
+    remuneration = min(round((goods_principal + logistics_principal) * payload.remuneration_rate / 100, 2), remaining)
+    breakdown["remuneration"] = remuneration
+    remaining -= remuneration
+
+    fogedom = min(payload.fogedom_allocation, remaining)
+    breakdown["fogedom_allocation"] = round(fogedom, 2)
+    remaining -= fogedom
+    breakdown["oscop_margin"] = round(remaining, 2)
+
+    settlement = {
+        "id": str(uuid.uuid4()), "operation_id": operation_id,
+        "collected_amount_ttc": payload.collected_amount_ttc,
+        "remuneration_rate": payload.remuneration_rate,
+        "breakdown": breakdown, "order": ["vat_reserve", "external_costs", "goods_principal",
+                                          "logistics_principal", "remuneration", "fogedom_allocation", "oscop_margin"],
+        "created_by": admin.get("email"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.cash_settlements.insert_one(dict(settlement))
+    repaid = goods_principal + logistics_principal + remuneration
+    await db.purchase_resale_operations.update_one(
+        {"id": operation_id},
+        {"$inc": {"client_collected_amount": payload.collected_amount_ttc,
+                  "investor_repaid_amount": repaid},
+         "$set": {"realized_margin_ex_vat": round(float(op.get("realized_margin_ex_vat") or 0) + breakdown["oscop_margin"], 2)}})
+    await _audit("CASH_SETTLEMENT", operation_id, admin, breakdown)
+    if repaid > 0:
+        await notify_admins(f"Remboursement investisseur — {op['reference']}",
+                            f"Cascade appliquée : principal marchandises {goods_principal:,.2f} €, principal logistique {logistics_principal:,.2f} €, rémunération {remuneration:,.2f} €.")
+    return settlement
+
+
+@pr_router.get("/admin/purchase-resale/operations/{operation_id}/settlements")
+async def list_settlements(operation_id: str, admin: dict = Depends(require_reader)):
+    s = await db.cash_settlements.find({"operation_id": operation_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return {"settlements": s}

@@ -18,6 +18,10 @@ DOC_TYPES = {
                             "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER"},
     "MARGIN_STATEMENT": {"prefix": "EM", "title": "ÉTAT DE MARGE DE L'OPÉRATION",
                          "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER"},
+    "FOGEDOM_REPORT": {"prefix": "RF", "title": "RAPPORT PRÉVENTIF F.O.G.E.D.O.M",
+                       "issuer": "F.O.G.E.D.O.M — rapport de suivi (ni prêteur, ni banque, ni assureur, ni garant)"},
+    "CLIENT_INVOICE": {"prefix": "FAC", "title": "FACTURE — VENTE DIRECTE O'SCOP",
+                       "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER — Vendeur, émetteur et bénéficiaire du paiement"},
 }
 
 
@@ -55,6 +59,19 @@ def doc_sections(doc_type: str, op: dict, extra: dict) -> list:
                 float(op.get("purchase_amount_ex_vat", 0)) + float(op.get("logistics_budget_ex_vat", 0))))),
             ("Mention", "Paiements réalisés pour le compte de la SCIC SAS OBJECTIF SCOP OUTREMER. "
                         "Les CREDI'SCOP-I ne constituent pas le montant investi."),
+        ]
+    if doc_type == "FOGEDOM_REPORT":
+        blockers = extra.get("blockers", [])
+        return common + [
+            ("Contrôle commande client", op.get("client_name") or "-"),
+            ("Fournisseur", op.get("supplier_name")),
+            ("Coût de revient complet HT", _eur(op.get("full_cost_price_ex_vat"))),
+            ("Marge consolidée prévisionnelle", f"{_eur(op.get('expected_margin_ex_vat'))} ({op.get('expected_margin_rate', 0)} %)"),
+            ("Logistique", f"{op.get('logistics_mode')} — statut {op.get('logistics_status')} — budget {_eur(op.get('logistics_budget_ex_vat'))}"),
+            ("Financement", op.get("funding_instrument") or "À confirmer par Bon d'Engagement"),
+            ("Risques / points bloquants", " ; ".join(blockers) if blockers else "Aucun blocage détecté"),
+            ("Mesures préventives", extra.get("preventive_measures", "Suivi standard F.O.G.E.D.O.M")),
+            ("Mention", "F.O.G.E.D.O.M n'est ni prêteur, ni banque, ni assureur, ni garant."),
         ]
     return common + [
         ("Prix fournisseur HT", _eur(op.get("purchase_amount_ex_vat"))),
