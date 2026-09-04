@@ -151,10 +151,7 @@ async def refresh_payment_link(link_id: str, _: dict = Depends(_admin)):
         raise HTTPException(status_code=502, detail=f"Erreur Stripe : {exc}")
     paid = next((s for s in sessions.data if s.payment_status == "paid"), None)
     if paid:
-        await db.admin_payment_links.update_one(
-            {"id": link_id},
-            {"$set": {"status": "paid", "paid_at": datetime.now(timezone.utc).isoformat(),
-                      "stripe_session_id": paid.id}})
+        await _mark_paid(db, link, paid.id, "manual")
         link["status"] = "paid"
     return link
 
@@ -171,6 +168,69 @@ async def deactivate_payment_link(link_id: str, _: dict = Depends(_admin)):
         raise HTTPException(status_code=502, detail=f"Erreur Stripe : {exc}")
     await db.admin_payment_links.update_one({"id": link_id}, {"$set": {"status": "deactivated"}})
     return {"status": "SUCCESS"}
+
+
+async def _send_client_receipt(db_, link: dict) -> None:
+    """Email de reçu envoyé au client dès que son paiement est détecté."""
+    try:
+        from brevo_service import send_email, _wrap_html
+        amount = f"{link['amount_cents'] / 100:,.2f}".replace(",", " ").replace(".", ",")
+        label = ACCOUNT_TYPES.get(link["account_type"], link["account_type"])
+        desc = (f"<tr><td style='padding:4px 14px 4px 0;color:#777;'>Détail</td>"
+                f"<td style='padding:4px 0;'>{link['description']}</td></tr>") if link.get("description") else ""
+        now = datetime.now(timezone.utc)
+        body = f"""
+          <h2 style=\"color:#D9B35A;margin:0 0 12px;font-size:20px;\">Reçu de paiement</h2>
+          <p>Bonjour,</p>
+          <p>Nous confirmons la <strong>bonne réception de votre paiement</strong> :</p>
+          <table style=\"border-collapse:collapse;margin:14px 0;font-size:14px;\">
+            <tr><td style=\"padding:4px 14px 4px 0;color:#777;\">Montant</td><td style=\"padding:4px 0;font-weight:bold;font-size:16px;\">{amount} €</td></tr>
+            <tr><td style=\"padding:4px 14px 4px 0;color:#777;\">Objet</td><td style=\"padding:4px 0;\">{label}</td></tr>
+            {desc}
+            <tr><td style=\"padding:4px 14px 4px 0;color:#777;\">Date</td><td style=\"padding:4px 0;\">{now.strftime('%d/%m/%Y')}</td></tr>
+            <tr><td style=\"padding:4px 14px 4px 0;color:#777;\">Référence</td><td style=\"padding:4px 0;font-family:monospace;\">{link['id'][:8].upper()}</td></tr>
+          </table>
+          <p>Ce message vaut confirmation de paiement. Conservez-le comme justificatif.</p>
+          <p style=\"margin-top:16px;\">Merci pour votre confiance,<br/>L'équipe KDMARCHÉ × O'SCOP</p>
+        """
+        res = await send_email(
+            link["email"], None,
+            f"Reçu de paiement — {amount} € — KDMARCHÉ × O'SCOP",
+            _wrap_html("Reçu de paiement", body), tags=["payment_link_receipt"])
+        if res is not None:
+            await db_.admin_payment_links.update_one(
+                {"id": link["id"]},
+                {"$set": {"receipt_sent_at": now.isoformat()},
+                 "$push": {"send_history": {"channel": "email", "to": link["email"],
+                                            "at": now.isoformat(), "by": "reçu automatique"}}})
+            logger.info("Reçu client envoyé à %s (lien %s)", link["email"], link["id"])
+    except Exception as exc:
+        logger.warning("Envoi reçu client %s : %s", link.get("id"), exc)
+
+
+async def _mark_paid(db_, link: dict, session_id: str, detected_by: str) -> bool:
+    """Passe le lien à « payé » (claim atomique), notifie les admins et envoie le reçu client."""
+    claim = await db_.admin_payment_links.update_one(
+        {"id": link["id"], "status": "pending"},
+        {"$set": {"status": "paid", "paid_at": datetime.now(timezone.utc).isoformat(),
+                  "stripe_session_id": session_id, "detected_by": detected_by}})
+    if claim.modified_count != 1:
+        return False
+    amount = f"{link['amount_cents'] / 100:,.2f}".replace(",", " ").replace(".", ",")
+    label = ACCOUNT_TYPES.get(link["account_type"], link["account_type"])
+    desc = f" ({link['description']})" if link.get("description") else ""
+    try:
+        from core_deps import create_notification
+        await create_notification(
+            "payment_link_paid", "💶 Paiement reçu via lien Stripe",
+            f"{amount} € réglés par {link['email']} — {label}{desc}. Le statut est passé à « Payé » dans Comptabilité.",
+            target_roles=["oscop_super_admin", "kdm_b2b_admin"],
+            data={"link": "/superadmin", "payment_link_id": link["id"],
+                  "amount_cents": link["amount_cents"], "email": link["email"]})
+    except Exception as exc:
+        logger.warning("Notification paiement %s : %s", link["id"], exc)
+    await _send_client_receipt(db_, link)
+    return True
 
 
 async def check_pending_payment_links(db_):
@@ -196,23 +256,8 @@ async def check_pending_payment_links(db_):
             paid = next((s for s in sessions.data if s.payment_status == "paid"), None)
             if not paid:
                 continue
-            claim = await db_.admin_payment_links.update_one(
-                {"id": link["id"], "status": "pending"},
-                {"$set": {"status": "paid", "paid_at": datetime.now(timezone.utc).isoformat(),
-                          "stripe_session_id": paid.id, "detected_by": "cron"}})
-            if claim.modified_count != 1:
-                continue
-            amount = f"{link['amount_cents'] / 100:,.2f}".replace(",", " ").replace(".", ",")
-            label = ACCOUNT_TYPES.get(link["account_type"], link["account_type"])
-            desc = f" ({link['description']})" if link.get("description") else ""
-            from core_deps import create_notification
-            await create_notification(
-                "payment_link_paid", "💶 Paiement reçu via lien Stripe",
-                f"{amount} € réglés par {link['email']} — {label}{desc}. Le statut est passé à « Payé » dans Comptabilité.",
-                target_roles=["oscop_super_admin", "kdm_b2b_admin"],
-                data={"link": "/superadmin", "payment_link_id": link["id"],
-                      "amount_cents": link["amount_cents"], "email": link["email"]})
-            logger.info("Paiement détecté automatiquement : lien %s (%s €)", link["id"], link["amount_cents"] / 100)
+            if await _mark_paid(db_, link, paid.id, "cron"):
+                logger.info("Paiement détecté automatiquement : lien %s (%s €)", link["id"], link["amount_cents"] / 100)
     except Exception as exc:
         logger.warning("check_pending_payment_links : %s", exc)
 
