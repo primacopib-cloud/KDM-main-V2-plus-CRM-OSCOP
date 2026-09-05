@@ -7,6 +7,7 @@ const TYPE_FR = { DATAROOM: 'Data room', INVESTOR_COMMITMENT: "Bon d'Engagement"
 
 export const InvestorDataroom = () => {
   const [ops, setOps] = useState([]);
+  const [seen, setSeen] = useState({});
   useEffect(() => {
     if (!getSessionToken()) return;
     fetch(`${API}/investor/my-dataroom`, { headers: getAuthHeaders() })
@@ -14,6 +15,8 @@ export const InvestorDataroom = () => {
       .then((d) => setOps((d.operations || []).filter((o) => o.documents.length > 0)))
       .catch(() => {});
   }, []);
+
+  const newCount = ops.reduce((n, o) => n + o.documents.filter((d) => d.is_new && !seen[d.id]).length, 0);
 
   const download = async (doc) => {
     try {
@@ -24,6 +27,7 @@ export const InvestorDataroom = () => {
       const a = document.createElement('a');
       a.href = url; a.download = `${doc.doc_number}.pdf`; a.click();
       URL.revokeObjectURL(url);
+      setSeen((s) => ({ ...s, [doc.id]: true }));
     } catch (e) {
       toast.error(String(e.message || e));
     }
@@ -34,6 +38,12 @@ export const InvestorDataroom = () => {
     <div className="glass-panel-soft rounded-[22px] p-5 mb-8" data-testid="investor-dataroom">
       <h2 className="text-lg font-bold flex items-center gap-2 mb-1">
         <FolderLock className="w-5 h-5 text-[#D9B35A]" /> Ma data room
+        {newCount > 0 && (
+          <span data-testid="dataroom-new-badge"
+            className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white animate-pulse">
+            {newCount} nouveau{newCount > 1 ? 'x' : ''}
+          </span>
+        )}
       </h2>
       <p className="text-white/60 text-xs mb-4">
         Documents en lecture seule des opérations pour lesquelles votre financement a été retenu.
@@ -52,8 +62,14 @@ export const InvestorDataroom = () => {
               {op.documents.map((d) => (
                 <button key={d.id} type="button" onClick={() => download(d)}
                   data-testid={`dataroom-doc-${d.doc_number}`}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border border-[#D9B35A]/30 text-[#E9CF8E] hover:bg-[#D9B35A]/10 transition-colors">
+                  className="relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border border-[#D9B35A]/30 text-[#E9CF8E] hover:bg-[#D9B35A]/10 transition-colors">
                   <FileDown className="w-3.5 h-3.5" /> {TYPE_FR[d.doc_type] || d.doc_type} — {d.doc_number}
+                  {d.is_new && !seen[d.id] && (
+                    <span data-testid={`new-dot-${d.doc_number}`}
+                      className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-red-500 text-white">
+                      Nouveau
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

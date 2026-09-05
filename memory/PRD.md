@@ -2594,3 +2594,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Helper notify_dataroom_investors (routes_investor_space.py): email Brevo à chaque investisseur ACCEPTED de l'opération (libellé pack Data room / Bon d'Engagement + référence + rappel CREDI'SCOP-I)
 - Branché sur: POST dataroom, POST documents (si INVESTOR_COMMITMENT), POST financing-interests/{id}/commitment
 - Testé e2e: génération DR-2026-0003 → Brevo 201 (email investisseur). Données de test nettoyées
+
+## Pastille data room in-app (05/06/2026) ✅
+- Backend: my-dataroom renvoie is_new par doc (collection dataroom_views/investor_email+doc_id); le download investisseur marque vu (upsert)
+- Frontend InvestorDataroom: badge rouge « X nouveaux » sur le titre (dataroom-new-badge) + pastille « Nouveau » par doc (new-dot-{num}), retirée localement après téléchargement
+- Testé e2e: is_new True → download 200 → False; capture UI badge + pastille visibles. Données de test nettoyées
