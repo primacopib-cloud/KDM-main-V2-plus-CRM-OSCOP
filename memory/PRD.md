@@ -2528,3 +2528,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - index.css @media print: body.print-focus masque tout (visibility) sauf .print-target repositionnée en haut
 - Intégré dans 5 sections: Registres des membres, Journal d'audit, Achat-Revente (liste), Marges (graphique), Comptabilité analytique
 - Vérifié par capture emulate print: seul le tableau Registres imprimé, noir sur blanc
+
+## En-tête Impression (05/06/2026) ✅
+- /app/frontend/src/components/PrintHeader.jsx: logo O'SCOP (/logos/oscop.webp) + « SCIC SAS OBJECTIF SCOP OUTREMER — Super Admin » + date/heure fr-FR rafraîchie sur beforeprint
+- Monté dans SuperAdminPage avant SuperAdminHeader; .print-header caché à l'écran, affiché @media print (bordure noire), visible aussi en impression ciblée (print-target décalée top 80px)
+- Vérifié par 2 captures emulate print (page entière + ciblée Registres)

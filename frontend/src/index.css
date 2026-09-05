@@ -567,3 +567,37 @@ select:disabled { color: rgba(243,237,228,0.4) !important; }
     margin: 0 !important;
   }
 }
+
+/* === EN-TÊTE D'IMPRESSION — logo + date/heure ====================== */
+.print-header { display: none; }
+@media print {
+  .print-header {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    padding: 0 0 10px 0;
+    margin: 0 0 14px 0;
+    border-bottom: 2px solid #000 !important;
+  }
+  .print-header img {
+    height: 42px !important;
+    width: auto !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+  .print-header div { display: flex; flex-direction: column; }
+  .print-header strong { font-size: 12pt; color: #000 !important; }
+  .print-header span { font-size: 9pt; color: #333 !important; }
+  /* Visible aussi en impression ciblée */
+  body.print-focus .print-header,
+  body.print-focus .print-header * { visibility: visible !important; }
+  body.print-focus .print-header {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: #FFF !important;
+    z-index: 10;
+  }
+  body.print-focus .print-target { top: 80px !important; }
+}
