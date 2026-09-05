@@ -183,5 +183,13 @@
     "drive_subtitle": "Retrait coopératif",
     "delivery": "Livraison",
     "delivery_subtitle": "Livraison locale"
+  },
+  "toc": {
+    "pros": "Professionnels",
+    "pricing": "Tarifs",
+    "consumers": "Particuliers",
+    "territories": "Territoires",
+    "relay_points": "Points relais",
+    "contact": "Contact"
   }
 }

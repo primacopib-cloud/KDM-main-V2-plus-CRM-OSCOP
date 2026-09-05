@@ -27,7 +27,7 @@ export const getNavItems = (userRole, isAdmin, pathname = '/') => {
     { href: '/', label: 'nav.home', icon: Home, public: true },
     { href: '/adhesion-vendeur', label: 'Accès Pro', icon: Store, public: true },
     { href: isPass ? '/catalogue-lolodrive' : '/catalogue', label: 'Catalogue Pro', icon: ShoppingCart, public: true },
-    { href: '/#territoires', label: 'Territoires', icon: MapPin, public: true },
+    { href: '/territoires', label: 'Territoires', icon: MapPin, public: true },
     { href: '/particuliers', label: 'LOLODRIVE', icon: Users, public: true, accent: '#8CC63E' },
   ].filter((it) => !(isPass && it.href === '/tarifs'));
 

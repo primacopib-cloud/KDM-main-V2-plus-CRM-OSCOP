@@ -2666,3 +2666,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Seed idempotent /app/tests_manual/seed_btp_agri.py: catégories « BTP & Matériaux » et « Agriculture & Végétal » (is_active) + 6 produits (BTP-CIM/FER/TOL, AGR-ENG/SEM/IRR) OSCOP_DIRECT_RESALE finançables, images générées (Gemini), incoterms dict par zone {ZONE:[CIF,DAP]}, zone_prices is_active pour 4 zones
 - Pièges corrigés: categories.is_active (pas active), zone_prices.is_active, incoterms doit être dict zone→liste (500 pydantic sinon)
 - Vérifié: API 8 catégories, 17 produits GP dont les 6 nouveaux; /catalogue?famille=btp et ?famille=agriculture ouvrent la bonne catégorie avec 3 produits chacun
+
+## 2026-06 — Header uniforme, retour, langues, historique contextuel (testé iteration_76/77 ✅)
+- HeaderBackButton (navigate(-1), caché sur '/') ajouté à NavBar + CatalogHeader + espaces (acheteur, vendeur, superadmin, commandes, wallet, documents)
+- LanguageSwitcher (drapeaux FR/EN/ES/Kréyòl, i18n + reload) présent sur tous ces headers ; FloatingToc traduit (clés toc.*)
+- Nouvelle page /territoires (carrousel seul) ; nav Territoires → /territoires ; LOLODRIVE → /particuliers (page dédiée)
+- Historique de navigation filtré par contexte (visiteur/acheteur/vendeur/investisseur/admin) avec badge de contexte (useNavigationHistory.getRouteContext)

@@ -11,6 +11,8 @@ import { ConnectionStatus } from '../NotificationToast';
 import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
 import { apiCall } from '../../services/http';
 import { BrandLogos } from '../BrandLogos';
+import { HeaderBackButton } from '../HeaderBackButton';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 const useOpenTicketsCount = () => {
   const [count, setCount] = useState(0);
@@ -107,6 +109,7 @@ export const SuperAdminHeader = ({
   >
     <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between">
       <div className="flex items-center gap-4">
+        <HeaderBackButton fallback="/" withLabel={false} />
         <Link to="/" className="flex items-center gap-2">
           <BrandLogos size="sm" />
         </Link>
@@ -131,6 +134,7 @@ export const SuperAdminHeader = ({
       </nav>
 
       <div className="flex items-center gap-3">
+        <LanguageSwitcher className="hidden xl:flex" />
         <NavigationHistoryDropdown variant="dark" />
         <ConnectionStatus isConnected={isConnected} />
 

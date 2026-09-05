@@ -183,5 +183,13 @@
     "drive_subtitle": "Co-op pickup",
     "delivery": "Delivery",
     "delivery_subtitle": "Local delivery"
+  },
+  "toc": {
+    "pros": "Professionals",
+    "pricing": "Pricing",
+    "consumers": "Consumers",
+    "territories": "Territories",
+    "relay_points": "Relay points",
+    "contact": "Contact"
   }
 }

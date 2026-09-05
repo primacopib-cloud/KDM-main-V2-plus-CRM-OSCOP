@@ -17,6 +17,8 @@ import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
 import { formatPrice } from './catalogUtils';
 import { CartSuggestions } from './CartSuggestions';
 import { BrandLogos } from '../BrandLogos';
+import { HeaderBackButton } from '../HeaderBackButton';
+import LanguageSwitcher from '../LanguageSwitcher';
 import { authAPI } from '../../services/api';
 import { getMySpace, isAdminUser } from '../navbar/navItems';
 
@@ -41,19 +43,10 @@ export const CatalogHeader = ({
       >
         <div className="max-w-[1280px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {connected ? (
-              <Link to={mySpace} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors" data-testid="catalog-back-my-space">
-                <ArrowLeft className="w-4 h-4" />
-                <span className="text-sm hidden sm:inline">Mon Espace</span>
-              </Link>
-            ) : (
-              <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors" data-testid="catalog-back-home">
-                <ArrowLeft className="w-4 h-4" />
-                <span className="text-sm hidden sm:inline">Accueil</span>
-              </Link>
-            )}
+            <HeaderBackButton fallback={connected ? mySpace : '/'} />
             <div className="flex items-center gap-3">
               <BrandLogos />
+              <LanguageSwitcher className="hidden md:flex" />
             </div>
           </div>
           

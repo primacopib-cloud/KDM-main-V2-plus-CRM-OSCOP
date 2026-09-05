@@ -7,6 +7,9 @@ import { ArrowLeft, AlertCircle, Loader2, RefreshCw, ShoppingCart, FileDown } fr
 import { Button } from '../components/ui/button';
 import { partners } from '../data/mock';
 import { BrandLogos } from '../components/BrandLogos';
+import { HeaderBackButton } from '../components/HeaderBackButton';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 import { authAPI, walletAPIV2, zonesAPIV2, paymentAPI, zoneAddonAPI } from '../services/api';
 import { API, getAuthHeaders } from '../services/http';
 import { formatCredits } from '../components/wallet/walletUtils';
@@ -252,15 +255,15 @@ export default function WalletPage() {
       >
         <div className="max-w-[1160px] mx-auto px-4 py-1 flex items-center justify-between h-10">
           <div className="flex items-center gap-2">
-            <Link to="/dashboard" className="text-white/60 hover:text-white transition-colors">
-              <ArrowLeft className="w-3.5 h-3.5" />
-            </Link>
+            <HeaderBackButton fallback="/espace-acheteur" withLabel={false} />
             <div className="flex items-center gap-1">
               <BrandLogos size="sm" />
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
+            <LanguageSwitcher className="hidden md:flex" />
+            <NavigationHistoryDropdown variant="dark" />
             {user && (
               <span className="text-[#D9B35A] text-xs font-medium">
                 {formatCredits(user.credits || 0)} {i18n.t('wallet.credits')}

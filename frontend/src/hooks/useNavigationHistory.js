@@ -29,6 +29,9 @@ const routeLabels = {
   '/bon-de-commande-dynamique': 'Bon de commande',
   '/fiche-produit': 'Fiche produit',
   '/statistiques': 'Statistiques',
+  '/territoires': 'Territoires',
+  '/particuliers': 'LOLODRIVE',
+  '/espace-investisseur': 'Espace Investisseur',
 };
 
 // Route icons mapping
@@ -50,6 +53,24 @@ const routeIcons = {
 
 const STORAGE_KEY = 'nav_history';
 const MAX_HISTORY_ITEMS = 10;
+
+// Contexte de navigation selon le statut de la page
+export const CONTEXT_LABELS = {
+  visitor: 'Visiteur',
+  buyer: 'Espace acheteur',
+  vendor: 'Espace vendeur',
+  investor: 'Espace investisseur',
+  admin: 'Espace admin',
+};
+
+export const getRouteContext = (path) => {
+  if (path.startsWith('/superadmin') || path.startsWith('/admin')) return 'admin';
+  if (path.startsWith('/espace-vendeur')) return 'vendor';
+  if (path.startsWith('/espace-investisseur')) return 'investor';
+  const buyerPaths = ['/espace-acheteur', '/commandes', '/wallet', '/documents', '/checkout', '/listes-achats', '/alertes-favoris', '/panier'];
+  if (buyerPaths.some((p) => path.startsWith(p))) return 'buyer';
+  return 'visitor';
+};
 
 // Get label for a path
 export const getRouteLabel = (path) => {
@@ -107,6 +128,7 @@ export function useNavigationHistory() {
         path: currentPath,
         label: getRouteLabel(currentPath),
         icon: getRouteIcon(currentPath),
+        context: getRouteContext(currentPath),
         timestamp: Date.now(),
       };
       
@@ -139,12 +161,14 @@ export function useNavigationHistory() {
     });
   }, []);
 
-  // Get recent history (excluding current page)
+  // Get recent history (excluding current page), filtré par contexte courant
+  const currentContext = getRouteContext(location.pathname);
   const getRecentHistory = useCallback((limit = 5) => {
     return history
       .filter(item => item.path !== location.pathname)
+      .filter(item => (item.context || getRouteContext(item.path)) === currentContext)
       .slice(0, limit);
-  }, [history, location.pathname]);
+  }, [history, location.pathname, currentContext]);
 
   return {
     history,
@@ -152,6 +176,8 @@ export function useNavigationHistory() {
     clearHistory,
     removeItem,
     currentPath: location.pathname,
+    currentContext,
+    currentContextLabel: CONTEXT_LABELS[currentContext],
   };
 }
 
