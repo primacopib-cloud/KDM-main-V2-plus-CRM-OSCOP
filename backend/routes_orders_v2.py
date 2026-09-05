@@ -188,6 +188,13 @@ async def create_order(
         {"id": cart["id"]},
         {"$set": {"status": CartStatus.CONVERTED.value, "updated_at": datetime.utcnow()}}
     )
+
+    # Décrément automatique du stock territoire + libération des réservations panier
+    from stock_reservations import decrement_stock_for_order
+    await decrement_stock_for_order(
+        db, membership["org_id"], zone_code, cart["items"],
+        order_dict["order_number"], current_user.get("email", ""),
+    )
     
     # Audit log
     audit = AuditLogEntry(

@@ -12,6 +12,7 @@ import {
 } from '../ui/sheet';
 import { partners } from '../../data/mock';
 import { CrediscopBadge } from '../CrediscopBadge';
+import { CartReservationCountdown } from './CartReservationCountdown';
 import { NotificationsBell } from '../NotificationsBell';
 import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
 import { formatPrice } from './catalogUtils';
@@ -154,10 +155,7 @@ export const CatalogHeader = ({
 
                 <div className="mt-6 flex flex-col h-[calc(100vh-200px)]">
                   {cart.items?.length > 0 && (
-                    <p className="mb-2 text-[11px] text-[#8CC63E] flex items-center gap-1.5" data-testid="cart-reservation-note">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#8CC63E]"></span>
-                      Quantités réservées pour vous pendant 30 minutes
-                    </p>
+                    <CartReservationCountdown reservedUntil={cart.reserved_until} />
                   )}
                   {cart.alerts?.length > 0 && (
                     <div className="mb-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1" data-testid="cart-alerts-banner">

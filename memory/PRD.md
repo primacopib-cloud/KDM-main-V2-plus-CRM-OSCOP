@@ -2698,3 +2698,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - routes_restock_alerts.py : POST /api/v2/catalog/restock-alerts (toggle), GET /mine ; notify_restock_watchers (in-app + email Brevo, abonnement consommé) déclenché au restock dans routes_stock_admin
 - stock_reservations.py : réservation absolue par (org, zone, produit), expiration 30 min (cleanup paresseux), available_for_org ; hooks dans routes_cart_v2 (add : contrôle dispo + reserved_until dans CartResponse ; remove/clear : libération)
 - UI : bouton « Me prévenir au retour en stock » sur cartes en rupture (ProductsGrid, état persistant), note verte « Quantités réservées 30 minutes » dans le panier (CatalogHeader)
+
+## 2026-06 — Compte à rebours panier + décrément stock commande (self-testé curl + capture ✅)
+- GET /cart renvoie reserved_until (réservation la plus proche d'expirer) ; CartReservationCountdown (mm:ss, ambre + toast à <5 min, « expirée » à 0) remplace la note statique dans CatalogHeader
+- create_order (routes_orders_v2) appelle decrement_stock_for_order : déduit quantity_available par territoire (validé Riz 30→10, Huile 100→96), trace stock_adjustments (reason « Commande KDM-… »), libère les réservations
+- Données démo restaurées (commande test supprimée, stocks & panier remis)
