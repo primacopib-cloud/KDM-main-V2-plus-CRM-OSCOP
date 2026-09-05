@@ -410,6 +410,7 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
         rating_count=product.get("rating_count") or 0,
         sale_model=product.get("sale_model", "PARTNER_DIRECT_SALE"),
         seller_name=product.get("seller_name"),
+        financing_eligible=product.get("financing_eligible"),
         oscop_price_ht_cents=product.get("oscop_price_ht_cents"),
         oscop_logistics_price_ht_cents=product.get("oscop_logistics_price_ht_cents"),
         oscop_vat_rate=product.get("oscop_vat_rate"),

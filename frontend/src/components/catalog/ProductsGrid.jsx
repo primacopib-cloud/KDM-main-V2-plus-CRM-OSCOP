@@ -165,6 +165,25 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               </Badge>
               
               <SaleModelBadge product={product} />
+              {/* Fiche circuit — vendeur juridique / facture / financement */}
+              <div className="grid gap-0.5 mb-2 text-[10.5px]" data-testid={`offer-legal-${product.sku}`}>
+                <div className="text-white/60">
+                  Vendeur juridique : <b className="text-white/90">
+                    {product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP — SCIC SAS OBJECTIF SCOP OUTREMER" : (product.seller_name || 'Partenaire vendeur référencé')}
+                  </b>
+                </div>
+                <div className="text-white/60">
+                  Facture émise par : <b className="text-white/90">
+                    {product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP" : (product.seller_name || 'le partenaire vendeur')}
+                  </b>
+                </div>
+              </div>
+              {product.financing_eligible && (
+                <span data-testid={`financing-badge-${product.sku}`}
+                  className="w-fit mb-2 px-1.5 py-0.5 rounded text-[9px] font-bold text-violet-300 bg-violet-400/10 border border-violet-400/30">
+                  ✓ Éligible au financement d'opération
+                </span>
+              )}
               {product.sale_model === 'OSCOP_DIRECT_RESALE' && product.oscop_price_ht_cents > 0 && (
                 <Button
                   size="sm"

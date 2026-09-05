@@ -37,7 +37,21 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
     const init = TERRITORY_DEFAULTS[initialTerritoryRef.current] || TERRITORY_DEFAULTS.GP;
     mapRef.current = new mapboxgl.Map({
       container: containerRef.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: {
+        version: 8,
+        sources: {
+          basemap: {
+            type: 'raster',
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+            maxzoom: 16,
+            attribution: '© Esri © OpenStreetMap contributors',
+          },
+        },
+        layers: [{ id: 'basemap-dark', type: 'raster', source: 'basemap' }],
+      },
       center: [init.lng, init.lat],
       zoom: init.zoom,
       attributionControl: true,
