@@ -2712,3 +2712,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Limite 2 prolongations par panier (self-testé curl ✅ : 1→extensions_left:1, 2→0, 3→400)
 - extend endpoint : extend_count par réservation, 400 « Limite de 2 prolongations atteinte » au-delà ; réponse extensions_left
 - UI : bouton masqué et remplacé par « Limite de 2 prolongations atteinte » (data-testid cart-reservation-limit) ; toast « dernière prolongation possible utilisée » à la 2e
+
+## 2026-06 — Tableau ruptures admin + historique réservations abandonnées (self-testé curl + capture ✅)
+- GET /api/catalog/admin/stockout-stats : agrégat stock_adjustments new_quantity=0 par produit/zone + état actuel (currently_out) ; GET /abandoned-reservations : reservation_history outcome EXPIRED_ABANDONED (org_name via db.orgs.legal_name, product_name via products+catalog_products)
+- cleanup_expired trace chaque réservation expirée dans db.reservation_history (org, produit, zone, qté, extend_count, dates)
+- UI superadmin onglet Catalogue : panneaux repliables « Ruptures par territoire » (badges EN RUPTURE/Disponible) et « Paniers abandonnés » (StockInsightsPanels.jsx)

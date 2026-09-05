@@ -190,6 +190,60 @@ async def update_zone_stock(product_id: str, body: StockUpdateRequest, admin: di
     }
 
 
+@stock_admin_router.get("/stockout-stats")
+async def get_stockout_stats(_: dict = Depends(_admin)):
+    """Produits les plus souvent en rupture par territoire (passages à 0 tracés + état actuel)."""
+    pipeline = [
+        {"$match": {"new_quantity": 0}},
+        {"$group": {
+            "_id": {"product_id": "$product_id", "zone_code": "$zone_code"},
+            "product_name": {"$last": "$product_name"},
+            "stockout_count": {"$sum": 1},
+            "last_stockout_at": {"$max": "$created_at"},
+        }},
+        {"$sort": {"stockout_count": -1, "last_stockout_at": -1}},
+        {"$limit": 50},
+    ]
+    rows = await db.stock_adjustments.aggregate(pipeline).to_list(50)
+    current = await db.zone_stocks.find({}, {"_id": 0, "product_id": 1, "zone_code": 1, "quantity_available": 1, "quantity_reserved": 1}).to_list(5000)
+    out_now = {(s["product_id"], s["zone_code"]) for s in current
+               if s.get("quantity_available", 0) - s.get("quantity_reserved", 0) <= 0}
+    names = {p["id"]: p["name"] for p in await db.products.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(500)}
+    names.update({p["id"]: p["name"] for p in await db.catalog_products.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(500)})
+    stats = [{
+        "product_id": r["_id"]["product_id"],
+        "zone_code": r["_id"]["zone_code"],
+        "product_name": r.get("product_name") or names.get(r["_id"]["product_id"], r["_id"]["product_id"]),
+        "stockout_count": r["stockout_count"],
+        "last_stockout_at": r["last_stockout_at"],
+        "currently_out": (r["_id"]["product_id"], r["_id"]["zone_code"]) in out_now,
+    } for r in rows]
+    covered = {(s["product_id"], s["zone_code"]) for s in stats}
+    for pid, zone in sorted(out_now - covered):
+        stats.append({
+            "product_id": pid, "zone_code": zone,
+            "product_name": names.get(pid, pid),
+            "stockout_count": 0, "last_stockout_at": None, "currently_out": True,
+        })
+    return {"stats": stats}
+
+
+@stock_admin_router.get("/abandoned-reservations")
+async def get_abandoned_reservations(limit: int = 50, _: dict = Depends(_admin)):
+    """Réservations expirées sans commande (paniers abandonnés)."""
+    entries = await db.reservation_history.find(
+        {"outcome": "EXPIRED_ABANDONED"}, {"_id": 0}
+    ).sort("expired_at", -1).to_list(min(limit, 200))
+    names = {p["id"]: p["name"] for p in await db.products.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(500)}
+    org_ids = list({e["org_id"] for e in entries})
+    orgs = {o["id"]: o.get("legal_name") or o.get("name") or o["id"]
+            for o in await db.orgs.find({"id": {"$in": org_ids}}, {"_id": 0, "id": 1, "legal_name": 1, "name": 1}).to_list(200)}
+    for e in entries:
+        e["product_name"] = names.get(e["product_id"], e["product_id"])
+        e["org_name"] = orgs.get(e["org_id"], e["org_id"])
+    return {"entries": entries, "total": await db.reservation_history.count_documents({"outcome": "EXPIRED_ABANDONED"})}
+
+
 @stock_admin_router.get("/stock-history/export")
 async def export_stock_history(
     product_id: str | None = None,
