@@ -309,3 +309,65 @@ async def air_quote(payload: AirQuoteRequest):
         "breakdown": {"base_freight": round(base, 2), "fuel_surcharge": fuel, "security_fee": security},
         "total_ex_vat": total,
     }
+
+
+class AirRateUpdate(BaseModel):
+    per_kg: Optional[dict] = None
+    min_charge: Optional[float] = None
+    transit_days: Optional[int] = None
+    fuel_rate: Optional[float] = None
+    security_per_kg: Optional[float] = None
+    active: Optional[bool] = None
+
+
+@freight_router.put("/admin/freight/air-rates/{route_id}")
+async def update_air_rate(route_id: str, payload: AirRateUpdate, admin: dict = Depends(_admin)):
+    update = {k: v for k, v in payload.dict().items() if v is not None}
+    if not update:
+        raise HTTPException(status_code=400, detail="Aucune modification")
+    res = await db.freight_air_rates.update_one({"id": route_id}, {"$set": update})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Route aérienne introuvable")
+    return {"success": True, "updated": list(update.keys())}
+
+
+class ModeCompareRequest(BaseModel):
+    territory: str
+    weight_kg: float = Field(gt=0, le=50000)
+    volume_m3: float = Field(gt=0, le=500)
+
+
+def _air_total(route: dict, weight: float, volume: float) -> float:
+    taxable = max(weight, volume * VOLUMETRIC_KG_PER_M3)
+    rate = _air_rate_for(route["per_kg"], taxable)
+    base = max(taxable * rate, route["min_charge"])
+    return round(base + base * route["fuel_rate"] / 100 + taxable * route["security_per_kg"], 2)
+
+
+@freight_router.post("/public/freight/compare-modes")
+async def compare_modes(payload: ModeCompareRequest):
+    """Coût et délai maritime (LCL) vs aérien pour un même envoi vers un territoire."""
+    regex = {"$regex": payload.territory, "$options": "i"}
+    sea_routes = await db.freight_rates.find({"active": True, "destination": regex}, {"_id": 0}).to_list(300)
+    air_routes = await db.freight_air_rates.find({"active": True, "destination": regex}, {"_id": 0}).to_list(100)
+    if not sea_routes or not air_routes:
+        raise HTTPException(status_code=404, detail="Aucune route mer+air pour ce territoire")
+    vol = max(payload.volume_m3, 1)
+    best_sea, best_air = None, None
+    for r in sea_routes:
+        base = r["base_prices"]["LCL"] * vol
+        total = round(base + base * r["baf_rate"] / 100 + r["thc"]["LCL"] * vol, 2)
+        if best_sea is None or total < best_sea["total_ex_vat"]:
+            best_sea = {"route": f"{r['origin']} → {r['destination']}", "total_ex_vat": total,
+                        "transit_days": r["transit_days"], "basis": f"LCL {vol} m³"}
+    for r in air_routes:
+        total = _air_total(r, payload.weight_kg, payload.volume_m3)
+        if best_air is None or total < best_air["total_ex_vat"]:
+            taxable = max(payload.weight_kg, payload.volume_m3 * VOLUMETRIC_KG_PER_M3)
+            best_air = {"route": f"{r['origin']} ✈ {r['destination']}", "total_ex_vat": total,
+                        "transit_days": r["transit_days"], "basis": f"{round(taxable, 1)} kg taxables"}
+    return {
+        "sea": best_sea, "air": best_air,
+        "savings_sea_ex_vat": round(best_air["total_ex_vat"] - best_sea["total_ex_vat"], 2),
+        "days_saved_air": best_sea["transit_days"] - best_air["transit_days"],
+    }

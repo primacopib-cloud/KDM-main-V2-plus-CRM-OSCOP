@@ -9,6 +9,7 @@ import Footer from '../components/Footer';
 import { FreightToOperation } from '../components/freight/FreightToOperation';
 import { FreightToOrder, FreightAccessGate, getStoredUser, canUseFreight } from '../components/freight/FreightToOrder';
 import { AirFreightPanel } from '../components/freight/AirFreightPanel';
+import { ModeComparePanel } from '../components/freight/ModeComparePanel';
 
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 
@@ -84,7 +85,7 @@ export default function FreightCalculatorPage() {
         </p>
         {/* Onglets Maritime / Aérien */}
         <div className="flex gap-2 mb-5" data-testid="freight-mode-tabs">
-          {[['SEA', 'Fret maritime'], ['AIR', 'Fret aérien — urgences']].map(([v, l]) => (
+          {[['SEA', 'Fret maritime'], ['AIR', 'Fret aérien — urgences'], ['COMPARE', 'Comparateur mer / air']].map(([v, l]) => (
             <button key={v} type="button" onClick={() => setMode(v)} data-testid={`freight-mode-${v}`}
               className={`px-4 py-2 rounded-[12px] text-sm font-semibold transition-colors ${
                 mode === v ? 'on-gold bg-[#D9B35A]' : 'bg-white/[0.05] text-white/60 hover:text-white border border-white/10'}`}>
@@ -92,7 +93,7 @@ export default function FreightCalculatorPage() {
             </button>
           ))}
         </div>
-        {mode === 'AIR' ? <AirFreightPanel /> : (
+        {mode === 'AIR' ? <AirFreightPanel /> : mode === 'COMPARE' ? <ModeComparePanel /> : (
         <>
         {!data ? <Loader2 className="w-6 h-6 animate-spin text-[#D9B35A]" /> : (
           <div className="grid md:grid-cols-2 gap-5">
