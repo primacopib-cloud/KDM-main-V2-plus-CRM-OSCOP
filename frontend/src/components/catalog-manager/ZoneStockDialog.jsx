@@ -53,6 +53,7 @@ export const ZoneStockButton = ({ product }) => {
           zone_code: z,
           quantity_available: byZone[z]?.quantity_available ?? 0,
           quantity_reserved: byZone[z]?.quantity_reserved ?? 0,
+          reorder_point: byZone[z]?.reorder_point ?? 10,
         })));
       })
       .catch(() => toast.error('Erreur de chargement des stocks'));
@@ -64,7 +65,11 @@ export const ZoneStockButton = ({ product }) => {
       const res = await fetch(`${API_URL}/api/catalog/admin/stock/${product.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ zone_code: row.zone_code, quantity_available: Number(row.quantity_available) || 0 }),
+        body: JSON.stringify({
+          zone_code: row.zone_code,
+          quantity_available: Number(row.quantity_available) || 0,
+          reorder_point: Number(row.reorder_point) || 0,
+        }),
       });
       if (!res.ok) throw new Error();
       const d = await res.json();
@@ -96,18 +101,30 @@ export const ZoneStockButton = ({ product }) => {
             <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-[#D9B35A]" /></div>
           ) : (
             <div className="space-y-3">              {rows.map((row, i) => (
-                <div key={row.zone_code} className="flex items-center gap-3">
-                  <span className="w-32 text-sm text-white/80">{row.zone_code}</span>
-                  <Input
-                    type="number" min="0" value={row.quantity_available}
-                    data-testid={`stock-input-${row.zone_code}`}
-                    onChange={(e) => setRows((p) => p.map((r, j) => (j === i ? { ...r, quantity_available: e.target.value } : r)))}
-                    className="h-9 w-28 bg-white/[0.06] border-white/15 text-white"
-                  />
-                  <span className="text-xs text-white/40">réservé : {row.quantity_reserved}</span>
+                <div key={row.zone_code} className="flex items-center gap-2">
+                  <span className="w-28 shrink-0 text-sm text-white/80">{row.zone_code}</span>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-white/40">Stock</span>
+                    <Input
+                      type="number" min="0" value={row.quantity_available}
+                      data-testid={`stock-input-${row.zone_code}`}
+                      onChange={(e) => setRows((p) => p.map((r, j) => (j === i ? { ...r, quantity_available: e.target.value } : r)))}
+                      className="h-9 w-24 bg-white/[0.06] border-white/15 text-white"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-[#E9CF8E]/70">Seuil réassort</span>
+                    <Input
+                      type="number" min="0" value={row.reorder_point}
+                      data-testid={`threshold-input-${row.zone_code}`}
+                      onChange={(e) => setRows((p) => p.map((r, j) => (j === i ? { ...r, reorder_point: e.target.value } : r)))}
+                      className="h-9 w-20 bg-[#D9B35A]/[0.08] border-[#D9B35A]/25 text-[#E9CF8E]"
+                    />
+                  </div>
+                  <span className="text-[10px] text-white/40 self-end pb-2">rés. {row.quantity_reserved}</span>
                   <Button size="sm" onClick={() => save(row)} disabled={savingZone === row.zone_code}
                     data-testid={`stock-save-${row.zone_code}`}
-                    className="ml-auto bg-[#D9B35A] hover:bg-[#c9a34a] text-black h-8 px-3 text-xs font-bold">
+                    className="ml-auto self-end bg-[#D9B35A] hover:bg-[#c9a34a] text-black h-8 px-3 text-xs font-bold">
                     {savingZone === row.zone_code ? '…' : 'Enregistrer'}
                   </Button>
                 </div>

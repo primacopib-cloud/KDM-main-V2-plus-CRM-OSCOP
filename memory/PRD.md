@@ -2684,3 +2684,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Accueil pro i18n : ProHero, ProJourneysSection, ProCatalogFamilies, FinancingCompartments, LolodriveSection, FogedomNotice, AudienceSwitcher → namespace pro.* + audience.* dans fr/en/es/gcf-site.json
 - Alerte seuil : update_zone_stock envoie send_critical_alert_email aux admins quand disponible <= reorder_point (10 défaut) en franchissement descendant ; réponse low_stock_alert_triggered. Email MOCKÉ en preview (SendGrid non configuré, loggé)
 - Historique : collection stock_adjustments (old/new_quantity, author_email, date) ; GET /api/catalog/admin/stock-history ; section historique dans ZoneStockDialog
+
+## 2026-06 — Seuil réassort personnalisé + export CSV historique stocks (self-testé curl + capture ✅)
+- StockUpdateRequest accepte reorder_point optionnel par produit/zone ; GET stock renvoie reorder_point ; alerte email au seuil personnalisé (validé : seuil 15, 50→14 → alerte)
+- GET /api/catalog/admin/stock-history/export → CSV (;, BOM UTF-8, en-têtes FR) — bouton « Export CSV historique » dans StockTerritoryPanel
+- ZoneStockDialog : colonnes Stock + Seuil réassort par territoire (data-testid threshold-input-{ZONE})
