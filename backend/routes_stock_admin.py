@@ -154,6 +154,8 @@ async def update_zone_stock(product_id: str, body: StockUpdateRequest, admin: di
     restocked = old_available <= 0 and body.quantity_available > 0
     if restocked:
         asyncio.ensure_future(alert_favorites(product_id, body.zone_code, "restock"))
+        from routes_restock_alerts import notify_restock_watchers
+        asyncio.ensure_future(notify_restock_watchers(product_id, body.zone_code))
 
     # Alerte email admins si le stock passe sous le seuil de réassort
     new_available = body.quantity_available - (existing.get("quantity_reserved", 0) if existing else 0)

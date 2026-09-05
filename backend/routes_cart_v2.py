@@ -50,6 +50,7 @@ def set_cart_database(database):
 
 from routes_catalog import get_current_user_catalog, get_user_org_context, check_price_access, get_selected_zone, ensure_member_active
 from role_guards import ensure_can_buy
+from stock_reservations import cleanup_expired, available_for_org, reserve_for_cart, release_org_zone
 
 # ============== CART ==============
 
@@ -97,6 +98,7 @@ async def get_cart(
         await db.carts.insert_one(cart)
     
     alerts = await _refresh_cart_items(cart)
+    await cleanup_expired(db)
     price_alerts = [a for a in alerts if a["type"] == "PRICE_CHANGED" and a.get("new")]
     if price_alerts and current_user.get("email"):
         asyncio.create_task(_send_price_alert_email(current_user, price_alerts))
@@ -184,7 +186,17 @@ async def add_to_cart(
     # Check if product already in cart
     items = cart.get("items", [])
     existing_idx = next((i for i, x in enumerate(items) if x["product_id"] == item.product_id), None)
-    
+
+    # Réservation panier : vérifie la disponibilité réelle (30 min, hors réservations des autres orgs)
+    await cleanup_expired(db)
+    prospective_qty = item.quantity + (items[existing_idx]["quantity"] if existing_idx is not None else 0)
+    available = await available_for_org(db, membership["org_id"], zone_code, item.product_id)
+    if available is not None and prospective_qty > available:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Stock insuffisant sur ce territoire : {max(available, 0)} unité(s) disponible(s)",
+        )
+
     if existing_idx is not None:
         # Update quantity
         items[existing_idx]["quantity"] += item.quantity
@@ -212,7 +224,10 @@ async def add_to_cart(
     )
     
     updated_cart = await db.carts.find_one({"id": cart["id"]})
-    return await _build_cart_response(updated_cart)
+    reserved_until = await reserve_for_cart(db, membership["org_id"], zone_code, item.product_id, prospective_qty)
+    response = await _build_cart_response(updated_cart)
+    response.reserved_until = reserved_until
+    return response
 
 
 @cart_router.delete("/cart/items/{item_id}", response_model=CartResponse)
@@ -238,7 +253,10 @@ async def remove_from_cart(
         raise HTTPException(status_code=404, detail="Panier non trouvé")
     
     # Remove item
+    removed = next((i for i in cart.get("items", []) if i["id"] == item_id), None)
     items = [i for i in cart.get("items", []) if i["id"] != item_id]
+    if removed:
+        await release_org_zone(db, membership["org_id"], cart["zone_code"], removed["product_id"])
     
     # Recalculate
     subtotal = sum(i["line_total_ht_cents"] for i in items)
@@ -269,6 +287,8 @@ async def clear_cart(current_user: dict = Depends(get_current_user_catalog)):
     await ensure_member_active(membership["org_id"])
     
     zone_code = await get_selected_zone(current_user)
+    if zone_code:
+        await release_org_zone(db, membership["org_id"], zone_code)
     
     await db.carts.update_one(
         {

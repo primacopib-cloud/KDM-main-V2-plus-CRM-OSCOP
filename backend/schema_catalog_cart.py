@@ -51,6 +51,7 @@ class CartResponse(BaseModel):
     updated_at: datetime
     promo_discount_cents: int = 0
     total_after_promo_cents: Optional[int] = None
+    reserved_until: Optional[str] = None
 
     class Config:
         from_attributes = True

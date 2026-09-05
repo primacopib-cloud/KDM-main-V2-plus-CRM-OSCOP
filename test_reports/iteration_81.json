@@ -1,0 +1,19 @@
+{
+  "summary": "Iteration 81 : Alerte Retour Stock + Réservation Panier (30 min) — 100% validé backend & frontend. Backend (8/8 pytest) : POST /api/v2/catalog/restock-alerts toggle subscribed true/false, GET /mine liste, 401 sans token, 404 produit inconnu. Admin PUT stock 0→30 renvoie restock_alert_triggered:true et log backend 'Restock watch alerts for 61c31a9c.../GUADELOUPE: 1 notified' présent ; GET /mine acheteur vidé après notification (abonnement consommé). POST cart/items {qty:5} renvoie reserved_until ISO, +26 → 400 'Stock insuffisant sur ce territoire', DELETE libère quantity_reserved. Frontend : login acheteur OK, note verte data-testid='cart-reservation-note' « Quantités réservées pour vous pendant 30 minutes » visible dans le panier ; avec stock GP=0, la carte Riz affiche stock-out-ALI-RIZ-001 + bouton restock-alert-ALI-RIZ-001 « Me prévenir au retour en stock » → clic → texte 'Alerte activée — vous serez prévenu', état persistant après reload (GET /mine). RESTAURATION complète : stock GP=30, quantity_reserved=0, aucun stock_reservations pour org-demo-achats, aucun restock_watcher restant, panier démo intact (3 lignes : Rhum×1, produit 1aa8...×4, Riz×15). Nota: durant le test, une réservation orphelin qty=5 et un cart doublon avaient été créés — nettoyés manuellement en fin de run.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_iter81_restock_reservations.py", "/app/test_reports/pytest/iter81.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_cart_v2 : possibilité de cart doublons pour même (org_id, zone_code) — observé lors d'un cycle add/delete anonyme (user_id=None). Considérer un unique index (org_id, zone_code) sur db.carts pour éviter des cartes fantômes lors des tests / sessions guest.",
+    "stock_reservations.reserve_for_cart : reset absolu à `quantity` OK, mais si l'utilisateur ajoute la même ligne dans un cart différent (même org+zone), la réservation existante (upsert par org+product+zone) est écrasée — le comportement peut faire perdre des unités si multi-panier. Confirmer que le panier est bien unique par (org, zone)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter81_restock_reservations.py"],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "100%"},
+  "test_credentials": "Acheteur: acheteur-pro@kdmarche.fr / Demo2026! — Admin: admin@kdmarche-oscop.fr / AdminKDM2025! (portal:admin)",
+  "seed_data_creation": "Aucune donnée persistée. Restauration DB effectuée: zone_stocks GP=30/reserved=0, stock_reservations org-demo-achats vidé, restock_watchers vidé, carts org-demo-achats GP intact (rhum×1, 1aa8…×4, Riz×15).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 81 (restock alerts + réservation 30 min) validée end-to-end. Tests réutilisables dans /app/backend/tests/test_iter81_restock_reservations.py. Attention : le POST /api/v2/catalog/cart/items peut créer un cart séparé si le premier n'est pas trouvé pour la session — surveiller les doublons.",
+  "rca of the issue": "N/A — aucun bug produit."
+}
