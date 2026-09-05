@@ -34,6 +34,7 @@ import { LegalPagesPanel } from '../components/superadmin/LegalPagesPanel';
 import { FogedomPanelWithOps } from '../components/superadmin/FogedomPanelWithOps';
 import { StaffRolesPanel } from '../components/superadmin/StaffRolesPanel';
 import { InvestorApplicationsPanel } from '../components/superadmin/InvestorApplicationsPanel';
+import { FinancingInterestsPanel } from '../components/superadmin/FinancingInterestsPanel';
 import { FreightRatesPanel } from '../components/superadmin/FreightRatesPanel';
 import { MarginsChart, ReminderSettings, AuditRegisterPanel, DisputedOrdersPanel } from '../components/superadmin/PurchaseResaleExtras';
 import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
@@ -246,6 +247,7 @@ export default function SuperAdminPage() {
             <DisputedOrdersPanel />
             <FogedomPanelWithOps />
             <InvestorApplicationsPanel />
+            <FinancingInterestsPanel />
             <AuditRegisterPanel />
           </TabsContent>
 
