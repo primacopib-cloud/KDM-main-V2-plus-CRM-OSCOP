@@ -2573,3 +2573,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Backend: POST /api/investor/financing-interest (auth get_current_user_v2, anti-doublon already_sent, 401 sans auth) → collection financing_interests + notify_admins (notif back-office + emails Brevo admins)
 - Frontend FinancingOpportunities: bouton « Je souhaite financer » (data-testid interest-btn-{ref}), toast connexion requise si non connecté, état « Demande transmise ✓ »
 - Testé e2e complet: candidature → approbation → login investisseur → clic bouton → notif admin vérifiée en base. Données de test nettoyées, compte investisseur test conservé (test_credentials.md)
+
+## Suivi intérêts admin (05/06/2026) ✅
+- Backend: GET /api/investor/financing-interests (admin, 401 sinon) + POST /financing-interests/{id}/decision accept|decline → statut ACCEPTED/DECLINED + email Brevo investisseur (retenu/décliné), 404 si déjà traité
+- Frontend: FinancingInterestsPanel (data-testid financing-interests-panel, interest-accept/decline-{id}) sous Candidatures investisseurs, onglet Achat-Revente, masqué si vide
+- Testé e2e: intérêt créé → liste admin → accept → ACCEPTED → re-décision 404. Données de test nettoyées

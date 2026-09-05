@@ -135,6 +135,48 @@ async def financing_interest(payload: dict, current_user: dict = Depends(get_cur
     return {"success": True, "already_sent": False}
 
 
+@investor_router.get("/financing-interests")
+async def list_financing_interests(admin: dict = Depends(_admin)):
+    items = await db.financing_interests.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return {"interests": items}
+
+
+@investor_router.post("/financing-interests/{interest_id}/decision")
+async def decide_financing_interest(interest_id: str, payload: dict, admin: dict = Depends(_admin)):
+    decision = (payload or {}).get("decision")
+    if decision not in ("accept", "decline"):
+        raise HTTPException(status_code=400, detail="decision: accept ou decline")
+    doc = await db.financing_interests.find_one({"id": interest_id, "status": "NEW"})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Intérêt introuvable ou déjà traité")
+    new_status = "ACCEPTED" if decision == "accept" else "DECLINED"
+    await db.financing_interests.update_one(
+        {"id": interest_id},
+        {"$set": {"status": new_status, "decided_by": admin.get("email"),
+                  "decided_at": datetime.now(timezone.utc).isoformat()}})
+    try:
+        from brevo_service import send_email, _wrap_html
+        if decision == "accept":
+            html = _wrap_html("Votre proposition de financement est retenue", (
+                f"<p style='font-size:14px;'>Bonjour {doc['investor_name']},</p>"
+                f"<p style='font-size:14px;'>Votre intérêt pour financer l'opération <b>{doc['operation_reference']}</b> "
+                "a été <b>retenu</b>. L'équipe O'SCOP vous contacte pour établir le Bon d'Engagement et les modalités "
+                "(montant, tranche marchandises ou logistique, instrument juridique).</p>"
+                "<p style='font-size:12px;color:#B8A98F;'>Tout investissement réel s'effectue en euros ou devises. "
+                "Les CREDI'SCOP-I n'y participent jamais.</p>"))
+            subject = f"Financement {doc['operation_reference']} — proposition retenue"
+        else:
+            html = _wrap_html("Votre proposition de financement", (
+                f"<p style='font-size:14px;'>Bonjour {doc['investor_name']},</p>"
+                f"<p style='font-size:14px;'>Votre intérêt pour l'opération <b>{doc['operation_reference']}</b> n'a pas "
+                "été retenu à ce stade. D'autres opportunités restent visibles dans votre espace investisseur.</p>"))
+            subject = f"Financement {doc['operation_reference']} — décision"
+        await send_email(doc["investor_email"], doc["investor_name"], subject, html, tags=["investisseur"])
+    except Exception:
+        pass
+    return {"success": True, "status": new_status}
+
+
 @investor_router.get("/dashboard")
 async def investor_dashboard(current_user: dict = Depends(get_current_user_v2)):
     email = (current_user.get("email") or "").lower()
