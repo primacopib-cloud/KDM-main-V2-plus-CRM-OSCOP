@@ -297,6 +297,76 @@ async def update_return_code_settings(body: ReturnCodeSettings, _: dict = Depend
     return {"discount_percent": body.discount_percent, "validity_hours": body.validity_hours}
 
 
+class ManualReturnCode(BaseModel):
+    org_id: str
+    discount_percent: int | None = Field(default=None, ge=1, le=50)
+    validity_hours: int | None = Field(default=None, ge=1, le=720)
+    send_email: bool = True
+
+
+@stock_admin_router.get("/return-codes/orgs")
+async def list_return_code_orgs(_: dict = Depends(_admin)):
+    orgs = await db.orgs.find({"status": "APPROVED"}, {"_id": 0, "id": 1, "legal_name": 1, "name": 1}).sort("legal_name", 1).to_list(300)
+    return {"orgs": [{"id": o["id"], "name": o.get("legal_name") or o.get("name") or o["id"]} for o in orgs]}
+
+
+@stock_admin_router.get("/return-codes")
+async def list_return_codes(_: dict = Depends(_admin)):
+    codes = await db.cart_return_codes.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    org_ids = list({c["org_id"] for c in codes})
+    orgs = {o["id"]: o.get("legal_name") or o.get("name") or o["id"]
+            for o in await db.orgs.find({"id": {"$in": org_ids}}, {"_id": 0, "id": 1, "legal_name": 1, "name": 1}).to_list(300)}
+    for c in codes:
+        c["org_name"] = orgs.get(c["org_id"], c["org_id"])
+    return {"codes": codes}
+
+
+@stock_admin_router.post("/return-codes")
+async def create_manual_return_code(body: ManualReturnCode, admin: dict = Depends(_admin)):
+    """Génère manuellement un bon de retour pour une organisation précise."""
+    import secrets
+    import uuid as _uuid
+    from datetime import timedelta
+
+    org = await db.orgs.find_one({"id": body.org_id}, {"_id": 0, "id": 1, "legal_name": 1, "name": 1})
+    if not org:
+        raise HTTPException(status_code=404, detail="Organisation non trouvée")
+    settings = await db.app_settings.find_one({"key": "return_code"}) or {}
+    pct = body.discount_percent or settings.get("discount_percent", 5)
+    hours = body.validity_hours or settings.get("validity_hours", 72)
+    code = f"RETOUR-{secrets.token_hex(3).upper()}"
+    await db.cart_return_codes.insert_one({
+        "id": str(_uuid.uuid4()), "code": code, "org_id": body.org_id, "zone_code": None,
+        "discount_percent": pct, "used": False, "manual": True,
+        "created_by": admin.get("email"),
+        "expires_at": (_now() + timedelta(hours=hours)).isoformat(),
+        "created_at": _now().isoformat(),
+    })
+    email_sent = False
+    if body.send_email:
+        owner = await db.org_memberships.find_one({"org_id": body.org_id, "role": {"$regex": "OWNER"}})
+        user = await db.users.find_one({"id": owner["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1}) if owner else None
+        if user and user.get("email"):
+            try:
+                from brevo_service import send_email, _wrap_html
+                org_name = org.get("legal_name") or org.get("name") or ""
+                html = _wrap_html("Bon de retour", f"""
+                  <h2 style="color:#D9B35A;margin:0 0 12px;font-size:18px;">Un bon de remise pour vous</h2>
+                  <p style="color:rgba(255,255,255,0.8);font-size:14px;">Bonjour {user.get('contact_name') or ''},<br/><br/>
+                  L'équipe KDMARCHÉ × O'SCOP offre à {org_name} un bon de <strong style="color:#D9B35A;">−{pct} % HT</strong> sur votre prochaine commande :</p>
+                  <p style="color:#D9B35A;font-size:20px;font-weight:bold;letter-spacing:2px;text-align:center;">{code}</p>
+                  <p style="color:rgba(255,255,255,0.5);font-size:11px;">Valable {hours} h, à saisir dans votre panier — usage unique.</p>
+                """)
+                await send_email(to_email=user["email"], to_name=user.get("contact_name"),
+                                 subject=f"🎁 Votre bon de remise KDMARCHÉ : −{pct} % HT",
+                                 html_content=html, tags=["manual-return-code"])
+                email_sent = True
+            except Exception:
+                pass
+    return {"code": code, "discount_percent": pct, "validity_hours": hours,
+            "org_name": org.get("legal_name") or org.get("name"), "email_sent": email_sent}
+
+
 @stock_admin_router.get("/reminder-conversion")
 async def get_reminder_conversion(_: dict = Depends(_admin)):
     """Taux de conversion des relances panier abandonné en commandes."""
