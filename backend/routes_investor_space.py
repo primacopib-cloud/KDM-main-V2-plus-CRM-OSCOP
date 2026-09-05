@@ -203,7 +203,34 @@ async def generate_commitment_from_interest(interest_id: str, admin: dict = Depe
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.operation_documents.insert_one(dict(doc))
+    await notify_dataroom_investors(op, number, "INVESTOR_COMMITMENT")
     return {"success": True, "doc_id": doc["id"], "doc_number": number}
+
+
+async def notify_dataroom_investors(operation: dict, doc_number: str, doc_type: str):
+    """Email aux investisseurs retenus quand un nouveau document arrive dans leur data room."""
+    label = "pack Data room" if doc_type == "DATAROOM" else "Bon d'Engagement"
+    accepted = await db.financing_interests.find(
+        {"operation_id": operation["id"], "status": "ACCEPTED"},
+        {"_id": 0, "investor_email": 1, "investor_name": 1}).to_list(50)
+    if not accepted:
+        return
+    try:
+        from brevo_service import send_email, _wrap_html
+        for inv in accepted:
+            html = _wrap_html("Nouveau document dans votre data room", (
+                f"<p style='font-size:14px;'>Bonjour {inv['investor_name']},</p>"
+                f"<p style='font-size:14px;'>Un nouveau document — <b>{label} {doc_number}</b> — vient d'être ajouté "
+                f"à la data room de l'opération <b>{operation.get('reference')}</b>"
+                f"{' (' + operation['linked_product_name'] + ')' if operation.get('linked_product_name') else ''}.</p>"
+                "<p style='font-size:14px;'>Retrouvez-le en lecture seule dans la section « Ma data room » "
+                "de votre espace investisseur.</p>"
+                "<p style='font-size:12px;color:#B8A98F;'>Les CREDI'SCOP-I sont des unités internes de services : "
+                "ils ne constituent ni un moyen de paiement, ni le montant investi.</p>"))
+            await send_email(inv["investor_email"], inv["investor_name"],
+                             f"[O'SCOP] Nouveau document — {operation.get('reference')}", html, tags=["investisseur"])
+    except Exception:
+        pass
 
 
 @investor_router.get("/my-dataroom")

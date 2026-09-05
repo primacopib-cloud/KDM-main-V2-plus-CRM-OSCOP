@@ -443,6 +443,9 @@ async def generate_document(operation_id: str, payload: DocumentCreate, admin: d
     }
     await db.operation_documents.insert_one(dict(doc))
     await _audit("DOCUMENT_GENERATED", operation_id, admin, {"doc_number": number, "type": payload.doc_type})
+    if payload.doc_type == "INVESTOR_COMMITMENT":
+        from routes_investor_space import notify_dataroom_investors
+        await notify_dataroom_investors(op, number, "INVESTOR_COMMITMENT")
     return doc
 
 
@@ -466,6 +469,8 @@ async def generate_dataroom(operation_id: str, admin: dict = Depends(_admin)):
     }
     await db.operation_documents.insert_one(dict(doc))
     await _audit("DATAROOM_GENERATED", operation_id, admin, {"doc_number": number})
+    from routes_investor_space import notify_dataroom_investors
+    await notify_dataroom_investors(op, number, "DATAROOM")
     return doc
 
 

@@ -2589,3 +2589,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - GET /api/investor/documents/{id}/pdf: lecture seule, 403 si non retenu (testé avec acheteur-pro), 401 sans auth, admin autorisé
 - Frontend: InvestorDataroom (data-testid investor-dataroom, dataroom-doc-{num}) monté dans InvestorSpacePage sous le tableau de bord, masqué si vide
 - Testé e2e: vide avant acceptation → 2 docs après (DR + BE) → PDF 200 investisseur, 403 autre user. Données de test nettoyées
+
+## Alerte nouveau document data room (05/06/2026) ✅
+- Helper notify_dataroom_investors (routes_investor_space.py): email Brevo à chaque investisseur ACCEPTED de l'opération (libellé pack Data room / Bon d'Engagement + référence + rappel CREDI'SCOP-I)
+- Branché sur: POST dataroom, POST documents (si INVESTOR_COMMITMENT), POST financing-interests/{id}/commitment
+- Testé e2e: génération DR-2026-0003 → Brevo 201 (email investisseur). Données de test nettoyées
