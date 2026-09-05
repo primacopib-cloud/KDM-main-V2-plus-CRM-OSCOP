@@ -452,5 +452,100 @@
     "offertes": "free",
     "payer_adhesion": "Pay my {{price}} € membership online",
     "paiement_note": "Secure Stripe payment — log in or create your account, then your PASS Space opens."
+  },
+  "pro": {
+    "hero_badge": "MULTI-TERRITORY PROFESSIONAL PURCHASING CENTRE",
+    "hero_title_1": "Your purchasing, financing and logistics,",
+    "hero_title_2": "in a single journey.",
+    "hero_desc": "O'SCOP can buy goods from the supplier, resell them and invoice the professional client. Depending on the offer, a referenced partner may also remain the direct seller. The circuit, price, logistics and payment beneficiary are defined before any commitment.",
+    "cta_besoin": "Submit a purchasing need",
+    "cta_catalogue": "Explore the Pro catalogue",
+    "cta_financer": "Finance an operation",
+    "flow_title": "Illustrative example of an operation",
+    "flow_steps": [
+      "Client order confirmed",
+      "Supplier invoices O'SCOP",
+      "Financer pays the supplier",
+      "LOGI'SCOP manages transport",
+      "O'SCOP resells and invoices the client",
+      "Collections repay the amounts due — the balance is O'SCOP's margin"
+    ],
+    "flow_note": "Illustrative diagram of the typical circuit. No amount shown represents an actual available line.",
+    "journeys_title": "Four professional journeys",
+    "journeys_sub": "Buy, sell, finance and organise logistics — within a single cooperative framework.",
+    "j_acheteurs_t": "Professional buyers",
+    "j_acheteurs_d": "Submit your purchasing needs, compare offers from both circuits and order at professional prices excl. VAT.",
+    "j_acheteurs_c": "Buy",
+    "j_fournisseurs_t": "Referenced suppliers",
+    "j_fournisseurs_d": "Join the cooperative referencing: sell directly or via O'SCOP buy-and-resell depending on the offer.",
+    "j_fournisseurs_c": "Become a supplier",
+    "j_investisseurs_t": "Investors & financers",
+    "j_investisseurs_d": "Finance real buy-and-resell operations in euros, goods tranche or logistics tranche.",
+    "j_investisseurs_c": "Finance",
+    "j_logiscop_t": "LOGI'SCOP",
+    "j_logiscop_d": "Pickup, consolidation, sea or air freight, customs, storage and multi-territory last mile.",
+    "j_logiscop_c": "Organise logistics",
+    "families_title": "Professional catalogue",
+    "families_sub": "Each listing shows the legal seller, invoice issuer, territory, availability, logistics, financing eligibility and price excl. VAT.",
+    "families_cta": "Open the Pro catalogue",
+    "fam_alimentaire": "Food & grocery",
+    "fam_btp": "Construction & equipment",
+    "fam_agriculture": "Agriculture & plants",
+    "fam_commerce": "General trade, hygiene & bazaar",
+    "fin_title": "Financing: four separate compartments",
+    "fin_sub": "CREDI'SCOP-I units activate internal services. Euros or currencies finance the operation.",
+    "fin_compartments": [
+      {
+        "t": "O'SCOP monthly subscription",
+        "d": "Access to the centre's services, invoiced in euros."
+      },
+      {
+        "t": "CREDI'SCOP-I service units counter",
+        "d": "Activates internal cooperative services. No monetary value."
+      },
+      {
+        "t": "Real investments",
+        "d": "In euros or currencies, they finance buy-and-resell operations."
+      },
+      {
+        "t": "Repayments per operation",
+        "d": "Distributed according to each operation's collection waterfall."
+      }
+    ],
+    "fin_can_title": "CREDI'SCOP-I units can activate",
+    "fin_can_list": [
+      "Data room",
+      "Supplier qualification",
+      "Economic analysis",
+      "Logistics analysis",
+      "Commitment Note",
+      "Payment workflow",
+      "Reporting",
+      "Closing"
+    ],
+    "fin_cannot_title": "They can never",
+    "fin_cannot_list": [
+      "Pay for a product",
+      "Pay for logistics",
+      "Be converted to money",
+      "Be transferred to a supplier",
+      "Be loaded on a card",
+      "Generate a return",
+      "Represent the invested amount"
+    ],
+    "lolo_badge": "CONSUMER JOURNEY MAINTAINED",
+    "lolo_title_pre": "For consumers,",
+    "lolo_title_post": "remains the dedicated access.",
+    "lolo_desc": "Consumers keep a separate universe to browse their territory's products, choose a cooperative relay, pick up their orders or benefit from local delivery.",
+    "lolo_cta_espace": "Go to the consumer space",
+    "lolo_cta_relais": "Find a LOLODRIVE relay",
+    "lolo_relays_active_one": "active relay",
+    "lolo_relays_active_other": "active relays",
+    "lolo_territories": "territories",
+    "fogedom_text": "is an internal analytical fund for support, prevention and continuity. Its intervention is optional, individualised and limited to available resources. It is neither an automatic guarantee, nor insurance, nor a repayment commitment to the investor."
+  },
+  "audience": {
+    "pro": "Professionals",
+    "consumers": "Consumers"
   }
 }

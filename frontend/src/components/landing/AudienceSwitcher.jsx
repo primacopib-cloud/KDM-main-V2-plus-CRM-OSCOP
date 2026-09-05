@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Building2, ShoppingBasket } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const AudienceSwitcher = () => {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const isPro = pathname === '/';
   useEffect(() => {
@@ -18,13 +20,13 @@ export const AudienceSwitcher = () => {
           className={`${base} ${isPro ? 'on-gold' : 'text-white/70 hover:text-white'}`}
           style={isPro ? { background: '#D9B35A' } : {}}>
           <Building2 className="w-3.5 h-3.5" />
-          <span>Professionnels · Centrale O'SCOP</span>
+          <span>{t('audience.pro')} · Centrale O'SCOP</span>
         </Link>
         <Link to="/particuliers" data-testid="audience-particuliers"
           className={`${base} ${!isPro && pathname.startsWith('/particuliers') ? 'text-[#1F2A12]' : 'text-white/70 hover:text-white'}`}
           style={!isPro && pathname.startsWith('/particuliers') ? { background: '#8CC63E' } : {}}>
           <ShoppingBasket className="w-3.5 h-3.5" />
-          <span>Particuliers · LOLODRIVE</span>
+          <span>{t('audience.consumers')} · LOLODRIVE</span>
         </Link>
       </div>
     </div>

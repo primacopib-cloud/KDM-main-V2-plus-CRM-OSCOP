@@ -23,20 +23,38 @@
     "avantages_cles": "Avantaj klé",
     "prix_structurels_b2b": "Pri striktirèl B2B",
     "il_ne_s_agit": "Sé pa ni ristoun, ni pwomosyon, mé pri ki ka soti adan on mutualizasyon ESS.",
-    "advantages": ["Mutualizasyon òganizé pa O'SCOP", "Volim konsolidé", "Supresyon entèmédyè", "Vant sèlman B2B", "Modèl EXW san fré retail"],
+    "advantages": [
+      "Mutualizasyon òganizé pa O'SCOP",
+      "Volim konsolidé",
+      "Supresyon entèmédyè",
+      "Vant sèlman B2B",
+      "Modèl EXW san fré retail"
+    ],
     "regle_absolue": "Règ absolu",
     "conditions_d_acces_au": "Kondisyon aksè a dispozitif koopératif zacha mutualizé",
     "acces_conditions_prefix": "Aksè a kondisyon ékonomik mutualizé ki ",
     "kdmarche_centrale_cooperative": "KDMARCHE – Santral Koopératif",
     "est_reserve_aux_membres": " ka pwopozé, rézèvé ba manm ki ni on ",
     "adhesion_o_scop_active": "adézyon O'SCOP aktif é a jou",
-    "exclusions_list": ["Aksè a pri mutualizé", "Aksè a santral B2B", "Aksè a zòn-yo"],
+    "exclusions_list": [
+      "Aksè a pri mutualizé",
+      "Aksè a santral B2B",
+      "Aksè a zòn-yo"
+    ],
     "conformite_juridique_administrative": "Konfòmité Jiridik & Adminis­tratif",
     "le_partenariat_garantit_une": "Patenarya-la ka garanti on transparans total",
     "garanties": "Garanti",
     "exclusions": "Èksklizyon",
-    "compliance_guaranteed": ["Transparans total asi sé wòl-la", "Nòt prévantif ACPR / DGCCRF entégré"],
-    "compliance_excluded": ["Pon vant a pèt (pri KDMARCHE jistifyé ékonomikman)", "Pon entèmédyasyon finansyè", "Pon aktivité asirans", "Pon pratik komèsyal twonpè"],
+    "compliance_guaranteed": [
+      "Transparans total asi sé wòl-la",
+      "Nòt prévantif ACPR / DGCCRF entégré"
+    ],
+    "compliance_excluded": [
+      "Pon vant a pèt (pri KDMARCHE jistifyé ékonomikman)",
+      "Pon entèmédyasyon finansyè",
+      "Pon aktivité asirans",
+      "Pon pratik komèsyal twonpè"
+    ],
     "formulaire_de_contact": "Fòmilè kontak",
     "demande_de_devis": "Demann kontak",
     "contactez_nous_pour_rejoindre": "Kontakté-nou pou vin jwenn Communityplace ESS-la",
@@ -73,6 +91,105 @@
     "modele_ethique_et_solidaire": "Modèl étik é solidè",
     "performant": "Pèfòman",
     "services_selectionnes": "Sèvis sélèksyonné",
-    "chips": ["Pwodui sélèksyonné", "Fòs kolèktif", "Koopérasyon mutualizasyon"]
+    "chips": [
+      "Pwodui sélèksyonné",
+      "Fòs kolèktif",
+      "Koopérasyon mutualizasyon"
+    ]
+  },
+  "pro": {
+    "hero_badge": "SANTRAL PWOFÉSYONÈL MILTI-TÉRITWA",
+    "hero_title_1": "Zacha a-w, finansman a-w é lojistik a-w,",
+    "hero_title_2": "adan on sèl parkou.",
+    "hero_desc": "O'SCOP pé achté machandiz-yo owa founisè-la, revann-yo é fakturé kliyan pwofésyonèl-la. Sèlon òf-la, on patnè référansé pé rété vandè dirèk-la osi. Sikwi-la, pri-la, lojistik-la é bénéfisyè péman-la défini avan angajman-la.",
+    "cta_besoin": "Dépozé on bézwen zacha",
+    "cta_catalogue": "Gadé katalòg Pro-la",
+    "cta_financer": "Finansé on opérasyon",
+    "flow_title": "Ègzanp ilistratif on opérasyon",
+    "flow_steps": [
+      "Komann kliyan konfirmé",
+      "Founisè ka fakturé O'SCOP",
+      "Finansè ka péyé founisè-la",
+      "LOGI'SCOP ka piloté transpò-la",
+      "O'SCOP ka revann é fakturé kliyan-la",
+      "Sé ankesman-la ka ranbousé sé som dû-la — rès-la sé maj O'SCOP"
+    ],
+    "flow_note": "Chéma ilistratif sikwi tip-la. Pon montan montré pa on liy disponib toutbon.",
+    "journeys_title": "Kat parkou pwofésyonèl",
+    "journeys_sub": "Achté, vann, finansé é òganizé lojistik-la — adan on sèl kad koopératif.",
+    "j_acheteurs_t": "Achtè pwofésyonèl",
+    "j_acheteurs_d": "Dépozé bézwen zacha a-w, konparé òf sé dé sikwi-la é komandé a pri pwofésyonèl HT.",
+    "j_acheteurs_c": "Achté",
+    "j_fournisseurs_t": "Founisè référansé",
+    "j_fournisseurs_d": "Vin jwenn référansman koopératif-la : vann dirèk oben pa acha-revant O'SCOP sèlon òf-la.",
+    "j_fournisseurs_c": "Vin founisè",
+    "j_investisseurs_t": "Envestisè & finansè",
+    "j_investisseurs_d": "Finansé opérasyon acha-revant toutbon an éro, tranch machandiz oben tranch lojistik.",
+    "j_investisseurs_c": "Finansé",
+    "j_logiscop_t": "LOGI'SCOP",
+    "j_logiscop_d": "Ranmasaj, groupaj, frèt maritim oben aéryen, dwann, stokaj é dènyé kilomèt milti-téritwa.",
+    "j_logiscop_c": "Òganizé lojistik-la",
+    "families_title": "Katalòg pwofésyonèl",
+    "families_sub": "Chak fich ka montré vandè jiridik-la, émétè fakti-la, téritwa-la, disponibilité-la, lojistik-la, éligibilité finansman-la é pri HT-la.",
+    "families_cta": "Ouvè katalòg Pro-la",
+    "fam_alimentaire": "Manjé & épicri",
+    "fam_btp": "BTP & ékipman",
+    "fam_agriculture": "Agrikilti & végétal",
+    "fam_commerce": "Komès jénéral, ijyèn & bazar",
+    "fin_title": "Finansman : kat konpartiman séparé",
+    "fin_sub": "Sé CREDI'SCOP-I la ka aktivé sèvis entèn-yo. Sé éro-la oben déviz-la ka finansé opérasyon-la.",
+    "fin_compartments": [
+      {
+        "t": "Abònman mansuèl O'SCOP",
+        "d": "Aksè a sèvis santral-la, fakturé an éro."
+      },
+      {
+        "t": "Kontè inité sèvis CREDI'SCOP-I",
+        "d": "Ka aktivé sèvis entèn koopératif-yo. San valè monétè."
+      },
+      {
+        "t": "Envestisman toutbon",
+        "d": "An éro oben déviz, yo ka finansé opérasyon acha-revant-yo."
+      },
+      {
+        "t": "Ranbousman pa opérasyon",
+        "d": "Vantilé sèlon kaskad ankesman chak opérasyon."
+      }
+    ],
+    "fin_can_title": "Sé CREDI'SCOP-I la pé aktivé",
+    "fin_can_list": [
+      "Data room",
+      "Kalifikasyon founisè",
+      "Analiz ékonomik",
+      "Analiz lojistik",
+      "Bon Angajman",
+      "Workflow péman",
+      "Reporting",
+      "Klotur"
+    ],
+    "fin_cannot_title": "Yo pa janmé pé",
+    "fin_cannot_list": [
+      "Péyé on pwodui",
+      "Péyé lojistik-la",
+      "Konvèti an lajan",
+      "Transféré ba on founisè",
+      "Chajé asi on kat",
+      "Bay on randman",
+      "Réprézanté montan envesti-la"
+    ],
+    "lolo_badge": "PARKOU PATIKILYÉ MENTNI",
+    "lolo_title_pre": "Pou sé patikilyé-la,",
+    "lolo_title_post": "ka rété aksè dédié-la.",
+    "lolo_desc": "Sé patikilyé-la ka gadé on linivè séparé pou gadé pwodui téritwa a-yo, chwazi on rilé koopératif, ranmasé komann a-yo oben pwofité on livrézon lokal.",
+    "lolo_cta_espace": "Rantré adan èspas patikilyé-la",
+    "lolo_cta_relais": "Touvé on rilé LOLODRIVE",
+    "lolo_relays_active_one": "rilé aktif",
+    "lolo_relays_active_other": "rilé aktif",
+    "lolo_territories": "téritwa",
+    "fogedom_text": "sé on fon entèn analitik soutyen, prévansyon é kontinuité. Entèvansyon a-y fakultatif, endividualizé é limité a résous disponib-yo. I pa ni on garanti otomatik, ni on asirans, ni on angajman ranbousman ba envestisè-la."
+  },
+  "audience": {
+    "pro": "Pwofésyonèl",
+    "consumers": "Patikilyé"
   }
 }

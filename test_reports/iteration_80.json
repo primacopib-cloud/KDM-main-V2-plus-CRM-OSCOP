@@ -1,0 +1,16 @@
+{
+  "summary": "Iteration 80 : 3 fonctionnalités testées et validées. (1) Accueil pro multilingue FR/EN/GCF via data-testid language-* — hero, familles catalogue, sections switchent correctement puis restaurés en FR. (2) Backend PUT /api/catalog/admin/stock/{id} déclenche low_stock_alert_triggered=true sur 40→8 et false sur 8→40, unauth=401, log backend contient 'Would send email to admin@... Stock sous seuil : Riz long grain 5kg (MARTINIQUE)'. (3) GET /api/catalog/admin/stock-history renvoie entries avec old_quantity/new_quantity/author_email/created_at/zone_code. (4) UI admin superadmin/Catalogue → stock-territory-panel, search 'Riz long', dialog ouvre avec 4 zones + historique ; GUADELOUPE 30→3 → toast succès '⚠ sous le seuil, admins alertés par email' + entrée d'historique visible, restauration 3→30 ajoute une entrée. Toutes valeurs initiales restaurées (GUADELOUPE=30, MARTINIQUE=40, GUYANE=50, REUNION=100). Langue FR active à la fin.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_iter80_stock_alerts_history.py", "/app/test_reports/pytest/iter80.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": ["/app/backend/tests/test_iter80_stock_alerts_history.py"],
+  "success_rate": {"backend": "100% (4/4)", "frontend": "100%"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! via /admin/connexion",
+  "seed_data_creation": "Aucune donnée persistée : stocks Riz (61c31a9c...) MARTINIQUE 40→8→40 puis GUADELOUPE 30→3→30. Historique db.stock_adjustments contient les mutations de test (documents de journalisation, comportement attendu).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 80 (i18n pro FR/EN/GCF + seuil stock alerte email + historique stock) entièrement validée backend+frontend. Toutes valeurs initiales du produit Riz restaurées. La collection db.stock_adjustments accumule les entrées historiques (comportement voulu).",
+  "rca of the issue": "N/A — pas de bug détecté."
+}

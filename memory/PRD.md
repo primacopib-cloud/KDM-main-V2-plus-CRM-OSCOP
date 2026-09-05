@@ -2679,3 +2679,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Kréyòl : gcf-extra.json + gcf-site.json fusionnés (mergeNs dans i18n/index.js) — nav, footer, auth, landing site, catalog, seo, buyer, orders, wallet, favoris, breadcrumb. NOTE : textes FR codés en dur dans ProHero/ProJourneysSection non i18n (backlog)
 - Mémoire langue : GET /api/profile/language appliqué après login (LoginPage + AdminLoginPage), sauvegarde via drapeaux (POST déjà existant)
 - Stocks par territoire : GET /api/catalog/admin/stock/{id} + /stock-products ajoutés ; _find_product cherche products ET catalog_products ; UI = ZoneStockButton dans ProductRow + StockTerritoryPanel (17 produits V2 dont BTP/AGR) dans le catalogue superadmin
+
+## 2026-06 — Accueil pro multilingue, alerte seuil stock, historique stocks (testé iteration_80 ✅ 100%)
+- Accueil pro i18n : ProHero, ProJourneysSection, ProCatalogFamilies, FinancingCompartments, LolodriveSection, FogedomNotice, AudienceSwitcher → namespace pro.* + audience.* dans fr/en/es/gcf-site.json
+- Alerte seuil : update_zone_stock envoie send_critical_alert_email aux admins quand disponible <= reorder_point (10 défaut) en franchissement descendant ; réponse low_stock_alert_triggered. Email MOCKÉ en preview (SendGrid non configuré, loggé)
+- Historique : collection stock_adjustments (old/new_quantity, author_email, date) ; GET /api/catalog/admin/stock-history ; section historique dans ZoneStockDialog
