@@ -2538,3 +2538,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - /app/frontend/src/components/PrintFooter.jsx: mention « Document confidentiel — SCIC SAS OBJECTIF SCOP OUTREMER — Diffusion interne uniquement », fixed bottom répété chaque page, trait noir, visible aussi en impression ciblée
 - index.css @media print: @page margin 16mm bas + @bottom-right « Page X / Y » (counter(page)/counter(pages), Chrome ≥131), body padding-bottom 34px anti-chevauchement
 - Vérifié par capture emulate print (mention ok); pagination @page visible uniquement dans le PDF/impression réelle (non capturable en screenshot)
+
+## Export PDF Direct (05/06/2026) ✅
+- yarn add jspdf html2canvas
+- /app/frontend/src/utils/sectionPdf.js: downloadSectionPdf(section,title) — html2canvas (clone restylé noir/blanc via PDF_STYLE), découpe multi-pages A4, en-tête logo O'SCOP+date, pied confidentialité + Page X/Y, nom fichier slug-date.pdf
+- PrintSectionButton.jsx réécrit: groupe « Imprimer | PDF » (data-testid pdf-section-btn), spinner pendant génération, toast succès/échec — actif sur les 5 sections existantes sans autre édition
+- Vérifié e2e: clic → download registres-des-membres-2026-09-05.pdf (2 Mo) + toast « PDF téléchargé »
