@@ -2645,3 +2645,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - AirRatesPanel.jsx (superadmin, sous FreightRatesPanel): table éditable onBlur (data-testid air-rate-{id}-{champ})
 - POST /api/public/freight/compare-modes {territory, weight_kg, volume_m3}: meilleure route mer (LCL au m³ + BAF + THC) vs meilleure route air (poids taxable) matchées par territoire (regex destination) + savings_sea_ex_vat + days_saved_air
 - ModeComparePanel.jsx: 3e onglet « Comparateur mer / air » (freight-mode-COMPARE), cartes côte à côte + verdict. Testé: Guadeloupe 300kg/2m³ → mer Dakar 245,60€/10j vs air Miami 1271,87€/2j, capture OK
+
+## Devis comparatif mer/air PDF (05/06/2026) ✅
+- POST /api/public/freight/compare-modes-pdf: PDF LOGI'SCOP numéroté DF-YYYY-xxxx (14 sections: envoi, mer/air route+base+total+délai, écart de coût, jours gagnés, validité), archivé dans freight_quotes
+- ModeComparePanel: bouton « Télécharger le comparatif PDF LOGI'SCOP » (compare-pdf-btn) sous le verdict
+- Testé e2e: curl → PDF valide 3135 o + UI download comparatif-mer-air-guadeloupe.pdf + toast
