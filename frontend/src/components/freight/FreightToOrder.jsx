@@ -69,7 +69,7 @@ export const FreightToOrder = ({ quote }) => {
           className="flex-1 min-w-[180px] h-9 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white">
           <option value="">— choisir une commande —</option>
           {orders.map((o) => (
-            <option key={o.id} value={o.id}>{o.order_number} · {(o.total_cents / 100).toLocaleString('fr-FR')} €</option>
+            <option key={o.id} value={o.id}>{o.order_number} · {((o.total_ttc_cents ?? o.total_cents ?? 0) / 100).toLocaleString('fr-FR')} €</option>
           ))}
         </select>
         <Button onClick={attach} disabled={busy || !orderId || done} data-testid="freight-attach-btn"
