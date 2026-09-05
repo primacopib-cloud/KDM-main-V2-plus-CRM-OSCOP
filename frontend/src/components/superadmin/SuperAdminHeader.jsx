@@ -2,7 +2,7 @@ import i18n from '@/i18n';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins, LifeBuoy, BookUser, Handshake, FileSignature, Mail, Network, Sparkles, Send, Calculator, UsersRound, Megaphone, Zap, Ticket, Scale, Truck, Images, Plug, Bot, Repeat,
+  LayoutDashboard, Users, Package, ShoppingCart, RefreshCw, Shield, BarChart3, ShieldCheck, Layers, ShoppingBag, Coins, LifeBuoy, BookUser, Handshake, FileSignature, Mail, Network, Sparkles, Send, Calculator, UsersRound, Megaphone, Zap, Ticket, Scale, Truck, Images, Plug, Bot, Repeat, Printer,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
@@ -146,6 +146,18 @@ export const SuperAdminHeader = ({
           <option value="year">{i18n.t('adm.cette_annee')}</option>
           <option value="all">{i18n.t('adm.tout')}</option>
         </select>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.print()}
+          data-testid="print-mode-btn"
+          title="Imprimer en noir sur blanc"
+          className="border-white/10 hover:bg-white/5"
+        >
+          <Printer className="w-4 h-4 mr-1" />
+          Imprimer
+        </Button>
 
         <Button
           variant="outline"

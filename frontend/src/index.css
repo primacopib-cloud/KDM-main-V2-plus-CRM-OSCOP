@@ -505,3 +505,51 @@ select option, select optgroup {
   color: #F3EDE4;
 }
 select:disabled { color: rgba(243,237,228,0.4) !important; }
+
+/* === MODE IMPRESSION — noir sur blanc pour les réunions ============ */
+@media print {
+  *,
+  [class][class][class],
+  [class][class][class] *,
+  [class][class][class]::before,
+  [class][class][class]::after {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-color: #999 !important;
+  }
+  html, body {
+    background: #FFFFFF !important;
+    font-size: 11pt;
+  }
+  header, nav, footer,
+  button, select, input[type="checkbox"],
+  .no-print,
+  [data-testid="whatsapp-float"],
+  [class*="whatsapp"],
+  [role="tablist"] {
+    display: none !important;
+  }
+  a { text-decoration: none !important; }
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  th, td {
+    border: 1px solid #444 !important;
+    padding: 4px 8px !important;
+    color: #000 !important;
+  }
+  thead th { background: #EEE !important; font-weight: 700; }
+  tr { page-break-inside: avoid; }
+  h1, h2, h3 { page-break-after: avoid; color: #000 !important; }
+  svg { color: #000 !important; }
+  .sticky, [class*="fixed"] { position: static !important; }
+  [class*="rounded"] { border-radius: 0 !important; }
+  [class*="backdrop-blur"] { backdrop-filter: none !important; }
+  input, textarea {
+    border: 1px solid #999 !important;
+    background: #FFF !important;
+  }
+}
