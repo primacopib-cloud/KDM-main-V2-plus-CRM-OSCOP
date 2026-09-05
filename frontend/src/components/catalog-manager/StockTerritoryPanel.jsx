@@ -67,7 +67,16 @@ export const StockTerritoryPanel = () => {
             {filtered.map((p) => (
               <div key={p.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white/90 truncate">{p.name}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm text-white/90 truncate">{p.name}</p>
+                    {(p.low_stock_zones || []).length > 0 && (
+                      <span data-testid={`low-stock-badge-${p.sku}`}
+                        title={`Territoires sous seuil : ${p.low_stock_zones.join(', ')}`}
+                        className="px-1.5 py-0.5 rounded text-[9px] font-bold text-red-300 bg-red-500/15 border border-red-400/40">
+                        ⚠ Stock faible · {p.low_stock_zones.join(', ')}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-white/40 font-mono">{p.sku} · {p.category}</p>
                 </div>
                 <ZoneStockButton product={p} />
