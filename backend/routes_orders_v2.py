@@ -127,6 +127,35 @@ async def create_order(
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
     }
+
+    # Bon de retour (relance panier abandonné) : remise HT + code mono-usage
+    if cart.get("return_code"):
+        promo = await db.cart_return_codes.find_one({
+            "code": cart["return_code"], "org_id": membership["org_id"], "used": False,
+        })
+        if promo and promo["expires_at"] >= datetime.utcnow().isoformat():
+            discount = round(cart["subtotal_ht_cents"] * promo["discount_percent"] / 100)
+            new_subtotal = cart["subtotal_ht_cents"] - discount
+            new_tax = int(new_subtotal * 0.085)
+            order_dict["return_code"] = promo["code"]
+            order_dict["return_discount_cents"] = discount
+            order_dict["subtotal_ht_cents"] = new_subtotal
+            order_dict["tax_cents"] = new_tax
+            order_dict["total_ttc_cents"] = new_subtotal + new_tax
+            await db.cart_return_codes.update_one(
+                {"id": promo["id"]},
+                {"$set": {"used": True, "used_at": datetime.utcnow().isoformat(), "order_id": order_dict["id"]}},
+            )
+
+    # Conversion des relances panier abandonné (fenêtre 7 jours)
+    from datetime import timedelta as _td
+    cutoff_7d = (datetime.utcnow() - _td(days=7)).isoformat()
+    await db.abandoned_cart_reminders.update_many(
+        {"org_id": membership["org_id"], "zone_code": zone_code,
+         "sent_at": {"$gte": cutoff_7d}, "converted": {"$ne": True}},
+        {"$set": {"converted": True, "converted_order_number": order_dict["order_number"],
+                  "converted_at": datetime.utcnow().isoformat()}},
+    )
     
     # Handle installment payment if requested
     MIN_INSTALLMENT_HT_CENTS = 550000  # 5500€ HT

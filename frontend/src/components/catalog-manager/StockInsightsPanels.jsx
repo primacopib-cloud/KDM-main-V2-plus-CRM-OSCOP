@@ -92,9 +92,12 @@ export const StockoutStatsPanel = () => {
 
 export const AbandonedCartsPanel = () => {
   const [data, setData] = useState(null);
+  const [conv, setConv] = useState(null);
   const load = () => {
     fetch(`${API_URL}/api/catalog/admin/abandoned-reservations`, { headers: getAuthHeaders() })
       .then((r) => r.json()).then(setData).catch(() => setData({ entries: [], total: 0 }));
+    fetch(`${API_URL}/api/catalog/admin/reminder-conversion`, { headers: getAuthHeaders() })
+      .then((r) => r.json()).then(setConv).catch(() => {});
   };
   return (
     <CollapsePanel icon={ShoppingCart} title="Paniers abandonnés (réservations expirées sans commande)" testid="abandoned-carts-panel">
@@ -107,6 +110,15 @@ export const AbandonedCartsPanel = () => {
               <p className="text-[11px] text-white/50 mb-2">{data.total} réservation(s) expirée(s) au total — relance email automatique (max 1/24 h par organisation)</p>
               <ExportCsvButton path="/api/catalog/admin/abandoned-reservations/export" filename="paniers_abandonnes" testid="abandoned-export-csv" />
             </div>
+            {conv && conv.reminders_sent > 0 && (
+              <div className="mb-3 px-3 py-2 rounded-lg bg-[#8CC63E]/[0.08] border border-[#8CC63E]/25 flex items-center gap-4 flex-wrap" data-testid="reminder-conversion-stats">
+                <span className="text-xs text-white/80">
+                  Taux de conversion des relances : <strong className="text-[#8CC63E] text-sm" data-testid="conversion-rate">{conv.conversion_rate_percent} %</strong>
+                  <span className="text-white/50"> ({conv.converted}/{conv.reminders_sent} relances → commande sous 7 j)</span>
+                </span>
+                <span className="text-[11px] text-white/50">Bons de retour utilisés : <strong className="text-[#E9CF8E]">{conv.return_codes_used}/{conv.return_codes_issued}</strong></span>
+              </div>
+            )}
             <table className="w-full text-left">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-white/40">

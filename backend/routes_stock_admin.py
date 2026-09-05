@@ -275,6 +275,22 @@ async def _fetch_abandoned(limit: int = 200):
     return entries
 
 
+@stock_admin_router.get("/reminder-conversion")
+async def get_reminder_conversion(_: dict = Depends(_admin)):
+    """Taux de conversion des relances panier abandonné en commandes."""
+    total = await db.abandoned_cart_reminders.count_documents({})
+    converted = await db.abandoned_cart_reminders.count_documents({"converted": True})
+    codes_total = await db.cart_return_codes.count_documents({})
+    codes_used = await db.cart_return_codes.count_documents({"used": True})
+    return {
+        "reminders_sent": total,
+        "converted": converted,
+        "conversion_rate_percent": round(converted / total * 100, 1) if total else 0.0,
+        "return_codes_issued": codes_total,
+        "return_codes_used": codes_used,
+    }
+
+
 @stock_admin_router.get("/abandoned-reservations")
 async def get_abandoned_reservations(limit: int = 50, _: dict = Depends(_admin)):
     """Réservations expirées sans commande (paniers abandonnés)."""
