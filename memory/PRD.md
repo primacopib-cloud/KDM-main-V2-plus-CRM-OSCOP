@@ -2708,3 +2708,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - cancel_order (routes_orders_v2) → restock_for_cancellation : ré-injecte les quantités (validé Riz 10→30, Huile 96→100), trace « Annulation commande KDM-… », déclenche alertes retour stock si le produit était épuisé
 - POST /api/v2/catalog/cart/reservation/extend : +15 min sur l'échéance de chaque réservation (max(now, expiry)+15), 404 si aucune réservation active
 - CartReservationCountdown : bouton doré « Prolonger 15 min » (data-testid cart-reservation-extend) visible quand < 5 min restantes ; validé UI 02:31 → 17:29 avec toast
+
+## 2026-06 — Limite 2 prolongations par panier (self-testé curl ✅ : 1→extensions_left:1, 2→0, 3→400)
+- extend endpoint : extend_count par réservation, 400 « Limite de 2 prolongations atteinte » au-delà ; réponse extensions_left
+- UI : bouton masqué et remplacé par « Limite de 2 prolongations atteinte » (data-testid cart-reservation-limit) ; toast « dernière prolongation possible utilisée » à la 2e
