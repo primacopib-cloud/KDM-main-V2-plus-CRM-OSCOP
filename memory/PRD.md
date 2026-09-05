@@ -2736,3 +2736,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - POST /api/catalog/admin/return-codes {org_id, discount_percent?, validity_hours?, send_email} : code RETOUR-XXXXXX manuel (manual:true, created_by admin), défauts = réglages app_settings ; email Brevo au owner de l'org ; GET /return-codes (liste + org_name + origine) ; GET /return-codes/orgs (orgs APPROVED)
 - UI : ReturnCodesPanel dans l'onglet Catalogue superadmin (sélecteur org, % et h optionnels, case email, tableau codes avec statut ACTIF/UTILISÉ/EXPIRÉ)
 - Validé : bon 8 %/24 h généré + email envoyé + applicable au panier (zone_code null OK) ; données test nettoyées
+
+## 2026-06 — Révocation de bons de retour (self-testé curl ✅)
+- POST /api/catalog/admin/return-codes/{id}/revoke (revoked/revoked_by/revoked_at ; 400 si utilisé ou déjà révoqué, 401 sans auth) ; apply-return-code et create_order refusent les bons révoqués
+- UI ReturnCodesPanel : bouton rouge « Révoquer » (avec confirmation) sur les bons ACTIFS, statut RÉVOQUÉ avec tooltip auteur

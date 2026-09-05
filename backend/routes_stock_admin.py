@@ -367,6 +367,23 @@ async def create_manual_return_code(body: ManualReturnCode, admin: dict = Depend
             "org_name": org.get("legal_name") or org.get("name"), "email_sent": email_sent}
 
 
+@stock_admin_router.post("/return-codes/{code_id}/revoke")
+async def revoke_return_code(code_id: str, admin: dict = Depends(_admin)):
+    """Désactive un bon de retour actif émis par erreur."""
+    code = await db.cart_return_codes.find_one({"id": code_id})
+    if not code:
+        raise HTTPException(status_code=404, detail="Bon non trouvé")
+    if code.get("used"):
+        raise HTTPException(status_code=400, detail="Ce bon a déjà été utilisé, il ne peut plus être révoqué")
+    if code.get("revoked"):
+        raise HTTPException(status_code=400, detail="Ce bon est déjà révoqué")
+    await db.cart_return_codes.update_one(
+        {"id": code_id},
+        {"$set": {"revoked": True, "revoked_by": admin.get("email"), "revoked_at": _now().isoformat()}},
+    )
+    return {"code": code["code"], "revoked": True}
+
+
 @stock_admin_router.get("/reminder-conversion")
 async def get_reminder_conversion(_: dict = Depends(_admin)):
     """Taux de conversion des relances panier abandonné en commandes."""
