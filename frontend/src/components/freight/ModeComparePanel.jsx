@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { API } from '../../services/http';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { FreightToOrder } from './FreightToOrder';
 
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 const TERRITORIES = ['Guadeloupe', 'Martinique', 'Guyane', 'La Réunion', 'Mayotte'];
@@ -13,6 +14,7 @@ export const ModeComparePanel = () => {
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [chosen, setChosen] = useState('sea');
 
   const body = () => ({
     territory: form.territory,
@@ -111,6 +113,26 @@ export const ModeComparePanel = () => {
               {pdfBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FileDown className="w-4 h-4 mr-1" />}
               Télécharger le comparatif PDF LOGI'SCOP
             </Button>
+            {/* Intégrer l'option choisie à une commande */}
+            <div className="pt-2 border-t border-white/10">
+              <p className="text-[11px] font-semibold text-white/60 uppercase mb-2">Option à intégrer à la commande</p>
+              <div className="flex gap-2 mb-1">
+                {[['sea', 'Option maritime'], ['air', 'Option aérienne']].map(([v, l]) => (
+                  <button key={v} type="button" onClick={() => setChosen(v)} data-testid={`choose-${v}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      chosen === v ? 'on-gold bg-[#D9B35A]' : 'bg-white/[0.05] text-white/60 hover:text-white border border-white/10'}`}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+              <FreightToOrder key={chosen} quote={{
+                route: result[chosen].route,
+                container: `${chosen === 'sea' ? 'Maritime' : 'Aérien'} — ${result[chosen].basis}`,
+                quantity: 1,
+                total_ex_vat: result[chosen].total_ex_vat,
+                transit_days_estimate: result[chosen].transit_days,
+              }} />
+            </div>
           </div>
         )}
       </div>
