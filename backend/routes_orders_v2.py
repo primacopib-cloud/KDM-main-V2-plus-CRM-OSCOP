@@ -131,7 +131,7 @@ async def create_order(
     # Bon de retour (relance panier abandonné) : remise HT + code mono-usage
     if cart.get("return_code"):
         promo = await db.cart_return_codes.find_one({
-            "code": cart["return_code"], "org_id": membership["org_id"], "used": False,
+            "code": cart["return_code"], "org_id": membership["org_id"], "used": False, "revoked": {"$ne": True},
         })
         if promo and promo["expires_at"] >= datetime.utcnow().isoformat():
             discount = round(cart["subtotal_ht_cents"] * promo["discount_percent"] / 100)

@@ -297,6 +297,8 @@ async def apply_return_code(
         raise HTTPException(status_code=404, detail="Code invalide pour votre organisation")
     if promo.get("used"):
         raise HTTPException(status_code=400, detail="Ce bon de retour a déjà été utilisé")
+    if promo.get("revoked"):
+        raise HTTPException(status_code=400, detail="Ce bon de retour a été révoqué")
     if promo["expires_at"] < datetime.utcnow().isoformat():
         raise HTTPException(status_code=400, detail="Ce bon de retour a expiré")
     cart = await db.carts.find_one({

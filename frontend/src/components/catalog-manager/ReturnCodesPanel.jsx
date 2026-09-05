@@ -49,6 +49,21 @@ export const ReturnCodesPanel = () => {
     }
   };
 
+  const revoke = async (c) => {
+    if (!window.confirm(`Révoquer le bon ${c.code} (${c.org_name}) ?`)) return;
+    try {
+      const res = await fetch(`${API_URL}/api/catalog/admin/return-codes/${c.id}/revoke`, {
+        method: 'POST', headers: getAuthHeaders(),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      toast.success(`Bon ${c.code} révoqué`);
+      loadCodes();
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
   return (
     <div className="rounded-xl bg-white/[0.02] border border-white/[0.08] mb-4" data-testid="return-codes-panel">
       <button type="button" onClick={() => setOpen(!open)} data-testid="return-codes-panel-toggle"
@@ -90,7 +105,7 @@ export const ReturnCodesPanel = () => {
                 <tr className="text-[10px] uppercase tracking-wider text-white/40">
                   <th className="py-1.5 pr-2">Code</th><th className="py-1.5 pr-2">Organisation</th>
                   <th className="py-1.5 pr-2 text-center">Remise</th><th className="py-1.5 pr-2">Expire</th>
-                  <th className="py-1.5 pr-2">Origine</th><th className="py-1.5">Statut</th>
+                  <th className="py-1.5 pr-2">Origine</th><th className="py-1.5 pr-2">Statut</th><th className="py-1.5">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -101,12 +116,22 @@ export const ReturnCodesPanel = () => {
                     <td className="py-2 pr-2 text-center text-white/70">−{c.discount_percent} %</td>
                     <td className="py-2 pr-2 text-white/50 font-mono">{fmtDate(c.expires_at)}</td>
                     <td className="py-2 pr-2 text-white/50">{c.manual ? `Manuel (${c.created_by || 'admin'})` : 'Relance auto'}</td>
-                    <td className="py-2">
+                    <td className="py-2 pr-2">
                       {c.used
                         ? <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-400/30">UTILISÉ</span>
-                        : new Date(c.expires_at) < new Date()
-                          ? <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white/40 bg-white/[0.05] border border-white/10">EXPIRÉ</span>
-                          : <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-[#8CC63E] bg-[#8CC63E]/10 border border-[#8CC63E]/30">ACTIF</span>}
+                        : c.revoked
+                          ? <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-red-300 bg-red-500/15 border border-red-400/40" title={`Révoqué par ${c.revoked_by || 'admin'}`}>RÉVOQUÉ</span>
+                          : new Date(c.expires_at) < new Date()
+                            ? <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white/40 bg-white/[0.05] border border-white/10">EXPIRÉ</span>
+                            : <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-[#8CC63E] bg-[#8CC63E]/10 border border-[#8CC63E]/30">ACTIF</span>}
+                    </td>
+                    <td className="py-2">
+                      {!c.used && !c.revoked && new Date(c.expires_at) >= new Date() && (
+                        <button type="button" onClick={() => revoke(c)} data-testid={`revoke-code-${c.code}`}
+                          className="px-2 py-1 rounded-md text-[9px] font-bold text-red-300 bg-red-500/10 border border-red-400/30 hover:bg-red-500/20 transition-colors">
+                          Révoquer
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
