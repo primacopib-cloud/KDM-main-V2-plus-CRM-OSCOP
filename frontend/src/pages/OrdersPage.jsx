@@ -369,6 +369,18 @@ export default function OrdersPage() {
                               </div>
                             </div>
 
+                            {/* Devis fret LOGI'SCOP intégré */}
+                            {order.freight_quote && (
+                              <div className="mt-3 p-3 rounded-xl bg-white/[0.04] border border-[#D9B35A]/25" data-testid={`order-freight-${order.id}`}>
+                                <h4 className="text-sm font-semibold text-white/70 mb-1">Devis fret LOGI'SCOP intégré</h4>
+                                <p className="text-xs text-white/70 m-0">
+                                  {order.freight_quote.route} · {order.freight_quote.container} × {order.freight_quote.quantity}
+                                  {' · '}<b className="text-[#E9CF8E]">{Number(order.freight_quote.total_ex_vat || 0).toLocaleString('fr-FR')} € HT</b>
+                                  {' · '}transit ≈ {order.freight_quote.transit_days_estimate} j
+                                </p>
+                              </div>
+                            )}
+
                             {/* Logistique */}
                             {order.logistics?.status && (
                               <div className="mt-3 p-3 rounded-xl bg-white/[0.04]" data-testid={`order-logistics-${order.id}`}>

@@ -91,41 +91,6 @@ const Footer = () => {
               <li>
                 <Link to="/calculateur-fret" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-logiscop-fret">LOGI'SCOP — Calculateur de fret</Link>
               </li>
-              <li>
-                <Link to="/tarifs" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-tarifs">{t('nav.pro_access')}</Link>
-              </li>
-              <li>
-                <Link to="/catalogue" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.b2b_catalog')}</Link>
-              </li>
-              <li>
-                <Link to="/adhesion" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.join')}</Link>
-              </li>
-              <li>
-                <Link to="/connexion" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.client_space')}</Link>
-              </li>
-            </ul>
-            
-            {/* Espaces Section */}
-            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#D4AF37] mb-4 mt-6">{t('footer.spaces')}</h4>
-            <ul className="space-y-3">
-              <li>
-                <Link to="/espace-acheteur" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.buyer_space')}</Link>
-              </li>
-              <li>
-                <Link to="/espace-acheteur" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-mon-espace">Mon espace</Link>
-              </li>
-              <li>
-                <Link to="/mon-crediscop" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-crediscop">Mon CREDI'SCOP</Link>
-              </li>
-              <li>
-                <Link to="/wallet" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-wallet">Wallet — Relevé d'unités</Link>
-              </li>
-              <li>
-                <Link to="/espace-vendeur" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('nav.vendor_space')}</Link>
-              </li>
-              <li>
-                <Link to="/superadmin" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.administration')}</Link>
-              </li>
             </ul>
           </div>
 
