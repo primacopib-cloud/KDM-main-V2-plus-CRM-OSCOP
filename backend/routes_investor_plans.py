@@ -399,7 +399,7 @@ async def upload_rib(body: RibUpload, user: dict = Depends(_current_user)):
     await db.investor_bank_details.update_one(
         {"user_id": user["id"]},
         {"$set": {"rib_filename": body.filename, "rib_content": body.content_base64,
-                  "rib_uploaded_at": _now().isoformat()},
+                  "rib_status": "PENDING", "rib_uploaded_at": _now().isoformat()},
          "$setOnInsert": {"id": str(uuid.uuid4()), "user_id": user["id"], "created_at": _now().isoformat()}},
         upsert=True)
     return {"uploaded": True, "filename": body.filename}

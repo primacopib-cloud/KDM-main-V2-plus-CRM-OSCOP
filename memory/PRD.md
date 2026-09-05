@@ -2765,3 +2765,11 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Suspension auto : webhook payment_failed → compteur payment_failures ; 2 échecs consécutifs → statut SUSPENDED + email + bannière rouge dans le widget ; invoice.paid → reset compteur + ACTIVE (validé)
 - Rapport mensuel superadmin : investor_reports.run_investor_monthly_report (jour 1, idempotent via system_flags) — abonnés par plan/statut, encaissements factures, financements uc du mois précédent (2 destinataires Brevo 201)
 - Relance J-3 : run_investor_j3_reminders — email 3 jours avant next_due (period_start+1 mois), 1 envoi/période via flag j3_reminder_period (validé : 1 envoi) ; les 2 jobs sont branchés dans scheduler.py (boucle 6h)
+
+## 2026-06 — Validation RIB, virements remboursement, portail carte Stripe, relevé annuel (self-testé ✅)
+- Nouveau routeur /app/backend/routes_investor_banking.py (préfixe /api/investor-plans, enregistré dans server.py)
+- Validation RIB : rib_status PENDING à l'upload → admin consulte (inline PDF/PNG) + approuve/refuse avec motif + email investisseur ; section RibValidationSection dans InvestorPlansAdminPanel ; chip statut côté investisseur
+- Virement remboursement : POST /admin/repayments BLOQUÉ tant que RIB non APPROVED (validé), trace IBAN/date/référence/opération + email ; bouton Virement (prompts) dans le tableau abonnés ; liste "Remboursements versés" + total dans l'espace investisseur (GET /my-repayments)
+- Portail carte : POST /billing-portal → Stripe billing portal via Customer.list(email) avec création de Configuration en fallback ; 404 propre si aucun customer (testé) ; happy path standard Stripe non testable sans abonnement payé réel
+- Relevé annuel fiscal : GET /my-annual-statement/{year}/pdf (abonnements + financements + remboursements, totaux) — bouton dans l'espace ; envoi auto par email début janvier (run_investor_annual_statements, flag system_flags, branché scheduler)
+- NOTE env : STRIPE_MODE=live dans .env ; les flux investisseur utilisent STRIPE_API_KEY (test) directement — clé .env placeholder mais clé valide dans le process backend

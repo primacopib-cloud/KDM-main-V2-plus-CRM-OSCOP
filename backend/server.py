@@ -503,6 +503,7 @@ from favorites_alerts import set_favorites_alerts_database
 from routes_stock_admin import stock_admin_router, set_stock_admin_database
 from routes_restock_alerts import restock_alerts_router, set_restock_alerts_database
 from routes_investor_plans import investor_plans_router, set_investor_plans_database
+from routes_investor_banking import investor_banking_router
 set_favorites_alerts_database(db)
 set_stock_admin_database(db)
 set_restock_alerts_database(db)
@@ -510,6 +511,7 @@ set_investor_plans_database(db)
 app.include_router(stock_admin_router)
 app.include_router(restock_alerts_router)
 app.include_router(investor_plans_router)
+app.include_router(investor_banking_router)
 
 # Centre d'alertes favoris (préférences par produit + historique)
 from routes_favorites_alerts_center import favorites_alerts_center_router, set_favorites_alerts_center_database

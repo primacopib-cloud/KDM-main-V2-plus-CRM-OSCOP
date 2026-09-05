@@ -68,6 +68,50 @@ async def run_investor_monthly_report(db, force: bool = False):
     return sent
 
 
+async def run_investor_annual_statements(db, force_year: int | None = None):
+    """Début janvier : envoie à chaque investisseur son relevé annuel fiscal PDF de l'année écoulée."""
+    now = _now()
+    if force_year is None and not (now.month == 1 and now.day <= 3):
+        return 0
+    year = force_year or now.year - 1
+    if not force_year and await db.system_flags.find_one({"key": f"investor_annual_statement_{year}"}):
+        return 0
+    import base64
+    from investor_billing import build_annual_statement_pdf
+    from brevo_service import send_email, _wrap_html
+    sent = 0
+    async for a in db.investor_accounts.find({}, {"_id": 0}):
+        user = await db.users.find_one({"id": a["user_id"]})
+        if not user or not user.get("email"):
+            continue
+        invoices = await db.investor_invoices.find(
+            {"user_id": a["user_id"], "issued_at": {"$regex": f"^{year}"}}, {"_id": 0}).sort("issued_at", 1).to_list(50)
+        financings = await db.invest_credit_ledger.find(
+            {"user_id": a["user_id"], "type": "FINANCING", "created_at": {"$regex": f"^{year}"}},
+            {"_id": 0}).sort("created_at", 1).to_list(500)
+        repayments = await db.investor_repayments.find(
+            {"user_id": a["user_id"], "paid_at": {"$regex": f"^{year}"}}, {"_id": 0}).sort("paid_at", 1).to_list(300)
+        if not invoices and not financings and not repayments:
+            continue
+        try:
+            pdf = build_annual_statement_pdf(user, a, year, invoices, financings, repayments)
+            await send_email(
+                to_email=user["email"], to_name=user.get("contact_name"),
+                subject=f"📄 Votre relevé annuel fiscal investisseur {year}",
+                html_content=_wrap_html("Relevé annuel", (
+                    f"<p style='font-size:14px;'>Bonjour {user.get('contact_name') or ''},</p>"
+                    f"<p style='font-size:14px;'>Veuillez trouver en pièce jointe votre relevé annuel <b>{year}</b> "
+                    "(abonnements, financements CREDI'SCOP-INVEST et remboursements) pour votre déclaration comptable.</p>")),
+                attachments=[{"content": base64.b64encode(pdf).decode(), "name": f"releve-annuel-{year}.pdf"}],
+                tags=["investor-report"])
+            sent += 1
+        except Exception as exc:
+            logger.warning("Relevé annuel %s : %s", user.get("email"), exc)
+    await db.system_flags.update_one({"key": f"investor_annual_statement_{year}"},
+                                     {"$set": {"sent_at": _now().isoformat(), "count": sent}}, upsert=True)
+    return sent
+
+
 async def run_investor_j3_reminders(db):
     """Relance J-3 : prévient l'investisseur 3 jours avant son prélèvement mensuel."""
     now = _now()
