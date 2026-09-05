@@ -25,6 +25,7 @@ import SignatureDemoPage from "./pages/SignatureDemoPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import InvestorSpacePage from "./pages/InvestorSpacePage";
 import ParticuliersPage from "./pages/ParticuliersPage";
+import TerritoiresPage from "./pages/TerritoiresPage";
 import PointsRelaisPage from "./pages/PointsRelaisPage";
 import LogiscopSpacePage from "./pages/LogiscopSpacePage";
 import OscopCheckoutReturnPage from "./pages/OscopCheckoutReturnPage";
@@ -176,6 +177,7 @@ function App() {
           <Route path="/superadmin" element={<SuperAdminPage />} />
           <Route path="/espace-investisseur" element={<InvestorSpacePage />} />
           <Route path="/particuliers" element={<ParticuliersPage />} />
+          <Route path="/territoires" element={<TerritoiresPage />} />
           <Route path="/points-relais" element={<PointsRelaisPage />} />
           <Route path="/espace-logiscop" element={<LogiscopSpacePage />} />
           <Route path="/espace-fournisseur/commandes-oscop" element={<SupplierOscopOrdersPage />} />

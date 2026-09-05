@@ -183,5 +183,13 @@
     "drive_subtitle": "Recogida cooperativa",
     "delivery": "Entrega",
     "delivery_subtitle": "Entrega local"
+  },
+  "toc": {
+    "pros": "Profesionales",
+    "pricing": "Tarifas",
+    "consumers": "Particulares",
+    "territories": "Territorios",
+    "relay_points": "Puntos de recogida",
+    "contact": "Contacto"
   }
 }

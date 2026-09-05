@@ -14,6 +14,7 @@ import NavigationHistoryDropdown from './NavigationHistoryDropdown';
 import QuickShortcuts from './QuickShortcuts';
 import { useFavorites } from './FavoriteButton';
 import LanguageSwitcher from './LanguageSwitcher';
+import { HeaderBackButton } from './HeaderBackButton';
 import CommunityplaceBadge from './CommunityplaceBadge';
 import { CrediscopBadge } from './CrediscopBadge';
 import { MessagesNavLink } from './MessagesNavLink';
@@ -111,6 +112,8 @@ const NavBar = ({ variant = 'default' }) => {
     >
       <div className="max-w-[1400px] mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-16 gap-4">
+          {/* Retour */}
+          <HeaderBackButton withLabel={false} className="flex-shrink-0" />
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3 flex-shrink-0">
             <BrandLogos className="[&>span:last-of-type]:hidden sm:[&>span:last-of-type]:inline-flex" />

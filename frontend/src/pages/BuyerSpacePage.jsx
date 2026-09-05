@@ -26,6 +26,8 @@ import { BuyerTransportTab } from '../components/buyer/transport/BuyerTransportT
 import { BuyerTabsNav } from '../components/buyer/BuyerTabsNav';
 import { BuyerProBadge } from '../components/buyer/BuyerProBadge';
 import { BrandLogos } from '../components/BrandLogos';
+import { HeaderBackButton } from '../components/HeaderBackButton';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
 
@@ -303,10 +305,7 @@ export default function BuyerSpacePage() {
       >
         <div className="max-w-[1280px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm hidden sm:inline">{i18n.t('buyer.accueil')}</span>
-            </Link>
+            <HeaderBackButton fallback="/" />
             <div className="flex items-center gap-3">
               <BrandLogos />
               <div className="w-10 h-10 rounded-xl bg-[#D9B35A]/20 flex items-center justify-center">
@@ -348,6 +347,7 @@ export default function BuyerSpacePage() {
           </nav>
           
           <div className="flex items-center gap-3">
+            <LanguageSwitcher className="hidden md:flex" />
             {/* Messagerie interne */}
             <MessagesNavLink />
 

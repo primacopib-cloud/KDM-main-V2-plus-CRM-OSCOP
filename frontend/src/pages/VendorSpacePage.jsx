@@ -17,6 +17,8 @@ import { toast } from 'sonner';
 import { BreadcrumbPill } from '../components/Breadcrumb';
 import { VendorProductAssistant } from '../components/VendorProductAssistant';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
+import { HeaderBackButton } from '../components/HeaderBackButton';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import { getStatusBadge } from '../components/vendor/vendorConstants';
 import { VendorProductFormModal as ProductFormModal } from '../components/vendor/VendorProductFormModal';
 import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
@@ -193,9 +195,7 @@ const VendorSpacePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/" className="text-white/40 hover:text-white transition-colors">
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
+              <HeaderBackButton fallback="/" withLabel={false} />
               <BrandLogos />
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center border border-[#D9B35A]/30">
                 <Building2 className="w-6 h-6 text-[#E9CF8E]" />
@@ -226,6 +226,7 @@ const VendorSpacePage = () => {
             </nav>
             
             <div className="flex items-center gap-3">
+              <LanguageSwitcher className="hidden md:flex" />
               {/* Messagerie interne */}
               <MessagesNavLink />
 

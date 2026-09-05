@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend-only targeted retest of header uniformity on /commandes, /wallet, /documents after fixes from iteration_76. All 4 acceptance criteria PASS. OrdersPage, WalletPage and DocumentsPage now expose HeaderBackButton (data-testid='header-back-button'), LanguageSwitcher (data-testid='language-switcher') and NavigationHistoryDropdown (title='Historique de navigation'). Badge on /commandes = 'Espace acheteur' with contextual list filtered to buyer routes (shows /espace-acheteur, excludes '/' and /superadmin visually). Back button on /commandes correctly navigates to /espace-acheteur. Regression on '/' (back hidden, lang visible) and /territoires (uniform header + territoires-page + kdm-territories-section) OK. Final html.lang = 'fr' as requested.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "NavigationHistoryDropdown trigger button has no data-testid — testing agents rely on title='Historique de navigation'. Recommend adding data-testid='history-dropdown-trigger' for stronger selector robustness.",
+    "sessionStorage nav_history still records cross-context routes (e.g. /superadmin appears in storage while on /commandes) — the dropdown filters visually by context, which is the intended UX. OK."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100% (4/4 critères ciblés)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! via /admin/connexion (submit='Accès sécurisé')",
+  "seed_data_creation": "aucune",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Verified on 1920x1080 preview after admin login → visit /espace-acheteur then /commandes. Selectors used: [data-testid=header-back-button], [data-testid=language-switcher], button[title='Historique de navigation'], [data-testid=history-context-badge]. On /commandes badge='Espace acheteur', menu visually shows only buyer routes (Espace Acheteur item; /superadmin filtered out although present in sessionStorage). Back button click on /commandes → /espace-acheteur OK. /wallet and /documents also expose all 3 header elements. '/' has NavBar with back-button hidden (count>0 but not visible) and lang-switcher visible. /territoires shows uniform header + territoires-page + kdm-territories-section. Language left in FR.",
+  "rca of the issue": "N/A — previous issue (OrdersPage custom header) fixed in this iteration by main agent. WalletPage and DocumentsPage also updated with the three header components."
+}

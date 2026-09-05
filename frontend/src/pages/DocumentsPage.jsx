@@ -20,6 +20,9 @@ import {
 
 import { partners } from '../data/mock';
 import { BrandLogos } from '../components/BrandLogos';
+import { HeaderBackButton } from '../components/HeaderBackButton';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -206,13 +209,14 @@ export default function DocumentsPage() {
       >
         <div className="max-w-[1160px] mx-auto px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm hidden sm:inline">Accueil</span>
-            </Link>
+            <HeaderBackButton fallback="/espace-acheteur" />
             <div className="flex items-center gap-3">
               <BrandLogos />
             </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher className="hidden md:flex" />
+            <NavigationHistoryDropdown variant="dark" />
           </div>
         </div>
       </header>

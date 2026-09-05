@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Home, Building2, ShoppingBasket, CreditCard, MapPin, Truck, Mail } from 'lucide-react';
+import i18n from '@/i18n';
 
 const ITEMS = [
-  { id: 'top', label: 'Accueil', icon: Home },
-  { id: 'pros', label: 'Professionnels', icon: Building2 },
-  { id: 'offres', label: 'Tarifs', icon: CreditCard },
-  { id: 'particuliers', label: 'Particuliers', icon: ShoppingBasket },
-  { id: 'territoires', label: 'Territoires', icon: MapPin },
-  { id: 'reseau-lolodrive', label: 'Points relais', icon: Truck },
-  { id: 'contact', label: 'Contact', icon: Mail },
+  { id: 'top', key: 'nav.home', fallback: 'Accueil', icon: Home },
+  { id: 'pros', key: 'toc.pros', fallback: 'Professionnels', icon: Building2 },
+  { id: 'offres', key: 'toc.pricing', fallback: 'Tarifs', icon: CreditCard },
+  { id: 'particuliers', key: 'toc.consumers', fallback: 'Particuliers', icon: ShoppingBasket },
+  { id: 'territoires', key: 'toc.territories', fallback: 'Territoires', icon: MapPin },
+  { id: 'reseau-lolodrive', key: 'toc.relay_points', fallback: 'Points relais', icon: Truck },
+  { id: 'contact', key: 'toc.contact', fallback: 'Contact', icon: Mail },
 ];
 
 export const FloatingToc = () => {
@@ -52,7 +53,8 @@ export const FloatingToc = () => {
         boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
       }}
     >
-      {ITEMS.map(({ id, label, icon: Icon }) => {
+      {ITEMS.map(({ id, key, fallback, icon: Icon }) => {
+        const label = i18n.t(key, fallback);
         const isActive = active === id;
         return (
           <button

@@ -1,0 +1,42 @@
+{
+  "summary": "Frontend-only regression testing of the KDMARCHE × O'SCOP header uniformity, back button, LanguageSwitcher and contextual navigation history. 6/7 acceptance criteria PASS. 1 issue: /commandes (OrdersPage) still uses its own custom header (BackLink + BrandLogos), so it is missing the uniform NavBar-based header (no header-back-button testid, no language-switcher, no NavigationHistoryDropdown with history-context-badge). All other pages tested (/, /territoires, /particuliers, /catalogue, /espace-acheteur, /espace-vendeur, /superadmin) expose the uniform header correctly. Language switcher (FR<->EN) works with reload; final state restored to FR as requested.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "OrdersPage (/commandes)",
+        "issue": "N'utilise pas <NavBar /> — header custom sans HeaderBackButton (data-testid='header-back-button' absent), sans LanguageSwitcher (data-testid='language-switcher' absent) et sans NavigationHistoryDropdown (data-testid='history-context-badge' absent). Le critère 'header uniforme' et 'badge Espace acheteur sur /commandes' n'est donc pas rempli.",
+        "selector": "/app/frontend/src/pages/OrdersPage.jsx (lignes ~153-180, header custom avec <BackLink> + <BrandLogos>)",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Landing page (LandingPage) après changement langue EN",
+        "issues": [
+          "Le NavBar principal traduit 'Home' correctement, MAIS la barre secondaire de la LandingPage/AudienceSwitcher garde 'Accueil | Professionnels | Tarifs | Particuliers | Territoires | Points relais | Contact' en français après switch EN (i18n non branché sur ces libellés). Non bloquant mais incohérent."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "OrdersPage.jsx : remplacer le header custom par <NavBar /> (comme LandingPage/TerritoiresPage) OU ajouter dans son header custom : <HeaderBackButton />, <LanguageSwitcher /> et <NavigationHistoryDropdown /> pour respecter le header uniforme et permettre la vérification du badge 'Espace acheteur' avec liste filtrée.",
+    "Vérifier que d'autres pages métier (WalletPage, DocumentsPage, CheckoutPage, VendorSpacePage variantes, LolodriveCatalogPage, etc.) utilisent bien NavBar ou incluent les 3 composants (HeaderBackButton, LanguageSwitcher, NavigationHistoryDropdown).",
+    "Optionnel : brancher i18n sur les libellés de la barre secondaire de LandingPage (AudienceSwitcher) pour cohérence FR/EN complète."
+  ],
+  "critical_code_review_comments": [
+    "useNavigationHistory.getRouteContext considère /admin/... comme 'admin' — OK, mais /admin/connexion est aussi 'admin' alors qu'il s'agit d'un écran public/pré-login (mineur, edge case).",
+    "HeaderBackButton utilise navigate(-1) via window.history.length > 2. Sur une entrée directe depuis un lien externe, history.length peut être 1 ⇒ fallback vers '/' est correct. OK.",
+    "LanguageSwitcher recharge la page (window.location.reload) après changeLanguage — expected mais fait perdre l'état local (formulaires non soumis). Acceptable pour le besoin actuel."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "~86% (6/7 critères)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! via /admin/connexion (submit='Accès sécurisé')",
+  "seed_data_creation": "aucune",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Détails vérifiés en preview 1920x1080. Résultats : (a) '/' : back-button caché ✓, lang-switcher visible ✓. (b) /territoires : territoires-page + kdm-territories-section présents ✓, back-button visible ✓, lang-switcher visible ✓, contenu uniquement carrousel territoires ✓. (c) /particuliers : back+lang OK. (d) Back chain '/' → /territoires → /catalogue → click header-back-button revient à /territoires ✓. (e) Language EN : html.lang='en' ✓, 'Home' au lieu de 'Accueil' ✓. Reset FR ✓ (état final français). (f) Historique contextuel : sur /superadmin badge='Espace admin' ✓ items=[] (aucune autre page admin visitée) ; sur '/' badge='Visiteur' items=['/territoires'] ✓ (pas d'inclusion des pages espaces) ; sur /commandes ÉCHEC : le bouton History n'existe pas car OrdersPage n'utilise pas NavBar. (g) Back button /espace-acheteur : fonctionne (navigate(-1) → /superadmin depuis test). (h) Lang-switcher visible sur /superadmin en 1920px ✓.",
+  "rca of the issue": "Root cause pour /commandes : OrdersPage.jsx (lignes 153-180) implémente son propre <header> custom au lieu d'utiliser <NavBar />. Ce header custom inclut <BackLink> et <BrandLogos> mais pas HeaderBackButton, LanguageSwitcher ou NavigationHistoryDropdown. Fix : remplacer le bloc header custom par <NavBar /> (+ padding-top si besoin) ou insérer les 3 composants dans le header existant. Reproduction : naviguer vers /commandes après login → aucun testid 'header-back-button', 'language-switcher' ni 'history-context-badge' présent dans le DOM."
+}

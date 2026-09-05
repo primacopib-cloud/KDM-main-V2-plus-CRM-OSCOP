@@ -39,7 +39,7 @@ const formatRelativeTime = (timestamp) => {
 export default function NavigationHistoryDropdown({ variant = 'dark' }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const { recentHistory, clearHistory, removeItem, currentPath } = useNavigationHistory();
+  const { recentHistory, clearHistory, removeItem, currentPath, currentContextLabel } = useNavigationHistory();
   
   const isDark = variant === 'dark';
 
@@ -110,6 +110,16 @@ export default function NavigationHistoryDropdown({ variant = 'dark' }) {
               <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Historique récent
               </span>
+              {currentContextLabel && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                    isDark ? 'bg-[#D9B35A]/15 text-[#D9B35A]' : 'bg-amber-100 text-amber-700'
+                  }`}
+                  data-testid="history-context-badge"
+                >
+                  {currentContextLabel}
+                </span>
+              )}
             </div>
             {hasHistory && (
               <button
