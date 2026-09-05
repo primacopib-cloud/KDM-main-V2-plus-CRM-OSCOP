@@ -103,7 +103,13 @@ async def get_cart(
     if price_alerts and current_user.get("email"):
         asyncio.create_task(_send_price_alert_email(current_user, price_alerts))
     from promo_pricing import enrich_cart_response
-    return await enrich_cart_response(db, await _build_cart_response(cart, alerts), cart, current_user)
+    response = await enrich_cart_response(db, await _build_cart_response(cart, alerts), cart, current_user)
+    soonest = await db.stock_reservations.find(
+        {"org_id": membership["org_id"], "zone_code": zone_code}
+    ).sort("expires_at", 1).to_list(1)
+    if soonest:
+        response.reserved_until = soonest[0]["expires_at"]
+    return response
 
 
 @cart_router.post("/cart/items", response_model=CartResponse)
