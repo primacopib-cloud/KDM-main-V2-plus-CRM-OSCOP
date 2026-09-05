@@ -2578,3 +2578,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Backend: GET /api/investor/financing-interests (admin, 401 sinon) + POST /financing-interests/{id}/decision accept|decline → statut ACCEPTED/DECLINED + email Brevo investisseur (retenu/décliné), 404 si déjà traité
 - Frontend: FinancingInterestsPanel (data-testid financing-interests-panel, interest-accept/decline-{id}) sous Candidatures investisseurs, onglet Achat-Revente, masqué si vide
 - Testé e2e: intérêt créé → liste admin → accept → ACCEPTED → re-décision 404. Données de test nettoyées
+
+## Bon d'Engagement auto + Data room (05/06/2026) ✅
+- POST /api/investor/financing-interests/{id}/commitment (admin): exige statut ACCEPTED (400 sinon), pré-remplit BE avec investisseur retenu (nom+email) + opération liée, renseigne investor_name de l'op si vide, doc BE numéroté archivé. Frontend: bouton « Bon d'Engagement PDF » (interest-commitment-{id}) sur intérêts retenus → download direct
+- Data room: doc_type DATAROOM (préfixe DR) dans operation_docs_pdf.py + POST /api/admin/purchase-resale/operations/{id}/dataroom → pack PDF synthèse (op, financement, logistique, marge, liste documents archivés, intérêts investisseurs, mention CREDI'SCOP-I) + audit DATAROOM_GENERATED. Frontend: bouton doré « + Data room (pack) » (gen-doc-dataroom) dans OperationDetail
+- Testé e2e: 400 sur NEW, BE-2026-0002 PDF valide, DR-2026-0001 17 sections PDF valide, investor_name rempli. Données de test nettoyées

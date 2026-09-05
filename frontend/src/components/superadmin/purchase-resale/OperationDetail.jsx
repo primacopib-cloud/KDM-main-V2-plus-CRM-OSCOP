@@ -46,6 +46,16 @@ export const OperationDetail = ({ operationId, meta, onChanged }) => {
     load();
   };
 
+  const genDataroom = async () => {
+    const res = await fetch(`${API}/admin/purchase-resale/operations/${operationId}/dataroom`, {
+      method: 'POST', headers: getAuthHeaders(),
+    });
+    if (!res.ok) { toast.error('Génération impossible'); return; }
+    const doc = await res.json();
+    toast.success(`Data room ${doc.doc_number} générée et archivée`);
+    load();
+  };
+
   const downloadDoc = async (doc) => {
     const res = await fetch(`${API}/admin/purchase-resale/documents/${doc.id}/pdf`, { headers: getAuthHeaders() });
     if (!res.ok) { toast.error('Téléchargement impossible'); return; }
@@ -123,6 +133,8 @@ export const OperationDetail = ({ operationId, meta, onChanged }) => {
               onClick={() => genDoc('MARGIN_STATEMENT')}>+ État de marge</Button>
             <Button size="sm" data-testid="gen-doc-fogedom" className="h-6 text-[10px] bg-white/10 hover:bg-white/20 text-white"
               onClick={() => genDoc('FOGEDOM_REPORT')}>+ Rapport F.O.G.E.D.O.M</Button>
+            <Button size="sm" data-testid="gen-doc-dataroom" className="on-gold h-6 text-[10px] bg-[#D9B35A] hover:bg-[#F2D07A] font-semibold"
+              onClick={genDataroom}>+ Data room (pack)</Button>
           </div>
           {docs.map((d) => (
             <button key={d.id} type="button" onClick={() => downloadDoc(d)} data-testid={`download-doc-${d.doc_number}`}

@@ -177,6 +177,35 @@ async def decide_financing_interest(interest_id: str, payload: dict, admin: dict
     return {"success": True, "status": new_status}
 
 
+@investor_router.post("/financing-interests/{interest_id}/commitment")
+async def generate_commitment_from_interest(interest_id: str, admin: dict = Depends(_admin)):
+    """Bon d'Engagement PDF pré-rempli avec l'investisseur retenu et l'opération liée."""
+    it = await db.financing_interests.find_one({"id": interest_id}, {"_id": 0})
+    if not it:
+        raise HTTPException(status_code=404, detail="Intérêt introuvable")
+    if it.get("status") != "ACCEPTED":
+        raise HTTPException(status_code=400, detail="L'intérêt doit d'abord être accepté")
+    op = await db.purchase_resale_operations.find_one({"id": it["operation_id"]}, {"_id": 0})
+    if not op:
+        raise HTTPException(status_code=404, detail="Opération introuvable")
+    if not op.get("investor_name"):
+        await db.purchase_resale_operations.update_one(
+            {"id": op["id"]}, {"$set": {"investor_name": it["investor_name"]}})
+        op["investor_name"] = it["investor_name"]
+    from operation_docs_pdf import next_doc_number, doc_sections
+    number = await next_doc_number(db, "INVESTOR_COMMITMENT")
+    doc = {
+        "id": str(uuid.uuid4()), "operation_id": op["id"],
+        "doc_type": "INVESTOR_COMMITMENT", "doc_number": number,
+        "sections": doc_sections("INVESTOR_COMMITMENT", op, {
+            "investor_name": f"{it['investor_name']} ({it['investor_email']})"}),
+        "created_by": admin.get("email"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.operation_documents.insert_one(dict(doc))
+    return {"success": True, "doc_id": doc["id"], "doc_number": number}
+
+
 @investor_router.get("/dashboard")
 async def investor_dashboard(current_user: dict = Depends(get_current_user_v2)):
     email = (current_user.get("email") or "").lower()

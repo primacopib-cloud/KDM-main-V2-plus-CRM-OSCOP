@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { HandCoins, Check, X } from 'lucide-react';
+import { HandCoins, Check, X, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { Button } from '../ui/button';
@@ -41,6 +41,28 @@ export const FinancingInterestsPanel = () => {
     }
   };
 
+  const downloadCommitment = async (it) => {
+    setBusy(it.id);
+    try {
+      const res = await fetch(`${API}/investor/financing-interests/${it.id}/commitment`, {
+        method: 'POST', headers: getAuthHeaders(),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      const pdfRes = await fetch(`${API}/admin/purchase-resale/documents/${d.doc_id}/pdf`, { headers: getAuthHeaders() });
+      const blob = await pdfRes.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${d.doc_number}.pdf`; a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Bon d'Engagement ${d.doc_number} généré ✓`);
+    } catch (e) {
+      toast.error(String(e.message || e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   if (items.length === 0) return null;
   return (
     <div className="glass-panel-soft rounded-[18px] p-5 mt-5" data-testid="financing-interests-panel">
@@ -63,6 +85,13 @@ export const FinancingInterestsPanel = () => {
               </div>
               <div className="flex items-center gap-2">
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${cls}`}>{label}</span>
+                {it.status === 'ACCEPTED' && (
+                  <Button size="sm" disabled={busy === it.id} onClick={() => downloadCommitment(it)}
+                    data-testid={`interest-commitment-${it.id}`}
+                    className="on-gold h-8 bg-[#D9B35A] hover:bg-[#F2D07A] font-semibold">
+                    <FileDown className="w-3.5 h-3.5 mr-1" /> Bon d'Engagement PDF
+                  </Button>
+                )}
                 {it.status === 'NEW' && (
                   <>
                     <Button size="sm" disabled={busy === it.id} onClick={() => decide(it, 'accept')}

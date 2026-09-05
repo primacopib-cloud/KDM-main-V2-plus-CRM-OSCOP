@@ -446,6 +446,29 @@ async def generate_document(operation_id: str, payload: DocumentCreate, admin: d
     return doc
 
 
+@pr_router.post("/admin/purchase-resale/operations/{operation_id}/dataroom")
+async def generate_dataroom(operation_id: str, admin: dict = Depends(_admin)):
+    """Génère le pack Data room PDF: synthèse opération + documents archivés + intérêts investisseurs."""
+    from operation_docs_pdf import next_doc_number, doc_sections
+    op = await _get_op(operation_id)
+    documents = await db.operation_documents.find(
+        {"operation_id": operation_id}, {"_id": 0, "doc_number": 1, "doc_type": 1, "created_at": 1}
+    ).sort("created_at", 1).to_list(100)
+    interests = await db.financing_interests.find(
+        {"operation_id": operation_id}, {"_id": 0, "investor_name": 1, "status": 1}).to_list(50)
+    number = await next_doc_number(db, "DATAROOM")
+    doc = {
+        "id": str(uuid.uuid4()), "operation_id": operation_id,
+        "doc_type": "DATAROOM", "doc_number": number,
+        "sections": doc_sections("DATAROOM", op, {"documents": documents, "interests": interests}),
+        "created_by": admin.get("email"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.operation_documents.insert_one(dict(doc))
+    await _audit("DATAROOM_GENERATED", operation_id, admin, {"doc_number": number})
+    return doc
+
+
 @pr_router.get("/admin/purchase-resale/operations/{operation_id}/documents")
 async def list_documents(operation_id: str, admin: dict = Depends(require_reader)):
     docs = await db.operation_documents.find(
