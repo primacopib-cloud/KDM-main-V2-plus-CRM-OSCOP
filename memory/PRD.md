@@ -2544,3 +2544,12 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - /app/frontend/src/utils/sectionPdf.js: downloadSectionPdf(section,title) — html2canvas (clone restylé noir/blanc via PDF_STYLE), découpe multi-pages A4, en-tête logo O'SCOP+date, pied confidentialité + Page X/Y, nom fichier slug-date.pdf
 - PrintSectionButton.jsx réécrit: groupe « Imprimer | PDF » (data-testid pdf-section-btn), spinner pendant génération, toast succès/échec — actif sur les 5 sections existantes sans autre édition
 - Vérifié e2e: clic → download registres-des-membres-2026-09-05.pdf (2 Mo) + toast « PDF téléchargé »
+
+## Refonte accueil pro + LOLODRIVE maintenu (05/06/2026) ✅ (testing_agent iteration_75: 14/14 points OK après correctifs)
+- Nouveaux composants /app/frontend/src/components/landing/: AudienceSwitcher (bandeau fixe body.has-audience-switcher → navbar-root top 34px), ProHero (surtitre/titre/3 CTA + exemple illustratif 6 étapes), ProJourneysSection (4 cartes → /espace-acheteur, /adhesion-vendeur, /espace-investisseur, /calculateur-fret), ProCatalogFamilies (4 familles → /catalogue), FinancingCompartments (4 compartiments + interdits CREDI'SCOP-I), LolodriveSection (compteur relais dynamique), FogedomNotice
+- Nouvelles routes: /particuliers (ParticuliersPage) et /points-relais (PointsRelaisPage) dans App.js — sections particuliers réutilisées, rien supprimé
+- navItems.js: nav pro Acheter/Fournisseurs/Financer/LOGI'SCOP/Catalogue Pro/Territoires/LOLODRIVE
+- Corrections contenu: hero « Jusqu'à –50% »/« 0% produit » supprimés, « wallet crédits » → compteur CREDI'SCOP-I (fr-site.json), doublon « Disponible sur votre territoire » résolu (ZoneProductsShowcase → « Produits phares de votre territoire »)
+- Backend: CTA_LABELS + hero_besoin_achat/hero_catalogue_pro/hero_financer (routes_cta_stats.py) — testé 200
+- Fix contraste: classe .on-gold (fin index.css) sur onglet actif + pastilles hero
+- CONNU/PRÉEXISTANT: tuiles Mapbox 403 (token REACT_APP_MAPBOX_TOKEN restreint/quota) → fonds de carte noirs, marqueurs visibles. Non traité.

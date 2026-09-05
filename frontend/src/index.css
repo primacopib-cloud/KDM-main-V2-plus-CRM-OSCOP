@@ -633,3 +633,9 @@ select:disabled { color: rgba(243,237,228,0.4) !important; }
   body.print-focus .print-footer,
   body.print-focus .print-footer * { visibility: visible !important; }
 }
+
+/* === SÉLECTEUR D'AUDIENCE — décale la nav sous le bandeau =========== */
+body.has-audience-switcher .navbar-root { top: 34px; }
+
+/* Texte sombre garanti sur fond or (déclaré en dernier = priorité) */
+.on-gold, .on-gold * { color: #2A1045 !important; }

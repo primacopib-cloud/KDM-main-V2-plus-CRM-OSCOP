@@ -147,7 +147,7 @@
       "Organisateur de la mutualisation",
       "Opérateur de l'accès à la plateforme",
       "Gestionnaire des abonnements",
-      "Gestionnaire du wallet crédits",
+      "Gestionnaire du compteur d'unités CREDI'SCOP-I",
       "Garant du cadre ESS et coopératif"
     ],
     "oscop_restrictions": [
@@ -358,7 +358,7 @@
     "pricing_title": "Tarifs & Abonnements O'SCOP",
     "pricing_desc": "Choisissez votre accès à la centrale : prix structurels B2B mutualisés via KDMARCHE, formules sans engagement.",
     "offers_title": "Nos offres d'adhésion",
-    "offers_desc": "Abonnements O'SCOP et wallet crédits : accédez aux prix structurels B2B jusqu'à -50%.",
+    "offers_desc": "Abonnements O'SCOP et compteur d'unités de services CREDI'SCOP-I : accédez aux prix structurels B2B négociés.",
     "logiscop_title": "LOGI'SCOP — Logistique coopérative",
     "logiscop_desc": "Le bras logistique du réseau coopératif : consolidation, acheminement maritime/aérien et distribution relais dans les DOM.",
     "oscop_title": "O'SCOP — Gouvernance ESS",

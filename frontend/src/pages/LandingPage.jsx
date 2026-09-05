@@ -32,6 +32,13 @@ import { ParallaxOrbs } from '../components/landing/ParallaxOrbs';
 import { ScrollProgressBar } from '../components/landing/ScrollProgressBar';
 import { ActivityTicker } from '../components/landing/ActivityTicker';
 import { BackToTop } from '../components/landing/BackToTop';
+import { AudienceSwitcher } from '../components/landing/AudienceSwitcher';
+import { ProHero } from '../components/landing/ProHero';
+import { ProJourneysSection } from '../components/landing/ProJourneysSection';
+import { ProCatalogFamilies } from '../components/landing/ProCatalogFamilies';
+import { FinancingCompartments } from '../components/landing/FinancingCompartments';
+import { LolodriveSection } from '../components/landing/LolodriveSection';
+import { FogedomNotice } from '../components/landing/FogedomNotice';
 export { PublicLolodriveMapSection };
 export { CooperativeApiSection };
 
@@ -42,110 +49,25 @@ const LandingPage = () => {
       <ScrollProgressBar />
       <BackToTop />
       <Seo titleKey="seo.landing_title" descKey="seo.landing_desc" />
+      <AudienceSwitcher />
       <NavBar />
       <FloatingToc />
-      <div className="pt-20 -mb-16"><FlashPromoBanner placement="landing" /></div>
+      <div className="pt-24 -mb-16"><FlashPromoBanner placement="landing" /></div>
 
-      {/* Hero Section */}
-      <section className="pt-20 pb-8 px-5">
-        <div className="max-w-[1160px] mx-auto">
-          <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 items-stretch">
-            {/* Main Hero Card */}
-            <div className="glass-panel card-glow rounded-[26px] p-7">
-              {/* Kicker */}
-              <div className="flex items-center gap-2.5 flex-wrap mb-3.5">
-                <div className="badge-status">
-                  <span className="dot pulse-glow"></span>
-                  {i18n.t('landing.partenariat_actif')}
-                </div>
-                <span className="pill">
-                  <span className="font-bold text-white/90">ESS</span>
-                  <span className="text-white/65">{i18n.t('landing.economie_sociale_et_solidaire')}</span>
-                </span>
-              </div>
+      {/* Hero professionnel */}
+      <ProHero />
 
-              <h2 className="text-[36px] leading-[1.08] font-bold tracking-tight my-2.5" data-testid="hero-title">
-                La centrale coopérative <span className="text-[#D9B35A]">d'achat, de référencement et de distribution</span>
-              </h2>
+      {/* Quatre parcours professionnels */}
+      <Reveal><ProJourneysSection /></Reveal>
 
-              <p className="text-white/75 text-base max-w-[60ch] m-0">
-                {i18n.t('landing.official_statement')}
-              </p>
+      {/* Catalogue professionnel — quatre familles */}
+      <Reveal variant="left"><ProCatalogFamilies /></Reveal>
 
-              {/* Actions */}
-              <div className="flex gap-3 flex-wrap mt-5">
-                <Link to="/catalogue">
-                  <button
-                    className="force-white inline-flex items-center justify-center gap-2.5 rounded-[14px] px-4 py-3 text-sm font-semibold text-white shadow-lg"
-                    style={{ background: 'linear-gradient(135deg, #5B2E8C 0%, #2A1045 100%)' }}
-                    data-testid="hero-cta-offres"
-                    onClick={() => trackCta('hero_offres')}
-                  >
-                    Découvrir les offres
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </Link>
-                <Link to="/tarifs">
-                  <button
-                    className="btn-ghost inline-flex items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold"
-                    data-testid="hero-cta-acces-pro"
-                    onClick={() => trackCta('hero_acces_pro')}
-                  >
-                    Accès acheteurs professionnels
-                  </button>
-                </Link>
-                <Link to="/espace-investisseur" className="btn-ghost inline-flex items-center justify-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold" data-testid="hero-cta-investisseurs">
-                  Espace investisseurs
-                </Link>
-              </div>
+      {/* Financement — quatre compartiments + CREDI'SCOP-I */}
+      <Reveal><FinancingCompartments /></Reveal>
 
-              {/* Mini Stats */}
-              <div className="grid grid-cols-3 gap-3 mt-5">
-                <div className="mini-card">
-                  <div className="text-xs text-white/65 uppercase tracking-wider">{i18n.t('landing.prix')}</div>
-                  <div className="text-sm mt-1.5 text-white/90 font-bold">{i18n.t('landing.jusqu_a_50')}</div>
-                </div>
-                <div className="mini-card">
-                  <div className="text-xs text-white/65 uppercase tracking-wider">{i18n.t('landing.modele')}</div>
-                  <div className="text-sm mt-1.5 text-white/90 font-bold">B2B EXW</div>
-                </div>
-                <div className="mini-card">
-                  <div className="text-xs text-white/65 uppercase tracking-wider">{i18n.t('landing.commission')}</div>
-                  <div className="text-sm mt-1.5 text-white/90 font-bold">{i18n.t('landing.0_produit')}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Side Card */}
-            <div className="glass-panel-soft rounded-[26px] p-5 flex flex-col gap-3.5 hero-enter-delayed" style={{ boxShadow: '0 16px 50px rgba(0,0,0,0.35)' }}>
-              <h3 className="text-sm tracking-wider uppercase text-white/75 font-semibold m-0">{i18n.t('landing.avantages_cles')}</h3>
-
-              {/* Callout */}
-              <div className="callout-gold">
-                <strong className="text-white/90">{i18n.t('landing.prix_structurels_b2b')}</strong>
-                <p className="text-sm text-white/70 mt-1 mb-0">
-                  {i18n.t('landing.il_ne_s_agit')}
-                </p>
-              </div>
-
-              {/* List */}
-              <ul className="grid gap-2.5 m-0 p-0 list-none">
-                {(i18n.t('landing.advantages', { returnObjects: true }) || []).map((advantage) => (
-                  <li
-                    key={`advantage-${advantage.slice(0, 32)}`}
-                    className="flex gap-2.5 items-start p-2.5 px-3 rounded-2xl bg-white/[0.03] border border-white/[0.08]"
-                  >
-                    <div className="check-icon mt-0.5"></div>
-                    <div>
-                      <b className="block text-white/90 text-sm">{advantage}</b>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Mention FOGEDOM-SCIC */}
+      <FogedomNotice />
 
       {/* Ticker d'activité en direct */}
       <ActivityTicker />
@@ -269,6 +191,8 @@ const LandingPage = () => {
       </Reveal>
 
       {/* ============ PARTIE PARTICULIERS / CONSOMMATEURS ============ */}
+      <Reveal><LolodriveSection /></Reveal>
+
       <Reveal variant="right">
       <AudienceBanner
         id="particuliers" icon={ShoppingBasket} color="#8CC63E" testId="audience-banner-particuliers"
