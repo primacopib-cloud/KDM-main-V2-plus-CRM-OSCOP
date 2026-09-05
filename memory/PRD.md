@@ -2620,3 +2620,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - MessagesNavLink: prop withLabel → bouton « Messagerie » + pastille non-lus, chaque utilisateur voit ses propres messages
 - Inséré dans 4 espaces: BuyerSpacePage (à côté du h1), VendorSpacePage, InvestorSpacePage, LogiscopSpacePage
 - Vérifié par capture: bouton + popover « Messages récents » dans l'espace investisseur, footer sans le lien
+
+## Messagerie contextuelle (05/06/2026) ✅
+- Backend routes_messages.py: POST /api/messages/contextual (envoi Brevo avec date fr + contexte + expéditeur, insert contextual_messages), GET ?context_ref= (historique perso), POST /{id}/resend (renvoi + resend_count), 400 champs requis, 401 sans auth
+- Frontend ContextualMessageDialog.jsx: bouton « Message » → dialog avec date d'envoi affichée, email destinataire éditable (défaut contact@objectifscopoutremer.com), objet pré-rempli [Opération/Commande REF], bouton Envoyer + historique avec Renvoyer
+- Intégré: FinancingOpportunities (opérations, espace investisseur) + OrdersPage (commandes acheteur)
+- Testé e2e UI+API: envoi Brevo, historique, resend_count=1, capture dialog complète. Données de test nettoyées

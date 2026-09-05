@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { TrendingUp, Package, HandCoins, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthHeaders, getSessionToken } from '../../services/http';
+import { ContextualMessageDialog } from '../ContextualMessageDialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR')} €`;
@@ -74,13 +75,14 @@ export const FinancingOpportunities = () => {
             <button type="button" onClick={() => expressInterest(op)}
               disabled={sending === op.id || sent[op.id]}
               data-testid={`interest-btn-${op.reference}`}
-              className={`mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-[10px] text-xs font-bold transition-colors ${
+              className={`mt-3 mr-2 inline-flex items-center gap-2 px-3 py-2 rounded-[10px] text-xs font-bold transition-colors ${
                 sent[op.id] ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 cursor-default'
                 : 'on-gold bg-[#D9B35A] hover:bg-[#F2D07A]'
               }`}>
               {sending === op.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <HandCoins className="w-3.5 h-3.5" />}
               {sent[op.id] ? 'Demande transmise ✓' : 'Je souhaite financer'}
             </button>
+            {getSessionToken() && <ContextualMessageDialog contextType="operation" contextRef={op.reference} />}
           </div>
         ))}
       </div>
