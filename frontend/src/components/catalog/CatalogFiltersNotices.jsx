@@ -9,7 +9,7 @@ import { IncotermAlertBell } from './IncotermAlertBell';
 export const CatalogFiltersNotices = ({
   categories, selectedCategory, setSelectedCategory, products, user, navigate,
   selectedIncoterm, setSelectedIncoterm, minRating, setMinRating, sortByRating, setSortByRating,
-  zoneName, saleFilter, setSaleFilter,
+  zoneName, saleFilter, setSaleFilter, financingOnly, setFinancingOnly,
 }) => (
   <>
     {/* Filtre circuit de vente */}
@@ -29,6 +29,19 @@ export const CatalogFiltersNotices = ({
             {label}
           </button>
         ))}
+        {setFinancingOnly && (
+          <button
+            onClick={() => setFinancingOnly(!financingOnly)}
+            data-testid="financing-filter-btn"
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              financingOnly
+                ? 'bg-violet-500/20 text-violet-300 border border-violet-400/40'
+                : 'bg-white/[0.04] text-white/55 hover:text-white border border-white/[0.08]'
+            }`}
+          >
+            ✓ Finançables uniquement
+          </button>
+        )}
       </div>
     )}
     {/* Categories */}
