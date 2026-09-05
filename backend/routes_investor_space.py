@@ -249,6 +249,11 @@ async def my_dataroom(current_user: dict = Depends(get_current_user_v2)):
         {"operation_id": {"$in": op_ids}, "doc_type": {"$in": ["DATAROOM", "INVESTOR_COMMITMENT"]}},
         {"_id": 0, "id": 1, "operation_id": 1, "doc_number": 1, "doc_type": 1, "created_at": 1},
     ).sort("created_at", -1).to_list(200)
+    seen = await db.dataroom_views.find(
+        {"investor_email": email}, {"_id": 0, "doc_id": 1}).to_list(500)
+    seen_ids = {v["doc_id"] for v in seen}
+    for d in docs:
+        d["is_new"] = d["id"] not in seen_ids
     by_op = {}
     for d in docs:
         by_op.setdefault(d["operation_id"], []).append(d)
@@ -268,6 +273,10 @@ async def investor_document_pdf(doc_id: str, current_user: dict = Depends(get_cu
         {"operation_id": doc["operation_id"], "investor_email": email, "status": "ACCEPTED"})
     if not allowed and not current_user.get("is_admin"):
         raise HTTPException(status_code=403, detail="Accès réservé à l'investisseur retenu")
+    if allowed:
+        await db.dataroom_views.update_one(
+            {"investor_email": email, "doc_id": doc_id},
+            {"$setOnInsert": {"viewed_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
     pdf = build_operation_pdf(doc)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'inline; filename="{doc["doc_number"]}.pdf"'})
