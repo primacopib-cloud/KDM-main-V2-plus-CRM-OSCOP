@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import { UtensilsCrossed, HardHat, Sprout, Store, ArrowRight } from 'lucide-react';
 
 const FAMILIES = [
-  { icon: UtensilsCrossed, label: 'Alimentaire & épicerie', color: '#D9B35A' },
-  { icon: HardHat, label: 'BTP & équipements', color: '#5AA7D9' },
-  { icon: Sprout, label: 'Agriculture & végétal', color: '#8CC63E' },
-  { icon: Store, label: 'Commerce général, hygiène & bazar', color: '#B37BE8' },
+  { icon: UtensilsCrossed, label: 'Alimentaire & épicerie', color: '#D9B35A', fam: 'alimentaire' },
+  { icon: HardHat, label: 'BTP & équipements', color: '#5AA7D9', fam: 'btp' },
+  { icon: Sprout, label: 'Agriculture & végétal', color: '#8CC63E', fam: 'agriculture' },
+  { icon: Store, label: 'Commerce général, hygiène & bazar', color: '#B37BE8', fam: 'commerce' },
 ];
 
 export const ProCatalogFamilies = () => (
@@ -25,7 +25,7 @@ export const ProCatalogFamilies = () => (
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {FAMILIES.map((f) => (
-          <Link key={f.label} to="/catalogue"
+          <Link key={f.label} to={`/catalogue?famille=${f.fam}`}
             className="glass-panel-soft rounded-[18px] p-5 flex items-center gap-3 hover:border-[#D9B35A]/40 transition-colors border border-transparent"
             data-testid={`family-${f.label.slice(0, 4).toLowerCase()}`}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${f.color}22`, border: `1px solid ${f.color}55` }}>

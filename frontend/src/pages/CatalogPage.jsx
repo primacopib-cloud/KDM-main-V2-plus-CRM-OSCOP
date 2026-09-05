@@ -117,6 +117,20 @@ export default function CatalogPage() {
 
         setZones(zonesData);
         setCategories(categoriesData);
+
+        // Ouverture directe dans une famille (?famille= depuis l'accueil pro)
+        const famParam = new URLSearchParams(window.location.search).get('famille');
+        if (famParam) {
+          const FAM_RX = {
+            alimentaire: /aliment|épicerie|frais|surgel|boisson/i,
+            btp: /matér|équip|btp|construction|outil/i,
+            agriculture: /agri|végét|jardin|semence/i,
+            commerce: /hygi|bazar|commerce|entretien|ménage/i,
+          };
+          const rx = FAM_RX[famParam];
+          const match = rx && categoriesData.find((c) => rx.test(c.name || ''));
+          if (match) setSelectedCategory(match.id);
+        }
         const entitled = !isAuth ? null : (myZonesData?.is_admin ? null : (myZonesData?.entitled || []));
         setEntitledZones(entitled);
 

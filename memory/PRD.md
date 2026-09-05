@@ -2655,3 +2655,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - ModeComparePanel: sélecteur « Option maritime / Option aérienne » (choose-sea/choose-air) sous le verdict + FreightToOrder (key=chosen) avec quote de l'option choisie (route, base, total HT, transit)
 - Fix FreightToOrder: total_ttc_cents ?? total_cents (affichait NaN €)
 - Testé e2e UI: option aérienne → intégrée à KDM-20260802 (Miami ✈ PàP, Aérien — 334kg taxables) + toast. Devis de test retiré de la commande démo
+
+## Séparation stricte pro/particuliers + Accès Pro + familles catalogue (05/06/2026) ✅
+- LandingPage (/, mode pro): retirés AudienceBanner particuliers, ZoneProductsShowcase, PublicLolodriveMapSection, ReferralChallengeBanner, VideoShowcase (tous restent sur /particuliers). Conservés: pont LolodriveSection + TerritoryCarousel (section territoriale pro, id=territoires)
+- Nav: « Fournisseurs » → « Accès Pro » (/adhesion-vendeur)
+- Catalogue visiteur: déjà sans prix (price_visible=False backend, prix floutés « Tarif réservé aux adhérents ») — vérifié 11/11 floutés
+- Familles accueil → catalogue pré-filtré: liens /catalogue?famille=alimentaire|btp|agriculture|commerce + mapping regex famille→catégorie dans CatalogPage (testé: commerce → catégorie Hygiène active)
