@@ -11,6 +11,7 @@ export const CartReservationCountdown = ({ reservedUntil, zone }) => {
   const [localUntil, setLocalUntil] = useState(null);
   const [remaining, setRemaining] = useState(null);
   const [extending, setExtending] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
   const warnedRef = useRef(false);
   const effectiveUntil = localUntil || reservedUntil;
 
@@ -40,10 +41,14 @@ export const CartReservationCountdown = ({ reservedUntil, zone }) => {
         headers: getAuthHeaders(),
       });
       const d = await res.json();
-      if (!res.ok) throw new Error(d.detail || '');
+      if (!res.ok) {
+        if (res.status === 400) setLimitReached(true);
+        throw new Error(d.detail || '');
+      }
       setLocalUntil(d.reserved_until);
+      if (d.extensions_left === 0) setLimitReached(true);
       warnedRef.current = false;
-      toast.success('Réservation prolongée de 15 minutes');
+      toast.success(`Réservation prolongée de 15 minutes${d.extensions_left === 0 ? ' (dernière prolongation possible utilisée)' : ''}`);
     } catch (e) {
       toast.error(e.message || 'Impossible de prolonger la réservation');
     } finally {
@@ -51,7 +56,11 @@ export const CartReservationCountdown = ({ reservedUntil, zone }) => {
     }
   };
 
-  const ExtendButton = () => (
+  const ExtendButton = () => limitReached ? (
+    <span className="ml-2 text-[10px] text-white/40" data-testid="cart-reservation-limit">
+      Limite de 2 prolongations atteinte
+    </span>
+  ) : (
     <button type="button" onClick={extend} disabled={extending} data-testid="cart-reservation-extend"
       className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors disabled:opacity-50">
       <Plus className="w-3 h-3" /> {extending ? '…' : 'Prolonger 15 min'}

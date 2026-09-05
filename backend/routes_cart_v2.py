@@ -256,15 +256,22 @@ async def extend_cart_reservation(
     ).to_list(100)
     if not reservations:
         raise HTTPException(status_code=404, detail="Aucune réservation active à prolonger")
+    MAX_EXTENSIONS = 2
+    used = max((r.get("extend_count", 0) for r in reservations), default=0)
+    if used >= MAX_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Limite de 2 prolongations atteinte pour ce panier")
     now = datetime.now(timezone.utc)
     latest = None
     for r in reservations:
         base = max(datetime.fromisoformat(r["expires_at"]), now)
         new_expires = (base + timedelta(minutes=15)).isoformat()
-        await db.stock_reservations.update_one({"id": r["id"]}, {"$set": {"expires_at": new_expires}})
+        await db.stock_reservations.update_one(
+            {"id": r["id"]},
+            {"$set": {"expires_at": new_expires, "extend_count": r.get("extend_count", 0) + 1}},
+        )
         if latest is None or new_expires < latest:
             latest = new_expires
-    return {"extended": len(reservations), "reserved_until": latest}
+    return {"extended": len(reservations), "reserved_until": latest, "extensions_left": MAX_EXTENSIONS - used - 1}
 
 
 @cart_router.delete("/cart/items/{item_id}", response_model=CartResponse)
