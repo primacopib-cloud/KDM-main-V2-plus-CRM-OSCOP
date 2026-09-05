@@ -2639,3 +2639,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Frontend: onglets « Fret maritime / Fret aérien — urgences » (freight-mode-SEA/AIR) dans FreightCalculatorPage; AirFreightPanel.jsx (recherche aéroport, poids/volume, devis détaillé, FreightToOperation + FreightToOrder)
 - Recherche port maritime: champ freight-route-search filtrant les 107 routes (testé « shanghai » → 5)
 - Testé e2e: quote CDG→PàP 120kg/1m³ → taxable 167kg, min charge 95€ ok; UI devis aérien 250kg = 1483€ HT + intégration commande
+
+## Barème aérien admin + comparateur mer/air (05/06/2026) ✅
+- PUT /api/admin/freight/air-rates/{id} (admin, 401 sans auth): per_kg (4 paliers), min_charge, fuel_rate, security_per_kg, transit_days, active. Testé: maj 111/19.5 puis restauration
+- AirRatesPanel.jsx (superadmin, sous FreightRatesPanel): table éditable onBlur (data-testid air-rate-{id}-{champ})
+- POST /api/public/freight/compare-modes {territory, weight_kg, volume_m3}: meilleure route mer (LCL au m³ + BAF + THC) vs meilleure route air (poids taxable) matchées par territoire (regex destination) + savings_sea_ex_vat + days_saved_air
+- ModeComparePanel.jsx: 3e onglet « Comparateur mer / air » (freight-mode-COMPARE), cartes côte à côte + verdict. Testé: Guadeloupe 300kg/2m³ → mer Dakar 245,60€/10j vs air Miami 1271,87€/2j, capture OK

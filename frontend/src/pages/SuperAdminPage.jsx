@@ -36,6 +36,7 @@ import { StaffRolesPanel } from '../components/superadmin/StaffRolesPanel';
 import { InvestorApplicationsPanel } from '../components/superadmin/InvestorApplicationsPanel';
 import { FinancingInterestsPanel } from '../components/superadmin/FinancingInterestsPanel';
 import { FreightRatesPanel } from '../components/superadmin/FreightRatesPanel';
+import { AirRatesPanel } from '../components/superadmin/AirRatesPanel';
 import { MarginsChart, ReminderSettings, AuditRegisterPanel, DisputedOrdersPanel } from '../components/superadmin/PurchaseResaleExtras';
 import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
 import { AnnouncementsTab } from '../components/superadmin/AnnouncementsTab';
@@ -219,6 +220,7 @@ export default function SuperAdminPage() {
             <LoloPointsContactPanel />
             <LogiscopTransportAdminPanel />
             <FreightRatesPanel />
+            <AirRatesPanel />
             <PartnerApplicationsPanel />
           </TabsContent>
 
