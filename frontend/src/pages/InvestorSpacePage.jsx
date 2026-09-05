@@ -3,6 +3,7 @@ import { TrendingUp, Ticket, Euro, Truck, ShieldAlert } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { InvestorLiveDashboard } from '../components/investor/InvestorLiveDashboard';
+import { FinancingOpportunities } from '../components/investor/FinancingOpportunities';
 import { InvestorApplyForm } from '../components/investor/InvestorApplyForm';
 
 const blocks = [
@@ -39,6 +40,7 @@ export default function InvestorSpacePage() {
           investissements réels et le financement logistique LOGI'SCOP.
         </p>
         <InvestorLiveDashboard />
+        <FinancingOpportunities />
         <InvestorApplyForm />
         <div className="grid md:grid-cols-2 gap-4 mb-8">
           {blocks.map((b) => (
