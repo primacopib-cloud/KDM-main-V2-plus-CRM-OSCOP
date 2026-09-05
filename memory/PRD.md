@@ -2689,3 +2689,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - StockUpdateRequest accepte reorder_point optionnel par produit/zone ; GET stock renvoie reorder_point ; alerte email au seuil personnalisé (validé : seuil 15, 50→14 → alerte)
 - GET /api/catalog/admin/stock-history/export → CSV (;, BOM UTF-8, en-têtes FR) — bouton « Export CSV historique » dans StockTerritoryPanel
 - ZoneStockDialog : colonnes Stock + Seuil réassort par territoire (data-testid threshold-input-{ZONE})
+
+## 2026-06 — Stock visible acheteur + badge stock faible superadmin (self-testé curl + captures ✅)
+- Catalogue Pro : sous chaque carte (acheteur avec prix visibles, zone sélectionnée), ligne disponibilité réelle — vert « N unités disponibles », ambre « Plus que N unités » (≤10), rouge « Rupture » (data-testid stock-availability-{SKU} / stock-out-{SKU}). Source: ProductResponse.stock_quantity (zone_stocks, dispo = available - reserved)
+- Superadmin StockTerritoryPanel : GET /stock-products renvoie low_stock_zones par produit (dispo <= reorder_point) → badge rouge « ⚠ Stock faible · ZONES » (data-testid low-stock-badge-{SKU})

@@ -50,6 +50,16 @@ async def list_stock_products(_: dict = Depends(_admin)):
     products = await db.products.find(
         {}, {"_id": 0, "id": 1, "name": 1, "sku": 1, "category": 1}
     ).sort("name", 1).to_list(500)
+    stocks = await db.zone_stocks.find(
+        {}, {"_id": 0, "product_id": 1, "zone_code": 1, "quantity_available": 1, "quantity_reserved": 1, "reorder_point": 1}
+    ).to_list(5000)
+    low_by_product: dict[str, list[str]] = {}
+    for s in stocks:
+        available = s.get("quantity_available", 0) - s.get("quantity_reserved", 0)
+        if available <= s.get("reorder_point", 10):
+            low_by_product.setdefault(s["product_id"], []).append(s["zone_code"])
+    for p in products:
+        p["low_stock_zones"] = sorted(low_by_product.get(p["id"], []))
     return {"products": products}
 
 

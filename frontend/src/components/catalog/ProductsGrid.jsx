@@ -284,10 +284,18 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                 </Button>
               </div>
               
-              {/* Stock indicator */}
-              {!product.in_stock && (
-                <p className="text-xs text-red-400 mt-2">Rupture de stock</p>
-              )}
+              {/* Disponibilité réelle par territoire */}
+              {!product.in_stock ? (
+                <p className="text-xs text-red-400 mt-2" data-testid={`stock-out-${product.sku}`}>Rupture de stock sur ce territoire</p>
+              ) : product.price_visible && typeof product.stock_quantity === 'number' ? (
+                <p className={`text-xs mt-2 flex items-center gap-1.5 ${product.stock_quantity <= 10 ? 'text-amber-400' : 'text-emerald-400'}`}
+                  data-testid={`stock-availability-${product.sku}`}>
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${product.stock_quantity <= 10 ? 'bg-amber-400' : 'bg-emerald-400'}`}></span>
+                  {product.stock_quantity <= 10
+                    ? `Plus que ${product.stock_quantity} unité${product.stock_quantity > 1 ? 's' : ''} disponible${product.stock_quantity > 1 ? 's' : ''} sur ce territoire`
+                    : `${product.stock_quantity} unités disponibles sur ce territoire`}
+                </p>
+              ) : null}
             </div>
             );
           })}
