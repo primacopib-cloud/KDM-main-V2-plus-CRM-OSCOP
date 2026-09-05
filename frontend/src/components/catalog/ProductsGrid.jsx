@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X, MessageSquarePlus, Heart } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X, MessageSquarePlus, Heart, BellRing } from 'lucide-react';
+import { toast } from 'sonner';
+import { getAuthHeaders, getSessionToken } from '../../services/http';
 import { tData } from '@/i18n/tData';
 import i18n from '@/i18n';
 import { Button } from '../ui/button';
@@ -106,7 +108,57 @@ const ProductLightbox = ({ zoom, onClose }) => {
   );
 };
 
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+const RestockAlertButton = ({ product, zone, subscribedSet, onToggle }) => {
+  if (!zone || !getSessionToken()) return null;
+  const key = `${product.id}:${zone}`;
+  const subscribed = subscribedSet.has(key);
+  const toggle = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v2/catalog/restock-alerts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ product_id: product.id, zone_code: zone }),
+      });
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      onToggle(key, d.subscribed);
+      toast.success(d.message);
+    } catch {
+      toast.error("Impossible d'enregistrer l'alerte");
+    }
+  };
+  return (
+    <button type="button" onClick={toggle} data-testid={`restock-alert-${product.sku}`}
+      className={`mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+        subscribed
+          ? 'text-[#8CC63E] bg-[#8CC63E]/10 border-[#8CC63E]/40'
+          : 'text-[#E9CF8E] bg-[#D9B35A]/10 border-[#D9B35A]/30 hover:bg-[#D9B35A]/20'
+      }`}>
+      <BellRing className="w-3.5 h-3.5" />
+      {subscribed ? 'Alerte activée — vous serez prévenu' : 'Me prévenir au retour en stock'}
+    </button>
+  );
+};
+
 export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) => {
+  const restockZone = cart?.zone_code || null;
+  const [subscribedSet, setSubscribedSet] = useState(new Set());
+  useEffect(() => {
+    if (!getSessionToken()) return;
+    fetch(`${API_URL}/api/v2/catalog/restock-alerts/mine`, { headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : { alerts: [] }))
+      .then((d) => setSubscribedSet(new Set((d.alerts || []).map((a) => `${a.product_id}:${a.zone_code}`))))
+      .catch(() => {});
+  }, []);
+  const toggleSubscribed = (key, subscribed) => {
+    setSubscribedSet((prev) => {
+      const next = new Set(prev);
+      if (subscribed) next.add(key); else next.delete(key);
+      return next;
+    });
+  };
   const [videoProduct, setVideoProduct] = useState(null);
   const [zoom, setZoom] = useState(null);
   const [reviewsProduct, setReviewsProduct] = useState(null);
@@ -286,7 +338,10 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               
               {/* Disponibilité réelle par territoire */}
               {!product.in_stock ? (
-                <p className="text-xs text-red-400 mt-2" data-testid={`stock-out-${product.sku}`}>Rupture de stock sur ce territoire</p>
+                <div className="mt-2">
+                  <p className="text-xs text-red-400" data-testid={`stock-out-${product.sku}`}>Rupture de stock sur ce territoire</p>
+                  <RestockAlertButton product={product} zone={restockZone} subscribedSet={subscribedSet} onToggle={toggleSubscribed} />
+                </div>
               ) : product.price_visible && typeof product.stock_quantity === 'number' ? (
                 <p className={`text-xs mt-2 flex items-center gap-1.5 ${product.stock_quantity <= 10 ? 'text-amber-400' : 'text-emerald-400'}`}
                   data-testid={`stock-availability-${product.sku}`}>

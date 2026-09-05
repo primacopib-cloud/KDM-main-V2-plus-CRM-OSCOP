@@ -2693,3 +2693,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Stock visible acheteur + badge stock faible superadmin (self-testé curl + captures ✅)
 - Catalogue Pro : sous chaque carte (acheteur avec prix visibles, zone sélectionnée), ligne disponibilité réelle — vert « N unités disponibles », ambre « Plus que N unités » (≤10), rouge « Rupture » (data-testid stock-availability-{SKU} / stock-out-{SKU}). Source: ProductResponse.stock_quantity (zone_stocks, dispo = available - reserved)
 - Superadmin StockTerritoryPanel : GET /stock-products renvoie low_stock_zones par produit (dispo <= reorder_point) → badge rouge « ⚠ Stock faible · ZONES » (data-testid low-stock-badge-{SKU})
+
+## 2026-06 — Alerte retour stock + réservation panier 30 min (testé iteration_81 ✅ 100%)
+- routes_restock_alerts.py : POST /api/v2/catalog/restock-alerts (toggle), GET /mine ; notify_restock_watchers (in-app + email Brevo, abonnement consommé) déclenché au restock dans routes_stock_admin
+- stock_reservations.py : réservation absolue par (org, zone, produit), expiration 30 min (cleanup paresseux), available_for_org ; hooks dans routes_cart_v2 (add : contrôle dispo + reserved_until dans CartResponse ; remove/clear : libération)
+- UI : bouton « Me prévenir au retour en stock » sur cartes en rupture (ProductsGrid, état persistant), note verte « Quantités réservées 30 minutes » dans le panier (CatalogHeader)
