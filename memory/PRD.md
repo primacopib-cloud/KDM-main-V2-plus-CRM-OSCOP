@@ -2562,3 +2562,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## Interrupteur financement admin + filtre catalogue (05/06/2026) ✅
 - Admin (catalog-manager/ProductRow.jsx): FinancingToggle (data-testid financing-toggle-{id}) → PATCH /api/admin/sale-model/products/{id} avec getAuthHeaders. Testé: Financement→Finançable + toast, état restauré
 - Catalogue (CatalogPage/CatalogFiltersNotices): bouton « ✓ Finançables uniquement » (data-testid financing-filter-btn) filtre client sur financing_eligible. Testé: 11→1 produit
+
+## Lien financement investisseur (05/06/2026) ✅
+- Backend: linked_product_id/linked_product_name sur OperationCreate/Update (routes_purchase_resale.py) + GET /api/public/financing-opportunities (opérations liées non closes, projection sans client_name, notice anti-CREDI'SCOP-I)
+- OperationFormDialog: select « Offre catalogue finançable liée » (data-testid op-linked-product) alimenté par les produits financing_eligible
+- Espace investisseur: composant FinancingOpportunities (data-testid financing-opportunities) masqué si aucune opportunité
+- Testé e2e: création op liée au Riz → visible dans /espace-investisseur avec produit/territoire/montants, client absent de l'API publique. Op de test nettoyée

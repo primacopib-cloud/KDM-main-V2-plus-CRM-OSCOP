@@ -40,7 +40,15 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
     purchase_amount_ex_vat: '', resale_amount_ex_vat: '', vat_rate: '8.5',
     logistics_mode: 'CUSTOMER_HANDLED', logistics_budget_ex_vat: '',
     logistics_resale_price_ex_vat: '', min_margin_rate: '0', territory_id: '',
+    linked_product_id: '',
   });
+  const [fundableProducts, setFundableProducts] = useState([]);
+  useEffect(() => {
+    fetch(`${API}/v2/catalog/products`)
+      .then((r) => r.json())
+      .then((d) => setFundableProducts((Array.isArray(d) ? d : []).filter((p) => p.financing_eligible)))
+      .catch(() => {});
+  }, []);
   const [costs, setCosts] = useState({});
   const [bestRoute, setBestRoute] = useState(null);
   const [suggestContainer, setSuggestContainer] = useState('20DV');
@@ -79,6 +87,9 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
           logistics_resale_price_ex_vat: num(form.logistics_resale_price_ex_vat),
           min_margin_rate: num(form.min_margin_rate),
           territory_id: form.territory_id || null,
+          linked_product_id: form.linked_product_id || null,
+          linked_product_name: form.linked_product_id
+            ? (fundableProducts.find((p) => p.id === form.linked_product_id)?.name || null) : null,
           cost_lines: Object.fromEntries(Object.entries(costs).map(([k, v]) => [k, num(v)])),
         }),
       });
@@ -128,6 +139,18 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
           {field('Prix de revente logistique HT (€)', 'logistics_resale_price_ex_vat')}
           {field('Seuil de marge minimal (%)', 'min_margin_rate')}
           {field('Territoire', 'territory_id', 'ex: Martinique')}
+          <div>
+            <label className="text-[11px] text-white/60 block mb-1">Offre catalogue finançable liée</label>
+            <select value={form.linked_product_id}
+              onChange={(e) => set('linked_product_id', e.target.value)}
+              data-testid="op-linked-product"
+              className="w-full h-9 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white">
+              <option value="">— aucune —</option>
+              {fundableProducts.map((p) => (
+                <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+              ))}
+            </select>
+          </div>
         </div>
         {bestRoute && (
           <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-400/25 flex-wrap" data-testid="best-route-suggestion">

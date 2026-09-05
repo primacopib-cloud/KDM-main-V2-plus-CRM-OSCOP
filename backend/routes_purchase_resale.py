@@ -80,6 +80,8 @@ class OperationCreate(BaseModel):
     cost_lines: Dict[str, float] = {}
     min_margin_rate: float = Field(default=0.0, ge=0, le=100)
     funding_instrument: Optional[str] = None
+    linked_product_id: Optional[str] = None
+    linked_product_name: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -97,6 +99,8 @@ class OperationUpdate(BaseModel):
     investor_name: Optional[str] = None
     funding_instrument: Optional[str] = None
     logistics_status: Optional[str] = None
+    linked_product_id: Optional[str] = None
+    linked_product_name: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -261,6 +265,19 @@ async def create_operation(payload: OperationCreate, admin: dict = Depends(_admi
     await _audit("OPERATION_CREATED", op["id"], admin, {"reference": ref})
     op["blockers"] = authorization_blockers(op)
     return op
+
+
+@pr_router.get("/public/financing-opportunities")
+async def financing_opportunities():
+    """Opérations d'achat-revente liées à une offre finançable, proposées aux investisseurs."""
+    ops = await db.purchase_resale_operations.find(
+        {"linked_product_id": {"$nin": [None, ""]}, "status": {"$nin": ["CLOSED", "CANCELLED"]}},
+        {"_id": 0, "id": 1, "reference": 1, "status": 1, "territory_id": 1,
+         "linked_product_id": 1, "linked_product_name": 1,
+         "purchase_amount_ex_vat": 1, "resale_amount_ex_vat": 1,
+         "logistics_mode": 1, "expected_margin_ex_vat": 1, "created_at": 1},
+    ).sort("created_at", -1).to_list(50)
+    return {"opportunities": ops, "notice": "Financement en euros ou devises uniquement. Les CREDI'SCOP-I n'y participent jamais."}
 
 
 @pr_router.get("/admin/purchase-resale/operations")
