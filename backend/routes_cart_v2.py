@@ -109,6 +109,9 @@ async def get_cart(
     ).sort("expires_at", 1).to_list(1)
     if soonest:
         response.reserved_until = soonest[0]["expires_at"]
+    if cart.get("return_code"):
+        response.return_code = cart["return_code"]
+        response.return_discount_cents = round(cart.get("subtotal_ht_cents", 0) * cart.get("return_discount_percent", 0) / 100)
     return response
 
 
@@ -272,6 +275,44 @@ async def extend_cart_reservation(
         if latest is None or new_expires < latest:
             latest = new_expires
     return {"extended": len(reservations), "reserved_until": latest, "extensions_left": MAX_EXTENSIONS - used - 1}
+
+
+@cart_router.post("/cart/apply-return-code", response_model=CartResponse)
+async def apply_return_code(
+    payload: dict,
+    zone_code: Optional[str] = None,
+    current_user: dict = Depends(get_current_user_catalog),
+):
+    """Applique un bon de retour (relance panier abandonné) au panier actif."""
+    code = (payload.get("code") or "").strip().upper()
+    if not code:
+        raise HTTPException(status_code=400, detail="Code requis")
+    membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
+    if not membership:
+        raise HTTPException(status_code=400, detail="Aucune organisation associée")
+    await ensure_member_active(membership["org_id"])
+    zone_code = await _resolve_zone(current_user, membership["org_id"], zone_code)
+    promo = await db.cart_return_codes.find_one({"code": code, "org_id": membership["org_id"]})
+    if not promo:
+        raise HTTPException(status_code=404, detail="Code invalide pour votre organisation")
+    if promo.get("used"):
+        raise HTTPException(status_code=400, detail="Ce bon de retour a déjà été utilisé")
+    if promo["expires_at"] < datetime.utcnow().isoformat():
+        raise HTTPException(status_code=400, detail="Ce bon de retour a expiré")
+    cart = await db.carts.find_one({
+        "org_id": membership["org_id"], "zone_code": zone_code, "status": CartStatus.ACTIVE.value,
+    })
+    if not cart or not cart.get("items"):
+        raise HTTPException(status_code=400, detail="Panier vide")
+    await db.carts.update_one(
+        {"id": cart["id"]},
+        {"$set": {"return_code": code, "return_discount_percent": promo["discount_percent"], "updated_at": datetime.utcnow()}},
+    )
+    cart = await db.carts.find_one({"id": cart["id"]})
+    response = await _build_cart_response(cart)
+    response.return_code = code
+    response.return_discount_cents = round(cart.get("subtotal_ht_cents", 0) * promo["discount_percent"] / 100)
+    return response
 
 
 @cart_router.delete("/cart/items/{item_id}", response_model=CartResponse)

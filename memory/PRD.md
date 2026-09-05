@@ -2721,3 +2721,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Relance panier abandonné + exports CSV ruptures/abandons (self-testé curl + capture ✅)
 - send_abandoned_cart_reminders (stock_reservations.py) : email Brevo à l'owner de l'org quand une réservation expire sans commande, groupé par org/zone, anti-spam 1/24 h (collection abandoned_cart_reminders), flag reminded sur reservation_history — validé : email envoyé + log + flag
 - GET /api/catalog/admin/stockout-stats/export et /abandoned-reservations/export : CSV (; BOM, en-têtes FR) via helper _csv_response ; boutons Export CSV dans les 2 panneaux (StockInsightsPanels) + colonne « Relancé » (✉ OUI)
+
+## 2026-06 — Bon de relance panier + taux de conversion (self-testé E2E curl ✅)
+- Relance abandon : génère un code RETOUR-XXXXXX (−5 % HT, 72 h, mono-usage, lié à l'org, collection cart_return_codes) inclus dans l'email
+- POST /api/v2/catalog/cart/apply-return-code : applique au panier (validations org/usage/expiration) ; create_order applique la remise (subtotal/tax/total recalculés), marque le code used + relances converted (fenêtre 7 j)
+- GET /api/catalog/admin/reminder-conversion : reminders_sent/converted/rate + codes émis/utilisés — bandeau vert dans AbandonedCartsPanel ; ReturnCodeBox (saisie code) dans le panier
+- Validé E2E : code généré → appliqué (−15,47 €) → commande 293,92 € HT → code used, relance converted, stats 100 % (1/1) ; données démo restaurées
