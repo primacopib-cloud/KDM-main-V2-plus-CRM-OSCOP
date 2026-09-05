@@ -231,3 +231,81 @@ async def update_rate(route_id: str, payload: RateUpdate, admin: dict = Depends(
     if not r.matched_count:
         raise HTTPException(status_code=404, detail="Route introuvable")
     return {"success": True}
+
+
+# ===== FRET AÉRIEN — marchandises urgentes =====
+AIR_DEFAULT_RATES = [
+    # (origine, destination, {palier €/kg}, min €, transit jours)
+    ("Paris CDG", "Pointe-à-Pitre (Guadeloupe)", {"lt45": 6.9, "kg45": 5.4, "kg100": 4.6, "kg300": 3.8}, 95, 2),
+    ("Paris CDG", "Fort-de-France (Martinique)", {"lt45": 6.9, "kg45": 5.4, "kg100": 4.6, "kg300": 3.8}, 95, 2),
+    ("Paris CDG", "Cayenne (Guyane)", {"lt45": 7.6, "kg45": 6.0, "kg100": 5.1, "kg300": 4.2}, 110, 3),
+    ("Paris CDG", "Saint-Denis (La Réunion)", {"lt45": 7.2, "kg45": 5.7, "kg100": 4.8, "kg300": 4.0}, 100, 2),
+    ("Paris CDG", "Dzaoudzi (Mayotte)", {"lt45": 8.1, "kg45": 6.4, "kg100": 5.4, "kg300": 4.5}, 120, 3),
+    ("Amsterdam (Pays-Bas)", "Pointe-à-Pitre (Guadeloupe)", {"lt45": 7.3, "kg45": 5.8, "kg100": 4.9, "kg300": 4.1}, 105, 3),
+    ("Miami (États-Unis)", "Pointe-à-Pitre (Guadeloupe)", {"lt45": 5.8, "kg45": 4.5, "kg100": 3.8, "kg300": 3.1}, 85, 2),
+    ("Miami (États-Unis)", "Fort-de-France (Martinique)", {"lt45": 5.8, "kg45": 4.5, "kg100": 3.8, "kg300": 3.1}, 85, 2),
+    ("Dubaï (EAU)", "Saint-Denis (La Réunion)", {"lt45": 5.5, "kg45": 4.3, "kg100": 3.6, "kg300": 3.0}, 90, 2),
+    ("Dubaï (EAU)", "Dzaoudzi (Mayotte)", {"lt45": 6.2, "kg45": 4.9, "kg100": 4.1, "kg300": 3.4}, 100, 3),
+    ("Shanghai (Chine)", "Saint-Denis (La Réunion)", {"lt45": 6.6, "kg45": 5.2, "kg100": 4.4, "kg300": 3.6}, 110, 4),
+    ("São Paulo (Brésil)", "Cayenne (Guyane)", {"lt45": 5.9, "kg45": 4.7, "kg100": 3.9, "kg300": 3.2}, 90, 2),
+]
+AIR_FUEL_RATE = 18.0
+AIR_SECURITY_PER_KG = 0.15
+VOLUMETRIC_KG_PER_M3 = 167
+
+
+async def seed_air_rates(database):
+    for origin, destination, per_kg, min_charge, transit in AIR_DEFAULT_RATES:
+        await database.freight_air_rates.update_one(
+            {"origin": origin, "destination": destination},
+            {"$setOnInsert": {"id": str(uuid.uuid4()), "origin": origin, "destination": destination,
+                              "per_kg": per_kg, "min_charge": min_charge, "transit_days": transit,
+                              "fuel_rate": AIR_FUEL_RATE, "security_per_kg": AIR_SECURITY_PER_KG,
+                              "active": True}},
+            upsert=True)
+
+
+class AirQuoteRequest(BaseModel):
+    route_id: str
+    weight_kg: float = Field(gt=0, le=50000)
+    volume_m3: float = Field(default=0, ge=0, le=500)
+
+
+def _air_rate_for(per_kg: dict, taxable: float) -> float:
+    if taxable < 45:
+        return per_kg["lt45"]
+    if taxable < 100:
+        return per_kg["kg45"]
+    if taxable < 300:
+        return per_kg["kg100"]
+    return per_kg["kg300"]
+
+
+@freight_router.get("/public/freight/air/routes")
+async def list_air_routes():
+    routes = await db.freight_air_rates.find({"active": True}, {"_id": 0}).sort(
+        [("origin", 1), ("destination", 1)]).to_list(100)
+    return {"routes": routes,
+            "note": "Barème aérien indicatif LOGI'SCOP pour marchandises urgentes — poids taxable = max(poids réel, volume × 167 kg/m³)."}
+
+
+@freight_router.post("/public/freight/air/quote")
+async def air_quote(payload: AirQuoteRequest):
+    route = await db.freight_air_rates.find_one({"id": payload.route_id, "active": True}, {"_id": 0})
+    if not route:
+        raise HTTPException(status_code=404, detail="Route aérienne introuvable")
+    taxable = max(payload.weight_kg, payload.volume_m3 * VOLUMETRIC_KG_PER_M3)
+    rate = _air_rate_for(route["per_kg"], taxable)
+    base = max(taxable * rate, route["min_charge"])
+    fuel = round(base * route["fuel_rate"] / 100, 2)
+    security = round(taxable * route["security_per_kg"], 2)
+    total = round(base + fuel + security, 2)
+    return {
+        "mode": "AIR",
+        "route": f"{route['origin']} ✈ {route['destination']}",
+        "taxable_weight_kg": round(taxable, 1),
+        "rate_per_kg": rate,
+        "transit_days_estimate": route["transit_days"],
+        "breakdown": {"base_freight": round(base, 2), "fuel_surcharge": fuel, "security_fee": security},
+        "total_ex_vat": total,
+    }

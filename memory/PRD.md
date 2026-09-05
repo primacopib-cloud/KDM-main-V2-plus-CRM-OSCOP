@@ -2633,3 +2633,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Intégration commande acheteur: POST /api/freight/attach-to-order (401 sans auth, 403 autre org, admin bypass) → order.freight_quote; OrderResponse + champ freight_quote; OrdersPage affiche « Devis fret LOGI'SCOP intégré »; UI FreightToOrder (select commandes + bouton) sous le devis. Admin garde FreightToOperation
 - Ports mondiaux: WORLD_DEPARTURES (20 ports: Shanghai, Ningbo, Singapour, Rotterdam, Anvers, Hambourg, Barcelone, Gênes, Algésiras, Istanbul, Jebel Ali, Nhava Sheva, New York, Houston, Miami, Santos, Casablanca, Dakar, Abidjan, Durban) × 5 destinations DOM = 107 routes actives (seed idempotent, to_list 300 + tri)
 - Testé e2e: gate visiteur, calculateur acheteur 107 routes, attach OK + visible sur commande, 401/403. Devis de test retiré de la commande démo
+
+## Fret aérien + recherche port (05/06/2026) ✅
+- Backend routes_freight_calc.py: AIR_DEFAULT_RATES (12 routes: CDG×5 DOM, Amsterdam, Miami×2, Dubaï×2, Shanghai, São Paulo), tarifs €/kg par paliers (<45/45/100/300), min charge, fuel 18%, sûreté 0,15€/kg, poids taxable max(réel, m³×167). GET /api/public/freight/air/routes + POST /air/quote. seed_air_rates branché au startup (server.py)
+- Frontend: onglets « Fret maritime / Fret aérien — urgences » (freight-mode-SEA/AIR) dans FreightCalculatorPage; AirFreightPanel.jsx (recherche aéroport, poids/volume, devis détaillé, FreightToOperation + FreightToOrder)
+- Recherche port maritime: champ freight-route-search filtrant les 107 routes (testé « shanghai » → 5)
+- Testé e2e: quote CDG→PàP 120kg/1m³ → taxable 167kg, min charge 95€ ok; UI devis aérien 250kg = 1483€ HT + intégration commande
