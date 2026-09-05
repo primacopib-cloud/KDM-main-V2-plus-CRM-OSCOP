@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { OperationFormDialog } from './purchase-resale/OperationFormDialog';
 import { OperationDetail } from './purchase-resale/OperationDetail';
+import { PrintSectionButton } from '../PrintSectionButton';
 import { Operation360 } from './purchase-resale/Operation360';
 
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
@@ -46,7 +47,7 @@ export const PurchaseResaleTab = () => {
   const ops = data?.operations || [];
 
   return (
-    <div className="space-y-5" data-testid="purchase-resale-tab">
+    <div className="space-y-5" data-testid="purchase-resale-tab" data-print-section>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -61,6 +62,7 @@ export const PurchaseResaleTab = () => {
           className="bg-[#D9B35A] text-[#2A1045] hover:bg-[#F2D07A] font-semibold">
           <Plus className="w-4 h-4 mr-1" /> Nouvelle opération
         </Button>
+        <PrintSectionButton />
       </div>
 
       <div className="rounded-[14px] p-3 border border-sky-400/25 bg-sky-500/10 flex gap-2 items-start">

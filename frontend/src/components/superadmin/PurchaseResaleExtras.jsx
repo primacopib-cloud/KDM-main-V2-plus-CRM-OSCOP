@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { PrintSectionButton } from '../PrintSectionButton';
 
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR')} €`;
 
@@ -27,9 +28,10 @@ export const MarginsChart = () => {
   const territories = Object.entries(byTerritory).sort((a, b) => b[1].expected - a[1].expected);
   const tMax = Math.max(...territories.map(([, v]) => Math.max(v.expected, v.realized, 1)));
   return (
-    <div className="glass-panel-soft rounded-[18px] p-4 mt-5" data-testid="margins-chart">
+    <div className="glass-panel-soft rounded-[18px] p-4 mt-5" data-testid="margins-chart" data-print-section>
       <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
         <BarChart3 className="w-5 h-5 text-[#D9B35A]" /> Marges prévisionnelles vs réalisées
+        <span className="ml-auto"><PrintSectionButton /></span>
       </h3>
       <div className="flex gap-3 text-[10px] text-white/55 mb-3">
         <span><span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#D9B35A] mr-1"></span>Prévisionnelle</span>

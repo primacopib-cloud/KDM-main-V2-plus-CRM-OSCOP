@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollText, ShieldCheck, Search, RefreshCw, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { PrintSectionButton } from '../PrintSectionButton';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inp = 'h-9 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35';
@@ -51,12 +52,13 @@ export const AuditJournalPanel = () => {
   };
 
   return (
-    <div className="glass-panel-soft rounded-[18px] p-5" data-testid="audit-journal-panel">
+    <div className="glass-panel-soft rounded-[18px] p-5" data-testid="audit-journal-panel" data-print-section>
       <div className="flex flex-wrap items-center gap-2 mb-1">
         <h3 className="font-display text-lg text-white flex items-center gap-2 flex-1">
           <ScrollText size={16} style={{ color: '#D9B35A' }} /> Journal d'audit
           <span className="text-sm font-normal text-white/50">({items.length})</span>
         </h3>
+        <PrintSectionButton />
         <button type="button" onClick={verify} data-testid="audit-verify-btn"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] border border-white/15 text-white/70 hover:text-white transition-colors">
           <ShieldCheck size={13} /> Vérifier l'intégrité
