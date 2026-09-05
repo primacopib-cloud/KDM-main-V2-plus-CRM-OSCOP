@@ -30,6 +30,7 @@ import { VendorAdhesionsPanel } from '../components/superadmin/VendorAdhesionsPa
 import { AccountingTab } from '../components/superadmin/AccountingTab';
 import { PurchaseResaleTab } from '../components/superadmin/PurchaseResaleTab';
 import { ServiceCreditsPanel } from '../components/superadmin/ServiceCreditsPanel';
+import { InvestorPlansAdminPanel } from '../components/superadmin/InvestorPlansAdminPanel';
 import { LegalPagesPanel } from '../components/superadmin/LegalPagesPanel';
 import { FogedomPanelWithOps } from '../components/superadmin/FogedomPanelWithOps';
 import { StaffRolesPanel } from '../components/superadmin/StaffRolesPanel';
@@ -283,6 +284,7 @@ export default function SuperAdminPage() {
           <TabsContent value="cpc">
             <CpcAdminTab />
             <ServiceCreditsPanel />
+            <InvestorPlansAdminPanel />
           </TabsContent>
 
           <TabsContent value="consultations">

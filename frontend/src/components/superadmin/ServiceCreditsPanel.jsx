@@ -53,7 +53,7 @@ export const ServiceCreditsPanel = () => {
     <div className="space-y-5 mt-8" data-testid="service-credits-panel">
       <div>
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <Ticket className="w-5 h-5 text-[#D9B35A]" /> CREDI'SCOP-I — Unités de services internes
+          <Ticket className="w-5 h-5 text-[#D9B35A]" /> CREDI'SCOP-INVEST — Unités de services internes
         </h2>
         <p className="text-amber-200/85 text-xs mt-1 p-2 rounded bg-amber-500/10 border border-amber-400/25">{catalog.disclaimer}</p>
       </div>

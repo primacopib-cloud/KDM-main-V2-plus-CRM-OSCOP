@@ -73,7 +73,7 @@ async def get_oscop_offer(product_id: str):
 @oscop_checkout_router.post("/session")
 async def create_session(payload: SessionCreate):
     if payload.payment_method.upper() in FORBIDDEN_METHODS:
-        raise HTTPException(status_code=409, detail="CREDI'SCOP-I ne peut jamais servir à payer des produits ou de la logistique")
+        raise HTTPException(status_code=409, detail="CREDI'SCOP-INVEST ne peut jamais servir à payer des produits ou de la logistique")
     prod = await _get_offer(payload.product_id)
     goods_ht = prod["oscop_price_ht_cents"] * payload.quantity
     logistics_ht = 0

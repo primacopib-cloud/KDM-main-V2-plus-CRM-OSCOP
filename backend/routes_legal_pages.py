@@ -47,10 +47,10 @@ DEFAULT_PAGES = [
 O'SCOP assure uniquement les services coopératifs indiqués sur l'offre : accès, mutualisation, référencement, coordination ou abonnement. O'SCOP n'encaisse jamais le prix des marchandises vendues par un partenaire.
 
 Le vendeur juridique, l'émetteur de la facture et le bénéficiaire du paiement sont indiqués sur chaque fiche avant la validation de la commande et demeurent enregistrés dans l'historique de l'opération."""),
-    ("conditions-credi-scop-investissement", "Conditions CREDI'SCOP-I et investissement",
-     """Les CREDI'SCOP-I sont des unités internes de services. Ils résultent d'un abonnement ou d'une attribution contractuelle de services.
+    ("conditions-credi-scop-investissement", "Conditions CREDI'SCOP-INVEST et investissement",
+     """Les CREDI'SCOP-INVEST sont des unités internes de services. Ils résultent d'un abonnement ou d'une attribution contractuelle de services.
 
-Les CREDI'SCOP-I : n'ont aucune valeur en euros ; ne sont pas convertibles ; ne sont pas remboursables en espèces ; ne sont pas transférables ; ne sont pas chargés sur une carte bancaire ; ne constituent pas le montant investi ; ne produisent aucun intérêt ni rendement ; ne donnent aucun droit automatique à une opération ; sont utilisables uniquement dans le catalogue fermé de services O'SCOP.
+Les CREDI'SCOP-INVEST : n'ont aucune valeur en euros ; ne sont pas convertibles ; ne sont pas remboursables en espèces ; ne sont pas transférables ; ne sont pas chargés sur une carte bancaire ; ne constituent pas le montant investi ; ne produisent aucun intérêt ni rendement ; ne donnent aucun droit automatique à une opération ; sont utilisables uniquement dans le catalogue fermé de services O'SCOP.
 
 Tout investissement réel fait l'objet d'un Bon d'Engagement déterminant le support juridique applicable (compte courant d'associé, titres participatifs, financement par acteur habilité, société de projet ou autre instrument validé) et d'un paiement distinct en monnaie ayant cours légal."""),
     ("convention-investisseur", "Convention investisseur",
@@ -66,7 +66,7 @@ Le payeur matériel peut être O'SCOP ou un investisseur agissant pour le compte
 
 Le fournisseur transmet les documents qualité, origine, douane et conformité requis, ainsi que les poids, volumes, conditionnements et contraintes de transport pour l'organisation logistique LOGI'SCOP."""),
     ("politique-paiement-et-remboursement", "Politique de paiement et de remboursement",
-     """Paiements des marchandises et de la logistique : carte bancaire, virement ou solution bancaire habilitée via un prestataire de services de paiement (PSP). CREDI'SCOP-I : unités internes réservées aux services d'analyse, d'activation et de suivi — jamais un moyen de paiement des produits.
+     """Paiements des marchandises et de la logistique : carte bancaire, virement ou solution bancaire habilitée via un prestataire de services de paiement (PSP). CREDI'SCOP-INVEST : unités internes réservées aux services d'analyse, d'activation et de suivi — jamais un moyen de paiement des produits.
 
 Aucun numéro complet de carte ni cryptogramme n'est stocké : les paiements utilisent des pages hébergées et la tokenisation du PSP. Seuls la référence PSP, le statut, le montant, la devise et la date sont conservés.
 
