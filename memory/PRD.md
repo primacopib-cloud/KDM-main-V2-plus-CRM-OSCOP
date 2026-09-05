@@ -2661,3 +2661,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Nav: « Fournisseurs » → « Accès Pro » (/adhesion-vendeur)
 - Catalogue visiteur: déjà sans prix (price_visible=False backend, prix floutés « Tarif réservé aux adhérents ») — vérifié 11/11 floutés
 - Familles accueil → catalogue pré-filtré: liens /catalogue?famille=alimentaire|btp|agriculture|commerce + mapping regex famille→catégorie dans CatalogPage (testé: commerce → catégorie Hygiène active)
+
+## Catégories BTP & Agriculture + 6 produits (05/06/2026) ✅
+- Seed idempotent /app/tests_manual/seed_btp_agri.py: catégories « BTP & Matériaux » et « Agriculture & Végétal » (is_active) + 6 produits (BTP-CIM/FER/TOL, AGR-ENG/SEM/IRR) OSCOP_DIRECT_RESALE finançables, images générées (Gemini), incoterms dict par zone {ZONE:[CIF,DAP]}, zone_prices is_active pour 4 zones
+- Pièges corrigés: categories.is_active (pas active), zone_prices.is_active, incoterms doit être dict zone→liste (500 pydantic sinon)
+- Vérifié: API 8 catégories, 17 produits GP dont les 6 nouveaux; /catalogue?famille=btp et ?famille=agriculture ouvrent la bonne catégorie avec 3 produits chacun
