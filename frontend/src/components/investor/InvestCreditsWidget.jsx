@@ -59,8 +59,15 @@ export const InvestCreditsWidget = () => {
   if (none || !data) return null;
   const warning = data.alert === 'ALMOST';
   const reached = data.alert === 'REACHED';
+  const suspended = data.account_status === 'SUSPENDED';
   return (
     <div className="rounded-[20px] p-5 mb-5 bg-white/[0.03] border border-[#D9B35A]/25" data-testid="invest-credits-widget">
+      {suspended && (
+        <div className="rounded-xl px-3 py-2 mb-3 flex items-start gap-2 text-xs bg-red-500/10 border border-red-400/40 text-red-300" data-testid="invest-suspended-banner">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>Capacité de financement <b>suspendue</b> après 2 échecs de prélèvement consécutifs. Mettez à jour votre carte bancaire : elle sera rétablie au prochain paiement réussi.</span>
+        </div>
+      )}
       <div className="flex items-center gap-2 mb-2">
         <Coins className="w-4 h-4 text-[#D9B35A]" />
         <h3 className="text-sm font-bold text-[#E9CF8E] m-0">CREDI'SCOP-INVEST — plan {data.plan}</h3>

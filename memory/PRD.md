@@ -2758,3 +2758,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Abonnés admin : GET /api/investor-plans/admin/subscribers (email, plan, statut À jour/Échec paiement, solde uc, prochaine échéance = period_start+1 mois) — tableau dans InvestorPlansAdminPanel
 - Rappel quota : check_low_quota_alert après chaque consommation (accept financement + /consume) — email si solde < 10 % du quota, 1 envoi max par période (flag low_quota_alerted_period) — validé (Brevo 201)
 - Export financements : GET /api/investor-plans/my-financings/pdf (entrées FINANCING + total) — bouton "Export PDF de mes financements" dans InvestCreditsWidget (validé %PDF + rendu UI)
+
+## 2026-06 — Coordonnées bancaires, archive factures, suspension impayé, rapport mensuel, relance J-3 (self-testé ✅)
+- Coordonnées bancaires investisseur : IBAN/BIC/titulaire + upload RIB PDF/PNG base64 max 5 Mo (rejet .jpg validé), invitation si incomplet, badge vert si complet, téléchargement RIB — endpoints /api/investor-plans/bank-details (+/rib), composant InvestorBankAndInvoices.jsx
+- Archive factures : GET /my-invoices + /my-invoices/{id}/pdf (re-génération reportlab), section dans l'espace investisseur
+- Suspension auto : webhook payment_failed → compteur payment_failures ; 2 échecs consécutifs → statut SUSPENDED + email + bannière rouge dans le widget ; invoice.paid → reset compteur + ACTIVE (validé)
+- Rapport mensuel superadmin : investor_reports.run_investor_monthly_report (jour 1, idempotent via system_flags) — abonnés par plan/statut, encaissements factures, financements uc du mois précédent (2 destinataires Brevo 201)
+- Relance J-3 : run_investor_j3_reminders — email 3 jours avant next_due (period_start+1 mois), 1 envoi/période via flag j3_reminder_period (validé : 1 envoi) ; les 2 jobs sont branchés dans scheduler.py (boucle 6h)

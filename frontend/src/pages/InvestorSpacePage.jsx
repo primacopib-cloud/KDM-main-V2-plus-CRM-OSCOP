@@ -10,6 +10,7 @@ import { MessagesNavLink } from '../components/MessagesNavLink';
 import { InvestorDataroom } from '../components/investor/InvestorDataroom';
 import { InvestorApplyForm } from '../components/investor/InvestorApplyForm';
 import { InvestCreditsWidget } from '../components/investor/InvestCreditsWidget';
+import { InvestorBankDetails, InvestorInvoicesArchive } from '../components/investor/InvestorBankAndInvoices';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -84,6 +85,8 @@ export default function InvestorSpacePage() {
         <FinancingOpportunities />
         <CheckoutResultBanner />
         <InvestCreditsWidget />
+        <InvestorBankDetails />
+        <InvestorInvoicesArchive />
         <InvestorApplyForm />
         <div className="grid md:grid-cols-2 gap-4 mb-8">
           {blocks.map((b) => (
