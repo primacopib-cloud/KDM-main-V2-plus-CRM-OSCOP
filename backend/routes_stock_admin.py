@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from admin_guard import require_admin
 from auth import get_current_user_id
+from email_alerts import send_critical_alert_email
 from favorites_alerts import alert_favorites
 
 logger = logging.getLogger(__name__)
@@ -81,16 +82,34 @@ async def get_zone_stocks(product_id: str, _: dict = Depends(_admin)):
     }
 
 
+@stock_admin_router.get("/stock-history")
+async def get_stock_history(
+    product_id: str | None = None,
+    zone_code: str | None = None,
+    limit: int = 50,
+    _: dict = Depends(_admin),
+):
+    query = {}
+    if product_id:
+        query["product_id"] = product_id
+    if zone_code:
+        query["zone_code"] = zone_code
+    entries = await db.stock_adjustments.find(query, {"_id": 0}).sort("created_at", -1).to_list(min(limit, 200))
+    return {"entries": entries}
+
+
 @stock_admin_router.put("/stock/{product_id}")
-async def update_zone_stock(product_id: str, body: StockUpdateRequest, _: dict = Depends(_admin)):
+async def update_zone_stock(product_id: str, body: StockUpdateRequest, admin: dict = Depends(_admin)):
     product = await _find_product(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
 
     existing = await db.zone_stocks.find_one({"product_id": product_id, "zone_code": body.zone_code})
     old_available = 0
+    reorder_point = 10
     if existing:
         old_available = existing.get("quantity_available", 0) - existing.get("quantity_reserved", 0)
+        reorder_point = existing.get("reorder_point", 10)
 
     await db.zone_stocks.update_one(
         {"product_id": product_id, "zone_code": body.zone_code},
@@ -102,15 +121,52 @@ async def update_zone_stock(product_id: str, body: StockUpdateRequest, _: dict =
         upsert=True,
     )
 
+    # Historique des ajustements
+    await db.stock_adjustments.insert_one({
+        "id": f"{product_id}-{body.zone_code}-{int(_now().timestamp() * 1000)}",
+        "product_id": product_id,
+        "product_name": product.get("name", ""),
+        "zone_code": body.zone_code,
+        "old_quantity": existing.get("quantity_available", 0) if existing else 0,
+        "new_quantity": body.quantity_available,
+        "author_id": admin.get("id"),
+        "author_email": admin.get("email"),
+        "created_at": _now().isoformat(),
+    })
+
     restocked = old_available <= 0 and body.quantity_available > 0
     if restocked:
         asyncio.ensure_future(alert_favorites(product_id, body.zone_code, "restock"))
+
+    # Alerte email admins si le stock passe sous le seuil de réassort
+    new_available = body.quantity_available - (existing.get("quantity_reserved", 0) if existing else 0)
+    low_stock_alerted = False
+    if new_available <= reorder_point and old_available > reorder_point:
+        low_stock_alerted = True
+        asyncio.ensure_future(asyncio.to_thread(
+            send_critical_alert_email,
+            alert_type="low_stock",
+            title=f"Stock sous seuil : {product.get('name', product_id)} ({body.zone_code})",
+            message=(
+                f"Le stock du produit <strong>{product.get('name', product_id)}</strong> "
+                f"sur le territoire <strong>{body.zone_code}</strong> est passé sous son seuil de réassort."
+            ),
+            details={
+                "Produit": product.get("name", product_id),
+                "Territoire": body.zone_code,
+                "Stock disponible": f"{new_available} unités",
+                "Seuil de réassort": f"{reorder_point} unités",
+                "Modifié par": admin.get("email", ""),
+            },
+            priority="high",
+        ))
 
     return {
         "product_id": product_id,
         "zone_code": body.zone_code,
         "quantity_available": body.quantity_available,
         "restock_alert_triggered": restocked,
+        "low_stock_alert_triggered": low_stock_alerted,
     }
 
 

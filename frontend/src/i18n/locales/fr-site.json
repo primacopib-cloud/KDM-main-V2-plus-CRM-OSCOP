@@ -452,5 +452,100 @@
     "offertes": "offertes",
     "payer_adhesion": "Payer mon adhésion {{price}} € en ligne",
     "paiement_note": "Paiement sécurisé Stripe — connectez-vous ou créez votre compte, votre Espace PASS s'ouvre ensuite."
+  },
+  "pro": {
+    "hero_badge": "CENTRALE PROFESSIONNELLE MULTI-TERRITOIRES",
+    "hero_title_1": "Vos achats, votre financement et votre logistique,",
+    "hero_title_2": "dans un seul parcours.",
+    "hero_desc": "O'SCOP peut acheter les marchandises auprès du fournisseur, les revendre et facturer le client professionnel. Selon l'offre, un partenaire référencé peut également demeurer le vendeur direct. Le circuit, le prix, la logistique et le bénéficiaire du paiement sont définis avant l'engagement.",
+    "cta_besoin": "Déposer un besoin d'achat",
+    "cta_catalogue": "Explorer le catalogue Pro",
+    "cta_financer": "Financer une opération",
+    "flow_title": "Exemple illustratif d'une opération",
+    "flow_steps": [
+      "Commande client confirmée",
+      "Fournisseur facture O'SCOP",
+      "Financeur paie le fournisseur",
+      "LOGI'SCOP pilote le transport",
+      "O'SCOP revend et facture le client",
+      "Les encaissements remboursent les sommes dues — le solde constitue la marge O'SCOP"
+    ],
+    "flow_note": "Schéma illustratif du circuit type. Aucun montant présenté ne constitue une ligne disponible réelle.",
+    "journeys_title": "Quatre parcours professionnels",
+    "journeys_sub": "Acheter, vendre, financer et organiser la logistique — dans un cadre coopératif unique.",
+    "j_acheteurs_t": "Acheteurs professionnels",
+    "j_acheteurs_d": "Déposez vos besoins d'achat, comparez les offres des deux circuits et commandez au tarif professionnel HT.",
+    "j_acheteurs_c": "Acheter",
+    "j_fournisseurs_t": "Fournisseurs référencés",
+    "j_fournisseurs_d": "Rejoignez le référencement coopératif : vendez en direct ou via l'achat-revente O'SCOP selon l'offre.",
+    "j_fournisseurs_c": "Devenir fournisseur",
+    "j_investisseurs_t": "Investisseurs & financeurs",
+    "j_investisseurs_d": "Financez des opérations réelles d'achat-revente en euros, tranche marchandises ou tranche logistique.",
+    "j_investisseurs_c": "Financer",
+    "j_logiscop_t": "LOGI'SCOP",
+    "j_logiscop_d": "Enlèvement, groupage, fret maritime ou aérien, douane, stockage et dernier kilomètre multi-territoires.",
+    "j_logiscop_c": "Organiser la logistique",
+    "families_title": "Catalogue professionnel",
+    "families_sub": "Chaque fiche affiche le vendeur juridique, l'émetteur de la facture, le territoire, la disponibilité, la logistique, l'éligibilité au financement et le prix HT.",
+    "families_cta": "Ouvrir le catalogue Pro",
+    "fam_alimentaire": "Alimentaire & épicerie",
+    "fam_btp": "BTP & équipements",
+    "fam_agriculture": "Agriculture & végétal",
+    "fam_commerce": "Commerce général, hygiène & bazar",
+    "fin_title": "Financement : quatre compartiments séparés",
+    "fin_sub": "Les CREDI'SCOP-I activent les services internes. Les euros ou devises financent l'opération.",
+    "fin_compartments": [
+      {
+        "t": "Abonnement mensuel O'SCOP",
+        "d": "Accès aux services de la centrale, facturé en euros."
+      },
+      {
+        "t": "Compteur d'unités de services CREDI'SCOP-I",
+        "d": "Active les services internes coopératifs. Sans valeur monétaire."
+      },
+      {
+        "t": "Investissements réels",
+        "d": "En euros ou devises, ils financent les opérations d'achat-revente."
+      },
+      {
+        "t": "Remboursements par opération",
+        "d": "Ventilés selon la cascade d'encaissement de chaque opération."
+      }
+    ],
+    "fin_can_title": "Les CREDI'SCOP-I peuvent activer",
+    "fin_can_list": [
+      "Data room",
+      "Qualification fournisseur",
+      "Analyse économique",
+      "Analyse logistique",
+      "Bon d'Engagement",
+      "Workflow de paiement",
+      "Reporting",
+      "Clôture"
+    ],
+    "fin_cannot_title": "Ils ne peuvent jamais",
+    "fin_cannot_list": [
+      "Payer un produit",
+      "Payer la logistique",
+      "Être convertis en monnaie",
+      "Être transférés à un fournisseur",
+      "Être chargés sur une carte",
+      "Générer un rendement",
+      "Représenter le montant investi"
+    ],
+    "lolo_badge": "PARCOURS PARTICULIERS MAINTENU",
+    "lolo_title_pre": "Pour les particuliers,",
+    "lolo_title_post": "reste l'accès dédié.",
+    "lolo_desc": "Les particuliers conservent un univers séparé pour consulter les produits de leur territoire, choisir un relais coopératif, retirer leurs commandes ou bénéficier d'une livraison locale.",
+    "lolo_cta_espace": "Accéder à l'espace particuliers",
+    "lolo_cta_relais": "Trouver un relais LOLODRIVE",
+    "lolo_relays_active_one": "relais actif",
+    "lolo_relays_active_other": "relais actifs",
+    "lolo_territories": "territoires",
+    "fogedom_text": "est un fonds interne analytique d'appui, de prévention et de continuité. Son intervention est facultative, individualisée et limitée aux ressources disponibles. Elle ne constitue ni une garantie automatique, ni une assurance, ni un engagement de remboursement de l'investisseur."
+  },
+  "audience": {
+    "pro": "Professionnels",
+    "consumers": "Particuliers"
   }
 }

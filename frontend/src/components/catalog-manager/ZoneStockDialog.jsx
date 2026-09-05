@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Boxes, Loader2 } from 'lucide-react';
+import { Boxes, Loader2, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthHeaders } from '../../services/http';
 import { Button } from '../ui/button';
@@ -9,10 +9,39 @@ import { Input } from '../ui/input';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const ZONES = ['GUADELOUPE', 'MARTINIQUE', 'GUYANE', 'REUNION'];
 
+const StockHistory = ({ productId, refreshKey }) => {
+  const [entries, setEntries] = useState([]);
+  useEffect(() => {
+    fetch(`${API_URL}/api/catalog/admin/stock-history?product_id=${productId}&limit=10`, { headers: getAuthHeaders() })
+      .then((r) => r.json())
+      .then((d) => setEntries(d.entries || []))
+      .catch(() => {});
+  }, [productId, refreshKey]);
+  if (!entries.length) return null;
+  return (
+    <div className="mt-4 pt-3 border-t border-white/10" data-testid="stock-history">
+      <p className="text-xs font-semibold text-[#E9CF8E] flex items-center gap-1.5 mb-2">
+        <History className="w-3.5 h-3.5" /> Historique des ajustements
+      </p>
+      <div className="max-h-40 overflow-y-auto space-y-1">
+        {entries.map((e) => (
+          <div key={e.id} className="flex items-center gap-2 text-[11px] text-white/60" data-testid="stock-history-entry">
+            <span className="w-24 shrink-0 font-mono text-white/40">{new Date(e.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+            <span className="w-24 shrink-0">{e.zone_code}</span>
+            <span className="font-mono">{e.old_quantity} → <strong className="text-white/85">{e.new_quantity}</strong></span>
+            <span className="ml-auto truncate text-white/40">{e.author_email}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const ZoneStockButton = ({ product }) => {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState(null);
   const [savingZone, setSavingZone] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!open) return;
@@ -39,7 +68,11 @@ export const ZoneStockButton = ({ product }) => {
       });
       if (!res.ok) throw new Error();
       const d = await res.json();
-      toast.success(`Stock ${row.zone_code} : ${d.quantity_available} unités${d.restock_alert_triggered ? ' (alerte réassort envoyée)' : ''}`);
+      setRefreshKey((k) => k + 1);
+      let msg = `Stock ${row.zone_code} : ${d.quantity_available} unités`;
+      if (d.restock_alert_triggered) msg += ' (alerte réassort envoyée)';
+      if (d.low_stock_alert_triggered) msg += ' — ⚠ sous le seuil, admins alertés par email';
+      toast.success(msg);
     } catch {
       toast.error('Échec de la mise à jour du stock');
     } finally {
@@ -62,8 +95,7 @@ export const ZoneStockButton = ({ product }) => {
           {!rows ? (
             <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-[#D9B35A]" /></div>
           ) : (
-            <div className="space-y-3">
-              {rows.map((row, i) => (
+            <div className="space-y-3">              {rows.map((row, i) => (
                 <div key={row.zone_code} className="flex items-center gap-3">
                   <span className="w-32 text-sm text-white/80">{row.zone_code}</span>
                   <Input
@@ -80,6 +112,7 @@ export const ZoneStockButton = ({ product }) => {
                   </Button>
                 </div>
               ))}
+              <StockHistory productId={product.id} refreshKey={refreshKey} />
             </div>
           )}
         </DialogContent>
