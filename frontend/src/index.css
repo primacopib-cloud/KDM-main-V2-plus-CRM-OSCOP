@@ -553,3 +553,17 @@ select:disabled { color: rgba(243,237,228,0.4) !important; }
     background: #FFF !important;
   }
 }
+
+/* === IMPRESSION CIBLÉE — n'imprimer qu'une section ================= */
+@media print {
+  body.print-focus > * { visibility: hidden !important; }
+  body.print-focus .print-target,
+  body.print-focus .print-target * { visibility: visible !important; }
+  body.print-focus .print-target {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}

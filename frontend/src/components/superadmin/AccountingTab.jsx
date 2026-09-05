@@ -5,6 +5,7 @@ import { API, getAuthHeaders } from '../../services/http';
 import { RevenueChart, FiscalRegisterSection } from './FiscalRegisterSection';
 import { TreasuryConsolidatedPanel } from './TreasuryConsolidatedPanel';
 import { PaymentLinksPanel } from './PaymentLinksPanel';
+import { PrintSectionButton } from '../PrintSectionButton';
 
 const eur = (cents) => `${(cents / 100).toFixed(2).replace('.', ',')} €`;
 
@@ -63,13 +64,14 @@ export const AccountingTab = () => {
 
   const labels = data?.kind_labels || {};
   return (
-    <div className="space-y-4" data-testid="accounting-tab">
+    <div className="space-y-4" data-testid="accounting-tab" data-print-section>
       <PaymentLinksPanel />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-white flex items-center gap-2">
           <Calculator className="w-4 h-4 text-[#D9B35A]" /> Comptabilité analytique
         </h2>
         <div className="flex items-center gap-2">
+          <PrintSectionButton />
           {PERIODS.map((p) => (
             <button key={p.days} type="button" onClick={() => setDays(p.days)}
               data-testid={`acct-period-${p.days}`}

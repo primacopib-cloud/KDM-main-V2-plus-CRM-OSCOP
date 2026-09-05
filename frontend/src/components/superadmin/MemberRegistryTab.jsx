@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, Fragment } from 'react';
 import { BookUser, Loader2, ShoppingBag, Store, FileDown, FileText, Ban, RotateCcw, AlertTriangle, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiCallV2, BACKEND_URL } from '../../services/http';
+import { PrintSectionButton } from '../PrintSectionButton';
 
 const TYPES = [
   { value: 'BUYER_PRO', label: 'Acheteurs pro', icon: ShoppingBag, color: '#5B9BD5' },
@@ -89,12 +90,13 @@ export const MemberRegistryTab = () => {
   };
 
   return (
-    <div className="space-y-4" data-testid="member-registry-tab">
+    <div className="space-y-4" data-testid="member-registry-tab" data-print-section>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-lg font-semibold flex items-center gap-2 text-[#4C2A6E]">
           <BookUser className="w-5 h-5 text-[#D9B35A]" /> Registres des membres
         </h2>
         <div className="flex gap-2 flex-wrap">
+          <PrintSectionButton />
           {TYPES.map((t) => (
             <button key={t.value} onClick={() => setType(t.value)}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-colors ${

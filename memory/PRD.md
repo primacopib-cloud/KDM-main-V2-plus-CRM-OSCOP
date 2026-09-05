@@ -2522,3 +2522,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Bouton « Imprimer » (data-testid print-mode-btn) dans SuperAdminHeader → window.print()
 - index.css @media print: tout noir sur blanc ([class][class][class] pour battre les !important du thème), header/nav/boutons/tablist masqués, tables bordées #444, thead gris, page-break-inside avoid, sticky→static
 - Vérifié via emulate_media print sur l'onglet Registres: rendu noir/blanc propre
+
+## Impression Ciblée (05/06/2026) ✅
+- Composant /app/frontend/src/components/PrintSectionButton.jsx: bouton « Imprimer » qui cible closest('[data-print-section]'), classes body.print-focus + .print-target, cleanup afterprint
+- index.css @media print: body.print-focus masque tout (visibility) sauf .print-target repositionnée en haut
+- Intégré dans 5 sections: Registres des membres, Journal d'audit, Achat-Revente (liste), Marges (graphique), Comptabilité analytique
+- Vérifié par capture emulate print: seul le tableau Registres imprimé, noir sur blanc
