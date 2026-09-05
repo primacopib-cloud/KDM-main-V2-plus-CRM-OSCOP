@@ -2553,3 +2553,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Backend: CTA_LABELS + hero_besoin_achat/hero_catalogue_pro/hero_financer (routes_cta_stats.py) — testé 200
 - Fix contraste: classe .on-gold (fin index.css) sur onglet actif + pastilles hero
 - CONNU/PRÉEXISTANT: tuiles Mapbox 403 (token REACT_APP_MAPBOX_TOKEN restreint/quota) → fonds de carte noirs, marqueurs visibles. Non traité.
+
+## Fond de carte + champs offre (05/06/2026) ✅
+- Carte LOLODRIVE (LoloPointsMap.jsx): style mapbox dark-v11 (tuiles 403, token restreint) → style inline raster Esri World_Dark_Gray_Base (sans clé, maxzoom 16). CARTO testé mais exige clé désormais. Vérifié: îles + marqueurs OK sur /points-relais
+- Catalogue Pro (ProductsGrid.jsx): bloc « Vendeur juridique » + « Facture émise par » sur chaque carte (data-testid offer-legal-{sku}) + badge « Éligible au financement d'opération » (financing-badge-{sku})
+- Backend: champ financing_eligible ajouté à SaleModelUpdate (routes_sale_model.py), ProductResponse (schema_catalog.py), _build_product_response (routes_catalog.py). Testé e2e: PATCH admin → GET /api/v2/catalog/products renvoie financing_eligible=true (ALI-RIZ-001 marqué en démo)

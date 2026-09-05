@@ -148,6 +148,7 @@ class ProductResponse(BaseModel):
     # Circuit de vente (Phase achat-revente)
     sale_model: Optional[str] = None
     seller_name: Optional[str] = None
+    financing_eligible: Optional[bool] = None
     oscop_price_ht_cents: Optional[int] = None
     oscop_logistics_price_ht_cents: Optional[int] = None
     oscop_vat_rate: Optional[float] = None

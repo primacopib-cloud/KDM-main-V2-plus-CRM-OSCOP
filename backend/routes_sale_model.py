@@ -137,6 +137,7 @@ class SaleModelUpdate(BaseModel):
     oscop_logistics_price_ht_cents: Optional[int] = None
     oscop_vat_rate: Optional[float] = None
     oscop_logistics_available: Optional[bool] = None
+    financing_eligible: Optional[bool] = None
 
 
 async def _admin(current_user: dict = Depends(get_current_user_v2)) -> dict:
@@ -173,7 +174,7 @@ async def update_product_sale_model(product_id: str, payload: SaleModelUpdate, a
     update = {"sale_model": payload.sale_model.value}
     if payload.seller_name is not None:
         update["seller_name"] = payload.seller_name
-    for f in ("oscop_price_ht_cents", "oscop_logistics_price_ht_cents", "oscop_vat_rate", "oscop_logistics_available"):
+    for f in ("oscop_price_ht_cents", "oscop_logistics_price_ht_cents", "oscop_vat_rate", "oscop_logistics_available", "financing_eligible"):
         v = getattr(payload, f)
         if v is not None:
             update[f] = v
