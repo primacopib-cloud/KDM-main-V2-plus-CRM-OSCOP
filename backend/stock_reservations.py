@@ -93,6 +93,45 @@ async def decrement_stock_for_order(db, org_id: str, zone_code: str, items: list
     return decremented
 
 
+async def restock_for_cancellation(db, zone_code: str, items: list, order_number: str, author_email: str = "") -> int:
+    """Ré-injecte les quantités au stock du territoire quand une commande est annulée."""
+    restocked = 0
+    now_iso = _now().isoformat()
+    for it in items:
+        if it.get("unavailable"):
+            continue
+        stock = await db.zone_stocks.find_one({"product_id": it["product_id"], "zone_code": zone_code})
+        if not stock:
+            continue
+        old_qty = stock.get("quantity_available", 0)
+        old_available = old_qty - stock.get("quantity_reserved", 0)
+        new_qty = old_qty + it["quantity"]
+        await db.zone_stocks.update_one(
+            {"product_id": it["product_id"], "zone_code": zone_code},
+            {"$set": {"quantity_available": new_qty, "updated_at": _now(), "last_restock_at": _now()}},
+        )
+        await db.stock_adjustments.insert_one({
+            "id": f"{it['product_id']}-{zone_code}-{int(_now().timestamp() * 1000)}",
+            "product_id": it["product_id"],
+            "product_name": it.get("product_name", ""),
+            "zone_code": zone_code,
+            "old_quantity": old_qty,
+            "new_quantity": new_qty,
+            "author_id": None,
+            "author_email": author_email or f"Annulation {order_number}",
+            "reason": f"Annulation commande {order_number}",
+            "created_at": now_iso,
+        })
+        if old_available <= 0 and new_qty > 0:
+            import asyncio
+            from favorites_alerts import alert_favorites
+            from routes_restock_alerts import notify_restock_watchers
+            asyncio.ensure_future(alert_favorites(it["product_id"], zone_code, "restock"))
+            asyncio.ensure_future(notify_restock_watchers(it["product_id"], zone_code))
+        restocked += 1
+    return restocked
+
+
 async def release_org_zone(db, org_id: str, zone_code: str, product_id: str | None = None) -> int:
     """Libère les réservations de l'org sur la zone (toutes ou un produit)."""
     query = {"org_id": org_id, "zone_code": zone_code}

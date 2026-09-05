@@ -2703,3 +2703,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - GET /cart renvoie reserved_until (réservation la plus proche d'expirer) ; CartReservationCountdown (mm:ss, ambre + toast à <5 min, « expirée » à 0) remplace la note statique dans CatalogHeader
 - create_order (routes_orders_v2) appelle decrement_stock_for_order : déduit quantity_available par territoire (validé Riz 30→10, Huile 100→96), trace stock_adjustments (reason « Commande KDM-… »), libère les réservations
 - Données démo restaurées (commande test supprimée, stocks & panier remis)
+
+## 2026-06 — Restock annulation + prolongation réservation (self-testé curl + captures ✅)
+- cancel_order (routes_orders_v2) → restock_for_cancellation : ré-injecte les quantités (validé Riz 10→30, Huile 96→100), trace « Annulation commande KDM-… », déclenche alertes retour stock si le produit était épuisé
+- POST /api/v2/catalog/cart/reservation/extend : +15 min sur l'échéance de chaque réservation (max(now, expiry)+15), 404 si aucune réservation active
+- CartReservationCountdown : bouton doré « Prolonger 15 min » (data-testid cart-reservation-extend) visible quand < 5 min restantes ; validé UI 02:31 → 17:29 avec toast
