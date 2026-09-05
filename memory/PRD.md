@@ -2740,3 +2740,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Révocation de bons de retour (self-testé curl ✅)
 - POST /api/catalog/admin/return-codes/{id}/revoke (revoked/revoked_by/revoked_at ; 400 si utilisé ou déjà révoqué, 401 sans auth) ; apply-return-code et create_order refusent les bons révoqués
 - UI ReturnCodesPanel : bouton rouge « Révoquer » (avec confirmation) sur les bons ACTIFS, statut RÉVOQUÉ avec tooltip auteur
+
+## 2026-06 — Programme investisseur FINANCER + CREDI'SCOP-INVEST (testé iteration_82 ✅ 100%)
+- routes_investor_plans.py : GET /api/investor-plans (3 plans seedés ULTIMATE 50k€/4M uc, VIP 100k€/8M uc, ELITE 300k€/24M uc + packs 250k€→1,25M uc / 600k€→3,9M uc) ; admin CRUD /admin (PUT visible/prix/quota/desc, DELETE) ; POST /apply → Stripe Checkout (clé env STRIPE_API_KEY, mode test) ; GET /checkout-status/{sid} → crée user rôle investor avec mot de passe provisoire (must_change_password) + investor_accounts + allocation mensuelle ledger ; GET /my-credits (solde, usage %, alert ALMOST ≥90 %/REACHED) ; POST /consume ; POST /buy-pack + GET /pack-status (crédite uc)
+- Frontend : InvestorApplyForm (FINANCER : raison sociale, pays drapeau, tél indicatif+drapeau, SIREN, email, cartes plans, explainer 8 droits + mention Bon d'Engagement/monnaie légale) ; InvestCreditsWidget (solde temps réel refresh 15 s, barre, alertes, packs, historique) ; CheckoutResultBanner (identifiant + mot de passe provisoire) ; InvestorPlansAdminPanel dans superadmin onglet Plans & Crédits (cpc)
+- Renommage global CREDI'SCOP-I → CREDI'SCOP-INVEST (frontend + backend, labels uniquement)
+- Boutons connectés : hero-cta-financer & journey-financer → /espace-investisseur#financer

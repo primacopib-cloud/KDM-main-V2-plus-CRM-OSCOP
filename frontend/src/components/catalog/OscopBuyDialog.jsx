@@ -100,7 +100,7 @@ export const OscopBuyDialog = ({ product, onClose }) => {
               Payer à O'SCOP (Stripe)
             </Button>
             <p className="text-[10px] text-white/40">
-              Paiement par carte ou moyen bancaire habilité via Stripe. Les CREDI'SCOP-I ne sont jamais
+              Paiement par carte ou moyen bancaire habilité via Stripe. Les CREDI'SCOP-INVEST ne sont jamais
               un moyen de paiement des produits. CGV O'SCOP applicables.
             </p>
           </div>

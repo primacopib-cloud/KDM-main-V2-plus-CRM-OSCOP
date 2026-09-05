@@ -493,14 +493,14 @@
     "fam_agriculture": "Agricultura y vegetal",
     "fam_commerce": "Comercio general, higiene y bazar",
     "fin_title": "Financiación: cuatro compartimentos separados",
-    "fin_sub": "Los CREDI'SCOP-I activan los servicios internos. Los euros o divisas financian la operación.",
+    "fin_sub": "Los CREDI'SCOP-INVEST activan los servicios internos. Los euros o divisas financian la operación.",
     "fin_compartments": [
       {
         "t": "Suscripción mensual O'SCOP",
         "d": "Acceso a los servicios de la central, facturado en euros."
       },
       {
-        "t": "Contador de unidades de servicios CREDI'SCOP-I",
+        "t": "Contador de unidades de servicios CREDI'SCOP-INVEST",
         "d": "Activa los servicios internos cooperativos. Sin valor monetario."
       },
       {
@@ -512,7 +512,7 @@
         "d": "Distribuidos según la cascada de cobro de cada operación."
       }
     ],
-    "fin_can_title": "Los CREDI'SCOP-I pueden activar",
+    "fin_can_title": "Los CREDI'SCOP-INVEST pueden activar",
     "fin_can_list": [
       "Data room",
       "Cualificación de proveedor",

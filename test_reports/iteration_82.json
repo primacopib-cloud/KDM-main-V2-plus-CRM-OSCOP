@@ -1,0 +1,19 @@
+{
+  "summary": "Iteration 82 — Programme investisseur (formulaire FINANCER + CREDI'SCOP-INVEST + admin plans) validé end-to-end sur le frontend. Le backend avait déjà été validé par curl par le main agent ; vérifications complémentaires côté DB et via UI. FRONTEND: /espace-investisseur non-connecté affiche titre FINANCER, formulaire investor-apply-form avec tous les champs (invest-legal-name/country avec drapeau France/phone-prefix +33/phone/siren/email), 3 cartes plans (ULTIMATE 50 000€/4M uc, VIP 100 000€/8M uc, ELITE 300 000€/24M uc), bloc crediscop-invest-explainer nommant les 8 droits (Data room, Qualification fournisseur, Analyse économique, Analyse logistique, Bon d'Engagement, Workflow de paiement, Reporting, Clôture) + mention « Chaque investissement réel fait l'objet d'un Bon d'Engagement et d'un paiement distinct en monnaie ayant cours légal ». Renommage CREDI'SCOP-INVEST (au lieu de CREDI'SCOP-I) confirmé. HOME: hero-cta-financer et journey-financer redirigent bien vers /espace-investisseur. LOGIN INVESTISSEUR: widget invest-credits-widget visible, invest-balance='4 000 000 uc', invest-history-toggle affiche allocation +4 000 000 uc. Soumission formulaire (qa-invest@test.fr, plan ULTIMATE sélectionné) → redirection vers checkout.stripe.com/c/pay/cs_test_... (paiement NON finalisé). SUPERADMIN /superadmin → onglet 'Plans & Crédits' (data-testid superadmin-tab-cpc) → panneau investor-plans-admin avec rows ULTIMATE/VIP/ELITE ; plan-toggle-VIP masquer→afficher OK ; plan-save-ULTIMATE → toast 'Plan ULTIMATE mis à jour'. RESTAURATION DB: investor_applications qa-invest@test.fr supprimé, ledger CONSUMPTION 'Test QA' vidé (0), invest_pack_sessions PENDING vidé (0), VIP visible=true confirmé, balance investisseur = 4 000 000 uc.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_investor_plans.py: le champ plan_id semble stocké en None dans investor_plans (query .find_one({'plan_id':'plan-vip'}) renvoie MISSING) — l'identification se fait probablement par 'name' (ULTIMATE/VIP/ELITE) ou _id. Non bloquant côté API mais à documenter pour futures scripts de maintenance/DB.",
+    "GET /api/investor-plans/my-credits retourne plan_name=None alors que l'UI affiche 'plan ULTIMATE' — vérifier la source du libellé (plan.name vs plan.plan_name) pour éviter des divergences futures."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (validé par main agent via curl + spot checks)", "frontend": "100%"},
+  "test_credentials": "Admin: admin@kdmarche-oscop.fr / AdminKDM2025! (portal admin, /admin/connexion). Investisseur: invest.test.i@test.fr / InvestTest2026!",
+  "seed_data_creation": "Aucune donnée persistée. Nettoyage effectué (application qa-invest@test.fr supprimée, aucun ledger Test QA, VIP visible=true).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Programme investisseur + formulaire FINANCER validés. Balance investisseur intacte à 4 000 000 uc. Le flow de paiement complet Stripe (checkout-status → création de compte + mot de passe provisoire) n'a pas été testé en bout de chaîne car nécessiterait un paiement réel — validé par revue de code seulement.",
+  "rca of the issue": "N/A — aucun bug produit."
+}

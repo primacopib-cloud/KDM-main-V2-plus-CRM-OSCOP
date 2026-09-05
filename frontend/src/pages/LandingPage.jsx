@@ -63,7 +63,7 @@ const LandingPage = () => {
       {/* Catalogue professionnel — quatre familles */}
       <Reveal variant="left"><ProCatalogFamilies /></Reveal>
 
-      {/* Financement — quatre compartiments + CREDI'SCOP-I */}
+      {/* Financement — quatre compartiments + CREDI'SCOP-INVEST */}
       <Reveal><FinancingCompartments /></Reveal>
 
       {/* Mention FOGEDOM-SCIC */}

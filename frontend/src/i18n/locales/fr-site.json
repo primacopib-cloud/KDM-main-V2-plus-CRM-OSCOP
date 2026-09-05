@@ -147,7 +147,7 @@
       "Organisateur de la mutualisation",
       "Opérateur de l'accès à la plateforme",
       "Gestionnaire des abonnements",
-      "Gestionnaire du compteur d'unités CREDI'SCOP-I",
+      "Gestionnaire du compteur d'unités CREDI'SCOP-INVEST",
       "Garant du cadre ESS et coopératif"
     ],
     "oscop_restrictions": [
@@ -358,7 +358,7 @@
     "pricing_title": "Tarifs & Abonnements O'SCOP",
     "pricing_desc": "Choisissez votre accès à la centrale : prix structurels B2B mutualisés via KDMARCHE, formules sans engagement.",
     "offers_title": "Nos offres d'adhésion",
-    "offers_desc": "Abonnements O'SCOP et compteur d'unités de services CREDI'SCOP-I : accédez aux prix structurels B2B négociés.",
+    "offers_desc": "Abonnements O'SCOP et compteur d'unités de services CREDI'SCOP-INVEST : accédez aux prix structurels B2B négociés.",
     "logiscop_title": "LOGI'SCOP — Logistique coopérative",
     "logiscop_desc": "Le bras logistique du réseau coopératif : consolidation, acheminement maritime/aérien et distribution relais dans les DOM.",
     "oscop_title": "O'SCOP — Gouvernance ESS",
@@ -493,14 +493,14 @@
     "fam_agriculture": "Agriculture & végétal",
     "fam_commerce": "Commerce général, hygiène & bazar",
     "fin_title": "Financement : quatre compartiments séparés",
-    "fin_sub": "Les CREDI'SCOP-I activent les services internes. Les euros ou devises financent l'opération.",
+    "fin_sub": "Les CREDI'SCOP-INVEST activent les services internes. Les euros ou devises financent l'opération.",
     "fin_compartments": [
       {
         "t": "Abonnement mensuel O'SCOP",
         "d": "Accès aux services de la centrale, facturé en euros."
       },
       {
-        "t": "Compteur d'unités de services CREDI'SCOP-I",
+        "t": "Compteur d'unités de services CREDI'SCOP-INVEST",
         "d": "Active les services internes coopératifs. Sans valeur monétaire."
       },
       {
@@ -512,7 +512,7 @@
         "d": "Ventilés selon la cascade d'encaissement de chaque opération."
       }
     ],
-    "fin_can_title": "Les CREDI'SCOP-I peuvent activer",
+    "fin_can_title": "Les CREDI'SCOP-INVEST peuvent activer",
     "fin_can_list": [
       "Data room",
       "Qualification fournisseur",
