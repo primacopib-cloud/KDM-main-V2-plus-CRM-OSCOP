@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Ship, Plane, Scale, Loader2 } from 'lucide-react';
+import { Ship, Plane, Scale, Loader2, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { API } from '../../services/http';
 import { Button } from '../ui/button';
@@ -12,17 +12,41 @@ export const ModeComparePanel = () => {
   const [form, setForm] = useState({ territory: 'Guadeloupe', weight_kg: '300', volume_m3: '2' });
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
+
+  const body = () => ({
+    territory: form.territory,
+    weight_kg: parseFloat(String(form.weight_kg).replace(',', '.')) || 1,
+    volume_m3: parseFloat(String(form.volume_m3).replace(',', '.')) || 1,
+  });
+
+  const downloadPdf = async () => {
+    setPdfBusy(true);
+    try {
+      const res = await fetch(`${API}/public/freight/compare-modes-pdf`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body()),
+      });
+      if (!res.ok) throw new Error('Génération impossible');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `comparatif-mer-air-${form.territory.toLowerCase()}.pdf`; a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Comparatif PDF téléchargé ✓');
+    } catch (e) {
+      toast.error(String(e.message || e));
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   const compare = async () => {
     setBusy(true);
     try {
       const res = await fetch(`${API}/public/freight/compare-modes`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          territory: form.territory,
-          weight_kg: parseFloat(String(form.weight_kg).replace(',', '.')) || 1,
-          volume_m3: parseFloat(String(form.volume_m3).replace(',', '.')) || 1,
-        }),
+        body: JSON.stringify(body()),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.detail || 'Erreur');
@@ -82,6 +106,11 @@ export const ModeComparePanel = () => {
                 ? <>La mer économise <b className="text-[#A9D96C]">{eur(result.savings_sea_ex_vat)}</b>, l'avion gagne <b className="text-[#E9CF8E]">{result.days_saved_air} jours</b> — arbitrez selon l'urgence.</>
                 : <>L'aérien est ici moins cher ET plus rapide de {result.days_saved_air} jours.</>}
             </p>
+            <Button onClick={downloadPdf} disabled={pdfBusy} variant="outline" data-testid="compare-pdf-btn"
+              className="border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/10">
+              {pdfBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FileDown className="w-4 h-4 mr-1" />}
+              Télécharger le comparatif PDF LOGI'SCOP
+            </Button>
           </div>
         )}
       </div>

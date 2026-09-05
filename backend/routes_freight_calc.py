@@ -371,3 +371,36 @@ async def compare_modes(payload: ModeCompareRequest):
         "savings_sea_ex_vat": round(best_air["total_ex_vat"] - best_sea["total_ex_vat"], 2),
         "days_saved_air": best_sea["transit_days"] - best_air["transit_days"],
     }
+
+
+@freight_router.post("/public/freight/compare-modes-pdf")
+async def compare_modes_pdf(payload: ModeCompareRequest):
+    """Comparatif mer/air PDF LOGI'SCOP numéroté (DF-YYYY-xxxx)."""
+    from fastapi.responses import Response
+    from operation_docs_pdf import build_operation_pdf, next_doc_number
+    result = await compare_modes(payload)
+    number = await next_doc_number(db, "FREIGHT_QUOTE")
+    eur = lambda v: f"{v:,.2f} EUR".replace(",", " ").replace(".", ",")
+    sea, air = result["sea"], result["air"]
+    sections = [
+        ("Objet", "Comparatif fret maritime / fret aérien"),
+        ("Territoire de destination", payload.territory),
+        ("Envoi", f"{payload.weight_kg:g} kg — {payload.volume_m3:g} m³"),
+        ("MARITIME — route la plus économique", sea["route"]),
+        ("Maritime — base", sea["basis"]),
+        ("Maritime — total HT", eur(sea["total_ex_vat"])),
+        ("Maritime — délai estimé", f"{sea['transit_days']} jours"),
+        ("AÉRIEN — route la plus rapide", air["route"]),
+        ("Aérien — base", air["basis"]),
+        ("Aérien — total HT", eur(air["total_ex_vat"])),
+        ("Aérien — délai estimé", f"{air['transit_days']} jours"),
+        ("Écart de coût (air − mer)", eur(result["savings_sea_ex_vat"])),
+        ("Jours gagnés par l'aérien", f"{result['days_saved_air']} jours"),
+        ("Validité", "Estimation indicative — devis contractuel confirmé avant tout engagement"),
+    ]
+    doc = {"doc_type": "FREIGHT_QUOTE", "doc_number": number, "sections": sections,
+           "created_at": datetime.now(timezone.utc).isoformat()}
+    await db.freight_quotes.insert_one({**doc, "id": number})
+    pdf = build_operation_pdf(doc)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{number}-comparatif-mer-air.pdf"'})
