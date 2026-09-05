@@ -9,6 +9,7 @@ import AdvancedStatsCharts from '../components/AdvancedStatsCharts';
 import { useNotificationWebSocket } from '../components/NotificationToast';
 import { BreadcrumbPill } from '../components/Breadcrumb';
 import { SuperAdminHeader } from '../components/superadmin/SuperAdminHeader';
+import { PrintHeader } from '../components/PrintHeader';
 import { DashboardTab } from '../components/superadmin/DashboardTab';
 import { UsersTab, OrdersTab } from '../components/superadmin/UsersOrdersTabs';
 import { TeamRolesTab } from '../components/superadmin/TeamRolesTab';
@@ -126,6 +127,7 @@ export default function SuperAdminPage() {
       className="min-h-screen text-white"
       style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}
     >
+      <PrintHeader />
       <SuperAdminHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
