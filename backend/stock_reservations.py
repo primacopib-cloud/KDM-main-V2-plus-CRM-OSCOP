@@ -12,8 +12,9 @@ def _now():
 
 
 async def cleanup_expired(db) -> int:
-    """Libère les réservations expirées et trace les paniers abandonnés."""
+    """Libère les réservations expirées, trace les paniers abandonnés et relance l'acheteur."""
     expired = await db.stock_reservations.find({"expires_at": {"$lt": _now().isoformat()}}).to_list(200)
+    abandoned_by_org: dict[tuple, list] = {}
     for r in expired:
         await db.zone_stocks.update_one(
             {"product_id": r["product_id"], "zone_code": r["zone_code"]},
@@ -31,7 +32,71 @@ async def cleanup_expired(db) -> int:
             "outcome": "EXPIRED_ABANDONED",
         })
         await db.stock_reservations.delete_one({"id": r["id"]})
+        abandoned_by_org.setdefault((r["org_id"], r["zone_code"]), []).append(r)
+    if abandoned_by_org:
+        import asyncio
+        asyncio.ensure_future(send_abandoned_cart_reminders(db, abandoned_by_org))
     return len(expired)
+
+
+async def send_abandoned_cart_reminders(db, abandoned_by_org: dict) -> int:
+    """Email de relance à l'acheteur dont la réservation panier a expiré (max 1 par org/zone/24 h)."""
+    import logging
+    from datetime import timedelta
+
+    logger = logging.getLogger(__name__)
+    sent = 0
+    cutoff = (_now() - timedelta(hours=24)).isoformat()
+    for (org_id, zone_code), reservations in abandoned_by_org.items():
+        already = await db.abandoned_cart_reminders.find_one(
+            {"org_id": org_id, "zone_code": zone_code, "sent_at": {"$gte": cutoff}}
+        )
+        if already:
+            continue
+        owner = await db.org_memberships.find_one({"org_id": org_id, "role": {"$regex": "OWNER"}})
+        user = await db.users.find_one({"id": owner["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1, "name": 1}) if owner else None
+        if not user or not user.get("email"):
+            continue
+        product_ids = [r["product_id"] for r in reservations]
+        names = {p["id"]: p["name"] for p in await db.products.find({"id": {"$in": product_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(50)}
+        rows = "".join(
+            f"<li style='color:rgba(255,255,255,0.85);font-size:14px;margin-bottom:4px;'>"
+            f"{names.get(r['product_id'], r['product_id'])} — {r['quantity']} unité(s)</li>"
+            for r in reservations
+        )
+        body = f"""
+          <h2 style="color:#D9B35A;margin:0 0 12px;font-size:18px;">Votre panier vous attend</h2>
+          <p style="color:rgba(255,255,255,0.8);font-size:14px;">
+            Bonjour {user.get('contact_name') or user.get('name') or ''},<br/><br/>
+            La réservation de votre panier KDMARCHÉ ({zone_code}) a expiré sans commande.
+            Les articles restent dans votre panier, mais les quantités ne sont plus garanties :
+          </p>
+          <ul style="padding-left:18px;">{rows}</ul>
+          <p style="color:rgba(255,255,255,0.55);font-size:12px;margin-top:16px;">
+            Reconnectez-vous au catalogue Pro pour finaliser votre commande — un nouvel ajout réactive la réservation de 30 minutes.
+          </p>
+        """
+        try:
+            from brevo_service import send_email, _wrap_html
+            await send_email(
+                to_email=user["email"], to_name=user.get("contact_name"),
+                subject=f"🛒 Votre panier KDMARCHÉ vous attend ({zone_code})",
+                html_content=_wrap_html("Relance panier", body),
+                tags=["abandoned-cart-reminder"],
+            )
+            sent += 1
+            await db.abandoned_cart_reminders.insert_one({
+                "id": str(uuid.uuid4()), "org_id": org_id, "zone_code": zone_code,
+                "email": user["email"], "products": product_ids, "sent_at": _now().isoformat(),
+            })
+            await db.reservation_history.update_many(
+                {"org_id": org_id, "zone_code": zone_code, "outcome": "EXPIRED_ABANDONED", "reminded": {"$exists": False}},
+                {"$set": {"reminded": True}},
+            )
+            logger.info("Abandoned cart reminder sent to %s (org %s, zone %s)", user["email"], org_id, zone_code)
+        except Exception as exc:
+            logger.error("Abandoned cart reminder failed for org %s: %s", org_id, exc)
+    return sent
 
 
 async def available_for_org(db, org_id: str, zone_code: str, product_id: str):

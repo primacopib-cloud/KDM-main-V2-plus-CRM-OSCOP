@@ -2717,3 +2717,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - GET /api/catalog/admin/stockout-stats : agrégat stock_adjustments new_quantity=0 par produit/zone + état actuel (currently_out) ; GET /abandoned-reservations : reservation_history outcome EXPIRED_ABANDONED (org_name via db.orgs.legal_name, product_name via products+catalog_products)
 - cleanup_expired trace chaque réservation expirée dans db.reservation_history (org, produit, zone, qté, extend_count, dates)
 - UI superadmin onglet Catalogue : panneaux repliables « Ruptures par territoire » (badges EN RUPTURE/Disponible) et « Paniers abandonnés » (StockInsightsPanels.jsx)
+
+## 2026-06 — Relance panier abandonné + exports CSV ruptures/abandons (self-testé curl + capture ✅)
+- send_abandoned_cart_reminders (stock_reservations.py) : email Brevo à l'owner de l'org quand une réservation expire sans commande, groupé par org/zone, anti-spam 1/24 h (collection abandoned_cart_reminders), flag reminded sur reservation_history — validé : email envoyé + log + flag
+- GET /api/catalog/admin/stockout-stats/export et /abandoned-reservations/export : CSV (; BOM, en-têtes FR) via helper _csv_response ; boutons Export CSV dans les 2 panneaux (StockInsightsPanels) + colonne « Relancé » (✉ OUI)
