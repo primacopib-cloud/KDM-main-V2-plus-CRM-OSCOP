@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { TrendingUp, Package } from 'lucide-react';
+import { TrendingUp, Package, HandCoins, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { getAuthHeaders, getSessionToken } from '../../services/http';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR')} €`;
@@ -12,6 +14,32 @@ const STATUS_FR = {
 export const FinancingOpportunities = () => {
   const [items, setItems] = useState([]);
   const [notice, setNotice] = useState('');
+  const [sending, setSending] = useState(null);
+  const [sent, setSent] = useState({});
+
+  const expressInterest = async (op) => {
+    if (!getSessionToken()) {
+      toast.error('Connectez-vous avec votre compte investisseur pour envoyer votre demande');
+      return;
+    }
+    setSending(op.id);
+    try {
+      const res = await fetch(`${API}/investor/financing-interest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ operation_id: op.id }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      setSent((s) => ({ ...s, [op.id]: true }));
+      toast.success(d.already_sent ? 'Demande déjà transmise aux admins' : "Demande envoyée à l'équipe O'SCOP ✓");
+    } catch (e) {
+      toast.error(String(e.message || e));
+    } finally {
+      setSending(null);
+    }
+  };
+
   useEffect(() => {
     fetch(`${API}/public/financing-opportunities`)
       .then((r) => r.json())
@@ -43,6 +71,16 @@ export const FinancingOpportunities = () => {
               <div>Achat fournisseur HT : <b className="text-white/85">{eur(op.purchase_amount_ex_vat)}</b></div>
               <div>Revente prévue HT : <b className="text-white/85">{eur(op.resale_amount_ex_vat)}</b></div>
             </div>
+            <button type="button" onClick={() => expressInterest(op)}
+              disabled={sending === op.id || sent[op.id]}
+              data-testid={`interest-btn-${op.reference}`}
+              className={`mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-[10px] text-xs font-bold transition-colors ${
+                sent[op.id] ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 cursor-default'
+                : 'on-gold bg-[#D9B35A] hover:bg-[#F2D07A]'
+              }`}>
+              {sending === op.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <HandCoins className="w-3.5 h-3.5" />}
+              {sent[op.id] ? 'Demande transmise ✓' : 'Je souhaite financer'}
+            </button>
           </div>
         ))}
       </div>
