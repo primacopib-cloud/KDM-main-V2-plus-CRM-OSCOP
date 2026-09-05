@@ -8,6 +8,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { FreightToOperation } from '../components/freight/FreightToOperation';
 import { FreightToOrder, FreightAccessGate, getStoredUser, canUseFreight } from '../components/freight/FreightToOrder';
+import { AirFreightPanel } from '../components/freight/AirFreightPanel';
 
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 
@@ -17,6 +18,8 @@ export default function FreightCalculatorPage() {
   const [quote, setQuote] = useState(null);
   const [comparison, setComparison] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState('SEA');
+  const [routeSearch, setRouteSearch] = useState('');
   const allowed = canUseFreight(getStoredUser());
 
   const compare = async () => {
@@ -79,15 +82,33 @@ export default function FreightCalculatorPage() {
           Estimez le coût du fret principal vers les Outre-mer pour sécuriser votre coût de revient
           et garantir la rentabilité de chaque opération. {data?.note}
         </p>
+        {/* Onglets Maritime / Aérien */}
+        <div className="flex gap-2 mb-5" data-testid="freight-mode-tabs">
+          {[['SEA', 'Fret maritime'], ['AIR', 'Fret aérien — urgences']].map(([v, l]) => (
+            <button key={v} type="button" onClick={() => setMode(v)} data-testid={`freight-mode-${v}`}
+              className={`px-4 py-2 rounded-[12px] text-sm font-semibold transition-colors ${
+                mode === v ? 'on-gold bg-[#D9B35A]' : 'bg-white/[0.05] text-white/60 hover:text-white border border-white/10'}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+        {mode === 'AIR' ? <AirFreightPanel /> : (
+        <>
         {!data ? <Loader2 className="w-6 h-6 animate-spin text-[#D9B35A]" /> : (
           <div className="grid md:grid-cols-2 gap-5">
             <div className="glass-panel-soft rounded-[20px] p-5 space-y-3">
               <div>
-                <label className="text-xs text-white/60">Route maritime</label>
+                <label className="text-xs text-white/60">Rechercher un port</label>
+                <Input value={routeSearch} onChange={(e) => setRouteSearch(e.target.value)}
+                  placeholder="ex: Shanghai, Miami, Guadeloupe…"
+                  data-testid="freight-route-search" className="bg-white/5 border-white/15 text-white" />
+              </div>
+              <div>
+                <label className="text-xs text-white/60">Route maritime ({data.routes.filter((r) => `${r.origin} ${r.destination}`.toLowerCase().includes(routeSearch.toLowerCase())).length})</label>
                 <select value={form.route_id} onChange={(e) => setForm({ ...form, route_id: e.target.value })}
                   data-testid="freight-route-select"
                   className="w-full bg-white/5 border border-white/15 rounded-md px-3 py-2 text-sm text-white">
-                  {data.routes.map((r) => (
+                  {data.routes.filter((r) => `${r.origin} ${r.destination}`.toLowerCase().includes(routeSearch.toLowerCase())).map((r) => (
                     <option key={r.id} value={r.id} className="bg-[#2A1045]">
                       {r.origin} → {r.destination} (~{r.transit_days} j)
                     </option>
@@ -211,6 +232,8 @@ export default function FreightCalculatorPage() {
               </table>
             </div>
           </div>
+        )}
+        </>
         )}
       </main>
       )}

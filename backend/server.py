@@ -74,7 +74,7 @@ from routes_legal_pages import legal_pages_router, set_legal_pages_database, see
 from routes_fogedom import fogedom_router, set_fogedom_database
 from routes_staff_roles import staff_roles_router, set_staff_roles_database
 from routes_investor_space import investor_router, set_investor_space_database
-from routes_freight_calc import freight_router, set_freight_database, seed_freight_rates
+from routes_freight_calc import freight_router, set_freight_database, seed_freight_rates, seed_air_rates
 set_database(db)
 set_applications_v2_database(db)
 set_billing_v2_database(db)
@@ -809,6 +809,7 @@ async def startup_db_client():
     await seed_service_catalog(db)
     await seed_legal_pages(db)
     await seed_freight_rates(db)
+    await seed_air_rates(db)
     # Create unique index on email
     await db.users.create_index("email", unique=True)
     await db.users.create_index("id", unique=True)
