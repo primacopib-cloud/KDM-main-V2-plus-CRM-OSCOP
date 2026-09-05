@@ -2731,3 +2731,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Remise visible checkout/PDF + réglage bons de retour (self-testé E2E curl + PDF + capture ✅)
 - CheckoutDialog : ligne verte « Bon de retour (CODE) −X € HT » (data-testid checkout-return-discount) + total ajusté ; PDF bon de commande (pdf_generators.generate_order_pdf) : ligne « Bon de retour (CODE) : −X € » avant Sous-total — validé dans le PDF réel
 - GET/PUT /api/catalog/admin/return-code-settings (discount_percent 1–50, validity_hours 1–720, collection app_settings key=return_code) ; send_abandoned_cart_reminders lit ces réglages (validé : 10 %/48 h appliqués au code généré et à l'email) ; UI ReturnCodeSettings dans AbandonedCartsPanel — réglages remis à 5 %/72 h
+
+## 2026-06 — Bons de retour manuels admin (self-testé curl + capture ✅)
+- POST /api/catalog/admin/return-codes {org_id, discount_percent?, validity_hours?, send_email} : code RETOUR-XXXXXX manuel (manual:true, created_by admin), défauts = réglages app_settings ; email Brevo au owner de l'org ; GET /return-codes (liste + org_name + origine) ; GET /return-codes/orgs (orgs APPROVED)
+- UI : ReturnCodesPanel dans l'onglet Catalogue superadmin (sélecteur org, % et h optionnels, case email, tableau codes avec statut ACTIF/UTILISÉ/EXPIRÉ)
+- Validé : bon 8 %/24 h généré + email envoyé + applicable au panier (zone_code null OK) ; données test nettoyées
