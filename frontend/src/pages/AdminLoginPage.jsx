@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { authAPI } from '../services/api';
+import { API, getAuthHeaders } from '../services/http';
 
 /**
  * Super Admin login page.
@@ -36,6 +37,11 @@ const AdminLoginPage = () => {
     setIsLoading(true);
     try {
       const result = await authAPI.login(formData.email, formData.password, 'admin');
+      try {
+        const r = await fetch(`${API}/profile/language`, { headers: getAuthHeaders(), credentials: 'include' });
+        const pref = await r.json();
+        if (pref?.language && pref.language !== i18n.language) await i18n.changeLanguage(pref.language);
+      } catch { /* langue par défaut conservée */ }
       // authAPI.login returns { access_token, user } and stores them; make sure the account is admin.
       const user = result?.user || JSON.parse(localStorage.getItem('user') || 'null');
       if (!user?.is_admin) {

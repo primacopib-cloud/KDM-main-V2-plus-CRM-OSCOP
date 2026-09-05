@@ -42,9 +42,48 @@ def _now():
     return datetime.now(timezone.utc)
 
 
+@stock_admin_router.get("/stock-products")
+async def list_stock_products(_: dict = Depends(_admin)):
+    """Produits du catalogue V2 (collection products) pour la gestion des stocks."""
+    products = await db.products.find(
+        {}, {"_id": 0, "id": 1, "name": 1, "sku": 1, "category": 1}
+    ).sort("name", 1).to_list(500)
+    return {"products": products}
+
+
+async def _find_product(product_id: str):
+    proj = {"_id": 0, "id": 1, "name": 1}
+    return (
+        await db.products.find_one({"id": product_id}, proj)
+        or await db.catalog_products.find_one({"id": product_id}, proj)
+    )
+
+
+@stock_admin_router.get("/stock/{product_id}")
+async def get_zone_stocks(product_id: str, _: dict = Depends(_admin)):
+    product = await _find_product(product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Produit non trouvé")
+    stocks = await db.zone_stocks.find({"product_id": product_id}, {"_id": 0}).to_list(50)
+    zones = await db.zone_prices.distinct("zone_code", {"product_id": product_id})
+    by_zone = {s["zone_code"]: s for s in stocks}
+    all_zones = sorted(set(list(by_zone.keys()) + list(zones)))
+    return {
+        "product_id": product_id,
+        "stocks": [
+            {
+                "zone_code": z,
+                "quantity_available": by_zone.get(z, {}).get("quantity_available", 0),
+                "quantity_reserved": by_zone.get(z, {}).get("quantity_reserved", 0),
+            }
+            for z in all_zones
+        ],
+    }
+
+
 @stock_admin_router.put("/stock/{product_id}")
 async def update_zone_stock(product_id: str, body: StockUpdateRequest, _: dict = Depends(_admin)):
-    product = await db.products.find_one({"id": product_id}, {"_id": 0, "id": 1, "name": 1})
+    product = await _find_product(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
 

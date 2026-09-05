@@ -19,6 +19,7 @@ import { VendorProductAssistant } from '../components/VendorProductAssistant';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 import { HeaderBackButton } from '../components/HeaderBackButton';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { SpaceHeaderActions } from '../components/SpaceHeaderActions';
 import { getStatusBadge } from '../components/vendor/vendorConstants';
 import { VendorProductFormModal as ProductFormModal } from '../components/vendor/VendorProductFormModal';
 import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
@@ -232,6 +233,8 @@ const VendorSpacePage = () => {
 
               {/* Navigation History */}
               <NavigationHistoryDropdown />
+
+              <SpaceHeaderActions />
 
               {credits !== null && (
                 <button
