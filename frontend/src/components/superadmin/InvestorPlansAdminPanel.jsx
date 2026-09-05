@@ -94,6 +94,7 @@ const fmtD = (iso) => new Date(iso).toLocaleDateString('fr-FR');
 const InvestorSubscribersTable = () => {
   const [subs, setSubs] = useState([]);
   const [dlg, setDlg] = useState(null);
+  const [fiche, setFiche] = useState(null);
   useEffect(() => {
     fetch(`${API_URL}/api/investor-plans/admin/subscribers`, { headers: getAuthHeaders() })
       .then((r) => r.json()).then((d) => setSubs(d.subscribers || [])).catch(() => {});
@@ -106,6 +107,15 @@ const InvestorSubscribersTable = () => {
       ops = (await res.json()).operations || [];
     } catch { /* saisie libre */ }
     setDlg({ sub: s, ops, amount: '', reference: '', operationRef: '' });
+  };
+
+  const openFiche = async (s) => {
+    try {
+      const res = await fetch(`${API_URL}/api/investor-plans/admin/investor-360/${s.user_id}`, { headers: getAuthHeaders() });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      setFiche(d);
+    } catch (e) { toast.error(e.message); }
   };
 
   const submitRepayment = async () => {
@@ -151,10 +161,16 @@ const InvestorSubscribersTable = () => {
                   <td className="px-3 py-2">{fmtD(s.period_start)}</td>
                   <td className="px-3 py-2 font-semibold text-white">{fmtD(s.next_due)}</td>
                   <td className="px-3 py-2">
-                    <button type="button" onClick={() => recordRepayment(s)} data-testid={`repayment-btn-${s.email}`}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold text-black bg-[#8CC63E] hover:bg-[#7ab52f] transition-colors">
-                      <Euro className="w-3 h-3" /> Virement
-                    </button>
+                    <span className="flex gap-1.5">
+                      <button type="button" onClick={() => recordRepayment(s)} data-testid={`repayment-btn-${s.email}`}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold text-black bg-[#8CC63E] hover:bg-[#7ab52f] transition-colors">
+                        <Euro className="w-3 h-3" /> Virement
+                      </button>
+                      <button type="button" onClick={() => openFiche(s)} data-testid={`fiche360-btn-${s.email}`}
+                        className="px-2 py-1 rounded-md text-[10px] font-bold text-[#E9CF8E] bg-white/[0.05] border border-[#D9B35A]/30 hover:bg-white/[0.1] transition-colors">
+                        Fiche 360
+                      </button>
+                    </span>
                   </td>
                 </tr>
               );
@@ -199,6 +215,58 @@ const InvestorSubscribersTable = () => {
               className="px-3 py-1.5 rounded-md text-xs font-semibold text-white/60 bg-white/[0.05] border border-white/15 hover:bg-white/[0.1] transition-colors">
               Annuler
             </button>
+          </div>
+        </div>
+      )}
+      {fiche && (
+        <div className="mt-3 rounded-xl p-4 bg-white/[0.04] border border-[#D9B35A]/40" data-testid="investor-360-card">
+          <div className="flex items-center gap-2 mb-3">
+            <p className="text-sm font-bold text-[#E9CF8E] m-0">Fiche investisseur 360 — {fiche.investor.name || fiche.investor.email}</p>
+            <span className="text-[11px] text-white/40">{fiche.investor.email}</span>
+            <button type="button" onClick={() => setFiche(null)} data-testid="fiche360-close"
+              className="ml-auto px-2 py-1 rounded-md text-[10px] font-semibold text-white/60 bg-white/[0.05] border border-white/15 hover:bg-white/[0.1] transition-colors">Fermer</button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 text-[11px] text-white/70">
+            <div className="rounded-lg p-3 bg-white/[0.02] border border-white/[0.06]">
+              <p className="font-bold text-white/90 m-0 mb-1">Abonnement</p>
+              {fiche.subscription ? (<>
+                <p className="m-0">Plan <b className="text-[#D9B35A]">{fiche.subscription.plan_code}</b> · statut <b>{fiche.subscription.status}</b></p>
+                <p className="m-0 text-white/40">Période depuis {fmtD(fiche.subscription.period_start)}</p>
+              </>) : <p className="m-0 text-white/40">Aucun abonnement</p>}
+            </div>
+            <div className="rounded-lg p-3 bg-white/[0.02] border border-white/[0.06]">
+              <p className="font-bold text-white/90 m-0 mb-1">CREDI'SCOP-INVEST</p>
+              <p className="m-0">Solde <b className="text-[#8CC63E]">{(fiche.credits.balance_uc ?? 0).toLocaleString('fr-FR')} uc</b> / quota {(fiche.credits.quota_uc ?? 0).toLocaleString('fr-FR')} uc</p>
+              <p className="m-0 text-white/40">Consommé : {(fiche.credits.consumed_uc ?? 0).toLocaleString('fr-FR')} uc · {fiche.credits.entries} mouvement(s)</p>
+            </div>
+            <div className="rounded-lg p-3 bg-white/[0.02] border border-white/[0.06]">
+              <p className="font-bold text-white/90 m-0 mb-1">RIB</p>
+              {fiche.bank ? (<>
+                <p className="m-0">{fiche.bank.holder} · IBAN …{(fiche.bank.iban || '').slice(-4)}</p>
+                <p className="m-0">Statut : <b className={fiche.bank.rib_status === 'APPROVED' ? 'text-[#8CC63E]' : fiche.bank.rib_status === 'REJECTED' ? 'text-red-300' : 'text-amber-300'}>{fiche.bank.rib_status || (fiche.bank.rib_filename ? 'PENDING' : 'NON TÉLÉVERSÉ')}</b></p>
+              </>) : <p className="m-0 text-amber-300">Coordonnées bancaires non renseignées</p>}
+            </div>
+            <div className="rounded-lg p-3 bg-white/[0.02] border border-white/[0.06]">
+              <p className="font-bold text-white/90 m-0 mb-1">Financements ({fiche.financings.count})</p>
+              <p className="m-0">Total : <b>{(fiche.financings.total_uc ?? 0).toLocaleString('fr-FR')} uc</b></p>
+              {fiche.financings.items.slice(0, 3).map((f) => (
+                <p key={f.id} className="m-0 text-white/40 truncate">{f.created_at.slice(0, 10)} · {f.label} · {(-f.amount_uc).toLocaleString('fr-FR')} uc</p>
+              ))}
+            </div>
+            <div className="rounded-lg p-3 bg-white/[0.02] border border-white/[0.06]">
+              <p className="font-bold text-white/90 m-0 mb-1">Virements de remboursement ({fiche.repayments.count})</p>
+              <p className="m-0">Total confirmé : <b className="text-[#8CC63E]">{(fiche.repayments.total_eur ?? 0).toLocaleString('fr-FR')} €</b></p>
+              {fiche.repayments.items.slice(0, 3).map((r) => (
+                <p key={r.id} className="m-0 text-white/40 truncate">{(r.paid_at || '').slice(0, 10)} · réf. {r.reference} · {(r.amount_eur ?? 0).toLocaleString('fr-FR')} € {r.reconciled ? '✓' : ''}</p>
+              ))}
+            </div>
+            <div className="rounded-lg p-3 bg-white/[0.02] border border-white/[0.06]">
+              <p className="font-bold text-white/90 m-0 mb-1">Factures d'abonnement ({fiche.invoices.count})</p>
+              <p className="m-0">Total encaissé : <b>{(fiche.invoices.total_eur ?? 0).toLocaleString('fr-FR')} €</b></p>
+              {fiche.invoices.items.slice(0, 3).map((i) => (
+                <p key={i.id} className="m-0 text-white/40 truncate">{i.period_label} · {i.number} · {(i.amount_eur ?? 0).toLocaleString('fr-FR')} €</p>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -280,22 +348,37 @@ const RibValidationSection = () => {
 const RepaymentsJournal = () => {
   const [reps, setReps] = useState([]);
   const [threshold, setThreshold] = useState('');
+  const [budget, setBudget] = useState('');
   const load = () => {
     fetch(`${API_URL}/api/investor-plans/admin/repayments`, { headers: getAuthHeaders() })
       .then((r) => r.json()).then((d) => setReps(d.repayments || [])).catch(() => {});
     fetch(`${API_URL}/api/investor-plans/admin/repayment-settings`, { headers: getAuthHeaders() })
-      .then((r) => r.json()).then((d) => setThreshold(String(d.double_approval_threshold_eur))).catch(() => {});
+      .then((r) => r.json()).then((d) => { setThreshold(String(d.double_approval_threshold_eur)); if (d.monthly_budget_eur) setBudget(String(d.monthly_budget_eur)); }).catch(() => {});
   };
   useEffect(load, []);
 
-  const saveThreshold = async () => {
+  const saveSettings = async (payload, msg) => {
     try {
       const res = await fetch(`${API_URL}/api/investor-plans/admin/repayment-settings`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ double_approval_threshold_eur: Number(threshold) }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error((await res.json()).detail || 'Erreur');
-      toast.success('Seuil de double validation enregistré');
+      toast.success(msg);
+    } catch (e) { toast.error(e.message); }
+  };
+  const saveThreshold = () => saveSettings({ double_approval_threshold_eur: Number(threshold) }, 'Seuil de double validation enregistré');
+  const saveBudget = () => saveSettings({ monthly_budget_eur: Number(budget) }, 'Budget mensuel enregistré');
+
+  const reconcile = async (r) => {
+    try {
+      const res = await fetch(`${API_URL}/api/investor-plans/admin/repayments/${r.id}/reconcile`, {
+        method: 'POST', headers: getAuthHeaders(),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      toast.success(d.reconciled ? 'Virement rapproché avec le relevé bancaire' : 'Rapprochement annulé');
+      load();
     } catch (e) { toast.error(e.message); }
   };
 
@@ -337,11 +420,30 @@ const RepaymentsJournal = () => {
           <button type="button" onClick={saveThreshold} data-testid="repayment-threshold-save"
             className="px-2 py-1 rounded-md font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors">OK</button>
         </label>
+        <label className="text-[10px] text-white/50 flex items-center gap-1">
+          Budget mensuel
+          <input type="number" value={budget} onChange={(e) => setBudget(e.target.value)}
+            data-testid="repayment-budget-input" placeholder="ex. 500000"
+            className="h-7 w-24 px-2 rounded-md bg-white/[0.05] border border-white/15 text-white text-xs" /> €
+          <button type="button" onClick={saveBudget} data-testid="repayment-budget-save"
+            className="px-2 py-1 rounded-md font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors">OK</button>
+        </label>
         <button type="button" onClick={exportCsv} data-testid="repayments-export-csv"
           className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-[#E9CF8E] bg-white/[0.05] border border-[#D9B35A]/30 hover:bg-white/[0.1] transition-colors">
           Export CSV comptable
         </button>
       </div>
+      {(() => {
+        const month = new Date().toISOString().slice(0, 7);
+        const monthTotal = reps.filter((r) => r.status !== 'PENDING_SECOND_APPROVAL' && (r.paid_at || '').startsWith(month))
+          .reduce((s, r) => s + (r.amount_eur || 0), 0);
+        const over = budget && monthTotal > Number(budget);
+        return (
+          <p className={`text-[11px] m-0 mb-2 ${over ? 'text-red-300 font-bold' : 'text-white/40'}`} data-testid="monthly-total-line">
+            Total du mois : {monthTotal.toLocaleString('fr-FR')} €{budget ? ` / budget ${Number(budget).toLocaleString('fr-FR')} €` : ''}{over ? ' — PLAFOND DÉPASSÉ (superadmin alerté par email)' : ''}
+          </p>
+        );
+      })()}
       {!reps.length ? (
         <p className="text-[11px] text-white/40 m-0">Aucun virement enregistré.</p>
       ) : (
@@ -359,7 +461,17 @@ const RepaymentsJournal = () => {
                     className="px-2 py-1 rounded-md text-[10px] font-bold text-black bg-[#8CC63E] hover:bg-[#7ab52f] transition-colors">Confirmer</button>
                 </span>
               ) : (
-                <span className="ml-auto px-2 py-0.5 rounded-full border text-[10px] font-semibold text-[#8CC63E] bg-[#8CC63E]/10 border-[#8CC63E]/30">Confirmé</span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 rounded-full border text-[10px] font-semibold text-[#8CC63E] bg-[#8CC63E]/10 border-[#8CC63E]/30">Confirmé</span>
+                  {r.reconciled ? (
+                    <button type="button" onClick={() => reconcile(r)} data-testid={`repayment-reconciled-${r.reference}`}
+                      title={`Rapproché par ${r.reconciled_by || ''} — cliquer pour annuler`}
+                      className="px-2 py-0.5 rounded-full border text-[10px] font-semibold text-sky-300 bg-sky-500/10 border-sky-400/40 hover:bg-sky-500/20 transition-colors">✓ Rapproché</button>
+                  ) : (
+                    <button type="button" onClick={() => reconcile(r)} data-testid={`repayment-reconcile-${r.reference}`}
+                      className="px-2 py-1 rounded-md text-[10px] font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors">Rapprocher</button>
+                  )}
+                </span>
               )}
             </div>
           ))}

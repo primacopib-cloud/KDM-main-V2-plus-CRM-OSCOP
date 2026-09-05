@@ -2781,3 +2781,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - ⚠️ FIX conflit de routes : investor_banking_router doit rester enregistré AVANT investor_plans_router dans server.py (sinon PUT /admin/{plan_id} intercepte /admin/repayment-settings)
 - Relance RIB manquant : run_rib_missing_reminders (compte actif ≥ 7 j sans RIB → email + flag rib_reminder_sent, idempotent) — branché scheduler
 - Note : le login exige company_name/siret sur users (KeyError sinon) — comptes admin de test doivent cloner le doc admin existant
+
+## 2026-06 — Rapprochement bancaire, plafond mensuel, fiche investisseur 360 (self-testé ✅)
+- Rapprochement : POST /admin/repayments/{id}/reconcile (toggle, refuse les PENDING), bouton Rapprocher/badge ✓ Rapproché dans le journal, colonne Rapproché OUI/NON dans le CSV
+- Plafond mensuel : setting monthly_repayment_budget_eur (PUT/GET repayment-settings étendu), _check_monthly_budget appelé à chaque virement confirmé → email admins si total mois > budget (1 alerte/mois via system_flags repayment_budget_alert_YYYY-MM, validé) ; ligne « Total du mois / budget » + mention PLAFOND DÉPASSÉ dans le journal
+- Fiche 360 : GET /admin/investor-360/{user_id} (abonnement, crédits solde/quota/consommé, financements, RIB+statut, virements, factures) ; bouton « Fiche 360 » par abonné → carte 6 blocs sous le tableau
+- Données de test purgées (virement VIR-2026-010, flag alerte, budget)

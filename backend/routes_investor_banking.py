@@ -117,18 +117,74 @@ async def _notify_repayment(user: dict, bank: dict, doc: dict):
 
 @investor_banking_router.get("/admin/repayment-settings")
 async def get_repayment_settings(_: dict = Depends(_admin)):
-    return {"double_approval_threshold_eur": await _repayment_threshold()}
+    budget = await _db().investor_settings.find_one({"key": "monthly_repayment_budget_eur"})
+    return {"double_approval_threshold_eur": await _repayment_threshold(),
+            "monthly_budget_eur": float(budget["value"]) if budget else None}
 
 
 @investor_banking_router.put("/admin/repayment-settings")
 async def set_repayment_settings(payload: dict, _: dict = Depends(_admin)):
-    threshold = float(payload.get("double_approval_threshold_eur", 0))
-    if threshold <= 0:
-        raise HTTPException(status_code=400, detail="Seuil invalide")
-    await _db().investor_settings.update_one(
-        {"key": "repayment_double_approval_threshold_eur"},
-        {"$set": {"value": threshold, "updated_at": _now().isoformat()}}, upsert=True)
-    return {"double_approval_threshold_eur": threshold}
+    out = {}
+    if "double_approval_threshold_eur" in payload:
+        threshold = float(payload["double_approval_threshold_eur"] or 0)
+        if threshold <= 0:
+            raise HTTPException(status_code=400, detail="Seuil invalide")
+        await _db().investor_settings.update_one(
+            {"key": "repayment_double_approval_threshold_eur"},
+            {"$set": {"value": threshold, "updated_at": _now().isoformat()}}, upsert=True)
+        out["double_approval_threshold_eur"] = threshold
+    if "monthly_budget_eur" in payload:
+        budget = float(payload["monthly_budget_eur"] or 0)
+        if budget <= 0:
+            raise HTTPException(status_code=400, detail="Budget invalide")
+        await _db().investor_settings.update_one(
+            {"key": "monthly_repayment_budget_eur"},
+            {"$set": {"value": budget, "updated_at": _now().isoformat()}}, upsert=True)
+        out["monthly_budget_eur"] = budget
+    if not out:
+        raise HTTPException(status_code=400, detail="Aucun paramètre fourni")
+    return out
+
+
+async def _month_confirmed_total(month_prefix: str) -> float:
+    reps = await _db().investor_repayments.find(
+        {"status": {"$ne": "PENDING_SECOND_APPROVAL"}, "paid_at": {"$regex": f"^{month_prefix}"}},
+        {"amount_eur": 1}).to_list(2000)
+    return sum(r["amount_eur"] for r in reps)
+
+
+async def _check_monthly_budget():
+    """Alerte superadmin si le total des remboursements du mois dépasse le budget défini."""
+    budget_doc = await _db().investor_settings.find_one({"key": "monthly_repayment_budget_eur"})
+    if not budget_doc:
+        return
+    budget = float(budget_doc["value"])
+    month = _now().strftime("%Y-%m")
+    total = await _month_confirmed_total(month)
+    if total <= budget:
+        return
+    flag_key = f"repayment_budget_alert_{month}"
+    if await _db().system_flags.find_one({"key": flag_key}):
+        return
+    try:
+        from brevo_service import send_email, _wrap_html
+        team = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
+        recipients = {team.lower()}
+        async for u in _db().users.find({"is_admin": True}, {"_id": 0, "email": 1}):
+            if u.get("email"):
+                recipients.add(u["email"].lower())
+        html = _wrap_html("Plafond virements dépassé", (
+            f"<p style='font-size:14px;'>⚠ Le total des remboursements investisseurs de <b>{month}</b> atteint "
+            f"<b>{total:,.0f} €</b> et dépasse le budget mensuel défini de <b>{budget:,.0f} €</b>. "
+            "Consultez le journal des virements dans le superadmin (onglet CREDI'SCOP).</p>").replace(",", " "))
+        for email in recipients:
+            await send_email(to_email=email, to_name=None,
+                             subject=f"⚠ Plafond mensuel des virements dépassé — {month}",
+                             html_content=html, tags=["investor-banking"])
+        await _db().system_flags.update_one({"key": flag_key},
+                                            {"$set": {"sent_at": _now().isoformat(), "total": total}}, upsert=True)
+    except Exception as exc:
+        logger.error("Alerte budget virements : %s", exc)
 
 
 @investor_banking_router.get("/admin/repayment-prefill/{user_id}")
@@ -172,6 +228,7 @@ async def admin_create_repayment(body: RepaymentCreate, admin: dict = Depends(_a
         return {"created": True, "repayment": doc,
                 "message": f"Montant > {threshold:,.0f} € — confirmation d'un second admin requise".replace(",", " ")}
     await _notify_repayment(user, bank, doc)
+    await _check_monthly_budget()
     return {"created": True, "repayment": doc}
 
 
@@ -189,7 +246,54 @@ async def approve_repayment(rep_id: str, admin: dict = Depends(_admin)):
     bank = await _db().investor_bank_details.find_one({"user_id": rep["user_id"]})
     if user and bank:
         await _notify_repayment(user, bank, rep)
+    await _check_monthly_budget()
     return {"status": "CONFIRMED"}
+
+
+@investor_banking_router.post("/admin/repayments/{rep_id}/reconcile")
+async def reconcile_repayment(rep_id: str, admin: dict = Depends(_admin)):
+    """Marque un virement comme rapproché avec le relevé bancaire réel (toggle)."""
+    rep = await _db().investor_repayments.find_one({"id": rep_id})
+    if not rep:
+        raise HTTPException(status_code=404, detail="Virement introuvable")
+    if rep.get("status") == "PENDING_SECOND_APPROVAL":
+        raise HTTPException(status_code=400, detail="Virement non confirmé — impossible de le rapprocher")
+    reconciled = not rep.get("reconciled")
+    updates = ({"reconciled": True, "reconciled_by": admin.get("email"), "reconciled_at": _now().isoformat()}
+               if reconciled else {"reconciled": False, "reconciled_by": None, "reconciled_at": None})
+    await _db().investor_repayments.update_one({"id": rep_id}, {"$set": updates})
+    return {"reconciled": reconciled}
+
+
+@investor_banking_router.get("/admin/investor-360/{user_id}")
+async def investor_360(user_id: str, _: dict = Depends(_admin)):
+    """Fiche unique : abonnement, crédits, financements, RIB, virements, factures."""
+    user = await _db().users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Investisseur non trouvé")
+    account = await _db().investor_accounts.find_one({"user_id": user_id}, {"_id": 0})
+    ledger = await _db().invest_credit_ledger.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    balance = sum(e["amount_uc"] for e in ledger)
+    financings = [e for e in ledger if e["type"] == "FINANCING"]
+    bank = await _db().investor_bank_details.find_one({"user_id": user_id}, {"_id": 0, "rib_content": 0})
+    repayments = await _db().investor_repayments.find({"user_id": user_id}, {"_id": 0}).sort("paid_at", -1).to_list(200)
+    invoices = await _db().investor_invoices.find({"user_id": user_id}, {"_id": 0}).sort("issued_at", -1).to_list(100)
+    return {
+        "investor": {"user_id": user_id, "email": user.get("email"),
+                     "name": user.get("contact_name") or user.get("name")},
+        "subscription": account,
+        "credits": {"balance_uc": balance, "quota_uc": (account or {}).get("monthly_invest_uc"),
+                    "consumed_uc": -sum(e["amount_uc"] for e in ledger if e["amount_uc"] < 0),
+                    "entries": len(ledger)},
+        "financings": {"count": len(financings), "total_uc": -sum(e["amount_uc"] for e in financings),
+                       "items": financings[:20]},
+        "bank": bank,
+        "repayments": {"count": len(repayments),
+                       "total_eur": sum(r["amount_eur"] for r in repayments if r.get("status") != "PENDING_SECOND_APPROVAL"),
+                       "items": repayments[:20]},
+        "invoices": {"count": len(invoices), "total_eur": sum(i["amount_eur"] for i in invoices),
+                     "items": invoices[:12]},
+    }
 
 
 @investor_banking_router.get("/admin/repayments")
@@ -209,12 +313,13 @@ async def export_repayments_csv(_: dict = Depends(_admin)):
     reps = await _db().investor_repayments.find({}, {"_id": 0}).sort("paid_at", -1).to_list(1000)
     buf = StringIO()
     w = csv.writer(buf, delimiter=";")
-    w.writerow(["Date", "Investisseur", "Montant EUR", "Référence", "Opération", "IBAN", "Statut", "Créé par", "Confirmé par"])
+    w.writerow(["Date", "Investisseur", "Montant EUR", "Référence", "Opération", "IBAN", "Statut", "Rapproché", "Créé par", "Confirmé par"])
     for r in reps:
         u = await _db().users.find_one({"id": r["user_id"]}, {"_id": 0, "email": 1})
         w.writerow([r["paid_at"][:10], (u or {}).get("email", ""), f"{r['amount_eur']:.2f}".replace(".", ","),
                     r["reference"], r.get("operation_ref") or "", r.get("iban", ""),
-                    r.get("status", "CONFIRMED"), r.get("created_by", ""), r.get("approved_by", "")])
+                    r.get("status", "CONFIRMED"), "OUI" if r.get("reconciled") else "NON",
+                    r.get("created_by", ""), r.get("approved_by", "")])
     return Response(content="\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": "attachment; filename=journal-virements-remboursements.csv"})
 
