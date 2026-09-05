@@ -2533,3 +2533,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - /app/frontend/src/components/PrintHeader.jsx: logo O'SCOP (/logos/oscop.webp) + « SCIC SAS OBJECTIF SCOP OUTREMER — Super Admin » + date/heure fr-FR rafraîchie sur beforeprint
 - Monté dans SuperAdminPage avant SuperAdminHeader; .print-header caché à l'écran, affiché @media print (bordure noire), visible aussi en impression ciblée (print-target décalée top 80px)
 - Vérifié par 2 captures emulate print (page entière + ciblée Registres)
+
+## Pied De Page Impression (05/06/2026) ✅
+- /app/frontend/src/components/PrintFooter.jsx: mention « Document confidentiel — SCIC SAS OBJECTIF SCOP OUTREMER — Diffusion interne uniquement », fixed bottom répété chaque page, trait noir, visible aussi en impression ciblée
+- index.css @media print: @page margin 16mm bas + @bottom-right « Page X / Y » (counter(page)/counter(pages), Chrome ≥131), body padding-bottom 34px anti-chevauchement
+- Vérifié par capture emulate print (mention ok); pagination @page visible uniquement dans le PDF/impression réelle (non capturable en screenshot)
