@@ -275,6 +275,28 @@ async def _fetch_abandoned(limit: int = 200):
     return entries
 
 
+class ReturnCodeSettings(BaseModel):
+    discount_percent: int = Field(ge=1, le=50)
+    validity_hours: int = Field(ge=1, le=720)
+
+
+@stock_admin_router.get("/return-code-settings")
+async def get_return_code_settings(_: dict = Depends(_admin)):
+    s = await db.app_settings.find_one({"key": "return_code"}, {"_id": 0}) or {}
+    return {"discount_percent": s.get("discount_percent", 5), "validity_hours": s.get("validity_hours", 72)}
+
+
+@stock_admin_router.put("/return-code-settings")
+async def update_return_code_settings(body: ReturnCodeSettings, _: dict = Depends(_admin)):
+    await db.app_settings.update_one(
+        {"key": "return_code"},
+        {"$set": {"discount_percent": body.discount_percent, "validity_hours": body.validity_hours,
+                  "updated_at": _now().isoformat()}},
+        upsert=True,
+    )
+    return {"discount_percent": body.discount_percent, "validity_hours": body.validity_hours}
+
+
 @stock_admin_router.get("/reminder-conversion")
 async def get_reminder_conversion(_: dict = Depends(_admin)):
     """Taux de conversion des relances panier abandonné en commandes."""

@@ -2727,3 +2727,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - POST /api/v2/catalog/cart/apply-return-code : applique au panier (validations org/usage/expiration) ; create_order applique la remise (subtotal/tax/total recalculés), marque le code used + relances converted (fenêtre 7 j)
 - GET /api/catalog/admin/reminder-conversion : reminders_sent/converted/rate + codes émis/utilisés — bandeau vert dans AbandonedCartsPanel ; ReturnCodeBox (saisie code) dans le panier
 - Validé E2E : code généré → appliqué (−15,47 €) → commande 293,92 € HT → code used, relance converted, stats 100 % (1/1) ; données démo restaurées
+
+## 2026-06 — Remise visible checkout/PDF + réglage bons de retour (self-testé E2E curl + PDF + capture ✅)
+- CheckoutDialog : ligne verte « Bon de retour (CODE) −X € HT » (data-testid checkout-return-discount) + total ajusté ; PDF bon de commande (pdf_generators.generate_order_pdf) : ligne « Bon de retour (CODE) : −X € » avant Sous-total — validé dans le PDF réel
+- GET/PUT /api/catalog/admin/return-code-settings (discount_percent 1–50, validity_hours 1–720, collection app_settings key=return_code) ; send_abandoned_cart_reminders lit ces réglages (validé : 10 %/48 h appliqués au code généré et à l'email) ; UI ReturnCodeSettings dans AbandonedCartsPanel — réglages remis à 5 %/72 h

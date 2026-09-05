@@ -201,6 +201,10 @@ def generate_order_pdf(order: dict, org: dict = None, signature_data: dict = Non
         ['', '', 'Sous-total HT :', f"{subtotal / 100:.2f} €"],
         ['', '', 'TVA (8,5%) :', f"{tax / 100:.2f} €"],
     ]
+
+    return_discount = order.get('return_discount_cents', 0)
+    if return_discount:
+        totals_data.insert(0, ['', '', f"Bon de retour ({order.get('return_code', '')}) :", f"-{return_discount / 100:.2f} €"])
     
     if fees > 0:
         totals_data.append(['', '', 'Frais paiement 4× :', f"{fees / 100:.2f} €"])
