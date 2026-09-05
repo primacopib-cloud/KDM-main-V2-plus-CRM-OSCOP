@@ -12,6 +12,7 @@ import {
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { ContextualMessageDialog } from '../components/ContextualMessageDialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../components/ui/select';
@@ -278,6 +279,7 @@ export default function OrdersPage() {
                         </div>
                         <div className="text-left">
                           <p className="font-semibold text-white/90">{order.order_number}</p>
+                          <ContextualMessageDialog contextType="order" contextRef={order.order_number} />
                           <p className="text-xs text-white/50">{formatDate(order.created_at)}</p>
                         </div>
                       </div>

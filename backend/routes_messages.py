@@ -95,3 +95,73 @@ async def unread_count(user_id: str = Depends(get_current_user_id)):
 async def mark_read(mid: str, user_id: str = Depends(get_current_user_id)):
     await db.internal_messages.update_one({"id": mid, "to_user_id": user_id}, {"$set": {"read": True}})
     return {"ok": True}
+
+
+class ContextualBody(BaseModel):
+    to_email: str
+    subject: str
+    body: str
+    context_type: str = "operation"
+    context_ref: str = ""
+
+
+def _fr_date(dt: datetime) -> str:
+    days = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+    months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet",
+              "août", "septembre", "octobre", "novembre", "décembre"]
+    return f"{days[dt.weekday()]} {dt.day} {months[dt.month - 1]} {dt.year} à {dt.strftime('%H:%M')}"
+
+
+async def _send_contextual_email(doc: dict, sender: dict):
+    from brevo_service import send_email, _wrap_html
+    now = datetime.now(timezone.utc)
+    label = "Opération" if doc["context_type"] == "operation" else "Commande"
+    html = _wrap_html(doc["subject"], (
+        f"<p style='font-size:12px;color:#B8A98F;'>{label} : <b>{doc['context_ref']}</b> — "
+        f"Envoyé le {_fr_date(now)}</p>"
+        f"<p style='font-size:14px;white-space:pre-line;'>{doc['body']}</p>"
+        f"<p style='font-size:12px;color:#B8A98F;'>Expéditeur : {sender.get('name') or ''} "
+        f"({sender.get('email') or ''}) — via la messagerie contextuelle de la centrale O'SCOP.</p>"))
+    await send_email(doc["to_email"], doc["to_email"], doc["subject"], html, tags=["messagerie-contextuelle"])
+    return now
+
+
+@messages_router.post("/contextual")
+async def send_contextual(payload: ContextualBody, user_id: str = Depends(get_current_user_id)):
+    sender = await _user_info(user_id)
+    doc = {
+        "id": str(uuid.uuid4()), "user_id": user_id,
+        "to_email": payload.to_email.strip().lower(), "subject": payload.subject.strip(),
+        "body": payload.body.strip(), "context_type": payload.context_type,
+        "context_ref": payload.context_ref, "resend_count": 0,
+    }
+    if not doc["to_email"] or not doc["subject"] or not doc["body"]:
+        raise HTTPException(status_code=400, detail="Destinataire, objet et message requis")
+    sent_at = await _send_contextual_email(doc, sender)
+    doc["sent_at"] = sent_at.isoformat()
+    doc["last_sent_at"] = doc["sent_at"]
+    await db.contextual_messages.insert_one(dict(doc))
+    doc.pop("_id", None)
+    return {"success": True, "message": doc}
+
+
+@messages_router.get("/contextual")
+async def list_contextual(context_ref: Optional[str] = None, user_id: str = Depends(get_current_user_id)):
+    q = {"user_id": user_id}
+    if context_ref:
+        q["context_ref"] = context_ref
+    items = await db.contextual_messages.find(q, {"_id": 0}).sort("sent_at", -1).to_list(50)
+    return {"messages": items}
+
+
+@messages_router.post("/contextual/{msg_id}/resend")
+async def resend_contextual(msg_id: str, user_id: str = Depends(get_current_user_id)):
+    doc = await db.contextual_messages.find_one({"id": msg_id, "user_id": user_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Message introuvable")
+    sender = await _user_info(user_id)
+    sent_at = await _send_contextual_email(doc, sender)
+    await db.contextual_messages.update_one(
+        {"id": msg_id},
+        {"$set": {"last_sent_at": sent_at.isoformat()}, "$inc": {"resend_count": 1}})
+    return {"success": True, "last_sent_at": sent_at.isoformat()}
