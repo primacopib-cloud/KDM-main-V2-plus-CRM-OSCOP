@@ -2512,3 +2512,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Cause: overrides thème light remappaient text-[#2A1045] → #CDB4F0 (clair) → illisible sur fonds dorés bg-[#D9B35A]
 - Fix global index.css: color #2A1045 !important sur bg-[#D9B35A]/[#F2D07A]/[#D4AF37]/[#E6C25A]/amber-400/500/yellow-400/500 et descendants
 - Vérifié par capture: « Créer l'opération » et « Nouvelle opération » en violet sombre rgb(42,16,69) sur or
+
+## Contraste global superadmin (04/06/2026) ✅
+- Revue 4 onglets (Dashboard, Registres, CREDI'SCOP, Comptabilité) par captures
+- index.css: relevé global text-white/30→60 (0.55–0.75), gris (gray/slate/zinc-400/500 → 0.72), muted-foreground, placeholders 0.45→0.58, paliers .on-dark alignés
+- Vérifié par captures avant/après: dates, historiques et sous-libellés lisibles
