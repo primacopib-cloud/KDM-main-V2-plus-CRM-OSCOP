@@ -18,6 +18,7 @@ import { BasicTab, PricingTab } from './catalog-manager/BasicPricingTabs';
 import { BulkProductActions } from './catalog-manager/BulkProductActions';
 import { ProductRow } from './catalog-manager/ProductRow';
 import { StockTerritoryPanel } from './catalog-manager/StockTerritoryPanel';
+import { StockoutStatsPanel, AbandonedCartsPanel } from './catalog-manager/StockInsightsPanels';
 import { FoodTab, TechnicalTab, LogisticsTab } from './catalog-manager/SpecializedTabs';
 import { AiProductAssistant } from './catalog-manager/AiProductAssistant';
 import { BulkEanImport } from './catalog-manager/BulkEanImport';
@@ -399,6 +400,8 @@ export default function ProductCatalogManager({ onProductSaved }) {
 
       {/* Stocks par territoire (catalogue V2) */}
       <StockTerritoryPanel />
+      <StockoutStatsPanel />
+      <AbandonedCartsPanel />
 
       {/* Products List */}
       <div className="space-y-3">

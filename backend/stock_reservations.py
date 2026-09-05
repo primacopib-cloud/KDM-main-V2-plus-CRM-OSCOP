@@ -12,13 +12,24 @@ def _now():
 
 
 async def cleanup_expired(db) -> int:
-    """Libère les réservations expirées (appel paresseux à chaque accès panier/stock)."""
+    """Libère les réservations expirées et trace les paniers abandonnés."""
     expired = await db.stock_reservations.find({"expires_at": {"$lt": _now().isoformat()}}).to_list(200)
     for r in expired:
         await db.zone_stocks.update_one(
             {"product_id": r["product_id"], "zone_code": r["zone_code"]},
             [{"$set": {"quantity_reserved": {"$max": [0, {"$subtract": [{"$ifNull": ["$quantity_reserved", 0]}, r["quantity"]]}]}}}],
         )
+        await db.reservation_history.insert_one({
+            "id": str(uuid.uuid4()),
+            "org_id": r["org_id"],
+            "product_id": r["product_id"],
+            "zone_code": r["zone_code"],
+            "quantity": r["quantity"],
+            "reserved_at": r.get("created_at"),
+            "expired_at": _now().isoformat(),
+            "extend_count": r.get("extend_count", 0),
+            "outcome": "EXPIRED_ABANDONED",
+        })
         await db.stock_reservations.delete_one({"id": r["id"]})
     return len(expired)
 
