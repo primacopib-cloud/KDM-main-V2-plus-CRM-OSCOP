@@ -2609,3 +2609,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - navItems.js: retiré Acheter/Financer/LOGI'SCOP du bandeau → nav = Accueil, Fournisseurs, Catalogue Pro, Territoires, LOLODRIVE
 - Footer.jsx section Navigation: ajouté « Acheter — Espace acheteur » (/espace-acheteur), « Financer une opération » (/espace-investisseur), « LOGI'SCOP — Calculateur de fret » (/calculateur-fret) (data-testid footer-link-acheter/financer/logiscop-fret)
 - Vérifié par capture: nav sans les 3 items, footer avec les 3 liens
+
+## Bandeau allégé 2 (05/06/2026) ✅
+- Retirés du bandeau: « Mon espace » (memberShortcuts vidés navItems.js), badge CREDI'SCOP (2 occurrences NavBar), MessagesNavLink
+- Footer section Espaces: + Mon espace (/espace-acheteur), Mon CREDI'SCOP (/mon-crediscop), Messagerie interne (/messages), Wallet — Relevé d'unités (/wallet) (data-testid footer-link-mon-espace/crediscop/messagerie/wallet)
+- Vérifié par captures avec compte connecté: bandeau épuré, 4 liens footer présents

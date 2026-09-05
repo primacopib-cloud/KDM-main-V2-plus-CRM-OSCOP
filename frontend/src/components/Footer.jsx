@@ -112,6 +112,18 @@ const Footer = () => {
                 <Link to="/espace-acheteur" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('footer.buyer_space')}</Link>
               </li>
               <li>
+                <Link to="/espace-acheteur" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-mon-espace">Mon espace</Link>
+              </li>
+              <li>
+                <Link to="/mon-crediscop" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-crediscop">Mon CREDI'SCOP</Link>
+              </li>
+              <li>
+                <Link to="/messages" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-messagerie">Messagerie interne</Link>
+              </li>
+              <li>
+                <Link to="/wallet" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-wallet">Wallet — Relevé d'unités</Link>
+              </li>
+              <li>
                 <Link to="/espace-vendeur" className="text-white/60 hover:text-white/90 text-sm transition-colors">{t('nav.vendor_space')}</Link>
               </li>
               <li>
