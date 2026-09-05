@@ -2517,3 +2517,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Revue 4 onglets (Dashboard, Registres, CREDI'SCOP, Comptabilité) par captures
 - index.css: relevé global text-white/30→60 (0.55–0.75), gris (gray/slate/zinc-400/500 → 0.72), muted-foreground, placeholders 0.45→0.58, paliers .on-dark alignés
 - Vérifié par captures avant/après: dates, historiques et sous-libellés lisibles
+
+## Mode Impression superadmin (05/06/2026) ✅
+- Bouton « Imprimer » (data-testid print-mode-btn) dans SuperAdminHeader → window.print()
+- index.css @media print: tout noir sur blanc ([class][class][class] pour battre les !important du thème), header/nav/boutons/tablist masqués, tables bordées #444, thead gris, page-break-inside avoid, sticky→static
+- Vérifié via emulate_media print sur l'onglet Registres: rendu noir/blanc propre
