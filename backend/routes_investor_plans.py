@@ -212,24 +212,35 @@ async def stripe_webhook(request: Request):
             "label": f"Renouvellement abonnement {account['plan_code']} (facture payée)",
             "amount_uc": account["monthly_invest_uc"], "created_at": _now().isoformat(),
         })
-        await db.investor_accounts.update_one({"id": account["id"]}, {"$set": {"status": "ACTIVE", "period_start": _now().isoformat()}})
+        await db.investor_accounts.update_one({"id": account["id"]}, {"$set": {
+            "status": "ACTIVE", "period_start": _now().isoformat(), "payment_failures": 0}})
         plan = await db.investor_plans.find_one({"id": account["plan_id"]}) or {"price_eur": 0}
         from investor_billing import send_monthly_invoice
         await send_monthly_invoice(db, user, account, plan)
     elif event_type == "invoice.payment_failed":
-        await db.investor_accounts.update_one({"id": account["id"]}, {"$set": {"status": "PAST_DUE"}})
+        failures = int(account.get("payment_failures", 0)) + 1
+        suspended = failures >= 2
+        new_status = "SUSPENDED" if suspended else "PAST_DUE"
+        await db.investor_accounts.update_one({"id": account["id"]}, {"$set": {
+            "status": new_status, "payment_failures": failures}})
         try:
             from brevo_service import send_email, _wrap_html
-            await send_email(
-                to_email=email, to_name=user.get("contact_name"),
-                subject="⚠ Échec du prélèvement de votre abonnement investisseur KDMARCHÉ",
-                html_content=_wrap_html("Échec de paiement", (
-                    f"<p style='font-size:14px;'>Bonjour {user.get('contact_name') or ''},</p>"
-                    f"<p style='font-size:14px;'>Le prélèvement mensuel de votre abonnement <b>{account['plan_code']}</b> a échoué. "
-                    "Une nouvelle tentative automatique sera effectuée. Merci de vérifier votre carte bancaire "
-                    "pour conserver l'accès à votre capacité CREDI'SCOP-INVEST.</p>")),
-                tags=["investor-billing"],
-            )
+            if suspended:
+                subject = "🚫 Capacité de financement suspendue — 2 échecs de prélèvement"
+                body = (f"<p style='font-size:14px;'>Bonjour {user.get('contact_name') or ''},</p>"
+                        f"<p style='font-size:14px;'>Après <b>2 échecs de prélèvement consécutifs</b> de votre "
+                        f"abonnement <b>{account['plan_code']}</b>, votre capacité de financement "
+                        "CREDI'SCOP-INVEST est <b>suspendue</b>. Mettez à jour votre carte bancaire : "
+                        "elle sera rétablie automatiquement au prochain paiement réussi.</p>")
+            else:
+                subject = "⚠ Échec du prélèvement de votre abonnement investisseur KDMARCHÉ"
+                body = (f"<p style='font-size:14px;'>Bonjour {user.get('contact_name') or ''},</p>"
+                        f"<p style='font-size:14px;'>Le prélèvement mensuel de votre abonnement <b>{account['plan_code']}</b> a échoué. "
+                        "Une nouvelle tentative automatique sera effectuée. Attention : un second échec "
+                        "suspendra votre capacité de financement CREDI'SCOP-INVEST.</p>")
+            await send_email(to_email=email, to_name=user.get("contact_name"), subject=subject,
+                             html_content=_wrap_html("Suspension" if suspended else "Échec de paiement", body),
+                             tags=["investor-billing"])
         except Exception as exc:
             logger.error("Relance échec paiement investisseur : %s", exc)
     return {"received": True}
@@ -238,7 +249,8 @@ async def stripe_webhook(request: Request):
 @investor_plans_router.get("/my-credits")
 async def my_invest_credits(user: dict = Depends(_current_user)):
     """Solde CREDI'SCOP-INVEST temps réel, historique et alertes."""
-    account = await db.investor_accounts.find_one({"user_id": user["id"], "status": {"$in": ["ACTIVE", "PAST_DUE"]}}, {"_id": 0})
+    account = await db.investor_accounts.find_one(
+        {"user_id": user["id"], "status": {"$in": ["ACTIVE", "PAST_DUE", "SUSPENDED"]}}, {"_id": 0})
     if not account:
         raise HTTPException(status_code=404, detail="Aucun abonnement investisseur actif")
 
@@ -265,7 +277,8 @@ async def my_invest_credits(user: dict = Depends(_current_user)):
     alert = "REACHED" if balance <= 0 else ("ALMOST" if usage_pct >= 90 else None)
     return {"plan": account["plan_code"], "monthly_invest_uc": quota, "allocated_uc": allocated,
             "consumed_uc": consumed, "balance_uc": balance, "usage_percent": usage_pct,
-            "alert": alert, "packs": CREDIT_PACKS, "history": ledger}
+            "alert": alert, "packs": CREDIT_PACKS, "history": ledger,
+            "account_status": account["status"]}
 
 
 class ConsumeRequest(BaseModel):
@@ -322,6 +335,86 @@ async def my_financings_pdf(user: dict = Depends(_current_user)):
     pdf = build_financings_pdf(user, account, entries)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": "attachment; filename=financements-crediscop-invest.pdf"})
+
+
+@investor_plans_router.get("/my-invoices")
+async def my_invoices(user: dict = Depends(_current_user)):
+    """Archive des factures mensuelles de l'investisseur."""
+    invoices = await db.investor_invoices.find(
+        {"user_id": user["id"]}, {"_id": 0}).sort("issued_at", -1).to_list(200)
+    return {"invoices": invoices}
+
+
+@investor_plans_router.get("/my-invoices/{invoice_id}/pdf")
+async def my_invoice_pdf(invoice_id: str, user: dict = Depends(_current_user)):
+    from fastapi.responses import Response
+    from investor_billing import build_subscription_invoice_pdf
+    invoice = await db.investor_invoices.find_one({"id": invoice_id, "user_id": user["id"]}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Facture non trouvée")
+    pdf = build_subscription_invoice_pdf(invoice)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename={invoice['number']}.pdf"})
+
+
+class BankDetails(BaseModel):
+    holder: str
+    iban: str
+    bic: str
+
+
+@investor_plans_router.get("/bank-details")
+async def get_bank_details(user: dict = Depends(_current_user)):
+    doc = await db.investor_bank_details.find_one({"user_id": user["id"]}, {"_id": 0, "rib_content": 0})
+    return {"bank_details": doc, "has_rib": bool(doc and doc.get("rib_filename"))}
+
+
+@investor_plans_router.put("/bank-details")
+async def save_bank_details(body: BankDetails, user: dict = Depends(_current_user)):
+    iban = body.iban.replace(" ", "").upper()
+    if len(iban) < 15 or len(iban) > 34:
+        raise HTTPException(status_code=400, detail="IBAN invalide")
+    await db.investor_bank_details.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"holder": body.holder.strip(), "iban": iban, "bic": body.bic.strip().upper(),
+                  "updated_at": _now().isoformat()},
+         "$setOnInsert": {"id": str(uuid.uuid4()), "user_id": user["id"], "created_at": _now().isoformat()}},
+        upsert=True)
+    return {"saved": True}
+
+
+class RibUpload(BaseModel):
+    filename: str
+    content_base64: str
+
+
+@investor_plans_router.post("/bank-details/rib")
+async def upload_rib(body: RibUpload, user: dict = Depends(_current_user)):
+    """Téléversement du RIB en PDF ou PNG (max 5 Mo)."""
+    ext = body.filename.rsplit(".", 1)[-1].lower() if "." in body.filename else ""
+    if ext not in ("pdf", "png"):
+        raise HTTPException(status_code=400, detail="Format accepté : PDF ou PNG uniquement")
+    if len(body.content_base64) > 7_000_000:
+        raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5 Mo)")
+    await db.investor_bank_details.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"rib_filename": body.filename, "rib_content": body.content_base64,
+                  "rib_uploaded_at": _now().isoformat()},
+         "$setOnInsert": {"id": str(uuid.uuid4()), "user_id": user["id"], "created_at": _now().isoformat()}},
+        upsert=True)
+    return {"uploaded": True, "filename": body.filename}
+
+
+@investor_plans_router.get("/bank-details/rib")
+async def download_rib(user: dict = Depends(_current_user)):
+    import base64 as b64
+    from fastapi.responses import Response
+    doc = await db.investor_bank_details.find_one({"user_id": user["id"]})
+    if not doc or not doc.get("rib_content"):
+        raise HTTPException(status_code=404, detail="Aucun RIB téléversé")
+    media = "application/pdf" if doc["rib_filename"].lower().endswith(".pdf") else "image/png"
+    return Response(content=b64.b64decode(doc["rib_content"]), media_type=media,
+                    headers={"Content-Disposition": f"attachment; filename={doc['rib_filename']}"})
 
 
 @investor_plans_router.post("/buy-pack")
