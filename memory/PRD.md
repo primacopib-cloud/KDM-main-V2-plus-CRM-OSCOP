@@ -2773,3 +2773,11 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Portail carte : POST /billing-portal → Stripe billing portal via Customer.list(email) avec création de Configuration en fallback ; 404 propre si aucun customer (testé) ; happy path standard Stripe non testable sans abonnement payé réel
 - Relevé annuel fiscal : GET /my-annual-statement/{year}/pdf (abonnements + financements + remboursements, totaux) — bouton dans l'espace ; envoi auto par email début janvier (run_investor_annual_statements, flag system_flags, branché scheduler)
 - NOTE env : STRIPE_MODE=live dans .env ; les flux investisseur utilisent STRIPE_API_KEY (test) directement — clé .env placeholder mais clé valide dans le process backend
+
+## 2026-06 — Pré-remplissage virement, journal + CSV, double validation, relance RIB manquant (self-testé ✅)
+- Pré-remplissage : GET /admin/repayment-prefill/{user_id} (financements FINANCING → réf op + montant €) ; dialogue virement dans le tableau abonnés avec select d'opérations (remplace les prompts)
+- Journal virements : GET /admin/repayments (+ email investisseur) affiché dans le panel CREDI'SCOP + export CSV BOM ; export /admin/repayments/export.csv
+- Double validation : seuil configurable (investor_settings, défaut 50 000 €, GET/PUT /admin/repayment-settings) ; au-delà → PENDING_SECOND_APPROVAL (pas d'email, invisible côté investisseur), confirmation par un 2e admin différent (403 si même admin), CONFIRMED → email — cycle complet validé
+- ⚠️ FIX conflit de routes : investor_banking_router doit rester enregistré AVANT investor_plans_router dans server.py (sinon PUT /admin/{plan_id} intercepte /admin/repayment-settings)
+- Relance RIB manquant : run_rib_missing_reminders (compte actif ≥ 7 j sans RIB → email + flag rib_reminder_sent, idempotent) — branché scheduler
+- Note : le login exige company_name/siret sur users (KeyError sinon) — comptes admin de test doivent cloner le doc admin existant
