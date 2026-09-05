@@ -31,9 +31,48 @@ DEFAULT_RATES = [
 BAF_RATE = 12.0
 THC = {"20DV": 180, "40DV": 260, "40HC": 260, "LCL": 22}
 
+# Ports de départ du monde entier — (port, (prix 20DV Antilles, transit j), (prix 20DV océan Indien, transit j))
+WORLD_DEPARTURES = [
+    ("Shanghai (Chine)", (5200, 40), (3300, 24)),
+    ("Ningbo (Chine)", (5150, 41), (3280, 25)),
+    ("Singapour", (4900, 36), (2900, 18)),
+    ("Rotterdam (Pays-Bas)", (2600, 19), (2950, 29)),
+    ("Anvers (Belgique)", (2580, 19), (2930, 29)),
+    ("Hambourg (Allemagne)", (2650, 20), (3000, 30)),
+    ("Barcelone (Espagne)", (2700, 17), (2850, 26)),
+    ("Gênes (Italie)", (2750, 18), (2800, 25)),
+    ("Algésiras (Espagne)", (2500, 14), (2750, 24)),
+    ("Istanbul (Turquie)", (3100, 22), (3050, 27)),
+    ("Jebel Ali (Dubaï, EAU)", (4300, 30), (2500, 14)),
+    ("Nhava Sheva (Mumbai, Inde)", (4500, 32), (2350, 12)),
+    ("New York (États-Unis)", (2900, 12), (4200, 35)),
+    ("Houston (États-Unis)", (3000, 14), (4300, 37)),
+    ("Miami (États-Unis)", (2450, 8), (4100, 34)),
+    ("Santos (Brésil)", (2800, 12), (3900, 30)),
+    ("Casablanca (Maroc)", (2400, 12), (3100, 26)),
+    ("Dakar (Sénégal)", (2350, 10), (3200, 24)),
+    ("Abidjan (Côte d'Ivoire)", (2600, 12), (3000, 21)),
+    ("Durban (Afrique du Sud)", (3800, 24), (2200, 9)),
+]
+
+
+def _prices(p20: int) -> dict:
+    return {"20DV": p20, "40DV": round(p20 * 1.37), "40HC": round(p20 * 1.45), "LCL": round(p20 / 26)}
+
+
+def _world_rates():
+    rates = []
+    for port, (p_ant, t_ant), (p_reu, t_reu) in WORLD_DEPARTURES:
+        rates.append((port, "Pointe-à-Pitre (Guadeloupe)", _prices(p_ant), t_ant))
+        rates.append((port, "Fort-de-France (Martinique)", _prices(p_ant), t_ant + 1))
+        rates.append((port, "Dégrad-des-Cannes (Guyane)", _prices(round(p_ant * 1.12)), t_ant + 3))
+        rates.append((port, "Port Réunion (La Réunion)", _prices(p_reu), t_reu))
+        rates.append((port, "Longoni (Mayotte)", _prices(round(p_reu * 1.08)), t_reu + 3))
+    return rates
+
 
 async def seed_freight_rates(database):
-    for origin, destination, prices, transit in DEFAULT_RATES:
+    for origin, destination, prices, transit in DEFAULT_RATES + _world_rates():
         await database.freight_rates.update_one(
             {"origin": origin, "destination": destination},
             {"$setOnInsert": {"id": str(uuid.uuid4()), "origin": origin, "destination": destination,
@@ -63,9 +102,37 @@ async def _admin(current_user: dict = Depends(get_current_user_v2)) -> dict:
     return current_user
 
 
+class AttachOrderRequest(BaseModel):
+    order_id: str
+    quote: dict
+
+
+@freight_router.post("/freight/attach-to-order")
+async def attach_quote_to_order(payload: AttachOrderRequest, current_user: dict = Depends(get_current_user_v2)):
+    """L'acheteur (ou l'admin) intègre le devis fret à une commande précise."""
+    order = await db.orders.find_one({"id": payload.order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande introuvable")
+    if not current_user.get("is_admin"):
+        membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
+        if not membership or order.get("org_id") != membership.get("org_id"):
+            raise HTTPException(status_code=403, detail="Cette commande ne vous appartient pas")
+    quote = {
+        "route": payload.quote.get("route"),
+        "container": payload.quote.get("container"),
+        "quantity": payload.quote.get("quantity"),
+        "total_ex_vat": payload.quote.get("total_ex_vat"),
+        "transit_days_estimate": payload.quote.get("transit_days_estimate"),
+        "attached_by": current_user.get("email"),
+        "attached_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.orders.update_one({"id": payload.order_id}, {"$set": {"freight_quote": quote}})
+    return {"success": True, "order_id": payload.order_id, "freight_quote": quote}
+
+
 @freight_router.get("/public/freight/routes")
 async def list_routes():
-    routes = await db.freight_rates.find({"active": True}, {"_id": 0}).to_list(50)
+    routes = await db.freight_rates.find({"active": True}, {"_id": 0}).sort([("origin", 1), ("destination", 1)]).to_list(300)
     return {"routes": routes, "containers": CONTAINERS,
             "note": ("Barème indicatif LOGI'SCOP paramétré par O'SCOP — chiffrage interne pour sécuriser "
                      "le coût de revient. Devis contractuel confirmé avant tout engagement.")}
@@ -133,7 +200,7 @@ async def quote_pdf(payload: QuoteRequest):
 @freight_router.post("/public/freight/compare")
 async def compare_routes(payload: QuoteRequest):
     """Comparateur : devis sur toutes les routes actives pour un même chargement."""
-    routes = await db.freight_rates.find({"active": True}, {"_id": 0}).to_list(50)
+    routes = await db.freight_rates.find({"active": True}, {"_id": 0}).sort([("origin", 1), ("destination", 1)]).to_list(300)
     results = []
     for route in routes:
         base_unit = float(route["base_prices"].get(payload.container_type, 0))

@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { FreightToOperation } from '../components/freight/FreightToOperation';
+import { FreightToOrder, FreightAccessGate, getStoredUser, canUseFreight } from '../components/freight/FreightToOrder';
 
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 
@@ -16,6 +17,7 @@ export default function FreightCalculatorPage() {
   const [quote, setQuote] = useState(null);
   const [comparison, setComparison] = useState(null);
   const [busy, setBusy] = useState(false);
+  const allowed = canUseFreight(getStoredUser());
 
   const compare = async () => {
     try {
@@ -68,6 +70,7 @@ export default function FreightCalculatorPage() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}>
       <Header />
+      {!allowed ? <FreightAccessGate /> : (
       <main className="max-w-[880px] mx-auto px-5 py-12" data-testid="freight-calculator-page">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2 flex items-center gap-3">
           <Ship className="w-8 h-8 text-[#D9B35A]" /> Calculateur de fret maritime LOGI'SCOP
@@ -171,6 +174,7 @@ export default function FreightCalculatorPage() {
                     Télécharger le devis PDF LOGI'SCOP
                   </Button>
                   <FreightToOperation quote={quote} />
+                  <FreightToOrder quote={quote} />
                 </div>
               )}
             </div>
@@ -209,6 +213,7 @@ export default function FreightCalculatorPage() {
           </div>
         )}
       </main>
+      )}
       <Footer />
     </div>
   );

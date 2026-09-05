@@ -340,6 +340,7 @@ async def _build_order_response(order: dict, pickup: dict = None) -> OrderRespon
         carrier=order.get("carrier"),
         carrier_pickup_confirmed_at=order.get("carrier_pickup_confirmed_at"),
         carrier_delivery_confirmed_at=order.get("carrier_delivery_confirmed_at"),
+        freight_quote=order.get("freight_quote"),
         created_at=order["created_at"],
     )
 

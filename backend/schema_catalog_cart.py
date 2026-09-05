@@ -121,6 +121,7 @@ class OrderResponse(BaseModel):
     carrier_pickup_confirmed_at: Optional[datetime] = None
     carrier_delivery_confirmed_at: Optional[datetime] = None
     logistics: Optional[Dict[str, Any]] = None
+    freight_quote: Optional[Dict[str, Any]] = None
     created_at: datetime
 
     class Config:

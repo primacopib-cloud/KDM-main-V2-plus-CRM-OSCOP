@@ -2626,3 +2626,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Frontend ContextualMessageDialog.jsx: bouton « Message » → dialog avec date d'envoi affichée, email destinataire éditable (défaut contact@objectifscopoutremer.com), objet pré-rempli [Opération/Commande REF], bouton Envoyer + historique avec Renvoyer
 - Intégré: FinancingOpportunities (opérations, espace investisseur) + OrdersPage (commandes acheteur)
 - Testé e2e UI+API: envoi Brevo, historique, resend_count=1, capture dialog complète. Données de test nettoyées
+
+## Footer épuré + fret restreint + ports mondiaux (05/06/2026) ✅
+- Footer: supprimés Accès Pro, Catalogue B2B, Adhérer, Espace client et toute la section Espaces (Espace acheteur, Mon espace, Mon CREDI'SCOP, Wallet, Espace Vendeur, Administration). Vérifié par scan texte footer
+- /calculateur-fret réservé acheteurs + admin: garde canUseFreight (localStorage user role buyer/admin/superadmin/is_admin) → FreightAccessGate sinon (components/freight/FreightToOrder.jsx)
+- Intégration commande acheteur: POST /api/freight/attach-to-order (401 sans auth, 403 autre org, admin bypass) → order.freight_quote; OrderResponse + champ freight_quote; OrdersPage affiche « Devis fret LOGI'SCOP intégré »; UI FreightToOrder (select commandes + bouton) sous le devis. Admin garde FreightToOperation
+- Ports mondiaux: WORLD_DEPARTURES (20 ports: Shanghai, Ningbo, Singapour, Rotterdam, Anvers, Hambourg, Barcelone, Gênes, Algésiras, Istanbul, Jebel Ali, Nhava Sheva, New York, Houston, Miami, Santos, Casablanca, Dakar, Abidjan, Durban) × 5 destinations DOM = 107 routes actives (seed idempotent, to_list 300 + tri)
+- Testé e2e: gate visiteur, calculateur acheteur 107 routes, attach OK + visible sur commande, 401/403. Devis de test retiré de la commande démo
