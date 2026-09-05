@@ -2746,3 +2746,15 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Frontend : InvestorApplyForm (FINANCER : raison sociale, pays drapeau, tél indicatif+drapeau, SIREN, email, cartes plans, explainer 8 droits + mention Bon d'Engagement/monnaie légale) ; InvestCreditsWidget (solde temps réel refresh 15 s, barre, alertes, packs, historique) ; CheckoutResultBanner (identifiant + mot de passe provisoire) ; InvestorPlansAdminPanel dans superadmin onglet Plans & Crédits (cpc)
 - Renommage global CREDI'SCOP-I → CREDI'SCOP-INVEST (frontend + backend, labels uniquement)
 - Boutons connectés : hero-cta-financer & journey-financer → /espace-investisseur#financer
+
+## 2026-06 — Reset mensuel, conso auto, renouvellement abonnement investisseur (self-testé curl ✅)
+- Reset quota : lazy dans my-credits — nouveau mois → entrée MONTHLY_RESET ramenant le solde exactement au quota du plan + period_start mis à jour (validé : 3,2M → 4M)
+- Conso auto : decision accept d'un intérêt de financement avec amount_eur → entrée FINANCING −uc au compte de l'investisseur (validé −500 000) ; prompt montant côté FinancingInterestsPanel
+- Renouvellement : checkout apply passé en mode subscription Stripe (recurring mensuel, Stripe gère prélèvements + retries) ; webhook POST /api/investor-plans/webhook : invoice.paid subscription_cycle → réallocation quota + ACTIVE ; invoice.payment_failed → statut PAST_DUE + email de relance Brevo (validé par simulation)
+- NOTE : configurer l'endpoint webhook dans le dashboard Stripe en production
+
+## 2026-06 — Facturation, abonnés admin, rappel quota, export financements (self-testé ✅)
+- Facture PDF : webhook invoice.paid cycle → facture O'SCOP (reportlab) archivée dans investor_invoices + envoyée en pièce jointe Brevo (201 vérifié) — module /app/backend/investor_billing.py
+- Abonnés admin : GET /api/investor-plans/admin/subscribers (email, plan, statut À jour/Échec paiement, solde uc, prochaine échéance = period_start+1 mois) — tableau dans InvestorPlansAdminPanel
+- Rappel quota : check_low_quota_alert après chaque consommation (accept financement + /consume) — email si solde < 10 % du quota, 1 envoi max par période (flag low_quota_alerted_period) — validé (Brevo 201)
+- Export financements : GET /api/investor-plans/my-financings/pdf (entrées FINANCING + total) — bouton "Export PDF de mes financements" dans InvestCreditsWidget (validé %PDF + rendu UI)

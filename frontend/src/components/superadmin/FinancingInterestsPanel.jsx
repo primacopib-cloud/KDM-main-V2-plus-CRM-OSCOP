@@ -23,12 +23,18 @@ export const FinancingInterestsPanel = () => {
   useEffect(load, [load]);
 
   const decide = async (it, decision) => {
+    let amountEur = 0;
+    if (decision === 'accept') {
+      const input = window.prompt('Montant financé en € (uc CREDI\'SCOP-INVEST à décompter automatiquement — vide ou 0 = aucun décompte)', '');
+      if (input === null) return;
+      amountEur = Number(input) || 0;
+    }
     setBusy(it.id);
     try {
       const res = await fetch(`${API}/investor/financing-interests/${it.id}/decision`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ decision }),
+        body: JSON.stringify({ decision, amount_eur: amountEur }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || 'Erreur');
