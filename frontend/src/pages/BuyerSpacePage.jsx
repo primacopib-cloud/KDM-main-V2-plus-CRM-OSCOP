@@ -28,6 +28,7 @@ import { BuyerProBadge } from '../components/buyer/BuyerProBadge';
 import { BrandLogos } from '../components/BrandLogos';
 import { HeaderBackButton } from '../components/HeaderBackButton';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { SpaceHeaderActions } from '../components/SpaceHeaderActions';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
 
@@ -356,6 +357,8 @@ export default function BuyerSpacePage() {
 
             {/* Navigation History */}
             <NavigationHistoryDropdown variant="dark" />
+
+            <SpaceHeaderActions />
             
             <Button 
               variant="outline" 

@@ -5,6 +5,7 @@ import { getAuthHeaders } from '../../services/http';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { CATEGORIES, formatPrice } from './constants';
+import { ZoneStockButton } from './ZoneStockDialog';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -86,6 +87,7 @@ export const ProductRow = ({
     </Badge>
 
     <div className="flex gap-2">
+      <ZoneStockButton product={product} />
       <FinancingToggle product={product} />
       {product.status === 'draft' && (
         <>

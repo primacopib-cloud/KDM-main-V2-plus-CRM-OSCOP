@@ -1,0 +1,22 @@
+{
+  "summary": "Retest ciblé FR des 2 bugs iteration_78 + validation nouveau panneau Stocks par territoire. TOUT PASSE. (1) Breadcrumb 'Accueil > Espace Investisseur' visible sur /espace-investisseur, clic sur Accueil redirige bien vers /. (2) Dialog zone-stock-dialog s'ouvre sans toast d'erreur pour prod_44b3e22bac9d (produit prod_*), 4 zones affichées, save GUADELOUPE=5 → toast succès 'Stock GUADELOUPE : 5 unités (alerte réassort envoyée)', restauration à 0 confirmée. (3) Nouveau panneau stock-territory-panel présent, toggle ouvre 17 produits V2, recherche 'BTP-CIM' → 1 résultat (Ciment gris 25kg), dialog OK, save MARTINIQUE=25 → toast succès, restauration à valeur initiale (0) OK.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ZoneStockDialog", "issues": ["Warning React: Missing Description or aria-describedby={undefined} for DialogContent — a11y mineur, non bloquant"]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": ["Ajouter DialogDescription ou aria-describedby sur ZoneStockDialog pour supprimer les warnings d'accessibilité Radix"],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! via /admin/connexion",
+  "seed_data_creation": "Aucune — valeurs de stock modifiées puis restaurées (GUADELOUPE prod_44b3e22bac9d : 0→5→0 ; MARTINIQUE BTP-CIM-001 : 0→25→0)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration_78 bugs (breadcrumb /espace-investisseur + dialog stock 404 sur prod_*) sont corrigés et validés en iteration_79. Nouveau panneau StockTerritoryPanel dans onglet Catalogue superadmin fonctionne (17 produits V2, recherche, dialog stocks). Seule remarque : warning a11y Radix DialogContent (non bloquant).",
+  "rca of the issue": "Non applicable — bugs déjà corrigés par main agent en amont, ce retest les valide."
+}

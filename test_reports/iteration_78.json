@@ -1,0 +1,38 @@
+{
+  "summary": "Iter 78 — Tests des nouvelles fonctionnalités KDMARCHÉ×O'SCOP : stocks admin par zone (GET+PUT), mémoire de langue de profil, NavBar sans Adhérer/IA/Favoris, boutons space (logout/ai/fav), breadcrumb dans espaces, kréyòl. Backend 8/8 tests OK. Front: 2 bugs identifiés (breadcrumb absent sur /espace-investisseur, dialog stocks 404 sur produits visibles du catalogue superadmin car les IDs affichés (prod_*) ne correspondent pas à ceux de la collection products interrogée par l'endpoint). Données restaurées : stocks {MARTINIQUE:40,GUADELOUPE:30,GUYANE:50,REUNION:100} pour 61c31a9c-..., preferred_language=fr.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "InvestorSpacePage", "issue": "BreadcrumbPill (nav[aria-label='Fil d'Ariane']) NON rendu sur /espace-investisseur alors que <BreadcrumbPill/> est importé et placé en ligne 42. Les 3 autres espaces (acheteur/vendeur/superadmin) affichent bien le breadcrumb. Vérifier que buildBreadcrumbPath('/espace-investisseur') renvoie bien >1 items (ajouter la route au mapping du composant Breadcrumb si absente).", "selector": "nav[aria-label='Fil d\\'Ariane']", "priority": "HIGH"},
+      {"component": "SuperAdmin Catalogue / ZoneStockDialog", "issue": "Cliquer sur data-testid='product-stock-{id}' pour les produits visibles renvoie 404 sur GET/PUT /api/catalog/admin/stock/{id}. Cause : les products.id affichés dans le catalogue superadmin (ex: prod_44b3e22bac9d, prod_...) ne correspondent PAS aux products existants dans la collection MongoDB `products` interrogée par routes_stock_admin.py (celle-ci utilise l'endpoint qui match sur products.id UUID type 61c31a9c-...). Résultat : le toast 'Échec de la mise à jour du stock' apparaît pour TOUS les produits actuellement visibles dans le catalogue superadmin (2 produits testés). L'endpoint backend fonctionne correctement (validé par pytest sur product 61c31a9c-... qui existe en base mais n'est pas listé côté UI).", "selector": "[data-testid^='product-stock-']", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_iter78_stock_language.py", "/app/test_reports/pytest/iter78_results.xml"],
+  "action_items": [
+    "Corriger le mapping BreadcrumbPath pour inclure /espace-investisseur (composant Breadcrumb.jsx buildBreadcrumbPath) pour que le fil d'ariane apparaisse (actuellement items.length <= 1 → return null).",
+    "Réconcilier les sources de données du catalogue superadmin : soit le catalogue affiche les produits de la collection `products` (mêmes IDs UUID), soit les endpoints /api/catalog/admin/stock acceptent les IDs `prod_*` du catalogue affiché. Actuellement il y a un mismatch qui rend le bouton stock inutilisable pour les produits visibles.",
+    "Optionnel : ZoneStockDialog utilise fetch() direct sans credentials:'include'. Fonctionne aujourd'hui car origin égale mais fragile — préférer apiCall du service http.js."
+  ],
+  "critical_code_review_comments": [
+    "ZoneStockDialog.jsx utilise fetch() bas niveau au lieu du wrapper apiCall (services/http.js) — perd la gestion d'erreur unifiée et le credentials:'include' explicite.",
+    "routes_stock_admin.py: la route GET renvoie une liste unifiée à partir de zone_stocks + zone_prices, mais si aucun stock existe pour un produit valide, la liste sera vide (200 sans zones) — l'UI affichera 0 partout. OK mais penser à seed les 4 zones par défaut.",
+    "Le breadcrumb dépend de buildBreadcrumbPath — vérifier la couverture des routes espaces (investor manque probablement).",
+    "Test préco : ajouter data-testid='breadcrumb-pill' sur BreadcrumbPill pour éviter de dépendre du aria-label français."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter78_stock_language.py"],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "~85% (2 bugs sur ~15 vérifs)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal admin via /admin/connexion)",
+  "seed_data_creation": "Aucune donnée créée. Stocks du produit 61c31a9c-... restaurés à MARTINIQUE=40, GUADELOUPE=30, GUYANE=50, REUNION=100. preferred_language du compte admin restauré à 'fr'.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iter 78 : backend stock/language 100% OK. Frontend a 2 bugs à corriger avant re-test : (1) BreadcrumbPill absent sur /espace-investisseur (mapping route dans components/Breadcrumb.jsx buildBreadcrumbPath) ; (2) mismatch IDs produits catalogue superadmin vs endpoint stock admin (UI 404 sur les 2 produits visibles). Le produit target 61c31a9c-d072-4988-9a39-76ca46520bba n'est PAS dans la liste catalogue superadmin visible — E1 doit vérifier pourquoi. Kréyòl toggle + mémoire langue via POST /api/profile/language fonctionnent parfaitement (Lakay/Konèkté après re-login). Tous les autres critères (headers, back-button, logout, ai/fav testids) OK.",
+  "rca_of_issues": {
+    "breadcrumb_investisseur": "Le composant BreadcrumbPill retourne null quand items.length<=1 ou pathname==='/'. buildBreadcrumbPath('/espace-investisseur') ne trouve probablement pas de mapping pour cette route → renvoie [rootOnly] → null. Voir Breadcrumb.jsx ligne 37 (buildBreadcrumbPath) et 178.",
+    "stock_dialog_404": "products.id dans la collection MongoDB (ex: 61c31a9c-d072-4988-9a39-76ca46520bba UUID v4) ≠ IDs affichés dans /superadmin onglet Catalogue (ex: prod_44b3e22bac9d). Le catalogue superadmin lit vraisemblablement une autre collection (catalog_products ?) ou effectue un mapping différent. Résultat : GET/PUT /api/catalog/admin/stock/prod_44b3e22bac9d → 404 'Produit non trouvé' car db.products.find_one({id: prod_44b...}) est vide."
+  }
+}

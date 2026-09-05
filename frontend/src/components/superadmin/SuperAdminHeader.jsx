@@ -13,6 +13,7 @@ import { apiCall } from '../../services/http';
 import { BrandLogos } from '../BrandLogos';
 import { HeaderBackButton } from '../HeaderBackButton';
 import LanguageSwitcher from '../LanguageSwitcher';
+import { SpaceHeaderActions } from '../SpaceHeaderActions';
 
 const useOpenTicketsCount = () => {
   const [count, setCount] = useState(0);
@@ -172,6 +173,8 @@ export const SuperAdminHeader = ({
           <RefreshCw className="w-4 h-4 mr-1" />
           {i18n.t('adm.actualiser')}
         </Button>
+
+        <SpaceHeaderActions showFavorites={false} />
       </div>
     </div>
 

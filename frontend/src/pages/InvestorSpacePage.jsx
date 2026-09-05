@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { TrendingUp, Ticket, Euro, Truck, ShieldAlert } from 'lucide-react';
-import Header from '../components/Header';
+import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
+import { BreadcrumbPill } from '../components/Breadcrumb';
+import { SpaceHeaderActions } from '../components/SpaceHeaderActions';
 import { InvestorLiveDashboard } from '../components/investor/InvestorLiveDashboard';
 import { FinancingOpportunities } from '../components/investor/FinancingOpportunities';
 import { MessagesNavLink } from '../components/MessagesNavLink';
@@ -34,8 +36,12 @@ const blocks = [
 export default function InvestorSpacePage() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}>
-      <Header />
-      <main className="max-w-[1000px] mx-auto px-5 py-14" data-testid="investor-space-page">
+      <NavBar />
+      <main className="max-w-[1000px] mx-auto px-5 pt-24 pb-14" data-testid="investor-space-page">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+          <BreadcrumbPill />
+          <SpaceHeaderActions showFavorites={false} />
+        </div>
         <div className="flex items-center gap-3 flex-wrap mb-3">
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">Espace investisseurs</h1>
           <MessagesNavLink withLabel />

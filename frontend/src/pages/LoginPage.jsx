@@ -13,6 +13,8 @@ import {
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { authAPI } from '../services/api';
+import { API, getAuthHeaders } from '../services/http';
+import i18n from '@/i18n';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
 /**
@@ -37,6 +39,11 @@ const LoginPage = () => {
     setIsLoading(true);
     try {
       const data = await authAPI.login(formData.email, formData.password);
+      try {
+        const r = await fetch(`${API}/profile/language`, { headers: getAuthHeaders(), credentials: 'include' });
+        const pref = await r.json();
+        if (pref?.language && pref.language !== i18n.language) await i18n.changeLanguage(pref.language);
+      } catch { /* langue par défaut conservée */ }
       if (data?.user?.must_change_password) {
         toast.info(t('auth.login_success'));
         navigate('/changer-mot-de-passe');

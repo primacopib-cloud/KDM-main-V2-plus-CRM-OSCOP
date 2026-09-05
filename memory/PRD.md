@@ -2672,3 +2672,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - LanguageSwitcher (drapeaux FR/EN/ES/Kréyòl, i18n + reload) présent sur tous ces headers ; FloatingToc traduit (clés toc.*)
 - Nouvelle page /territoires (carrousel seul) ; nav Territoires → /territoires ; LOLODRIVE → /particuliers (page dédiée)
 - Historique de navigation filtré par contexte (visiteur/acheteur/vendeur/investisseur/admin) avec badge de contexte (useNavigationHistory.getRouteContext)
+
+## 2026-06 — Espaces, header épuré, Kréyòl, langue profil, stocks territoire (testé iterations 78/79 ✅)
+- NavBar public : bouton « Adhérer » supprimé ; Assistant IA & Favoris retirés du header → exclusifs aux espaces via SpaceHeaderActions (IA + favoris + déconnexion) sur acheteur/vendeur/superadmin/investisseur
+- Espace investisseur : passage au NavBar uniforme + BreadcrumbPill (route ajoutée au routeConfig de Breadcrumb.jsx)
+- Kréyòl : gcf-extra.json + gcf-site.json fusionnés (mergeNs dans i18n/index.js) — nav, footer, auth, landing site, catalog, seo, buyer, orders, wallet, favoris, breadcrumb. NOTE : textes FR codés en dur dans ProHero/ProJourneysSection non i18n (backlog)
+- Mémoire langue : GET /api/profile/language appliqué après login (LoginPage + AdminLoginPage), sauvegarde via drapeaux (POST déjà existant)
+- Stocks par territoire : GET /api/catalog/admin/stock/{id} + /stock-products ajoutés ; _find_product cherche products ET catalog_products ; UI = ZoneStockButton dans ProductRow + StockTerritoryPanel (17 produits V2 dont BTP/AGR) dans le catalogue superadmin

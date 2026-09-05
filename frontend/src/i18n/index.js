@@ -3,6 +3,8 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import fr from './locales/fr.json';
 import gcf from './locales/gcf.json';
+import gcfExtra from './locales/gcf-extra.json';
+import gcfSite from './locales/gcf-site.json';
 import frSite from './locales/fr-site.json';
 import frApp from './locales/fr-app.json';
 import en from './locales/en.json';
@@ -24,6 +26,16 @@ import esData from './locales/es-data.json';
  *
  * Detection : URL `?lang=es` > localStorage `i18nextLng` > navigator > FR fallback.
  */
+const mergeNs = (...objs) => {
+  const out = {};
+  for (const o of objs) {
+    for (const [k, v] of Object.entries(o)) {
+      out[k] = v && typeof v === 'object' && !Array.isArray(v) ? { ...(out[k] || {}), ...v } : v;
+    }
+  }
+  return out;
+};
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -32,7 +44,7 @@ i18n
       fr: { translation: { ...fr, ...frSite, ...frApp, ...frAdmin, ...frData } },
       en: { translation: { ...en, ...enSite, ...enApp, ...enAdmin, ...enData } },
       es: { translation: { ...es, ...esSite, ...esApp, ...esAdmin, ...esData } },
-      gcf: { translation: gcf },
+      gcf: { translation: mergeNs(gcf, gcfExtra, gcfSite) },
     },
     fallbackLng: 'fr',
     supportedLngs: ['fr', 'en', 'es', 'gcf'],
