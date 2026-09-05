@@ -2787,3 +2787,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Plafond mensuel : setting monthly_repayment_budget_eur (PUT/GET repayment-settings étendu), _check_monthly_budget appelé à chaque virement confirmé → email admins si total mois > budget (1 alerte/mois via system_flags repayment_budget_alert_YYYY-MM, validé) ; ligne « Total du mois / budget » + mention PLAFOND DÉPASSÉ dans le journal
 - Fiche 360 : GET /admin/investor-360/{user_id} (abonnement, crédits solde/quota/consommé, financements, RIB+statut, virements, factures) ; bouton « Fiche 360 » par abonné → carte 6 blocs sous le tableau
 - Données de test purgées (virement VIR-2026-010, flag alerte, budget)
+
+## 2026-06 — Fiche 360 PDF (self-testé ✅)
+- GET /admin/investor-360/{user_id}/pdf (build_investor_360_pdf : blocs abonnement/crédits/RIB/financements/virements/factures) — bouton « Télécharger en PDF » dans la carte fiche 360 (200 %PDF, 401 sans auth)
