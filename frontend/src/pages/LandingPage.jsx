@@ -190,30 +190,15 @@ const LandingPage = () => {
       <PartnerCarousel />
       </Reveal>
 
-      {/* ============ PARTIE PARTICULIERS / CONSOMMATEURS ============ */}
+      {/* ============ PONT PARTICULIERS (détails sur /particuliers) ============ */}
       <Reveal><LolodriveSection /></Reveal>
 
-      <Reveal variant="right">
-      <AudienceBanner
-        id="particuliers" icon={ShoppingBasket} color="#8CC63E" testId="audience-banner-particuliers"
-        kicker="Espace particuliers"
-        title="Pour les particuliers & consommateurs"
-        subtitle="Produits phares de votre territoire, points relais LOLODRIVE, PASS Vie Chère, parrainage et spots vidéo."
-      />
-      </Reveal>
-
-      {/* Produits phares par territoire */}
-      <Reveal><ZoneProductsShowcase /></Reveal>
-
-      {/* Carrousel territorial — visiteurs grand public */}
+      {/* Section territoriale professionnelle */}
       <Reveal variant="zoom">
       <div className="py-8">
         <TerritoryCarousel />
       </div>
       </Reveal>
-
-      {/* Réseau LOLODRIVE — carte publique */}
-      <Reveal><PublicLolodriveMapSection /></Reveal>
 
       {/* Témoignages membres */}
       <Reveal variant="left"><TestimonialsSection /></Reveal>
