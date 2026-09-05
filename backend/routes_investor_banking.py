@@ -296,6 +296,16 @@ async def investor_360(user_id: str, _: dict = Depends(_admin)):
     }
 
 
+@investor_banking_router.get("/admin/investor-360/{user_id}/pdf")
+async def investor_360_pdf(user_id: str, admin: dict = Depends(_admin)):
+    """Fiche 360 en PDF pour les comités d'investissement."""
+    from investor_billing import build_investor_360_pdf
+    data = await investor_360(user_id, admin)
+    pdf = build_investor_360_pdf(data)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=fiche-investisseur-360-{user_id[:8]}.pdf"})
+
+
 @investor_banking_router.get("/admin/repayments")
 async def admin_list_repayments(user_id: str | None = None, _: dict = Depends(_admin)):
     q = {"user_id": user_id} if user_id else {}

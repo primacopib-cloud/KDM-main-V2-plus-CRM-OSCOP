@@ -223,8 +223,23 @@ const InvestorSubscribersTable = () => {
           <div className="flex items-center gap-2 mb-3">
             <p className="text-sm font-bold text-[#E9CF8E] m-0">Fiche investisseur 360 — {fiche.investor.name || fiche.investor.email}</p>
             <span className="text-[11px] text-white/40">{fiche.investor.email}</span>
+            <button type="button" data-testid="fiche360-pdf-btn"
+              onClick={async () => {
+                try {
+                  const res = await fetch(`${API_URL}/api/investor-plans/admin/investor-360/${fiche.investor.user_id}/pdf`, { headers: getAuthHeaders() });
+                  if (!res.ok) throw new Error('Export impossible');
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url; a.download = 'fiche-investisseur-360.pdf'; a.click();
+                  URL.revokeObjectURL(url);
+                } catch (e) { toast.error(e.message); }
+              }}
+              className="ml-auto px-2.5 py-1 rounded-md text-[10px] font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors">
+              Télécharger en PDF
+            </button>
             <button type="button" onClick={() => setFiche(null)} data-testid="fiche360-close"
-              className="ml-auto px-2 py-1 rounded-md text-[10px] font-semibold text-white/60 bg-white/[0.05] border border-white/15 hover:bg-white/[0.1] transition-colors">Fermer</button>
+              className="px-2 py-1 rounded-md text-[10px] font-semibold text-white/60 bg-white/[0.05] border border-white/15 hover:bg-white/[0.1] transition-colors">Fermer</button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 text-[11px] text-white/70">
             <div className="rounded-lg p-3 bg-white/[0.02] border border-white/[0.06]">

@@ -214,6 +214,94 @@ def build_annual_statement_pdf(user: dict, account: dict, year: int, invoices: l
     return buf.getvalue()
 
 
+def build_investor_360_pdf(data: dict) -> bytes:
+    """Fiche investisseur 360 pour comités d'investissement."""
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    w, h = A4
+    inv = data["investor"]
+    _header(c, w, h, "FICHE INVESTISSEUR 360", f"Éditée le {datetime.now(timezone.utc).isoformat()[:10]}",
+            "COMITÉ D'INVESTISSEMENT")
+    y = h - 42 * mm
+    c.setFillColor(colors.black)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(20 * mm, y, inv.get("name") or inv.get("email") or "")
+    c.setFont("Helvetica", 9)
+    c.setFillColor(GREY)
+    c.drawString(20 * mm, y - 5.5 * mm, inv.get("email") or "")
+    y -= 16 * mm
+
+    def block(title, rows):
+        nonlocal y
+        if y < 50 * mm:
+            _footer(c, w)
+            c.showPage()
+            y = h - 25 * mm
+        c.setFillColor(GOLD)
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(20 * mm, y, title)
+        y -= 2.5 * mm
+        c.setStrokeColor(GOLD)
+        c.line(20 * mm, y, w - 20 * mm, y)
+        y -= 6 * mm
+        for label, value in rows:
+            if y < 30 * mm:
+                _footer(c, w)
+                c.showPage()
+                y = h - 25 * mm
+            c.setFillColor(GREY)
+            c.setFont("Helvetica", 8.5)
+            c.drawString(20 * mm, y, str(label))
+            c.setFillColor(colors.black)
+            c.setFont("Helvetica-Bold", 8.5)
+            c.drawString(85 * mm, y, str(value)[:70])
+            y -= 6 * mm
+        y -= 5 * mm
+
+    def _uc(n):
+        return f"{(n or 0):,}".replace(",", " ") + " uc"
+
+    sub = data.get("subscription") or {}
+    block("ABONNEMENT", [
+        ("Plan", sub.get("plan_code") or "—"),
+        ("Statut", sub.get("status") or "—"),
+        ("Période en cours depuis", (sub.get("period_start") or "")[:10] or "—"),
+        ("Quota mensuel", _uc(sub.get("monthly_invest_uc"))),
+    ])
+    cr = data["credits"]
+    block("CREDI'SCOP-INVEST", [
+        ("Solde", _uc(cr.get("balance_uc"))),
+        ("Consommé", _uc(cr.get("consumed_uc"))),
+        ("Mouvements", cr.get("entries")),
+    ])
+    bank = data.get("bank")
+    block("COORDONNÉES BANCAIRES", [
+        ("Titulaire", (bank or {}).get("holder") or "Non renseigné"),
+        ("IBAN", ("…" + (bank or {}).get("iban", "")[-6:]) if bank and bank.get("iban") else "Non renseigné"),
+        ("Statut RIB", (bank or {}).get("rib_status") or ("PENDING" if bank and bank.get("rib_filename") else "NON TÉLÉVERSÉ")),
+    ])
+    fin = data["financings"]
+    fin_rows = [("Total financé", _uc(fin.get("total_uc"))), ("Nombre d'opérations", fin.get("count"))]
+    for e in fin.get("items", [])[:8]:
+        fin_rows.append((e["created_at"][:10], f"{e.get('label', '')} — {_uc(-e['amount_uc'])}"))
+    block("FINANCEMENTS", fin_rows)
+    rep = data["repayments"]
+    rep_rows = [("Total confirmé", _eur(rep.get("total_eur"))), ("Nombre de virements", rep.get("count"))]
+    for r in rep.get("items", [])[:8]:
+        rep_rows.append(((r.get("paid_at") or "")[:10],
+                         f"Réf. {r['reference']} — {_eur(r['amount_eur'])}"
+                         f"{' — rapproché' if r.get('reconciled') else ''}"))
+    block("VIREMENTS DE REMBOURSEMENT", rep_rows)
+    invc = data["invoices"]
+    inv_rows = [("Total encaissé", _eur(invc.get("total_eur"))), ("Nombre de factures", invc.get("count"))]
+    for i in invc.get("items", [])[:8]:
+        inv_rows.append((i.get("period_label", ""), f"{i['number']} — {_eur(i['amount_eur'])}"))
+    block("FACTURES D'ABONNEMENT", inv_rows)
+    _footer(c, w)
+    c.save()
+    return buf.getvalue()
+
+
 async def check_low_quota_alert(db, user_id: str):
     """Email de rappel quand le solde passe sous 10 % du quota (1 envoi par période)."""
     account = await db.investor_accounts.find_one({"user_id": user_id, "status": {"$in": ["ACTIVE", "PAST_DUE"]}})
