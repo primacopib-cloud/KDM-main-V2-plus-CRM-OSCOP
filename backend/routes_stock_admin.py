@@ -32,6 +32,7 @@ async def _admin(user_id: str = Depends(get_current_user_id)) -> dict:
 class StockUpdateRequest(BaseModel):
     zone_code: str
     quantity_available: int = Field(ge=0)
+    reorder_point: int | None = Field(default=None, ge=0)
 
 
 class PriceUpdateRequest(BaseModel):
@@ -76,6 +77,7 @@ async def get_zone_stocks(product_id: str, _: dict = Depends(_admin)):
                 "zone_code": z,
                 "quantity_available": by_zone.get(z, {}).get("quantity_available", 0),
                 "quantity_reserved": by_zone.get(z, {}).get("quantity_reserved", 0),
+                "reorder_point": by_zone.get(z, {}).get("reorder_point", 10),
             }
             for z in all_zones
         ],
@@ -106,17 +108,22 @@ async def update_zone_stock(product_id: str, body: StockUpdateRequest, admin: di
 
     existing = await db.zone_stocks.find_one({"product_id": product_id, "zone_code": body.zone_code})
     old_available = 0
-    reorder_point = 10
+    reorder_point = body.reorder_point if body.reorder_point is not None else 10
     if existing:
         old_available = existing.get("quantity_available", 0) - existing.get("quantity_reserved", 0)
-        reorder_point = existing.get("reorder_point", 10)
+        if body.reorder_point is None:
+            reorder_point = existing.get("reorder_point", 10)
 
+    set_fields = {"quantity_available": body.quantity_available, "updated_at": _now(),
+                  "last_restock_at": _now() if body.quantity_available > 0 else None}
+    if body.reorder_point is not None:
+        set_fields["reorder_point"] = body.reorder_point
     await db.zone_stocks.update_one(
         {"product_id": product_id, "zone_code": body.zone_code},
         {
-            "$set": {"quantity_available": body.quantity_available, "updated_at": _now(),
-                     "last_restock_at": _now() if body.quantity_available > 0 else None},
-            "$setOnInsert": {"id": f"{product_id}-{body.zone_code}", "quantity_reserved": 0, "reorder_point": 10},
+            "$set": set_fields,
+            "$setOnInsert": {"id": f"{product_id}-{body.zone_code}", "quantity_reserved": 0,
+                             **({} if body.reorder_point is not None else {"reorder_point": 10})},
         },
         upsert=True,
     )
@@ -167,7 +174,45 @@ async def update_zone_stock(product_id: str, body: StockUpdateRequest, admin: di
         "quantity_available": body.quantity_available,
         "restock_alert_triggered": restocked,
         "low_stock_alert_triggered": low_stock_alerted,
+        "reorder_point": reorder_point,
     }
+
+
+@stock_admin_router.get("/stock-history/export")
+async def export_stock_history(
+    product_id: str | None = None,
+    zone_code: str | None = None,
+    _: dict = Depends(_admin),
+):
+    """Export CSV de l'historique des ajustements de stock."""
+    import csv
+    import io
+
+    from fastapi.responses import StreamingResponse
+
+    query = {}
+    if product_id:
+        query["product_id"] = product_id
+    if zone_code:
+        query["zone_code"] = zone_code
+    entries = await db.stock_adjustments.find(query, {"_id": 0}).sort("created_at", -1).to_list(5000)
+
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=";")
+    writer.writerow(["Date", "Produit", "SKU produit (id)", "Territoire", "Ancienne quantité", "Nouvelle quantité", "Auteur"])
+    for e in entries:
+        writer.writerow([
+            e.get("created_at", ""), e.get("product_name", ""), e.get("product_id", ""),
+            e.get("zone_code", ""), e.get("old_quantity", ""), e.get("new_quantity", ""),
+            e.get("author_email", ""),
+        ])
+    buf.seek(0)
+    filename = f"historique_stocks_{_now().strftime('%Y%m%d_%H%M')}.csv"
+    return StreamingResponse(
+        iter(["\ufeff" + buf.getvalue()]),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @stock_admin_router.put("/price/{product_id}")

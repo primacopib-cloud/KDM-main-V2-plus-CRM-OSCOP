@@ -1,10 +1,28 @@
 import { useState, useEffect } from 'react';
-import { Boxes, Search } from 'lucide-react';
+import { Boxes, Search, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import { getAuthHeaders } from '../../services/http';
 import { Input } from '../ui/input';
 import { ZoneStockButton } from './ZoneStockDialog';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+const exportHistoryCsv = async () => {
+  try {
+    const res = await fetch(`${API_URL}/api/catalog/admin/stock-history/export`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error();
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `historique_stocks_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Historique des stocks exporté en CSV');
+  } catch {
+    toast.error("Échec de l'export CSV");
+  }
+};
 
 // Stocks par territoire — produits du catalogue V2 (BTP, agriculture, alimentaire…)
 export const StockTerritoryPanel = () => {
@@ -32,12 +50,18 @@ export const StockTerritoryPanel = () => {
       </button>
       {open && (
         <div className="px-4 pb-4 space-y-2">
-          <div className="relative w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un produit (ex: BTP-CIM-001)…"
-              data-testid="stock-territory-search"
-              className="pl-9 h-9 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40" />
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un produit (ex: BTP-CIM-001)…"
+                data-testid="stock-territory-search"
+                className="pl-9 h-9 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40" />
+            </div>
+            <button type="button" onClick={exportHistoryCsv} data-testid="stock-history-export-csv"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-semibold text-[#E9CF8E] bg-[#D9B35A]/10 border border-[#D9B35A]/30 hover:bg-[#D9B35A]/20 transition-colors">
+              <Download className="w-3.5 h-3.5" /> Export CSV historique
+            </button>
           </div>
           <div className="max-h-72 overflow-y-auto space-y-1.5">
             {filtered.map((p) => (
