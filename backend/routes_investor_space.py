@@ -107,6 +107,34 @@ DISCLAIMER = ("Les CREDI'SCOP-I sont des unités internes de services. Ils ne co
               "l'objet d'un Bon d'Engagement et d'un paiement distinct en monnaie ayant cours légal.")
 
 
+@investor_router.post("/financing-interest")
+async def financing_interest(payload: dict, current_user: dict = Depends(get_current_user_v2)):
+    op_id = (payload or {}).get("operation_id")
+    op = await db.purchase_resale_operations.find_one(
+        {"id": op_id}, {"_id": 0, "reference": 1, "linked_product_name": 1, "territory_id": 1})
+    if not op:
+        raise HTTPException(status_code=404, detail="Opération introuvable")
+    email = (current_user.get("email") or "").lower()
+    name = current_user.get("contact_name") or current_user.get("company_name") or email
+    existing = await db.financing_interests.find_one({"operation_id": op_id, "investor_email": email})
+    if existing:
+        return {"success": True, "already_sent": True}
+    await db.financing_interests.insert_one({
+        "id": str(uuid.uuid4()), "operation_id": op_id, "operation_reference": op["reference"],
+        "investor_email": email, "investor_name": name, "status": "NEW",
+        "created_at": datetime.now(timezone.utc).isoformat()})
+    try:
+        from routes_purchase_resale import notify_admins
+        await notify_admins(
+            f"Intérêt investisseur — {op['reference']}",
+            f"{name} ({email}) souhaite financer l'opération {op['reference']}"
+            f" ({op.get('linked_product_name') or 'offre liée'}, {op.get('territory_id') or 'territoire n.c.'}).",
+            category="investisseur")
+    except Exception:
+        pass
+    return {"success": True, "already_sent": False}
+
+
 @investor_router.get("/dashboard")
 async def investor_dashboard(current_user: dict = Depends(get_current_user_v2)):
     email = (current_user.get("email") or "").lower()
