@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
-export const MessagesNavLink = ({ variant = 'dark' }) => {
+export const MessagesNavLink = ({ variant = 'dark', withLabel = false }) => {
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const [inbox, setInbox] = useState([]);
@@ -69,9 +69,12 @@ export const MessagesNavLink = ({ variant = 'dark' }) => {
   return (
     <div className="relative" ref={ref}>
       <button type="button" onClick={toggle} title="Messagerie interne"
-        className={`relative p-2 rounded-lg transition-colors ${light ? 'hover:bg-gray-100' : 'hover:bg-white/[0.06]'}`}
+        className={`relative rounded-lg transition-colors ${withLabel
+          ? 'inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold border border-white/15 text-white/80 hover:text-white hover:bg-white/10'
+          : `p-2 ${light ? 'hover:bg-gray-100' : 'hover:bg-white/[0.06]'}`}`}
         data-testid="messages-nav-link">
         <Mail className={`w-4 h-4 ${light ? 'text-gray-500' : 'text-white/70'}`} />
+        {withLabel && <span>Messagerie</span>}
         {unread > 0 && (
           <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#D9B35A] text-[#1F0A33] rounded-full text-[10px] font-bold flex items-center justify-center"
             data-testid="messages-unread-badge">

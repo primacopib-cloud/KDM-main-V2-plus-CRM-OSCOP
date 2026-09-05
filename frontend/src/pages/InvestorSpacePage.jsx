@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { InvestorLiveDashboard } from '../components/investor/InvestorLiveDashboard';
 import { FinancingOpportunities } from '../components/investor/FinancingOpportunities';
+import { MessagesNavLink } from '../components/MessagesNavLink';
 import { InvestorDataroom } from '../components/investor/InvestorDataroom';
 import { InvestorApplyForm } from '../components/investor/InvestorApplyForm';
 
@@ -35,7 +36,10 @@ export default function InvestorSpacePage() {
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}>
       <Header />
       <main className="max-w-[1000px] mx-auto px-5 py-14" data-testid="investor-space-page">
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">Espace investisseurs</h1>
+        <div className="flex items-center gap-3 flex-wrap mb-3">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">Espace investisseurs</h1>
+          <MessagesNavLink withLabel />
+        </div>
         <p className="text-white/70 max-w-[70ch] mb-8">
           L'espace investisseur O'SCOP sépare strictement l'abonnement, le compteur CREDI'SCOP-I, les
           investissements réels et le financement logistique LOGI'SCOP.
