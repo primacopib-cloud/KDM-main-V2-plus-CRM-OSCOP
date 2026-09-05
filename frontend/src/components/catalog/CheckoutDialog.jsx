@@ -53,9 +53,15 @@ export const CheckoutDialog = ({
                   ))}
                 </div>
               )}
+              {cart?.return_discount_cents > 0 && (
+                <div className="flex justify-between items-center text-[#8CC63E] text-sm" data-testid="checkout-return-discount">
+                  <span>Bon de retour ({cart.return_code})</span>
+                  <span>−{formatPrice(cart.return_discount_cents)} HT</span>
+                </div>
+              )}
               <div className="flex justify-between items-center border-t border-white/[0.08] pt-2">
                 <span>{cartItemCount} article{cartItemCount > 1 ? 's' : ''}</span>
-                <span className="font-bold text-[#D9B35A]">{formatPrice(cartTotal)} HT</span>
+                <span className="font-bold text-[#D9B35A]">{formatPrice(cartTotal - (cart?.return_discount_cents || 0))} HT</span>
               </div>
             </div>
             

@@ -90,6 +90,55 @@ export const StockoutStatsPanel = () => {
   );
 };
 
+const ReturnCodeSettings = () => {
+  const [s, setS] = useState(null);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    fetch(`${API_URL}/api/catalog/admin/return-code-settings`, { headers: getAuthHeaders() })
+      .then((r) => r.json()).then(setS).catch(() => {});
+  }, []);
+  const save = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/catalog/admin/return-code-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ discount_percent: Number(s.discount_percent), validity_hours: Number(s.validity_hours) }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success('Réglages des bons de retour enregistrés');
+    } catch {
+      toast.error('Échec de l\'enregistrement (remise 1–50 %, validité 1–720 h)');
+    } finally {
+      setSaving(false);
+    }
+  };
+  if (!s) return null;
+  return (
+    <div className="mb-3 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] flex items-center gap-3 flex-wrap" data-testid="return-code-settings">
+      <span className="text-[11px] text-white/60 font-semibold">Bons de retour :</span>
+      <label className="flex items-center gap-1.5 text-[11px] text-white/50">
+        Remise
+        <input type="number" min="1" max="50" value={s.discount_percent}
+          onChange={(e) => setS({ ...s, discount_percent: e.target.value })}
+          data-testid="return-code-percent-input"
+          className="h-7 w-14 px-1.5 rounded-md bg-white/[0.05] border border-white/15 text-white text-[11px] text-center" /> % HT
+      </label>
+      <label className="flex items-center gap-1.5 text-[11px] text-white/50">
+        Validité
+        <input type="number" min="1" max="720" value={s.validity_hours}
+          onChange={(e) => setS({ ...s, validity_hours: e.target.value })}
+          data-testid="return-code-hours-input"
+          className="h-7 w-16 px-1.5 rounded-md bg-white/[0.05] border border-white/15 text-white text-[11px] text-center" /> h
+      </label>
+      <button type="button" onClick={save} disabled={saving} data-testid="return-code-settings-save"
+        className="h-7 px-2.5 rounded-md text-[10px] font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors disabled:opacity-50">
+        {saving ? '…' : 'Enregistrer'}
+      </button>
+    </div>
+  );
+};
+
 export const AbandonedCartsPanel = () => {
   const [data, setData] = useState(null);
   const [conv, setConv] = useState(null);
@@ -103,13 +152,21 @@ export const AbandonedCartsPanel = () => {
     <CollapsePanel icon={ShoppingCart} title="Paniers abandonnés (réservations expirées sans commande)" testid="abandoned-carts-panel">
       {() => {
         if (data === null) { load(); return <p className="text-xs text-white/40">Chargement…</p>; }
-        if (!data.entries?.length) return <p className="text-xs text-white/40 py-1">Aucune réservation expirée tracée pour l'instant.</p>;
+        if (!data.entries?.length) {
+          return (
+            <>
+              <ReturnCodeSettings />
+              <p className="text-xs text-white/40 py-1">Aucune réservation expirée tracée pour l'instant.</p>
+            </>
+          );
+        }
         return (
           <>
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-white/50 mb-2">{data.total} réservation(s) expirée(s) au total — relance email automatique (max 1/24 h par organisation)</p>
               <ExportCsvButton path="/api/catalog/admin/abandoned-reservations/export" filename="paniers_abandonnes" testid="abandoned-export-csv" />
             </div>
+            <ReturnCodeSettings />
             {conv && conv.reminders_sent > 0 && (
               <div className="mb-3 px-3 py-2 rounded-lg bg-[#8CC63E]/[0.08] border border-[#8CC63E]/25 flex items-center gap-4 flex-wrap" data-testid="reminder-conversion-stats">
                 <span className="text-xs text-white/80">

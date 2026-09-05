@@ -59,13 +59,16 @@ async def send_abandoned_cart_reminders(db, abandoned_by_org: dict) -> int:
             continue
         product_ids = [r["product_id"] for r in reservations]
         names = {p["id"]: p["name"] for p in await db.products.find({"id": {"$in": product_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(50)}
-        # Bon de retour : code promo 5 % valable 72 h, mono-usage
+        # Bon de retour : pourcentage et durée réglables par les admins
         import secrets
+        settings = await db.app_settings.find_one({"key": "return_code"}) or {}
+        pct = settings.get("discount_percent", 5)
+        hours = settings.get("validity_hours", 72)
         return_code = f"RETOUR-{secrets.token_hex(3).upper()}"
         await db.cart_return_codes.insert_one({
             "id": str(uuid.uuid4()), "code": return_code, "org_id": org_id, "zone_code": zone_code,
-            "discount_percent": 5, "used": False,
-            "expires_at": (_now() + timedelta(hours=72)).isoformat(),
+            "discount_percent": pct, "used": False,
+            "expires_at": (_now() + timedelta(hours=hours)).isoformat(),
             "created_at": _now().isoformat(),
         })
         rows = "".join(
@@ -82,9 +85,9 @@ async def send_abandoned_cart_reminders(db, abandoned_by_org: dict) -> int:
           </p>
           <ul style="padding-left:18px;">{rows}</ul>
           <div style="margin:16px 0;padding:14px;border-radius:12px;background:rgba(217,179,90,0.12);border:1px solid rgba(217,179,90,0.4);text-align:center;">
-            <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:0 0 6px;">Pour vous remercier de revenir, voici un bon de <strong style="color:#D9B35A;">−5 % HT</strong> sur votre commande :</p>
+            <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:0 0 6px;">Pour vous remercier de revenir, voici un bon de <strong style="color:#D9B35A;">−{pct} % HT</strong> sur votre commande :</p>
             <p style="color:#D9B35A;font-size:20px;font-weight:bold;letter-spacing:2px;margin:0;">{return_code}</p>
-            <p style="color:rgba(255,255,255,0.5);font-size:11px;margin:6px 0 0;">Valable 72 h, à saisir dans votre panier — usage unique.</p>
+            <p style="color:rgba(255,255,255,0.5);font-size:11px;margin:6px 0 0;">Valable {hours} h, à saisir dans votre panier — usage unique.</p>
           </div>
           <p style="color:rgba(255,255,255,0.55);font-size:12px;margin-top:16px;">
             Reconnectez-vous au catalogue Pro pour finaliser votre commande — un nouvel ajout réactive la réservation de 30 minutes.
