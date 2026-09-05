@@ -236,6 +236,37 @@ async def add_to_cart(
     return response
 
 
+@cart_router.post("/cart/reservation/extend")
+async def extend_cart_reservation(
+    zone_code: Optional[str] = None,
+    current_user: dict = Depends(get_current_user_catalog),
+):
+    """Prolonge de 15 minutes les réservations panier de l'organisation."""
+    membership = await db.org_memberships.find_one({"user_id": current_user["id"]})
+    if not membership:
+        raise HTTPException(status_code=400, detail="Aucune organisation associée")
+    await ensure_member_active(membership["org_id"])
+    zone_code = await _resolve_zone(current_user, membership["org_id"], zone_code)
+    if not zone_code:
+        raise HTTPException(status_code=400, detail="Sélectionnez une zone d'abord")
+    await cleanup_expired(db)
+    from datetime import timedelta, timezone
+    reservations = await db.stock_reservations.find(
+        {"org_id": membership["org_id"], "zone_code": zone_code}
+    ).to_list(100)
+    if not reservations:
+        raise HTTPException(status_code=404, detail="Aucune réservation active à prolonger")
+    now = datetime.now(timezone.utc)
+    latest = None
+    for r in reservations:
+        base = max(datetime.fromisoformat(r["expires_at"]), now)
+        new_expires = (base + timedelta(minutes=15)).isoformat()
+        await db.stock_reservations.update_one({"id": r["id"]}, {"$set": {"expires_at": new_expires}})
+        if latest is None or new_expires < latest:
+            latest = new_expires
+    return {"extended": len(reservations), "reserved_until": latest}
+
+
 @cart_router.delete("/cart/items/{item_id}", response_model=CartResponse)
 async def remove_from_cart(
     item_id: str,

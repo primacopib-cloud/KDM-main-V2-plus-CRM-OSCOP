@@ -293,6 +293,14 @@ async def cancel_order(
     )
     
     updated = await db.orders.find_one({"id": order_id})
+
+    # Ré-injection automatique du stock territoire
+    from stock_reservations import restock_for_cancellation
+    await restock_for_cancellation(
+        db, order["zone_code"], order.get("items", []),
+        order["order_number"], current_user.get("email", ""),
+    )
+
     import asyncio
     from erp_webhooks import dispatch_order_event
     asyncio.create_task(dispatch_order_event(order_id, "order.status_changed",

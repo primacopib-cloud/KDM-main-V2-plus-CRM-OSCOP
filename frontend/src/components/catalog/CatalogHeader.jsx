@@ -155,7 +155,7 @@ export const CatalogHeader = ({
 
                 <div className="mt-6 flex flex-col h-[calc(100vh-200px)]">
                   {cart.items?.length > 0 && (
-                    <CartReservationCountdown reservedUntil={cart.reserved_until} />
+                    <CartReservationCountdown reservedUntil={cart.reserved_until} zone={cart.zone_code} />
                   )}
                   {cart.alerts?.length > 0 && (
                     <div className="mb-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1" data-testid="cart-alerts-banner">
