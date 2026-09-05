@@ -190,9 +190,7 @@ async def update_zone_stock(product_id: str, body: StockUpdateRequest, admin: di
     }
 
 
-@stock_admin_router.get("/stockout-stats")
-async def get_stockout_stats(_: dict = Depends(_admin)):
-    """Produits les plus souvent en rupture par territoire (passages à 0 tracés + état actuel)."""
+async def _compute_stockout_stats():
     pipeline = [
         {"$match": {"new_quantity": 0}},
         {"$group": {
@@ -225,15 +223,48 @@ async def get_stockout_stats(_: dict = Depends(_admin)):
             "product_name": names.get(pid, pid),
             "stockout_count": 0, "last_stockout_at": None, "currently_out": True,
         })
-    return {"stats": stats}
+    return stats
 
 
-@stock_admin_router.get("/abandoned-reservations")
-async def get_abandoned_reservations(limit: int = 50, _: dict = Depends(_admin)):
-    """Réservations expirées sans commande (paniers abandonnés)."""
+def _csv_response(header: list, rows: list, filename_prefix: str):
+    import csv
+    import io
+
+    from fastapi.responses import StreamingResponse
+
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=";")
+    writer.writerow(header)
+    for row in rows:
+        writer.writerow(row)
+    filename = f"{filename_prefix}_{_now().strftime('%Y%m%d_%H%M')}.csv"
+    return StreamingResponse(
+        iter(["\ufeff" + buf.getvalue()]),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@stock_admin_router.get("/stockout-stats")
+async def get_stockout_stats(_: dict = Depends(_admin)):
+    """Produits les plus souvent en rupture par territoire (passages à 0 tracés + état actuel)."""
+    return {"stats": await _compute_stockout_stats()}
+
+
+@stock_admin_router.get("/stockout-stats/export")
+async def export_stockout_stats(_: dict = Depends(_admin)):
+    stats = await _compute_stockout_stats()
+    return _csv_response(
+        ["Produit", "Territoire", "Nombre de ruptures", "Dernière rupture", "En rupture actuellement"],
+        [[s["product_name"], s["zone_code"], s["stockout_count"], s["last_stockout_at"] or "", "OUI" if s["currently_out"] else "NON"] for s in stats],
+        "ruptures_territoires",
+    )
+
+
+async def _fetch_abandoned(limit: int = 200):
     entries = await db.reservation_history.find(
         {"outcome": "EXPIRED_ABANDONED"}, {"_id": 0}
-    ).sort("expired_at", -1).to_list(min(limit, 200))
+    ).sort("expired_at", -1).to_list(min(limit, 1000))
     names = {p["id"]: p["name"] for p in await db.products.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(500)}
     org_ids = list({e["org_id"] for e in entries})
     orgs = {o["id"]: o.get("legal_name") or o.get("name") or o["id"]
@@ -241,7 +272,25 @@ async def get_abandoned_reservations(limit: int = 50, _: dict = Depends(_admin))
     for e in entries:
         e["product_name"] = names.get(e["product_id"], e["product_id"])
         e["org_name"] = orgs.get(e["org_id"], e["org_id"])
+    return entries
+
+
+@stock_admin_router.get("/abandoned-reservations")
+async def get_abandoned_reservations(limit: int = 50, _: dict = Depends(_admin)):
+    """Réservations expirées sans commande (paniers abandonnés)."""
+    entries = await _fetch_abandoned(limit)
     return {"entries": entries, "total": await db.reservation_history.count_documents({"outcome": "EXPIRED_ABANDONED"})}
+
+
+@stock_admin_router.get("/abandoned-reservations/export")
+async def export_abandoned_reservations(_: dict = Depends(_admin)):
+    entries = await _fetch_abandoned(1000)
+    return _csv_response(
+        ["Expirée le", "Organisation", "Produit", "Territoire", "Quantité", "Prolongations", "Relancé par email"],
+        [[e.get("expired_at", ""), e["org_name"], e["product_name"], e["zone_code"], e["quantity"],
+          e.get("extend_count", 0), "OUI" if e.get("reminded") else "NON"] for e in entries],
+        "paniers_abandonnes",
+    )
 
 
 @stock_admin_router.get("/stock-history/export")
