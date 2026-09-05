@@ -112,6 +112,43 @@ async def run_investor_annual_statements(db, force_year: int | None = None):
     return sent
 
 
+async def run_rib_missing_reminders(db):
+    """Relance l'investisseur sans RIB téléversé 7 jours après son adhésion."""
+    now = _now()
+    sent = 0
+    async for a in db.investor_accounts.find({"status": {"$in": ["ACTIVE", "PAST_DUE"]}}, {"_id": 0}):
+        if a.get("rib_reminder_sent"):
+            continue
+        created = datetime.fromisoformat(a["created_at"])
+        if now - created < timedelta(days=7):
+            continue
+        bank = await db.investor_bank_details.find_one({"user_id": a["user_id"]})
+        if bank and bank.get("rib_filename"):
+            continue
+        user = await db.users.find_one({"id": a["user_id"]})
+        if not user or not user.get("email"):
+            continue
+        try:
+            from brevo_service import send_email, _wrap_html
+            await send_email(
+                to_email=user["email"], to_name=user.get("contact_name"),
+                subject="📎 Pensez à téléverser votre RIB pour recevoir vos remboursements",
+                html_content=_wrap_html("RIB manquant", (
+                    f"<p style='font-size:14px;'>Bonjour {user.get('contact_name') or ''},</p>"
+                    "<p style='font-size:14px;'>Votre espace investisseur est actif depuis plus de 7 jours "
+                    "mais votre <b>RIB n'a pas encore été téléversé</b>. Sans RIB validé, aucun remboursement "
+                    "d'investissement ne peut vous être versé. Rendez-vous dans votre espace, section "
+                    "« Mes coordonnées bancaires », pour le téléverser en PDF ou PNG.</p>")),
+                tags=["investor-banking"])
+            await db.investor_accounts.update_one({"id": a["id"]}, {"$set": {"rib_reminder_sent": now.isoformat()}})
+            sent += 1
+        except Exception as exc:
+            logger.warning("Relance RIB manquant %s : %s", user.get("email"), exc)
+    if sent:
+        logger.info("Relances RIB manquant : %d email(s)", sent)
+    return sent
+
+
 async def run_investor_j3_reminders(db):
     """Relance J-3 : prévient l'investisseur 3 jours avant son prélèvement mensuel."""
     now = _now()

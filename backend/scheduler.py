@@ -377,10 +377,12 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler referral challenge crashed: %s", exc)
         try:
-            from investor_reports import run_investor_monthly_report, run_investor_j3_reminders, run_investor_annual_statements
+            from investor_reports import (run_investor_monthly_report, run_investor_j3_reminders,
+                                          run_investor_annual_statements, run_rib_missing_reminders)
             await run_investor_monthly_report(_db)
             await run_investor_j3_reminders(_db)
             await run_investor_annual_statements(_db)
+            await run_rib_missing_reminders(_db)
         except Exception as exc:
             logger.exception("Scheduler investor reports crashed: %s", exc)
         try:

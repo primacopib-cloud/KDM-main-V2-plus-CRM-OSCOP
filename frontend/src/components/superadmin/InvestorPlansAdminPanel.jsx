@@ -82,6 +82,7 @@ export const InvestorPlansAdminPanel = () => {
       </div>
       <InvestorSubscribersTable />
       <RibValidationSection />
+      <RepaymentsJournal />
     </div>
   );
 };
@@ -92,25 +93,31 @@ const fmtD = (iso) => new Date(iso).toLocaleDateString('fr-FR');
 // Tableau des investisseurs abonnés : statut de paiement + prochaine échéance
 const InvestorSubscribersTable = () => {
   const [subs, setSubs] = useState([]);
+  const [dlg, setDlg] = useState(null);
   useEffect(() => {
     fetch(`${API_URL}/api/investor-plans/admin/subscribers`, { headers: getAuthHeaders() })
       .then((r) => r.json()).then((d) => setSubs(d.subscribers || [])).catch(() => {});
   }, []);
 
   const recordRepayment = async (s) => {
-    const amount = window.prompt(`Montant du remboursement versé à ${s.email} (en €) :`);
-    if (!amount || !Number(amount)) return;
-    const reference = window.prompt('Référence du virement bancaire :');
-    if (!reference) return;
-    const operationRef = window.prompt('Opération liée (optionnel) :') || null;
+    let ops = [];
+    try {
+      const res = await fetch(`${API_URL}/api/investor-plans/admin/repayment-prefill/${s.user_id}`, { headers: getAuthHeaders() });
+      ops = (await res.json()).operations || [];
+    } catch { /* saisie libre */ }
+    setDlg({ sub: s, ops, amount: '', reference: '', operationRef: '' });
+  };
+
+  const submitRepayment = async () => {
     try {
       const res = await fetch(`${API_URL}/api/investor-plans/admin/repayments`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ user_id: s.user_id, amount_eur: Number(amount), reference, operation_ref: operationRef }),
+        body: JSON.stringify({ user_id: dlg.sub.user_id, amount_eur: Number(dlg.amount), reference: dlg.reference, operation_ref: dlg.operationRef || null }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || 'Erreur');
-      toast.success(`Remboursement de ${Number(amount).toLocaleString('fr-FR')} € tracé (réf. ${reference})`);
+      toast.success(d.message || `Remboursement de ${Number(dlg.amount).toLocaleString('fr-FR')} € tracé`);
+      setDlg(null);
     } catch (e) { toast.error(e.message); }
   };
   if (!subs.length) return null;
@@ -155,6 +162,46 @@ const InvestorSubscribersTable = () => {
           </tbody>
         </table>
       </div>
+      {dlg && (
+        <div className="mt-3 rounded-xl p-3 bg-white/[0.04] border border-[#D9B35A]/40" data-testid="repayment-dialog">
+          <p className="text-xs font-bold text-[#E9CF8E] m-0 mb-2">Virement de remboursement — {dlg.sub.email}</p>
+          {dlg.ops.length > 0 && (
+            <select data-testid="repayment-op-select" defaultValue=""
+              onChange={(e) => {
+                const op = dlg.ops.find((o) => o.ledger_id === e.target.value);
+                if (op) setDlg({ ...dlg, amount: String(op.amount_eur), operationRef: op.operation_ref });
+              }}
+              className="mb-2 w-full h-8 px-2 rounded-md bg-[#2A1E4E] border border-white/15 text-white text-xs">
+              <option value="">Pré-remplir depuis une opération financée…</option>
+              {dlg.ops.map((o) => (
+                <option key={o.ledger_id} value={o.ledger_id}>
+                  {o.operation_ref} — {o.amount_eur.toLocaleString('fr-FR')} € ({new Date(o.financed_at).toLocaleDateString('fr-FR')})
+                </option>
+              ))}
+            </select>
+          )}
+          <div className="flex gap-2 flex-wrap">
+            <input type="number" placeholder="Montant €" value={dlg.amount} data-testid="repayment-amount-input"
+              onChange={(e) => setDlg({ ...dlg, amount: e.target.value })}
+              className="h-8 w-32 px-2 rounded-md bg-white/[0.05] border border-white/15 text-white text-xs" />
+            <input placeholder="Référence virement" value={dlg.reference} data-testid="repayment-reference-input"
+              onChange={(e) => setDlg({ ...dlg, reference: e.target.value })}
+              className="h-8 w-40 px-2 rounded-md bg-white/[0.05] border border-white/15 text-white text-xs" />
+            <input placeholder="Opération (optionnel)" value={dlg.operationRef} data-testid="repayment-operation-input"
+              onChange={(e) => setDlg({ ...dlg, operationRef: e.target.value })}
+              className="h-8 w-40 px-2 rounded-md bg-white/[0.05] border border-white/15 text-white text-xs" />
+            <button type="button" onClick={submitRepayment} disabled={!Number(dlg.amount) || !dlg.reference}
+              data-testid="repayment-submit-btn"
+              className="px-3 py-1.5 rounded-md text-xs font-bold text-black bg-[#8CC63E] hover:bg-[#7ab52f] disabled:opacity-40 transition-colors">
+              Enregistrer le virement
+            </button>
+            <button type="button" onClick={() => setDlg(null)} data-testid="repayment-cancel-btn"
+              className="px-3 py-1.5 rounded-md text-xs font-semibold text-white/60 bg-white/[0.05] border border-white/15 hover:bg-white/[0.1] transition-colors">
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -224,6 +271,100 @@ const RibValidationSection = () => {
           );
         })}
       </div>
+    </div>
+  );
+};
+
+
+// Journal global des virements de remboursement + double validation + export CSV
+const RepaymentsJournal = () => {
+  const [reps, setReps] = useState([]);
+  const [threshold, setThreshold] = useState('');
+  const load = () => {
+    fetch(`${API_URL}/api/investor-plans/admin/repayments`, { headers: getAuthHeaders() })
+      .then((r) => r.json()).then((d) => setReps(d.repayments || [])).catch(() => {});
+    fetch(`${API_URL}/api/investor-plans/admin/repayment-settings`, { headers: getAuthHeaders() })
+      .then((r) => r.json()).then((d) => setThreshold(String(d.double_approval_threshold_eur))).catch(() => {});
+  };
+  useEffect(load, []);
+
+  const saveThreshold = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/investor-plans/admin/repayment-settings`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ double_approval_threshold_eur: Number(threshold) }),
+      });
+      if (!res.ok) throw new Error((await res.json()).detail || 'Erreur');
+      toast.success('Seuil de double validation enregistré');
+    } catch (e) { toast.error(e.message); }
+  };
+
+  const approve = async (r) => {
+    try {
+      const res = await fetch(`${API_URL}/api/investor-plans/admin/repayments/${r.id}/approve`, {
+        method: 'POST', headers: getAuthHeaders(),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      toast.success('Virement confirmé — investisseur notifié');
+      load();
+    } catch (e) { toast.error(e.message); }
+  };
+
+  const exportCsv = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/investor-plans/admin/repayments/export.csv`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error('Export impossible');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'journal-virements-remboursements.csv'; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { toast.error(e.message); }
+  };
+
+  return (
+    <div className="mt-5" data-testid="repayments-journal">
+      <div className="flex items-center gap-2 flex-wrap mb-2">
+        <h4 className="text-xs font-bold text-[#E9CF8E] flex items-center gap-1.5 m-0">
+          <Euro className="w-3.5 h-3.5" /> Journal des virements de remboursement ({reps.length})
+        </h4>
+        <label className="ml-auto text-[10px] text-white/50 flex items-center gap-1">
+          Double validation au-delà de
+          <input type="number" value={threshold} onChange={(e) => setThreshold(e.target.value)}
+            data-testid="repayment-threshold-input"
+            className="h-7 w-24 px-2 rounded-md bg-white/[0.05] border border-white/15 text-white text-xs" /> €
+          <button type="button" onClick={saveThreshold} data-testid="repayment-threshold-save"
+            className="px-2 py-1 rounded-md font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors">OK</button>
+        </label>
+        <button type="button" onClick={exportCsv} data-testid="repayments-export-csv"
+          className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-[#E9CF8E] bg-white/[0.05] border border-[#D9B35A]/30 hover:bg-white/[0.1] transition-colors">
+          Export CSV comptable
+        </button>
+      </div>
+      {!reps.length ? (
+        <p className="text-[11px] text-white/40 m-0">Aucun virement enregistré.</p>
+      ) : (
+        <div className="space-y-1.5 max-h-56 overflow-y-auto">
+          {reps.map((r) => (
+            <div key={r.id} className="flex items-center gap-2 flex-wrap text-[11px] text-white/70 rounded-lg px-3 py-2 bg-white/[0.02] border border-white/[0.06]" data-testid={`journal-row-${r.reference}`}>
+              <span className="font-mono text-white/40">{(r.paid_at || '').slice(0, 10)}</span>
+              <span className="text-white/60">{r.investor_email}</span>
+              <span className="font-mono font-bold text-[#8CC63E]">{(r.amount_eur ?? 0).toLocaleString('fr-FR')} €</span>
+              <span className="text-white/40">réf. {r.reference}{r.operation_ref ? ` — ${r.operation_ref}` : ''}</span>
+              {r.status === 'PENDING_SECOND_APPROVAL' ? (
+                <span className="ml-auto flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 rounded-full border text-[10px] font-semibold text-amber-300 bg-amber-500/10 border-amber-400/40">Attente 2e admin (créé par {r.created_by})</span>
+                  <button type="button" onClick={() => approve(r)} data-testid={`repayment-approve-${r.reference}`}
+                    className="px-2 py-1 rounded-md text-[10px] font-bold text-black bg-[#8CC63E] hover:bg-[#7ab52f] transition-colors">Confirmer</button>
+                </span>
+              ) : (
+                <span className="ml-auto px-2 py-0.5 rounded-full border text-[10px] font-semibold text-[#8CC63E] bg-[#8CC63E]/10 border-[#8CC63E]/30">Confirmé</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

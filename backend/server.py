@@ -510,8 +510,8 @@ set_restock_alerts_database(db)
 set_investor_plans_database(db)
 app.include_router(stock_admin_router)
 app.include_router(restock_alerts_router)
-app.include_router(investor_plans_router)
 app.include_router(investor_banking_router)
+app.include_router(investor_plans_router)
 
 # Centre d'alertes favoris (préférences par produit + historique)
 from routes_favorites_alerts_center import favorites_alerts_center_router, set_favorites_alerts_center_database
