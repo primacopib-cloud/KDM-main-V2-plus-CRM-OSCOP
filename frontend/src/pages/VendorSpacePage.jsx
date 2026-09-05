@@ -201,7 +201,10 @@ const VendorSpacePage = () => {
                 <Building2 className="w-6 h-6 text-[#E9CF8E]" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">{i18n.t('adm.espace_vendeur')}</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl font-bold text-white">{i18n.t('adm.espace_vendeur')}</h1>
+                  <MessagesNavLink withLabel />
+                </div>
                 <p className="text-sm text-white/50">{dashboard?.company_name || 'Mon Entreprise'}</p>
               </div>
             </div>

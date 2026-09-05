@@ -316,6 +316,7 @@ export default function BuyerSpacePage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-lg font-bold text-white">{i18n.t('buyer.espace_acheteur_pro')}</h1>
                   <BuyerProBadge />
+                  <MessagesNavLink withLabel />
                 </div>
                 <p className="text-xs text-white/50">{user?.company_name || i18n.t('buyer.mon_compte_b2b')}</p>
               </div>

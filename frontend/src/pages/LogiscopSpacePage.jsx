@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../services/http';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { MessagesNavLink } from '../components/MessagesNavLink';
 import { Badge } from '../components/ui/badge';
 import Header from '../components/Header';
 
@@ -134,6 +135,7 @@ export default function LogiscopSpacePage() {
       <main className="max-w-[1200px] mx-auto px-5 py-10" data-testid="logiscop-space-page">
         <h1 className="text-3xl font-bold tracking-tight mb-1 flex items-center gap-2">
           <Truck className="w-7 h-7 text-[#D9B35A]" /> Espace LOGI'SCOP
+          <MessagesNavLink withLabel />
         </h1>
         {data && <p className="text-sky-200/75 text-xs mb-6 p-2.5 rounded bg-sky-500/10 border border-sky-400/20">{data.notice}</p>}
         {error && <p className="text-amber-300 text-sm">Accès réservé aux opérateurs LOGI'SCOP — connectez-vous avec un compte autorisé.</p>}

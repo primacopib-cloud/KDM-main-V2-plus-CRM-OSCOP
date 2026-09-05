@@ -2614,3 +2614,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Retirés du bandeau: « Mon espace » (memberShortcuts vidés navItems.js), badge CREDI'SCOP (2 occurrences NavBar), MessagesNavLink
 - Footer section Espaces: + Mon espace (/espace-acheteur), Mon CREDI'SCOP (/mon-crediscop), Messagerie interne (/messages), Wallet — Relevé d'unités (/wallet) (data-testid footer-link-mon-espace/crediscop/messagerie/wallet)
 - Vérifié par captures avec compte connecté: bandeau épuré, 4 liens footer présents
+
+## Messagerie par espace (05/06/2026) ✅
+- « Messagerie interne » retirée du footer (lien supprimé)
+- MessagesNavLink: prop withLabel → bouton « Messagerie » + pastille non-lus, chaque utilisateur voit ses propres messages
+- Inséré dans 4 espaces: BuyerSpacePage (à côté du h1), VendorSpacePage, InvestorSpacePage, LogiscopSpacePage
+- Vérifié par capture: bouton + popover « Messages récents » dans l'espace investisseur, footer sans le lien
