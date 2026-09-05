@@ -20,12 +20,14 @@ export const OperationDetail = ({ operationId, meta, onChanged }) => {
   const [tranche, setTranche] = useState({ financing_tranche: 'GOODS', investor_name: '', approved_amount: '' });
   const [disb, setDisb] = useState({ financing_tranche: 'GOODS', payee_category: 'SUPPLIER_GOODS', payee_name: '', amount: '', method: 'OSCOP_BANK_TRANSFER' });
   const [settle, setSettle] = useState({ amount: '', rate: '0' });
+  const [views, setViews] = useState({});
 
   const load = useCallback(async () => {
-    const [res, dres, sres] = await Promise.all([
+    const [res, dres, sres, vres] = await Promise.all([
       fetch(`${API}/admin/purchase-resale/operations/${operationId}`, { headers: getAuthHeaders() }),
       fetch(`${API}/admin/purchase-resale/operations/${operationId}/documents`, { headers: getAuthHeaders() }),
       fetch(`${API}/admin/purchase-resale/operations/${operationId}/settlements`, { headers: getAuthHeaders() }),
+      fetch(`${API}/admin/purchase-resale/operations/${operationId}/document-views`, { headers: getAuthHeaders() }),
     ]);
     if (res.ok) {
       const det = await res.json();
@@ -33,6 +35,10 @@ export const OperationDetail = ({ operationId, meta, onChanged }) => {
       setDetail(det);
     }
     if (dres.ok) setDocs((await dres.json()).documents || []);
+    if (vres.ok) {
+      const v = (await vres.json()).documents || [];
+      setViews(Object.fromEntries(v.map((x) => [x.doc_id, x])));
+    }
   }, [operationId]);
 
   const genDoc = async (docType) => {
@@ -137,10 +143,22 @@ export const OperationDetail = ({ operationId, meta, onChanged }) => {
               onClick={genDataroom}>+ Data room (pack)</Button>
           </div>
           {docs.map((d) => (
-            <button key={d.id} type="button" onClick={() => downloadDoc(d)} data-testid={`download-doc-${d.doc_number}`}
-              className="block text-[11px] text-[#D9B35A] hover:underline">
-              ⬇ {d.doc_number} — {d.created_at.slice(0, 10)}
-            </button>
+            <div key={d.id} className="mb-0.5">
+              <button type="button" onClick={() => downloadDoc(d)} data-testid={`download-doc-${d.doc_number}`}
+                className="block text-[11px] text-[#D9B35A] hover:underline">
+                ⬇ {d.doc_number} — {d.created_at.slice(0, 10)}
+              </button>
+              {views[d.id] && (
+                <p className="text-[10px] text-white/55 ml-3 m-0" data-testid={`doc-views-${d.doc_number}`}>
+                  {views[d.id].readers.length > 0
+                    ? <>Lu par : {views[d.id].readers.map((r) => `${r.investor_name} (${(r.viewed_at || '').slice(0, 10)})`).join(', ')}</>
+                    : <span className="text-amber-300/80">Non consulté par les investisseurs retenus</span>}
+                  {views[d.id].pending.length > 0 && views[d.id].readers.length > 0 && (
+                    <> · En attente : {views[d.id].pending.map((p) => p.investor_name).join(', ')}</>
+                  )}
+                </p>
+              )}
+            </div>
           ))}
         </div>
       </div>

@@ -474,6 +474,36 @@ async def generate_dataroom(operation_id: str, admin: dict = Depends(_admin)):
     return doc
 
 
+@pr_router.get("/admin/purchase-resale/operations/{operation_id}/document-views")
+async def document_views(operation_id: str, admin: dict = Depends(require_reader)):
+    """Qui a consulté chaque document de la data room (investisseurs retenus)."""
+    docs = await db.operation_documents.find(
+        {"operation_id": operation_id, "doc_type": {"$in": ["DATAROOM", "INVESTOR_COMMITMENT"]}},
+        {"_id": 0, "id": 1, "doc_number": 1}).to_list(100)
+    doc_ids = [d["id"] for d in docs]
+    views = await db.dataroom_views.find(
+        {"doc_id": {"$in": doc_ids}}, {"_id": 0}).to_list(500)
+    accepted = await db.financing_interests.find(
+        {"operation_id": operation_id, "status": "ACCEPTED"},
+        {"_id": 0, "investor_email": 1, "investor_name": 1}).to_list(50)
+    names = {a["investor_email"]: a["investor_name"] for a in accepted}
+    by_doc = {}
+    for v in views:
+        by_doc.setdefault(v["doc_id"], []).append({
+            "investor_email": v["investor_email"],
+            "investor_name": names.get(v["investor_email"], v["investor_email"]),
+            "viewed_at": v.get("viewed_at")})
+    result = []
+    for d in docs:
+        readers = by_doc.get(d["id"], [])
+        read_emails = {r["investor_email"] for r in readers}
+        result.append({
+            "doc_id": d["id"], "doc_number": d["doc_number"], "readers": readers,
+            "pending": [{"investor_email": e, "investor_name": n}
+                        for e, n in names.items() if e not in read_emails]})
+    return {"documents": result}
+
+
 @pr_router.get("/admin/purchase-resale/operations/{operation_id}/documents")
 async def list_documents(operation_id: str, admin: dict = Depends(require_reader)):
     docs = await db.operation_documents.find(

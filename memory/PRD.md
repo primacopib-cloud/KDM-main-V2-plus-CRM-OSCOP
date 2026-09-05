@@ -2599,3 +2599,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Backend: my-dataroom renvoie is_new par doc (collection dataroom_views/investor_email+doc_id); le download investisseur marque vu (upsert)
 - Frontend InvestorDataroom: badge rouge « X nouveaux » sur le titre (dataroom-new-badge) + pastille « Nouveau » par doc (new-dot-{num}), retirée localement après téléchargement
 - Testé e2e: is_new True → download 200 → False; capture UI badge + pastille visibles. Données de test nettoyées
+
+## Suivi lectures data room admin (05/06/2026) ✅
+- GET /api/admin/purchase-resale/operations/{id}/document-views (require_reader, 401 sans auth): par doc DR/BE → readers (nom+date via financing_interests) + pending (retenus n'ayant pas lu)
+- OperationDetail: sous chaque document, ligne « Lu par : X (date) · En attente : Y » ou « Non consulté » ambre (data-testid doc-views-{num})
+- Testé e2e: pending avant lecture → readers après téléchargement investisseur; capture UI OK. Données de test nettoyées
