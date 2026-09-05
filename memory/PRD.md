@@ -2604,3 +2604,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - GET /api/admin/purchase-resale/operations/{id}/document-views (require_reader, 401 sans auth): par doc DR/BE → readers (nom+date via financing_interests) + pending (retenus n'ayant pas lu)
 - OperationDetail: sous chaque document, ligne « Lu par : X (date) · En attente : Y » ou « Non consulté » ambre (data-testid doc-views-{num})
 - Testé e2e: pending avant lecture → readers après téléchargement investisseur; capture UI OK. Données de test nettoyées
+
+## Nav allégée + liens footer (05/06/2026) ✅
+- navItems.js: retiré Acheter/Financer/LOGI'SCOP du bandeau → nav = Accueil, Fournisseurs, Catalogue Pro, Territoires, LOLODRIVE
+- Footer.jsx section Navigation: ajouté « Acheter — Espace acheteur » (/espace-acheteur), « Financer une opération » (/espace-investisseur), « LOGI'SCOP — Calculateur de fret » (/calculateur-fret) (data-testid footer-link-acheter/financer/logiscop-fret)
+- Vérifié par capture: nav sans les 3 items, footer avec les 3 liens
