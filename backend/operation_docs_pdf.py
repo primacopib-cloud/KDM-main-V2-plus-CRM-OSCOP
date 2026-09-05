@@ -24,6 +24,8 @@ DOC_TYPES = {
                        "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER — Vendeur, émetteur et bénéficiaire du paiement"},
     "FREIGHT_QUOTE": {"prefix": "DF", "title": "DEVIS DE FRET MARITIME LOGI'SCOP",
                       "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER, agissant par son établissement LOGI'SCOP"},
+    "DATAROOM": {"prefix": "DR", "title": "DATA ROOM DE L'OPÉRATION",
+                 "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER — dossier de synthèse (service interne CREDI'SCOP-I)"},
 }
 
 
@@ -62,6 +64,26 @@ def doc_sections(doc_type: str, op: dict, extra: dict) -> list:
             ("Mention", "Paiements réalisés pour le compte de la SCIC SAS OBJECTIF SCOP OUTREMER. "
                         "Les CREDI'SCOP-I ne constituent pas le montant investi."),
         ]
+    if doc_type == "DATAROOM":
+        rows = common + [
+            ("Statut opération", op.get("status")),
+            ("Territoire", op.get("territory_id") or "-"),
+            ("Offre catalogue liée", op.get("linked_product_name") or "-"),
+            ("Achat fournisseur HT", _eur(op.get("purchase_amount_ex_vat"))),
+            ("Revente prévue HT", _eur(op.get("resale_amount_ex_vat"))),
+            ("Coût de revient complet HT", _eur(op.get("full_cost_price_ex_vat"))),
+            ("Marge consolidée prévisionnelle", f"{_eur(op.get('expected_margin_ex_vat'))} ({op.get('expected_margin_rate', 0)} %)"),
+            ("Logistique", f"{op.get('logistics_mode')} — statut {op.get('logistics_status') or '-'}"),
+            ("Financement", op.get("funding_instrument") or "À confirmer par Bon d'Engagement"),
+            ("Investisseur", op.get("investor_name") or "-"),
+        ]
+        for i, d in enumerate(extra.get("documents", []), 1):
+            rows.append((f"Document archivé {i}", f"{d.get('doc_number')} — {d.get('doc_type')} ({str(d.get('created_at', ''))[:10]})"))
+        for i, it in enumerate(extra.get("interests", []), 1):
+            rows.append((f"Intérêt investisseur {i}", f"{it.get('investor_name')} — statut {it.get('status')}"))
+        rows.append(("Mention", "Data room : service interne activable par CREDI'SCOP-I. "
+                                "Les CREDI'SCOP-I ne constituent ni un moyen de paiement, ni le montant investi."))
+        return rows
     if doc_type == "FOGEDOM_REPORT":
         blockers = extra.get("blockers", [])
         return common + [
