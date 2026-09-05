@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Coins, AlertTriangle } from 'lucide-react';
+import { Coins, AlertTriangle, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthHeaders } from '../../services/http';
 
@@ -41,6 +41,18 @@ export const InvestCreditsWidget = () => {
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || 'Erreur');
       window.location.href = d.checkout_url;
+    } catch (e) { toast.error(e.message); }
+  };
+
+  const exportFinancings = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/investor-plans/my-financings/pdf`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error('Export impossible');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'financements-crediscop-invest.pdf'; a.click();
+      URL.revokeObjectURL(url);
     } catch (e) { toast.error(e.message); }
   };
 
@@ -92,6 +104,10 @@ export const InvestCreditsWidget = () => {
           ))}
         </div>
       </details>
+      <button type="button" onClick={exportFinancings} data-testid="export-financings-pdf"
+        className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-[#E9CF8E] bg-white/[0.05] border border-[#D9B35A]/30 hover:bg-white/[0.1] transition-colors">
+        <FileDown className="w-3.5 h-3.5" /> Export PDF de mes financements
+      </button>
     </div>
   );
 };

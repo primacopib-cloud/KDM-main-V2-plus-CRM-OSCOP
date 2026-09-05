@@ -134,9 +134,10 @@ async def apply_and_checkout(body: InvestorApplication, request: Request):
     stripe.api_key = _stripe_key()
     origin = request.headers.get("origin") or os.environ.get("FRONTEND_URL", "")
     session = stripe.checkout.Session.create(
-        mode="payment",
+        mode="subscription",
         line_items=[{"price_data": {"currency": "eur", "unit_amount": plan["price_eur"] * 100,
-                                    "product_data": {"name": f"Adhésion investisseur {plan['name']} — 1er mois"}},
+                                    "recurring": {"interval": "month"},
+                                    "product_data": {"name": f"Abonnement investisseur {plan['name']} — mensuel"}},
                      "quantity": 1}],
         success_url=f"{origin}/espace-investisseur?invest_session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{origin}/espace-investisseur?invest_cancelled=1",
@@ -192,12 +193,69 @@ async def checkout_status(session_id: str):
             "plan": plan["code"], "must_change_password": temp_password is not None}
 
 
+@investor_plans_router.post("/webhook")
+async def stripe_webhook(request: Request):
+    """Renouvellement mensuel : allocation à chaque facture payée, relance email en cas d'échec de carte."""
+    payload = await request.json()
+    event_type = payload.get("type", "")
+    obj = payload.get("data", {}).get("object", {})
+    email = (obj.get("customer_email") or (obj.get("customer_details") or {}).get("email") or "").lower()
+    if not email:
+        return {"received": True}
+    user = await db.users.find_one({"email": email})
+    account = user and await db.investor_accounts.find_one({"user_id": user["id"]})
+    if not account:
+        return {"received": True}
+    if event_type == "invoice.paid" and obj.get("billing_reason") == "subscription_cycle":
+        await db.invest_credit_ledger.insert_one({
+            "id": str(uuid.uuid4()), "user_id": user["id"], "type": "MONTHLY_ALLOCATION",
+            "label": f"Renouvellement abonnement {account['plan_code']} (facture payée)",
+            "amount_uc": account["monthly_invest_uc"], "created_at": _now().isoformat(),
+        })
+        await db.investor_accounts.update_one({"id": account["id"]}, {"$set": {"status": "ACTIVE", "period_start": _now().isoformat()}})
+        plan = await db.investor_plans.find_one({"id": account["plan_id"]}) or {"price_eur": 0}
+        from investor_billing import send_monthly_invoice
+        await send_monthly_invoice(db, user, account, plan)
+    elif event_type == "invoice.payment_failed":
+        await db.investor_accounts.update_one({"id": account["id"]}, {"$set": {"status": "PAST_DUE"}})
+        try:
+            from brevo_service import send_email, _wrap_html
+            await send_email(
+                to_email=email, to_name=user.get("contact_name"),
+                subject="⚠ Échec du prélèvement de votre abonnement investisseur KDMARCHÉ",
+                html_content=_wrap_html("Échec de paiement", (
+                    f"<p style='font-size:14px;'>Bonjour {user.get('contact_name') or ''},</p>"
+                    f"<p style='font-size:14px;'>Le prélèvement mensuel de votre abonnement <b>{account['plan_code']}</b> a échoué. "
+                    "Une nouvelle tentative automatique sera effectuée. Merci de vérifier votre carte bancaire "
+                    "pour conserver l'accès à votre capacité CREDI'SCOP-INVEST.</p>")),
+                tags=["investor-billing"],
+            )
+        except Exception as exc:
+            logger.error("Relance échec paiement investisseur : %s", exc)
+    return {"received": True}
+
+
 @investor_plans_router.get("/my-credits")
 async def my_invest_credits(user: dict = Depends(_current_user)):
     """Solde CREDI'SCOP-INVEST temps réel, historique et alertes."""
-    account = await db.investor_accounts.find_one({"user_id": user["id"], "status": "ACTIVE"}, {"_id": 0})
+    account = await db.investor_accounts.find_one({"user_id": user["id"], "status": {"$in": ["ACTIVE", "PAST_DUE"]}}, {"_id": 0})
     if not account:
         raise HTTPException(status_code=404, detail="Aucun abonnement investisseur actif")
+
+    # Reset mensuel automatique du compteur au quota du plan
+    period_start = datetime.fromisoformat(account["period_start"])
+    now = _now()
+    if (now.year, now.month) != (period_start.year, period_start.month):
+        ledger_now = await db.invest_credit_ledger.find({"user_id": user["id"]}, {"_id": 0, "amount_uc": 1}).to_list(500)
+        current_balance = sum(e["amount_uc"] for e in ledger_now)
+        adjust = account["monthly_invest_uc"] - current_balance
+        if adjust != 0:
+            await db.invest_credit_ledger.insert_one({
+                "id": str(uuid.uuid4()), "user_id": user["id"], "type": "MONTHLY_RESET",
+                "label": f"Remise à niveau mensuelle plan {account['plan_code']}",
+                "amount_uc": adjust, "created_at": now.isoformat(),
+            })
+        await db.investor_accounts.update_one({"id": account["id"]}, {"$set": {"period_start": now.isoformat()}})
     ledger = await db.invest_credit_ledger.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
     allocated = sum(e["amount_uc"] for e in ledger if e["amount_uc"] > 0)
     consumed = -sum(e["amount_uc"] for e in ledger if e["amount_uc"] < 0)
@@ -224,7 +282,46 @@ async def consume_credits(body: ConsumeRequest, user: dict = Depends(_current_us
         "id": str(uuid.uuid4()), "user_id": user["id"], "type": "CONSUMPTION",
         "label": body.label, "amount_uc": -body.amount_uc, "created_at": _now().isoformat(),
     })
+    from investor_billing import check_low_quota_alert
+    await check_low_quota_alert(db, user["id"])
     return await my_invest_credits(user)
+
+
+@investor_plans_router.get("/admin/subscribers")
+async def admin_list_subscribers(_: dict = Depends(_admin)):
+    """Liste des investisseurs abonnés : plan, statut de paiement, prochaine échéance."""
+    accounts = await db.investor_accounts.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    out = []
+    for a in accounts:
+        user = await db.users.find_one({"id": a["user_id"]}, {"_id": 0, "email": 1, "name": 1, "contact_name": 1})
+        ledger = await db.invest_credit_ledger.find({"user_id": a["user_id"]}, {"amount_uc": 1}).to_list(1000)
+        ps = datetime.fromisoformat(a["period_start"])
+        next_due = (ps.replace(year=ps.year + 1, month=1) if ps.month == 12
+                    else ps.replace(month=ps.month + 1))
+        out.append({
+            "user_id": a["user_id"], "email": (user or {}).get("email"),
+            "name": (user or {}).get("contact_name") or (user or {}).get("name"),
+            "plan_code": a["plan_code"], "status": a["status"],
+            "monthly_invest_uc": a["monthly_invest_uc"],
+            "balance_uc": sum(e["amount_uc"] for e in ledger),
+            "period_start": a["period_start"], "next_due": next_due.isoformat(),
+        })
+    return {"subscribers": out}
+
+
+@investor_plans_router.get("/my-financings/pdf")
+async def my_financings_pdf(user: dict = Depends(_current_user)):
+    """Export PDF comptable des financements acceptés."""
+    from fastapi.responses import Response
+    from investor_billing import build_financings_pdf
+    account = await db.investor_accounts.find_one({"user_id": user["id"]})
+    if not account:
+        raise HTTPException(status_code=404, detail="Aucun abonnement investisseur")
+    entries = await db.invest_credit_ledger.find(
+        {"user_id": user["id"], "type": "FINANCING"}, {"_id": 0}).sort("created_at", 1).to_list(500)
+    pdf = build_financings_pdf(user, account, entries)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": "attachment; filename=financements-crediscop-invest.pdf"})
 
 
 @investor_plans_router.post("/buy-pack")

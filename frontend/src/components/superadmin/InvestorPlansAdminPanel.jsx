@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Landmark, Eye, EyeOff, Trash2, Save } from 'lucide-react';
+import { Landmark, Eye, EyeOff, Trash2, Save, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthHeaders } from '../../services/http';
 
@@ -79,6 +79,56 @@ export const InvestorPlansAdminPanel = () => {
               className="mt-2 w-full px-2 py-1.5 rounded-md bg-white/[0.04] border border-white/10 text-white/80 text-[11px]" />
           </div>
         ))}
+      </div>
+      <InvestorSubscribersTable />
+    </div>
+  );
+};
+
+const STATUS_LABEL = { ACTIVE: ['À jour', 'text-[#8CC63E] bg-[#8CC63E]/10 border-[#8CC63E]/30'], PAST_DUE: ['Échec paiement', 'text-red-300 bg-red-500/10 border-red-400/40'] };
+const fmtD = (iso) => new Date(iso).toLocaleDateString('fr-FR');
+
+// Tableau des investisseurs abonnés : statut de paiement + prochaine échéance
+const InvestorSubscribersTable = () => {
+  const [subs, setSubs] = useState([]);
+  useEffect(() => {
+    fetch(`${API_URL}/api/investor-plans/admin/subscribers`, { headers: getAuthHeaders() })
+      .then((r) => r.json()).then((d) => setSubs(d.subscribers || [])).catch(() => {});
+  }, []);
+  if (!subs.length) return null;
+  return (
+    <div className="mt-5" data-testid="investor-subscribers-table">
+      <h4 className="text-xs font-bold text-[#E9CF8E] flex items-center gap-1.5 m-0 mb-2">
+        <Users className="w-3.5 h-3.5" /> Investisseurs abonnés ({subs.length})
+      </h4>
+      <div className="overflow-x-auto rounded-xl border border-white/[0.08]">
+        <table className="w-full text-[11px] text-white/70">
+          <thead>
+            <tr className="bg-white/[0.04] text-white/45 text-left">
+              <th className="px-3 py-2 font-semibold">Investisseur</th>
+              <th className="px-3 py-2 font-semibold">Plan</th>
+              <th className="px-3 py-2 font-semibold">Paiement</th>
+              <th className="px-3 py-2 font-semibold text-right">Solde uc</th>
+              <th className="px-3 py-2 font-semibold">Période en cours</th>
+              <th className="px-3 py-2 font-semibold">Prochaine échéance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {subs.map((s) => {
+              const [label, cls] = STATUS_LABEL[s.status] || [s.status, 'text-white/50 bg-white/5 border-white/15'];
+              return (
+                <tr key={s.user_id} className="border-t border-white/[0.06]" data-testid={`subscriber-row-${s.email}`}>
+                  <td className="px-3 py-2"><span className="text-white font-semibold">{s.name || '—'}</span><br /><span className="text-white/40">{s.email}</span></td>
+                  <td className="px-3 py-2 font-bold text-[#D9B35A]">{s.plan_code}</td>
+                  <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded-full border font-semibold ${cls}`}>{label}</span></td>
+                  <td className="px-3 py-2 text-right font-mono">{(s.balance_uc ?? 0).toLocaleString('fr-FR')}</td>
+                  <td className="px-3 py-2">{fmtD(s.period_start)}</td>
+                  <td className="px-3 py-2 font-semibold text-white">{fmtD(s.next_due)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -154,6 +154,24 @@ async def decide_financing_interest(interest_id: str, payload: dict, admin: dict
         {"id": interest_id},
         {"$set": {"status": new_status, "decided_by": admin.get("email"),
                   "decided_at": datetime.now(timezone.utc).isoformat()}})
+    # Consommation automatique des uc CREDI'SCOP-INVEST au montant financé
+    consumed_uc = 0
+    if decision == "accept":
+        try:
+            amount_eur = int((payload or {}).get("amount_eur") or 0)
+        except (TypeError, ValueError):
+            amount_eur = 0
+        if amount_eur > 0:
+            inv_user = await db.users.find_one({"email": doc["investor_email"]})
+            account = inv_user and await db.investor_accounts.find_one({"user_id": inv_user["id"], "status": {"$in": ["ACTIVE", "PAST_DUE"]}})
+            if account:
+                await db.invest_credit_ledger.insert_one({
+                    "id": str(uuid.uuid4()), "user_id": inv_user["id"], "type": "FINANCING",
+                    "label": f"Financement opération {doc['operation_reference']}",
+                    "amount_uc": -amount_eur, "created_at": datetime.now(timezone.utc).isoformat()})
+                consumed_uc = amount_eur
+                from investor_billing import check_low_quota_alert
+                await check_low_quota_alert(db, inv_user["id"])
     try:
         from brevo_service import send_email, _wrap_html
         if decision == "accept":
@@ -174,7 +192,7 @@ async def decide_financing_interest(interest_id: str, payload: dict, admin: dict
         await send_email(doc["investor_email"], doc["investor_name"], subject, html, tags=["investisseur"])
     except Exception:
         pass
-    return {"success": True, "status": new_status}
+    return {"success": True, "status": new_status, "consumed_uc": consumed_uc}
 
 
 @investor_router.post("/financing-interests/{interest_id}/commitment")
