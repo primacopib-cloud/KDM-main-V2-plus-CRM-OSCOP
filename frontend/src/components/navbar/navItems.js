@@ -25,12 +25,13 @@ export const getNavItems = (userRole, isAdmin, pathname = '/') => {
   const isPass = userRole === 'TITULAIRE_PASS';
   const baseItems = [
     { href: '/', label: 'nav.home', icon: Home, public: true },
-    { href: '/#pros', label: 'Professionnels', icon: Store, public: true, accent: '#D9B35A' },
-    { href: '/#particuliers', label: 'Particuliers', icon: Users, public: true },
+    { href: '/espace-acheteur', label: 'Acheter', icon: ShoppingCart, public: true, accent: '#D9B35A' },
+    { href: '/adhesion-vendeur', label: 'Fournisseurs', icon: Store, public: true },
+    { href: '/espace-investisseur', label: 'Financer', icon: CreditCard, public: true },
+    { href: '/calculateur-fret', label: "LOGI'SCOP", icon: MapPin, public: true },
+    { href: isPass ? '/catalogue-lolodrive' : '/catalogue', label: 'Catalogue Pro', icon: ShoppingCart, public: true },
     { href: '/#territoires', label: 'Territoires', icon: MapPin, public: true },
-    { href: isPass ? '/catalogue-lolodrive' : '/catalogue', label: 'nav.catalog', icon: ShoppingCart, public: true },
-    { href: '/tarifs', label: 'nav.pro_access', icon: CreditCard, public: true },
-    { href: '/#contact', label: 'footer.contact', icon: Mail, public: true },
+    { href: '/particuliers', label: 'LOLODRIVE', icon: Users, public: true, accent: '#8CC63E' },
   ].filter((it) => !(isPass && it.href === '/tarifs'));
 
   // Member-only shortcuts kept in top bar (per product decision).

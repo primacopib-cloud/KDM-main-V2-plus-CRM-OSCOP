@@ -22,6 +22,9 @@ def set_cta_stats_database(database):
 
 
 CTA_LABELS = {
+    "hero_besoin_achat": "Déposer un besoin d'achat (hero pro accueil)",
+    "hero_catalogue_pro": "Explorer le catalogue Pro (hero pro accueil)",
+    "hero_financer": "Financer une opération (hero pro accueil)",
     "hero_acces_pro": "Découvrir l'Accès Pro Mutualisé (hero accueil)",
     "devenir_relais": "Devenir relais LOLODRIVE (accueil)",
     "adherer_centrale": "Adhérer à la Centrale (vitrine zones)",

@@ -101,7 +101,7 @@ const NavBar = ({ variant = 'default' }) => {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300`}
+      className={`navbar-root fixed top-0 left-0 right-0 z-50 transition-all duration-300`}
       style={{
         background: isScrolled ? 'rgba(30,12,52,0.94)' : 'rgba(30,12,52,0.88)',
         backdropFilter: 'blur(14px)',

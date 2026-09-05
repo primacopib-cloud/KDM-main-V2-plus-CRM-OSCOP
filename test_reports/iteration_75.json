@@ -1,0 +1,42 @@
+{
+  "summary": "Frontend-only validation of the Centrale O'SCOP homepage refonte (/), plus new routes /particuliers and /points-relais and regression on /catalogue, /tarifs, /espace-investisseur, /calculateur-fret, /espace-acheteur, /adhesion-vendeur. All 14 requested acceptance points were verified with Playwright on desktop (1920x1080) and mobile (390x844). Result: functionally 100% OK. Two visual/integration defects found: (1) the ACTIVE 'Professionnels · Centrale O'SCOP' tab label is nearly unreadable because index.css:468 forces .text-[#2A1045] to #CDB4F0 !important over the gold background (same rule washes out the 1..6 step badges in the pro hero); (2) the three new hero CTA ids are unknown to the backend CTA tracker so /api/public/cta-click returns 400 (clicks silently not tracked). Mapbox vector tiles return 403 on every map (pre-existing), so the relay map base layer renders black with markers only.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/public/cta-click", "issue": "400 'CTA inconnu' for the new hero CTA ids (hero_besoin_achat, hero_catalogue_pro, hero_financer) — missing from CTA_LABELS in /app/backend/routes_cta_stats.py, so new homepage CTA clicks are never recorded (frontend swallows the error)"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AudienceSwitcher (active pro tab)", "issue": "Computed text color is rgb(205,180,240) instead of #2A1045 on the #D9B35A gold background (contrast ~1.5:1, label illegible). Root cause: global rule index.css:468 '.text-[#2A1045] { color:#CDB4F0 !important }' overrides the Tailwind class. Fix with an inline style color or a dedicated class.", "selector": "[data-testid=\"audience-pro\"]", "priority": "HIGH"},
+      {"component": "ProHero flow example step badges", "issue": "Same index.css:468 override washes out the 1-6 step numbers (light lavender on gold) — low contrast", "selector": "[data-testid=\"hero-flow-example\"] li span:first-child", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "CTA tracking from new pro hero", "issue": "/api/public/cta-click returns 400 for hero_besoin_achat / hero_catalogue_pro / hero_financer", "affected_selectors": ["[data-testid=\"hero-cta-besoin-achat\"]", "[data-testid=\"hero-cta-catalogue-pro\"]", "[data-testid=\"hero-cta-financer\"]"]},
+      {"flow": "LOLODRIVE relay maps (/, /particuliers, /points-relais)", "issue": "All api.mapbox.com vector tile requests return HTTP 403 with the token from frontend/.env (REACT_APP_MAPBOX_TOKEN) — base map renders black, only custom markers visible. Pre-existing, affects every map page.", "affected_selectors": [".mapboxgl-canvas"]}
+    ],
+    "design_issues": [
+      {"screen": "/ mobile 390x844", "issues": ["Audience switcher label wraps on 2 lines with no top padding — text touches the top edge of the bar (cramped); still fully visible without scrolling"]},
+      {"screen": "/ + /particuliers territory carousel", "issues": ["'Tous les territoires' pill overlaps the 'ANTILLES · GUYANE' caption of the territory map (caption partly hidden)"]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix contrast of active audience tab: stop relying on text-[#2A1045] (overridden by index.css:468) — use style={{color:'#2A1045'}} on [data-testid=audience-pro] and on the hero step badges",
+    "Register the new CTA ids (hero_besoin_achat, hero_catalogue_pro, hero_financer) in CTA_LABELS (/app/backend/routes_cta_stats.py) to stop the 400 on /api/public/cta-click",
+    "Investigate the Mapbox 403 (token URL restriction / quota) — relay maps show a black base layer on /, /particuliers and /points-relais",
+    "Minor: add vertical padding to the audience switcher on mobile and fix the 'Tous les territoires' pill overlap in TerritoryCarousel"
+  ],
+  "critical_code_review_comments": [
+    "index.css:468 blanket !important color override on arbitrary Tailwind color classes is a trap — any new dark-on-gold text is silently inverted; scope it or remove it",
+    "LolodriveSection swallows API errors silently (.catch(() => {})) — the relay counter simply disappears instead of showing a fallback/error state",
+    "LandingPage.jsx renders ~30 sections in one file; consider splitting the pro block and the particuliers block into two composed components"
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend-only request)", "frontend": "100% functional acceptance criteria, 2 visual/integration defects"},
+  "seed_data_creation": "None — read-only public pages",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Verified: audience-switcher fixed at top (y=0, h=32.5 desktop / 49 mobile, body.has-audience-switcher present, gold bg on active pro tab, both links navigate correctly incl. mobile); pro-hero surtitre/titre/3 CTAs/6-step illustrative example + 'Aucun montant... ligne disponible réelle'; pro-journeys 4 cards with correct hrefs (journey-acheter redirects to /connexion?redirect=/espace-acheteur as expected for a protected route, no 404); pro-catalog-families 4 families + CTA all to /catalogue; financing-compartments with the exact CREDI'SCOP-I sentence and the 'Ils ne peuvent jamais' list (no CREDI'SCOP-I as a payment means); fogedom-notice text OK; lolodrive-section with dynamic counter '10 relais actifs · 4 territoires' from GET /api/lolodrive/lolo-points (10 real docs, not hardcoded); /particuliers and /points-relais render with public-points-count = '10 relais actifs' and territory filters Tous/Guadeloupe/Martinique/Guyane/La Réunion; NavBar order exactly Accueil, Acheter, Fournisseurs, Financer, LOGI'SCOP, Catalogue Pro, Territoires, LOLODRIVE; legacy sections (tarification, logistique, conformité, partenaires, témoignages, contact, carte LOLODRIVE) still present; 'Jusqu'à –50%' and '0% produit' absent; 'Disponible sur votre territoire' appears only once and ZoneProductsShowcase shows 'Produits phares de votre territoire'. Note GET /api/lolo-points (non-lolodrive prefix) returns 0 points — unused by the UI but a duplicate/stale route.",
+  "rca_of_the_issue": "Illegible active tab: AudienceSwitcher applies Tailwind class text-[#2A1045], but /app/frontend/src/index.css line 468 declares '.text-[#4C2A6E], .text-[#4a1776], .text-[#2A1045], .text-[#3B1A5C] { color: #CDB4F0 !important; }', so the computed color becomes rgb(205,180,240) on the #D9B35A gold background. CTA 400: routes_cta_stats.record_cta_click rejects any cta_id absent from the hardcoded CTA_LABELS dict, and the three new hero ids were never added."
+}

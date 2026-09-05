@@ -24,6 +24,8 @@ import OrderPreviewPage from "./pages/OrderPreviewPage";
 import SignatureDemoPage from "./pages/SignatureDemoPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import InvestorSpacePage from "./pages/InvestorSpacePage";
+import ParticuliersPage from "./pages/ParticuliersPage";
+import PointsRelaisPage from "./pages/PointsRelaisPage";
 import LogiscopSpacePage from "./pages/LogiscopSpacePage";
 import OscopCheckoutReturnPage from "./pages/OscopCheckoutReturnPage";
 import LegalDynamicPage from "./pages/LegalDynamicPage";
@@ -173,6 +175,8 @@ function App() {
           <Route path="/super-admin" element={<SuperAdminPage />} />
           <Route path="/superadmin" element={<SuperAdminPage />} />
           <Route path="/espace-investisseur" element={<InvestorSpacePage />} />
+          <Route path="/particuliers" element={<ParticuliersPage />} />
+          <Route path="/points-relais" element={<PointsRelaisPage />} />
           <Route path="/espace-logiscop" element={<LogiscopSpacePage />} />
           <Route path="/espace-fournisseur/commandes-oscop" element={<SupplierOscopOrdersPage />} />
           <Route path="/calculateur-fret" element={<FreightCalculatorPage />} />

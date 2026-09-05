@@ -65,7 +65,7 @@ export const ZoneProductsShowcase = () => {
         <div className="flex items-center gap-2 mb-1">
           <MapPin className="w-5 h-5" style={{ color: '#D9B35A' }} />
           <h2 className="text-lg md:text-lg font-bold" style={{ color: '#F7F2E9' }}>
-            {i18n.t('landing.zone_showcase_title', 'Disponible sur votre territoire')}
+            {i18n.t('landing.zone_showcase_title', 'Produits phares de votre territoire')}
           </h2>
         </div>
         <p className="text-sm mb-5" style={{ color: 'rgba(247,242,233,0.6)' }}>
