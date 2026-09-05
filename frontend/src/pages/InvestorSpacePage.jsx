@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { InvestorLiveDashboard } from '../components/investor/InvestorLiveDashboard';
 import { FinancingOpportunities } from '../components/investor/FinancingOpportunities';
+import { InvestorDataroom } from '../components/investor/InvestorDataroom';
 import { InvestorApplyForm } from '../components/investor/InvestorApplyForm';
 
 const blocks = [
@@ -40,6 +41,7 @@ export default function InvestorSpacePage() {
           investissements réels et le financement logistique LOGI'SCOP.
         </p>
         <InvestorLiveDashboard />
+        <InvestorDataroom />
         <FinancingOpportunities />
         <InvestorApplyForm />
         <div className="grid md:grid-cols-2 gap-4 mb-8">

@@ -206,6 +206,46 @@ async def generate_commitment_from_interest(interest_id: str, admin: dict = Depe
     return {"success": True, "doc_id": doc["id"], "doc_number": number}
 
 
+@investor_router.get("/my-dataroom")
+async def my_dataroom(current_user: dict = Depends(get_current_user_v2)):
+    """Data room en lecture pour l'investisseur retenu: docs DATAROOM + Bons d'Engagement de ses opérations."""
+    email = (current_user.get("email") or "").lower()
+    accepted = await db.financing_interests.find(
+        {"investor_email": email, "status": "ACCEPTED"}, {"_id": 0, "operation_id": 1}).to_list(100)
+    op_ids = list({a["operation_id"] for a in accepted})
+    if not op_ids:
+        return {"operations": []}
+    ops = await db.purchase_resale_operations.find(
+        {"id": {"$in": op_ids}},
+        {"_id": 0, "id": 1, "reference": 1, "status": 1, "territory_id": 1, "linked_product_name": 1}).to_list(100)
+    docs = await db.operation_documents.find(
+        {"operation_id": {"$in": op_ids}, "doc_type": {"$in": ["DATAROOM", "INVESTOR_COMMITMENT"]}},
+        {"_id": 0, "id": 1, "operation_id": 1, "doc_number": 1, "doc_type": 1, "created_at": 1},
+    ).sort("created_at", -1).to_list(200)
+    by_op = {}
+    for d in docs:
+        by_op.setdefault(d["operation_id"], []).append(d)
+    return {"operations": [{**op, "documents": by_op.get(op["id"], [])} for op in ops]}
+
+
+@investor_router.get("/documents/{doc_id}/pdf")
+async def investor_document_pdf(doc_id: str, current_user: dict = Depends(get_current_user_v2)):
+    """Téléchargement lecture seule, réservé à l'investisseur retenu sur l'opération."""
+    from fastapi.responses import Response
+    from operation_docs_pdf import build_operation_pdf
+    doc = await db.operation_documents.find_one({"id": doc_id}, {"_id": 0})
+    if not doc or doc.get("doc_type") not in ("DATAROOM", "INVESTOR_COMMITMENT"):
+        raise HTTPException(status_code=404, detail="Document introuvable")
+    email = (current_user.get("email") or "").lower()
+    allowed = await db.financing_interests.find_one(
+        {"operation_id": doc["operation_id"], "investor_email": email, "status": "ACCEPTED"})
+    if not allowed and not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Accès réservé à l'investisseur retenu")
+    pdf = build_operation_pdf(doc)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="{doc["doc_number"]}.pdf"'})
+
+
 @investor_router.get("/dashboard")
 async def investor_dashboard(current_user: dict = Depends(get_current_user_v2)):
     email = (current_user.get("email") or "").lower()
