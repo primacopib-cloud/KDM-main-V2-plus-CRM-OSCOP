@@ -31,10 +31,8 @@ export const getNavItems = (userRole, isAdmin, pathname = '/') => {
     { href: '/particuliers', label: 'LOLODRIVE', icon: Users, public: true, accent: '#8CC63E' },
   ].filter((it) => !(isPass && it.href === '/tarifs'));
 
-  // Member-only shortcuts kept in top bar (per product decision).
-  const memberShortcuts = [
-    { href: mySpace, label: 'nav.my_space', icon: LayoutDashboard },
-  ];
+  // Member-only shortcuts déplacés en pied de page (demande utilisateur).
+  const memberShortcuts = [];
 
   // Espaces dédiés par rôle (COOPER / EXPERT)
   const roleSpaces = [];
