@@ -70,6 +70,7 @@ export default function CatalogPage() {
   // Filters
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [saleFilter, setSaleFilter] = useState('all');
+  const [financingOnly, setFinancingOnly] = useState(false);
   const [selectedIncoterm, setSelectedIncoterm] = useState('all');
   const [minRating, setMinRating] = useState('all');
   const [sortByRating, setSortByRating] = useState(false);
@@ -457,13 +458,15 @@ export default function CatalogPage() {
           zoneName={selectedZone === 'ALL' ? 'Tous les territoires' : (zones.find((z) => z.code === selectedZone)?.name || selectedZone)}
           saleFilter={saleFilter}
           setSaleFilter={setSaleFilter}
+          financingOnly={financingOnly}
+          setFinancingOnly={setFinancingOnly}
           products={products}
           user={user}
           navigate={navigate}
         />
 
         <ProductsGrid
-          products={saleFilter === 'all' ? products : products.filter((p) => (p.sale_model || 'PARTNER_DIRECT_SALE') === saleFilter)}
+          products={(saleFilter === 'all' ? products : products.filter((p) => (p.sale_model || 'PARTNER_DIRECT_SALE') === saleFilter)).filter((p) => !financingOnly || p.financing_eligible)}
           cart={cart}
           cartLoading={cartLoading}
           handleAddToCart={handleAddToCart}

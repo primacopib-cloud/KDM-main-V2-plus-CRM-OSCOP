@@ -1,9 +1,45 @@
-import { Package, Edit, Trash2, Rocket, Sparkles } from 'lucide-react';
+import { Package, Edit, Trash2, Rocket, Sparkles, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { getAuthHeaders } from '../../services/http';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { CATEGORIES, formatPrice } from './constants';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+const FinancingToggle = ({ product }) => {
+  const [on, setOn] = useState(!!product.financing_eligible);
+  const [busy, setBusy] = useState(false);
+  const toggle = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/sale-model/products/${product.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ sale_model: product.sale_model || 'PARTNER_DIRECT_SALE', financing_eligible: !on }),
+      });
+      if (!res.ok) throw new Error();
+      setOn(!on);
+      toast.success(!on ? 'Éligible au financement ✓' : 'Financement désactivé');
+    } catch {
+      toast.error('Échec de la mise à jour');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <button type="button" onClick={toggle} disabled={busy}
+      data-testid={`financing-toggle-${product.id}`}
+      title="Éligible au financement d'opération"
+      className={`inline-flex items-center gap-1.5 h-8 px-2 rounded-lg text-xs font-semibold border transition-colors ${
+        on ? 'bg-violet-500/20 text-violet-300 border-violet-400/40' : 'bg-white/[0.04] text-white/45 border-white/10 hover:text-white/70'
+      }`}>
+      <TrendingUp className="w-3.5 h-3.5" /> {on ? 'Finançable' : 'Financement'}
+    </button>
+  );
+};
 
 export const ProductRow = ({
   product, checked, onToggle, pricingId, suggestPrice, publishProduct, openEditProduct, handleDelete,
@@ -50,6 +86,7 @@ export const ProductRow = ({
     </Badge>
 
     <div className="flex gap-2">
+      <FinancingToggle product={product} />
       {product.status === 'draft' && (
         <>
           <Button size="sm" onClick={() => suggestPrice(product)} disabled={pricingId === product.id}
