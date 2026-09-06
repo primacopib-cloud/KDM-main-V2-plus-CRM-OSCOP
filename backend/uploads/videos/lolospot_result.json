@@ -1,0 +1,32 @@
+{
+ "lolospot_products": {
+  "model": "fal-ai/veo3/fast",
+  "request_id": "01a07923-7c23-7440-bb92-f3ee2009cda6",
+  "status": "DONE",
+  "local_url": "/api/uploads/videos/lolospot_products.mp4"
+ },
+ "lolospot_order": {
+  "model": "fal-ai/veo3/fast",
+  "request_id": "01a07923-7c33-7282-b028-1608998303aa",
+  "status": "DONE",
+  "local_url": "/api/uploads/videos/lolospot_order.mp4"
+ },
+ "lolospot_prep": {
+  "model": "fal-ai/veo3/fast",
+  "request_id": "01a07923-7c42-7bc3-86db-69aa86d784ac",
+  "status": "DONE",
+  "local_url": "/api/uploads/videos/lolospot_prep.mp4"
+ },
+ "lolospot_pickup": {
+  "model": "fal-ai/veo3/fast",
+  "request_id": "01a07923-7c52-7472-b693-abb455aec7b2",
+  "status": "DONE",
+  "local_url": "/api/uploads/videos/lolospot_pickup.mp4"
+ },
+ "lolospot_final": {
+  "model": "fal-ai/veo3/fast",
+  "request_id": "01a07923-7c60-7791-ac9c-2b8c8eb89d71",
+  "status": "DONE",
+  "local_url": "/api/uploads/videos/lolospot_final.mp4"
+ }
+}

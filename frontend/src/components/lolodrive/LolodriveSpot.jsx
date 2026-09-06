@@ -4,34 +4,36 @@ import { useNavigate } from 'react-router-dom';
 
 const IMG = 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/';
 /*
- * Montage publicitaire 30 s.
- * Vidéos réelles du projet (Veo 3, uploads/videos, H.264/AAC valides) : boutique antillaise (scène 1) + cave/terroir (scène 3).
- * Note : le Chromium headless de test n'embarque pas le codec H.264 → repli image automatique en environnement de test ;
- * sur les navigateurs réels (Chrome, Safari, Firefox), les vidéos jouent normalement (Range requests supportées côté serveur).
- * SÉQUENCES VIDÉO MANQUANTES (clé FAL expirée — à fournir pour un rendu 100 % vidéo) :
- *  - sélection de produits par 3 en magasin, commande sur smartphone, préparation/chargement des sacs,
- *    retrait au point relais, famille finale, et une piste musicale libre de droits.
- * En attendant, ces scènes utilisent des images fixes présentées sobrement (fondu, sans faux mouvement).
+ * Montage publicitaire 30 s — 6 scènes vidéo réelles (Veo 3, uploads/videos) sur 7 :
+ * accroche boutique, sélection produits ×3, commande smartphone, préparation relais, retrait drive, famille finale.
+ * Reste en image fixe : scène 2 « concept lot ×3 » (packshot). Musique libre de droits : à fournir (l'audio provient des clips).
+ * Note test : le Chromium headless n'a pas le codec H.264 → repli image auto ; navigateurs réels OK (Range 206 côté serveur).
  */
 const SCENES = [
   { video: '/api/uploads/videos/8aa3c90e-b59d-4ae7-b8d4-ff5e6ccab36d.mp4',
     poster: `${IMG}c0c71f4f0cace537b3db6b0c91c1d22217126f055e31fb54f4072536c58685b7.jpeg`,
     img: `${IMG}c0c71f4f0cace537b3db6b0c91c1d22217126f055e31fb54f4072536c58685b7.jpeg`,
-    duration: 4000, kicker: 'LOLODRIVE by O’SCOP', title: 'VOTRE TERRITOIRE, VOS PRODUITS', sub: 'L’épicerie antillaise, par lot de 3.' },
+    duration: 4000, kicker: 'LOLODRIVE by O\u2019SCOP', title: 'VOTRE TERRITOIRE, VOS PRODUITS', sub: 'L\u2019\u00e9picerie antillaise, par lot de 3.' },
   { img: `${IMG}03b0b0754e0126acf04556bc2c87535f4f6c847886d7a38aa7b1c2d4f9090d25.jpeg`,
-    duration: 4000, kicker: 'LE CONCEPT', title: 'ACHETEZ PAR LOT ×3', sub: '3 fois plus malin. 3 fois moins cher à l’unité.' },
-  { video: '/api/uploads/videos/c7492609-8a49-4c57-b4d0-576c62091831.mp4',
-    poster: `${IMG}76fb75f13d4956f61e133f4254f19748210d76a544df1563775d75b31e7969ec.jpeg`,
+    duration: 4000, kicker: 'LE CONCEPT', title: 'ACHETEZ PAR LOT \u00d73', sub: '3 fois plus malin. 3 fois moins cher \u00e0 l\u2019unit\u00e9.' },
+  { video: '/api/uploads/videos/lolospot_products.mp4',
+    img: `${IMG}0cf29917f13c278e3b19b8be49129ca514173f41acb07096e6b1ed7ef07f1b86.jpeg`,
+    duration: 4000, kicker: 'TOUS VOS ESSENTIELS', title: 'TOUJOURS PAR 3', sub: 'Des volumes group\u00e9s, des prix n\u00e9goci\u00e9s par la coop\u00e9rative.' },
+  { video: '/api/uploads/videos/lolospot_order.mp4',
+    poster: `${IMG}ed2ed1e5a423c20f9be1f285167fdf1fe6c2defebfc13b5be0b193fc982668ef.jpeg`,
+    img: `${IMG}ed2ed1e5a423c20f9be1f285167fdf1fe6c2defebfc13b5be0b193fc982668ef.jpeg`,
+    duration: 5000, kicker: 'EN LIGNE', title: 'COMMANDEZ EN 3 CLICS', sub: 'Tout le catalogue \u00e0 prix mini, depuis votre canap\u00e9.' },
+  { video: '/api/uploads/videos/lolospot_prep.mp4',
     img: `${IMG}76fb75f13d4956f61e133f4254f19748210d76a544df1563775d75b31e7969ec.jpeg`,
-    duration: 4000, kicker: 'LE TERROIR', title: 'LES PRODUITS DE CHEZ NOUS', sub: 'Rhums, épicerie, frais : le catalogue de votre territoire.' },
-  { img: `${IMG}ed2ed1e5a423c20f9be1f285167fdf1fe6c2defebfc13b5be0b193fc982668ef.jpeg`,
-    duration: 5000, kicker: 'EN LIGNE', title: 'COMMANDEZ EN 3 CLICS', sub: 'Tout le catalogue à prix mini, depuis votre canapé.' },
-  { img: `${IMG}0cf29917f13c278e3b19b8be49129ca514173f41acb07096e6b1ed7ef07f1b86.jpeg`,
-    duration: 4000, kicker: 'VOTRE RELAIS PRÉPARE', title: 'VOS COURSES PRÊTES PAR 3', sub: 'Riz, pâtes, huile… vos essentiels regroupés pour vous.' },
-  { img: `${IMG}c0c71f4f0cace537b3db6b0c91c1d22217126f055e31fb54f4072536c58685b7.jpeg`,
-    duration: 5000, kicker: 'PRÈS DE CHEZ VOUS', title: 'RETRAIT EN POINT RELAIS', sub: 'Votre relais LOLODRIVE vous attend au coin de la rue.' },
-  { img: `${IMG}2c4c4c0249af14104048ae27f62936bf211c576e43239ccd602020c7c5483ffa.jpeg`,
-    duration: 4000, kicker: 'LOLODRIVE by O’SCOP', title: 'LA VIE MOINS CHÈRE, ENSEMBLE', sub: 'Le PASS qui change vos courses. Rejoignez la coopérative.', final: true },
+    duration: 4000, kicker: 'VOTRE RELAIS PR\u00c9PARE', title: 'VOS COURSES PR\u00caTES PAR 3', sub: 'Vos essentiels regroup\u00e9s et pr\u00e9par\u00e9s pour vous.' },
+  { video: '/api/uploads/videos/lolospot_pickup.mp4',
+    poster: `${IMG}c0c71f4f0cace537b3db6b0c91c1d22217126f055e31fb54f4072536c58685b7.jpeg`,
+    img: `${IMG}c0c71f4f0cace537b3db6b0c91c1d22217126f055e31fb54f4072536c58685b7.jpeg`,
+    duration: 5000, kicker: 'PR\u00c8S DE CHEZ VOUS', title: 'RETRAIT EN POINT RELAIS', sub: 'Votre relais LOLODRIVE vous attend au coin de la rue.' },
+  { video: '/api/uploads/videos/lolospot_final.mp4',
+    poster: `${IMG}2c4c4c0249af14104048ae27f62936bf211c576e43239ccd602020c7c5483ffa.jpeg`,
+    img: `${IMG}2c4c4c0249af14104048ae27f62936bf211c576e43239ccd602020c7c5483ffa.jpeg`,
+    duration: 4000, kicker: 'LOLODRIVE by O\u2019SCOP', title: 'LA VIE MOINS CH\u00c8RE, ENSEMBLE', sub: 'Le PASS qui change vos courses. Rejoignez la coop\u00e9rative.', final: true },
 ];
 const API = process.env.REACT_APP_BACKEND_URL;
 const mediaUrl = (u) => (u && u.startsWith('/') ? `${API}${u}` : u);

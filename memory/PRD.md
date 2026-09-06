@@ -2933,3 +2933,11 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Scènes « Retrait en point relais » + poster/fallback scène 1 : remplacées par une devanture de drive point relais MODERNE avec enseigne mascotte « LOLO DRIVE — Click & Collect, Épicerie en ligne », baies numérotées, client chargeant sa voiture (c0c71f4f…jpeg) — screenshots validés dans le spot
 - Logo source : asset utilisateur lolopng.png (mascotte smartphone)
 - CLÉ FAL : toujours expirée (401) — l'utilisateur n'a pas encore fourni de nouvelle clé ; les 5 séquences vidéo du spot restent à générer (script type : soumettre via ai_media_service.submit_product_video, poller check_video_status, download_video_locally)
+
+## 2026-06 — 5 séquences vidéo Veo 3 générées et intégrées (self-testé ✅)
+- Nouvelle clé FAL enregistrée dans backend/.env (FAL_KEY) — backend redémarré
+- 5 clips générés via ai_media_service (Veo 3) et pérennisés : lolospot_products / order / prep / pickup / final .mp4 (uploads/videos, H.264 valides, servis 206 video/mp4)
+- Montage 30 s : 6 scènes vidéo sur 7 (accroche boutique 8aa3c90e, sélection produits ×3, commande smartphone, préparation relais, retrait drive, famille finale CTA) ; seule la scène 2 « concept lot ×3 » reste un packshot image
+- Posters : devanture LOLO DRIVE (accroche + pickup), smartphone logo (order), famille (final)
+- Reste à fournir : piste musicale libre de droits (l'audio provient des pistes des clips)
+- Rappel : headless test sans H.264 → repli image auto ; navigateurs réels OK
