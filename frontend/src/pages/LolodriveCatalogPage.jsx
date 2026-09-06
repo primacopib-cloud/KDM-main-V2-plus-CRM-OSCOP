@@ -60,9 +60,14 @@ export default function LolodriveCatalogPage() {
   }, []);
 
   // Load catalog products + lolo points whenever filter/territory change (also gates on auth)
+  const isVisitor = !authAPI.isAuthenticated();
   useEffect(() => {
-    if (!authAPI.isAuthenticated()) {
-      navigate('/connexion');
+    if (isVisitor) {
+      fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/catalog/public`)
+        .then((r) => r.json())
+        .then((d) => setProducts(d.products || []))
+        .catch(() => {})
+        .finally(() => setLoading(false));
       return;
     }
     let cancelled = false;
@@ -196,10 +201,17 @@ export default function LolodriveCatalogPage() {
   return (
     <LolodriveLayout
       title={i18n.t('lolodrive.catalogue_lolodrive')}
-      subtitle={passActive
-        ? "PASS actif — prix PASS visibles sur les ESSENTIELS, paiement en UC autorisé."
-        : "PASS inactif — activez votre PASS pour bénéficier des prix réduits."}
-      actions={
+      subtitle={isVisitor
+        ? 'Aperçu visiteur — prix réservés aux titulaires du PASS LOLODRIVE.'
+        : passActive
+          ? "PASS actif — prix PASS visibles sur les ESSENTIELS, paiement en UC autorisé."
+          : "PASS inactif — activez votre PASS pour bénéficier des prix réduits."}
+      actions={isVisitor ? (
+        <Button onClick={() => navigate('/pass-lolodrive')} data-testid="visitor-pass-cta"
+          style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
+          <Star className="w-4 h-4 mr-2" /> Acheter le PASS & créer mon espace
+        </Button>
+      ) : (
         <>
         <Button asChild variant="outline" data-testid="back-to-orders-btn">
           <BackLink fallback="/pass">
@@ -211,7 +223,7 @@ export default function LolodriveCatalogPage() {
             <Button data-testid="open-cart-btn"
               style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
               <ShoppingCart className="w-4 h-4 mr-2" />
-              Panier {cartItems.length > 0 && `(${cartItems.length})`}
+              Panier {qtyTotal > 0 && `(${Math.round(qtyTotal / 3)} lot${qtyTotal > 3 ? 's' : ''} ×3)`}
             </Button>
           </SheetTrigger>
           <SheetContent className="bg-[#0a0a0f] border-white/10 text-white w-full sm:max-w-md">
@@ -229,12 +241,12 @@ export default function LolodriveCatalogPage() {
                   <div key={sku} className="flex items-center gap-2 p-2 rounded bg-white/[0.03]">
                     <div className="flex-1 text-sm">
                       <div className="font-medium">{p.name}</div>
-                      <div className="text-xs text-white/40">{fmtEUR(discountedUnit(p))} × {qty}</div>
+                      <div className="text-xs text-white/40" data-testid={`cart-line-lots-${sku}`}>{fmtEUR(discountedUnit(p) * 3)} le lot de 3 × {Math.round(qty / 3)}</div>
                     </div>
                     <Button size="icon" variant="ghost" onClick={() => sub(sku)} data-testid={`cart-sub-${sku}`}>
                       <Minus className="w-3 h-3" />
                     </Button>
-                    <span className="w-6 text-center text-sm">{qty}</span>
+                    <span className="w-14 text-center text-sm font-semibold">{Math.round(qty / 3)} lot{qty > 3 ? 's' : ''}</span>
                     <Button size="icon" variant="ghost" onClick={() => add(sku)} data-testid={`cart-add-${sku}`}>
                       <Plus className="w-3 h-3" />
                     </Button>
@@ -308,7 +320,7 @@ export default function LolodriveCatalogPage() {
           </SheetContent>
         </Sheet>
         </>
-      }
+      )}
     >
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <TerritorySelector
@@ -344,7 +356,42 @@ export default function LolodriveCatalogPage() {
         </div>
       )}
 
-      {!loading && (() => {
+      {!loading && isVisitor && (
+        <>
+          <div className="grid gap-2.5 mb-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }} data-testid="visitor-catalog-grid">
+            {applyCatalogFilters(products, { search, category, subcategory }).map((p) => (
+              <div key={p.sku} className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.08]" data-testid={`visitor-product-${p.sku}`}>
+                <div className="relative h-28 bg-white/[0.04]">
+                  {p.photo_url || p.image_url ? (
+                    <img src={p.photo_url || p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white/20"><ShoppingCart className="w-8 h-8" /></div>
+                  )}
+                  <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#8CC63E] text-[#1F2A12]">LOT ×3</span>
+                </div>
+                <div className="p-3">
+                  <div className="text-sm font-semibold text-white truncate">{p.name}</div>
+                  <div className="text-[10px] text-white/40">{p.category || ''}</div>
+                  <div className="mt-1.5 text-[11px] font-semibold text-[#E9CF8E]">🔒 Prix réservé aux titulaires PASS</div>
+                </div>
+              </div>
+            ))}
+            {products.length === 0 && (
+              <p className="text-white/40 text-sm col-span-full py-8 text-center">Vitrine en cours de préparation — revenez bientôt !</p>
+            )}
+          </div>
+          <div className="rounded-2xl p-5 text-center border border-[#D9B35A]/40 bg-[#D9B35A]/[0.07]" data-testid="visitor-pass-invite">
+            <p className="text-white font-semibold m-0 mb-1">Envie de commander par lots de 3 aux prix mutualisés ?</p>
+            <p className="text-white/60 text-sm m-0 mb-3">Achetez votre PASS LOLODRIVE et créez votre espace pour accéder à tout le catalogue et aux prix.</p>
+            <Button onClick={() => navigate('/pass-lolodrive')} data-testid="visitor-pass-invite-btn"
+              style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
+              <Star className="w-4 h-4 mr-2" /> Acheter le PASS & créer mon espace
+            </Button>
+          </div>
+        </>
+      )}
+
+      {!loading && !isVisitor && (() => {
         const visible = applyCatalogFilters(products, { search, category, subcategory })
           .filter((p) => filter !== 'FAVS' || favs.includes(p.sku));
         if (visible.length === 0 && filter !== 'FAVS') {

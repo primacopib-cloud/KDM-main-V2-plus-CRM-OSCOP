@@ -161,6 +161,10 @@ export default function ProductCatalogManager({ onProductSaved }) {
         status: formData.status,
         image_url: formData.image_url || null,
         image_lot3: !!formData.image_lot3,
+        images: (formData.gallery_text !== undefined
+          ? formData.gallery_text.split('\n')
+          : (formData.images || [])).map((s) => (typeof s === 'string' ? s.trim() : s?.url || '')).filter(Boolean),
+        visitor_visible: !!formData.visitor_visible,
         translations: formData.translations || null,
         is_active: formData.is_active,
         is_new: formData.is_new,

@@ -141,6 +141,21 @@ export const BasicTab = ({ formData, handleChange }) => (
                     <Checkbox checked={!!formData.image_lot3} onCheckedChange={(v) => handleChange('image_lot3', v)} />
                     <span className="text-sm text-white/80">Affichage image ×3 (lot de 3)</span>
                   </label>
+                  <label className="flex items-center gap-2 cursor-pointer" data-testid="product-visitor-visible-toggle">
+                    <Checkbox checked={!!formData.visitor_visible} onCheckedChange={(v) => handleChange('visitor_visible', v)} />
+                    <span className="text-sm text-white/80">Visible par les visiteurs (vitrine)</span>
+                  </label>
+                </div>
+                <div className="mt-3">
+                  <Label className="text-white/80">Galerie photos (une URL par ligne, défilement sur la fiche)</Label>
+                  <Textarea
+                    data-testid="product-gallery-input"
+                    rows={3}
+                    placeholder={'https://…/photo1.jpg\nhttps://…/photo2.jpg'}
+                    value={formData.gallery_text !== undefined ? formData.gallery_text : (formData.images || []).map((s) => (typeof s === 'string' ? s : s?.url || '')).filter(Boolean).join('\n')}
+                    onChange={(e) => handleChange('gallery_text', e.target.value)}
+                    className="mt-1 bg-white/[0.04] border-white/10 text-white"
+                  />
                 </div>
               </FormSection>
             </TabsContent>

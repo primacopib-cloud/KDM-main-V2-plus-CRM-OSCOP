@@ -263,8 +263,9 @@ export default function CatalogPage() {
   // Add to cart
   const handleAddToCart = async (product) => {
     if (!user) {
-      toast.info(i18n.t('catalog.visiteur_connexion', 'Connectez-vous pour commander'));
-      navigate('/connexion?redirect=/catalogue');
+      toast.info(i18n.t('catalog.visiteur_connexion', 'Créez votre espace pro pour commander'), {
+        action: { label: 'Adhérer', onClick: () => navigate('/tarifs') },
+      });
       return;
     }
     if (!product.price_visible) {

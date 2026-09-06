@@ -98,8 +98,47 @@ async def community_board(q: str | None = None):
             continue
         out.append({"reference": n["reference"], "product": n["product"], "quantity": n["quantity"],
                     "territory": n["territory"], "flag": TERRITORY_FLAG.get(n["territory"], "FR"),
-                    "status": n["status"], "created_at": n["created_at"]})
+                    "status": n["status"], "created_at": n["created_at"],
+                    "joiners_count": len(n.get("joiners") or []),
+                    "joined_quantity": int(n.get("joined_quantity") or 0)})
     return {"demands": out}
+
+
+class JoinNeedBody(BaseModel):
+    email: EmailStr
+    quantity: int = Field(1, ge=1, le=10000)
+
+
+@purchase_needs_router.post("/public/purchase-needs/{reference}/join")
+async def join_purchase_need(reference: str, body: JoinNeedBody):
+    """Un visiteur rejoint une demande publiée pour grouper les volumes."""
+    need = await db.purchase_needs.find_one({"reference": reference, "communityplace": True})
+    if not need:
+        raise HTTPException(status_code=404, detail="Demande introuvable")
+    if any(j.get("email") == body.email.lower() for j in (need.get("joiners") or [])):
+        raise HTTPException(status_code=409, detail="Vous avez déjà rejoint cette demande.")
+    from datetime import datetime, timezone
+    await db.purchase_needs.update_one(
+        {"reference": reference},
+        {"$push": {"joiners": {"email": body.email.lower(), "quantity": body.quantity,
+                               "joined_at": datetime.now(timezone.utc).isoformat()}},
+         "$inc": {"joined_quantity": body.quantity}})
+    updated = await db.purchase_needs.find_one({"reference": reference}, {"_id": 0, "joiners": 1, "joined_quantity": 1})
+    return {"ok": True, "reference": reference,
+            "joiners_count": len(updated.get("joiners") or []),
+            "joined_quantity": int(updated.get("joined_quantity") or 0)}
+
+
+@purchase_needs_router.get("/admin/purchase-needs/stats/csv")
+async def communityplace_stats_csv(_: dict = Depends(require_admin)):
+    """Export CSV comptabilité : revenus mensuels frais de publication CommunityPlace."""
+    from fastapi.responses import Response
+    data = await communityplace_stats(_)
+    lines = ["mois;revenus_eur"] + [f"{m['month']};{m['revenue_eur']:.2f}" for m in data["months"]]
+    lines.append(f"TOTAL;{data['total_eur']:.2f}")
+    csv = "\ufeff" + "\n".join(lines)
+    return Response(content=csv, media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": "attachment; filename=revenus_communityplace.csv"})
 
 
 @purchase_needs_router.get("/admin/purchase-needs/stats")

@@ -49,6 +49,24 @@ async def create_event(request: EventCreate, admin: dict = Depends(require_admin
 # Admin products / default seed
 # =======================
 
+@lolodrive_admin_router.get("/admin/products/visitor-visibility")
+async def list_visitor_visibility(admin: dict = Depends(require_admin)):
+    products = await db.lolodrive_products.find(
+        {"is_active": {"$ne": False}},
+        {"_id": 0, "sku": 1, "name": 1, "category": 1, "visitor_visible": 1},
+    ).sort("name", 1).to_list(300)
+    return {"products": products}
+
+
+@lolodrive_admin_router.patch("/admin/products/{sku}/visitor-visible")
+async def toggle_visitor_visible(sku: str, payload: dict, admin: dict = Depends(require_admin)):
+    r = await db.lolodrive_products.update_one(
+        {"sku": sku}, {"$set": {"visitor_visible": bool(payload.get("visible")), "updated_at": datetime.utcnow()}})
+    if not r.matched_count:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    return {"ok": True, "sku": sku, "visitor_visible": bool(payload.get("visible"))}
+
+
 @lolodrive_admin_router.post("/admin/products")
 async def admin_create_product(request: RegisterProduct, admin: dict = Depends(require_admin)):
     doc = request.dict()
