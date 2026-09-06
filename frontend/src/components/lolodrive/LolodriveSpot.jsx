@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const SCENES = [
   {
-    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/e5498487eea15f9539f2ee0e270da835d47df5e649a4a390c866313bf9d0a061.jpeg',
+    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/039326cadeb0461a959a33ae2f89cbe9e948a90ffe8743eb25eecab91c37f1e9.jpeg',
     kicker: 'LE CONCEPT', title: 'ACHETEZ PAR LOT ×3', sub: '3 fois plus malin. 3 fois moins cher à l\u2019unité.',
   },
   {

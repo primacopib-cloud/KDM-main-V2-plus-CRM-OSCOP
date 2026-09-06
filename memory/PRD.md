@@ -2898,4 +2898,5 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Compteur vues spot : POST /api/lolodrive/spot/view (public, upsert $inc par mois dans db.spot_views) appelé à l'ouverture du LolodriveSpot ; GET /api/lolodrive/admin/spot-views (total + par mois) affiché dans VisitorShowcasePanel (spot-views-stats) — curl testé (1 vue 2026-09)
 
 ## 2026-06 — Taux conversion spot (self-testé ✅)
+- Scène 1 du spot regénérée en photoréaliste (3 sacs de riz identiques, éclairage studio doré, fond violet) — URL 039326ca…jpeg
 - POST /api/lolodrive/spot/cta ($inc cta_clicks par mois, db.spot_views) déclenché au clic « Découvrir le PASS » du spot ; GET admin/spot-views renvoie total_cta + conversion_pct (global et par mois) ; affichage « 🎬 Spot — X lectures → Y clics (Z % de conversion) » (spot-conversion-rate) dans VisitorShowcasePanel — testé curl (1 vue / 1 clic / 100 %) + screenshot UI
