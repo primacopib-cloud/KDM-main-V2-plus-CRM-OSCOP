@@ -119,6 +119,34 @@ async def check_and_alert() -> dict:
     return {"checked": checked, "alerts_sent": alerts_sent}
 
 
+async def run_nightly_connector_report(database) -> dict:
+    """Test nocturne de tous les connecteurs + email récap si au moins une panne."""
+    now = datetime.now(timezone.utc)
+    if not (0 <= now.hour < 6):
+        return {"skipped": "hors fenêtre nocturne"}
+    day_key = f"connector_nightly_{now.strftime('%Y-%m-%d')}"
+    if await database.system_flags.find_one({"key": day_key}):
+        return {"skipped": "déjà exécuté"}
+    result = await check_and_alert()
+    down = await database.connector_health_status.find({"status": "ERROR"}, {"_id": 0}).to_list(50)
+    if down:
+        rows = "".join(
+            f"<li><strong>{d.get('label', d.get('name', ''))}</strong> — {d.get('error') or 'erreur inconnue'} "
+            f"(vérifié à {d.get('checked_at', '')[:16].replace('T', ' ')})</li>" for d in down)
+        await _send_alert_email(
+            f"Test nocturne : {len(down)} connecteur(s) en panne",
+            f"<p>Le test automatique nocturne a détecté <strong>{len(down)} connecteur(s) en panne</strong> :</p>"
+            f"<ul>{rows}</ul><p>Consultez la page Connecteurs du superadmin pour relancer un test manuel.</p>",
+            {"Connecteurs testés": result.get("checked", 0), "En panne": len(down)},
+            "high",
+        )
+    await database.system_flags.update_one(
+        {"key": day_key},
+        {"$set": {"sent_at": now.isoformat(), "checked": result.get("checked", 0), "down": len(down)}},
+        upsert=True)
+    return {"checked": result.get("checked", 0), "down": len(down)}
+
+
 async def health_watch_loop() -> None:
     await asyncio.sleep(90)
     while True:

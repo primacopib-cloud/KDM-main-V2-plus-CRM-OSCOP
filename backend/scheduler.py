@@ -386,6 +386,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler investor reports crashed: %s", exc)
         try:
+            from connectors.health_watch import run_nightly_connector_report
+            await run_nightly_connector_report(_db)
+        except Exception as exc:
+            logger.exception("Scheduler nightly connector report crashed: %s", exc)
+        try:
             from routes_parrainia import process_parrainia
             await process_parrainia(_db)
         except Exception as exc:
