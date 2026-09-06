@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -488,21 +488,43 @@ os.makedirs(os.path.join(_uploads_dir, "products"), exist_ok=True)
 
 
 @app.get("/api/uploads/{upload_path:path}")
-async def serve_upload(upload_path: str):
-    """Sert les fichiers uploadés : object storage (nouveaux) avec fallback disque (anciens)."""
+async def serve_upload(upload_path: str, request: Request):
+    """Sert les fichiers uploadés : object storage (nouveaux) avec fallback disque (anciens). Supporte les Range requests (vidéo)."""
     from upload_storage import fetch_upload, mime_for_ext
     safe = os.path.normpath(upload_path).lstrip("/")
     if safe.startswith(".."):
         raise HTTPException(status_code=404, detail="Fichier non trouvé")
     local = os.path.join(_uploads_dir, safe)
+    data = None
+    ctype = mime_for_ext(safe.rsplit(".", 1)[-1])
     if os.path.isfile(local):
         with open(local, "rb") as fh:
-            return _FileResp(content=fh.read(), media_type=mime_for_ext(safe.rsplit(".", 1)[-1]))
-    try:
-        data, ctype = await fetch_upload(safe)
-        return _FileResp(content=data, media_type=ctype)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Fichier non trouvé")
+            data = fh.read()
+    else:
+        try:
+            data, ctype = await fetch_upload(safe)
+        except Exception:
+            raise HTTPException(status_code=404, detail="Fichier non trouvé")
+    range_header = request.headers.get("range")
+    total = len(data)
+    if range_header and range_header.startswith("bytes="):
+        try:
+            spec = range_header[6:].split(",")[0].strip()
+            start_s, _, end_s = spec.partition("-")
+            start = int(start_s) if start_s else max(0, total - int(end_s))
+            end = min(int(end_s), total - 1) if (start_s and end_s) else total - 1
+            if start > end or start >= total:
+                raise ValueError
+            chunk = data[start:end + 1]
+            return _FileResp(content=chunk, status_code=206, media_type=ctype, headers={
+                "Content-Range": f"bytes {start}-{end}/{total}",
+                "Accept-Ranges": "bytes",
+                "Content-Length": str(len(chunk)),
+            })
+        except ValueError:
+            return _FileResp(content=b"", status_code=416, media_type=ctype,
+                             headers={"Content-Range": f"bytes */{total}"})
+    return _FileResp(content=data, media_type=ctype, headers={"Accept-Ranges": "bytes"})
 
 # Alertes favoris (restock/promo) + routes admin stock & prix
 from favorites_alerts import set_favorites_alerts_database

@@ -26,6 +26,7 @@ MIME_TYPES = {
     "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif",
     "webp": "image/webp", "svg": "image/svg+xml", "pdf": "application/pdf",
     "heic": "image/heic", "csv": "text/csv", "txt": "text/plain",
+    "mp4": "video/mp4", "webm": "video/webm", "mp3": "audio/mpeg",
 }
 
 
