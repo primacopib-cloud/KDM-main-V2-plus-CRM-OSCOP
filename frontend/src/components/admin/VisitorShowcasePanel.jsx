@@ -36,6 +36,11 @@ export const VisitorShowcasePanel = () => {
       <div className="flex items-center gap-2 mb-1">
         <Store className="w-4 h-4 text-[#D9B35A]" />
         <h3 className="text-sm font-bold text-[#E9CF8E] m-0">Vitrine visiteurs — catalogue LOLODRIVE ({visibleCount} visible{visibleCount > 1 ? 's' : ''})</h3>
+        <button type="button" data-testid="showcase-preview-btn"
+          onClick={() => window.open('/catalogue-lolodrive?visitor=1', '_blank')}
+          className="ml-auto px-3 py-1 rounded-full text-[11px] font-bold text-[#1F2A12] bg-[#8CC63E] hover:brightness-110 transition-[filter]">
+          👁 Voir comme un visiteur
+        </button>
       </div>
       <p className="text-[11px] text-white/45 m-0 mb-3">Les visiteurs non connectés ne voient que ces produits, prix masqués, avec invitation à acheter le PASS.</p>
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un produit…"

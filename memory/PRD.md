@@ -2872,3 +2872,13 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Upload photos direct : POST /api/catalog/admin/upload-image (require_admin, PNG/JPG/WEBP max 4 Mo, save_upload → /api/uploads/products/gallery-*.ext) — testé curl (URL servie 200) ; bouton « Téléverser des photos » (product-gallery-upload-btn, input multiple) dans BasicPricingTabs qui ajoute les URLs au textarea galerie
 - Vitrine pro admin : GET /api/catalog/admin/products/visitor-visibility + PATCH /products/{id}/visitor-visible (déclarés AVANT /products/{product_id} pour éviter interception) ; ProVisitorShowcasePanel (pro-visitor-showcase-panel, switches) monté onglet Catalogue du superadmin — testé curl (17 produits, 5 visibles, toggle on/off) + screenshot UI
 - Auth admin curl : cookie httpOnly (curl -c/-b jar), pas de Bearer localStorage
+
+## 2026-06 — Spot LOLODRIVE, guards accueil, groupage avancé, uploads, aperçu vitrine (testing_agent 100% backend 6/6 + frontend 100%)
+- Spot publicitaire cinématique : LolodriveSpot.jsx (4 scènes images générées, ken burns, textes animés, barre progression, CTA PASS, replay) — bouton « Voir le spot LOLODRIVE » (open-lolodrive-spot) sur /catalogue-lolodrive (visiteur + membre)
+- Guards espaces privés : RequireMember dans App.js — /superadmin + /lolodrive → /admin/connexion ; /vendor + /espace-vendeur → /connexion (FUITE CORRIGÉE : ces pages s'affichaient sans auth). /espace-acheteur, /wallet, /commandes redirigeaient déjà. Testés 7/7.
+- Jauge groupage : board renvoie current_quantity / goal_quantity (goal = max(qty init ×2, 10)) + grouping_closed ; jauge gradient (board-gauge-{ref}) + badge « Groupage clôturé »
+- Clôture groupage : POST /api/admin/purchase-needs/{id}/close-grouping (409 si déjà clos, join → 409 après) + emails demandeur + tous joiners ; bouton superadmin (need-close-grouping-{id})
+- Image principale produit : bloc upload + URL + aperçu (product-main-image-url / product-main-image-upload-btn) réutilisant /api/catalog/admin/upload-image
+- Aperçu vitrine : boutons « Voir comme un visiteur » (showcase-preview-btn, pro-showcase-preview-btn) → /catalogue-lolodrive?visitor=1 et /catalogue?visitor=1 ; LolodriveCatalogPage isVisitor inclut ?visitor ; CatalogPage visitorPreview (fetch credentials omit)
+- Besoin d'achat multi-produits : POST /api/public/purchase-needs/batch (1 demande PAR produit, max 10, emails récap) + POST /api/public/purchase-needs/upload-image (2 Mo, 2 photos/produit) ; PurchaseNeedForm réécrit : items dynamiques, bulle « une demande = un produit » (need-one-product-info), multiplicateur tarif (need-fee-multiplier), uploads photos
+- data-testid edit-product-{id} ajouté sur le crayon ProductRow

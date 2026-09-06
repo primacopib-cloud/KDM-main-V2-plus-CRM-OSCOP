@@ -103,7 +103,7 @@ export const ProductRow = ({
           </Button>
         </>
       )}
-      <Button size="sm" variant="ghost" onClick={() => openEditProduct(product)} className="text-white/60 hover:text-white">
+      <Button size="sm" variant="ghost" onClick={() => openEditProduct(product)} data-testid={`edit-product-${product.id}`} className="text-white/60 hover:text-white">
         <Edit className="w-4 h-4" />
       </Button>
       <Button size="sm" variant="ghost" onClick={() => handleDelete(product.id)} className="text-white/60 hover:text-red-400">

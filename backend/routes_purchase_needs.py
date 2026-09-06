@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import logging
 import uuid
+import re
+from typing import List
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from pydantic import BaseModel, EmailStr, Field
 
 from lolodrive_helpers import require_admin
@@ -35,6 +37,25 @@ class PurchaseNeedCreate(BaseModel):
     budget_eur: float | None = None
     deadline: str | None = None
     description: str | None = None
+    images: List[str] | None = Field(default=None, max_length=2)
+
+
+class NeedItem(BaseModel):
+    product: str = Field(min_length=3)
+    quantity: str
+    budget_eur: float | None = None
+    description: str | None = None
+    images: List[str] | None = Field(default=None, max_length=2)
+
+
+class PurchaseNeedBatch(BaseModel):
+    company: str = Field(min_length=2)
+    contact_name: str = Field(min_length=2)
+    email: EmailStr
+    phone: str = Field(min_length=6)
+    territory: str
+    deadline: str | None = None
+    items: List[NeedItem] = Field(min_length=1, max_length=10)
 
 
 @purchase_needs_router.post("/public/purchase-needs")
@@ -83,6 +104,108 @@ async def track_purchase_need(reference: str):
             "vendor_price_eur": need.get("vendor_price_eur"), "created_at": need["created_at"]}
 
 
+def _qty_num(qty: str) -> int:
+    m = re.search(r"\d+", str(qty or ""))
+    return int(m.group()) if m else 0
+
+
+@purchase_needs_router.post("/public/purchase-needs/upload-image")
+async def upload_need_image(file: UploadFile = File(...)):
+    """Photos produit du besoin d'achat (max 2 Mo, 2 par produit côté form)."""
+    allowed = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Format accepté : PNG, JPG ou WEBP")
+    content = await file.read()
+    if len(content) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image trop lourde (max 2 Mo)")
+    filename = f"need-{uuid.uuid4().hex[:10]}.{allowed[file.content_type]}"
+    from upload_storage import save_upload
+    url = await save_upload(f"needs/{filename}", content, file.content_type)
+    return {"ok": True, "url": url}
+
+
+@purchase_needs_router.post("/public/purchase-needs/batch")
+async def create_purchase_needs_batch(body: PurchaseNeedBatch):
+    """Multi-produits : une demande créée PAR produit (le tarif de publication s'applique par demande)."""
+    now = datetime.now(timezone.utc)
+    refs = []
+    for item in body.items:
+        ref = f"BA-{now.strftime('%Y%m')}-{str(uuid.uuid4())[:6].upper()}"
+        doc = {"id": str(uuid.uuid4()), "reference": ref,
+               "company": body.company, "contact_name": body.contact_name, "email": body.email,
+               "phone": body.phone, "territory": body.territory, "deadline": body.deadline,
+               "product": item.product, "quantity": item.quantity, "budget_eur": item.budget_eur,
+               "description": item.description, "images": item.images or [],
+               "status": "NEW", "assigned_vendor": None, "communityplace": False, "created_at": _now()}
+        await db.purchase_needs.insert_one(dict(doc))
+        refs.append({"reference": ref, "product": item.product})
+    n = len(refs)
+    try:
+        from brevo_service import send_email, _wrap_html
+        import os
+        team = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
+        rows = "".join(f"<li><b>{r['reference']}</b> — {r['product']}</li>" for r in refs)
+        await send_email(
+            to_email=team, to_name=None,
+            subject=f"🛒 {n} besoin(s) d'achat — {body.company}",
+            html_content=_wrap_html("Besoins d'achat reçus", (
+                f"<p style='font-size:14px;'><b>{body.company}</b> ({body.contact_name}, {body.email}, "
+                f"{body.phone}) — territoire {body.territory}</p><ul style='font-size:14px;'>{rows}</ul>"
+                f"<p>À traiter dans le superadmin, onglet Demandes.</p>")),
+            tags=["purchase-need"])
+        await send_email(
+            to_email=body.email, to_name=body.contact_name,
+            subject=f"✅ Vos {n} besoins d'achat sont enregistrés" if n > 1 else f"✅ Votre besoin d'achat est enregistré — suivi n° {refs[0]['reference']}",
+            html_content=_wrap_html("Besoins d'achat reçus", (
+                f"<p style='font-size:14px;'>Bonjour {body.contact_name},</p>"
+                f"<p style='font-size:14px;'>Vos demandes sont enregistrées (une demande par produit) :</p>"
+                f"<ul style='font-size:14px;'>{rows}</ul>"
+                f"<p style='font-size:14px;'>Le tarif de publication CommunityPlace s'applique par demande "
+                f"(× {n}). Conservez ces numéros pour tout échange.</p>")),
+            tags=["purchase-need"])
+    except Exception as e:
+        logger.warning(f"batch need emails failed: {e}")
+    return {"ok": True, "count": n, "references": refs}
+
+
+@purchase_needs_router.post("/admin/purchase-needs/{need_id}/close-grouping")
+async def close_grouping(need_id: str, admin: dict = Depends(require_admin)):
+    """Clôture le groupage d'une demande et notifie demandeur + tous les participants."""
+    need = await db.purchase_needs.find_one({"id": need_id})
+    if not need:
+        raise HTTPException(status_code=404, detail="Demande introuvable")
+    if need.get("grouping_closed"):
+        raise HTTPException(status_code=409, detail="Groupage déjà clôturé")
+    await db.purchase_needs.update_one(
+        {"id": need_id}, {"$set": {"grouping_closed": True, "grouping_closed_at": _now()}})
+    joiners = need.get("joiners") or []
+    total = f"{need['quantity']} + {int(need.get('joined_quantity') or 0)}"
+    notified = 0
+    try:
+        from brevo_service import send_email, _wrap_html
+        html = _wrap_html("Groupage clôturé", (
+            f"<p style='font-size:14px;'>Le groupage de la demande <b>{need['product']}</b> "
+            f"(suivi <b>{need['reference']}</b>) est clôturé.</p>"
+            f"<p style='font-size:14px;'>Volume final groupé : <b>{total}</b> "
+            f"({len(joiners)} participant{'s' if len(joiners) > 1 else ''}).<br/>"
+            f"La Centrale O'SCOP négocie désormais les meilleures conditions et revient vers vous.</p>"))
+        recipients = [{"email": need.get("email"), "name": need.get("contact_name")}] + \
+                     [{"email": j.get("email"), "name": None} for j in joiners]
+        for r in recipients:
+            if not r["email"]:
+                continue
+            try:
+                await send_email(to_email=r["email"], to_name=r["name"],
+                                 subject=f"📦 Groupage clôturé — {need['reference']} ({need['product']})",
+                                 html_content=html, tags=["purchase-need-close"])
+                notified += 1
+            except Exception:
+                pass
+    except Exception as e:
+        logger.warning(f"close grouping emails failed: {e}")
+    return {"ok": True, "grouping_closed": True, "notified": notified}
+
+
 TERRITORY_FLAG = {"Guadeloupe": "GP", "Martinique": "MQ", "Guyane": "GF", "La Réunion": "RE",
                   "Mayotte": "YT", "Saint-Martin": "MF"}
 
@@ -96,11 +219,17 @@ async def community_board(q: str | None = None):
     for n in needs:
         if q and q.lower() not in f"{n['product']} {n['territory']} {n.get('company', '')}".lower():
             continue
+        init = _qty_num(n.get("quantity"))
+        joined = int(n.get("joined_quantity") or 0)
+        goal = max(init * 2, init + joined, 10)
         out.append({"reference": n["reference"], "product": n["product"], "quantity": n["quantity"],
                     "territory": n["territory"], "flag": TERRITORY_FLAG.get(n["territory"], "FR"),
                     "status": n["status"], "created_at": n["created_at"],
                     "joiners_count": len(n.get("joiners") or []),
-                    "joined_quantity": int(n.get("joined_quantity") or 0)})
+                    "joined_quantity": joined,
+                    "current_quantity": init + joined,
+                    "goal_quantity": goal,
+                    "grouping_closed": bool(n.get("grouping_closed"))})
     return {"demands": out}
 
 
@@ -115,6 +244,8 @@ async def join_purchase_need(reference: str, body: JoinNeedBody):
     need = await db.purchase_needs.find_one({"reference": reference, "communityplace": True})
     if not need:
         raise HTTPException(status_code=404, detail="Demande introuvable")
+    if need.get("grouping_closed"):
+        raise HTTPException(status_code=409, detail="Le groupage de cette demande est clôturé.")
     if any(j.get("email") == body.email.lower() for j in (need.get("joiners") or [])):
         raise HTTPException(status_code=409, detail="Vous avez déjà rejoint cette demande.")
     from datetime import datetime, timezone

@@ -98,9 +98,10 @@ export default function CatalogPage() {
   // Min amount for installment (5500€ HT = 550000 cents)
 
   // Load initial data
+  const visitorPreview = new URLSearchParams(window.location.search).has('visitor');
   useEffect(() => {
     const init = async () => {
-      const isAuth = authAPI.isAuthenticated();
+      const isAuth = !visitorPreview && authAPI.isAuthenticated();
 
       try {
         let userData = null;
@@ -224,6 +225,14 @@ export default function CatalogPage() {
     if (!selectedZone) return;
     
     try {
+      if (visitorPreview) {
+        const sp = new URLSearchParams({ zone_code: selectedZone });
+        if (selectedCategory && selectedCategory !== 'all') sp.append('category_id', selectedCategory);
+        if (searchTerm) sp.append('search', searchTerm);
+        const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/v2/catalog/products?${sp}`, { credentials: 'omit' });
+        setProducts(await r.json());
+        return;
+      }
       const params = { zoneCode: selectedZone };
       if (selectedCategory && selectedCategory !== 'all') {
         params.categoryId = selectedCategory;

@@ -17,6 +17,7 @@ import { CatalogFiltersBar, applyCatalogFilters } from '../components/lolodrive/
 import { groupByCategory } from '../components/lolodrive/groupByCategory';
 import { CartSlotPicker } from '../components/lolodrive/CartSlotPicker';
 import { LolodriveProductCard } from '../components/lolodrive/LolodriveProductCard';
+import { LolodriveSpotButton } from '../components/lolodrive/LolodriveSpot';
 import { PassLolodriveBadge } from '../components/catalog/ProductPromoBadges';
 import { distanceFeeRate, getReferencePointCode, kmBetween } from '../utils/relayDistance';
 
@@ -60,7 +61,7 @@ export default function LolodriveCatalogPage() {
   }, []);
 
   // Load catalog products + lolo points whenever filter/territory change (also gates on auth)
-  const isVisitor = !authAPI.isAuthenticated();
+  const isVisitor = !authAPI.isAuthenticated() || new URLSearchParams(window.location.search).has('visitor');
   useEffect(() => {
     if (isVisitor) {
       fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/catalog/public`)
@@ -207,12 +208,16 @@ export default function LolodriveCatalogPage() {
           ? "PASS actif — prix PASS visibles sur les ESSENTIELS, paiement en UC autorisé."
           : "PASS inactif — activez votre PASS pour bénéficier des prix réduits."}
       actions={isVisitor ? (
+        <>
+        <LolodriveSpotButton />
         <Button onClick={() => navigate('/pass-lolodrive')} data-testid="visitor-pass-cta"
           style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
           <Star className="w-4 h-4 mr-2" /> Acheter le PASS & créer mon espace
         </Button>
+        </>
       ) : (
         <>
+        <LolodriveSpotButton />
         <Button asChild variant="outline" data-testid="back-to-orders-btn">
           <BackLink fallback="/pass">
             <ArrowLeft className="w-4 h-4 mr-2" /> Retour
