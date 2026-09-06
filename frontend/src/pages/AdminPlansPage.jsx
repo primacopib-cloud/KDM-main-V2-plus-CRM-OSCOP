@@ -1,7 +1,7 @@
 import i18n from '@/i18n';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Coins, Layers, Settings2, Users } from 'lucide-react';
+import { ArrowLeft, Loader2, Coins, Layers, Settings2, Users, Landmark } from 'lucide-react';
 import { toast } from 'sonner';
 import NavBar from '../components/NavBar';
 import { authAPI, adminPlansAPI } from '../services/api';
@@ -15,6 +15,7 @@ import { CreditsTab } from '../components/admin/plans/CreditsTab';
 import { WalletPacksTab } from '../components/admin/plans/WalletPacksTab';
 import { WalletPackFormModal } from '../components/admin/plans/WalletPackFormModal';
 import { PriceSchedulePanel } from '../components/admin/plans/PriceSchedulePanel';
+import { InvestorPlansAdminPanel } from '../components/superadmin/InvestorPlansAdminPanel';
 
 const AdminPlansPage = () => {
   const navigate = useNavigate();
@@ -288,6 +289,7 @@ const AdminPlansPage = () => {
             { id: 'options', label: i18n.t('adm.options_addons'), icon: Settings2 },
             { id: 'packs', label: 'Packs de crédits', icon: Coins },
             { id: 'credits', label: i18n.t('adm.credits_utilisateurs'), icon: Coins },
+            { id: 'investisseurs', label: 'Plans & crédits investisseurs', icon: Landmark },
           ].map((t) => (
             <button
               key={t.id}
@@ -345,6 +347,8 @@ const AdminPlansPage = () => {
             onAdjust={handleOpenAdjust}
           />
         )}
+
+        {activeTab === 'investisseurs' && <InvestorPlansAdminPanel />}
       </div>
 
       {/* Modals */}

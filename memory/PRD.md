@@ -2798,3 +2798,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Liste mondiale des pays formulaire FINANCER (self-testé ✅)
 - Nouveau fichier /app/frontend/src/components/investor/countries.js : 209 pays (PRIORITY_COUNTRIES France+Outre-mer 12 entrées, WORLD_COUNTRIES ~197, noms FR, indicatifs internationaux)
 - Selects pays et indicatif avec optgroup « France & Outre-mer » / « International », drapeaux flagcdn synchronisés (validé : Japon +81)
+
+## 2026-06 — Validation téléphone, plan supprimé accueil, onglet investisseurs /admin/plans (self-testé ✅)
+- Validation téléphone FINANCER : validatePhone (règles par indicatif : +33/DOM 9 chiffres, +1 10, défaut 6-12, tolère le 0 initial) — erreur onBlur + blocage submit + message sous champ
+- Plan supprimé toujours en accueil : cause = cache module-level dans usePublicPlans (jamais re-fetch) → fix : re-fetch systématique au montage
+- Plans & crédits investisseurs manquants dans /admin/plans : nouvel onglet « Plans & crédits investisseurs » (tab-investisseurs) rendant InvestorPlansAdminPanel (plans + abonnés + RIB + journal virements)
