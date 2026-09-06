@@ -2823,3 +2823,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - CTA « Explorer le catalogue LOLODRIVE » → /catalogue, MASQUÉ si non abonné (GET /api/public/lolodrive-pass/active : pass ACTIVE ends_at>now via cookie, admin=true) ; « Adhérer à la Centrale » remplacé par « PASS LOLODRIVE » → /pass-lolodrive (l'accueil pro garde les anciens boutons)
 - Carrousel configurable : backend routes_lolodrive_home.py — GET /api/public/lolodrive-carousel {product_ids,max_count}, PUT /api/admin/lolodrive-carousel (require_admin lolodrive_helpers, 401 sans auth) sur db.app_settings ; front ordonne/filtre les produits v2 selon la config, fallback top rating si vide
 - Panel superadmin LolodriveCarouselPanel (recherche produit, ajout/retrait/ordre, nombre max 1-24) intégré dans /lolodrive (LolodriveAdminDashboardPage) — PUT/GET validés par curl (2 produits, max 4, puis restauré)
+
+## 2026-06 — Promo carrousel, recherche abonnés, drag & drop (self-testé ✅)
+- Promo PASS : promo_percent (0-90) ajouté à la config carrousel (backend + panel admin) ; carrousel particuliers : badge « −X% PASS » vert + prix public barré + prix remisé vert « HT avec PASS » (validé 15 %, badge ×12) — actuellement réglé à 15 %, modifiable/désactivable (0) dans le panel /lolodrive
+- Recherche abonnés : champ nom/email (filtre client) dans InvestorSubscribersTable — superadmin uniquement (validé : 0 puis 1 résultat)
+- Drag & drop : réordonnancement HTML5 (draggable + GripVertical) des produits sélectionnés dans LolodriveCarouselPanel, ordre envoyé au PUT

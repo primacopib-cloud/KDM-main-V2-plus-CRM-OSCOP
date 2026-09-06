@@ -136,17 +136,36 @@ export const ZoneProductsShowcase = ({ audience = 'pro' }) => {
                         <Heart size={9} fill="currentColor" /> {i18n.t('catalog.coup_de_coeur_court', 'Coup de cœur')}
                       </span>
                     )}
+                    {isLolo && carouselCfg?.promo_percent > 0 && (
+                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold text-black"
+                        data-testid={i < products.length ? `promo-badge-${p.sku}` : undefined}
+                        style={{ background: 'linear-gradient(90deg, #8CC63E, #6FA82E)' }}>
+                        −{carouselCfg.promo_percent}% PASS
+                      </span>
+                    )}
                   </div>
                   <div className="p-3">
                     <p className="text-sm font-semibold truncate" style={{ color: '#F7F2E9' }}>{tData(p.name) || p.name}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(247,242,233,0.45)' }}>{p.sku}</p>
-                    {(p.price_ht_cents ?? p.teaser_price_ht_cents) != null && (
-                      <p className="text-sm font-bold mt-1" style={{ color: '#D9B35A' }}
-                        data-testid={i < products.length ? `showcase-price-${p.sku}` : undefined}>
-                        {p.price_ht_cents == null && <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}>{i18n.t('landing.a_partir_de', 'à partir de')} </span>}
-                        {(((p.price_ht_cents ?? p.teaser_price_ht_cents)) / 100).toFixed(2)} € <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}>HT</span>
-                      </p>
-                    )}
+                    {(p.price_ht_cents ?? p.teaser_price_ht_cents) != null && (() => {
+                      const cents = p.price_ht_cents ?? p.teaser_price_ht_cents;
+                      const promo = isLolo && carouselCfg?.promo_percent > 0 ? carouselCfg.promo_percent : 0;
+                      return (
+                        <p className="text-sm font-bold mt-1" style={{ color: '#D9B35A' }}
+                          data-testid={i < products.length ? `showcase-price-${p.sku}` : undefined}>
+                          {p.price_ht_cents == null && <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}>{i18n.t('landing.a_partir_de', 'à partir de')} </span>}
+                          {promo > 0 ? (
+                            <>
+                              <span className="line-through font-normal mr-1.5" style={{ color: 'rgba(247,242,233,0.45)' }}>{(cents / 100).toFixed(2)} €</span>
+                              <span style={{ color: '#8CC63E' }}>{((cents * (100 - promo)) / 10000).toFixed(2)} €</span>
+                              <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}> HT {i18n.t('landing.avec_pass', 'avec PASS')}</span>
+                            </>
+                          ) : (
+                            <>{(cents / 100).toFixed(2)} € <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}>HT</span></>
+                          )}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </Link>
               ))}

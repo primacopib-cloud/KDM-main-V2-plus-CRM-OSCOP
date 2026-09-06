@@ -95,6 +95,7 @@ const InvestorSubscribersTable = () => {
   const [subs, setSubs] = useState([]);
   const [dlg, setDlg] = useState(null);
   const [fiche, setFiche] = useState(null);
+  const [search, setSearch] = useState('');
   useEffect(() => {
     fetch(`${API_URL}/api/investor-plans/admin/subscribers`, { headers: getAuthHeaders() })
       .then((r) => r.json()).then((d) => setSubs(d.subscribers || [])).catch(() => {});
@@ -131,11 +132,18 @@ const InvestorSubscribersTable = () => {
     } catch (e) { toast.error(e.message); }
   };
   if (!subs.length) return null;
+  const q = search.trim().toLowerCase();
+  const filtered = q ? subs.filter((s) => (s.name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q)) : subs;
   return (
     <div className="mt-5" data-testid="investor-subscribers-table">
-      <h4 className="text-xs font-bold text-[#E9CF8E] flex items-center gap-1.5 m-0 mb-2">
-        <Users className="w-3.5 h-3.5" /> Investisseurs abonnés ({subs.length})
-      </h4>
+      <div className="flex items-center gap-2 flex-wrap mb-2">
+        <h4 className="text-xs font-bold text-[#E9CF8E] flex items-center gap-1.5 m-0">
+          <Users className="w-3.5 h-3.5" /> Investisseurs abonnés ({filtered.length}{q ? `/${subs.length}` : ''})
+        </h4>
+        <input value={search} onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher par nom ou email…" data-testid="subscribers-search-input"
+          className="ml-auto h-8 w-64 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs" />
+      </div>
       <div className="overflow-x-auto rounded-xl border border-white/[0.08]">
         <table className="w-full text-[11px] text-white/70">
           <thead>
@@ -150,7 +158,7 @@ const InvestorSubscribersTable = () => {
             </tr>
           </thead>
           <tbody>
-            {subs.map((s) => {
+            {filtered.map((s) => {
               const [label, cls] = STATUS_LABEL[s.status] || [s.status, 'text-white/50 bg-white/5 border-white/15'];
               return (
                 <tr key={s.user_id} className="border-t border-white/[0.06]" data-testid={`subscriber-row-${s.email}`}>

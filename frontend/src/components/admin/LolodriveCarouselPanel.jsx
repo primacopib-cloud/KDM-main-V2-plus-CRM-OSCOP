@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Home, Search, Trash2, Save, Plus } from 'lucide-react';
+import { Home, Search, Trash2, Save, Plus, GripVertical } from 'lucide-react';
 import { getAuthHeaders } from '../../services/http';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -9,14 +9,17 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 export const LolodriveCarouselPanel = () => {
   const [selected, setSelected] = useState([]);
   const [maxCount, setMaxCount] = useState(12);
+  const [promoPercent, setPromoPercent] = useState(0);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const dragIndex = useRef(null);
 
   useEffect(() => {
     (async () => {
       try {
         const cfg = await fetch(`${API_URL}/api/public/lolodrive-carousel`).then((r) => r.json());
         setMaxCount(cfg.max_count || 12);
+        setPromoPercent(cfg.promo_percent || 0);
         if (cfg.product_ids?.length) {
           const all = await fetch(`${API_URL}/api/v2/catalog/products?limit=100`, { headers: getAuthHeaders(), credentials: 'include' }).then((r) => r.json());
           setSelected(cfg.product_ids.map((id) => (Array.isArray(all) ? all.find((p) => p.id === id) : null) || { id, name: id, sku: '' }));
@@ -37,7 +40,7 @@ export const LolodriveCarouselPanel = () => {
       const res = await fetch(`${API_URL}/api/admin/lolodrive-carousel`, {
         method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ product_ids: list.map((p) => p.id), max_count: Number(count) || 12 }),
+        body: JSON.stringify({ product_ids: list.map((p) => p.id), max_count: Number(count) || 12, promo_percent: Number(promoPercent) || 0 }),
       });
       if (!res.ok) throw new Error((await res.json()).detail || 'Erreur');
       toast.success('Carrousel de l\'accueil particuliers enregistré');
@@ -54,6 +57,12 @@ export const LolodriveCarouselPanel = () => {
           <input type="number" min={1} max={24} value={maxCount} onChange={(e) => setMaxCount(e.target.value)}
             data-testid="carousel-max-input"
             className="h-7 w-16 px-2 rounded-md bg-white/[0.05] border border-white/15 text-white text-xs" />
+        </label>
+        <label className="text-[10px] text-white/50 flex items-center gap-1">
+          Promo PASS
+          <input type="number" min={0} max={90} value={promoPercent} onChange={(e) => setPromoPercent(e.target.value)}
+            data-testid="carousel-promo-input"
+            className="h-7 w-14 px-2 rounded-md bg-white/[0.05] border border-white/15 text-white text-xs" /> %
         </label>
         <button type="button" onClick={() => save()} data-testid="carousel-save-btn"
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors">
@@ -88,7 +97,23 @@ export const LolodriveCarouselPanel = () => {
       {selected.length > 0 && (
         <div className="space-y-1">
           {selected.map((p, i) => (
-            <div key={p.id} className="flex items-center gap-2 text-xs text-white/75 rounded-lg px-3 py-1.5 bg-white/[0.02] border border-white/[0.06]" data-testid={`carousel-selected-${p.sku || p.id}`}>
+            <div key={p.id} draggable
+              onDragStart={() => { dragIndex.current = i; }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => {
+                const from = dragIndex.current;
+                if (from === null || from === i) return;
+                setSelected((prev) => {
+                  const next = [...prev];
+                  const [moved] = next.splice(from, 1);
+                  next.splice(i, 0, moved);
+                  return next;
+                });
+                dragIndex.current = null;
+              }}
+              className="flex items-center gap-2 text-xs text-white/75 rounded-lg px-3 py-1.5 bg-white/[0.02] border border-white/[0.06] cursor-grab active:cursor-grabbing"
+              data-testid={`carousel-selected-${p.sku || p.id}`}>
+              <GripVertical className="w-3.5 h-3.5 text-white/30" />
               <span className="text-white/35 font-mono w-5">{i + 1}.</span>
               <span className="flex-1 truncate">{p.name} <span className="text-white/35">{p.sku}</span></span>
               <button type="button" onClick={() => setSelected((prev) => prev.filter((x) => x.id !== p.id))}
