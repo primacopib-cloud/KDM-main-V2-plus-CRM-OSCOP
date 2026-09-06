@@ -231,7 +231,8 @@ async def community_board(q: str | None = None):
                     "current_quantity": init + joined,
                     "goal_quantity": goal,
                     "grouping_closed": bool(n.get("grouping_closed")),
-                    "photos_count": len(n.get("images") or [])})
+                    "photos_count": len(n.get("images") or []),
+                    "photos": (n.get("images") or [])[:2]})
     return {"demands": out}
 
 

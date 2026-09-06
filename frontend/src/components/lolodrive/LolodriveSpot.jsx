@@ -30,6 +30,9 @@ export const LolodriveSpot = ({ onClose }) => {
   const [done, setDone] = useState(false);
   const timer = useRef(null);
   useEffect(() => {
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/spot/view`, { method: 'POST' }).catch(() => {});
+  }, []);
+  useEffect(() => {
     if (done) return undefined;
     timer.current = setTimeout(() => {
       if (scene < SCENES.length - 1) setScene(scene + 1);

@@ -2892,3 +2892,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Partage : boutons Facebook (board-share-fb-{ref}, sharer.php) + copier lien (board-copy-{ref}, clipboard + toast) à côté du WhatsApp sur chaque carte non clôturée
 - Badge photos : board renvoie photos_count ; badge « 📷 N » (board-photos-badge-{ref}) sur les cartes avec images
 - Spot auto : LolodriveSpotButton autoPlay sur /particuliers — se lance 1,2 s après la 1re visite (flag localStorage kdm_spot_seen), jamais relancé ensuite — testé (ouverture auto, flag, reload sans relance)
+
+## 2026-06 — Popover photos board + compteur vues spot (self-testé ✅)
+- Photos sur board : board renvoie photos[] (max 2) ; popover au survol du badge 📷 (board-photos-popover-{ref}, miniatures 88px style inline pour battre les règles CSS globales) — screenshot validé
+- Compteur vues spot : POST /api/lolodrive/spot/view (public, upsert $inc par mois dans db.spot_views) appelé à l'ouverture du LolodriveSpot ; GET /api/lolodrive/admin/spot-views (total + par mois) affiché dans VisitorShowcasePanel (spot-views-stats) — curl testé (1 vue 2026-09)

@@ -49,6 +49,13 @@ async def create_event(request: EventCreate, admin: dict = Depends(require_admin
 # Admin products / default seed
 # =======================
 
+@lolodrive_admin_router.get("/admin/spot-views")
+async def spot_views_stats(admin: dict = Depends(require_admin)):
+    """Lectures du spot publicitaire par mois."""
+    rows = await db.spot_views.find({}, {"_id": 0}).sort("month", -1).to_list(24)
+    return {"months": rows, "total": sum(r.get("views", 0) for r in rows)}
+
+
 @lolodrive_admin_router.get("/admin/products/visitor-visibility")
 async def list_visitor_visibility(admin: dict = Depends(require_admin)):
     products = await db.lolodrive_products.find(

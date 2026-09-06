@@ -56,9 +56,19 @@ export const CommunityBoard = () => {
                 <img src={`https://flagcdn.com/w40/${d.flag.toLowerCase()}.png`} alt={d.territory} width={24} height={16} className="rounded-[2px]" />
                 <span className="text-white font-semibold text-sm truncate">{d.product}</span>
                 {d.photos_count > 0 && (
-                  <span className="ml-auto shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold text-[#8CC63E] bg-[#8CC63E]/10 border border-[#8CC63E]/35"
-                    data-testid={`board-photos-badge-${d.reference}`} title={`${d.photos_count} photo(s) produit`}>
-                    📷 {d.photos_count}
+                  <span className="ml-auto shrink-0 relative group/photos">
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-[#8CC63E] bg-[#8CC63E]/10 border border-[#8CC63E]/35 cursor-help"
+                      data-testid={`board-photos-badge-${d.reference}`} title={`${d.photos_count} photo(s) produit`}>
+                      📷 {d.photos_count}
+                    </span>
+                    <span className="absolute right-0 top-full mt-1.5 z-20 hidden group-hover/photos:flex gap-1.5 p-2 rounded-xl bg-[#1A0930] border border-[#D9B35A]/40 shadow-xl"
+                      data-testid={`board-photos-popover-${d.reference}`}>
+                      {(d.photos || []).map((u) => (
+                        <img key={u} src={u.startsWith('http') ? u : `${API_URL}${u}`} alt="photo produit"
+                          style={{ width: 88, height: 88, objectFit: 'cover', flexShrink: 0 }}
+                          className="rounded-lg border border-white/15" />
+                      ))}
+                    </span>
                   </span>
                 )}
               </div>
