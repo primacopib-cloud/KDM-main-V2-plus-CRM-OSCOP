@@ -3,37 +3,22 @@ import { X, Play, RotateCcw, Ticket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const SCENES = [
-  {
-    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/054f6348e53ce9b73fb54fcd4fa05decc2ca0d2e2b7ffbeb724e737fa803e083.jpeg',
-    kicker: 'LE CONCEPT', title: 'ACHETEZ PAR LOT ×3', sub: '3 fois plus malin. 3 fois moins cher à l\u2019unité.',
-  },
-  {
-    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/83e1955e893d3c92ca7216c6a9f31ab525b06483e520107a500e31b94f902ff7.jpeg',
-    kicker: 'PRIX MINI', title: '3 SACS, 1 PRIX MALIN', sub: 'La farine, le riz, l\u2019huile\u2026 tous vos basiques en lot de 3.',
-  },
-  {
-    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/066a97d0b67d52b053b5225d5d7ce9453ede24aeae0b59a36f80cdbca25cb5ae.jpeg',
-    kicker: 'TOUS VOS ESSENTIELS', title: 'TOUJOURS PAR 3', sub: 'Des volumes groupés, des prix négociés par la coopérative.',
-  },
-  {
-    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/16a3bce431dea7ce5b1f15042cab8b3c10abd66e76875e4c504995cea1f02dda.jpeg',
-    kicker: 'LE FRAIS AUSSI', title: 'LE LOT ×3 POUR TOUTE LA FAMILLE', sub: 'Yaourts, laitages, produits frais : même concept, mêmes économies.',
-  },
-  {
-    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/6d6384d010a917c8ad9abd345363c11bf463de2a3130fb7099b5b957081244b1.jpeg',
-    kicker: 'EN LIGNE', title: 'COMMANDEZ EN 3 CLICS', sub: 'Tout le catalogue à prix mini, depuis votre canapé.',
-  },
-  {
-    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/c1dfa9a3d673b8eb6195961779888c6538d73ea356f123877722f54be5cc6a6d.jpeg',
-    kicker: 'PRÈS DE CHEZ VOUS', title: 'RETRAIT EN POINT RELAIS', sub: 'Votre relais LOLODRIVE vous attend au coin de la rue.',
-  },
-  {
-    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/dac47ad5efe02567caf9c348bfc1e4b949a1959c6aeba549d0b86af0ac7ffcc3.jpeg',
-    kicker: 'LOLODRIVE by O\u2019SCOP', title: 'LA VIE MOINS CHÈRE, ENSEMBLE', sub: 'Le PASS qui change vos courses. Rejoignez la coopérative.',
-    final: true,
-  },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/03b0b0754e0126acf04556bc2c87535f4f6c847886d7a38aa7b1c2d4f9090d25.jpeg', kicker: 'LE CONCEPT', title: 'ACHETEZ PAR LOT ×3', sub: '3 fois plus malin. 3 fois moins cher à l’unité.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/0b81e622a804740a64f116f11cdc67b68ac642af1b583382206aa5d3d31efe6c.jpeg', kicker: 'PRIX MINI', title: '3 SACS, 1 PRIX MALIN', sub: 'Farine, riz, huile… tous vos basiques en lot de 3.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/0cf29917f13c278e3b19b8be49129ca514173f41acb07096e6b1ed7ef07f1b86.jpeg', kicker: 'TOUS VOS ESSENTIELS', title: 'TOUJOURS PAR 3', sub: 'Des volumes groupés, des prix négociés par la coopérative.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/6c56ab7e6014f75dd19aa182a53b71d7c629d8369cfce46ce5c0c4d308299bc8.jpeg', kicker: 'FRAÎCHEUR LOCALE', title: 'LES LÉGUMES AUSSI PAR 3', sub: 'Paniers de saison, circuits courts de votre territoire.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/8cf70561efa90776a937c8cb7d877202eeeb46950b26675f165eab7f63dbce79.jpeg', kicker: 'PETIT DÉJEUNER', title: 'CÉRÉALES EN LOT ×3', sub: 'De quoi tenir tout le mois, sans exploser le budget.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/76fb75f13d4956f61e133f4254f19748210d76a544df1563775d75b31e7969ec.jpeg', kicker: 'EN CUISINE', title: 'L’HUILE PAR 3', sub: 'La qualité au meilleur prix, mutualisée par la centrale.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/60b34b639106d0169fe28bdbc09fff173d69387dcd7e64f67f6e9d3dfeeb177c.jpeg', kicker: 'SAVEURS', title: 'SAUCES EN LOT ×3', sub: 'Vos recettes du quotidien, toujours par 3.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/b4dda9a82e47c6d4403730d0aae0dc145f959666c6acdb6769b7fd7a47e72afc.jpeg', kicker: 'GARDE-MANGER', title: 'LÉGUMES SECS PAR 3', sub: 'Haricots, lentilles, pois chiches : le plein de protéines.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/61ba04fd8e9fb05fbb4448c22bbc58058667b02b3ff4c66ffb3278ac8b745694.jpeg', kicker: 'CRÉMERIE', title: 'LE BEURRE PAR 3', sub: 'Le frais aussi respecte le concept LOLODRIVE.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/b25f7dce889bca0050263779c06a368256b0f795758acb8bad7ec69693c1abab.jpeg', kicker: 'LE FRAIS AUSSI', title: 'YAOURTS EN LOT ×3', sub: 'Laitages et desserts : même concept, mêmes économies.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/d153872f45873abad4877398f43985177b1fe733f28fde31ab273ea7b775f1e4.jpeg', kicker: 'PLAISIR', title: 'FROMAGES PAR 3', sub: 'Les bons produits, accessibles à toutes les familles.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/6d6384d010a917c8ad9abd345363c11bf463de2a3130fb7099b5b957081244b1.jpeg', kicker: 'EN LIGNE', title: 'COMMANDEZ EN 3 CLICS', sub: 'Tout le catalogue à prix mini, depuis votre canapé.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/c1dfa9a3d673b8eb6195961779888c6538d73ea356f123877722f54be5cc6a6d.jpeg', kicker: 'PRÈS DE CHEZ VOUS', title: 'RETRAIT EN POINT RELAIS', sub: 'Votre relais LOLODRIVE vous attend au coin de la rue.' },
+  { img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/dac47ad5efe02567caf9c348bfc1e4b949a1959c6aeba549d0b86af0ac7ffcc3.jpeg', kicker: 'LOLODRIVE by O’SCOP', title: 'LA VIE MOINS CHÈRE, ENSEMBLE', sub: 'Le PASS qui change vos courses. Rejoignez la coopérative.', final: true },
 ];
-const SCENE_MS = 4200;
+const SCENE_MS = 2800;
 
 // Spot publicitaire cinématique LOLODRIVE — scènes animées plein écran
 export const LolodriveSpot = ({ onClose }) => {
@@ -99,7 +84,7 @@ export const LolodriveSpot = ({ onClose }) => {
       {/* Progression scènes */}
       <div className="absolute top-[7vh] left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
         {SCENES.map((_, i) => (
-          <div key={i} className="h-1 w-14 sm:w-20 rounded-full bg-white/25 overflow-hidden">
+          <div key={i} className="h-1 w-5 sm:w-9 rounded-full bg-white/25 overflow-hidden">
             {i < scene || done ? <div className="h-full w-full bg-[#D9B35A]" />
               : i === scene ? <div key={scene} className="h-full bg-[#D9B35A]" style={{ animation: `spotBar ${SCENE_MS}ms linear forwards` }} /> : null}
           </div>
