@@ -14,10 +14,25 @@ const Flag = ({ code }) => (
 const RIGHTS = ['Data room', 'Qualification fournisseur', 'Analyse économique', 'Analyse logistique', "Bon d'Engagement", 'Workflow de paiement', 'Reporting', 'Clôture'];
 const fmtEur = (n) => n.toLocaleString('fr-FR') + ' €';
 
+// Règles de longueur (chiffres significatifs, sans le 0 initial) par indicatif
+const PHONE_RULES = { '+33': [9, 9], '+590': [9, 9], '+596': [9, 9], '+594': [9, 9], '+262': [9, 9], '+1': [10, 10] };
+const validatePhone = (prefix, phone) => {
+  let digits = (phone || '').replace(/\D/g, '');
+  if (digits.startsWith('0')) digits = digits.slice(1);
+  const [min, max] = PHONE_RULES[prefix] || [6, 12];
+  if (digits.length < min || digits.length > max) {
+    return min === max
+      ? `Numéro invalide pour l'indicatif ${prefix} : ${min} chiffres attendus (hors 0 initial), ${digits.length} saisi(s)`
+      : `Numéro invalide pour l'indicatif ${prefix} : entre ${min} et ${max} chiffres attendus, ${digits.length} saisi(s)`;
+  }
+  return null;
+};
+
 export const InvestorApplyForm = () => {
   const [plans, setPlans] = useState([]);
   const [form, setForm] = useState({ legal_name: '', country: 'FR', phone_prefix: '+33', phone: '', siren: '', email: '', plan_id: '' });
   const [prefixCountry, setPrefixCountry] = useState('FR');
+  const [phoneError, setPhoneError] = useState(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -28,6 +43,9 @@ export const InvestorApplyForm = () => {
   const submit = async (e) => {
     e.preventDefault();
     if (!form.plan_id) { toast.error('Choisissez un plan d\'abonnement'); return; }
+    const phoneErr = validatePhone(form.phone_prefix, form.phone);
+    if (phoneErr) { setPhoneError(phoneErr); toast.error(phoneErr); return; }
+    setPhoneError(null);
     setBusy(true);
     try {
       const res = await fetch(`${API_URL}/api/investor-plans/apply`, {
@@ -81,8 +99,14 @@ export const InvestorApplyForm = () => {
               </optgroup>
             </select>
           </div>
-          <input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            placeholder="Téléphone" data-testid="invest-phone" className={inputCls} />
+          <div className="flex-1">
+            <input required value={form.phone}
+              onChange={(e) => { setForm({ ...form, phone: e.target.value }); if (phoneError) setPhoneError(null); }}
+              onBlur={() => form.phone && setPhoneError(validatePhone(form.phone_prefix, form.phone))}
+              placeholder="Téléphone" data-testid="invest-phone"
+              className={`${inputCls} ${phoneError ? 'border-red-400/70' : ''}`} />
+            {phoneError && <p className="text-red-300 text-[11px] m-0 mt-1" data-testid="invest-phone-error">{phoneError}</p>}
+          </div>
         </div>
         <input required value={form.siren} onChange={(e) => setForm({ ...form, siren: e.target.value })}
           placeholder="N° Immatriculation / SIREN" data-testid="invest-siren" className={inputCls} />

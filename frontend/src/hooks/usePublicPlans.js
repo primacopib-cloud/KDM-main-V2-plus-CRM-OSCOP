@@ -7,7 +7,7 @@ export const usePublicPlans = () => {
   const [plans, setPlans] = useState(cache);
 
   useEffect(() => {
-    if (cache) return;
+    // Toujours re-fetch : un plan supprimé/masqué côté admin doit disparaître de l'accueil
     fetch(`${process.env.REACT_APP_BACKEND_URL}/api/public/plans`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
