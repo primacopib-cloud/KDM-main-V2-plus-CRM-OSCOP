@@ -2918,3 +2918,12 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Lien de partage du spot (self-testé ✅)
 - Lien direct : /catalogue-lolodrive?spot=1 ouvre le spot automatiquement (param géré dans LolodriveSpotButton, prioritaire sur le flag première visite) — testé (ouverture auto via URL)
 - Écran final : boutons « Partager sur WhatsApp » (spot-share-wa, wa.me avec message + lien) et « Copier le lien du spot » (spot-share-copy, clipboard avec confirmation « Lien copié ✓ »)
+
+## 2026-06 — Spot audiovisuel v4 : refonte pro (self-testé ✅ avec limites)
+- LolodriveSpot réécrit : scènes {video, poster, img (repli), duration, kicker, title, sub, final} ; montage 30 s (4/4/4/5/4/5/4 s) : accroche vidéo boutique antillaise → concept lot ×3 → terroir (vidéo cave) → commande en ligne → préparation relais → retrait → finale CTA PASS
+- Vidéos réelles : 2 clips Veo 3 du projet (uploads/videos 8aa3c90e + c7492609, H.264/AAC valides) ; les autres scènes = images fixes assumées (fondu sobre, PAS de faux ken burns)
+- Réalisation sobre : suppression bulles ×3, rebonds, sweeps, pulsations ; cartouche « LOT ×3 » discret ; titres par groupes de 2 mots (fade léger) ; fondu de scène 350 ms ; prefers-reduced-motion respecté
+- Lecture : autoplay muted, bouton son (fondu volume à l'activation — l'audio vient des pistes des clips), bouton pause/reprise accessible (aria-labels), pause auto onglet caché (reprise auto si pause automatique), timers avec temps restant, préchargement de la seule séquence suivante, onError → repli image (uniquement sur erreur média réelle), cleanup complet
+- Serveur : support HTTP Range (206) sur /api/uploads/* (requis pour le streaming mp4) + mime video/mp4 ; tracking view/cta sans doublon (refs) ; toutes les fonctions préservées (?spot=1, autoPlay/kdm_spot_seen, replay, partage WA, copie lien, CTA /pass-lolodrive)
+- LIMITE DE TEST : le Chromium headless n'embarque pas H.264 → repli image en environnement de test ; navigateurs réels OK
+- MÉDIAS À FOURNIR (clé FAL expirée — 401) : clips sélection produits en magasin, commande smartphone, préparation/chargement sacs, retrait relais, famille finale + musique libre de droits
