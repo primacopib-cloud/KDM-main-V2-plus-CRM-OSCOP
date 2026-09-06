@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Play, RotateCcw, Ticket } from 'lucide-react';
+import { X, Play, RotateCcw, Ticket, Share2, Link as LinkIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const SCENES = [
@@ -25,6 +25,7 @@ export const LolodriveSpot = ({ onClose }) => {
   const navigate = useNavigate();
   const [scene, setScene] = useState(0);
   const [done, setDone] = useState(false);
+  const [copied, setCopied] = useState(false);
   const timer = useRef(null);
   useEffect(() => {
     fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/spot/view`, { method: 'POST' }).catch(() => {});
@@ -124,10 +125,27 @@ export const LolodriveSpot = ({ onClose }) => {
         ))}
       </div>
       {done && (
-        <button type="button" data-testid="spot-replay" onClick={() => { setScene(0); setDone(false); }}
-          className="absolute bottom-[8vh] left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-2 px-4 h-10 rounded-full text-xs font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition-colors">
-          <RotateCcw className="w-3.5 h-3.5" /> Revoir le spot
-        </button>
+        <div className="absolute bottom-[8vh] left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 flex-wrap justify-center">
+          <button type="button" data-testid="spot-replay" onClick={() => { setScene(0); setDone(false); }}
+            className="inline-flex items-center gap-2 px-4 h-10 rounded-full text-xs font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition-colors">
+            <RotateCcw className="w-3.5 h-3.5" /> Revoir le spot
+          </button>
+          <a data-testid="spot-share-wa"
+            href={`https://wa.me/?text=${encodeURIComponent(`🎬 Regarde le spot LOLODRIVE : les courses par lot ×3 à prix mini, en ligne et en point relais ! ${window.location.origin}/catalogue-lolodrive?spot=1`)}`}
+            target="_blank" rel="noreferrer"
+            className="inline-flex items-center gap-2 px-4 h-10 rounded-full text-xs font-bold text-white bg-[#25D366]/25 border border-[#25D366]/50 hover:bg-[#25D366]/40 transition-colors">
+            <Share2 className="w-3.5 h-3.5" /> Partager sur WhatsApp
+          </a>
+          <button type="button" data-testid="spot-share-copy"
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/catalogue-lolodrive?spot=1`)
+                .then(() => setCopied(true)).catch(() => {});
+              setTimeout(() => setCopied(false), 2500);
+            }}
+            className="inline-flex items-center gap-2 px-4 h-10 rounded-full text-xs font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition-colors">
+            <LinkIcon className="w-3.5 h-3.5" /> {copied ? 'Lien copié ✓' : 'Copier le lien du spot'}
+          </button>
+        </div>
       )}
       <button type="button" data-testid="spot-close" onClick={onClose}
         className="absolute top-[8vh] right-4 z-10 p-2 rounded-full text-white bg-white/10 border border-white/25 hover:bg-white/20 transition-colors">
@@ -141,6 +159,11 @@ export const LolodriveSpot = ({ onClose }) => {
 export const LolodriveSpotButton = ({ className = '', autoPlay = false }) => {
   const [open, setOpen] = useState(false);
   useEffect(() => {
+    // Lien de partage : ?spot=1 ouvre le spot directement
+    if (new URLSearchParams(window.location.search).has('spot')) {
+      setOpen(true);
+      return undefined;
+    }
     if (!autoPlay) return undefined;
     try {
       if (localStorage.getItem('kdm_spot_seen')) return undefined;

@@ -2914,3 +2914,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-06 — Spot dynamisé (self-testé ✅)
 - Animations enrichies dans LolodriveSpot : 4 mouvements ken burns alternés par scène (zoom in/out, pan, rotation légère), titre mot-par-mot avec rebond élastique (spotWordPop), soulignement animé dégradé, balayage lumineux traversant l'image (spotSweep), badge « LOT ×3 » rebondissant + pulsation (spotBadgeBounce/Pulse), bulles « ×3 » flottantes montantes (spotFloat), CTA final avec pulsation halo (spotCtaPulse) — screenshots validés
+
+## 2026-06 — Lien de partage du spot (self-testé ✅)
+- Lien direct : /catalogue-lolodrive?spot=1 ouvre le spot automatiquement (param géré dans LolodriveSpotButton, prioritaire sur le flag première visite) — testé (ouverture auto via URL)
+- Écran final : boutons « Partager sur WhatsApp » (spot-share-wa, wa.me avec message + lien) et « Copier le lien du spot » (spot-share-copy, clipboard avec confirmation « Lien copié ✓ »)
