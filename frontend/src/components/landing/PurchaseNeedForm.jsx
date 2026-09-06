@@ -11,6 +11,7 @@ export const PurchaseNeedForm = ({ onClose }) => {
   const [f, setF] = useState({ company: '', contact_name: '', email: '', phone: '', territory: 'Guadeloupe', product: '', quantity: '', budget_eur: '', deadline: '', description: '' });
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [ref, setRef] = useState('');
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
   const submit = async (e) => {
@@ -22,6 +23,8 @@ export const PurchaseNeedForm = ({ onClose }) => {
         body: JSON.stringify({ ...f, budget_eur: f.budget_eur ? Number(f.budget_eur) : null, deadline: f.deadline || null, description: f.description || null }),
       });
       if (!res.ok) throw new Error((await res.json()).detail?.[0]?.msg || 'Envoi impossible — vérifiez les champs');
+      const d = await res.json();
+      setRef(d.reference || '');
       setSent(true);
     } catch (err) { toast.error(typeof err.message === 'string' ? err.message : 'Erreur'); }
     finally { setBusy(false); }
@@ -38,7 +41,8 @@ export const PurchaseNeedForm = ({ onClose }) => {
         {sent ? (
           <div className="py-8 text-center" data-testid="purchase-need-success">
             <p className="text-[#8CC63E] font-bold text-base m-0">✅ Besoin d'achat envoyé !</p>
-            <p className="text-white/60 text-sm mt-2">La Centrale O'SCOP vous recontacte à l'adresse indiquée après étude de votre demande.</p>
+            {ref && <p className="text-white font-mono text-lg mt-2 mb-0" data-testid="need-tracking-ref">N° de suivi : {ref}</p>}
+            <p className="text-white/60 text-sm mt-2">Un email de confirmation avec votre numéro de suivi vient de vous être envoyé. La Centrale O'SCOP vous recontacte après étude de votre demande.</p>
           </div>
         ) : (
           <form onSubmit={submit}>
