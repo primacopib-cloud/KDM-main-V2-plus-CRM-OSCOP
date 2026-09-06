@@ -10,11 +10,14 @@ const API = process.env.REACT_APP_BACKEND_URL;
 export const VisitorShowcasePanel = () => {
   const [products, setProducts] = useState([]);
   const [q, setQ] = useState('');
+  const [spotViews, setSpotViews] = useState(null);
   useEffect(() => {
     fetch(`${API}/api/lolodrive/admin/products/visitor-visibility`, { headers: getAuthHeaders(), credentials: 'include' })
       .then((r) => (r.ok ? r.json() : { products: [] }))
       .then((d) => setProducts(d.products || []))
       .catch(() => {});
+    fetch(`${API}/api/lolodrive/admin/spot-views`, { headers: getAuthHeaders(), credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null)).then(setSpotViews).catch(() => {});
   }, []);
   const toggle = async (sku, visible) => {
     try {
@@ -43,6 +46,16 @@ export const VisitorShowcasePanel = () => {
         </button>
       </div>
       <p className="text-[11px] text-white/45 m-0 mb-3">Les visiteurs non connectés ne voient que ces produits, prix masqués, avec invitation à acheter le PASS.</p>
+      {spotViews && (
+        <div className="mb-3 rounded-xl px-3 py-2 bg-white/[0.04] border border-white/[0.08] flex items-center gap-2 flex-wrap" data-testid="spot-views-stats">
+          <span className="text-[11px] font-bold text-[#E9CF8E]">🎬 Spot LOLODRIVE — {spotViews.total} lecture{spotViews.total > 1 ? 's' : ''}</span>
+          {(spotViews.months || []).map((m) => (
+            <span key={m.month} className="px-2 py-0.5 rounded-full text-[10px] text-white/70 bg-white/[0.05] border border-white/15">
+              {m.month} · {m.views}
+            </span>
+          ))}
+        </div>
+      )}
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un produit…"
         data-testid="visitor-showcase-search"
         className="h-9 w-full sm:w-72 mb-3 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-white text-sm placeholder:text-white/35" />

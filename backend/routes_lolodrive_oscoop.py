@@ -102,6 +102,15 @@ async def catalog_teaser():
     products = await db.lolodrive_products.find({"is_active": {"$ne": False}, "$or": [{"point_code": {"$exists": False}}, {"point_code": None}]}, {"_id": 0, "price_pass_cents": 0}).limit(7).to_list(7)
     return {"products": products, "note": "Catalogue teaser public : prix PASS détaillés masqués."}
 
+@lolodrive_router.post("/spot/view")
+async def track_spot_view():
+    """Compte une lecture du spot publicitaire LOLODRIVE."""
+    from datetime import datetime, timezone
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    await db.spot_views.update_one({"month": month}, {"$inc": {"views": 1}}, upsert=True)
+    return {"ok": True}
+
+
 @lolodrive_router.get("/catalog/public")
 async def catalog_public_visitors():
     """Vitrine visiteurs : produits choisis par le superadmin, prix masqués."""
