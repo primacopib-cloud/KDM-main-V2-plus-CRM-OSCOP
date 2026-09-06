@@ -15,6 +15,7 @@ import {
 } from '../components/ui/select';
 import { toast } from 'sonner';
 import { BreadcrumbPill } from '../components/Breadcrumb';
+import { VendorNeedsPanel } from '../components/vendor/VendorNeedsPanel';
 import { VendorProductAssistant } from '../components/VendorProductAssistant';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 import { HeaderBackButton } from '../components/HeaderBackButton';
@@ -276,6 +277,7 @@ const VendorSpacePage = () => {
         <div className="mb-6">
           <BreadcrumbPill className="bg-white/10 border border-white/15" />
         </div>
+        <VendorNeedsPanel />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white/[0.06] border border-white/10">
             <TabsTrigger value="dashboard" className="gap-2">

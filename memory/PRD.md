@@ -2839,3 +2839,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Taux conversion : pass-clicks étendu (purchases_total/30d/7d depuis lolodrive_passes created_at naive-UTC, conversion_30d_percent) affiché dans le panel carrousel
 - Besoins d'achat : routes_purchase_needs.py — POST /api/public/purchase-needs (validation pydantic 422, notif email équipe), GET /api/admin/purchase-needs (401 sans auth), POST /{id}/assign (404 si vendeur inconnu, email vendeur, statut ASSIGNED), POST /{id}/communityplace (flag payant)
 - UI : bouton hero « Déposer un besoin d'achat » ouvre PurchaseNeedForm (modal, bouton « Envoyer mon besoin d'achat », écran succès) ; PurchaseNeedsPanel en tête de l'onglet Demandes du superadmin (Assigner + CommunityPlace)
+
+## 2026-06 — Suivi demandeur, réponse vendeur, tarif CommunityPlace (self-testé ✅)
+- N° de suivi BA-YYYYMM-XXXX à la création + email confirmation demandeur + GET /api/public/purchase-needs/track/{ref} ; référence affichée dans l'écran succès du formulaire
+- Réponse vendeur : GET /api/vendor/purchase-needs (assignés à l'email courant), POST /{id}/respond accept(prix requis, 400 sinon)/decline + note → VENDOR_ACCEPTED/DECLINED + email équipe ; VendorNeedsPanel dans /espace-vendeur (boutons Accepter+prix / Décliner)
+- CommunityPlace payant : POST /{id}/communityplace {fee_eur, défaut 50} → checkout Stripe (metadata COMMUNITYPLACE_FEE) + email lien de paiement au demandeur + statut paiement PENDING ; prompt montant côté admin, badge « paiement X € en attente »
+- NOTE : la confirmation du paiement CommunityPlace (webhook checkout.session.completed) n'est pas branchée — statut reste PENDING après paiement
