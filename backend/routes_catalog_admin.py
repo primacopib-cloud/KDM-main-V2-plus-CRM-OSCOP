@@ -3,7 +3,8 @@ KDMARCHE × O'SCOP - API Catalogue Produits Admin
 CRUD complet pour la gestion du catalogue depuis l'espace Super Admin
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends, UploadFile, File
+from lolodrive_helpers import require_admin
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
@@ -119,6 +120,41 @@ async def list_catalog_products(
     except Exception as e:
         logger.error(f"Error listing products: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@catalog_admin_router.get("/products/visitor-visibility")
+async def list_pro_visitor_visibility(admin: dict = Depends(require_admin)):
+    """Vitrine visiteurs du catalogue PRO : liste avec statut."""
+    products = await db.products.find(
+        {"status": "ACTIVE"},
+        {"_id": 0, "id": 1, "sku": 1, "name": 1, "category_id": 1, "visitor_visible": 1},
+    ).sort("name", 1).to_list(500)
+    return {"products": products}
+
+
+@catalog_admin_router.patch("/products/{product_id}/visitor-visible")
+async def toggle_pro_visitor_visible(product_id: str, payload: dict, admin: dict = Depends(require_admin)):
+    r = await db.products.update_one(
+        {"id": product_id},
+        {"$set": {"visitor_visible": bool(payload.get("visible")), "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if not r.matched_count:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    return {"ok": True, "id": product_id, "visitor_visible": bool(payload.get("visible"))}
+
+
+@catalog_admin_router.post("/upload-image")
+async def upload_gallery_image(file: UploadFile = File(...), admin: dict = Depends(require_admin)):
+    """Téléversement direct d'une photo de galerie produit."""
+    allowed = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Format accepté : PNG, JPG ou WEBP")
+    content = await file.read()
+    if len(content) > 4 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image trop lourde (max 4 Mo)")
+    filename = f"gallery-{uuid.uuid4().hex[:10]}.{allowed[file.content_type]}"
+    from upload_storage import save_upload
+    url = await save_upload(f"products/{filename}", content, file.content_type)
+    return {"ok": True, "url": url}
 
 
 @catalog_admin_router.get("/products/{product_id}")

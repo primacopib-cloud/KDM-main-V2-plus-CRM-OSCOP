@@ -124,9 +124,41 @@ async def join_purchase_need(reference: str, body: JoinNeedBody):
                                "joined_at": datetime.now(timezone.utc).isoformat()}},
          "$inc": {"joined_quantity": body.quantity}})
     updated = await db.purchase_needs.find_one({"reference": reference}, {"_id": 0, "joiners": 1, "joined_quantity": 1})
+    j_count = len(updated.get("joiners") or [])
+    j_qty = int(updated.get("joined_quantity") or 0)
+    try:
+        from brevo_service import send_email, _wrap_html
+        await send_email(
+            to_email=body.email.lower(), to_name=None,
+            subject=f"🤝 Vous avez rejoint la demande groupée {reference} — {need['product']}",
+            html_content=_wrap_html("Demande groupée rejointe", (
+                f"<p style='font-size:14px;'>Bonjour,</p>"
+                f"<p style='font-size:14px;'>Vous avez rejoint la demande d'achat groupée "
+                f"<b>{need['product']}</b> (territoire {need['territory']}) sous le numéro de suivi "
+                f"<b style='font-size:16px;'>{reference}</b>.</p>"
+                f"<p style='font-size:14px;'>Votre quantité : <b>{body.quantity}</b><br/>"
+                f"Volume groupé actuel : <b>{need['quantity']} + {j_qty}</b> "
+                f"({j_count} participant{'s' if j_count > 1 else ''})</p>"
+                f"<p style='font-size:14px;'>La Centrale O'SCOP vous tiendra informé de l'avancement : "
+                f"conservez ce numéro pour tout échange.</p>")),
+            tags=["purchase-need-join"])
+        if need.get("email"):
+            await send_email(
+                to_email=need["email"], to_name=need.get("contact_name"),
+                subject=f"📈 Votre demande {reference} groupe les volumes — +{body.quantity} qté",
+                html_content=_wrap_html("Nouveau participant sur votre demande", (
+                    f"<p style='font-size:14px;'>Bonjour {need.get('contact_name', '')},</p>"
+                    f"<p style='font-size:14px;'>Bonne nouvelle : un nouveau participant vient de rejoindre votre "
+                    f"demande <b>{need['product']}</b> (suivi <b>{reference}</b>) pour <b>+{body.quantity}</b> en quantité.</p>"
+                    f"<p style='font-size:14px;'>Volume groupé actuel : <b>{need['quantity']} + {j_qty}</b> "
+                    f"({j_count} participant{'s' if j_count > 1 else ''}). Plus le volume grandit, "
+                    f"meilleures sont les conditions négociées par la Centrale O'SCOP.</p>")),
+                tags=["purchase-need-join"])
+    except Exception as e:
+        logger.warning(f"join emails failed: {e}")
     return {"ok": True, "reference": reference,
-            "joiners_count": len(updated.get("joiners") or []),
-            "joined_quantity": int(updated.get("joined_quantity") or 0)}
+            "joiners_count": j_count,
+            "joined_quantity": j_qty}
 
 
 @purchase_needs_router.get("/admin/purchase-needs/stats/csv")
