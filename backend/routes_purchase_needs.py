@@ -85,7 +85,49 @@ async def track_purchase_need(reference: str):
 
 @purchase_needs_router.get("/admin/purchase-needs")
 async def list_purchase_needs(_: dict = Depends(require_admin)):
-    return {"needs": await db.purchase_needs.find({}, {"_id": 0}).sort("created_at", -1).to_list(300)}
+    needs = await db.purchase_needs.find({}, {"_id": 0}).sort("created_at", -1).to_list(300)
+    # Confirmation lazy des paiements CommunityPlace en attente
+    pending = [n for n in needs if n.get("communityplace_payment_status") == "PENDING" and n.get("communityplace_checkout_id")][:10]
+    if pending:
+        import os
+        import stripe
+        stripe.api_key = os.environ.get("STRIPE_API_KEY")
+        for n in pending:
+            try:
+                s = stripe.checkout.Session.retrieve(n["communityplace_checkout_id"])
+                if s.payment_status == "paid":
+                    await db.purchase_needs.update_one({"id": n["id"]}, {"$set": {
+                        "communityplace_payment_status": "PAID", "communityplace_paid_at": _now()}})
+                    n["communityplace_payment_status"] = "PAID"
+            except Exception as exc:
+                logger.warning("Check paiement CommunityPlace %s : %s", n["id"], exc)
+    return {"needs": needs}
+
+
+@purchase_needs_router.post("/public/purchase-needs/webhook")
+async def communityplace_webhook(payload: dict):
+    """Webhook Stripe : checkout.session.completed → besoin marqué payé."""
+    if payload.get("type") != "checkout.session.completed":
+        return {"received": True}
+    obj = (payload.get("data") or {}).get("object") or {}
+    need_id = (obj.get("metadata") or {}).get("purchase_need_id")
+    if need_id and obj.get("payment_status") == "paid":
+        await db.purchase_needs.update_one({"id": need_id}, {"$set": {
+            "communityplace_payment_status": "PAID", "communityplace_paid_at": _now()}})
+    return {"received": True}
+
+
+@purchase_needs_router.get("/public/purchase-needs/accept-offer/{reference}")
+async def accept_vendor_offer(reference: str):
+    """Acceptation en ligne de l'offre vendeur → redirection vers l'adhésion pro."""
+    import os
+    from fastapi.responses import RedirectResponse
+    need = await db.purchase_needs.find_one({"reference": reference.upper().strip()})
+    base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+    if need and need.get("status") == "VENDOR_ACCEPTED":
+        await db.purchase_needs.update_one({"id": need["id"]}, {"$set": {
+            "status": "OFFER_ACCEPTED", "offer_accepted_at": _now()}})
+    return RedirectResponse(url=f"{base}/tarifs?besoin={reference}")
 
 
 class AssignBody(BaseModel):
@@ -207,6 +249,22 @@ async def vendor_respond(need_id: str, body: VendorResponse, user: dict = Depend
                     f"<b>{need['reference']} — {need['product']}</b> avec une proposition de "
                     f"<b>{body.price_eur:,.0f} €</b>.".replace(",", " ")
                     + (f"<br/>Note : {body.note}" if body.note else "") + "</p>")
+            api_base = os.environ.get("BACKEND_PUBLIC_URL") or os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+            await send_email(
+                to_email=need["email"], to_name=need["contact_name"],
+                subject=f"💼 Offre reçue pour votre besoin {need['reference']} — {body.price_eur:,.0f} €".replace(",", " "),
+                html_content=_wrap_html("Proposition de prix", (
+                    f"<p style='font-size:14px;'>Bonjour {need['contact_name']},</p>"
+                    f"<p style='font-size:14px;'>Un vendeur référencé de la Centrale O'SCOP propose "
+                    f"<b style='font-size:16px;'>{body.price_eur:,.0f} €</b> pour votre besoin "
+                    f"<b>{need['reference']} — {need['product']}</b> (quantité {need['quantity']})."
+                    + (f"<br/>Note du vendeur : {body.note}" if body.note else "") + "</p>"
+                    f"<p style='text-align:center;'><a href='{api_base}/api/public/purchase-needs/accept-offer/{need['reference']}' "
+                    "style='display:inline-block;background:#8CC63E;color:#1F0A33;font-weight:bold;"
+                    "padding:12px 26px;border-radius:12px;text-decoration:none;'>Accepter l'offre et adhérer à la Centrale</a></p>"
+                    "<p style='font-size:12px;color:#888;'>L'acceptation vous dirige vers l'adhésion professionnelle "
+                    "KDMARCHÉ × O'SCOP, nécessaire pour finaliser l'achat.</p>").replace(",", " ")),
+                tags=["purchase-need"])
         else:
             subject = f"❌ Besoin {need['reference']} décliné par le vendeur"
             html = (f"<p style='font-size:14px;'>Le vendeur <b>{user.get('email')}</b> décline le besoin "

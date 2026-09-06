@@ -56,6 +56,16 @@ async def _active_recharge_boost():
 async def public_pass_plans():
     await _ensure_seed()
     adhesion = await db.pass_plans.find_one({"kind": "adhesion", "active": True}, {"_id": 0})
+    if adhesion:
+        promo = adhesion.get("promo_percent") or 0
+        ends = adhesion.get("promo_ends_at")
+        if promo and ends and ends <= datetime.now(timezone.utc).isoformat():
+            promo = 0
+        if promo:
+            adhesion["promo_price_eur"] = round(adhesion["price_eur"] * (100 - promo) / 100, 2)
+            adhesion["promo_active_percent"] = promo
+        else:
+            adhesion["promo_active_percent"] = 0
     recharges = await db.pass_plans.find(
         {"kind": "recharge", "active": True}, {"_id": 0}).sort("sort", 1).to_list(20)
     boost = await _active_recharge_boost()
@@ -97,6 +107,8 @@ class PlanBody(BaseModel):
     uc: int
     bonus_uc: int = 0
     active: bool = True
+    promo_percent: int = 0
+    promo_ends_at: str | None = None
 
 
 @pass_plans_router.get("/admin/pass-plans")
@@ -125,7 +137,9 @@ async def update_pass_plan(plan_id: str, body: PlanBody, admin: dict = Depends(r
     if body.price_eur <= 0 or body.uc <= 0 or body.bonus_uc < 0:
         raise HTTPException(status_code=400, detail="Valeurs invalides")
     upd = {"price_eur": body.price_eur, "uc": body.uc, "bonus_uc": body.bonus_uc,
-           "active": body.active, "updated_at": datetime.now(timezone.utc).isoformat()}
+           "active": body.active, "promo_percent": max(0, min(90, body.promo_percent)),
+           "promo_ends_at": body.promo_ends_at or None,
+           "updated_at": datetime.now(timezone.utc).isoformat()}
     if body.label.strip():
         upd["label"] = body.label.strip()
     res = await db.pass_plans.update_one({"id": plan_id}, {"$set": upd})

@@ -9,6 +9,7 @@ const STATUS = {
   ASSIGNED: ['Assigné', 'text-[#8CC63E] bg-[#8CC63E]/10 border-[#8CC63E]/30'],
   VENDOR_ACCEPTED: ['Accepté vendeur', 'text-[#8CC63E] bg-[#8CC63E]/15 border-[#8CC63E]/50'],
   VENDOR_DECLINED: ['Décliné vendeur', 'text-red-300 bg-red-500/10 border-red-400/40'],
+  OFFER_ACCEPTED: ['Offre acceptée client', 'text-[#8CC63E] bg-[#8CC63E]/20 border-[#8CC63E]/60'],
 };
 
 // Superadmin : besoins d'achat déposés par les visiteurs
@@ -60,8 +61,8 @@ export const PurchaseNeedsPanel = () => {
                   {n.vendor_price_eur ? <span className="font-mono text-[#8CC63E]">offre {Number(n.vendor_price_eur).toLocaleString('fr-FR')} €</span> : null}
                   <span className={`px-2 py-0.5 rounded-full border font-semibold ${cls}`}>{label}</span>
                   {n.communityplace && (
-                    <span className="px-2 py-0.5 rounded-full border font-semibold text-sky-300 bg-sky-500/10 border-sky-400/40">
-                      CommunityPlace {n.communityplace_payment_status === 'PENDING' ? `· paiement ${Number(n.communityplace_fee_eur || 0).toLocaleString('fr-FR')} € en attente` : ''}
+                    <span className={`px-2 py-0.5 rounded-full border font-semibold ${n.communityplace_payment_status === 'PAID' ? 'text-[#8CC63E] bg-[#8CC63E]/10 border-[#8CC63E]/30' : 'text-sky-300 bg-sky-500/10 border-sky-400/40'}`}>
+                      CommunityPlace {n.communityplace_payment_status === 'PAID' ? '· payé ✓' : n.communityplace_payment_status === 'PENDING' ? `· paiement ${Number(n.communityplace_fee_eur || 0).toLocaleString('fr-FR')} € en attente` : ''}
                     </span>
                   )}
                   <span className="ml-auto flex gap-1.5">
