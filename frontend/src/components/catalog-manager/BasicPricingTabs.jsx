@@ -137,6 +137,10 @@ export const BasicTab = ({ formData, handleChange }) => (
                     <Checkbox checked={formData.is_featured} onCheckedChange={(v) => handleChange('is_featured', v)} />
                     <span className="text-sm text-white/80">Mis en avant</span>
                   </label>
+                  <label className="flex items-center gap-2 cursor-pointer" data-testid="product-image-lot3-toggle">
+                    <Checkbox checked={!!formData.image_lot3} onCheckedChange={(v) => handleChange('image_lot3', v)} />
+                    <span className="text-sm text-white/80">Affichage image ×3 (lot de 3)</span>
+                  </label>
                 </div>
               </FormSection>
             </TabsContent>

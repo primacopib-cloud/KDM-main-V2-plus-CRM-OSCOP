@@ -31,6 +31,7 @@ class CategoryCreate(BaseModel):
     description: Optional[str] = None
     parent_id: Optional[str] = None  # For hierarchy
     image_url: Optional[str] = None
+    image_lot3: bool = False
     sort_order: int = 0
 
 
@@ -42,6 +43,7 @@ class CategoryResponse(BaseModel):
     description: Optional[str] = None
     parent_id: Optional[str] = None
     image_url: Optional[str] = None
+    image_lot3: bool = False
     sort_order: int
     product_count: int = 0
     is_active: bool
@@ -59,6 +61,7 @@ class CategoryInDB(BaseModel):
     description: Optional[str] = None
     parent_id: Optional[str] = None
     image_url: Optional[str] = None
+    image_lot3: bool = False
     sort_order: int = 0
     product_count: int = 0
     is_active: bool = True
@@ -98,6 +101,7 @@ class ProductCreate(BaseModel):
     weight_kg: Optional[float] = None
     volume_m3: Optional[float] = None
     image_url: Optional[str] = None
+    image_lot3: bool = False
     tags: List[str] = []
 
 
@@ -114,6 +118,7 @@ class ProductResponse(BaseModel):
     min_order_qty: int
     max_order_qty: Optional[int] = None
     image_url: Optional[str] = None
+    image_lot3: bool = False
     images: Optional[List[str]] = None
     video_url: Optional[str] = None
     video_urls: Optional[dict] = None
@@ -173,6 +178,7 @@ class ProductInDB(BaseModel):
     weight_kg: Optional[float] = None
     volume_m3: Optional[float] = None
     image_url: Optional[str] = None
+    image_lot3: bool = False
     tags: List[str] = []
     status: str = ProductStatus.ACTIVE.value
     is_featured: bool = False

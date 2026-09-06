@@ -59,6 +59,7 @@ class ProductCreate(BaseModel):
     logistics: Optional[Dict[str, Any]] = None
     media: Optional[Dict[str, Any]] = None
     image_url: Optional[str] = None
+    image_lot3: bool = False
     translations: Optional[Dict[str, Any]] = None
 
 
@@ -188,6 +189,7 @@ async def create_catalog_product(product: ProductCreate):
             "logistics": product.logistics,
             "media": product.media,
             "image_url": product.image_url,
+            "image_lot3": product.image_lot3,
             "translations": product.translations,
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -260,6 +262,7 @@ async def update_catalog_product(product_id: str, product: ProductUpdate):
             "logistics": product.logistics,
             "media": product.media,
             "image_url": product.image_url,
+            "image_lot3": product.image_lot3,
             "translations": product.translations,
             "updated_at": datetime.now(timezone.utc)
         }

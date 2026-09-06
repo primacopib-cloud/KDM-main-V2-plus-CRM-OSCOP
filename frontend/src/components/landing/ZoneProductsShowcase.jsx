@@ -157,7 +157,15 @@ export const ZoneProductsShowcase = ({ audience = 'pro' }) => {
                 >
                   <div className="relative h-28 bg-white/[0.04] flex items-center justify-center overflow-hidden">
                     {p.image_url ? (
-                      <img src={p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      p.image_lot3 ? (
+                        <div className="w-full h-full grid grid-cols-3 gap-[2px]" data-testid={`image-lot3-${p.sku}`}>
+                          {[0, 1, 2].map((k) => (
+                            <img key={k} src={p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
+                          ))}
+                        </div>
+                      ) : (
+                        <img src={p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      )
                     ) : (
                       <Package className="w-8 h-8 text-white/20" />
                     )}

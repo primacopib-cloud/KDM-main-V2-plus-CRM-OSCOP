@@ -96,7 +96,8 @@ export default function LolodriveCatalogPage() {
     return d ? Math.round((p.display_price_cents || 0) * (1 - d.value_percent / 100)) : (p.display_price_cents || 0);
   };
 
-  const add = (sku) => setCart({ ...cart, [sku]: (cart[sku] || 0) + 1 });
+  // Concept LOLODRIVE : ajout au panier par lot de 3
+  const add = (sku) => setCart({ ...cart, [sku]: (cart[sku] || 0) + 3 });
 
   // Panier sauvegardé : persiste entre les sessions
   useEffect(() => {
@@ -127,7 +128,7 @@ export default function LolodriveCatalogPage() {
     }).catch(() => {});
   }, []);
   const sub = (sku) => {
-    const n = (cart[sku] || 0) - 1;
+    const n = (cart[sku] || 0) - 3;
     const c = { ...cart };
     if (n <= 0) delete c[sku]; else c[sku] = n;
     setCart(c);

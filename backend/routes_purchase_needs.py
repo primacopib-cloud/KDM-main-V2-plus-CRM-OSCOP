@@ -83,6 +83,39 @@ async def track_purchase_need(reference: str):
             "vendor_price_eur": need.get("vendor_price_eur"), "created_at": need["created_at"]}
 
 
+TERRITORY_FLAG = {"Guadeloupe": "GP", "Martinique": "MQ", "Guyane": "GF", "La Réunion": "RE",
+                  "Mayotte": "YT", "Saint-Martin": "MF"}
+
+
+@purchase_needs_router.get("/public/community-board")
+async def community_board(q: str | None = None):
+    """Demandes de produits publiées (CommunityPlace) pour l'accueil, avec drapeau territoire."""
+    needs = await db.purchase_needs.find(
+        {"communityplace": True}, {"_id": 0, "email": 0, "phone": 0}).sort("created_at", -1).to_list(60)
+    out = []
+    for n in needs:
+        if q and q.lower() not in f"{n['product']} {n['territory']} {n.get('company', '')}".lower():
+            continue
+        out.append({"reference": n["reference"], "product": n["product"], "quantity": n["quantity"],
+                    "territory": n["territory"], "flag": TERRITORY_FLAG.get(n["territory"], "FR"),
+                    "status": n["status"], "created_at": n["created_at"]})
+    return {"demands": out}
+
+
+@purchase_needs_router.get("/admin/purchase-needs/stats")
+async def communityplace_stats(_: dict = Depends(require_admin)):
+    """Revenus mensuels des frais de publication CommunityPlace encaissés."""
+    paid = await db.purchase_needs.find(
+        {"communityplace_payment_status": "PAID"},
+        {"_id": 0, "communityplace_fee_eur": 1, "communityplace_paid_at": 1}).to_list(1000)
+    months: dict = {}
+    for p in paid:
+        m = (p.get("communityplace_paid_at") or "")[:7]
+        months[m] = months.get(m, 0) + float(p.get("communityplace_fee_eur") or 0)
+    return {"months": [{"month": m, "revenue_eur": v} for m, v in sorted(months.items(), reverse=True)],
+            "total_eur": sum(months.values()), "count": len(paid)}
+
+
 @purchase_needs_router.get("/admin/purchase-needs")
 async def list_purchase_needs(_: dict = Depends(require_admin)):
     needs = await db.purchase_needs.find({}, {"_id": 0}).sort("created_at", -1).to_list(300)
