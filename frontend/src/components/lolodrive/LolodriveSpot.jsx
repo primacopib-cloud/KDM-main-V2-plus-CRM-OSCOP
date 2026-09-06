@@ -41,19 +41,47 @@ export const LolodriveSpot = ({ onClose }) => {
   return (
     <div className="fixed inset-0 z-[120] bg-black flex items-center justify-center overflow-hidden" data-testid="lolodrive-spot">
       <style>{`
-        @keyframes spotKenBurns { 0% { transform: scale(1.12) translateX(2%); } 100% { transform: scale(1.0) translateX(-2%); } }
+        @keyframes spotKbA { 0% { transform: scale(1.18) translate(3%, 1%); } 100% { transform: scale(1.02) translate(-2%, -1%); } }
+        @keyframes spotKbB { 0% { transform: scale(1.02) translate(-3%, 0); } 100% { transform: scale(1.16) translate(2%, 1%); } }
+        @keyframes spotKbC { 0% { transform: scale(1.2) translateY(3%); } 100% { transform: scale(1.04) translateY(-2%); } }
+        @keyframes spotKbD { 0% { transform: scale(1.05) rotate(-1deg); } 100% { transform: scale(1.18) rotate(0.6deg); } }
         @keyframes spotFadeUp { 0% { opacity: 0; transform: translateY(28px); } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes spotWordPop { 0% { opacity: 0; transform: translateY(34px) scale(0.85) rotate(-2deg); } 60% { opacity: 1; transform: translateY(-4px) scale(1.04); } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }
         @keyframes spotKicker { 0% { opacity: 0; letter-spacing: 0.6em; } 100% { opacity: 1; letter-spacing: 0.28em; } }
         @keyframes spotBar { 0% { width: 0; } 100% { width: 100%; } }
         @keyframes spotGlow { 0%,100% { text-shadow: 0 0 24px rgba(217,179,90,0.55); } 50% { text-shadow: 0 0 48px rgba(217,179,90,0.95); } }
         @keyframes spotFlash { 0% { opacity: 0.9; } 100% { opacity: 0; } }
+        @keyframes spotSweep { 0% { transform: translateX(-140%) skewX(-18deg); } 100% { transform: translateX(240%) skewX(-18deg); } }
+        @keyframes spotBadgeBounce { 0% { opacity: 0; transform: scale(0.3) rotate(-14deg); } 55% { transform: scale(1.15) rotate(4deg); } 100% { opacity: 1; transform: scale(1) rotate(-6deg); } }
+        @keyframes spotBadgePulse { 0%,100% { transform: scale(1) rotate(-6deg); } 50% { transform: scale(1.07) rotate(-4deg); } }
+        @keyframes spotFloat { 0% { transform: translateY(105vh) scale(0.6); opacity: 0; } 12% { opacity: 0.9; } 100% { transform: translateY(-8vh) scale(1.15); opacity: 0; } }
+        @keyframes spotCtaPulse { 0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(140,198,62,0.55); } 50% { transform: scale(1.05); box-shadow: 0 0 0 14px rgba(140,198,62,0); } }
+        @keyframes spotUnderline { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
       `}</style>
       {/* Scène */}
       <div key={scene} className="absolute inset-0">
         <img src={s.img} alt="" className="w-full h-full object-cover"
-          style={{ animation: `spotKenBurns ${SCENE_MS + 600}ms ease-out forwards` }} />
+          style={{ animation: `${['spotKbA', 'spotKbB', 'spotKbC', 'spotKbD'][scene % 4]} ${SCENE_MS + 700}ms ease-in-out forwards` }} />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,4,20,0.35) 0%, rgba(10,4,20,0.15) 40%, rgba(10,4,20,0.88) 100%)' }} />
+        {/* Balayage lumineux qui traverse l'image */}
+        <div className="absolute inset-y-0 w-[26%] pointer-events-none"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.32), transparent)', animation: `spotSweep ${SCENE_MS}ms 300ms ease-in-out forwards` }} />
         <div className="absolute inset-0 pointer-events-none bg-white" style={{ animation: 'spotFlash 500ms ease-out forwards' }} />
+        {/* Bulles ×3 flottantes */}
+        {!s.final && [0, 1, 2].map((k) => (
+          <span key={k} className="absolute font-black text-[#8CC63E] pointer-events-none select-none"
+            style={{ left: `${14 + k * 32}%`, fontSize: k === 1 ? '2.2rem' : '1.4rem', opacity: 0,
+              textShadow: '0 2px 14px rgba(0,0,0,0.5)',
+              animation: `spotFloat ${SCENE_MS + 1800}ms ${300 + k * 800}ms linear forwards` }}>×3</span>
+        ))}
+        {/* Badge LOT ×3 qui rebondit */}
+        {!s.final && (
+          <div className="absolute top-[11vh] left-[4vw] px-4 py-2 rounded-2xl font-black text-[#1F2A12] text-lg sm:text-2xl"
+            style={{ background: 'linear-gradient(135deg, #8CC63E, #D9B35A)', boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+              animation: `spotBadgeBounce 700ms 350ms cubic-bezier(0.34,1.56,0.64,1) backwards, spotBadgePulse 1.6s 1100ms ease-in-out infinite` }}>
+            LOT ×3
+          </div>
+        )}
         {/* Bandes ciné */}
         <div className="absolute top-0 left-0 right-0 h-[6vh] bg-black" />
         <div className="absolute bottom-0 left-0 right-0 h-[6vh] bg-black" />
@@ -62,10 +90,15 @@ export const LolodriveSpot = ({ onClose }) => {
           <p className="text-[#8CC63E] font-bold text-xs sm:text-sm uppercase m-0"
             style={{ animation: 'spotKicker 900ms ease-out forwards', letterSpacing: '0.28em' }}>{s.kicker}</p>
           <h2 className="text-white font-black m-0 mt-2 text-3xl sm:text-5xl lg:text-6xl leading-tight"
-            style={{ animation: 'spotFadeUp 800ms 250ms ease-out backwards, spotGlow 2.5s 1s ease-in-out infinite', fontFamily: 'inherit' }}>
-            {s.title}
+            style={{ animation: 'spotGlow 2.5s 1s ease-in-out infinite', fontFamily: 'inherit' }}>
+            {s.title.split(' ').map((w, wi) => (
+              <span key={wi} className="inline-block mr-[0.28em]"
+                style={{ animation: `spotWordPop 620ms ${220 + wi * 110}ms cubic-bezier(0.34,1.56,0.64,1) backwards` }}>{w}</span>
+            ))}
           </h2>
-          <p className="text-white/85 text-sm sm:text-lg m-0 mt-3" style={{ animation: 'spotFadeUp 800ms 550ms ease-out backwards' }}>{s.sub}</p>
+          <span className="block mx-auto mt-2 h-[3px] w-24 sm:w-40 rounded-full origin-center"
+            style={{ background: 'linear-gradient(90deg, #8CC63E, #D9B35A)', animation: `spotUnderline 600ms ${300 + s.title.split(' ').length * 110}ms ease-out backwards` }} />
+          <p className="text-white/85 text-sm sm:text-lg m-0 mt-3" style={{ animation: 'spotFadeUp 800ms 650ms ease-out backwards' }}>{s.sub}</p>
           {s.final && (
             <div style={{ animation: 'spotFadeUp 800ms 900ms ease-out backwards' }} className="mt-5 flex items-center justify-center gap-3 flex-wrap">
               <button type="button" data-testid="spot-cta-pass" onClick={() => {
@@ -74,7 +107,7 @@ export const LolodriveSpot = ({ onClose }) => {
                 navigate('/pass-lolodrive');
               }}
                 className="px-6 h-12 rounded-full font-bold text-sm text-[#1F0A33] hover:brightness-110 transition-[filter]"
-                style={{ background: 'linear-gradient(135deg, #D9B35A, #8CC63E)' }}>
+                style={{ background: 'linear-gradient(135deg, #D9B35A, #8CC63E)', animation: 'spotCtaPulse 1.8s 1.6s ease-in-out infinite' }}>
                 <Ticket className="w-4 h-4 inline mr-2" /> Découvrir le PASS LOLODRIVE
               </button>
             </div>

@@ -2911,3 +2911,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Spot : scènes finales en éclairage clair (self-testé ✅)
 - 3 dernières scènes regénérées en plein jour : smartphone (salon lumineux), point relais caribéen en plein soleil, famille en cuisine blanche — screenshots validés (relais + finale CTA)
 - Les 14 scènes du spot sont désormais toutes en éclairage clair high-key
+
+## 2026-06 — Spot dynamisé (self-testé ✅)
+- Animations enrichies dans LolodriveSpot : 4 mouvements ken burns alternés par scène (zoom in/out, pan, rotation légère), titre mot-par-mot avec rebond élastique (spotWordPop), soulignement animé dégradé, balayage lumineux traversant l'image (spotSweep), badge « LOT ×3 » rebondissant + pulsation (spotBadgeBounce/Pulse), bulles « ×3 » flottantes montantes (spotFloat), CTA final avec pulsation halo (spotCtaPulse) — screenshots validés
