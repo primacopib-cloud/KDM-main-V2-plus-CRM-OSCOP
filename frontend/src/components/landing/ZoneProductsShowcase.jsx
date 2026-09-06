@@ -9,13 +9,26 @@ import { trackCta } from '../../services/ctaTracking';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Aperçu des produits phares par territoire sur la page d'accueil (visiteurs)
-export const ZoneProductsShowcase = () => {
+export const ZoneProductsShowcase = ({ audience = 'pro' }) => {
+  const isLolo = audience === 'lolodrive';
   const [zone, setZone] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [carouselCfg, setCarouselCfg] = useState(null);
+  const [hasPass, setHasPass] = useState(false);
   const trackRef = useRef(null);
   const offsetRef = useRef(0);
   const pausedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isLolo) return;
+    fetch(`${API_URL}/api/public/lolodrive-carousel`)
+      .then((r) => (r.ok ? r.json() : null)).then(setCarouselCfg).catch(() => setCarouselCfg({ product_ids: [], max_count: 12 }));
+    if (localStorage.getItem('user')) {
+      fetch(`${API_URL}/api/public/lolodrive-pass/active`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : { active: false })).then((d) => setHasPass(!!d.active)).catch(() => {});
+    }
+  }, [isLolo]);
 
   // Défilement automatique continu (boucle infinie), pause au survol ou pendant une navigation manuelle
   useEffect(() => {
@@ -51,13 +64,25 @@ export const ZoneProductsShowcase = () => {
   };
 
   useEffect(() => {
+    if (isLolo && carouselCfg === null) return;
     setLoading(true);
-    fetch(`${API_URL}/api/v2/catalog/products?sort=rating&limit=12${zone ? `&zone_code=${zone}` : ''}`)
+    const hasSelection = isLolo && carouselCfg?.product_ids?.length > 0;
+    const maxCount = isLolo ? (carouselCfg?.max_count || 12) : 12;
+    const limit = hasSelection ? 100 : maxCount;
+    fetch(`${API_URL}/api/v2/catalog/products?sort=rating&limit=${limit}${zone ? `&zone_code=${zone}` : ''}`)
       .then((r) => (r.ok ? r.json() : []))
-      .then((d) => setProducts(Array.isArray(d) ? d : []))
+      .then((d) => {
+        let list = Array.isArray(d) ? d : [];
+        if (hasSelection) {
+          const order = carouselCfg.product_ids;
+          list = list.filter((p) => order.includes(p.id))
+            .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+        }
+        setProducts(list.slice(0, maxCount));
+      })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
-  }, [zone]);
+  }, [zone, isLolo, carouselCfg]);
 
   return (
     <section className="py-10 px-5" data-testid="zone-showcase-section">
@@ -141,15 +166,33 @@ export const ZoneProductsShowcase = () => {
         )}
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link to="/catalogue" data-testid="showcase-catalog-cta" onClick={() => trackCta('voir_catalogue')}
-            className="btn-ghost h-10 px-5 rounded-lg inline-flex items-center gap-2 text-sm">
-            {i18n.t('landing.voir_catalogue', 'Voir tout le catalogue')} <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link to="/tarifs" data-testid="showcase-join-cta" onClick={() => trackCta('adherer_centrale')}
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-lg text-sm font-bold"
-            style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}>
-            {i18n.t('landing.adherer_a_la_centrale', 'Adhérer à la Centrale')}
-          </Link>
+          {isLolo ? (
+            <>
+              {hasPass && (
+                <Link to="/catalogue" data-testid="showcase-lolodrive-catalog-cta" onClick={() => trackCta('explorer_catalogue_lolodrive')}
+                  className="btn-ghost h-10 px-5 rounded-lg inline-flex items-center gap-2 text-sm">
+                  {i18n.t('landing.explorer_catalogue_lolodrive', 'Explorer le catalogue LOLODRIVE')} <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
+              <Link to="/pass-lolodrive" data-testid="showcase-pass-lolodrive-cta" onClick={() => trackCta('pass_lolodrive')}
+                className="inline-flex items-center gap-2 h-10 px-5 rounded-lg text-sm font-bold"
+                style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}>
+                {i18n.t('landing.pass_lolodrive_cta', 'PASS LOLODRIVE')}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/catalogue" data-testid="showcase-catalog-cta" onClick={() => trackCta('voir_catalogue')}
+                className="btn-ghost h-10 px-5 rounded-lg inline-flex items-center gap-2 text-sm">
+                {i18n.t('landing.voir_catalogue', 'Voir tout le catalogue')} <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link to="/tarifs" data-testid="showcase-join-cta" onClick={() => trackCta('adherer_centrale')}
+                className="inline-flex items-center gap-2 h-10 px-5 rounded-lg text-sm font-bold"
+                style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}>
+                {i18n.t('landing.adherer_a_la_centrale', 'Adhérer à la Centrale')}
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </section>
