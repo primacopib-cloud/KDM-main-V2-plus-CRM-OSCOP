@@ -259,7 +259,7 @@ export default function FinanceBridgeAdminPage() {
                 <tbody>
                   {events.map((ev) => (
                     <tr key={ev.id}
-                      className="border-b hover:bg-amber-50/40"
+                      className="border-b hover:bg-white/[0.06]"
                       style={{ borderColor: "rgba(212,175,55,0.12)" }}
                       data-testid={`fin-event-row-${ev.id}`}>
                       <td className="py-2 pr-3 tabular-nums whitespace-nowrap">{fmtDateTime(ev.created_at)}</td>
@@ -354,7 +354,7 @@ function StatusBadge({ status }) {
     SUCCESS_IDEMPOTENT: { bg: "rgba(31,77,135,0.14)",  color: "#1F4D87", label: "Idempotent" },
     ERROR:              { bg: "rgba(230,68,50,0.14)",  color: "#E64432", label: "Erreur" },
   };
-  const c = map[status] || { bg: "rgba(148,163,184,0.16)", color: "#64748b", label: status };
+  const c = map[status] || { bg: "rgba(148,163,184,0.16)", color: "#cbd5e1", label: status };
   return (
     <span className="inline-block px-2 py-0.5 rounded text-xs font-medium" style={{ background: c.bg, color: c.color }}>
       {c.label}
