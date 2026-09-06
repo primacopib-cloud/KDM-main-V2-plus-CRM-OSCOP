@@ -51,9 +51,16 @@ async def create_event(request: EventCreate, admin: dict = Depends(require_admin
 
 @lolodrive_admin_router.get("/admin/spot-views")
 async def spot_views_stats(admin: dict = Depends(require_admin)):
-    """Lectures du spot publicitaire par mois."""
+    """Lectures + clics CTA du spot publicitaire par mois, avec taux de conversion."""
     rows = await db.spot_views.find({}, {"_id": 0}).sort("month", -1).to_list(24)
-    return {"months": rows, "total": sum(r.get("views", 0) for r in rows)}
+    total_views = sum(r.get("views", 0) for r in rows)
+    total_cta = sum(r.get("cta_clicks", 0) for r in rows)
+    for r in rows:
+        v = r.get("views", 0)
+        r["cta_clicks"] = r.get("cta_clicks", 0)
+        r["conversion_pct"] = round(r["cta_clicks"] / v * 100, 1) if v else 0.0
+    return {"months": rows, "total": total_views, "total_cta": total_cta,
+            "conversion_pct": round(total_cta / total_views * 100, 1) if total_views else 0.0}
 
 
 @lolodrive_admin_router.get("/admin/products/visitor-visibility")
