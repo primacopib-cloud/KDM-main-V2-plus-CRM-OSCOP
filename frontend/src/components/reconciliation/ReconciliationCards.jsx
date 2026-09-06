@@ -167,7 +167,7 @@ export function ByKindCard({ account, byKind, testid }) {
                 <div className="text-sm font-medium">{label}</div>
                 <div className="text-xs opacity-50">{entry.count} paiement{entry.count > 1 ? "s" : ""}</div>
               </div>
-              <div className="text-lg font-semibold tabular-nums" style={{ color: "var(--kdm-anthracite)" }}>
+              <div className="text-lg font-semibold tabular-nums" style={{ color: "#F7F2E9" }}>
                 {formatEur(entry.amount_cents)}
               </div>
             </div>

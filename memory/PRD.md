@@ -2803,3 +2803,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Validation téléphone FINANCER : validatePhone (règles par indicatif : +33/DOM 9 chiffres, +1 10, défaut 6-12, tolère le 0 initial) — erreur onBlur + blocage submit + message sous champ
 - Plan supprimé toujours en accueil : cause = cache module-level dans usePublicPlans (jamais re-fetch) → fix : re-fetch systématique au montage
 - Plans & crédits investisseurs manquants dans /admin/plans : nouvel onglet « Plans & crédits investisseurs » (tab-investisseurs) rendant InvestorPlansAdminPanel (plans + abonnés + RIB + journal virements)
+
+## 2026-06 — Lisibilité page /admin/stripe-reconciliation (self-testé ✅)
+- ACCOUNT_COLOR.oscop #5B2E8C → #B07CE8 (violet clair lisible sur fond sombre, aussi couleur des barres/légende)
+- Montants ByKindCard var(--kdm-anthracite) → #F7F2E9 ; Net comptable accent → #7EC8E3 ; hover table amber-50 → white/6
+- Tooltip du graphique : fond sombre #241243 + label clair (au lieu de blanc/illisible) ; axes et grille du chart éclaircis

@@ -20,8 +20,9 @@ import {
 } from "../components/reconciliation/ReconciliationCards";
 
 const CHART_MARGIN = { top: 10, right: 12, left: 0, bottom: 8 };
-const TICK_11 = { fontSize: 11 };
-const TOOLTIP_STYLE = { background: "#fff", border: "1px solid rgba(212,175,55,0.3)", borderRadius: 12 };
+const TICK_11 = { fontSize: 11, fill: "rgba(247,242,233,0.65)" };
+const TOOLTIP_STYLE = { background: "#241243", border: "1px solid rgba(212,175,55,0.45)", borderRadius: 12, color: "#F7F2E9" };
+const TOOLTIP_LABEL_STYLE = { color: "#F7F2E9", fontWeight: 600 };
 const BAR_RADIUS_FLAT = [0, 0, 0, 0];
 const BAR_RADIUS_TOP = [6, 6, 0, 0];
 
@@ -262,7 +263,7 @@ export default function StripeReconciliationPage() {
                 title="Net comptable (brut − remboursé)"
                 amount={grandNetCents}
                 count={null}
-                accent="var(--kdm-bleu-logistique)"
+                accent="#7EC8E3"
                 testid="reco-total-net"
               />
             </div>
@@ -281,9 +282,9 @@ export default function StripeReconciliationPage() {
               <div style={{ width: "100%", height: 320 }}>
                 <ResponsiveContainer>
                   <BarChart data={data.by_day} margin={CHART_MARGIN}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(31,42,58,0.08)" />
-                    <XAxis dataKey="day" tick={TICK_11} stroke="rgba(31,42,58,0.6)" />
-                    <YAxis tick={TICK_11} stroke="rgba(31,42,58,0.6)" tickFormatter={(v) => `${v} €`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                    <XAxis dataKey="day" tick={TICK_11} stroke="rgba(247,242,233,0.45)" />
+                    <YAxis tick={TICK_11} stroke="rgba(247,242,233,0.45)" tickFormatter={(v) => `${v} €`} />
                     <Tooltip
                       formatter={(value, name) => {
                         const a = name.replace("_net_eur", "").replace("_eur", "");
@@ -291,6 +292,8 @@ export default function StripeReconciliationPage() {
                       }}
                       labelFormatter={(d) => `Jour : ${d}`}
                       contentStyle={TOOLTIP_STYLE}
+                      labelStyle={TOOLTIP_LABEL_STYLE}
+                      cursor={{ fill: "rgba(255,255,255,0.06)" }}
                     />
                     <Legend
                       formatter={(v) => ACCOUNT_LABEL[v.replace("_net_eur", "").replace("_eur", "")] || v}
@@ -383,7 +386,7 @@ export default function StripeReconciliationPage() {
                       {txData.items.map((tx) => (
                         <tr
                           key={tx.id}
-                          className="border-b transition-colors hover:bg-amber-50/40"
+                          className="border-b transition-colors hover:bg-white/[0.06]"
                           style={{ borderColor: "rgba(212,175,55,0.12)" }}
                           data-testid={`reco-tx-row-${tx.id}`}
                         >

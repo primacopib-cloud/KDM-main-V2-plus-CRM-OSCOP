@@ -6,7 +6,7 @@ export const ACCOUNT_LABEL = {
   kdmarche: "KDMARCHE",
 };
 export const ACCOUNT_COLOR = {
-  oscop: "#5B2E8C",      // Bleu logistique
+  oscop: "#B07CE8",      // Violet clair lisible sur fond sombre
   kdmarche: "#D4AF37",   // Or métallisé
 };
 export const KIND_LABEL = {
