@@ -2828,3 +2828,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Promo PASS : promo_percent (0-90) ajouté à la config carrousel (backend + panel admin) ; carrousel particuliers : badge « −X% PASS » vert + prix public barré + prix remisé vert « HT avec PASS » (validé 15 %, badge ×12) — actuellement réglé à 15 %, modifiable/désactivable (0) dans le panel /lolodrive
 - Recherche abonnés : champ nom/email (filtre client) dans InvestorSubscribersTable — superadmin uniquement (validé : 0 puis 1 résultat)
 - Drag & drop : réordonnancement HTML5 (draggable + GripVertical) des produits sélectionnés dans LolodriveCarouselPanel, ordre envoyé au PUT
+
+## 2026-06 — Promo à durée limitée + compteur clics PASS (self-testé ✅)
+- promo_ends_at ajouté à la config carrousel (datetime-local admin, ISO backend) ; GET public force promo_percent=0 si expiré (validé) ; compte à rebours PromoCountdown (tick 1 s, « ⏳ Promo PASS −15% — se termine dans 1j 23h 59min ») affiché au-dessus du carrousel particuliers
+- CTA_LABELS enrichi : pass_lolodrive + explorer_catalogue_lolodrive (les clics étaient rejetés 400 avant) ; GET /api/admin/lolodrive-carousel/pass-clicks {total,last_7d,last_30d} affiché dans le panel carrousel — validé (clic compté)
+- Promo démo active : 15 % jusqu'à J+2

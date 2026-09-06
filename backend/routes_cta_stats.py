@@ -30,6 +30,8 @@ CTA_LABELS = {
     "adherer_centrale": "Adhérer à la Centrale (vitrine zones)",
     "adherer_centrale_api": "Adhérer à la Centrale (section API accueil)",
     "voir_catalogue": "Voir tout le catalogue (vitrine zones)",
+    "pass_lolodrive": "PASS LOLODRIVE (carrousel accueil particuliers)",
+    "explorer_catalogue_lolodrive": "Explorer le catalogue LOLODRIVE (accueil particuliers)",
     "tarifs_ess-acces-pro": "S'inscrire — ESS Accès Pro (/tarifs)",
     "tarifs_ess-volume-pro": "S'inscrire — ESS Volume Pro (/tarifs)",
     "tarifs_ess-impact-pro": "S'inscrire — ESS Impact Pro (/tarifs)",

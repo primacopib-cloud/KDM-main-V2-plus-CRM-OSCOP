@@ -8,6 +8,33 @@ import { trackCta } from '../../services/ctaTracking';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
+// Compte à rebours de fin de promo PASS
+const PromoCountdown = ({ endsAt, percent }) => {
+  const [left, setLeft] = useState('');
+  useEffect(() => {
+    const tick = () => {
+      const ms = new Date(endsAt) - Date.now();
+      if (ms <= 0) { setLeft(''); return; }
+      const d = Math.floor(ms / 86400000);
+      const h = Math.floor((ms % 86400000) / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      setLeft(d > 0 ? `${d}j ${h}h ${m}min` : `${h}h ${m}min ${s}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [endsAt]);
+  if (!left) return null;
+  return (
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 text-xs font-bold"
+      data-testid="promo-countdown"
+      style={{ background: 'rgba(140,198,62,0.12)', border: '1px solid rgba(140,198,62,0.45)', color: '#8CC63E' }}>
+      ⏳ {i18n.t('landing.promo_pass_fin', 'Promo PASS')} −{percent}% — {i18n.t('landing.se_termine_dans', 'se termine dans')} {left}
+    </div>
+  );
+};
+
 // Aperçu des produits phares par territoire sur la page d'accueil (visiteurs)
 export const ZoneProductsShowcase = ({ audience = 'pro' }) => {
   const isLolo = audience === 'lolodrive';
@@ -99,6 +126,10 @@ export const ZoneProductsShowcase = ({ audience = 'pro' }) => {
 
         {/* Carte interactive des Outre-mer */}
         <TerritoryMap zone={zone} onSelect={setZone} showAll />
+
+        {isLolo && carouselCfg?.promo_percent > 0 && carouselCfg?.promo_ends_at && (
+          <PromoCountdown endsAt={carouselCfg.promo_ends_at} percent={carouselCfg.promo_percent} />
+        )}
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
