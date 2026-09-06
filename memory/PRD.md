@@ -2927,3 +2927,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Serveur : support HTTP Range (206) sur /api/uploads/* (requis pour le streaming mp4) + mime video/mp4 ; tracking view/cta sans doublon (refs) ; toutes les fonctions préservées (?spot=1, autoPlay/kdm_spot_seen, replay, partage WA, copie lien, CTA /pass-lolodrive)
 - LIMITE DE TEST : le Chromium headless n'embarque pas H.264 → repli image en environnement de test ; navigateurs réels OK
 - MÉDIAS À FOURNIR (clé FAL expirée — 401) : clips sélection produits en magasin, commande smartphone, préparation/chargement sacs, retrait relais, famille finale + musique libre de droits
+
+## 2026-06 — Logo LOLO DRIVE dans le spot (self-testé ✅)
+- Scène « Commandez en 3 clics » : image regénérée avec la mascotte/nom LOLO DRIVE en header de l'app sur l'écran du smartphone (ed2ed1e5…jpeg)
+- Scènes « Retrait en point relais » + poster/fallback scène 1 : remplacées par une devanture de drive point relais MODERNE avec enseigne mascotte « LOLO DRIVE — Click & Collect, Épicerie en ligne », baies numérotées, client chargeant sa voiture (c0c71f4f…jpeg) — screenshots validés dans le spot
+- Logo source : asset utilisateur lolopng.png (mascotte smartphone)
+- CLÉ FAL : toujours expirée (401) — l'utilisateur n'a pas encore fourni de nouvelle clé ; les 5 séquences vidéo du spot restent à générer (script type : soumettre via ai_media_service.submit_product_video, poller check_video_status, download_video_locally)
