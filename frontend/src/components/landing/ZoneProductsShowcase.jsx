@@ -9,7 +9,7 @@ import { trackCta } from '../../services/ctaTracking';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Compte à rebours de fin de promo PASS
-const PromoCountdown = ({ endsAt, percent }) => {
+export const PromoCountdown = ({ endsAt, percent }) => {
   const [left, setLeft] = useState('');
   useEffect(() => {
     const tick = () => {

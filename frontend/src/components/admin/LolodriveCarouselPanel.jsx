@@ -83,7 +83,8 @@ export const LolodriveCarouselPanel = () => {
       <p className="text-[11px] text-white/40 m-0 mb-3">Sans sélection, l'accueil affiche automatiquement les produits les mieux notés.</p>
       {clicks && (
         <p className="text-[11px] m-0 mb-3 text-[#8CC63E]" data-testid="pass-clicks-counter">
-          Clics sur PASS LOLODRIVE depuis le carrousel : <b>{clicks.total}</b> au total · {clicks.last_30d} sur 30 j · {clicks.last_7d} sur 7 j
+          Clics PASS depuis le carrousel : <b>{clicks.total}</b> total · {clicks.last_30d} / 30 j — Achats de PASS : <b>{clicks.purchases_total}</b> total · {clicks.purchases_30d} / 30 j
+          {clicks.conversion_30d_percent != null && <> — Taux de conversion 30 j : <b>{clicks.conversion_30d_percent} %</b></>}
         </p>
       )}
       <div className="flex gap-2 mb-3">

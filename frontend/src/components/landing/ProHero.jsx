@@ -1,13 +1,17 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { ArrowRight, FileSearch, TrendingUp, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { trackCta } from '../../services/ctaTracking';
+import { PurchaseNeedForm } from './PurchaseNeedForm';
 
 export const ProHero = () => {
   const { t } = useTranslation();
+  const [showNeedForm, setShowNeedForm] = useState(false);
   const flowSteps = t('pro.flow_steps', { returnObjects: true });
   return (
   <section className="pt-20 pb-8 px-5" data-testid="pro-hero">
+    {showNeedForm && <PurchaseNeedForm onClose={() => setShowNeedForm(false)} />}
     <div className="max-w-[1160px] mx-auto">
       <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 items-stretch">
         <div className="glass-panel card-glow rounded-[26px] p-7">
@@ -22,13 +26,12 @@ export const ProHero = () => {
             {t('pro.hero_desc')}
           </p>
           <div className="flex gap-3 flex-wrap mt-5">
-            <Link to="/espace-acheteur" onClick={() => trackCta('hero_besoin_achat')}>
-              <button className="force-white inline-flex items-center gap-2.5 rounded-[14px] px-4 py-3 text-sm font-semibold text-white shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #5B2E8C 0%, #2A1045 100%)' }}
-                data-testid="hero-cta-besoin-achat">
-                <FileSearch className="w-4 h-4" /> {t('pro.cta_besoin')}
-              </button>
-            </Link>
+            <button type="button" onClick={() => { trackCta('hero_besoin_achat'); setShowNeedForm(true); }}
+              className="force-white inline-flex items-center gap-2.5 rounded-[14px] px-4 py-3 text-sm font-semibold text-white shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #5B2E8C 0%, #2A1045 100%)' }}
+              data-testid="hero-cta-besoin-achat">
+              <FileSearch className="w-4 h-4" /> {t('pro.cta_besoin')}
+            </button>
             <Link to="/catalogue" onClick={() => trackCta('hero_catalogue_pro')}
               className="btn-ghost inline-flex items-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold"
               data-testid="hero-cta-catalogue-pro">

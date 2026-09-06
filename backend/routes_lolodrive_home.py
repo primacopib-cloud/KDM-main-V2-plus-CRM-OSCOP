@@ -68,14 +68,22 @@ async def set_carousel_config(body: CarouselConfig, admin: dict = Depends(requir
 
 @lolodrive_home_router.get("/admin/lolodrive-carousel/pass-clicks")
 async def pass_clicks(admin: dict = Depends(require_admin)):
-    """Clics sur PASS LOLODRIVE depuis le carrousel (suivi de conversion)."""
+    """Clics PASS depuis le carrousel vs achats réels de PASS (taux de conversion)."""
     from datetime import timedelta
     now = datetime.now(timezone.utc)
     q = {"cta_id": "pass_lolodrive"}
     total = await db.cta_clicks.count_documents(q)
     d7 = await db.cta_clicks.count_documents({**q, "at": {"$gte": (now - timedelta(days=7)).isoformat()}})
     d30 = await db.cta_clicks.count_documents({**q, "at": {"$gte": (now - timedelta(days=30)).isoformat()}})
-    return {"total": total, "last_7d": d7, "last_30d": d30}
+    p_total = await db.lolodrive_passes.count_documents({})
+    naive30 = (now - timedelta(days=30)).replace(tzinfo=None)
+    naive7 = (now - timedelta(days=7)).replace(tzinfo=None)
+    p30 = await db.lolodrive_passes.count_documents({"created_at": {"$gte": naive30}})
+    p7 = await db.lolodrive_passes.count_documents({"created_at": {"$gte": naive7}})
+    conv = round(p30 / d30 * 100, 1) if d30 else None
+    return {"total": total, "last_7d": d7, "last_30d": d30,
+            "purchases_total": p_total, "purchases_30d": p30, "purchases_7d": p7,
+            "conversion_30d_percent": conv}
 
 
 @lolodrive_home_router.get("/public/lolodrive-pass/active")
