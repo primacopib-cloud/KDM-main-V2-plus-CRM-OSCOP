@@ -10,6 +10,7 @@ import { PublicLolodriveMapSection } from '../components/landing/PublicLolodrive
 import { VideoShowcase } from '../components/kdmarche/VideoShowcase';
 import { ReferralChallengeBanner } from '../components/ReferralChallengeBanner';
 import { Reveal } from '../components/landing/Reveal';
+import { LolodriveSpotButton } from '../components/lolodrive/LolodriveSpot';
 
 export default function ParticuliersPage() {
   return (
@@ -24,6 +25,7 @@ export default function ParticuliersPage() {
         title="Pour les particuliers & consommateurs"
         subtitle="Produits phares de votre territoire, points relais LOLODRIVE, PASS Vie Chère, parrainage et spots vidéo."
       />
+      <div className="flex justify-center -mt-2 mb-2"><LolodriveSpotButton /></div>
       <Reveal><ZoneProductsShowcase audience="lolodrive" /></Reveal>
       <Reveal variant="zoom"><div className="py-8"><TerritoryCarousel /></div></Reveal>
       <Reveal><PublicLolodriveMapSection /></Reveal>
