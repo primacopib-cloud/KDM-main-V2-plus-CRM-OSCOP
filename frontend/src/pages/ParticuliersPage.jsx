@@ -25,7 +25,7 @@ export default function ParticuliersPage() {
         title="Pour les particuliers & consommateurs"
         subtitle="Produits phares de votre territoire, points relais LOLODRIVE, PASS Vie Chère, parrainage et spots vidéo."
       />
-      <div className="flex justify-center -mt-2 mb-2"><LolodriveSpotButton /></div>
+      <div className="flex justify-center -mt-2 mb-2"><LolodriveSpotButton autoPlay /></div>
       <Reveal><ZoneProductsShowcase audience="lolodrive" /></Reveal>
       <Reveal variant="zoom"><div className="py-8"><TerritoryCarousel /></div></Reveal>
       <Reveal><PublicLolodriveMapSection /></Reveal>

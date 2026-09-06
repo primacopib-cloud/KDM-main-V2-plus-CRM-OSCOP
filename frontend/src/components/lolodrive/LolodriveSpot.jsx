@@ -100,9 +100,20 @@ export const LolodriveSpot = ({ onClose }) => {
   );
 };
 
-// Bouton déclencheur réutilisable
-export const LolodriveSpotButton = ({ className = '' }) => {
+// Bouton déclencheur réutilisable — autoPlay : lance le spot à la première visite (flag localStorage)
+export const LolodriveSpotButton = ({ className = '', autoPlay = false }) => {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!autoPlay) return undefined;
+    try {
+      if (localStorage.getItem('kdm_spot_seen')) return undefined;
+      const t = setTimeout(() => {
+        localStorage.setItem('kdm_spot_seen', '1');
+        setOpen(true);
+      }, 1200);
+      return () => clearTimeout(t);
+    } catch { return undefined; }
+  }, [autoPlay]);
   return (
     <>
       <button type="button" data-testid="open-lolodrive-spot" onClick={() => setOpen(true)}

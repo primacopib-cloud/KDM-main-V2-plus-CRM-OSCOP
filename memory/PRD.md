@@ -2887,3 +2887,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Spot en accueil : LolodriveSpotButton ajouté sous l'AudienceBanner de /particuliers (screenshot validé)
 - Photos demandes : PurchaseNeedsPanel affiche need.images en miniatures cliquables (need-photos-{id}) ; email d'assignation vendeur inclut les <img> (FRONTEND_URL préfixé pour les chemins /api/uploads) — image démo sur BES-2026-0902
 - Partage WhatsApp : bouton vert (board-share-{ref}, icône SVG WhatsApp) sur chaque carte non clôturée du board → wa.me avec texte incitatif + lien /?besoin={ref}#community-board — vérifié href
+
+## 2026-06 — Partage multi-réseaux, badge photos, spot auto (self-testé ✅)
+- Partage : boutons Facebook (board-share-fb-{ref}, sharer.php) + copier lien (board-copy-{ref}, clipboard + toast) à côté du WhatsApp sur chaque carte non clôturée
+- Badge photos : board renvoie photos_count ; badge « 📷 N » (board-photos-badge-{ref}) sur les cartes avec images
+- Spot auto : LolodriveSpotButton autoPlay sur /particuliers — se lance 1,2 s après la 1re visite (flag localStorage kdm_spot_seen), jamais relancé ensuite — testé (ouverture auto, flag, reload sans relance)
