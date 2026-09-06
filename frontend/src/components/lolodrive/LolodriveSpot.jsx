@@ -4,8 +4,20 @@ import { useNavigate } from 'react-router-dom';
 
 const SCENES = [
   {
-    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/039326cadeb0461a959a33ae2f89cbe9e948a90ffe8743eb25eecab91c37f1e9.jpeg',
+    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/054f6348e53ce9b73fb54fcd4fa05decc2ca0d2e2b7ffbeb724e737fa803e083.jpeg',
     kicker: 'LE CONCEPT', title: 'ACHETEZ PAR LOT ×3', sub: '3 fois plus malin. 3 fois moins cher à l\u2019unité.',
+  },
+  {
+    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/83e1955e893d3c92ca7216c6a9f31ab525b06483e520107a500e31b94f902ff7.jpeg',
+    kicker: 'PRIX MINI', title: '3 SACS, 1 PRIX MALIN', sub: 'La farine, le riz, l\u2019huile\u2026 tous vos basiques en lot de 3.',
+  },
+  {
+    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/066a97d0b67d52b053b5225d5d7ce9453ede24aeae0b59a36f80cdbca25cb5ae.jpeg',
+    kicker: 'TOUS VOS ESSENTIELS', title: 'TOUJOURS PAR 3', sub: 'Des volumes groupés, des prix négociés par la coopérative.',
+  },
+  {
+    img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/16a3bce431dea7ce5b1f15042cab8b3c10abd66e76875e4c504995cea1f02dda.jpeg',
+    kicker: 'LE FRAIS AUSSI', title: 'LE LOT ×3 POUR TOUTE LA FAMILLE', sub: 'Yaourts, laitages, produits frais : même concept, mêmes économies.',
   },
   {
     img: 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/6d6384d010a917c8ad9abd345363c11bf463de2a3130fb7099b5b957081244b1.jpeg',
