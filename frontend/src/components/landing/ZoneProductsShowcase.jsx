@@ -167,6 +167,12 @@ export const ZoneProductsShowcase = ({ audience = 'pro' }) => {
                         <Heart size={9} fill="currentColor" /> {i18n.t('catalog.coup_de_coeur_court', 'Coup de cœur')}
                       </span>
                     )}
+                    {isLolo && (
+                      <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold text-[#1F0A33]"
+                        style={{ background: '#E9CF8E' }} data-testid={i < products.length ? `lot3-badge-${p.sku}` : undefined}>
+                        LOT ×3
+                      </span>
+                    )}
                     {isLolo && carouselCfg?.promo_percent > 0 && (
                       <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold text-black"
                         data-testid={i < products.length ? `promo-badge-${p.sku}` : undefined}
@@ -179,7 +185,8 @@ export const ZoneProductsShowcase = ({ audience = 'pro' }) => {
                     <p className="text-sm font-semibold truncate" style={{ color: '#F7F2E9' }}>{tData(p.name) || p.name}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(247,242,233,0.45)' }}>{p.sku}</p>
                     {(p.price_ht_cents ?? p.teaser_price_ht_cents) != null && (() => {
-                      const cents = p.price_ht_cents ?? p.teaser_price_ht_cents;
+                      const unit = p.price_ht_cents ?? p.teaser_price_ht_cents;
+                      const cents = isLolo ? unit * 3 : unit;
                       const promo = isLolo && carouselCfg?.promo_percent > 0 ? carouselCfg.promo_percent : 0;
                       return (
                         <p className="text-sm font-bold mt-1" style={{ color: '#D9B35A' }}
@@ -189,10 +196,10 @@ export const ZoneProductsShowcase = ({ audience = 'pro' }) => {
                             <>
                               <span className="line-through font-normal mr-1.5" style={{ color: 'rgba(247,242,233,0.45)' }}>{(cents / 100).toFixed(2)} €</span>
                               <span style={{ color: '#8CC63E' }}>{((cents * (100 - promo)) / 10000).toFixed(2)} €</span>
-                              <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}> HT {i18n.t('landing.avec_pass', 'avec PASS')}</span>
+                              <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}> HT {isLolo ? i18n.t('landing.le_lot_de_3', 'le lot de 3') + ' ' : ''}{i18n.t('landing.avec_pass', 'avec PASS')}</span>
                             </>
                           ) : (
-                            <>{(cents / 100).toFixed(2)} € <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}>HT</span></>
+                            <>{(cents / 100).toFixed(2)} € <span className="text-[10px] font-normal" style={{ color: 'rgba(247,242,233,0.5)' }}>HT{isLolo ? ` ${i18n.t('landing.le_lot_de_3', 'le lot de 3')}` : ''}</span></>
                           )}
                         </p>
                       );

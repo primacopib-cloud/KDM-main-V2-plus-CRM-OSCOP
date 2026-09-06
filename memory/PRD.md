@@ -2845,3 +2845,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Réponse vendeur : GET /api/vendor/purchase-needs (assignés à l'email courant), POST /{id}/respond accept(prix requis, 400 sinon)/decline + note → VENDOR_ACCEPTED/DECLINED + email équipe ; VendorNeedsPanel dans /espace-vendeur (boutons Accepter+prix / Décliner)
 - CommunityPlace payant : POST /{id}/communityplace {fee_eur, défaut 50} → checkout Stripe (metadata COMMUNITYPLACE_FEE) + email lien de paiement au demandeur + statut paiement PENDING ; prompt montant côté admin, badge « paiement X € en attente »
 - NOTE : la confirmation du paiement CommunityPlace (webhook checkout.session.completed) n'est pas branchée — statut reste PENDING après paiement
+
+## 2026-06 — Lot ×3, paiement CommunityPlace auto, offre demandeur, prix PASS administrable (self-testé ✅)
+- Lot ×3 LOLODRIVE : carrousel particuliers = badge « LOT ×3 » + prix affiché ×3 « HT le lot de 3 » (promo appliquée dessus)
+- Paiement CommunityPlace : webhook POST /api/public/purchase-needs/webhook (checkout.session.completed + metadata purchase_need_id → PAID) + check lazy Stripe dans GET /admin/purchase-needs (10 PENDING max) ; badge « payé ✓ » (validé)
+- Offre vers demandeur : à l'acceptation vendeur → email demandeur avec prix + bouton « Accepter l'offre et adhérer » → GET /api/public/purchase-needs/accept-offer/{ref} → statut OFFER_ACCEPTED + redirect 307 /tarifs?besoin=REF (validé)
+- Prix PASS : PassPlansPanel gérait déjà modifier/supprimer/masquer ; ajout promo_percent + promo_ends_at (PATCH pass-plans, champs UI adhesion) ; public pass-plans renvoie promo_price_eur/promo_active_percent ; PassLolodrivePage : prix barré + PromoCountdown ; prix Stripe réel via _effective_pass_price (cache price invalidé si montant change) — validé 60→48 € avec countdown, puis promo remise à 0

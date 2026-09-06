@@ -35,6 +35,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/lolodrive/pass/subscription", tags=["PASS Subscription"])
 
 PASS_PRICE_EUR = 60.0
+
+
+async def _effective_pass_price() -> float:
+    """Prix d'adhésion effectif : plan admin + promo à durée limitée."""
+    plan = await db.pass_plans.find_one({"kind": "adhesion", "active": True})
+    if not plan:
+        return PASS_PRICE_EUR
+    price = float(plan["price_eur"])
+    promo = plan.get("promo_percent") or 0
+    ends = plan.get("promo_ends_at")
+    if promo and (not ends or ends > datetime.now(timezone.utc).isoformat()):
+        price = round(price * (100 - promo) / 100, 2)
+    return price
 PASS_PERIOD_DAYS = 365
 PASS_UC_PER_PERIOD = 600
 
@@ -81,9 +94,10 @@ async def _resolve_or_create_stripe_customer(user: dict) -> str:
 async def _resolve_or_create_pass_price() -> str:
     """Return a Stripe Price id for the PASS subscription. Creates Product+Price on first run."""
     stripe.api_key = _stripe_key()
+    eff_price = await _effective_pass_price()
     cfg = await db.app_settings.find_one({"_id": "pass_subscription"}) or {}
     price_id = cfg.get("price_id")
-    if price_id:
+    if price_id and cfg.get("amount_cents") == int(eff_price * 100):
         try:
             stripe.Price.retrieve(price_id)
             return price_id
@@ -96,7 +110,7 @@ async def _resolve_or_create_pass_price() -> str:
     )
     price = stripe.Price.create(
         product=product.id,
-        unit_amount=int(PASS_PRICE_EUR * 100),
+        unit_amount=int(eff_price * 100),
         currency="eur",
         recurring={"interval": "year"},
     )
@@ -106,7 +120,7 @@ async def _resolve_or_create_pass_price() -> str:
             "_id": "pass_subscription",
             "product_id": product.id,
             "price_id": price.id,
-            "amount_cents": int(PASS_PRICE_EUR * 100),
+            "amount_cents": int(eff_price * 100),
             "currency": "eur",
             "updated_at": datetime.now(timezone.utc),
         }},
@@ -158,7 +172,7 @@ async def start_subscription(payload: StartSubscriptionIn, user_id: str = Depend
         "session_id": session.id,
         "user_id": user_id,
         "kind": "PASS_SUBSCRIPTION",
-        "amount_cents": int(PASS_PRICE_EUR * 100),
+        "amount_cents": int((await _effective_pass_price()) * 100),
         "currency": "eur",
         "payment_status": "initiated",
         "stripe_customer_id": customer_id,

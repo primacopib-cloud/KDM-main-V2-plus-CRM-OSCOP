@@ -3,6 +3,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { ShoppingBasket, Users, MapPin, ArrowRight, BadgeCheck, Ticket, BatteryCharging, Sparkles, CreditCard } from 'lucide-react';
 import NavBar from '../components/NavBar';
 import { PromoPassBanner } from '../components/landing/PromoPassBanner';
+import { PromoCountdown } from '../components/landing/ZoneProductsShowcase';
 import { FlashPromoBanner } from '../components/FlashPromoBanner';
 import i18n from '@/i18n';
 import { VitrineReviews } from '../components/pass/VitrineReviews';
@@ -99,8 +100,20 @@ export default function PassLolodrivePage() {
                 <p className="text-xs text-white/55 mt-0.5">{i18n.t('passPage.uc_note')}</p>
               </div>
               <p className="text-3xl font-bold text-[#E9CF8E]" data-testid="pass-adhesion-price">
-                {plans.adhesion.price_eur} € <span className="text-base text-white/70">/ {plans.adhesion.uc + (plans.adhesion.bonus_uc || 0)} UC</span>
+                {plans.adhesion.promo_active_percent > 0 ? (
+                  <>
+                    <span className="line-through text-white/40 text-xl font-normal mr-2">{plans.adhesion.price_eur} €</span>
+                    <span className="text-[#8CC63E]">{plans.adhesion.promo_price_eur} €</span>
+                  </>
+                ) : (
+                  <>{plans.adhesion.price_eur} €</>
+                )} <span className="text-base text-white/70">/ {plans.adhesion.uc + (plans.adhesion.bonus_uc || 0)} UC</span>
               </p>
+              {plans.adhesion.promo_active_percent > 0 && plans.adhesion.promo_ends_at && (
+                <div className="w-full mt-1" data-testid="pass-adhesion-promo-countdown">
+                  <PromoCountdown endsAt={plans.adhesion.promo_ends_at} percent={plans.adhesion.promo_active_percent} />
+                </div>
+              )}
             </div>
             <div className="mt-4 pt-4 border-t border-[#D9B35A]/20">
               <button type="button" data-testid="pass-pay-adhesion-btn"

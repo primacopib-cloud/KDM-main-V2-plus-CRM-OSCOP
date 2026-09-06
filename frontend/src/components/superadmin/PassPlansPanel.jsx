@@ -20,6 +20,12 @@ const PlanRow = ({ plan, onSave, onDelete }) => {
       <label className="flex items-center gap-1 text-[10.5px] text-white/55">
         <input type="checkbox" checked={!!p.active} onChange={(e) => setP({ ...p, active: e.target.checked })} data-testid={`plan-active-${plan.id}`} /> actif
       </label>
+      {plan.kind === 'adhesion' && (
+        <>
+          <label className="text-[10px] text-white/40">Promo % <input type="number" min="0" max="90" value={p.promo_percent || 0} onChange={set('promo_percent')} className={numCls} data-testid={`plan-promo-${plan.id}`} /></label>
+          <label className="text-[10px] text-white/40">Fin <input type="datetime-local" value={(p.promo_ends_at || '').slice(0, 16)} onChange={(e) => setP({ ...p, promo_ends_at: e.target.value })} className="h-7 px-2 rounded-md bg-white/[0.05] border border-white/15 text-white text-xs" data-testid={`plan-promo-ends-${plan.id}`} /></label>
+        </>
+      )}
       <button type="button" onClick={() => onSave(plan.id, p)} data-testid={`plan-save-${plan.id}`}
         className="p-1.5 rounded-md bg-white/10 text-[#E9CF8E] hover:bg-white/15" title="Enregistrer"><Save className="w-3.5 h-3.5" /></button>
       {plan.kind !== 'adhesion' && (
@@ -52,6 +58,8 @@ export const PassPlansPanel = () => {
     if (await call(`${API}/admin/pass-plans/${id}`, 'PATCH', {
       label: p.label || '', price_eur: Number(p.price_eur), uc: Number(p.uc),
       bonus_uc: Number(p.bonus_uc || 0), active: !!p.active,
+      promo_percent: Number(p.promo_percent || 0),
+      promo_ends_at: p.promo_ends_at ? new Date(p.promo_ends_at).toISOString() : null,
     })) toast.success('Plan mis à jour');
   };
   const del = async (id) => { if (await call(`${API}/admin/pass-plans/${id}`, 'DELETE')) toast.success('Plan supprimé'); };
