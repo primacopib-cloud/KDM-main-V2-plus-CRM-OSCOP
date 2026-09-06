@@ -2790,3 +2790,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-06 — Fiche 360 PDF (self-testé ✅)
 - GET /admin/investor-360/{user_id}/pdf (build_investor_360_pdf : blocs abonnement/crédits/RIB/financements/virements/factures) — bouton « Télécharger en PDF » dans la carte fiche 360 (200 %PDF, 401 sans auth)
+
+## 2026-06 — Fix drapeaux formulaire FINANCER (self-testé ✅)
+- Les emoji drapeaux (🇫🇷) ne s'affichent pas sous Windows → remplacés par des images flagcdn.com/w40 superposées dans les selects pays et indicatif (composant Flag, pl-10)
+- Le select indicatif utilise désormais le code pays comme value (CA/US partagent +1) et reste synchronisé avec le select pays
