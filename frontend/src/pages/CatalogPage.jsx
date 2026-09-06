@@ -1,4 +1,5 @@
 import { FlashPromoBanner } from '../components/FlashPromoBanner';
+import { PromoPassBanner } from '../components/landing/PromoPassBanner';
 import i18n from '@/i18n';
 import { SearchSuggest, addRecentSearch } from '../components/catalog/SearchSuggest';
 import { ZoneAddonDialog } from '../components/catalog/ZoneAddonDialog';
@@ -402,6 +403,7 @@ export default function CatalogPage() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }} data-testid="catalog-page">
       <FlashPromoBanner placement="catalog" />
+      <PromoPassBanner />
       <CatalogHeader
         zones={zones}
         entitledZones={entitledZones}

@@ -356,6 +356,9 @@ app.include_router(lolodrive_admin_router)
 from routes_lolodrive_home import lolodrive_home_router, set_lolodrive_home_database
 set_lolodrive_home_database(db)
 app.include_router(lolodrive_home_router)
+from routes_purchase_needs import purchase_needs_router, set_purchase_needs_database
+set_purchase_needs_database(db)
+app.include_router(purchase_needs_router)
 
 # Import and include LOLODRIVE Stripe Checkout (hosted page) for PASS/Recharge/Order
 from routes_lolodrive_checkout import (

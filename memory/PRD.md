@@ -2833,3 +2833,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - promo_ends_at ajouté à la config carrousel (datetime-local admin, ISO backend) ; GET public force promo_percent=0 si expiré (validé) ; compte à rebours PromoCountdown (tick 1 s, « ⏳ Promo PASS −15% — se termine dans 1j 23h 59min ») affiché au-dessus du carrousel particuliers
 - CTA_LABELS enrichi : pass_lolodrive + explorer_catalogue_lolodrive (les clics étaient rejetés 400 avant) ; GET /api/admin/lolodrive-carousel/pass-clicks {total,last_7d,last_30d} affiché dans le panel carrousel — validé (clic compté)
 - Promo démo active : 15 % jusqu'à J+2
+
+## 2026-06 — Bandeau promo global, taux conversion PASS, besoins d'achat visiteurs (self-testé ✅)
+- PromoPassBanner (components/landing) : countdown promo PASS sur /catalogue (sous FlashPromoBanner) et /pass-lolodrive (sous NavBar) ; PromoCountdown exporté
+- Taux conversion : pass-clicks étendu (purchases_total/30d/7d depuis lolodrive_passes created_at naive-UTC, conversion_30d_percent) affiché dans le panel carrousel
+- Besoins d'achat : routes_purchase_needs.py — POST /api/public/purchase-needs (validation pydantic 422, notif email équipe), GET /api/admin/purchase-needs (401 sans auth), POST /{id}/assign (404 si vendeur inconnu, email vendeur, statut ASSIGNED), POST /{id}/communityplace (flag payant)
+- UI : bouton hero « Déposer un besoin d'achat » ouvre PurchaseNeedForm (modal, bouton « Envoyer mon besoin d'achat », écran succès) ; PurchaseNeedsPanel en tête de l'onglet Demandes du superadmin (Assigner + CommunityPlace)

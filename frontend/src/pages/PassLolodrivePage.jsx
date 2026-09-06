@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { ShoppingBasket, Users, MapPin, ArrowRight, BadgeCheck, Ticket, BatteryCharging, Sparkles, CreditCard } from 'lucide-react';
 import NavBar from '../components/NavBar';
+import { PromoPassBanner } from '../components/landing/PromoPassBanner';
 import { FlashPromoBanner } from '../components/FlashPromoBanner';
 import i18n from '@/i18n';
 import { VitrineReviews } from '../components/pass/VitrineReviews';
@@ -60,6 +61,7 @@ export default function PassLolodrivePage() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #1F0A33 0%, #2A1045 100%)' }}>
       <NavBar />
+      <PromoPassBanner />
       <div className="pt-20 -mb-16"><FlashPromoBanner placement="pass" /></div>
       <main className="max-w-3xl mx-auto px-4 pt-28 pb-20" data-testid="pass-lolodrive-page">
         {firstName && (
