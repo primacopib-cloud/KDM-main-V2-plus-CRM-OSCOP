@@ -236,7 +236,7 @@ export default function GedBridgeAdminPage() {
                   {events.map((ev) => (
                     <tr
                       key={ev.id}
-                      className="border-b transition-colors hover:bg-amber-50/40"
+                      className="border-b transition-colors hover:bg-white/[0.06]"
                       style={{ borderColor: "rgba(212,175,55,0.12)" }}
                       data-testid={`ged-event-row-${ev.id}`}
                     >
@@ -342,7 +342,7 @@ function StatusBadge({ status }) {
     SUCCESS: { bg: "rgba(140,198,62,0.18)", color: "#6FA82E", label: "Succès" },
     ERROR:   { bg: "rgba(230,68,50,0.14)",  color: "#E64432", label: "Erreur" },
   };
-  const c = map[status] || { bg: "rgba(148,163,184,0.16)", color: "#64748b", label: status };
+  const c = map[status] || { bg: "rgba(148,163,184,0.16)", color: "#cbd5e1", label: status };
   return (
     <span className="inline-block px-2 py-0.5 rounded text-xs font-medium" style={{ background: c.bg, color: c.color }}>
       {c.label}

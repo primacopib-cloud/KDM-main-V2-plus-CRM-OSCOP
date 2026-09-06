@@ -2808,3 +2808,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - ACCOUNT_COLOR.oscop #5B2E8C → #B07CE8 (violet clair lisible sur fond sombre, aussi couleur des barres/légende)
 - Montants ByKindCard var(--kdm-anthracite) → #F7F2E9 ; Net comptable accent → #7EC8E3 ; hover table amber-50 → white/6
 - Tooltip du graphique : fond sombre #241243 + label clair (au lieu de blanc/illisible) ; axes et grille du chart éclaircis
+
+## 2026-06 — Contraste pages admin GED / Finance Bridge / Connecteurs (self-testé ✅)
+- GED + Finance Bridge : hover:bg-amber-50/40 → hover:bg-white/[0.06] (le survol rendait le texte clair illisible) ; badge statut fallback #64748b → #cbd5e1
+- Connecteurs : déjà conforme (F7F2E9, bg-white/5) — vérifié par screenshot, rien à corriger
