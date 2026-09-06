@@ -7,6 +7,9 @@ import { Toaster } from "./components/ui/sonner";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 const RedirectInscription = () => <Navigate to={{ pathname: '/adhesion-vendeur', search: window.location.search }} replace />;
+// Guard : les espaces privés redirigent les visiteurs vers la connexion
+const RequireMember = ({ children, admin = false }) =>
+  (localStorage.getItem('user') ? children : <Navigate to={admin ? '/admin/connexion' : '/connexion'} replace />);
 import OffersPage from "./pages/OffersPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -174,7 +177,7 @@ function App() {
           <Route path="/signature-sms" element={<SignatureDemoPage />} />
           {/* Super Admin Dashboard */}
           <Route path="/super-admin" element={<SuperAdminPage />} />
-          <Route path="/superadmin" element={<SuperAdminPage />} />
+          <Route path="/superadmin" element={<RequireMember admin><SuperAdminPage /></RequireMember>} />
           <Route path="/espace-investisseur" element={<InvestorSpacePage />} />
           <Route path="/particuliers" element={<ParticuliersPage />} />
           <Route path="/territoires" element={<TerritoiresPage />} />
@@ -195,7 +198,7 @@ function App() {
           <Route path="/bon-de-commande-dynamique" element={<DynamicOrderPage />} />
           <Route path="/dynamic-order" element={<DynamicOrderPage />} />
           {/* Vendor Space - Espace Vendeur */}
-          <Route path="/espace-vendeur" element={<VendorSpacePage />} />
+          <Route path="/espace-vendeur" element={<RequireMember><VendorSpacePage /></RequireMember>} />
           <Route path="/espace-cooper" element={<CooperSpacePage />} />
           <Route path="/espace-expert" element={<ExpertSpacePage />} />
           <Route path="/changer-mot-de-passe" element={<ChangePasswordPage />} />
@@ -203,7 +206,7 @@ function App() {
           <Route path="/contact" element={<SupportContactPage />} />
           <Route path="/support" element={<SupportContactPage />} />
           <Route path="/partenariat" element={<PartnershipPage />} />
-          <Route path="/vendor" element={<VendorSpacePage />} />
+          <Route path="/vendor" element={<RequireMember><VendorSpacePage /></RequireMember>} />
           {/* Admin Products Validation */}
           <Route path="/admin/produits" element={<AdminProductsPage />} />
           <Route path="/admin/products" element={<AdminProductsPage />} />
@@ -239,7 +242,7 @@ function App() {
           {/* ====================================================== */}
           {/* LOLODRIVE by O'SCOP — 7 modules                           */}
           {/* ====================================================== */}
-          <Route path="/lolodrive" element={<LolodriveAdminDashboardPage />} />
+          <Route path="/lolodrive" element={<RequireMember admin><LolodriveAdminDashboardPage /></RequireMember>} />
           <Route path="/lolodrive/dashboard" element={<LolodriveAdminDashboardPage />} />
           <Route path="/pass" element={<PassSpacePage />} />
           <Route path="/pass-lolodrive/inscription" element={<PassRegistrationPage />} />

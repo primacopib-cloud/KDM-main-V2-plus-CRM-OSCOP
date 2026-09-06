@@ -110,6 +110,22 @@ export const PurchaseNeedsPanel = () => {
                         <Globe className="w-3 h-3" /> CommunityPlace
                       </button>
                     )}
+                    {n.communityplace && !n.grouping_closed && (
+                      <button type="button" data-testid={`need-close-grouping-${n.id}`}
+                        onClick={() => {
+                          if (window.confirm(`Clôturer le groupage de ${n.reference} ? Tous les participants seront notifiés par email.`)) {
+                            post(`${API_URL}/api/admin/purchase-needs/${n.id}/close-grouping`, {}, 'Groupage clôturé — participants notifiés');
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold text-orange-300 bg-orange-500/10 border border-orange-400/40 hover:bg-orange-500/20 transition-colors">
+                        🔒 Clôturer groupage
+                      </button>
+                    )}
+                    {n.grouping_closed && (
+                      <span className="px-2 py-1 rounded-md text-white/45 bg-white/[0.04] border border-white/10" data-testid={`need-grouping-closed-${n.id}`}>
+                        Groupage clôturé ✓
+                      </span>
+                    )}
                   </span>
                 </div>
                 <p className="m-0 mt-1 text-white/45">

@@ -1,30 +1,53 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { X, Send } from 'lucide-react';
+import { X, Send, Plus, Trash2, Info, ImagePlus } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const TERRITORIES = ['Guadeloupe', 'Martinique', 'Guyane', 'La Réunion', 'Mayotte', 'Saint-Martin', 'Autre'];
 const inputCls = 'h-10 px-3 rounded-xl bg-white/[0.06] border border-white/15 text-white text-sm w-full placeholder:text-white/35';
+const emptyItem = () => ({ product: '', quantity: '', budget_eur: '', description: '', images: [] });
 
-// Formulaire visiteur : dépôt d'un besoin d'achat complet (traité par le superadmin)
+// Formulaire visiteur : dépôt d'un ou plusieurs besoins d'achat (une demande PAR produit)
 export const PurchaseNeedForm = ({ onClose }) => {
-  const [f, setF] = useState({ company: '', contact_name: '', email: '', phone: '', territory: 'Guadeloupe', product: '', quantity: '', budget_eur: '', deadline: '', description: '' });
+  const [f, setF] = useState({ company: '', contact_name: '', email: '', phone: '', territory: 'Guadeloupe', deadline: '' });
+  const [items, setItems] = useState([emptyItem()]);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
-  const [ref, setRef] = useState('');
+  const [refs, setRefs] = useState([]);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const setItem = (i, k, v) => setItems((prev) => prev.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
+
+  const uploadImage = async (i, file) => {
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const r = await fetch(`${API_URL}/api/public/purchase-needs/upload-image`, { method: 'POST', body: fd });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Erreur upload');
+      setItems((prev) => prev.map((it, j) => (j === i ? { ...it, images: [...it.images, d.url].slice(0, 2) } : it)));
+    } catch (e) { toast.error(e.message); }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true);
     try {
-      const res = await fetch(`${API_URL}/api/public/purchase-needs`, {
+      const res = await fetch(`${API_URL}/api/public/purchase-needs/batch`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...f, budget_eur: f.budget_eur ? Number(f.budget_eur) : null, deadline: f.deadline || null, description: f.description || null }),
+        body: JSON.stringify({
+          ...f, deadline: f.deadline || null,
+          items: items.map((it) => ({
+            product: it.product, quantity: it.quantity,
+            budget_eur: it.budget_eur ? Number(it.budget_eur) : null,
+            description: it.description || null,
+            images: it.images.length ? it.images : null,
+          })),
+        }),
       });
       if (!res.ok) throw new Error((await res.json()).detail?.[0]?.msg || 'Envoi impossible — vérifiez les champs');
       const d = await res.json();
-      setRef(d.reference || '');
+      setRefs(d.references || []);
       setSent(true);
     } catch (err) { toast.error(typeof err.message === 'string' ? err.message : 'Erreur'); }
     finally { setBusy(false); }
@@ -40,13 +63,25 @@ export const PurchaseNeedForm = ({ onClose }) => {
         </div>
         {sent ? (
           <div className="py-8 text-center" data-testid="purchase-need-success">
-            <p className="text-[#8CC63E] font-bold text-base m-0">✅ Besoin d'achat envoyé !</p>
-            {ref && <p className="text-white font-mono text-lg mt-2 mb-0" data-testid="need-tracking-ref">N° de suivi : {ref}</p>}
-            <p className="text-white/60 text-sm mt-2">Un email de confirmation avec votre numéro de suivi vient de vous être envoyé. La Centrale O'SCOP vous recontacte après étude de votre demande.</p>
+            <p className="text-[#8CC63E] font-bold text-base m-0">✅ {refs.length > 1 ? `${refs.length} besoins d'achat envoyés !` : "Besoin d'achat envoyé !"}</p>
+            <div className="mt-2 space-y-1">
+              {refs.map((r) => (
+                <p key={r.reference} className="text-white font-mono text-sm m-0" data-testid="need-tracking-ref">{r.reference} — {r.product}</p>
+              ))}
+            </div>
+            <p className="text-white/60 text-sm mt-3">Un email de confirmation avec vos numéros de suivi vient de vous être envoyé. La Centrale O'SCOP vous recontacte après étude.</p>
           </div>
         ) : (
           <form onSubmit={submit}>
-            <p className="text-xs text-white/55 m-0 mb-4">Décrivez votre besoin produit : la Centrale l'étudie, l'assigne à un vendeur référencé ou le publie sur la CommunityPlace.</p>
+            <p className="text-xs text-white/55 m-0 mb-2">Décrivez votre besoin : la Centrale l'étudie, l'assigne à un vendeur référencé ou le publie sur la CommunityPlace.</p>
+            <div className="flex items-start gap-2 rounded-xl px-3 py-2 mb-4 bg-[#8CC63E]/10 border border-[#8CC63E]/35" data-testid="need-one-product-info">
+              <Info className="w-4 h-4 text-[#8CC63E] shrink-0 mt-0.5" />
+              <p className="text-[11px] text-white/75 m-0">
+                <b>Une demande = un produit.</b> Ajoutez autant de produits que nécessaire ci-dessous : une demande distincte
+                sera créée par produit, et le tarif de publication CommunityPlace s'applique <b>par demande</b>
+                (prix unitaire × nombre de produits).
+              </p>
+            </div>
             <div className="grid gap-2.5 sm:grid-cols-2">
               <input required value={f.company} onChange={set('company')} placeholder="Société / Raison sociale *" className={inputCls} data-testid="need-company" />
               <input required value={f.contact_name} onChange={set('contact_name')} placeholder="Nom du contact *" className={inputCls} data-testid="need-contact" />
@@ -55,18 +90,58 @@ export const PurchaseNeedForm = ({ onClose }) => {
               <select value={f.territory} onChange={set('territory')} className={`${inputCls} bg-[#2B1548]`} data-testid="need-territory">
                 {TERRITORIES.map((t) => <option key={t}>{t}</option>)}
               </select>
-              <input required value={f.product} onChange={set('product')} placeholder="Produit recherché *" className={inputCls} data-testid="need-product" />
-              <input required value={f.quantity} onChange={set('quantity')} placeholder="Quantité (ex. 2 palettes, 500 unités) *" className={inputCls} data-testid="need-quantity" />
-              <input type="number" min="0" value={f.budget_eur} onChange={set('budget_eur')} placeholder="Budget estimé € (optionnel)" className={inputCls} data-testid="need-budget" />
               <input type="date" value={f.deadline} onChange={set('deadline')} className={inputCls} data-testid="need-deadline" title="Date limite souhaitée" />
             </div>
-            <textarea value={f.description} onChange={set('description')} rows={3} data-testid="need-description"
-              placeholder="Précisions : marque, conditionnement, normes, livraison souhaitée…"
-              className="mt-2.5 w-full px-3 py-2 rounded-xl bg-white/[0.06] border border-white/15 text-white text-sm placeholder:text-white/35" />
+            <div className="mt-3 space-y-3">
+              {items.map((it, i) => (
+                <div key={i} className="rounded-2xl p-3 bg-white/[0.03] border border-white/[0.1]" data-testid={`need-item-${i}`}>
+                  <div className="flex items-center mb-2">
+                    <span className="text-[11px] font-bold text-[#E9CF8E]">Produit {i + 1}</span>
+                    {items.length > 1 && (
+                      <button type="button" onClick={() => setItems((prev) => prev.filter((_, j) => j !== i))} data-testid={`need-item-remove-${i}`}
+                        className="ml-auto p-1 rounded text-white/50 hover:text-red-300 hover:bg-white/[0.06] transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                    )}
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input required value={it.product} onChange={(e) => setItem(i, 'product', e.target.value)} placeholder="Produit recherché *" className={inputCls} data-testid={`need-product-${i}`} />
+                    <input required value={it.quantity} onChange={(e) => setItem(i, 'quantity', e.target.value)} placeholder="Quantité (ex. 2 palettes, 500 unités) *" className={inputCls} data-testid={`need-quantity-${i}`} />
+                    <input type="number" min="0" value={it.budget_eur} onChange={(e) => setItem(i, 'budget_eur', e.target.value)} placeholder="Budget estimé € (optionnel)" className={inputCls} data-testid={`need-budget-${i}`} />
+                    <input value={it.description} onChange={(e) => setItem(i, 'description', e.target.value)} placeholder="Précisions : marque, normes…" className={inputCls} data-testid={`need-description-${i}`} />
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {it.images.map((url, k) => (
+                      <div key={url} className="relative">
+                        <img src={url.startsWith('http') ? url : `${API_URL}${url}`} alt="" className="w-14 h-14 object-cover rounded-lg border border-white/15" />
+                        <button type="button" onClick={() => setItem(i, 'images', it.images.filter((_, m) => m !== k))}
+                          className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] leading-none">×</button>
+                      </div>
+                    ))}
+                    {it.images.length < 2 && (
+                      <label className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-[11px] font-semibold cursor-pointer text-[#E9CF8E] bg-[#D9B35A]/10 border border-[#D9B35A]/35 hover:bg-[#D9B35A]/20 transition-colors">
+                        <ImagePlus className="w-3.5 h-3.5" /> Photo produit ({it.images.length}/2)
+                        <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" data-testid={`need-image-input-${i}`}
+                          onChange={(e) => { uploadImage(i, e.target.files?.[0]); e.target.value = ''; }} />
+                      </label>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {items.length < 10 && (
+              <button type="button" onClick={() => setItems((prev) => [...prev, emptyItem()])} data-testid="need-add-item"
+                className="mt-2.5 inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-[12px] font-bold text-[#8CC63E] bg-[#8CC63E]/10 border border-[#8CC63E]/40 hover:bg-[#8CC63E]/20 transition-colors">
+                <Plus className="w-3.5 h-3.5" /> Ajouter un autre produit
+              </button>
+            )}
+            {items.length > 1 && (
+              <p className="text-[11px] text-[#E9CF8E] m-0 mt-2" data-testid="need-fee-multiplier">
+                💡 {items.length} produits = {items.length} demandes — tarif de publication unitaire × {items.length} en cas de publication CommunityPlace.
+              </p>
+            )}
             <button type="submit" disabled={busy} data-testid="purchase-need-submit"
               className="mt-4 w-full h-11 rounded-xl font-bold text-sm text-[#1F0A33] disabled:opacity-60 transition-opacity"
               style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)' }}>
-              <Send className="w-4 h-4 inline mr-2" /> {busy ? 'Envoi…' : "Envoyer mon besoin d'achat"}
+              <Send className="w-4 h-4 inline mr-2" /> {busy ? 'Envoi…' : items.length > 1 ? `Envoyer mes ${items.length} besoins d'achat` : "Envoyer mon besoin d'achat"}
             </button>
           </form>
         )}

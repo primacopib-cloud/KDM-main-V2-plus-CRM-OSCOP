@@ -147,6 +147,43 @@ export const BasicTab = ({ formData, handleChange }) => (
                   </label>
                 </div>
                 <div className="mt-3">
+                  <Label className="text-white/80">Image principale du produit</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    {formData.image_url && (
+                      <img src={formData.image_url.startsWith('http') ? formData.image_url : `${process.env.REACT_APP_BACKEND_URL}${formData.image_url}`}
+                        alt="" className="w-12 h-12 object-cover rounded-lg border border-white/15" data-testid="main-image-preview" />
+                    )}
+                    <Input
+                      data-testid="product-main-image-url"
+                      placeholder="https://…/photo.jpg ou téléversez →"
+                      value={formData.image_url || ''}
+                      onChange={(e) => handleChange('image_url', e.target.value)}
+                      className="flex-1 bg-white/[0.04] border-white/10 text-white"
+                    />
+                    <input type="file" id="main-image-upload" accept="image/png,image/jpeg,image/webp" className="hidden"
+                      data-testid="product-main-image-upload-input"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        try {
+                          const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/catalog/admin/upload-image`, {
+                            method: 'POST', credentials: 'include', body: fd,
+                          });
+                          const d = await r.json();
+                          if (!r.ok) throw new Error(d.detail || 'Erreur upload');
+                          handleChange('image_url', d.url);
+                        } catch (err) { window.alert(err.message); }
+                        e.target.value = '';
+                      }} />
+                    <label htmlFor="main-image-upload" data-testid="product-main-image-upload-btn"
+                      className="inline-flex items-center px-3 h-10 rounded-lg text-xs font-semibold cursor-pointer whitespace-nowrap bg-[#D9B35A]/15 text-[#E9CF8E] border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25 transition-colors">
+                      📤 Téléverser
+                    </label>
+                  </div>
+                </div>
+                <div className="mt-3">
                   <Label className="text-white/80">Galerie photos (une URL par ligne, défilement sur la fiche)</Label>
                   <Textarea
                     data-testid="product-gallery-input"

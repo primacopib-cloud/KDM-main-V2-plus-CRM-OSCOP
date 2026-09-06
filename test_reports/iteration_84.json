@@ -1,0 +1,33 @@
+{
+  "summary": "Iter84 lot testing: 6/6 backend tests PASS (batch purchase-needs, upload need image, community-board gauge fields, close-grouping full flow with 409 idempotence + join-after-close 409, catalog admin upload-image). Frontend E2E: all 7 guards redirect correctly (/superadmin, /lolodrive → /admin/connexion; /vendor, /espace-vendeur, /espace-acheteur, /wallet, /commandes → /connexion). LOLODRIVE spot opens with animated scenes, spot-close/spot-replay/spot-cta-pass all present. Community-board shows board-gauge with 'Volume groupé' / 'Objectif' (2 gauges visible on real data BES-2026-0901/0902). PurchaseNeedForm multi-items: need-one-product-info bubble OK, need-add-item adds product-1 with its own fields, need-fee-multiplier shows '2 produits = 2 demandes' after add, submission returns 2 need-tracking-ref (BA-*). Superadmin: 2 need-close-grouping-* buttons visible on demo data (not clicked), pro-showcase-preview-btn present on Catalogue tab, showcase-preview-btn on /lolodrive opens /catalogue-lolodrive?visitor=1 in new tab. Product edit form has product-main-image-url + upload-btn + gallery inputs.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "SuperAdmin > Catalogue > ProductCatalogManager", "issues": ["The edit (Pencil) button on each product row in ProductRow.jsx has no data-testid — makes automated E2E fragile. Suggest adding data-testid={`edit-product-${product.id}`}."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iter84_lot_features.py", "/app/test_reports/pytest/iter84.xml"],
+  "action_items": [
+    "Optional: add data-testid to the Pencil (edit) button in /app/frontend/src/components/catalog-manager/ProductRow.jsx for better testability.",
+    "Console warning during Demandes panel render: 'Each child in a list should have a unique \"key\" prop.' in PurchaseNeedsPanel — non-blocking but should be fixed (missing key on iterated children).",
+    "Note: task spec referenced need-product-1/need-product-2 (1-indexed) but implementation uses 0-indexed need-product-0/need-product-1 with UI labels 'Produit 1/2'. Behavior is correct; task can be updated to use 0/1 indexing or code to use 1/2 indexing for consistency."
+  ],
+  "critical_code_review_comments": [
+    "routes_purchase_needs.close_grouping correctly handles idempotence (409 on 2nd call) and cascades join 409 correctly.",
+    "routes_purchase_needs.upload_need_image validates mime + size (2MB) with clear French errors — good.",
+    "PurchaseNeedsPanel iterates joiners/items without unique `key` — React warning in console; verify /app/frontend/src/components/superadmin/PurchaseNeedsPanel.jsx list rendering."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter84_lot_features.py"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (guards 7/7, spot OK, board gauge OK, multi-item form OK, admin panels OK, product image inputs OK, visitor preview OK)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal:admin)",
+  "seed_data_creation": "Created 2 test purchase_needs via UI submission (TEST_Produit UI A/B) — purged after test via motor MongoDB delete_many({company: /^TEST_/}). Backend test also creates+deletes 3 test needs (2 batch + 1 close-grouping seed) — all cleaned up.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iter84 lot features validated end-to-end. Demo data BES-2026-0901/0902 preserved (not touched). No functional bugs. Only 2 minor cleanups suggested: React key warning in PurchaseNeedsPanel + missing data-testid on ProductRow edit button.",
+  "rca of the issue": "N/A — no bugs found."
+}

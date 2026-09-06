@@ -60,16 +60,33 @@ export const CommunityBoard = () => {
               <span className="inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-semibold text-[#E9CF8E] bg-white/[0.05] border border-[#D9B35A]/30">
                 {STATUS_FR[d.status] || d.status}
               </span>
+              <div className="mt-2" data-testid={`board-gauge-${d.reference}`}>
+                <div className="flex justify-between text-[9px] text-white/45 mb-0.5">
+                  <span>Volume groupé : {d.current_quantity}</span>
+                  <span>Objectif : {d.goal_quantity}</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
+                  <div className="h-full rounded-full transition-[width] duration-700"
+                    style={{ width: `${Math.min(100, Math.round((d.current_quantity / (d.goal_quantity || 1)) * 100))}%`,
+                      background: 'linear-gradient(90deg, #8CC63E, #D9B35A)' }} />
+                </div>
+              </div>
               <div className="mt-2 flex items-center justify-between gap-2">
                 <span className="text-[10px] text-white/45 inline-flex items-center gap-1">
                   <Users className="w-3 h-3" />
                   {d.joiners_count > 0 ? `${d.joiners_count} participant${d.joiners_count > 1 ? 's' : ''} · +${d.joined_quantity} qté groupée` : 'Groupez les volumes'}
                 </span>
+                {d.grouping_closed ? (
+                  <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-white/[0.06] text-white/50 border border-white/15" data-testid={`board-closed-${d.reference}`}>
+                    Groupage clôturé
+                  </span>
+                ) : (
                 <button type="button" data-testid={`board-join-${d.reference}`}
                   onClick={() => { setJoinRef(joinRef === d.reference ? null : d.reference); setJoinQty(3); }}
                   className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#D9B35A]/15 text-[#E9CF8E] border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25 transition-colors">
                   Rejoindre
                 </button>
+                )}
               </div>
               {joinRef === d.reference && (
                 <div className="mt-2 flex gap-1.5" data-testid={`board-join-form-${d.reference}`}>
