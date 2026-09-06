@@ -2903,3 +2903,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-06 — Spot LOLODRIVE : série photoréaliste lot ×3 (self-testé ✅)
 - 4 nouvelles scènes photoréalistes (riz 5kg ×3, farine kraft ×3, pâtes penne ×3, yaourts verre ×3) éclairage studio softbox + rim doré, fond violet — spot passe à 7 scènes (riz/farine/pâtes/yaourts/en ligne/relais/famille+CTA), vérifié plein écran (défilement, barres progression 7)
+
+## 2026-06 — Spot LOLODRIVE v3 : éclairage clair + 11 produits (self-testé ✅)
+- 11 scènes produits en éclairage clair high-key (fond blanc lumineux, images compressées quality medium / compression 70) : riz, farine, pâtes, légumes, céréales, huile, sauces, légumes secs, beurre, yaourts, fromage — chacune ×3
+- 14 scènes au total (+ en ligne, relais, finale famille CTA) ; rythme accéléré SCENE_MS 2800 ms ; barres de progression compactées (w-5 sm:w-9) — vérifié plein écran (14 barres, défilement OK, textes lisibles sur fond clair grâce au dégradé bas)
