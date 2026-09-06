@@ -4,23 +4,30 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const COUNTRIES = [
-  { code: 'FR', name: 'France', flag: '🇫🇷', prefix: '+33' },
-  { code: 'GP', name: 'Guadeloupe', flag: '🇬🇵', prefix: '+590' },
-  { code: 'MQ', name: 'Martinique', flag: '🇲🇶', prefix: '+596' },
-  { code: 'GF', name: 'Guyane', flag: '🇬🇫', prefix: '+594' },
-  { code: 'RE', name: 'La Réunion', flag: '🇷🇪', prefix: '+262' },
-  { code: 'BE', name: 'Belgique', flag: '🇧🇪', prefix: '+32' },
-  { code: 'CH', name: 'Suisse', flag: '🇨🇭', prefix: '+41' },
-  { code: 'LU', name: 'Luxembourg', flag: '🇱🇺', prefix: '+352' },
-  { code: 'CA', name: 'Canada', flag: '🇨🇦', prefix: '+1' },
-  { code: 'US', name: 'États-Unis', flag: '🇺🇸', prefix: '+1' },
+  { code: 'FR', name: 'France', prefix: '+33' },
+  { code: 'GP', name: 'Guadeloupe', prefix: '+590' },
+  { code: 'MQ', name: 'Martinique', prefix: '+596' },
+  { code: 'GF', name: 'Guyane', prefix: '+594' },
+  { code: 'RE', name: 'La Réunion', prefix: '+262' },
+  { code: 'BE', name: 'Belgique', prefix: '+32' },
+  { code: 'CH', name: 'Suisse', prefix: '+41' },
+  { code: 'LU', name: 'Luxembourg', prefix: '+352' },
+  { code: 'CA', name: 'Canada', prefix: '+1' },
+  { code: 'US', name: 'États-Unis', prefix: '+1' },
 ];
+// Image de drapeau (les emoji drapeaux ne s'affichent pas sous Windows)
+const Flag = ({ code }) => (
+  <img src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`} alt={code} width={22} height={15}
+    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-[2px] pointer-events-none shadow-sm"
+    data-testid={`flag-img-${code}`} />
+);
 const RIGHTS = ['Data room', 'Qualification fournisseur', 'Analyse économique', 'Analyse logistique', "Bon d'Engagement", 'Workflow de paiement', 'Reporting', 'Clôture'];
 const fmtEur = (n) => n.toLocaleString('fr-FR') + ' €';
 
 export const InvestorApplyForm = () => {
   const [plans, setPlans] = useState([]);
   const [form, setForm] = useState({ legal_name: '', country: 'FR', phone_prefix: '+33', phone: '', siren: '', email: '', plan_id: '' });
+  const [prefixCountry, setPrefixCountry] = useState('FR');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -57,17 +64,23 @@ export const InvestorApplyForm = () => {
       <div className="grid sm:grid-cols-2 gap-3 mb-4">
         <input required value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })}
           placeholder="Raison sociale" data-testid="invest-legal-name" className={inputCls} />
-        <select value={form.country} data-testid="invest-country"
-          onChange={(e) => { const c = COUNTRIES.find((x) => x.code === e.target.value); setForm({ ...form, country: c.code, phone_prefix: c.prefix }); }}
-          className={`${inputCls} bg-[#2B1548]`}>
-          {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.flag} {c.name}</option>)}
-        </select>
-        <div className="flex gap-2">
-          <select value={form.phone_prefix} data-testid="invest-phone-prefix"
-            onChange={(e) => setForm({ ...form, phone_prefix: e.target.value })}
-            className="h-10 px-2 rounded-xl bg-[#2B1548] border border-white/15 text-white text-sm w-32">
-            {COUNTRIES.map((c) => <option key={c.code} value={c.prefix}>{c.flag} {c.prefix}</option>)}
+        <div className="relative">
+          <Flag code={form.country} />
+          <select value={form.country} data-testid="invest-country"
+            onChange={(e) => { const c = COUNTRIES.find((x) => x.code === e.target.value); setForm({ ...form, country: c.code, phone_prefix: c.prefix }); setPrefixCountry(c.code); }}
+            className={`${inputCls} bg-[#2B1548] pl-10`}>
+            {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
           </select>
+        </div>
+        <div className="flex gap-2">
+          <div className="relative w-32 shrink-0">
+            <Flag code={prefixCountry} />
+            <select value={prefixCountry} data-testid="invest-phone-prefix"
+              onChange={(e) => { const c = COUNTRIES.find((x) => x.code === e.target.value); setPrefixCountry(c.code); setForm({ ...form, phone_prefix: c.prefix }); }}
+              className="h-10 pl-10 pr-1 rounded-xl bg-[#2B1548] border border-white/15 text-white text-sm w-full">
+              {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.prefix}</option>)}
+            </select>
+          </div>
           <input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
             placeholder="Téléphone" data-testid="invest-phone" className={inputCls} />
         </div>
