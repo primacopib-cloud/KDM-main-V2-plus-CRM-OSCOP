@@ -111,6 +111,15 @@ async def track_spot_view():
     return {"ok": True}
 
 
+@lolodrive_router.post("/spot/cta")
+async def track_spot_cta():
+    """Compte un clic « Découvrir le PASS » à la fin du spot (conversion)."""
+    from datetime import datetime, timezone
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    await db.spot_views.update_one({"month": month}, {"$inc": {"cta_clicks": 1}}, upsert=True)
+    return {"ok": True}
+
+
 @lolodrive_router.get("/catalog/public")
 async def catalog_public_visitors():
     """Vitrine visiteurs : produits choisis par le superadmin, prix masqués."""

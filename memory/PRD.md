@@ -2896,3 +2896,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Popover photos board + compteur vues spot (self-testé ✅)
 - Photos sur board : board renvoie photos[] (max 2) ; popover au survol du badge 📷 (board-photos-popover-{ref}, miniatures 88px style inline pour battre les règles CSS globales) — screenshot validé
 - Compteur vues spot : POST /api/lolodrive/spot/view (public, upsert $inc par mois dans db.spot_views) appelé à l'ouverture du LolodriveSpot ; GET /api/lolodrive/admin/spot-views (total + par mois) affiché dans VisitorShowcasePanel (spot-views-stats) — curl testé (1 vue 2026-09)
+
+## 2026-06 — Taux conversion spot (self-testé ✅)
+- POST /api/lolodrive/spot/cta ($inc cta_clicks par mois, db.spot_views) déclenché au clic « Découvrir le PASS » du spot ; GET admin/spot-views renvoie total_cta + conversion_pct (global et par mois) ; affichage « 🎬 Spot — X lectures → Y clics (Z % de conversion) » (spot-conversion-rate) dans VisitorShowcasePanel — testé curl (1 vue / 1 clic / 100 %) + screenshot UI

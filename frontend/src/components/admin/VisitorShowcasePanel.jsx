@@ -49,9 +49,12 @@ export const VisitorShowcasePanel = () => {
       {spotViews && (
         <div className="mb-3 rounded-xl px-3 py-2 bg-white/[0.04] border border-white/[0.08] flex items-center gap-2 flex-wrap" data-testid="spot-views-stats">
           <span className="text-[11px] font-bold text-[#E9CF8E]">🎬 Spot LOLODRIVE — {spotViews.total} lecture{spotViews.total > 1 ? 's' : ''}</span>
+          <span className="text-[11px] font-bold text-[#8CC63E]" data-testid="spot-conversion-rate">
+            → {spotViews.total_cta || 0} clic{(spotViews.total_cta || 0) > 1 ? 's' : ''} « Découvrir le PASS » ({spotViews.conversion_pct || 0} % de conversion)
+          </span>
           {(spotViews.months || []).map((m) => (
             <span key={m.month} className="px-2 py-0.5 rounded-full text-[10px] text-white/70 bg-white/[0.05] border border-white/15">
-              {m.month} · {m.views}
+              {m.month} · {m.views} vue{m.views > 1 ? 's' : ''} · {m.cta_clicks || 0} clic{(m.cta_clicks || 0) > 1 ? 's' : ''} · {m.conversion_pct || 0} %
             </span>
           ))}
         </div>

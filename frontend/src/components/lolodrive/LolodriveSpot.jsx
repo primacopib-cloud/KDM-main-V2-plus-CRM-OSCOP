@@ -71,7 +71,11 @@ export const LolodriveSpot = ({ onClose }) => {
           <p className="text-white/85 text-sm sm:text-lg m-0 mt-3" style={{ animation: 'spotFadeUp 800ms 550ms ease-out backwards' }}>{s.sub}</p>
           {s.final && (
             <div style={{ animation: 'spotFadeUp 800ms 900ms ease-out backwards' }} className="mt-5 flex items-center justify-center gap-3 flex-wrap">
-              <button type="button" data-testid="spot-cta-pass" onClick={() => { onClose(); navigate('/pass-lolodrive'); }}
+              <button type="button" data-testid="spot-cta-pass" onClick={() => {
+                fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lolodrive/spot/cta`, { method: 'POST' }).catch(() => {});
+                onClose();
+                navigate('/pass-lolodrive');
+              }}
                 className="px-6 h-12 rounded-full font-bold text-sm text-[#1F0A33] hover:brightness-110 transition-[filter]"
                 style={{ background: 'linear-gradient(135deg, #D9B35A, #8CC63E)' }}>
                 <Ticket className="w-4 h-4 inline mr-2" /> Découvrir le PASS LOLODRIVE
