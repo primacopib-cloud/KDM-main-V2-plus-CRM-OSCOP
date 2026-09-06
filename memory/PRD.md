@@ -2882,3 +2882,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Aperçu vitrine : boutons « Voir comme un visiteur » (showcase-preview-btn, pro-showcase-preview-btn) → /catalogue-lolodrive?visitor=1 et /catalogue?visitor=1 ; LolodriveCatalogPage isVisitor inclut ?visitor ; CatalogPage visitorPreview (fetch credentials omit)
 - Besoin d'achat multi-produits : POST /api/public/purchase-needs/batch (1 demande PAR produit, max 10, emails récap) + POST /api/public/purchase-needs/upload-image (2 Mo, 2 photos/produit) ; PurchaseNeedForm réécrit : items dynamiques, bulle « une demande = un produit » (need-one-product-info), multiplicateur tarif (need-fee-multiplier), uploads photos
 - data-testid edit-product-{id} ajouté sur le crayon ProductRow
+
+## 2026-06 — Spot accueil, photos demandes admin/vendeur, partage WhatsApp (self-testé ✅)
+- Spot en accueil : LolodriveSpotButton ajouté sous l'AudienceBanner de /particuliers (screenshot validé)
+- Photos demandes : PurchaseNeedsPanel affiche need.images en miniatures cliquables (need-photos-{id}) ; email d'assignation vendeur inclut les <img> (FRONTEND_URL préfixé pour les chemins /api/uploads) — image démo sur BES-2026-0902
+- Partage WhatsApp : bouton vert (board-share-{ref}, icône SVG WhatsApp) sur chaque carte non clôturée du board → wa.me avec texte incitatif + lien /?besoin={ref}#community-board — vérifié href

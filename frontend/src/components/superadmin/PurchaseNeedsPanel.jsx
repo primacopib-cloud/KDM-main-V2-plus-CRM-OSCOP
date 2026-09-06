@@ -134,6 +134,16 @@ export const PurchaseNeedsPanel = () => {
                   {n.assigned_vendor ? ` · vendeur : ${n.assigned_vendor}` : ''}
                 </p>
                 {n.description && <p className="m-0 mt-0.5 text-white/50 italic">{n.description}</p>}
+                {(n.images || []).length > 0 && (
+                  <div className="flex gap-1.5 mt-1.5" data-testid={`need-photos-${n.id}`}>
+                    {n.images.map((u) => (
+                      <a key={u} href={u.startsWith('http') ? u : `${API_URL}${u}`} target="_blank" rel="noreferrer">
+                        <img src={u.startsWith('http') ? u : `${API_URL}${u}`} alt="photo produit"
+                          className="w-14 h-14 object-cover rounded-lg border border-white/15 hover:border-[#D9B35A]/60 transition-colors" />
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}

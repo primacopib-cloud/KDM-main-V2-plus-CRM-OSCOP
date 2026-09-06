@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 import re
+import os
 from typing import List
 from datetime import datetime, timezone
 
@@ -391,7 +392,11 @@ async def assign_purchase_need(need_id: str, body: AssignBody, admin: dict = Dep
                 f"territoire {need['territory']}<br/>Demandeur : {need['company']} ({need['contact_name']}, "
                 f"{need['email']}, {need['phone']})"
                 + (f"<br/>Budget : {need['budget_eur']:,.0f} €".replace(",", " ") if need.get("budget_eur") else "") +
-                f"<br/>{need.get('description') or ''}</p>")),
+                f"<br/>{need.get('description') or ''}</p>"
+                + ("".join(
+                    f"<img src='{(os.environ.get('FRONTEND_URL') or 'https://centrale.objectifscopoutremer.com') + u if u.startswith('/') else u}' "
+                    f"alt='photo produit' style='max-width:220px;border-radius:10px;margin:4px 6px 4px 0;' />"
+                    for u in (need.get("images") or [])) if need.get("images") else ""))),
             tags=["purchase-need"])
     except Exception as exc:
         logger.warning("Email vendeur assignation : %s", exc)
