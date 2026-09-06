@@ -1,20 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Landmark, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PRIORITY_COUNTRIES, WORLD_COUNTRIES, ALL_COUNTRIES } from './countries';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
-const COUNTRIES = [
-  { code: 'FR', name: 'France', prefix: '+33' },
-  { code: 'GP', name: 'Guadeloupe', prefix: '+590' },
-  { code: 'MQ', name: 'Martinique', prefix: '+596' },
-  { code: 'GF', name: 'Guyane', prefix: '+594' },
-  { code: 'RE', name: 'La Réunion', prefix: '+262' },
-  { code: 'BE', name: 'Belgique', prefix: '+32' },
-  { code: 'CH', name: 'Suisse', prefix: '+41' },
-  { code: 'LU', name: 'Luxembourg', prefix: '+352' },
-  { code: 'CA', name: 'Canada', prefix: '+1' },
-  { code: 'US', name: 'États-Unis', prefix: '+1' },
-];
+const COUNTRIES = ALL_COUNTRIES;
 // Image de drapeau (les emoji drapeaux ne s'affichent pas sous Windows)
 const Flag = ({ code }) => (
   <img src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`} alt={code} width={22} height={15}
@@ -69,7 +59,12 @@ export const InvestorApplyForm = () => {
           <select value={form.country} data-testid="invest-country"
             onChange={(e) => { const c = COUNTRIES.find((x) => x.code === e.target.value); setForm({ ...form, country: c.code, phone_prefix: c.prefix }); setPrefixCountry(c.code); }}
             className={`${inputCls} bg-[#2B1548] pl-10`}>
-            {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+            <optgroup label="France & Outre-mer">
+              {PRIORITY_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+            </optgroup>
+            <optgroup label="International">
+              {WORLD_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+            </optgroup>
           </select>
         </div>
         <div className="flex gap-2">
@@ -78,7 +73,12 @@ export const InvestorApplyForm = () => {
             <select value={prefixCountry} data-testid="invest-phone-prefix"
               onChange={(e) => { const c = COUNTRIES.find((x) => x.code === e.target.value); setPrefixCountry(c.code); setForm({ ...form, phone_prefix: c.prefix }); }}
               className="h-10 pl-10 pr-1 rounded-xl bg-[#2B1548] border border-white/15 text-white text-sm w-full">
-              {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.prefix}</option>)}
+              <optgroup label="France & Outre-mer">
+                {PRIORITY_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.prefix} {c.name}</option>)}
+              </optgroup>
+              <optgroup label="International">
+                {WORLD_COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.prefix} {c.name}</option>)}
+              </optgroup>
             </select>
           </div>
           <input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}

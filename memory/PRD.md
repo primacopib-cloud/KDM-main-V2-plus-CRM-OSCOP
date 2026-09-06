@@ -2794,3 +2794,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Fix drapeaux formulaire FINANCER (self-testé ✅)
 - Les emoji drapeaux (🇫🇷) ne s'affichent pas sous Windows → remplacés par des images flagcdn.com/w40 superposées dans les selects pays et indicatif (composant Flag, pl-10)
 - Le select indicatif utilise désormais le code pays comme value (CA/US partagent +1) et reste synchronisé avec le select pays
+
+## 2026-06 — Liste mondiale des pays formulaire FINANCER (self-testé ✅)
+- Nouveau fichier /app/frontend/src/components/investor/countries.js : 209 pays (PRIORITY_COUNTRIES France+Outre-mer 12 entrées, WORLD_COUNTRIES ~197, noms FR, indicatifs internationaux)
+- Selects pays et indicatif avec optgroup « France & Outre-mer » / « International », drapeaux flagcdn synchronisés (validé : Japon +81)
