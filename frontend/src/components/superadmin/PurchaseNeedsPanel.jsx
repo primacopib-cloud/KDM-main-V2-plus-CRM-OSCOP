@@ -15,9 +15,12 @@ const STATUS = {
 // Superadmin : besoins d'achat déposés par les visiteurs
 export const PurchaseNeedsPanel = () => {
   const [needs, setNeeds] = useState([]);
+  const [stats, setStats] = useState(null);
   const load = () => {
     fetch(`${API_URL}/api/admin/purchase-needs`, { headers: getAuthHeaders(), credentials: 'include' })
       .then((r) => (r.ok ? r.json() : { needs: [] })).then((d) => setNeeds(d.needs || [])).catch(() => {});
+    fetch(`${API_URL}/api/admin/purchase-needs/stats`, { headers: getAuthHeaders(), credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null)).then(setStats).catch(() => {});
   };
   useEffect(load, []);
 
@@ -46,6 +49,20 @@ export const PurchaseNeedsPanel = () => {
         <ShoppingCart className="w-4 h-4 text-[#D9B35A]" />
         <h3 className="text-sm font-bold text-[#E9CF8E] m-0">Besoins d'achat visiteurs ({needs.length})</h3>
       </div>
+      {stats && stats.count > 0 && (
+        <div className="mb-3 rounded-xl p-3 bg-white/[0.04] border border-white/[0.08]" data-testid="communityplace-revenue-stats">
+          <p className="text-[11px] font-bold text-[#E9CF8E] m-0 mb-1.5">
+            Revenus frais de publication CommunityPlace — {Number(stats.total_eur).toFixed(2)} € encaissés ({stats.count} paiement{stats.count > 1 ? 's' : ''})
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {stats.months.map((m) => (
+              <span key={m.month} className="px-2 py-0.5 rounded-full text-[10px] text-white/80 bg-white/[0.05] border border-white/15">
+                {m.month} · {Number(m.revenue_eur).toFixed(2)} €
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       {!needs.length ? (
         <p className="text-[11px] text-white/40 m-0">Aucun besoin d'achat déposé pour le moment.</p>
       ) : (

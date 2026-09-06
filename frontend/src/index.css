@@ -636,6 +636,8 @@ select:disabled { color: rgba(243,237,228,0.4) !important; }
 
 /* === SÉLECTEUR D'AUDIENCE — décale la nav sous le bandeau =========== */
 body.has-audience-switcher .navbar-root { top: 34px; }
+body.has-lolo-subnav .navbar-root { top: 66px; }
+body.has-lolo-subnav { padding-top: 32px; --lolo-offset: 66px; }
 
 /* Texte sombre garanti sur fond or (déclaré en dernier = priorité) */
 .on-gold, .on-gold * { color: #2A1045 !important; }

@@ -25,6 +25,7 @@ import { VideoShowcase } from '../components/kdmarche/VideoShowcase';
 import { AudienceBanner } from '../components/landing/AudienceBanner';
 import { KdmPillarsSection } from '../components/landing/KdmPillarsSection';
 import { CoopEssSection } from '../components/landing/CoopEssSection';
+import { CommunityBoard } from '../components/landing/CommunityBoard';
 import { CooperativeApiSection } from '../components/landing/CooperativeApiSection';
 import { FloatingToc } from '../components/landing/FloatingToc';
 import { Reveal } from '../components/landing/Reveal';
@@ -77,6 +78,7 @@ const LandingPage = () => {
 
       {/* Pourquoi Communityplace ? */}
       <Reveal><WhyCommunityplaceSection /></Reveal>
+      <Reveal><CommunityBoard /></Reveal>
 
       {/* ============ PARTIE PROFESSIONNELS ============ */}
       <Reveal variant="left">

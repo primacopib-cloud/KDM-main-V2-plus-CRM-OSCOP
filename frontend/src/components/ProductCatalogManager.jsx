@@ -160,6 +160,7 @@ export default function ProductCatalogManager({ onProductSaved }) {
         manufacturer: formData.manufacturer || null,
         status: formData.status,
         image_url: formData.image_url || null,
+        image_lot3: !!formData.image_lot3,
         translations: formData.translations || null,
         is_active: formData.is_active,
         is_new: formData.is_new,

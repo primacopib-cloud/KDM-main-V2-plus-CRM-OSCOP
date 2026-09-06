@@ -156,6 +156,10 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
             detail=f"Commande Drive temporairement suspendue jusqu'au {until.strftime('%d/%m/%Y')} : "
                    f"{count} commande(s) non retirée(s) récemment. Contactez votre relais pour toute question.")
     q = await quote_cart(user["id"], request.items)
+    # Concept LOLODRIVE : vente exclusivement par lot de 3
+    for line in q["lines"]:
+        if line.get("qty", 0) % 3 != 0:
+            raise HTTPException(status_code=400, detail=f"LOLODRIVE vend par lot de 3 : ajustez la quantité de « {line.get('name', line.get('sku', ''))} » (multiple de 3).")
     cfg = await logistics_config()
     is_drive = request.fulfillment_type in [FulfillmentType.DRIVE, FulfillmentType.LOLO_POINT]
     fees_cents = cfg["drive_fee_min_cents"] if is_drive else cfg["delivery_fee_min_cents"]
