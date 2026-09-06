@@ -238,6 +238,24 @@ const InvestorSubscribersTable = () => {
               className="ml-auto px-2.5 py-1 rounded-md text-[10px] font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors">
               Télécharger en PDF
             </button>
+            <button type="button" data-testid="fiche360-committee-btn"
+              onClick={async () => {
+                try {
+                  const cur = await fetch(`${API_URL}/api/investor-plans/admin/committee-emails`, { headers: getAuthHeaders() }).then((r) => r.json()).catch(() => ({ emails: [] }));
+                  const input = window.prompt('Emails des membres du comité (séparés par des virgules) :', (cur.emails || []).join(', '));
+                  if (!input) return;
+                  const res = await fetch(`${API_URL}/api/investor-plans/admin/investor-360/${fiche.investor.user_id}/send-committee`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+                    body: JSON.stringify({ emails: input.split(',') }),
+                  });
+                  const d = await res.json();
+                  if (!res.ok) throw new Error(d.detail || 'Erreur');
+                  toast.success(`Fiche 360 envoyée à ${d.sent} membre(s) du comité`);
+                } catch (e) { toast.error(e.message); }
+              }}
+              className="px-2.5 py-1 rounded-md text-[10px] font-bold text-black bg-[#8CC63E] hover:bg-[#7ab52f] transition-colors">
+              Envoyer au comité
+            </button>
             <button type="button" onClick={() => setFiche(null)} data-testid="fiche360-close"
               className="px-2 py-1 rounded-md text-[10px] font-semibold text-white/60 bg-white/[0.05] border border-white/15 hover:bg-white/[0.1] transition-colors">Fermer</button>
           </div>

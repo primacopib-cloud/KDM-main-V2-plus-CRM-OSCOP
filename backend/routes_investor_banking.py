@@ -306,6 +306,50 @@ async def investor_360_pdf(user_id: str, admin: dict = Depends(_admin)):
                     headers={"Content-Disposition": f"attachment; filename=fiche-investisseur-360-{user_id[:8]}.pdf"})
 
 
+class CommitteeSend(BaseModel):
+    emails: list[str]
+
+
+@investor_banking_router.post("/admin/investor-360/{user_id}/send-committee")
+async def send_360_to_committee(user_id: str, body: CommitteeSend, admin: dict = Depends(_admin)):
+    """Envoie la fiche 360 PDF par email aux membres du comité d'investissement."""
+    emails = [e.strip().lower() for e in body.emails if e.strip() and "@" in e]
+    if not emails:
+        raise HTTPException(status_code=400, detail="Aucune adresse email valide fournie")
+    from investor_billing import build_investor_360_pdf
+    data = await investor_360(user_id, admin)
+    pdf = build_investor_360_pdf(data)
+    import base64
+    from brevo_service import send_email, _wrap_html
+    inv = data["investor"]
+    sent = 0
+    for email in emails:
+        try:
+            await send_email(
+                to_email=email, to_name=None,
+                subject=f"📋 Fiche investisseur 360 — {inv.get('name') or inv.get('email')}",
+                html_content=_wrap_html("Comité d'investissement", (
+                    f"<p style='font-size:14px;'>Veuillez trouver en pièce jointe la fiche investisseur 360 de "
+                    f"<b>{inv.get('name') or inv.get('email')}</b> (abonnement, crédits CREDI'SCOP-INVEST, "
+                    f"financements, RIB, virements, factures), transmise par {admin.get('email')}.</p>")),
+                attachments=[{"content": base64.b64encode(pdf).decode(),
+                              "name": f"fiche-investisseur-360-{(inv.get('name') or 'investisseur').replace(' ', '-')}.pdf"}],
+                tags=["investor-committee"])
+            sent += 1
+        except Exception as exc:
+            logger.error("Envoi fiche comité vers %s : %s", email, exc)
+    await _db().investor_settings.update_one(
+        {"key": "committee_emails"},
+        {"$set": {"value": emails, "updated_at": _now().isoformat()}}, upsert=True)
+    return {"sent": sent, "emails": emails}
+
+
+@investor_banking_router.get("/admin/committee-emails")
+async def get_committee_emails(_: dict = Depends(_admin)):
+    doc = await _db().investor_settings.find_one({"key": "committee_emails"})
+    return {"emails": (doc or {}).get("value", [])}
+
+
 @investor_banking_router.get("/admin/repayments")
 async def admin_list_repayments(user_id: str | None = None, _: dict = Depends(_admin)):
     q = {"user_id": user_id} if user_id else {}

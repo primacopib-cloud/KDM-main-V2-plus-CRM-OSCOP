@@ -2812,3 +2812,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Contraste pages admin GED / Finance Bridge / Connecteurs (self-testé ✅)
 - GED + Finance Bridge : hover:bg-amber-50/40 → hover:bg-white/[0.06] (le survol rendait le texte clair illisible) ; badge statut fallback #64748b → #cbd5e1
 - Connecteurs : déjà conforme (F7F2E9, bg-white/5) — vérifié par screenshot, rien à corriger
+
+## 2026-06 — Pays mondiaux partout, test connecteurs nocturne, envoi fiche comité (self-testé ✅)
+- Pays : investor/countries.js dérive désormais de components/onboarding/countries.js (206 pays, source partagée déjà utilisée par ContactForm/PartnerForm/PhoneInput/Onboarding) — FINANCER affiche 206 pays (validé Sénégal +221). NOTE : les selects Guadeloupe/Martinique/… de CoopersConventions, fret, PartnershipPage, VendorOnboarding sont des TERRITOIRES métier, volontairement non modifiés
+- Test connecteurs : health_watch loop 10 min existait déjà (alertes transitions) ; ajout run_nightly_connector_report (fenêtre 0-6h UTC, flag jour system_flags, récap email « high » si ≥1 connecteur ERROR) branché scheduler — validé : 6 connecteurs testés, 0 panne, idempotent
+- Fiche comité : POST /admin/investor-360/{user_id}/send-committee {emails[]} → PDF 360 en pièce jointe à chaque membre + sauvegarde committee_emails (GET /admin/committee-emails pour préremplir) ; bouton « Envoyer au comité » (prompt prérempli) dans la fiche 360 — validé (sent:1, filtre emails invalides, 400 si aucun valide)
