@@ -156,6 +156,45 @@ export const BasicTab = ({ formData, handleChange }) => (
                     onChange={(e) => handleChange('gallery_text', e.target.value)}
                     className="mt-1 bg-white/[0.04] border-white/10 text-white"
                   />
+                  <div className="mt-2">
+                    <input
+                      type="file"
+                      id="gallery-upload-input"
+                      data-testid="product-gallery-upload-input"
+                      accept="image/png,image/jpeg,image/webp"
+                      multiple
+                      className="hidden"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || []);
+                        if (!files.length) return;
+                        const current = formData.gallery_text !== undefined
+                          ? formData.gallery_text
+                          : (formData.images || []).map((s) => (typeof s === 'string' ? s : s?.url || '')).filter(Boolean).join('\n');
+                        let text = current;
+                        for (const f of files) {
+                          const fd = new FormData();
+                          fd.append('file', f);
+                          try {
+                            const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/catalog/admin/upload-image`, {
+                              method: 'POST', credentials: 'include', body: fd,
+                            });
+                            const d = await r.json();
+                            if (!r.ok) throw new Error(d.detail || 'Erreur upload');
+                            text = text ? `${text}\n${d.url}` : d.url;
+                          } catch (err) {
+                            window.alert(`${f.name} : ${err.message}`);
+                          }
+                        }
+                        handleChange('gallery_text', text);
+                        e.target.value = '';
+                      }}
+                    />
+                    <label htmlFor="gallery-upload-input"
+                      data-testid="product-gallery-upload-btn"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer bg-[#D9B35A]/15 text-[#E9CF8E] border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25 transition-colors">
+                      📤 Téléverser des photos (PNG/JPG/WEBP, max 4 Mo)
+                    </label>
+                  </div>
                 </div>
               </FormSection>
             </TabsContent>
