@@ -353,6 +353,9 @@ app.include_router(product_lots_router)
 app.include_router(loyalty_router)
 app.include_router(pos_operators_router)
 app.include_router(lolodrive_admin_router)
+from routes_lolodrive_home import lolodrive_home_router, set_lolodrive_home_database
+set_lolodrive_home_database(db)
+app.include_router(lolodrive_home_router)
 
 # Import and include LOLODRIVE Stripe Checkout (hosted page) for PASS/Recharge/Order
 from routes_lolodrive_checkout import (
