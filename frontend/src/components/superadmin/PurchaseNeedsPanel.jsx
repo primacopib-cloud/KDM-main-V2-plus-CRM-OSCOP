@@ -53,6 +53,19 @@ export const PurchaseNeedsPanel = () => {
         <div className="mb-3 rounded-xl p-3 bg-white/[0.04] border border-white/[0.08]" data-testid="communityplace-revenue-stats">
           <p className="text-[11px] font-bold text-[#E9CF8E] m-0 mb-1.5">
             Revenus frais de publication CommunityPlace — {Number(stats.total_eur).toFixed(2)} € encaissés ({stats.count} paiement{stats.count > 1 ? 's' : ''})
+            <button type="button" data-testid="communityplace-csv-btn"
+              onClick={async () => {
+                const r = await fetch(`${API_URL}/api/admin/purchase-needs/stats/csv`, { headers: getAuthHeaders(), credentials: 'include' });
+                const blob = await r.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'revenus_communityplace.csv';
+                a.click();
+                URL.revokeObjectURL(a.href);
+              }}
+              className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold text-[#1F2A12] bg-[#D9B35A] hover:brightness-110">
+              Export CSV
+            </button>
           </p>
           <div className="flex flex-wrap gap-2">
             {stats.months.map((m) => (

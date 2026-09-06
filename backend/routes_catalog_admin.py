@@ -60,6 +60,8 @@ class ProductCreate(BaseModel):
     media: Optional[Dict[str, Any]] = None
     image_url: Optional[str] = None
     image_lot3: bool = False
+    images: Optional[List[str]] = None
+    visitor_visible: bool = False
     translations: Optional[Dict[str, Any]] = None
 
 
@@ -190,6 +192,8 @@ async def create_catalog_product(product: ProductCreate):
             "media": product.media,
             "image_url": product.image_url,
             "image_lot3": product.image_lot3,
+            "images": product.images or [],
+            "visitor_visible": product.visitor_visible,
             "translations": product.translations,
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
@@ -263,6 +267,8 @@ async def update_catalog_product(product_id: str, product: ProductUpdate):
             "media": product.media,
             "image_url": product.image_url,
             "image_lot3": product.image_lot3,
+            "images": product.images or [],
+            "visitor_visible": product.visitor_visible,
             "translations": product.translations,
             "updated_at": datetime.now(timezone.utc)
         }

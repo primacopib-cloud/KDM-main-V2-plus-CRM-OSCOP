@@ -254,6 +254,9 @@ async def list_products(
     
     # Build query
     query = {"status": ProductStatus.ACTIVE.value}
+    if not current_user:
+        # Visiteurs : seule la vitrine choisie par le superadmin est visible
+        query["visitor_visible"] = True
     
     if category_id:
         query["category_id"] = category_id

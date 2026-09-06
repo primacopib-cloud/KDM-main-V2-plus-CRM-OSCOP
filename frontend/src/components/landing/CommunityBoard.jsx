@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Search, Megaphone } from 'lucide-react';
+import { Search, Megaphone, Users } from 'lucide-react';
+import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const STATUS_FR = { NEW: 'Nouvelle', ASSIGNED: 'En traitement', VENDOR_ACCEPTED: 'Offre reçue', VENDOR_DECLINED: 'En recherche', OFFER_ACCEPTED: 'Conclue' };
@@ -8,6 +9,24 @@ const STATUS_FR = { NEW: 'Nouvelle', ASSIGNED: 'En traitement', VENDOR_ACCEPTED:
 export const CommunityBoard = () => {
   const [demands, setDemands] = useState([]);
   const [q, setQ] = useState('');
+  const [joinRef, setJoinRef] = useState(null);
+  const [joinEmail, setJoinEmail] = useState('');
+  const [joinQty, setJoinQty] = useState(3);
+  const submitJoin = async (ref) => {
+    if (!joinEmail.includes('@')) return toast.error('Email invalide');
+    try {
+      const r = await fetch(`${API_URL}/api/public/purchase-needs/${ref}/join`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: joinEmail, quantity: Number(joinQty) || 1 }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Erreur');
+      setDemands((prev) => prev.map((x) => (x.reference === ref
+        ? { ...x, joiners_count: d.joiners_count, joined_quantity: d.joined_quantity } : x)));
+      setJoinRef(null); setJoinEmail('');
+      toast.success('Vous avez rejoint la demande — volumes groupés !');
+    } catch (e) { toast.error(e.message); }
+  };
   useEffect(() => {
     fetch(`${API_URL}/api/public/community-board`)
       .then((r) => (r.ok ? r.json() : { demands: [] })).then((d) => setDemands(d.demands || [])).catch(() => {});
@@ -41,6 +60,31 @@ export const CommunityBoard = () => {
               <span className="inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-semibold text-[#E9CF8E] bg-white/[0.05] border border-[#D9B35A]/30">
                 {STATUS_FR[d.status] || d.status}
               </span>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span className="text-[10px] text-white/45 inline-flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  {d.joiners_count > 0 ? `${d.joiners_count} participant${d.joiners_count > 1 ? 's' : ''} · +${d.joined_quantity} qté groupée` : 'Groupez les volumes'}
+                </span>
+                <button type="button" data-testid={`board-join-${d.reference}`}
+                  onClick={() => { setJoinRef(joinRef === d.reference ? null : d.reference); setJoinQty(3); }}
+                  className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#D9B35A]/15 text-[#E9CF8E] border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25 transition-colors">
+                  Rejoindre
+                </button>
+              </div>
+              {joinRef === d.reference && (
+                <div className="mt-2 flex gap-1.5" data-testid={`board-join-form-${d.reference}`}>
+                  <input value={joinEmail} onChange={(e) => setJoinEmail(e.target.value)} placeholder="votre@email.fr"
+                    data-testid={`board-join-email-${d.reference}`}
+                    className="h-8 flex-1 min-w-0 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-white text-[11px] placeholder:text-white/35" />
+                  <input type="number" min="1" value={joinQty} onChange={(e) => setJoinQty(e.target.value)}
+                    data-testid={`board-join-qty-${d.reference}`}
+                    className="h-8 w-14 px-1.5 rounded-lg bg-white/[0.06] border border-white/15 text-white text-[11px]" />
+                  <button type="button" onClick={() => submitJoin(d.reference)} data-testid={`board-join-submit-${d.reference}`}
+                    className="h-8 px-2.5 rounded-lg text-[11px] font-bold text-[#1F2A12] bg-[#D9B35A] hover:brightness-110 transition-[filter]">
+                    OK
+                  </button>
+                </div>
+              )}
             </div>
           ))}
           {!filtered.length && <p className="text-white/40 text-sm">Aucun résultat pour « {q} ».</p>}
