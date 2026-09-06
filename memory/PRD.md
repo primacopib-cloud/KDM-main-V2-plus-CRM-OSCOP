@@ -2907,3 +2907,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Spot LOLODRIVE v3 : éclairage clair + 11 produits (self-testé ✅)
 - 11 scènes produits en éclairage clair high-key (fond blanc lumineux, images compressées quality medium / compression 70) : riz, farine, pâtes, légumes, céréales, huile, sauces, légumes secs, beurre, yaourts, fromage — chacune ×3
 - 14 scènes au total (+ en ligne, relais, finale famille CTA) ; rythme accéléré SCENE_MS 2800 ms ; barres de progression compactées (w-5 sm:w-9) — vérifié plein écran (14 barres, défilement OK, textes lisibles sur fond clair grâce au dégradé bas)
+
+## 2026-06 — Spot : scènes finales en éclairage clair (self-testé ✅)
+- 3 dernières scènes regénérées en plein jour : smartphone (salon lumineux), point relais caribéen en plein soleil, famille en cuisine blanche — screenshots validés (relais + finale CTA)
+- Les 14 scènes du spot sont désormais toutes en éclairage clair high-key
