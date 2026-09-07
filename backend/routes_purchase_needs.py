@@ -509,7 +509,26 @@ async def vendor_respond(need_id: str, body: VendorResponse, user: dict = Depend
                     "<p style='font-size:12px;color:#888;'>L'acceptation vous dirige vers l'adhésion professionnelle "
                     "KDMARCHÉ × O'SCOP, nécessaire pour finaliser l'achat.</p>").replace(",", " ")),
                 tags=["purchase-need"])
-        else:
+            for j in (need.get("joiners") or []):
+                jm = (j.get("email") or "").lower()
+                if not jm or jm == (need.get("email") or "").lower():
+                    continue
+                try:
+                    await send_email(
+                        to_email=jm, to_name=None,
+                        subject=f"💼 Offre vendeur reçue — demande groupée {need['reference']}",
+                        html_content=_wrap_html("Offre reçue", (
+                            f"<p style='font-size:14px;'>Bonne nouvelle ! Un vendeur référencé de la Centrale O'SCOP propose "
+                            f"<b style='font-size:16px;'>{body.price_eur:,.0f} €</b> pour la demande groupée "
+                            f"<b>{need['reference']} — {need['product']}</b> que vous avez rejointe "
+                            f"(votre quantité : {j.get('quantity')})."
+                            + (f"<br/>Note du vendeur : {body.note}" if body.note else "") + "</p>"
+                            f"<p style='text-align:center;'><a href='{api_base}/?besoin={need['reference']}#community-board' "
+                            "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
+                            "padding:12px 26px;border-radius:12px;text-decoration:none;'>Suivre la demande groupée</a></p>").replace(",", " ")),
+                        tags=["purchase-need"])
+                except Exception as e2:
+                    logger.warning("Email participant offre : %s", e2)
             subject = f"❌ Besoin {need['reference']} décliné par le vendeur"
             html = (f"<p style='font-size:14px;'>Le vendeur <b>{user.get('email')}</b> décline le besoin "
                     f"<b>{need['reference']} — {need['product']}</b>."

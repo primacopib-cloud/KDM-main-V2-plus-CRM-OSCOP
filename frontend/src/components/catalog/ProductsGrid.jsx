@@ -142,6 +142,11 @@ const RestockAlertButton = ({ product, zone, subscribedSet, onToggle }) => {
   );
 };
 
+const COUNTRY_FLAGS = {
+  CUBA: 'cu', HAITI: 'ht', BRESIL: 'br', MAROC: 'ma', FRANCE: 'fr', SENEGAL: 'sn',
+  'COTE-DIVOIRE': 'ci', 'AFRIQUE-DU-SUD': 'za', MADAGASCAR: 'mg', MAURICE: 'mu',
+};
+
 export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) => {
   const restockZone = cart?.zone_code || null;
   const [subscribedSet, setSubscribedSet] = useState(new Set());
@@ -215,6 +220,15 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               <Badge variant="outline" className="w-fit mb-2 text-[10px] text-white/60 border-white/20">
                 {tData(product.category_name) || tData('Produit')}
               </Badge>
+              {(product.countries || []).length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 mb-2" data-testid={`product-countries-${product.sku}`}>
+                  <span className="text-[9px] uppercase tracking-wide text-white/40">Disponible :</span>
+                  {product.countries.map((c) => COUNTRY_FLAGS[c] && (
+                    <img key={c} src={`https://flagcdn.com/w20/${COUNTRY_FLAGS[c]}.png`} alt={c} title={c}
+                      width={18} height={12} className="rounded-[2px] border border-white/10" />
+                  ))}
+                </div>
+              )}
               
               <SaleModelBadge product={product} />
               {/* Fiche circuit — vendeur juridique / facture / financement */}

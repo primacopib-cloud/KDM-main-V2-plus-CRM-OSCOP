@@ -138,6 +138,8 @@ class ProductResponse(BaseModel):
     rar_zones: List[str] = []
     rar_min_ceiling_cents: Optional[int] = None
     rar_delay: Optional[str] = None
+    # Pays du monde affectés (carte)
+    countries: List[str] = []
     rar_trigger: Optional[str] = None
     rar_logistics_fees: Optional[str] = None
     rar_customs: Optional[str] = None
