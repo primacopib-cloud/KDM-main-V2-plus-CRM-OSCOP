@@ -2957,3 +2957,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-06 — Formulaire partenariat : Pays + drapeaux + indicatif (self-testé ✅)
 - PartnershipPage : label « Territoire » → « Pays », select remplacé par SearchableCountryDropdown (catalogue mondial COUNTRIES, drapeaux FlagCDN, recherche) ; champ téléphone = dropdown drapeau + indicatif (mode dial, synchronisé avec le pays) + numéro ; payload contact_phone envoyé avec l'indicatif (« +596 690… ») ; backend inchangé (territory = nom du pays) — screenshots validés (Guadeloupe→Martinique, +590→+596)
+
+## 2026-06 — Pays partout (self-testé ✅)
+- PurchaseNeedForm (besoin d'achat) : sélecteur pays mondial avec drapeaux (SearchableCountryDropdown) + téléphone drapeau/indicatif synchronisé (La Réunion → +262 testé) ; payload : phone avec indicatif + country_code
+- Backend batch : champ optionnel country_code stocké ; le board utilise country_code pour le drapeau (fallback TERRITORY_FLAG)
+- Formulaire contact (SupportContactPage) : pas de champ téléphone/pays → rien à modifier ; partenariat déjà fait au lot précédent
