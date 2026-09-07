@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Store, TrendingUp, MapPin, IdCard, ExternalLink, Ban, CheckCircle2, Loader2, Link2 } from 'lucide-react';
+import { Store, TrendingUp, MapPin, IdCard, ExternalLink, Ban, CheckCircle2, Loader2, Link2, Download, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { TerritoryFlag } from '../Flag';
+import { SpaceDetailDialog, RelayManagerDialog } from './SpaceDetailDialog';
 
 const SPACES = [
   { key: 'vendors', label: 'Vendeurs', icon: Store, route: '/vendor', active: 'APPROVED', suspend: 'SUSPENDED' },
@@ -21,6 +22,8 @@ export const SpacesRegistryPanel = () => {
   const [data, setData] = useState(null);
   const [tab, setTab] = useState('vendors');
   const [busy, setBusy] = useState(null);
+  const [detailRow, setDetailRow] = useState(null);
+  const [managerRow, setManagerRow] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${API}/admin/spaces/registries`, { headers: getAuthHeaders(), credentials: 'include' })
@@ -49,6 +52,20 @@ export const SpacesRegistryPanel = () => {
     } catch (e) { toast.error(e.message); } finally { setBusy(null); }
   };
 
+  const exportCsv = () => {
+    const header = ['Nom', 'Email', 'Téléphone', 'Pays', 'Détail', 'Compte lié', 'Statut', 'Inscrit le'];
+    const lines = rows.map((r) => [r.name, r.email, r.phone, r.country, r.detail,
+      r.account_connected ? 'Oui' : 'Non', r.status, String(r.created_at || '').slice(0, 10)]);
+    const csv = [header, ...lines]
+      .map((l) => l.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `registre-${space.key}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   return (
     <div className="rounded-[18px] p-5 bg-white/[0.04] border border-white/10" data-testid="spaces-registry-panel">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -56,6 +73,10 @@ export const SpacesRegistryPanel = () => {
           <h2 className="text-base font-semibold text-white">Registres des espaces</h2>
           <p className="text-xs text-white/50">Comptes enregistrés automatiquement et connectés à leur espace</p>
         </div>
+        <button type="button" onClick={exportCsv} data-testid="spaces-export-csv"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] border border-white/15 text-white/75 hover:text-white">
+          <Download className="w-3.5 h-3.5" /> Exporter CSV ({rows.length})
+        </button>
       </div>
       <div className="flex flex-wrap gap-2 mb-4">
         {SPACES.map((s) => (
@@ -91,7 +112,12 @@ export const SpacesRegistryPanel = () => {
                 const suspended = ['SUSPENDED', 'REJECTED', 'CANCELLED'].includes(r.status);
                 return (
                   <tr key={r.id} className="border-b border-white/5" data-testid={`spaces-row-${r.id}`}>
-                    <td className="py-2.5 pr-3 text-white/90 font-medium">{r.name}</td>
+                    <td className="py-2.5 pr-3">
+                      <button type="button" onClick={() => setDetailRow(r)} data-testid={`detail-${r.id}`}
+                        className="text-white/90 font-medium hover:text-[#E9CF8E] underline-offset-2 hover:underline text-left">
+                        {r.name}
+                      </button>
+                    </td>
                     <td className="py-2.5 pr-3 text-white/60">{r.email || '—'}</td>
                     <td className="py-2.5 pr-3 text-white/60">
                       {r.country ? (
@@ -116,6 +142,13 @@ export const SpacesRegistryPanel = () => {
                           className="p-1.5 rounded-md bg-white/[0.05] border border-white/10 text-white/60 hover:text-white">
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
+                        {tab === 'relays' && (
+                          <button type="button" onClick={() => setManagerRow(r)} data-testid={`link-manager-${r.id}`}
+                            title="Lier un gérant"
+                            className="p-1.5 rounded-md bg-[#D9B35A]/15 border border-[#D9B35A]/30 text-[#E9CF8E] hover:bg-[#D9B35A]/25">
+                            <UserCog className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         {suspended ? (
                           <button type="button" onClick={() => setStatus(r, space.active)} disabled={busy === r.id}
                             data-testid={`activate-${r.id}`} title="Réactiver"
@@ -138,6 +171,10 @@ export const SpacesRegistryPanel = () => {
           </table>
         </div>
       )}
+      <SpaceDetailDialog open={!!detailRow} onClose={() => setDetailRow(null)}
+        kind={space.patchKind || space.key} row={detailRow} spaceLabel={space.label} />
+      <RelayManagerDialog open={!!managerRow} onClose={() => setManagerRow(null)}
+        relay={managerRow} onLinked={load} />
     </div>
   );
 };

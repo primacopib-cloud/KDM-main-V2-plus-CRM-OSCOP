@@ -290,6 +290,12 @@ async def activate_account(body: ActivateBody, response: Response):
             "status": "APPROVED", "approved_at": now_iso, "created_at": now_iso,
             "description": "", "source": "vendor_onboarding", "onboarding_id": ob["id"],
         })
+        try:
+            from routes_admin_spaces import notify_admin_signup
+            await notify_admin_signup("Nouveau vendeur inscrit",
+                                      f"{ob['company']} ({ob['email']}) a activé son espace vendeur.", "vendeur")
+        except Exception:
+            pass
     await db.vendor_onboarding.update_one({"id": ob["id"]}, {"$set": {
         "status": "ACTIVATED", "activated_at": datetime.now(timezone.utc).isoformat(),
     }})
