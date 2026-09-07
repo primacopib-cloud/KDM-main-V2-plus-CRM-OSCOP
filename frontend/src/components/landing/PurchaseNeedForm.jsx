@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { X, Send, Plus, Trash2, Info, ImagePlus } from 'lucide-react';
+import { SearchableCountryDropdown } from '../onboarding/CountryPhoneFields';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
-const TERRITORIES = ['Guadeloupe', 'Martinique', 'Guyane', 'La Réunion', 'Mayotte', 'Saint-Martin', 'Autre'];
 const inputCls = 'h-10 px-3 rounded-xl bg-white/[0.06] border border-white/15 text-white text-sm w-full placeholder:text-white/35';
 const emptyItem = () => ({ product: '', quantity: '', budget_eur: '', description: '', images: [] });
 
 // Formulaire visiteur : dépôt d'un ou plusieurs besoins d'achat (une demande PAR produit)
 export const PurchaseNeedForm = ({ onClose }) => {
   const [f, setF] = useState({ company: '', contact_name: '', email: '', phone: '', territory: 'Guadeloupe', deadline: '' });
+  const [countryCode, setCountryCode] = useState('GP');
+  const [dial, setDial] = useState('+590');
   const [items, setItems] = useState([emptyItem()]);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -36,7 +38,7 @@ export const PurchaseNeedForm = ({ onClose }) => {
       const res = await fetch(`${API_URL}/api/public/purchase-needs/batch`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...f, deadline: f.deadline || null,
+          ...f, phone: `${dial} ${f.phone}`.trim(), country_code: countryCode, deadline: f.deadline || null,
           items: items.map((it) => ({
             product: it.product, quantity: it.quantity,
             budget_eur: it.budget_eur ? Number(it.budget_eur) : null,
@@ -86,10 +88,17 @@ export const PurchaseNeedForm = ({ onClose }) => {
               <input required value={f.company} onChange={set('company')} placeholder="Société / Raison sociale *" className={inputCls} data-testid="need-company" />
               <input required value={f.contact_name} onChange={set('contact_name')} placeholder="Nom du contact *" className={inputCls} data-testid="need-contact" />
               <input required type="email" value={f.email} onChange={set('email')} placeholder="Email *" className={inputCls} data-testid="need-email" />
-              <input required value={f.phone} onChange={set('phone')} placeholder="Téléphone *" className={inputCls} data-testid="need-phone" />
-              <select value={f.territory} onChange={set('territory')} className={`${inputCls} bg-[#2B1548]`} data-testid="need-territory">
-                {TERRITORIES.map((t) => <option key={t}>{t}</option>)}
-              </select>
+              <div className="flex gap-1.5">
+                <div className="w-24 shrink-0">
+                  <SearchableCountryDropdown mode="dial" value={countryCode} display={dial} testId="need-dial-select"
+                    buttonClassName={inputCls}
+                    onSelect={(c) => { setCountryCode(c.code); setDial(c.dial); }} />
+                </div>
+                <input required value={f.phone} onChange={set('phone')} placeholder="Téléphone *" className={inputCls} data-testid="need-phone" />
+              </div>
+              <SearchableCountryDropdown value={countryCode} display={f.territory} testId="need-territory"
+                buttonClassName={inputCls}
+                onSelect={(c) => { setCountryCode(c.code); setDial(c.dial); setF((prev) => ({ ...prev, territory: c.name })); }} />
               <input type="date" value={f.deadline} onChange={set('deadline')} className={inputCls} data-testid="need-deadline" title="Date limite souhaitée" />
             </div>
             <div className="mt-3 space-y-3">

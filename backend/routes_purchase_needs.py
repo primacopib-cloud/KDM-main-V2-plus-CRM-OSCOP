@@ -55,6 +55,7 @@ class PurchaseNeedBatch(BaseModel):
     email: EmailStr
     phone: str = Field(min_length=6)
     territory: str
+    country_code: str | None = None
     deadline: str | None = None
     items: List[NeedItem] = Field(min_length=1, max_length=10)
 
@@ -134,7 +135,7 @@ async def create_purchase_needs_batch(body: PurchaseNeedBatch):
         ref = f"BA-{now.strftime('%Y%m')}-{str(uuid.uuid4())[:6].upper()}"
         doc = {"id": str(uuid.uuid4()), "reference": ref,
                "company": body.company, "contact_name": body.contact_name, "email": body.email,
-               "phone": body.phone, "territory": body.territory, "deadline": body.deadline,
+               "phone": body.phone, "territory": body.territory, "country_code": body.country_code, "deadline": body.deadline,
                "product": item.product, "quantity": item.quantity, "budget_eur": item.budget_eur,
                "description": item.description, "images": item.images or [],
                "status": "NEW", "assigned_vendor": None, "communityplace": False, "created_at": _now()}
@@ -224,7 +225,8 @@ async def community_board(q: str | None = None):
         joined = int(n.get("joined_quantity") or 0)
         goal = max(init * 2, init + joined, 10)
         out.append({"reference": n["reference"], "product": n["product"], "quantity": n["quantity"],
-                    "territory": n["territory"], "flag": TERRITORY_FLAG.get(n["territory"], "FR"),
+                    "territory": n["territory"],
+                    "flag": (n.get("country_code") or TERRITORY_FLAG.get(n["territory"], "FR")),
                     "status": n["status"], "created_at": n["created_at"],
                     "joiners_count": len(n.get("joiners") or []),
                     "joined_quantity": joined,
