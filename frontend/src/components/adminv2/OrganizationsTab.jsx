@@ -10,6 +10,7 @@ import {
 import { adminAPIV2 } from '../../services/api';
 import { ORG_STATUSES, formatDate } from './adminV2Constants';
 import { OrgFormDialog } from './OrgFormDialog';
+import { TerritoryFlag } from '../Flag';
 
 const iconBtn = 'p-1.5 rounded-lg border transition-colors';
 
@@ -124,7 +125,7 @@ export const OrganizationsTab = ({
                     </td>
                     <td className="p-4 text-white/70 font-mono text-sm">{org.registration_id}</td>
                     <td className="p-4">
-                      <Badge variant="outline" className="text-white/60 border-white/20">{org.territory}</Badge>
+                      <Badge variant="outline" className="text-white/60 border-white/20 gap-1.5"><TerritoryFlag territory={org.territory} className="w-3.5 h-auto rounded-[1px] inline-block" />{org.territory}</Badge>
                     </td>
                     <td className="p-4"><Badge className={statusConfig.color}>{statusConfig.label}</Badge></td>
                     <td className="p-4 text-white/50 text-sm">{formatDate(org.created_at)}</td>

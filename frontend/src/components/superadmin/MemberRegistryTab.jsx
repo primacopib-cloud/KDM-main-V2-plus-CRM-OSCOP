@@ -3,6 +3,7 @@ import { BookUser, Loader2, ShoppingBag, Store, FileDown, FileText, Ban, RotateC
 import { toast } from 'sonner';
 import { apiCallV2, BACKEND_URL } from '../../services/http';
 import { PrintSectionButton } from '../PrintSectionButton';
+import { TerritoryFlag } from '../Flag';
 
 const TYPES = [
   { value: 'BUYER_PRO', label: 'Acheteurs pro', icon: ShoppingBag, color: '#5B9BD5' },
@@ -130,7 +131,7 @@ export const MemberRegistryTab = () => {
               <tr className="text-left text-[11px] uppercase tracking-wider text-[#8A785F] border-b border-[#EDE1C6] bg-[#FBF6EC]">
                 <th className="px-4 py-3">Raison sociale</th>
                 <th className="px-4 py-3">SIRET</th>
-                <th className="px-4 py-3">Territoire</th>
+                <th className="px-4 py-3">Pays</th>
                 <th className="px-4 py-3">Contact</th>
                 <th className="px-4 py-3">Inscrit le</th>
                 <th className="px-4 py-3">Statut</th>
@@ -145,7 +146,7 @@ export const MemberRegistryTab = () => {
                 <tr className="border-b border-[#F3EBD8] last:border-0 hover:bg-[#FBF6EC] transition-colors" data-testid={`registry-row-${m.org_id}`}>
                   <td className="px-4 py-3 font-medium text-[#3D2E1E]">{m.legal_name}</td>
                   <td className="px-4 py-3 text-[#7A6850] font-mono text-xs">{m.siret}</td>
-                  <td className="px-4 py-3 text-[#7A6850]">{m.territory}</td>
+                  <td className="px-4 py-3 text-[#7A6850]"><span className="inline-flex items-center gap-1.5"><TerritoryFlag territory={m.territory} className="w-4 h-auto rounded-[1px] inline-block" />{m.territory}</span></td>
                   <td className="px-4 py-3 text-[#7A6850]">
                     {m.contact_name || '—'}
                     {m.contact_email && <span className="block text-xs text-[#A8977C]">{m.contact_email}</span>}

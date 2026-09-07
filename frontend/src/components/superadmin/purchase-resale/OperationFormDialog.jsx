@@ -5,6 +5,8 @@ import { API, getAuthHeaders } from '../../../services/http';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
+import { SearchableCountryDropdown } from '../../onboarding/CountryPhoneFields';
+import { COUNTRIES } from '../../onboarding/countries';
 
 const COST_LABELS = {
   pickup_precarriage: 'Enlèvement & pré-acheminement',
@@ -138,7 +140,14 @@ export const OperationFormDialog = ({ open, onClose, onCreated }) => {
           {field('Budget logistique HT (€)', 'logistics_budget_ex_vat')}
           {field('Prix de revente logistique HT (€)', 'logistics_resale_price_ex_vat')}
           {field('Seuil de marge minimal (%)', 'min_margin_rate')}
-          {field('Territoire', 'territory_id', 'ex: Martinique')}
+          <div>
+            <label className="text-xs text-white/60">Pays</label>
+            <SearchableCountryDropdown
+              value={(COUNTRIES.find((c) => c.name === form.territory_id) || {}).code || 'MQ'}
+              display={form.territory_id || 'Choisir un pays'} testId="op-form-country"
+              buttonClassName="!h-9 !rounded-md !text-sm !bg-white/5 !border-white/15"
+              onSelect={(c) => set('territory_id')({ target: { value: c.name } })} />
+          </div>
           <div>
             <label className="text-[11px] text-white/60 block mb-1">Offre catalogue finançable liée</label>
             <select value={form.linked_product_id}

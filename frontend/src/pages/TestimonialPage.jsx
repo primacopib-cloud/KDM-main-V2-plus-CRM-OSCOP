@@ -3,6 +3,8 @@ import { Star, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
+import { SearchableCountryDropdown } from '../components/onboarding/CountryPhoneFields';
+import { COUNTRIES } from '../components/onboarding/countries';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const inp = 'w-full h-11 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-[#D9B35A]/60';
@@ -46,7 +48,10 @@ export default function TestimonialPage() {
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Votre nom *" className={inp} data-testid="testimonial-name" required />
                 <input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Entreprise" className={inp} data-testid="testimonial-company" />
                 <input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Fonction (ex : Gérant)" className={inp} />
-                <input value={form.territory} onChange={(e) => setForm({ ...form, territory: e.target.value })} placeholder="Territoire (ex : Guadeloupe)" className={inp} />
+                <SearchableCountryDropdown
+                  value={(COUNTRIES.find((c) => c.name === form.territory) || {}).code || 'GP'}
+                  display={form.territory || 'Pays'} testId="testimonial-country"
+                  onSelect={(c) => setForm({ ...form, territory: c.name })} />
               </div>
               <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email (non publié)" className={inp} />
               <div className="flex items-center gap-2">
