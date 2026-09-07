@@ -127,9 +127,21 @@ async def list_pro_visitor_visibility(admin: dict = Depends(require_admin)):
     """Vitrine visiteurs du catalogue PRO : liste avec statut."""
     products = await db.products.find(
         {"status": "ACTIVE"},
-        {"_id": 0, "id": 1, "sku": 1, "name": 1, "category_id": 1, "visitor_visible": 1},
+        {"_id": 0, "id": 1, "sku": 1, "name": 1, "category_id": 1, "visitor_visible": 1, "countries": 1},
     ).sort("name", 1).to_list(500)
     return {"products": products}
+
+
+@catalog_admin_router.patch("/products/{product_id}/countries")
+async def set_product_countries(product_id: str, payload: dict, admin: dict = Depends(require_admin)):
+    """Affecte des pays du monde à un produit pour peupler la carte."""
+    countries = [str(c).upper() for c in (payload.get("countries") or []) if c]
+    r = await db.products.update_one(
+        {"id": product_id},
+        {"$set": {"countries": countries, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if not r.matched_count:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    return {"ok": True, "id": product_id, "countries": countries}
 
 
 @catalog_admin_router.patch("/products/{product_id}/visitor-visible")

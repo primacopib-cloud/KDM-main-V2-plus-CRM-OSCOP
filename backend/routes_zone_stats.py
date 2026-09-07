@@ -7,6 +7,9 @@ db = None
 
 ZONES = ["GUADELOUPE", "MARTINIQUE", "GUYANE", "REUNION", "MAYOTTE"]
 
+WORLD_ZONES = ["CUBA", "HAITI", "BRESIL", "MAROC", "FRANCE", "SENEGAL",
+               "COTE-DIVOIRE", "AFRIQUE-DU-SUD", "MADAGASCAR", "MAURICE"]
+
 
 def set_zone_stats_database(database):
     global db
@@ -22,4 +25,9 @@ async def zones_stats():
         members = await db.orgs.count_documents({"status": "APPROVED", "territory": z})
         zone_doc = await db.zones_v2.find_one({"code": z}, {"_id": 0, "member_target": 1}) or {}
         out[z] = {"products": len(pids), "members": members, "target": zone_doc.get("member_target") or 20}
+    for z in WORLD_ZONES:
+        n = await db.products.count_documents({"status": "ACTIVE", "countries": z})
+        if n:
+            members = await db.orgs.count_documents({"status": "APPROVED", "territory": z})
+            out[z] = {"products": n, "members": members, "target": 20}
     return out

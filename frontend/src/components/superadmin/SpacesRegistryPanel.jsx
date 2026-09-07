@@ -39,6 +39,16 @@ export const SpacesRegistryPanel = () => {
 
   const space = SPACES.find((s) => s.key === tab);
   const allRows = data?.[tab] || [];
+
+  const thisM = new Date().toISOString().slice(0, 7);
+  const pd = new Date(); pd.setDate(1); pd.setMonth(pd.getMonth() - 1);
+  const prevM = pd.toISOString().slice(0, 7);
+  const monthStats = SPACES.map((s) => {
+    const list = data?.[s.key] || [];
+    const nThis = list.filter((r) => String(r.created_at || '').slice(0, 7) === thisM).length;
+    const nPrev = list.filter((r) => String(r.created_at || '').slice(0, 7) === prevM).length;
+    return { ...s, total: list.length, nThis, nPrev, delta: nThis - nPrev };
+  });
   const statuses = [...new Set(allRows.map((r) => r.status).filter(Boolean))];
   const q = search.trim().toLowerCase();
   const rows = allRows.filter((r) =>
@@ -100,6 +110,24 @@ export const SpacesRegistryPanel = () => {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] border border-white/15 text-white/75 hover:text-white">
           <Download className="w-3.5 h-3.5" /> Exporter CSV ({rows.length})
         </button>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4" data-testid="spaces-month-stats">
+        {monthStats.map((s) => (
+          <div key={s.key} className="rounded-xl p-3 bg-white/[0.03] border border-white/[0.08]" data-testid={`month-stat-${s.key}`}>
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-white/45">
+              <s.icon className="w-3 h-3" /> {s.label}
+            </div>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-xl font-bold text-white">{s.total}</span>
+              <span className="text-[11px] font-semibold text-[#8CC63E]">+{s.nThis} ce mois</span>
+              {s.nPrev > 0 || s.nThis > 0 ? (
+                <span className={`text-[10px] font-bold ${s.delta > 0 ? 'text-emerald-300' : s.delta < 0 ? 'text-red-300' : 'text-white/40'}`}>
+                  {s.delta > 0 ? '▲' : s.delta < 0 ? '▼' : '—'} {s.delta > 0 ? `+${s.delta}` : s.delta} vs mois dernier
+                </span>
+              ) : null}
+            </div>
+          </div>
+        ))}
       </div>
       <div className="flex flex-wrap gap-2 mb-4">
         {SPACES.map((s) => (

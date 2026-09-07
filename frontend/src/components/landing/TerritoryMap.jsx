@@ -33,8 +33,16 @@ const arc = (a, b) => {
 };
 
 // Carte interactive « réseau des Outre-mer » (accueil + catalogue) — `showAll` : pastille « Tous les territoires »
+const BASSINS = [
+  { key: 'ALL', label: '🌍 Monde', vb: '0 0 1000 420' },
+  { key: 'CARAIBES', label: 'Caraïbes', vb: '20 20 330 330' },
+  { key: 'AFRIQUE', label: 'Afrique · Europe', vb: '430 0 340 400' },
+  { key: 'OCEAN_INDIEN', label: 'Océan Indien', vb: '770 220 230 200' },
+];
+
 export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
   const [stats, setStats] = useState({});
+  const [bassin, setBassin] = useState('ALL');
 
   useEffect(() => {
     fetch(`${API_URL}/api/v2/catalog/zones-stats`)
@@ -43,10 +51,14 @@ export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
       .catch(() => {});
   }, []);
 
+  const vb = BASSINS.find((b) => b.key === bassin)?.vb || '0 0 1000 420';
+  const k = Math.sqrt(Number(vb.split(' ')[2]) / 1000);
+
   return (
   <div className="relative rounded-3xl overflow-hidden border border-white/[0.08] mb-6" data-testid="territory-map"
     style={{ background: 'radial-gradient(120% 140% at 50% -20%, rgba(217,179,90,0.10), rgba(20,8,38,0.4) 45%, rgba(12,4,24,0.6))' }}>
-    <svg viewBox="0 0 1000 420" className="w-full h-auto block" role="img" aria-label="Carte des territoires d'Outre-mer">
+    <div style={{ aspectRatio: '1000 / 420' }}>
+    <svg viewBox={vb} preserveAspectRatio="xMidYMid meet" className="w-full h-full block" role="img" aria-label="Carte des territoires d'Outre-mer et pays du monde">
       <defs>
         <linearGradient id="tm-arc" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#D9B35A" stopOpacity="0.05" />
@@ -78,33 +90,37 @@ export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
       ))}
 
       {/* Étiquettes de bassins */}
-      <text x="200" y="38" fontSize="13" fill="rgba(247,242,233,0.45)" textAnchor="middle" letterSpacing="3">ANTILLES · GUYANE</text>
-      <text x="855" y="38" fontSize="13" fill="rgba(247,242,233,0.45)" textAnchor="middle" letterSpacing="3">OCÉAN INDIEN</text>
-      <text x="530" y="410" fontSize="12" fill="rgba(140,198,62,0.45)" textAnchor="middle" letterSpacing="3">PAYS & TERRITOIRES PARTENAIRES DU MONDE</text>
+      {bassin === 'ALL' && (
+        <>
+          <text x="200" y="38" fontSize="13" fill="rgba(247,242,233,0.45)" textAnchor="middle" letterSpacing="3">ANTILLES · GUYANE</text>
+          <text x="855" y="38" fontSize="13" fill="rgba(247,242,233,0.45)" textAnchor="middle" letterSpacing="3">OCÉAN INDIEN</text>
+          <text x="530" y="410" fontSize="12" fill="rgba(140,198,62,0.45)" textAnchor="middle" letterSpacing="3">PAYS & TERRITOIRES PARTENAIRES DU MONDE</text>
+        </>
+      )}
 
       {/* Pays du monde */}
       {W.map((t) => {
         const active = zone === t.code;
         return (
           <g key={t.code} onClick={() => onSelect(t.code)} style={{ cursor: 'pointer' }} data-testid={`map-zone-${t.code}`}>
-            {active && <circle cx={t.x} cy={t.y} r="26" fill="url(#tm-glow)" />}
-            <circle cx={t.x} cy={t.y} r={active ? 11 : 8} fill={active ? 'rgba(140,198,62,0.28)' : 'rgba(255,255,255,0.05)'}
+            {active && <circle cx={t.x} cy={t.y} r={26 * k} fill="url(#tm-glow)" />}
+            <circle cx={t.x} cy={t.y} r={(active ? 11 : 8) * k} fill={active ? 'rgba(140,198,62,0.28)' : 'rgba(255,255,255,0.05)'}
               stroke={active ? '#8CC63E' : 'rgba(140,198,62,0.45)'} strokeWidth={active ? 2 : 1}
               style={{ transition: 'all .25s ease' }} />
-            <circle cx={t.x} cy={t.y} r={active ? 4.5 : 3} fill={active ? '#B6E27A' : '#8CC63E'} style={{ transition: 'all .25s ease' }} />
+            <circle cx={t.x} cy={t.y} r={(active ? 4.5 : 3) * k} fill={active ? '#B6E27A' : '#8CC63E'} style={{ transition: 'all .25s ease' }} />
             {active && (
-              <circle cx={t.x} cy={t.y} r="11" fill="none" stroke="#8CC63E" strokeWidth="1.5" opacity="0.8">
-                <animate attributeName="r" values="11;24" dur="1.8s" repeatCount="indefinite" />
+              <circle cx={t.x} cy={t.y} r={11 * k} fill="none" stroke="#8CC63E" strokeWidth="1.5" opacity="0.8">
+                <animate attributeName="r" values={`${11 * k};${24 * k}`} dur="1.8s" repeatCount="indefinite" />
                 <animate attributeName="opacity" values="0.7;0" dur="1.8s" repeatCount="indefinite" />
               </circle>
             )}
-            <text x={t.x + t.dx} y={t.y + 4} fontSize={active ? 13 : 11.5} fontWeight={active ? 700 : 500}
+            <text x={t.x + t.dx * k} y={t.y + 4 * k} fontSize={(active ? 13 : 11.5) * k} fontWeight={active ? 700 : 500}
               fill={active ? '#B6E27A' : 'rgba(247,242,233,0.55)'} textAnchor={t.anchor}
               style={{ transition: 'all .25s ease', userSelect: 'none' }}>
               {t.label}
             </text>
             {stats[t.code] && (
-              <text x={t.x + t.dx} y={t.y + 19} fontSize="10" fontWeight="500"
+              <text x={t.x + t.dx * k} y={t.y + 19 * k} fontSize={10 * k} fontWeight="500"
                 fill={active ? 'rgba(140,198,62,0.95)' : 'rgba(140,198,62,0.6)'} textAnchor={t.anchor}
                 data-testid={`map-stats-${t.code}`} style={{ userSelect: 'none' }}>
                 {stats[t.code].products} {i18n.t('landing.map_produits', 'produits')} · {stats[t.code].members} {i18n.t('landing.map_adherents', 'adhérents')}
@@ -119,26 +135,26 @@ export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
         const active = zone === t.code;
         return (
           <g key={t.code} onClick={() => onSelect(t.code)} style={{ cursor: 'pointer' }} data-testid={`map-zone-${t.code}`}>
-            {active && <circle cx={t.x} cy={t.y} r="34" fill="url(#tm-glow)" />}
-            <circle cx={t.x} cy={t.y} r={active ? 15 : 11} fill={active ? 'rgba(217,179,90,0.28)' : 'rgba(255,255,255,0.06)'}
+            {active && <circle cx={t.x} cy={t.y} r={34 * k} fill="url(#tm-glow)" />}
+            <circle cx={t.x} cy={t.y} r={(active ? 15 : 11) * k} fill={active ? 'rgba(217,179,90,0.28)' : 'rgba(255,255,255,0.06)'}
               stroke={active ? '#D9B35A' : 'rgba(217,179,90,0.45)'} strokeWidth={active ? 2 : 1.2}
               style={{ transition: 'all .25s ease' }} />
-            <circle cx={t.x} cy={t.y} r={active ? 5.5 : 4} fill={active ? '#E9CF8E' : '#D9B35A'} style={{ transition: 'all .25s ease' }}>
+            <circle cx={t.x} cy={t.y} r={(active ? 5.5 : 4) * k} fill={active ? '#E9CF8E' : '#D9B35A'} style={{ transition: 'all .25s ease' }}>
               {!active && <animate attributeName="opacity" values="1;0.45;1" dur="2.4s" repeatCount="indefinite" />}
             </circle>
             {active && (
-              <circle cx={t.x} cy={t.y} r="15" fill="none" stroke="#D9B35A" strokeWidth="1.5" opacity="0.8">
-                <animate attributeName="r" values="15;30" dur="1.8s" repeatCount="indefinite" />
+              <circle cx={t.x} cy={t.y} r={15 * k} fill="none" stroke="#D9B35A" strokeWidth="1.5" opacity="0.8">
+                <animate attributeName="r" values={`${15 * k};${30 * k}`} dur="1.8s" repeatCount="indefinite" />
                 <animate attributeName="opacity" values="0.7;0" dur="1.8s" repeatCount="indefinite" />
               </circle>
             )}
-            <text x={t.x + t.dx} y={t.y + 5} fontSize={active ? 16 : 14} fontWeight={active ? 700 : 500}
+            <text x={t.x + t.dx * k} y={t.y + 5 * k} fontSize={(active ? 16 : 14) * k} fontWeight={active ? 700 : 500}
               fill={active ? '#E9CF8E' : 'rgba(247,242,233,0.75)'} textAnchor={t.anchor}
               style={{ transition: 'all .25s ease', userSelect: 'none' }}>
               {t.label}
             </text>
             {stats[t.code] && (
-              <text x={t.x + t.dx} y={t.y + 22} fontSize="10.5" fontWeight="500"
+              <text x={t.x + t.dx * k} y={t.y + 22 * k} fontSize={10.5 * k} fontWeight="500"
                 fill={active ? 'rgba(217,179,90,0.95)' : 'rgba(217,179,90,0.6)'} textAnchor={t.anchor}
                 data-testid={`map-stats-${t.code}`} style={{ userSelect: 'none' }}>
                 {stats[t.code].products} {i18n.t('landing.map_produits', 'produits')} · {stats[t.code].members} {i18n.t('landing.map_adherents', 'adhérents')}
@@ -148,12 +164,23 @@ export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
         );
       })}
     </svg>
+    </div>
     <p className="absolute bottom-2 right-4 text-[10px]" style={{ color: 'rgba(247,242,233,0.35)' }}>
       {i18n.t('landing.map_hint', 'Cliquez sur un territoire pour découvrir ses produits')}
     </p>
     <div className="absolute bottom-2 left-4 flex items-center gap-3 text-[10px]" data-testid="map-legend" style={{ color: 'rgba(247,242,233,0.45)' }}>
       <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#D9B35A' }} /> Outre-mer O'SCOP</span>
       <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#8CC63E' }} /> Pays & territoires du monde</span>
+    </div>
+    <div className="absolute top-3 right-3 flex flex-wrap gap-1.5" data-testid="map-bassins">
+      {BASSINS.map((b) => (
+        <button key={b.key} type="button" onClick={() => setBassin(b.key)} data-testid={`map-bassin-${b.key}`}
+          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${bassin === b.key
+            ? 'bg-[#D9B35A] text-black border-[#D9B35A]'
+            : 'bg-black/40 text-white/70 border-white/20 hover:bg-black/60 backdrop-blur-sm'}`}>
+          {b.label}
+        </button>
+      ))}
     </div>
     {showAll && (
       <button type="button" onClick={() => onSelect('')} data-testid="map-zone-all"

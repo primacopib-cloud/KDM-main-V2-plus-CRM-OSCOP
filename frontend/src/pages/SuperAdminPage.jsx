@@ -34,6 +34,7 @@ import { ServiceCreditsPanel } from '../components/superadmin/ServiceCreditsPane
 import { InvestorPlansAdminPanel } from '../components/superadmin/InvestorPlansAdminPanel';
 import { PurchaseNeedsPanel } from '../components/superadmin/PurchaseNeedsPanel';
 import { ProVisitorShowcasePanel } from '../components/superadmin/ProVisitorShowcasePanel';
+import { ProductCountriesPanel } from '../components/superadmin/ProductCountriesPanel';
 import { LegalPagesPanel } from '../components/superadmin/LegalPagesPanel';
 import { FogedomPanelWithOps } from '../components/superadmin/FogedomPanelWithOps';
 import { StaffRolesPanel } from '../components/superadmin/StaffRolesPanel';
@@ -164,6 +165,7 @@ export default function SuperAdminPage() {
           <TabsContent value="catalog">
             <ProductCatalogManager onProductSaved={fetchData} />
             <ProVisitorShowcasePanel />
+            <ProductCountriesPanel />
           </TabsContent>
 
           <TabsContent value="stats">

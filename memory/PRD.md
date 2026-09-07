@@ -2986,3 +2986,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Tri colonnes registres : en-têtes cliquables Nom / Statut / Inscrit le (asc/desc, flèches) + nouvelle colonne « Inscrit le » (testé UI : tri nom asc/desc OK).
 - Accueil pros : section « Offres & demandes » scindée en deux blocs Offres (statuts VENDOR_ACCEPTED/OFFER_ACCEPTED) et Demandes, chacun avec son propre filtre de recherche (board-search-offres / board-search-demandes). Lien pied de page « Acheter — Espace acheteur » supprimé (Footer.jsx). Testé UI.
 - Carte « Choisir ma zone » enrichie : 10 pays/territoires du monde sélectionnables (Cuba, Haïti, Brésil, Maroc, France, Sénégal, Côte d'Ivoire, Afrique du Sud, Madagascar, Maurice) en marqueurs verts avec drapeaux, légende Outre-mer/Monde, bande « Pays & territoires partenaires du monde » (TerritoryMap.jsx, utilisée accueil + catalogue). Testé UI : sélection Madagascar filtre le catalogue.
+
+## 2026-06 — Carte monde v2 + stats espaces
+- Produits par pays : champ products.countries + PATCH /api/catalog/admin/products/{id}/countries + panneau superadmin « Produits par pays » (onglet Catalogue, chips drapeaux 10 pays). zones-stats inclut les pays monde avec produits ; le catalogue filtre par pays (country_filter dans routes_catalog list_products). Testé curl : Madagascar 1 produit, catalogue authentifié filtré.
+- Zoom bassins : boutons Monde / Caraïbes / Afrique·Europe / Océan Indien sur TerritoryMap (viewBox dynamique, tailles mises à l'échelle sqrt(k), ratio fixe 1000/420, bandeaux masqués en zoom). Testé UI.
+- Stats espaces : 4 compteurs mensuels en haut du panneau Registres (total, +ce mois, delta vs mois précédent). Testé UI.
