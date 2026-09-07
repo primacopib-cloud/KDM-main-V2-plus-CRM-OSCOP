@@ -1,4 +1,5 @@
 """Registres & gestion des espaces (vendeur, investisseur, relais, PASS) pour le superadmin."""
+import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -14,6 +15,14 @@ db = None
 def set_admin_spaces_database(database):
     global db
     db = database
+
+
+async def notify_admin_signup(title: str, message: str, category: str = "inscription"):
+    await db.admin_notifications.insert_one({
+        "id": str(uuid.uuid4()), "title": title, "message": message,
+        "type": "info", "category": category, "target_user_id": None,
+        "action_url": "/superadmin", "metadata": {}, "is_read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()})
 
 
 def _iso(v):
@@ -111,6 +120,104 @@ async def get_registries(admin: dict = Depends(require_admin)):
 
 class StatusBody(BaseModel):
     status: str
+
+
+class ManagerBody(BaseModel):
+    email: str
+
+
+@admin_spaces_router.get("/relays/managers")
+async def list_relay_managers(admin: dict = Depends(require_admin)):
+    items = []
+    async for u in db.users.find({"role": "GERANT_LOLO_POINT"}, {"_id": 0, "password_hash": 0}):
+        items.append({"id": u.get("id"), "name": u.get("contact_name") or u.get("company_name"), "email": u.get("email")})
+    return {"managers": items}
+
+
+@admin_spaces_router.patch("/relays/{item_id}/manager")
+async def link_relay_manager(item_id: str, body: ManagerBody, admin: dict = Depends(require_admin)):
+    email = body.email.strip().lower()
+    manager = await db.users.find_one({"email": email, "role": "GERANT_LOLO_POINT"}, {"_id": 0, "id": 1, "contact_name": 1})
+    if not manager:
+        raise HTTPException(status_code=404, detail="Aucun compte gérant avec cet email")
+    res = await db.lolodrive_points.update_one(
+        {"id": item_id},
+        {"$set": {"contact_email": email, "manager_user_id": manager["id"],
+                  "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Relais introuvable")
+    return {"ok": True, "manager": manager.get("contact_name"), "email": email}
+
+
+def _fmt_order(o):
+    return {
+        "order_number": o.get("order_number"),
+        "date": _iso(o.get("created_at")),
+        "total_cents": o.get("total_cents") or o.get("total_ttc_cents") or 0,
+        "status": o.get("status"),
+    }
+
+
+@admin_spaces_router.get("/{kind}/{item_id}/detail")
+async def get_space_detail(kind: str, item_id: str, admin: dict = Depends(require_admin)):
+    profile, orders, passes, activity, extra = {}, [], [], [], []
+    if kind == "vendors":
+        v = await db.vendors.find_one({"id": item_id}, {"_id": 0, "password_hash": 0})
+        if not v:
+            raise HTTPException(status_code=404, detail="Vendeur introuvable")
+        profile = {"name": v.get("company_name"), "contact": v.get("contact_name"), "email": v.get("email"),
+                   "phone": v.get("phone"), "country": v.get("country"), "status": (v.get("status") or "").upper(),
+                   "created_at": _iso(v.get("created_at"))}
+        async for p in db.vendor_products.find({"vendor_id": item_id}, {"_id": 0}).sort("created_at", -1).limit(10):
+            extra.append({"label": p.get("name"), "value": f"{(p.get('price_ttc_cents') or 0) / 100:.2f} € · {p.get('status', '')}"})
+        activity.append({"date": _iso(v.get("created_at")), "label": "Inscription vendeur"})
+        if v.get("approved_at"):
+            activity.append({"date": _iso(v.get("approved_at")), "label": "Compte approuvé"})
+    elif kind == "investors":
+        acc = await db.investor_accounts.find_one({"id": item_id}, {"_id": 0})
+        if not acc:
+            raise HTTPException(status_code=404, detail="Investisseur introuvable")
+        user = await db.users.find_one({"id": acc.get("user_id")}, {"_id": 0, "password_hash": 0}) or {}
+        profile = {"name": user.get("contact_name") or user.get("company_name"), "email": user.get("email"),
+                   "phone": user.get("phone"), "country": user.get("country"),
+                   "status": (acc.get("status") or "").upper(), "created_at": _iso(acc.get("created_at")),
+                   "detail": f"Plan {acc.get('plan_code')} · {round((acc.get('monthly_invest_uc') or 0) / 100)} UC/mois"}
+        async for l in db.invest_credit_ledger.find({"user_id": acc.get("user_id")}, {"_id": 0}).sort("created_at", -1).limit(10):
+            activity.append({"date": _iso(l.get("created_at")), "label": f"{l.get('label')} ({round((l.get('amount_uc') or 0) / 100)} UC)"})
+        activity.append({"date": _iso(acc.get("created_at")), "label": "Ouverture du compte investisseur"})
+        if user.get("last_login_at"):
+            activity.insert(0, {"date": _iso(user.get("last_login_at")), "label": "Dernière connexion"})
+    elif kind == "relays":
+        p = await db.lolodrive_points.find_one({"id": item_id}, {"_id": 0})
+        if not p:
+            raise HTTPException(status_code=404, detail="Relais introuvable")
+        profile = {"name": p.get("name"), "email": p.get("contact_email"), "country": p.get("territory"),
+                   "status": (p.get("status") or "").upper(), "created_at": _iso(p.get("created_at")),
+                   "detail": f"{p.get('code', '')} · {p.get('city', '')}"}
+        async for o in db.lolodrive_orders.find({"lolo_point_id": item_id}, {"_id": 0}).sort("created_at", -1).limit(10):
+            orders.append(_fmt_order(o))
+        n_act = await db.lolodrive_passes.count_documents({"source_lolo_point_id": item_id})
+        extra.append({"label": "PASS activés via ce relais", "value": str(n_act)})
+        activity.append({"date": _iso(p.get("created_at")), "label": "Création du relais"})
+    elif kind == "pass-members":
+        user = await db.users.find_one({"id": item_id}, {"_id": 0, "password_hash": 0})
+        if not user:
+            raise HTTPException(status_code=404, detail="Membre introuvable")
+        profile = {"name": user.get("contact_name") or user.get("company_name"), "email": user.get("email"),
+                   "phone": user.get("phone"), "country": user.get("country"),
+                   "status": "MEMBRE PASS", "created_at": _iso(user.get("created_at"))}
+        async for pa in db.lolodrive_passes.find({"user_id": item_id}, {"_id": 0}).sort("created_at", -1).limit(5):
+            passes.append({"status": (pa.get("status") or "").upper(), "starts_at": _iso(pa.get("starts_at")),
+                           "ends_at": _iso(pa.get("ends_at")), "uc_granted": pa.get("uc_granted")})
+        async for o in db.lolodrive_orders.find({"user_id": item_id}, {"_id": 0}).sort("created_at", -1).limit(10):
+            orders.append(_fmt_order(o))
+        activity.append({"date": _iso(user.get("created_at")), "label": "Création du compte"})
+        if user.get("last_login_at"):
+            activity.insert(0, {"date": _iso(user.get("last_login_at")), "label": "Dernière connexion"})
+    else:
+        raise HTTPException(status_code=404, detail="Type d'espace inconnu")
+    activity = [a for a in activity if a.get("date")]
+    return {"profile": profile, "orders": orders, "passes": passes, "activity": activity, "extra": extra}
 
 
 _KINDS = {

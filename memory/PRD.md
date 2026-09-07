@@ -2975,3 +2975,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Remplacement « Territoire » → « Pays » avec drapeau + téléphone avec drapeau/indicatif dans : OrgFormDialog (admin B2B), CRM (contact/org), Témoignages, Achat-Revente (OperationFormDialog), création relais (LoloPointsAdminPage), tableaux (Organisations, Demandes d'adhésion, Registre membres, LoloPointManager), i18n fr/en/es. Helper partagé `TerritoryFlag` dans components/Flag.jsx.
 - Nouveau backend `routes_admin_spaces.py` : GET /api/admin/spaces/registries (vendors/investors/relays/pass_members auto-construits depuis vendors, investor_accounts+users, lolodrive_points+gérants, users TITULAIRE_PASS+lolodrive_passes) + PATCH /api/admin/spaces/{kind}/{id}/status (suspendre/réactiver).
 - Nouveau panneau superadmin `SpacesRegistryPanel` (onglet Registres) : 4 sous-onglets avec compteurs, drapeaux pays, badge compte connecté, statut, actions ouvrir l'espace (/vendor, /espace-investisseur, /lolo-point/dashboard, /pass) + suspendre/réactiver. Testé curl (login 200, 4 registres, PATCH ok) + screenshot UI.
+
+## 2026-06 — Registres des espaces v2
+- Fiche détaillée cliquable par membre (GET /api/admin/spaces/{kind}/{id}/detail) : profil, PASS, historique commandes, activité, produits/infos — dialog `SpaceDetailDialog`.
+- Liaison gérant↔relais depuis le registre (GET /relays/managers + PATCH /relays/{id}/manager) — dialog `RelayManagerDialog`, badge « Connecté » mis à jour.
+- Alertes superadmin nouveaux inscrits (admin_notifications, cloche admin) : nouveau vendeur (routes_vendor + vendor_onboarding, testé e2e), nouveau membre PASS (routes_pass_registration), investisseur (déjà existant). Helper `notify_admin_signup` dans routes_admin_spaces.py.
+- Export CSV par registre (bouton « Exporter CSV » frontend).
+- Tests : curl détail 4 kinds OK, liaison gérant OK (connected True), notif vendeur créée puis nettoyée, screenshot fiche PASS avec 10 commandes.

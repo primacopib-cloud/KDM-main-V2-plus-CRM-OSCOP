@@ -56,6 +56,12 @@ async def create_pass_registration(body: PassRegistrationBody):
     }
     await db.pass_registrations.insert_one(dict(doc))
     try:
+        from routes_admin_spaces import notify_admin_signup
+        await notify_admin_signup("Nouveau membre PASS LOLODRIVE",
+                                  f"{doc['first_name']} {doc['last_name']} ({doc.get('city', '')}) vient de s'inscrire au PASS.", "pass")
+    except Exception:
+        pass
+    try:
         from core_deps import create_notification
         relay_name = (body.relay or {}).get("name")
         await create_notification(

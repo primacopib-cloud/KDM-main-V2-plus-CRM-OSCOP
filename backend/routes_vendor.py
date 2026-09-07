@@ -120,7 +120,14 @@ async def register_vendor(data: VendorRegistration):
     }
     
     await db.vendors.insert_one(vendor)
-    
+
+    try:
+        from routes_admin_spaces import notify_admin_signup
+        await notify_admin_signup("Nouveau vendeur inscrit",
+                                  f"{data.company_name} ({data.email}) vient de créer son espace vendeur.", "vendeur")
+    except Exception:
+        logger.warning("Notification admin nouveau vendeur non envoyée")
+
     logger.info(f"New vendor registered: {vendor_id} - {data.company_name}")
     
     return {
