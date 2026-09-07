@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Store, TrendingUp, MapPin, IdCard, ExternalLink, Ban, CheckCircle2, Loader2, Link2, Download, UserCog, Search } from 'lucide-react';
+import { Store, TrendingUp, MapPin, IdCard, ExternalLink, Ban, CheckCircle2, Loader2, Link2, Download, UserCog, Search, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { TerritoryFlag } from '../Flag';
@@ -26,6 +26,7 @@ export const SpacesRegistryPanel = () => {
   const [managerRow, setManagerRow] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sort, setSort] = useState({ key: null, dir: 1 });
 
   const load = useCallback(() => {
     fetch(`${API}/admin/spaces/registries`, { headers: getAuthHeaders(), credentials: 'include' })
@@ -43,6 +44,21 @@ export const SpacesRegistryPanel = () => {
   const rows = allRows.filter((r) =>
     (statusFilter === 'ALL' || r.status === statusFilter) &&
     (!q || (r.name || '').toLowerCase().includes(q) || (r.email || '').toLowerCase().includes(q)));
+  if (sort.key) {
+    rows.sort((a, b) => sort.dir * String(a[sort.key] || '').localeCompare(String(b[sort.key] || ''), 'fr'));
+  }
+
+  const toggleSort = (key) => setSort((s) => (s.key === key ? { key, dir: -s.dir } : { key, dir: 1 }));
+
+  const SortTh = ({ k, children, className = 'py-2 pr-3' }) => (
+    <th className={className}>
+      <button type="button" onClick={() => toggleSort(k)} data-testid={`sort-${k}`}
+        className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-white/80">
+        {children}
+        {sort.key === k ? (sort.dir === 1 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+      </button>
+    </th>
+  );
 
   const setStatus = async (row, status) => {
     setBusy(row.id);
@@ -118,18 +134,19 @@ export const SpacesRegistryPanel = () => {
           <table className="w-full text-sm" data-testid={`spaces-table-${tab}`}>
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wide text-white/40 border-b border-white/10">
-                <th className="py-2 pr-3">Nom</th>
+                <SortTh k="name">Nom</SortTh>
                 <th className="py-2 pr-3">Email</th>
                 <th className="py-2 pr-3">Pays</th>
                 <th className="py-2 pr-3">Détail</th>
                 <th className="py-2 pr-3">Compte</th>
-                <th className="py-2 pr-3">Statut</th>
+                <SortTh k="status">Statut</SortTh>
+                <SortTh k="created_at">Inscrit le</SortTh>
                 <th className="py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <tr><td colSpan={7} className="py-6 text-center text-white/40 text-xs">Aucune inscription pour le moment</td></tr>
+                <tr><td colSpan={8} className="py-6 text-center text-white/40 text-xs">Aucune inscription pour le moment</td></tr>
               )}
               {rows.map((r) => {
                 const suspended = ['SUSPENDED', 'REJECTED', 'CANCELLED'].includes(r.status);
@@ -158,6 +175,7 @@ export const SpacesRegistryPanel = () => {
                     <td className="py-2.5 pr-3">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusColor(r.status)}`}>{r.status}</span>
                     </td>
+                    <td className="py-2.5 pr-3 text-white/50 text-xs">{r.created_at ? String(r.created_at).slice(0, 10) : '—'}</td>
                     <td className="py-2.5">
                       <div className="flex items-center gap-1.5">
                         <a href={space.route} target="_blank" rel="noreferrer" data-testid={`open-space-${r.id}`}
