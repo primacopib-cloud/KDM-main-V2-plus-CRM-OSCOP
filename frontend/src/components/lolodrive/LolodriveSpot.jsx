@@ -11,7 +11,7 @@ const IMG = 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4ef
  */
 const SCENES = [
   { img: `${IMG}6c56ab7e6014f75dd19aa182a53b71d7c629d8369cfce46ce5c0c4d308299bc8.jpeg`,
-    duration: 4000, kicker: 'LOLODRIVE by O’SCOP', title: 'VOTRE TERRITOIRE, VOS PRODUITS', sub: 'L’épicerie antillaise, par lot de 3.' },
+    duration: 4000, kicker: 'LOLODRIVE by O’SCOP', title: 'VOTRE TERRITOIRE, VOS PRODUITS', sub: 'L’épicerie, par lot de 3.' },
   { img: `${IMG}e75eaa357fdbbd5691f0ca0cb0b494e86beb3f3c76d2f6b1422a25a0ec4b5c93.jpeg`,
     duration: 4000, kicker: 'LE CONCEPT', title: 'ACHETEZ PAR LOT \u00d73', sub: '3 fois plus malin. 3 fois moins cher \u00e0 l\u2019unit\u00e9.' },
   { video: '/api/uploads/videos/lolospot_products.mp4',

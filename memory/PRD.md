@@ -2951,5 +2951,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - 2 frames générées avec le logo lolopng sur polo vert (dfcdaeb9 prep, ddfaffd9 pickup) puis 2 clips image-to-video Veo 3 (fal-ai/veo3/fast/image-to-video) : lolospot_prep2.mp4 + lolospot_pickup2.mp4 remplaçant les précédents dans le montage ; posters mis à jour — screenshots validés (mascotte LOLO DRIVE visible sur les t-shirts + enseignes des baies)
 
 ## 2026-06 — Spot : bois naturel + logo discret côté cœur (self-testé ✅)
+- Sous-titre scène 1 : « L'épicerie, par lot de 3. » (mention « antillaise » retirée)
 - 2 nouvelles frames (fa549890 prep, 1d44d398 pickup) : petit badge mascotte LOLO DRIVE côté cœur sur polo vert, cageots et décor du point relais en bois ton naturel (étagères, enseignes Pickup Lane / Park & Collect en bois)
 - 2 clips image-to-video Veo 3 regénérés : lolospot_prep3.mp4 + lolospot_pickup3.mp4 intégrés au montage (posters mis à jour) — screenshots validés
