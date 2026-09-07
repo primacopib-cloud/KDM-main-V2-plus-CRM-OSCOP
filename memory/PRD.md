@@ -2993,3 +2993,5 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Stats espaces : 4 compteurs mensuels en haut du panneau Registres (total, +ce mois, delta vs mois précédent). Testé UI.
 - Pays en vitrine : ProductResponse.countries + drapeaux « Disponible : » sur les fiches produit du catalogue (ProductsGrid). Testé UI.
 - Alerte offre reçue : email Brevo à chaque participant d'une demande groupée quand un vendeur accepte (vendor_respond, routes_purchase_needs). Testé e2e : 3 emails 201 (demandeur + participant + équipe), données test nettoyées.
+- Acceptation participant : lien « Accepter l'offre et adhérer » dans l'email participant → GET accept-offer/{ref}?participant=email enregistre participant_accepts (sans changer le statut, réservé au demandeur) puis redirige vers /tarifs. Testé curl : 307 + participant_accepts enregistré, données nettoyées.
+- Filtre pays catalogue : liste déroulante 🌍 (5 Outre-mer + 10 pays monde) à côté de la recherche, branchée sur handleZoneChange. Testé UI : Guadeloupe → 5 produits.

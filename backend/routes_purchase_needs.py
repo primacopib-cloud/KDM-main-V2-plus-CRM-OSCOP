@@ -358,13 +358,18 @@ async def communityplace_webhook(payload: dict):
 
 
 @purchase_needs_router.get("/public/purchase-needs/accept-offer/{reference}")
-async def accept_vendor_offer(reference: str):
+async def accept_vendor_offer(reference: str, participant: str | None = None):
     """Acceptation en ligne de l'offre vendeur → redirection vers l'adhésion pro."""
     import os
     from fastapi.responses import RedirectResponse
     need = await db.purchase_needs.find_one({"reference": reference.upper().strip()})
     base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
-    if need and need.get("status") == "VENDOR_ACCEPTED":
+    if need and participant:
+        p = participant.strip().lower()
+        if p and not any(a.get("email") == p for a in (need.get("participant_accepts") or [])):
+            await db.purchase_needs.update_one({"id": need["id"]}, {
+                "$push": {"participant_accepts": {"email": p, "accepted_at": _now()}}})
+    elif need and need.get("status") == "VENDOR_ACCEPTED":
         await db.purchase_needs.update_one({"id": need["id"]}, {"$set": {
             "status": "OFFER_ACCEPTED", "offer_accepted_at": _now()}})
     return RedirectResponse(url=f"{base}/tarifs?besoin={reference}")
@@ -523,9 +528,12 @@ async def vendor_respond(need_id: str, body: VendorResponse, user: dict = Depend
                             f"<b>{need['reference']} — {need['product']}</b> que vous avez rejointe "
                             f"(votre quantité : {j.get('quantity')})."
                             + (f"<br/>Note du vendeur : {body.note}" if body.note else "") + "</p>"
+                            f"<p style='text-align:center;'><a href='{api_base}/api/public/purchase-needs/accept-offer/{need['reference']}?participant={jm}' "
+                            "style='display:inline-block;background:#8CC63E;color:#1F0A33;font-weight:bold;"
+                            "padding:12px 26px;border-radius:12px;text-decoration:none;'>Accepter l'offre et adhérer</a></p>"
                             f"<p style='text-align:center;'><a href='{api_base}/?besoin={need['reference']}#community-board' "
                             "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
-                            "padding:12px 26px;border-radius:12px;text-decoration:none;'>Suivre la demande groupée</a></p>").replace(",", " ")),
+                            "padding:10px 22px;border-radius:12px;text-decoration:none;'>Suivre la demande groupée</a></p>").replace(",", " ")),
                         tags=["purchase-need"])
                 except Exception as e2:
                     logger.warning("Email participant offre : %s", e2)
