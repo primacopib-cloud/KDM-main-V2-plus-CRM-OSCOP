@@ -2962,3 +2962,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - PurchaseNeedForm (besoin d'achat) : sélecteur pays mondial avec drapeaux (SearchableCountryDropdown) + téléphone drapeau/indicatif synchronisé (La Réunion → +262 testé) ; payload : phone avec indicatif + country_code
 - Backend batch : champ optionnel country_code stocké ; le board utilise country_code pour le drapeau (fallback TERRITORY_FLAG)
 - Formulaire contact (SupportContactPage) : pas de champ téléphone/pays → rien à modifier ; partenariat déjà fait au lot précédent
+
+## 2026-06 — Création point relais superadmin (self-testé ✅)
+- Formulaire « ➕ Créer un point relais LOLODRIVE » ajouté en tête de LoloPointsContactPanel (onglet LOGICOOP) : nom*, code (auto LP-… si vide), territoire GP/MQ/GF/RE/YT, ville, adresse → POST /api/lolodrive/admin/lolo-points (endpoint existant) ; le point apparaît aussitôt dans la liste éditable — testé curl (création MQ + purge) + screenshot UI
