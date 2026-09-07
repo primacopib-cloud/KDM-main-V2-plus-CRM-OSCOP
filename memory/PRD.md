@@ -2946,3 +2946,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Scène 1 « Votre territoire, vos produits » : vidéo rhum-boutique remplacée par l'image paniers de légumes ×3 (6c56ab7e…)
 - Scène 2 concept : packshot riz remplacé par rayonnage magasin pâtes + farine ultra réaliste SANS prix ni devise (e75eaa35… — v1 db9aedae rejetée car prix en £)
 - Titre scène préparation : « VOS COURSES PRÉPARÉES AVEC SOIN » (au lieu de « prêtes par 3 ») — screenshots validés
+
+## 2026-06 — Logo sur t-shirts préparateur/livreur (self-testé ✅)
+- 2 frames générées avec le logo lolopng sur polo vert (dfcdaeb9 prep, ddfaffd9 pickup) puis 2 clips image-to-video Veo 3 (fal-ai/veo3/fast/image-to-video) : lolospot_prep2.mp4 + lolospot_pickup2.mp4 remplaçant les précédents dans le montage ; posters mis à jour — screenshots validés (mascotte LOLO DRIVE visible sur les t-shirts + enseignes des baies)
