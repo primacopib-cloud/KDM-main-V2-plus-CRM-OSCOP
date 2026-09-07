@@ -412,6 +412,7 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
         video_url=product.get("video_url"),
         video_urls=product.get("video_urls"),
         tags=product.get("tags", []),
+        countries=product.get("countries") or [],
         translations=product.get("translations"),
         status=product["status"],
         price_visible=price_visible,

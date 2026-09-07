@@ -2991,3 +2991,5 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Produits par pays : champ products.countries + PATCH /api/catalog/admin/products/{id}/countries + panneau superadmin « Produits par pays » (onglet Catalogue, chips drapeaux 10 pays). zones-stats inclut les pays monde avec produits ; le catalogue filtre par pays (country_filter dans routes_catalog list_products). Testé curl : Madagascar 1 produit, catalogue authentifié filtré.
 - Zoom bassins : boutons Monde / Caraïbes / Afrique·Europe / Océan Indien sur TerritoryMap (viewBox dynamique, tailles mises à l'échelle sqrt(k), ratio fixe 1000/420, bandeaux masqués en zoom). Testé UI.
 - Stats espaces : 4 compteurs mensuels en haut du panneau Registres (total, +ce mois, delta vs mois précédent). Testé UI.
+- Pays en vitrine : ProductResponse.countries + drapeaux « Disponible : » sur les fiches produit du catalogue (ProductsGrid). Testé UI.
+- Alerte offre reçue : email Brevo à chaque participant d'une demande groupée quand un vendeur accepte (vendor_respond, routes_purchase_needs). Testé e2e : 3 emails 201 (demandeur + participant + équipe), données test nettoyées.
