@@ -2983,3 +2983,4 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Export CSV par registre (bouton « Exporter CSV » frontend).
 - Tests : curl détail 4 kinds OK, liaison gérant OK (connected True), notif vendeur créée puis nettoyée, screenshot fiche PASS avec 10 commandes.
 - Filtres registres : recherche nom/email + filtre statut + compteur résultats dans SpacesRegistryPanel (testé UI : recherche "capesterre" → 1, filtre ACTIVE → 10).
+- Tri colonnes registres : en-têtes cliquables Nom / Statut / Inscrit le (asc/desc, flèches) + nouvelle colonne « Inscrit le » (testé UI : tri nom asc/desc OK).
