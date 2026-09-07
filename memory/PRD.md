@@ -2954,3 +2954,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Sous-titre scène 1 : « L'épicerie, par lot de 3. » (mention « antillaise » retirée)
 - 2 nouvelles frames (fa549890 prep, 1d44d398 pickup) : petit badge mascotte LOLO DRIVE côté cœur sur polo vert, cageots et décor du point relais en bois ton naturel (étagères, enseignes Pickup Lane / Park & Collect en bois)
 - 2 clips image-to-video Veo 3 regénérés : lolospot_prep3.mp4 + lolospot_pickup3.mp4 intégrés au montage (posters mis à jour) — screenshots validés
+
+## 2026-06 — Formulaire partenariat : Pays + drapeaux + indicatif (self-testé ✅)
+- PartnershipPage : label « Territoire » → « Pays », select remplacé par SearchableCountryDropdown (catalogue mondial COUNTRIES, drapeaux FlagCDN, recherche) ; champ téléphone = dropdown drapeau + indicatif (mode dial, synchronisé avec le pays) + numéro ; payload contact_phone envoyé avec l'indicatif (« +596 690… ») ; backend inchangé (territory = nom du pays) — screenshots validés (Guadeloupe→Martinique, +590→+596)
