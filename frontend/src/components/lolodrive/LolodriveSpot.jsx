@@ -10,11 +10,9 @@ const IMG = 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4ef
  * Note test : le Chromium headless n'a pas le codec H.264 → repli image auto ; navigateurs réels OK (Range 206 côté serveur).
  */
 const SCENES = [
-  { video: '/api/uploads/videos/8aa3c90e-b59d-4ae7-b8d4-ff5e6ccab36d.mp4',
-    poster: `${IMG}c0c71f4f0cace537b3db6b0c91c1d22217126f055e31fb54f4072536c58685b7.jpeg`,
-    img: `${IMG}c0c71f4f0cace537b3db6b0c91c1d22217126f055e31fb54f4072536c58685b7.jpeg`,
-    duration: 4000, kicker: 'LOLODRIVE by O\u2019SCOP', title: 'VOTRE TERRITOIRE, VOS PRODUITS', sub: 'L\u2019\u00e9picerie antillaise, par lot de 3.' },
-  { img: `${IMG}03b0b0754e0126acf04556bc2c87535f4f6c847886d7a38aa7b1c2d4f9090d25.jpeg`,
+  { img: `${IMG}6c56ab7e6014f75dd19aa182a53b71d7c629d8369cfce46ce5c0c4d308299bc8.jpeg`,
+    duration: 4000, kicker: 'LOLODRIVE by O’SCOP', title: 'VOTRE TERRITOIRE, VOS PRODUITS', sub: 'L’épicerie antillaise, par lot de 3.' },
+  { img: `${IMG}e75eaa357fdbbd5691f0ca0cb0b494e86beb3f3c76d2f6b1422a25a0ec4b5c93.jpeg`,
     duration: 4000, kicker: 'LE CONCEPT', title: 'ACHETEZ PAR LOT \u00d73', sub: '3 fois plus malin. 3 fois moins cher \u00e0 l\u2019unit\u00e9.' },
   { video: '/api/uploads/videos/lolospot_products.mp4',
     img: `${IMG}0cf29917f13c278e3b19b8be49129ca514173f41acb07096e6b1ed7ef07f1b86.jpeg`,
@@ -25,7 +23,7 @@ const SCENES = [
     duration: 5000, kicker: 'EN LIGNE', title: 'COMMANDEZ EN 3 CLICS', sub: 'Tout le catalogue \u00e0 prix mini, depuis votre canap\u00e9.' },
   { video: '/api/uploads/videos/lolospot_prep.mp4',
     img: `${IMG}76fb75f13d4956f61e133f4254f19748210d76a544df1563775d75b31e7969ec.jpeg`,
-    duration: 4000, kicker: 'VOTRE RELAIS PR\u00c9PARE', title: 'VOS COURSES PR\u00caTES PAR 3', sub: 'Vos essentiels regroup\u00e9s et pr\u00e9par\u00e9s pour vous.' },
+    duration: 4000, kicker: 'VOTRE RELAIS PR\u00c9PARE', title: 'VOS COURSES PR\u00c9PAR\u00c9ES AVEC SOIN', sub: 'Vos essentiels regroup\u00e9s et pr\u00e9par\u00e9s pour vous.' },
   { video: '/api/uploads/videos/lolospot_pickup.mp4',
     poster: `${IMG}c0c71f4f0cace537b3db6b0c91c1d22217126f055e31fb54f4072536c58685b7.jpeg`,
     img: `${IMG}c0c71f4f0cace537b3db6b0c91c1d22217126f055e31fb54f4072536c58685b7.jpeg`,

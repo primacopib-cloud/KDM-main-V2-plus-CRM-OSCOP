@@ -2941,3 +2941,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Posters : devanture LOLO DRIVE (accroche + pickup), smartphone logo (order), famille (final)
 - Reste à fournir : piste musicale libre de droits (l'audio provient des pistes des clips)
 - Rappel : headless test sans H.264 → repli image auto ; navigateurs réels OK
+
+## 2026-06 — Retouches spot (self-testé ✅)
+- Scène 1 « Votre territoire, vos produits » : vidéo rhum-boutique remplacée par l'image paniers de légumes ×3 (6c56ab7e…)
+- Scène 2 concept : packshot riz remplacé par rayonnage magasin pâtes + farine ultra réaliste SANS prix ni devise (e75eaa35… — v1 db9aedae rejetée car prix en £)
+- Titre scène préparation : « VOS COURSES PRÉPARÉES AVEC SOIN » (au lieu de « prêtes par 3 ») — screenshots validés
