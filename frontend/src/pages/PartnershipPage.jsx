@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { apiCall } from '../services/http';
+import { SearchableCountryDropdown } from '../components/onboarding/CountryPhoneFields';
 
 const PARTNER_TYPES = [
   { value: 'LOGISCOP', label: "Transporteur LOGI'SCOP" },
@@ -13,13 +14,13 @@ const PARTNER_TYPES = [
   { value: 'AUTRE', label: 'Autre partenariat' },
 ];
 
-const TERRITORIES = ['Guadeloupe', 'Martinique', 'Guyane', 'La Réunion', 'Hexagone', 'Autre'];
-
 export default function PartnershipPage() {
   const [form, setForm] = useState({
     structure_name: '', siret: '', partner_type: 'LOGISCOP', territory: 'Guadeloupe',
     contact_name: '', contact_email: '', contact_phone: '', message: '',
   });
+  const [countryCode, setCountryCode] = useState('GP');
+  const [dial, setDial] = useState('+590');
   const [sending, setSending] = useState(false);
   const [reference, setReference] = useState(null);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -28,7 +29,8 @@ export default function PartnershipPage() {
     e.preventDefault();
     setSending(true);
     try {
-      const res = await apiCall('/partnership/request', { method: 'POST', body: JSON.stringify(form) });
+      const payload = { ...form, contact_phone: form.contact_phone ? `${dial} ${form.contact_phone}`.trim() : form.contact_phone };
+      const res = await apiCall('/partnership/request', { method: 'POST', body: JSON.stringify(payload) });
       setReference(res.reference);
       toast.success('Demande de partenariat envoyée !');
     } catch (err) {
@@ -92,10 +94,18 @@ export default function PartnershipPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs uppercase tracking-wider text-white/60 mb-2">Territoire *</label>
-                <select value={form.territory} onChange={set('territory')} className={inputCls} data-testid="partnership-territory-select">
-                  {TERRITORIES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+                <label className="block text-xs uppercase tracking-wider text-white/60 mb-2">Pays *</label>
+                <SearchableCountryDropdown
+                  value={countryCode}
+                  display={form.territory}
+                  testId="partnership-territory-select"
+                  buttonClassName={inputCls}
+                  onSelect={(c) => {
+                    setCountryCode(c.code);
+                    setDial(c.dial);
+                    setForm((f) => ({ ...f, territory: c.name }));
+                  }}
+                />
               </div>
             </div>
             <div className="grid sm:grid-cols-3 gap-4">
@@ -109,7 +119,19 @@ export default function PartnershipPage() {
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-wider text-white/60 mb-2">Téléphone</label>
-                <input value={form.contact_phone} onChange={set('contact_phone')} className={inputCls} data-testid="partnership-phone-input" placeholder="0690 XX XX XX" />
+                <div className="flex gap-1.5">
+                  <div className="w-28 shrink-0">
+                    <SearchableCountryDropdown
+                      mode="dial"
+                      value={countryCode}
+                      display={dial}
+                      testId="partnership-dial-select"
+                      buttonClassName={inputCls}
+                      onSelect={(c) => { setCountryCode(c.code); setDial(c.dial); }}
+                    />
+                  </div>
+                  <input value={form.contact_phone} onChange={set('contact_phone')} className={inputCls} data-testid="partnership-phone-input" placeholder="690 XX XX XX" />
+                </div>
               </div>
             </div>
             <div>
