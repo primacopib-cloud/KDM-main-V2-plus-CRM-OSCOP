@@ -12,6 +12,20 @@ const T = [
   { code: 'REUNION', label: 'Réunion', x: 910, y: 331, anchor: 'end', dx: -16 },
 ];
 
+// Pays & territoires du monde (même projection : lon -90..70 → x 0..1000, lat 30..-35 → y 0..420)
+const W = [
+  { code: 'CUBA', label: '🇨🇺 Cuba', x: 69, y: 55, anchor: 'start', dx: 12 },
+  { code: 'HAITI', label: '🇭🇹 Haïti', x: 111, y: 74, anchor: 'start', dx: 12 },
+  { code: 'BRESIL', label: '🇧🇷 Brésil', x: 263, y: 296, anchor: 'start', dx: 12 },
+  { code: 'MAROC', label: '🇲🇦 Maroc', x: 519, y: 26, anchor: 'end', dx: -12 },
+  { code: 'FRANCE', label: '🇫🇷 France', x: 577, y: 26, anchor: 'start', dx: 12 },
+  { code: 'SENEGAL', label: '🇸🇳 Sénégal', x: 473, y: 99, anchor: 'end', dx: -12 },
+  { code: 'COTE-DIVOIRE', label: "🇨🇮 Côte d'Ivoire", x: 538, y: 145, anchor: 'start', dx: 12 },
+  { code: 'AFRIQUE-DU-SUD', label: '🇿🇦 Afrique du Sud', x: 738, y: 372, anchor: 'end', dx: -12 },
+  { code: 'MADAGASCAR', label: '🇲🇬 Madagascar', x: 856, y: 317, anchor: 'end', dx: -12 },
+  { code: 'MAURICE', label: '🇲🇺 Maurice', x: 934, y: 372, anchor: 'end', dx: -12 },
+];
+
 const arc = (a, b) => {
   const mx = (a.x + b.x) / 2;
   const my = Math.min(a.y, b.y) - Math.max(40, Math.abs(a.x - b.x) * 0.18);
@@ -66,6 +80,39 @@ export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
       {/* Étiquettes de bassins */}
       <text x="200" y="38" fontSize="13" fill="rgba(247,242,233,0.45)" textAnchor="middle" letterSpacing="3">ANTILLES · GUYANE</text>
       <text x="855" y="38" fontSize="13" fill="rgba(247,242,233,0.45)" textAnchor="middle" letterSpacing="3">OCÉAN INDIEN</text>
+      <text x="530" y="410" fontSize="12" fill="rgba(140,198,62,0.45)" textAnchor="middle" letterSpacing="3">PAYS & TERRITOIRES PARTENAIRES DU MONDE</text>
+
+      {/* Pays du monde */}
+      {W.map((t) => {
+        const active = zone === t.code;
+        return (
+          <g key={t.code} onClick={() => onSelect(t.code)} style={{ cursor: 'pointer' }} data-testid={`map-zone-${t.code}`}>
+            {active && <circle cx={t.x} cy={t.y} r="26" fill="url(#tm-glow)" />}
+            <circle cx={t.x} cy={t.y} r={active ? 11 : 8} fill={active ? 'rgba(140,198,62,0.28)' : 'rgba(255,255,255,0.05)'}
+              stroke={active ? '#8CC63E' : 'rgba(140,198,62,0.45)'} strokeWidth={active ? 2 : 1}
+              style={{ transition: 'all .25s ease' }} />
+            <circle cx={t.x} cy={t.y} r={active ? 4.5 : 3} fill={active ? '#B6E27A' : '#8CC63E'} style={{ transition: 'all .25s ease' }} />
+            {active && (
+              <circle cx={t.x} cy={t.y} r="11" fill="none" stroke="#8CC63E" strokeWidth="1.5" opacity="0.8">
+                <animate attributeName="r" values="11;24" dur="1.8s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.7;0" dur="1.8s" repeatCount="indefinite" />
+              </circle>
+            )}
+            <text x={t.x + t.dx} y={t.y + 4} fontSize={active ? 13 : 11.5} fontWeight={active ? 700 : 500}
+              fill={active ? '#B6E27A' : 'rgba(247,242,233,0.55)'} textAnchor={t.anchor}
+              style={{ transition: 'all .25s ease', userSelect: 'none' }}>
+              {t.label}
+            </text>
+            {stats[t.code] && (
+              <text x={t.x + t.dx} y={t.y + 19} fontSize="10" fontWeight="500"
+                fill={active ? 'rgba(140,198,62,0.95)' : 'rgba(140,198,62,0.6)'} textAnchor={t.anchor}
+                data-testid={`map-stats-${t.code}`} style={{ userSelect: 'none' }}>
+                {stats[t.code].products} {i18n.t('landing.map_produits', 'produits')} · {stats[t.code].members} {i18n.t('landing.map_adherents', 'adhérents')}
+              </text>
+            )}
+          </g>
+        );
+      })}
 
       {/* Marqueurs */}
       {T.map((t) => {
@@ -104,6 +151,10 @@ export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
     <p className="absolute bottom-2 right-4 text-[10px]" style={{ color: 'rgba(247,242,233,0.35)' }}>
       {i18n.t('landing.map_hint', 'Cliquez sur un territoire pour découvrir ses produits')}
     </p>
+    <div className="absolute bottom-2 left-4 flex items-center gap-3 text-[10px]" data-testid="map-legend" style={{ color: 'rgba(247,242,233,0.45)' }}>
+      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#D9B35A' }} /> Outre-mer O'SCOP</span>
+      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#8CC63E' }} /> Pays & territoires du monde</span>
+    </div>
     {showAll && (
       <button type="button" onClick={() => onSelect('')} data-testid="map-zone-all"
         className={`absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${!zone
