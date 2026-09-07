@@ -222,7 +222,7 @@ export default function LoloPointManagerPage() {
                   <tr className="text-left text-[11px] text-white/40 uppercase tracking-wider border-b border-white/[0.06]">
                     <th className="py-2 pr-2">#</th>
                     <th className="py-2 pr-2">Relais</th>
-                    <th className="py-2 pr-2">Territoire</th>
+                    <th className="py-2 pr-2">Pays</th>
                     <th className="py-2 pr-2 text-right">CA</th>
                     <th className="py-2 pr-2 text-right">Commandes</th>
                     <th className="py-2 pr-2 text-right">Retraits</th>

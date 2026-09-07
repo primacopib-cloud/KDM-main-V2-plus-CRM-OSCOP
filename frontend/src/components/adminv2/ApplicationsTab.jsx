@@ -17,9 +17,10 @@ import {
 import { APP_STATUSES, REJECTION_REASONS, formatDate } from './adminV2Constants';
 import { DocPreviewModal } from './DocPreviewModal';
 import { applicationsAPIV2 } from '../../services/api';
+import { TerritoryFlag } from '../Flag';
 
 const exportCsv = (apps) => {
-  const header = ['Raison sociale', 'SIRET', 'Territoire', 'Statut', 'Contact', 'Email', 'Créée le', 'Relancée le', 'Documents'];
+  const header = ['Raison sociale', 'SIRET', 'Pays', 'Statut', 'Contact', 'Email', 'Créée le', 'Relancée le', 'Documents'];
   const rows = apps.map((a) => [
     a.org?.legal_name, a.org?.registration_id, a.org?.territory, a.status,
     a.org?.contact_name, a.org?.contact_email,
@@ -187,6 +188,7 @@ export const ApplicationsTab = ({
                                   <div className="flex items-center gap-2">
                                     <MapPin className="w-4 h-4 text-white/40" />
                                     <span className="text-white/60">{i18n.t('adm.territoire')}</span>
+                                    <TerritoryFlag territory={app.org?.territory} className="w-4 h-auto rounded-[2px] inline-block" />
                                     <span className="text-white/90">{app.org?.territory}</span>
                                   </div>
                                   {app.org?.legal_form && (

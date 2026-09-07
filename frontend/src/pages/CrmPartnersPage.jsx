@@ -14,6 +14,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { crmAPI } from '../services/api';
 import { toast } from 'sonner';
+import { PhoneInput } from '../components/PhoneInput';
+import { SearchableCountryDropdown } from '../components/onboarding/CountryPhoneFields';
+import { COUNTRIES } from '../components/onboarding/countries';
 
 const PIPELINE_STAGES = [
   { id: 'lead_entrant', label: 'Lead', color: '#888' },
@@ -321,7 +324,8 @@ const NewContactDialog = ({ open, onOpenChange, onCreated }) => {
             <Input placeholder="Nom" value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} className="bg-white/[0.04] border-white/10" />
           </div>
           <Input placeholder="Email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} className="bg-white/[0.04] border-white/10" />
-          <Input placeholder="Téléphone" value={f.telephone} onChange={(e) => setF({ ...f, telephone: e.target.value })} className="bg-white/[0.04] border-white/10" />
+          <PhoneInput value={f.telephone} onChange={(v) => setF({ ...f, telephone: v })} testId="new-contact-phone"
+            inputClass="h-9 px-2.5 rounded-md text-sm text-white bg-white/[0.04] border border-white/10 flex-1 min-w-0" />
           <Button className="w-full" onClick={async () => {
             try { await crmAPI.createContact(f); toast.success('Contact créé'); onOpenChange(false); onCreated(); }
             catch (e) { toast.error(e.message); }
@@ -350,7 +354,11 @@ const NewOrgDialog = ({ open, onOpenChange, onCreated }) => {
           <Input placeholder="Enseigne" value={f.enseigne} onChange={(e) => setF({ ...f, enseigne: e.target.value })} className="bg-white/[0.04] border-white/10" />
           <div className="grid grid-cols-2 gap-2">
             <Input placeholder="Ville" value={f.ville} onChange={(e) => setF({ ...f, ville: e.target.value })} className="bg-white/[0.04] border-white/10" />
-            <Input placeholder="Territoire" value={f.territoire} onChange={(e) => setF({ ...f, territoire: e.target.value })} className="bg-white/[0.04] border-white/10" />
+            <SearchableCountryDropdown
+              value={(COUNTRIES.find((c) => c.name === f.territoire) || COUNTRIES[0]).code}
+              display={f.territoire || 'Pays'} testId="new-org-country"
+              buttonClassName="!h-9 !rounded-md !text-sm !bg-white/[0.04] !border-white/10"
+              onSelect={(c) => setF({ ...f, territoire: c.name })} />
           </div>
           <Button className="w-full" onClick={async () => {
             try { await crmAPI.createOrg(f); toast.success('Organisation créée'); onOpenChange(false); onCreated(); }

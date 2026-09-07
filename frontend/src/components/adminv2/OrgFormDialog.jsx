@@ -11,8 +11,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../ui/select';
 import { adminAPIV2 } from '../../services/api';
+import { PhoneInput } from '../PhoneInput';
 
 const TERRITORIES = ['GUADELOUPE', 'MARTINIQUE', 'GUYANE', 'REUNION', 'MAYOTTE', 'CARIBBEAN'];
+const T_FLAG = { GUADELOUPE: 'gp', MARTINIQUE: 'mq', GUYANE: 'gf', REUNION: 're', MAYOTTE: 'yt', CARIBBEAN: 'fr' };
+const T_LABEL = { GUADELOUPE: 'Guadeloupe', MARTINIQUE: 'Martinique', GUYANE: 'Guyane', REUNION: 'La Réunion', MAYOTTE: 'Mayotte', CARIBBEAN: 'Caraïbe' };
 const STATUSES = [
   ['DRAFT', 'Brouillon'], ['PENDING_REVIEW', 'En révision'], ['APPROVED', 'Approuvé'],
   ['SUSPENDED', 'Suspendu'], ['CLOSED', 'Fermé'],
@@ -78,10 +81,19 @@ export const OrgFormDialog = ({ open, onClose, org, onSaved }) => {
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label className="text-white/70 text-xs">Territoire</Label>
+              <Label className="text-white/70 text-xs">Pays</Label>
               <Select value={form.territory} onValueChange={(v) => set('territory', v)}>
                 <SelectTrigger className={inputCls} data-testid="org-form-territory"><SelectValue /></SelectTrigger>
-                <SelectContent>{TERRITORIES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {TERRITORIES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      <span className="inline-flex items-center gap-2">
+                        <img src={`https://flagcdn.com/w20/${T_FLAG[t]}.png`} alt="" width={18} height={12} className="rounded-[2px]" />
+                        {T_LABEL[t] || t}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
@@ -117,8 +129,11 @@ export const OrgFormDialog = ({ open, onClose, org, onSaved }) => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-white/70 text-xs">Téléphone</Label>
-              <Input value={form.contact_phone} onChange={(e) => set('contact_phone', e.target.value)}
-                data-testid="org-form-contact-phone" className={inputCls} />
+              <div className="mt-1">
+                <PhoneInput value={form.contact_phone} onChange={(v) => set('contact_phone', v)}
+                  testId="org-form-contact-phone"
+                  inputClass="h-9 px-2.5 rounded-md text-sm text-white bg-white/[0.04] border border-white/10 flex-1 min-w-0 w-full" />
+              </div>
             </div>
             <div>
               <Label className="text-white/70 text-xs">Ville</Label>

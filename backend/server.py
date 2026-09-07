@@ -568,6 +568,10 @@ set_vendor_emails_database(db)
 from routes_member_profiles import member_profiles_router, set_member_profiles_database
 app.include_router(member_profiles_router)
 set_member_profiles_database(db)
+
+from routes_admin_spaces import admin_spaces_router, set_admin_spaces_database
+app.include_router(admin_spaces_router)
+set_admin_spaces_database(db)
 from routes_accounting import accounting_router, set_accounting_database
 app.include_router(accounting_router)
 set_accounting_database(db)

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { lolodriveAPI } from '../services/api';
 import { toast } from 'sonner';
 import TerritorySelector, { getInitialTerritory } from '../components/TerritorySelector';
+import { TerritoryFlag } from '../components/Flag';
 import LoloPointsMap from '../components/LoloPointsMap';
 
 export default function LoloPointsAdminPage() {
@@ -117,17 +118,20 @@ export default function LoloPointsAdminPage() {
               </DialogHeader>
               <div className="space-y-3">
                 <div>
-                  <Label className="text-xs text-white/60">Territoire</Label>
-                  <select
-                    value={form.territory}
-                    onChange={(e) => setForm({ ...form, territory: e.target.value })}
-                    className="w-full mt-1 bg-white/[0.04] border border-white/10 rounded-md px-3 py-2 text-sm"
-                    data-testid="new-point-territory"
-                  >
-                    {territories.map((t) => (
-                      <option key={t.code} value={t.code} className="bg-[#15151c]">{t.name} ({t.code})</option>
-                    ))}
-                  </select>
+                  <Label className="text-xs text-white/60">Pays</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <TerritoryFlag territory={form.territory} className="w-5 h-auto rounded-[2px] shrink-0" />
+                    <select
+                      value={form.territory}
+                      onChange={(e) => setForm({ ...form, territory: e.target.value })}
+                      className="w-full bg-white/[0.04] border border-white/10 rounded-md px-3 py-2 text-sm"
+                      data-testid="new-point-territory"
+                    >
+                      {territories.map((t) => (
+                        <option key={t.code} value={t.code} className="bg-[#15151c]">{t.name} ({t.code})</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 {[
                   { k: 'name', l: 'Nom' },

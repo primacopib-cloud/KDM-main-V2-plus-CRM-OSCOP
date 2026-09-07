@@ -24,6 +24,7 @@ import { PartnerApplicationsPanel } from '../components/superadmin/PartnerApplic
 import { LoloPointsContactPanel } from '../components/superadmin/LoloPointsContactPanel';
 import { SupportTicketsTab } from '../components/superadmin/SupportTicketsTab';
 import { MemberRegistryTab } from '../components/superadmin/MemberRegistryTab';
+import { SpacesRegistryPanel } from '../components/superadmin/SpacesRegistryPanel';
 import { AuditJournalPanel } from '../components/superadmin/AuditJournalPanel';
 import { CoopersConventionsTab } from '../components/superadmin/CoopersConventionsTab';
 import { VendorAdhesionsPanel } from '../components/superadmin/VendorAdhesionsPanel';
@@ -233,6 +234,7 @@ export default function SuperAdminPage() {
           </TabsContent>
 
           <TabsContent value="registry" className="space-y-6">
+            <SpacesRegistryPanel />
             <MemberRegistryTab />
             <AuditJournalPanel />
           </TabsContent>

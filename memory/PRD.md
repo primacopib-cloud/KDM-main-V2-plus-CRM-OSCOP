@@ -2970,3 +2970,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - LolodriveCatalogAdminPanel (monté sur /lolodrive) : liste des 23 produits (sku, catégorie, prix) avec recherche + formulaire création (nom*, sku auto, catégorie, prix public*, prix PASS, image, stock) → POST /api/lolodrive/admin/products ; nouvelle route GET /api/lolodrive/admin/products/list (require_admin, avec prix)
 - Liens rapides en tête du panneau : Espace relais (/lolo-point/dashboard), Espace investisseur (/espace-investisseur), Espace client PASS (/pass) — ouverture dans un nouvel onglet
 - Testé curl (list 23, création 200, purge TEST-CREATE-1) + screenshot UI
+
+## 2026-06 — Pays/drapeaux partout + Registres des espaces
+- Remplacement « Territoire » → « Pays » avec drapeau + téléphone avec drapeau/indicatif dans : OrgFormDialog (admin B2B), CRM (contact/org), Témoignages, Achat-Revente (OperationFormDialog), création relais (LoloPointsAdminPage), tableaux (Organisations, Demandes d'adhésion, Registre membres, LoloPointManager), i18n fr/en/es. Helper partagé `TerritoryFlag` dans components/Flag.jsx.
+- Nouveau backend `routes_admin_spaces.py` : GET /api/admin/spaces/registries (vendors/investors/relays/pass_members auto-construits depuis vendors, investor_accounts+users, lolodrive_points+gérants, users TITULAIRE_PASS+lolodrive_passes) + PATCH /api/admin/spaces/{kind}/{id}/status (suspendre/réactiver).
+- Nouveau panneau superadmin `SpacesRegistryPanel` (onglet Registres) : 4 sous-onglets avec compteurs, drapeaux pays, badge compte connecté, statut, actions ouvrir l'espace (/vendor, /espace-investisseur, /lolo-point/dashboard, /pass) + suspendre/réactiver. Testé curl (login 200, 4 registres, PATCH ok) + screenshot UI.

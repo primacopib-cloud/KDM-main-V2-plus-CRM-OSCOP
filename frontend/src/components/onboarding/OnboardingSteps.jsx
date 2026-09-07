@@ -128,7 +128,7 @@ export const OnboardingStep1 = ({ formData, setFormData, loading, handleCreateOr
               onValueChange={(value) => setFormData(prev => ({ ...prev, territory: value }))}
             >
               <SelectTrigger data-testid="select-territory">
-                <SelectValue placeholder="Sélectionnez votre territoire" />
+                <SelectValue placeholder="Sélectionnez votre pays" />
               </SelectTrigger>
               <SelectContent>
                 {TERRITORIES.map(t => (
