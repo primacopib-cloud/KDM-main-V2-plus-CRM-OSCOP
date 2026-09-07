@@ -449,6 +449,18 @@ export default function CatalogPage() {
           </div>
           
           <div className="flex gap-3">
+            <select value={selectedZone || 'ALL'} onChange={(e) => handleZoneChange(e.target.value)}
+              data-testid="catalog-country-filter"
+              className="h-10 px-2.5 rounded-md text-sm text-white bg-white/[0.04] border border-white/10 max-w-[180px]">
+              {[['ALL', '🌍 Tous les pays'], ['GUADELOUPE', '🇬🇵 Guadeloupe'], ['MARTINIQUE', '🇲🇶 Martinique'],
+                ['GUYANE', '🇬🇫 Guyane'], ['REUNION', '🇷🇪 La Réunion'], ['MAYOTTE', '🇾🇹 Mayotte'],
+                ['CUBA', '🇨🇺 Cuba'], ['HAITI', '🇭🇹 Haïti'], ['BRESIL', '🇧🇷 Brésil'], ['MAROC', '🇲🇦 Maroc'],
+                ['FRANCE', '🇫🇷 France'], ['SENEGAL', '🇸🇳 Sénégal'], ['COTE-DIVOIRE', "🇨🇮 Côte d'Ivoire"],
+                ['AFRIQUE-DU-SUD', '🇿🇦 Afrique du Sud'], ['MADAGASCAR', '🇲🇬 Madagascar'], ['MAURICE', '🇲🇺 Maurice'],
+              ].map(([code, label]) => (
+                <option key={code} value={code} className="bg-[#1F0A33]">{label}</option>
+              ))}
+            </select>
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
               <Input
