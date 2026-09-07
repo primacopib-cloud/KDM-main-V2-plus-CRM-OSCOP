@@ -238,11 +238,16 @@ async def list_products(
     """List products with ABAC-controlled pricing (visitors see products without prices)"""
     # "ALL" = tous les territoires (pas de filtre zone) ; le tarif reste calculé sur la zone serveur du membre
     show_all = (zone_code or "").upper() == "ALL"
+    country_filter = None
     if show_all:
         zone_code = (await get_selected_zone(current_user)) if current_user else None
     else:
         # Zone demandée par l'UI, sinon zone sélectionnée côté serveur
         zone_code = zone_code or (await get_selected_zone(current_user) if current_user else None)
+        if zone_code and not await db.zones_v2.find_one({"code": zone_code}, {"_id": 1}):
+            # Pays du monde (hors zones Outre-mer) : filtre par pays affectés aux produits
+            country_filter = zone_code.upper()
+            zone_code = (await get_selected_zone(current_user)) if current_user else None
     
     # Check price access (entitlement de la zone demandée obligatoire)
     price_visible = False
@@ -297,7 +302,9 @@ async def list_products(
         query["rating_avg"] = {"$gte": min_rating}
 
     # Disponibilité par zone : uniquement les produits avec un prix actif dans la zone demandée
-    if zone_code and not show_all:
+    if country_filter:
+        query["countries"] = country_filter
+    elif zone_code and not show_all:
         zone_product_ids = await db.zone_prices.distinct(
             "product_id", {"zone_code": zone_code, "is_active": True})
         query["id"] = {"$in": zone_product_ids}
