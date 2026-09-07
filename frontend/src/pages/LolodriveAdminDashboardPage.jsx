@@ -8,6 +8,7 @@ import { SuppliersPanel } from '../components/admin/SuppliersPanel';
 import { LolodriveCategoriesPanel } from '../components/admin/LolodriveCategoriesPanel';
 import { LolodriveCarouselPanel } from '../components/admin/LolodriveCarouselPanel';
 import { VisitorShowcasePanel } from '../components/admin/VisitorShowcasePanel';
+import { LolodriveCatalogAdminPanel } from '../components/admin/LolodriveCatalogAdminPanel';
 import { LoyaltyConfigPanel } from '../components/admin/LoyaltyConfigPanel';
 import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
@@ -338,6 +339,7 @@ export default function LolodriveAdminDashboardPage() {
       )}
       <LolodriveCategoriesPanel />
       <LolodriveCarouselPanel />
+      <LolodriveCatalogAdminPanel />
       <VisitorShowcasePanel />
       <DriveFeesPanel />
       <MissingPhotosPanel />

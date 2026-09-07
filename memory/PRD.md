@@ -2965,3 +2965,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-06 — Création point relais superadmin (self-testé ✅)
 - Formulaire « ➕ Créer un point relais LOLODRIVE » ajouté en tête de LoloPointsContactPanel (onglet LOGICOOP) : nom*, code (auto LP-… si vide), territoire GP/MQ/GF/RE/YT, ville, adresse → POST /api/lolodrive/admin/lolo-points (endpoint existant) ; le point apparaît aussitôt dans la liste éditable — testé curl (création MQ + purge) + screenshot UI
+
+## 2026-06 — Catalogue LOLODRIVE superadmin + accès espaces (self-testé ✅)
+- LolodriveCatalogAdminPanel (monté sur /lolodrive) : liste des 23 produits (sku, catégorie, prix) avec recherche + formulaire création (nom*, sku auto, catégorie, prix public*, prix PASS, image, stock) → POST /api/lolodrive/admin/products ; nouvelle route GET /api/lolodrive/admin/products/list (require_admin, avec prix)
+- Liens rapides en tête du panneau : Espace relais (/lolo-point/dashboard), Espace investisseur (/espace-investisseur), Espace client PASS (/pass) — ouverture dans un nouvel onglet
+- Testé curl (list 23, création 200, purge TEST-CREATE-1) + screenshot UI

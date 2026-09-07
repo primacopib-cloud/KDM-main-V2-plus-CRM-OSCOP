@@ -63,6 +63,15 @@ async def spot_views_stats(admin: dict = Depends(require_admin)):
             "conversion_pct": round(total_cta / total_views * 100, 1) if total_views else 0.0}
 
 
+@lolodrive_admin_router.get("/admin/products/list")
+async def admin_list_products(admin: dict = Depends(require_admin)):
+    products = await db.lolodrive_products.find(
+        {"is_active": {"$ne": False}},
+        {"_id": 0, "sku": 1, "name": 1, "category": 1, "price_public_cents": 1, "price_pass_cents": 1, "stock_qty": 1},
+    ).sort("name", 1).to_list(500)
+    return {"products": products}
+
+
 @lolodrive_admin_router.get("/admin/products/visitor-visibility")
 async def list_visitor_visibility(admin: dict = Depends(require_admin)):
     products = await db.lolodrive_products.find(
