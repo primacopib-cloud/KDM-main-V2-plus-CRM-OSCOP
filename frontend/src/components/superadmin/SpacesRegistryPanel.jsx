@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Store, TrendingUp, MapPin, IdCard, ExternalLink, Ban, CheckCircle2, Loader2, Link2, Download, UserCog } from 'lucide-react';
+import { Store, TrendingUp, MapPin, IdCard, ExternalLink, Ban, CheckCircle2, Loader2, Link2, Download, UserCog, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { TerritoryFlag } from '../Flag';
@@ -24,6 +24,8 @@ export const SpacesRegistryPanel = () => {
   const [busy, setBusy] = useState(null);
   const [detailRow, setDetailRow] = useState(null);
   const [managerRow, setManagerRow] = useState(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   const load = useCallback(() => {
     fetch(`${API}/admin/spaces/registries`, { headers: getAuthHeaders(), credentials: 'include' })
@@ -35,7 +37,12 @@ export const SpacesRegistryPanel = () => {
   useEffect(() => { load(); }, [load]);
 
   const space = SPACES.find((s) => s.key === tab);
-  const rows = data?.[tab] || [];
+  const allRows = data?.[tab] || [];
+  const statuses = [...new Set(allRows.map((r) => r.status).filter(Boolean))];
+  const q = search.trim().toLowerCase();
+  const rows = allRows.filter((r) =>
+    (statusFilter === 'ALL' || r.status === statusFilter) &&
+    (!q || (r.name || '').toLowerCase().includes(q) || (r.email || '').toLowerCase().includes(q)));
 
   const setStatus = async (row, status) => {
     setBusy(row.id);
@@ -80,13 +87,29 @@ export const SpacesRegistryPanel = () => {
       </div>
       <div className="flex flex-wrap gap-2 mb-4">
         {SPACES.map((s) => (
-          <button key={s.key} type="button" onClick={() => setTab(s.key)} data-testid={`spaces-tab-${s.key}`}
+          <button key={s.key} type="button" onClick={() => { setTab(s.key); setSearch(''); setStatusFilter('ALL'); }} data-testid={`spaces-tab-${s.key}`}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
               tab === s.key ? 'bg-[#D9B35A]/20 border-[#D9B35A]/50 text-[#E9CF8E]' : 'bg-white/[0.04] border-white/10 text-white/60 hover:text-white'}`}>
             <s.icon className="w-3.5 h-3.5" /> {s.label}
             <span className="text-white/40">({(data?.[s.key] || []).length})</span>
           </button>
         ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <Search className="w-3.5 h-3.5 text-white/35 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} data-testid="spaces-search"
+            placeholder="Rechercher par nom ou email…"
+            className="w-full h-9 pl-8 pr-3 rounded-lg text-xs text-white placeholder-white/35 bg-white/[0.05] border border-white/15 focus:outline-none focus:ring-1 focus:ring-[#D9B35A]/50" />
+        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} data-testid="spaces-status-filter"
+          className="h-9 px-2.5 rounded-lg text-xs text-white bg-white/[0.05] border border-white/15">
+          <option value="ALL" className="bg-[#1F0A33]">Tous les statuts</option>
+          {statuses.map((s) => <option key={s} value={s} className="bg-[#1F0A33]">{s}</option>)}
+        </select>
+        {(q || statusFilter !== 'ALL') && (
+          <span className="text-[11px] text-white/45" data-testid="spaces-filter-count">{rows.length} résultat(s)</span>
+        )}
       </div>
       {!data ? (
         <div className="py-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-white/40" /></div>

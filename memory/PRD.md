@@ -2982,3 +2982,4 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Alertes superadmin nouveaux inscrits (admin_notifications, cloche admin) : nouveau vendeur (routes_vendor + vendor_onboarding, testé e2e), nouveau membre PASS (routes_pass_registration), investisseur (déjà existant). Helper `notify_admin_signup` dans routes_admin_spaces.py.
 - Export CSV par registre (bouton « Exporter CSV » frontend).
 - Tests : curl détail 4 kinds OK, liaison gérant OK (connected True), notif vendeur créée puis nettoyée, screenshot fiche PASS avec 10 commandes.
+- Filtres registres : recherche nom/email + filtre statut + compteur résultats dans SpacesRegistryPanel (testé UI : recherche "capesterre" → 1, filtre ACTIVE → 10).
