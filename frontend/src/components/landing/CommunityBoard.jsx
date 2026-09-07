@@ -8,7 +8,8 @@ const STATUS_FR = { NEW: 'Nouvelle', ASSIGNED: 'En traitement', VENDOR_ACCEPTED:
 // Accueil : offres & demandes de produits publiées (CommunityPlace) avec drapeau du territoire
 export const CommunityBoard = () => {
   const [demands, setDemands] = useState([]);
-  const [q, setQ] = useState('');
+  const [qOffres, setQOffres] = useState('');
+  const [qDemandes, setQDemandes] = useState('');
   const [joinRef, setJoinRef] = useState(null);
   const [joinEmail, setJoinEmail] = useState('');
   const [joinQty, setJoinQty] = useState(3);
@@ -32,24 +33,14 @@ export const CommunityBoard = () => {
       .then((r) => (r.ok ? r.json() : { demands: [] })).then((d) => setDemands(d.demands || [])).catch(() => {});
   }, []);
   if (!demands.length) return null;
-  const ql = q.trim().toLowerCase();
-  const filtered = ql ? demands.filter((d) => `${d.product} ${d.territory} ${d.reference}`.toLowerCase().includes(ql)) : demands;
-  return (
-    <section className="py-10 px-5" data-testid="community-board">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-3 flex-wrap mb-5">
-          <h2 className="text-lg md:text-lg font-bold m-0 flex items-center gap-2" style={{ color: '#F7F2E9' }}>
-            <Megaphone className="w-5 h-5 text-[#D9B35A]" /> Offres & demandes de produits
-          </h2>
-          <div className="relative ml-auto w-full sm:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} data-testid="community-board-search"
-              placeholder="Rechercher un produit, un territoire…"
-              className="h-10 w-full pl-9 pr-3 rounded-xl bg-white/[0.06] border border-white/15 text-white text-sm placeholder:text-white/35" />
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((d) => (
+  const OFFER_STATUSES = ['VENDOR_ACCEPTED', 'OFFER_ACCEPTED'];
+  const match = (d, q) => {
+    const ql = q.trim().toLowerCase();
+    return !ql || `${d.product} ${d.territory} ${d.reference}`.toLowerCase().includes(ql);
+  };
+  const offres = demands.filter((d) => OFFER_STATUSES.includes(d.status) && match(d, qOffres));
+  const dems = demands.filter((d) => !OFFER_STATUSES.includes(d.status) && match(d, qDemandes));
+  const renderCard = (d) => (
             <div key={d.reference} className="rounded-2xl p-4 bg-white/[0.03] border border-white/[0.08] hover:border-[#D9B35A]/40 transition-colors"
               data-testid={`board-demand-${d.reference}`}>
               <div className="flex items-center gap-2">
@@ -142,8 +133,38 @@ export const CommunityBoard = () => {
                 </div>
               )}
             </div>
-          ))}
-          {!filtered.length && <p className="text-white/40 text-sm">Aucun résultat pour « {q} ».</p>}
+  );
+
+  const searchBox = (value, setValue, testId, placeholder) => (
+    <div className="relative ml-auto w-full sm:w-72">
+      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+      <input value={value} onChange={(e) => setValue(e.target.value)} data-testid={testId}
+        placeholder={placeholder}
+        className="h-10 w-full pl-9 pr-3 rounded-xl bg-white/[0.06] border border-white/15 text-white text-sm placeholder:text-white/35" />
+    </div>
+  );
+
+  return (
+    <section className="py-10 px-5" data-testid="community-board">
+      <div className="max-w-6xl mx-auto">
+        <h2 className="text-lg md:text-lg font-bold m-0 flex items-center gap-2 mb-5" style={{ color: '#F7F2E9' }}>
+          <Megaphone className="w-5 h-5 text-[#D9B35A]" /> Offres & demandes de produits
+        </h2>
+        <div className="flex items-center gap-3 flex-wrap mb-3">
+          <h3 className="text-sm font-bold m-0 uppercase tracking-wide text-[#8CC63E]" data-testid="board-offres-title">Offres ({offres.length})</h3>
+          {searchBox(qOffres, setQOffres, 'board-search-offres', 'Rechercher une offre…')}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-8" data-testid="board-offres-grid">
+          {offres.map(renderCard)}
+          {!offres.length && <p className="text-white/40 text-sm">{qOffres ? <>Aucune offre pour « {qOffres} ».</> : 'Aucune offre en cours.'}</p>}
+        </div>
+        <div className="flex items-center gap-3 flex-wrap mb-3">
+          <h3 className="text-sm font-bold m-0 uppercase tracking-wide text-[#E9CF8E]" data-testid="board-demandes-title">Demandes ({dems.length})</h3>
+          {searchBox(qDemandes, setQDemandes, 'board-search-demandes', 'Rechercher une demande…')}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="board-demandes-grid">
+          {dems.map(renderCard)}
+          {!dems.length && <p className="text-white/40 text-sm">{qDemandes ? <>Aucune demande pour « {qDemandes} ».</> : 'Aucune demande en cours.'}</p>}
         </div>
       </div>
     </section>
