@@ -449,18 +449,29 @@ export default function CatalogPage() {
           </div>
           
           <div className="flex gap-3">
-            <select value={selectedZone || 'ALL'} onChange={(e) => handleZoneChange(e.target.value)}
-              data-testid="catalog-country-filter"
-              className="h-10 px-2.5 rounded-md text-sm text-white bg-white/[0.04] border border-white/10 max-w-[180px]">
-              {[['ALL', '🌍 Tous les pays'], ['GUADELOUPE', '🇬🇵 Guadeloupe'], ['MARTINIQUE', '🇲🇶 Martinique'],
-                ['GUYANE', '🇬🇫 Guyane'], ['REUNION', '🇷🇪 La Réunion'], ['MAYOTTE', '🇾🇹 Mayotte'],
-                ['CUBA', '🇨🇺 Cuba'], ['HAITI', '🇭🇹 Haïti'], ['BRESIL', '🇧🇷 Brésil'], ['MAROC', '🇲🇦 Maroc'],
-                ['FRANCE', '🇫🇷 France'], ['SENEGAL', '🇸🇳 Sénégal'], ['COTE-DIVOIRE', "🇨🇮 Côte d'Ivoire"],
-                ['AFRIQUE-DU-SUD', '🇿🇦 Afrique du Sud'], ['MADAGASCAR', '🇲🇬 Madagascar'], ['MAURICE', '🇲🇺 Maurice'],
-              ].map(([code, label]) => (
-                <option key={code} value={code} className="bg-[#1F0A33]">{label}</option>
-              ))}
-            </select>
+            <Select value={selectedZone || 'ALL'} onValueChange={handleZoneChange}>
+              <SelectTrigger className="h-10 w-[190px] bg-white/[0.04] border-white/10 text-white text-sm" data-testid="catalog-country-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">
+                  <span className="inline-flex items-center gap-2">🌍 Tous les pays</span>
+                </SelectItem>
+                {[['GUADELOUPE', 'gp', 'Guadeloupe'], ['MARTINIQUE', 'mq', 'Martinique'],
+                  ['GUYANE', 'gf', 'Guyane'], ['REUNION', 're', 'La Réunion'], ['MAYOTTE', 'yt', 'Mayotte'],
+                  ['CUBA', 'cu', 'Cuba'], ['HAITI', 'ht', 'Haïti'], ['BRESIL', 'br', 'Brésil'], ['MAROC', 'ma', 'Maroc'],
+                  ['FRANCE', 'fr', 'France'], ['SENEGAL', 'sn', 'Sénégal'], ['COTE-DIVOIRE', 'ci', "Côte d'Ivoire"],
+                  ['AFRIQUE-DU-SUD', 'za', 'Afrique du Sud'], ['MADAGASCAR', 'mg', 'Madagascar'], ['MAURICE', 'mu', 'Maurice'],
+                ].map(([code, flag, label]) => (
+                  <SelectItem key={code} value={code}>
+                    <span className="inline-flex items-center gap-2">
+                      <img src={`https://flagcdn.com/w20/${flag}.png`} alt="" width={18} height={12} className="rounded-[2px]" />
+                      {label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
               <Input
