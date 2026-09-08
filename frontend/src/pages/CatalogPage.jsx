@@ -56,7 +56,9 @@ export default function CatalogPage() {
   const [addonZone, setAddonZone] = useState(null);
 
   const handleZoneChange = (code) => {
-    if (code !== 'ALL' && Array.isArray(entitledZones) && !entitledZones.includes(code)) {
+    // Les pays du monde (hors zones Outre-mer tarifées) sont libres pour tous
+    const isDomZone = zones.some((z) => z.code === code);
+    if (code !== 'ALL' && isDomZone && Array.isArray(entitledZones) && !entitledZones.includes(code)) {
       setAddonZone(zones.find((z) => z.code === code) || { code, name: code });
       return;
     }
