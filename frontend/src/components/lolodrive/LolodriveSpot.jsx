@@ -176,7 +176,7 @@ export const LolodriveSpot = ({ onClose }) => {
           </div>
         )}
         {/* Textes */}
-        <div className="absolute inset-x-0 bottom-[11vh] px-6 text-center">
+        <div className="absolute inset-x-0 bottom-[26vh] sm:bottom-[11vh] px-6 text-center">
           <p className="text-[#8CC63E] font-semibold text-[11px] sm:text-sm uppercase m-0 tracking-[0.24em]" style={anim(80)}>{s.kicker}</p>
           <h2 className="text-white font-black m-0 mt-2 text-2xl sm:text-4xl lg:text-5xl leading-tight" style={{ textShadow: '0 2px 18px rgba(0,0,0,0.55)' }}>
             {wordGroups(s.title).map((g, gi) => (
@@ -233,15 +233,15 @@ export const LolodriveSpot = ({ onClose }) => {
         </button>
       </div>
       {done && (
-        <div className="absolute bottom-[8vh] left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 flex-wrap justify-center">
+        <div className="absolute bottom-[3vh] left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center max-w-[94vw]">
           <button type="button" data-testid="spot-replay" onClick={() => { setScene(0); setDone(false); setPaused(false); remainingRef.current = SCENES[0].duration; }}
-            className="inline-flex items-center gap-2 px-4 h-10 rounded-full text-xs font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition-colors">
+            className="inline-flex items-center gap-2 px-3 sm:px-4 h-9 sm:h-10 rounded-full text-[10px] sm:text-xs font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition-colors">
             <RotateCcw className="w-3.5 h-3.5" /> Revoir le spot
           </button>
           <a data-testid="spot-share-wa"
             href={`https://wa.me/?text=${encodeURIComponent(`🎬 Regarde le spot LOLODRIVE : les courses par lot ×3 à prix mini, en ligne et en point relais ! ${window.location.origin}/catalogue-lolodrive?spot=1`)}`}
             target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-2 px-4 h-10 rounded-full text-xs font-bold text-white bg-[#25D366]/25 border border-[#25D366]/50 hover:bg-[#25D366]/40 transition-colors">
+            className="inline-flex items-center gap-2 px-3 sm:px-4 h-9 sm:h-10 rounded-full text-[10px] sm:text-xs font-bold text-white bg-[#25D366]/25 border border-[#25D366]/50 hover:bg-[#25D366]/40 transition-colors">
             <Share2 className="w-3.5 h-3.5" /> Partager sur WhatsApp
           </a>
           <button type="button" data-testid="spot-share-copy"
@@ -250,9 +250,13 @@ export const LolodriveSpot = ({ onClose }) => {
                 .then(() => setCopied(true)).catch(() => {});
               setTimeout(() => setCopied(false), 2500);
             }}
-            className="inline-flex items-center gap-2 px-4 h-10 rounded-full text-xs font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition-colors">
+            className="inline-flex items-center gap-2 px-3 sm:px-4 h-9 sm:h-10 rounded-full text-[10px] sm:text-xs font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition-colors">
             <LinkIcon className="w-3.5 h-3.5" /> {copied ? 'Lien copié ✓' : 'Copier le lien du spot'}
           </button>
+          <a data-testid="spot-download-vertical" href={`${API}/api/uploads/videos/lolospot_vertical.mp4`} download="spot-lolodrive-story.mp4"
+            className="inline-flex items-center gap-2 px-3 sm:px-4 h-9 sm:h-10 rounded-full text-[10px] sm:text-xs font-bold text-white bg-[#D9B35A]/20 border border-[#D9B35A]/50 hover:bg-[#D9B35A]/35 transition-colors">
+            ⬇️ Version story (9:16)
+          </a>
         </div>
       )}
     </div>
