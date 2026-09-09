@@ -39,7 +39,6 @@ import { ProJourneysSection } from '../components/landing/ProJourneysSection';
 import { ProCatalogFamilies } from '../components/landing/ProCatalogFamilies';
 import { FinancingCompartments } from '../components/landing/FinancingCompartments';
 import { LolodriveSection } from '../components/landing/LolodriveSection';
-import { FogedomNotice } from '../components/landing/FogedomNotice';
 export { PublicLolodriveMapSection };
 export { CooperativeApiSection };
 
@@ -66,9 +65,6 @@ const LandingPage = () => {
 
       {/* Financement — quatre compartiments + CREDI'SCOP-INVEST */}
       <Reveal><FinancingCompartments /></Reveal>
-
-      {/* Mention FOGEDOM-SCIC */}
-      <FogedomNotice />
 
       {/* Ticker d'activité en direct */}
       <ActivityTicker />
