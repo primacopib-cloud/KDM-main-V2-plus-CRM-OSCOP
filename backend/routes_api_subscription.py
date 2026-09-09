@@ -218,7 +218,8 @@ async def my_api_subscription(user: dict = Depends(_member)):
     if sub.get("api_key_id"):
         key = await db.api_keys.find_one({"id": sub["api_key_id"]},
                                          {"_id": 0, "month_usage": 1, "monthly_quota": 1, "usage_month": 1,
-                                          "requests_count": 1, "webhook_url": 1, "webhook_events": 1})
+                                          "requests_count": 1, "webhook_url": 1, "webhook_events": 1,
+                                          "webhook_paused": 1})
         if key:
             current_month = datetime.now(timezone.utc).strftime("%Y-%m")
             sub["usage"] = {
@@ -228,6 +229,7 @@ async def my_api_subscription(user: dict = Depends(_member)):
             }
             sub["webhook_url"] = key.get("webhook_url") or ""
             sub["webhook_events"] = key.get("webhook_events") or ["paid", "preparing", "ready", "fulfilled"]
+            sub["webhook_paused"] = bool(key.get("webhook_paused"))
     return {"subscription": sub, "is_relay": is_relay}
 
 
@@ -237,6 +239,7 @@ VALID_WEBHOOK_EVENTS = ["paid", "preparing", "ready", "fulfilled"]
 class WebhookUrlBody(BaseModel):
     webhook_url: str
     events: list[str] | None = None
+    paused: bool | None = None
 
 
 async def _my_active_sub(user: dict) -> dict:
@@ -249,7 +252,7 @@ async def _my_active_sub(user: dict) -> dict:
 
 @api_sub_router.put("/api-subscription/me/webhook")
 async def set_my_webhook(body: WebhookUrlBody, user: dict = Depends(_member)):
-    """L'abonné configure lui-même l'URL webhook de sa clé (vide = retirer)."""
+    """L'abonné configure lui-même l'URL webhook de sa clé (vide = retirer) — pause possible sans rien perdre."""
     url = body.webhook_url.strip()
     if url and not url.startswith(("http://", "https://")):
         raise HTTPException(status_code=400, detail="URL invalide (http/https requis)")
@@ -262,10 +265,14 @@ async def set_my_webhook(body: WebhookUrlBody, user: dict = Depends(_member)):
         if not events:
             raise HTTPException(status_code=400, detail="Sélectionnez au moins un événement")
         upd["webhook_events"] = events
+    if body.paused is not None:
+        upd["webhook_paused"] = body.paused
+        upd["webhook_paused_at"] = datetime.now(timezone.utc).isoformat() if body.paused else None
     if key is not None and not key.get("webhook_secret"):
         upd["webhook_secret"] = f"whsec_{_s.token_hex(16)}"
     await db.api_keys.update_one({"id": sub["api_key_id"]}, {"$set": upd})
-    return {"ok": True, "webhook_url": url, "events": upd.get("webhook_events")}
+    return {"ok": True, "webhook_url": url, "events": upd.get("webhook_events"),
+            "webhook_paused": upd.get("webhook_paused")}
 
 
 @api_sub_router.post("/api-subscription/me/webhook/test")

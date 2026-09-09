@@ -69,8 +69,17 @@ async def dispatch_lolodrive_order_event(order_id: str, event: str = "lolodrive.
         key = await db.api_keys.find_one({
             "id": sub["api_key_id"], "is_active": True,
             "webhook_url": {"$exists": True, "$nin": ["", None]},
-        }, {"_id": 0, "id": 1, "name": 1, "webhook_url": 1, "webhook_secret": 1, "webhook_events": 1})
+        }, {"_id": 0, "id": 1, "name": 1, "webhook_url": 1, "webhook_secret": 1, "webhook_events": 1,
+            "webhook_paused": 1})
         if not key:
+            return
+        # Pause temporaire demandée par le relais : notification ignorée, configuration conservée
+        if key.get("webhook_paused"):
+            await db.webhook_deliveries.insert_one({
+                "key_id": key["id"], "key_name": key.get("name"), "event": event, "order_id": order_id,
+                "url": key["webhook_url"], "status_code": None, "ok": False, "paused": True,
+                "error": "Webhook suspendu par le relais (pause)", "ts": datetime.now(timezone.utc).isoformat(),
+            })
             return
         # Filtre des événements choisis par le relais (défaut : tous)
         wanted = key.get("webhook_events")
@@ -149,8 +158,9 @@ async def _retry_later(key: dict, event: str, order_id: str, body: str, attempt:
     """Relance automatique différée d'une livraison échouée (2 tentatives : +5 min puis +15 min)."""
     await asyncio.sleep(delay if delay is not None else RETRY_DELAYS[attempt - 1])
     fresh = await db.api_keys.find_one({"id": key["id"], "is_active": True},
-                                       {"_id": 0, "id": 1, "name": 1, "webhook_url": 1, "webhook_secret": 1})
-    if not fresh or not fresh.get("webhook_url"):
+                                       {"_id": 0, "id": 1, "name": 1, "webhook_url": 1, "webhook_secret": 1,
+                                        "webhook_paused": 1})
+    if not fresh or not fresh.get("webhook_url") or fresh.get("webhook_paused"):
         return
     logger.info("Relance auto webhook %s (tentative %s, commande %s)", fresh.get("name"), attempt, order_id)
     await _deliver(fresh, event, order_id, body, attempt=attempt)
