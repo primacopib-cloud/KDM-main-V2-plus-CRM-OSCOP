@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { BadgeCheck, Copy, Download, Eye, EyeOff, FileSpreadsheet, KeyRound } from 'lucide-react';
+import { BadgeCheck, Copy, Download, Eye, EyeOff, FileSpreadsheet, KeyRound, ScrollText } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const frDate = (iso) => { try { return new Date(iso).toLocaleDateString('fr-FR'); } catch { return iso || '—'; } };
@@ -8,6 +8,20 @@ const frDate = (iso) => { try { return new Date(iso).toLocaleDateString('fr-FR')
 export const ApiSubscriptionsPanel = () => {
   const [data, setData] = useState({ items: [], active_count: 0, total_eur: 0, annual_price_eur: 2500 });
   const [revealed, setRevealed] = useState({});
+  const [showLog, setShowLog] = useState(false);
+  const [calls, setCalls] = useState(null);
+
+  const loadCalls = () => {
+    fetch(`${API}/admin/api-subscriptions/calls?limit=50`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => setCalls(d.calls || []))
+      .catch(() => setCalls([]));
+  };
+  const toggleLog = () => {
+    const next = !showLog;
+    setShowLog(next);
+    if (next) loadCalls();
+  };
 
   const load = useCallback(() => {
     fetch(`${API}/admin/api-subscriptions`, { credentials: 'include' })
@@ -67,6 +81,8 @@ export const ApiSubscriptionsPanel = () => {
                 <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
                   <BadgeCheck size={11} /> ACTIF
                 </span>
+              ) : s.status === 'EXPIRED' ? (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 font-bold">EXPIRÉ — CLÉ DÉSACTIVÉE</span>
               ) : (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">EN ATTENTE DE PAIEMENT</span>
               )}
@@ -101,6 +117,26 @@ export const ApiSubscriptionsPanel = () => {
         ))}
         {!data.items.length && (
           <p className="text-sm text-white/40 py-4 text-center">Aucun abonnement API souscrit pour le moment.</p>
+        )}
+      </div>
+      <div className="mt-4 pt-3 border-t border-white/10">
+        <button onClick={toggleLog} data-testid="api-subs-log-toggle"
+          className="text-xs font-bold text-white/60 hover:text-white inline-flex items-center gap-1.5">
+          <ScrollText size={13} className="text-[#D9B35A]" /> Journal des appels API {showLog ? '▾' : '▸'}
+        </button>
+        {showLog && (
+          <div className="mt-2 space-y-1 max-h-64 overflow-y-auto" data-testid="api-subs-log-list">
+            {calls === null && <p className="text-xs text-white/40 m-0 py-2">Chargement…</p>}
+            {calls?.map((c, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-x-2 text-[11px] py-1 px-2 rounded-lg bg-white/[0.03]">
+                <span className={`px-1.5 py-0.5 rounded font-bold ${c.method === 'GET' ? 'bg-[#8CC63E]/15 text-[#B6E27A]' : 'bg-amber-400/15 text-amber-300'}`}>{c.method}</span>
+                <code className="text-white/80">{c.path}</code>
+                <span className="text-white/45">{c.email} · {c.reference}</span>
+                <span className="text-white/35 ml-auto">{new Date(c.ts).toLocaleString('fr-FR')}</span>
+              </div>
+            ))}
+            {calls?.length === 0 && <p className="text-xs text-white/40 m-0 py-2">Aucun appel API enregistré par les abonnés.</p>}
+          </div>
         )}
       </div>
     </div>

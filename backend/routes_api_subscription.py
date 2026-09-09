@@ -245,6 +245,24 @@ async def list_api_subscriptions_admin(_: dict = Depends(require_admin)):
             "total_eur": total, "annual_price_eur": API_ANNUAL_PRICE_EUR}
 
 
+@api_sub_router.get("/admin/api-subscriptions/calls")
+async def api_subscription_call_log(limit: int = 50, _: dict = Depends(require_admin)):
+    """Journal des derniers appels API des abonnés (support technique)."""
+    limit = max(1, min(limit, 200))
+    subs = await db.api_subscriptions.find(
+        {"api_key_id": {"$exists": True}},
+        {"_id": 0, "api_key_id": 1, "email": 1, "reference": 1}).to_list(500)
+    by_key = {s["api_key_id"]: s for s in subs}
+    if not by_key:
+        return {"calls": []}
+    logs = await db.api_call_logs.find(
+        {"key_id": {"$in": list(by_key)}}, {"_id": 0}).sort("ts", -1).to_list(limit)
+    return {"calls": [{
+        "email": by_key[l["key_id"]]["email"], "reference": by_key[l["key_id"]]["reference"],
+        "method": l.get("method"), "path": l.get("path"), "ts": l.get("ts"),
+    } for l in logs]}
+
+
 @api_sub_router.get("/admin/api-subscriptions/export")
 async def export_api_subscriptions_csv(_: dict = Depends(require_admin)):
     """Export CSV comptabilité du registre des abonnements API."""

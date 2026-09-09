@@ -44,3 +44,22 @@ async def run_api_subscription_expiry_reminders(db) -> int:
     if sent:
         logger.info("Rappels expiration abonnement API envoyés : %s", sent)
     return sent
+
+
+async def run_api_subscription_expirations(db) -> int:
+    """Désactive la clé API des abonnements arrivés à expiration sans renouvellement (idempotent)."""
+    now = datetime.now(timezone.utc).isoformat()
+    deactivated = 0
+    cursor = db.api_subscriptions.find({
+        "status": "ACTIVE",
+        "valid_until": {"$lt": now},
+        "key_deactivated_at": {"$exists": False},
+        "api_key_id": {"$exists": True},
+    })
+    async for sub in cursor:
+        await db.api_keys.update_one({"id": sub["api_key_id"]}, {"$set": {"is_active": False}})
+        await db.api_subscriptions.update_one({"id": sub["id"]}, {"$set": {
+            "status": "EXPIRED", "key_deactivated_at": now}})
+        deactivated += 1
+        logger.info("Clé API désactivée (abonnement expiré) : %s (%s)", sub.get("reference"), sub.get("email"))
+    return deactivated
