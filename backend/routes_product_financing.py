@@ -169,6 +169,30 @@ async def download_financing_invoice(fp_id: str, user: dict = Depends(_investor)
                     headers={"Content-Disposition": f"attachment; filename=facture-{fp['reference']}.pdf"})
 
 
+@financing_router.get("/admin/financing-products/stats")
+async def financing_products_stats(_: dict = Depends(require_admin)):
+    """Statistiques financements : total financé, marge cumulée O'SCOP, top investisseurs."""
+    paid = await db.financing_products.find({"status": "PAID"}, {"_id": 0}).to_list(1000)
+    all_items = await db.financing_products.find({}, {"_id": 0, "status": 1}).to_list(1000)
+    total_paid = round(sum(float(i.get("total_price_eur") or 0) for i in paid), 2)
+    margin_cumul = round(sum(float(i.get("total_price_eur") or 0) - float(i.get("base_price_eur") or 0) for i in paid), 2)
+    by_investor = {}
+    for i in paid:
+        email = (i.get("paid_by") or "").lower() or "inconnu"
+        e = by_investor.setdefault(email, {"email": email, "products_count": 0, "total_eur": 0.0})
+        e["products_count"] += 1
+        e["total_eur"] = round(e["total_eur"] + float(i.get("total_price_eur") or 0), 2)
+    top = sorted(by_investor.values(), key=lambda x: -x["total_eur"])[:5]
+    return {
+        "total_financed_eur": total_paid,
+        "margin_cumul_eur": margin_cumul,
+        "paid_count": len(paid),
+        "open_count": sum(1 for i in all_items if i.get("status") == "OPEN"),
+        "pending_count": sum(1 for i in all_items if i.get("status") == "PENDING_PAYMENT"),
+        "top_investors": top,
+    }
+
+
 @financing_router.get("/admin/financing-products")
 async def list_financing_products_admin(_: dict = Depends(require_admin)):
     items = await db.financing_products.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)

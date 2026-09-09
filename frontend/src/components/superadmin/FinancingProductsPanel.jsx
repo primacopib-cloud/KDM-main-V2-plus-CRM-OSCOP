@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Banknote, Plus, Trash2, Pencil, Loader2, Download } from 'lucide-react';
+import { Banknote, Plus, Trash2, Pencil, Loader2, Download, TrendingUp, Trophy } from 'lucide-react';
 import { getAuthHeaders } from '../../services/http';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -14,6 +14,7 @@ const STATUS = {
 // Superadmin : inscription de produits au financement investisseur (marge bénéficiaire O'SCOP)
 export const FinancingProductsPanel = () => {
   const [items, setItems] = useState([]);
+  const [stats, setStats] = useState(null);
   const [catalog, setCatalog] = useState([]);
   const [form, setForm] = useState({ product_id: '', name: '', base_price_eur: '', margin_percent: '' });
   const [busy, setBusy] = useState(false);
@@ -22,6 +23,8 @@ export const FinancingProductsPanel = () => {
   const load = () => {
     fetch(`${API_URL}/api/admin/financing-products`, { headers: getAuthHeaders(), credentials: 'include' })
       .then((r) => (r.ok ? r.json() : { products: [] })).then((d) => setItems(d.products || [])).catch(() => {});
+    fetch(`${API_URL}/api/admin/financing-products/stats`, { headers: getAuthHeaders(), credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null)).then((d) => d && setStats(d)).catch(() => {});
   };
   useEffect(() => {
     load();
@@ -114,6 +117,37 @@ export const FinancingProductsPanel = () => {
         Seul le superadmin inscrit un produit au financement et lui attribue une marge bénéficiaire O'SCOP.
         Une fois payé par un investisseur, le produit passe « Vendu et facturé par O'SCOP ».
       </p>
+      {stats && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4" data-testid="fin-stats-block">
+          <div className="rounded-xl px-3 py-2.5 bg-[#8CC63E]/10 border border-[#8CC63E]/30" data-testid="fin-stat-total">
+            <div className="text-[10px] uppercase tracking-wide text-white/50 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3 text-[#8CC63E]" /> Total financé
+            </div>
+            <div className="text-base font-bold text-[#8CC63E]">{eur(stats.total_financed_eur)}</div>
+            <div className="text-[10px] text-white/45">{stats.paid_count} produit(s) payé(s)</div>
+          </div>
+          <div className="rounded-xl px-3 py-2.5 bg-[#D9B35A]/10 border border-[#D9B35A]/30" data-testid="fin-stat-margin">
+            <div className="text-[10px] uppercase tracking-wide text-white/50">Marge cumulée O'SCOP</div>
+            <div className="text-base font-bold text-[#E9CF8E]">{eur(stats.margin_cumul_eur)}</div>
+            <div className="text-[10px] text-white/45">{stats.open_count} à financer · {stats.pending_count} en cours</div>
+          </div>
+          <div className="rounded-xl px-3 py-2.5 bg-white/[0.04] border border-white/10 col-span-2" data-testid="fin-stat-top">
+            <div className="text-[10px] uppercase tracking-wide text-white/50 flex items-center gap-1 mb-1">
+              <Trophy className="w-3 h-3 text-[#D9B35A]" /> Top investisseurs
+            </div>
+            {stats.top_investors?.length ? (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/70">
+                {stats.top_investors.map((t, i) => (
+                  <span key={t.email} data-testid={`fin-top-investor-${i}`}>
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}{' '}
+                    <b className="text-white/90">{t.email}</b> — {eur(t.total_eur)} ({t.products_count})
+                  </span>
+                ))}
+              </div>
+            ) : <p className="text-[11px] text-white/35 m-0">Aucun paiement pour le moment.</p>}
+          </div>
+        </div>
+      )}
       <form onSubmit={create} className="flex flex-wrap items-center gap-2 mb-4">
         <select value={form.product_id} data-testid="fin-product-select"
           onChange={(e) => setForm({ ...form, product_id: e.target.value })}
