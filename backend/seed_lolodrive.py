@@ -222,8 +222,8 @@ async def main():
         {"id": str(uuid.uuid4()), "wallet_id": "wallet-demo-1", "type": "DEBIT", "amount_uc": 100, "reason": "ORDER_PAY_UC", "order_id": "order-demo-1", "created_at": now - timedelta(days=3)},
         {"id": str(uuid.uuid4()), "wallet_id": "wallet-demo-1", "type": "DEBIT", "amount_uc": 50, "reason": "ORDER_PAY_UC", "order_id": "order-demo-2", "created_at": now - timedelta(days=1)},
     ]
-    await db.lolodrive_wallet_ledger.delete_many({"wallet_id": "wallet-demo-1"})
-    await db.lolodrive_wallet_ledger.insert_many(ledger_entries)
+    for entry in ledger_entries:
+        await db.lolodrive_wallet_ledger.update_one({"id": entry["id"]}, {"$set": entry}, upsert=True)
     print("  ✔ PASS, wallet et ledger seeded pour Marie Dupont")
 
     # ---- 8. COMMANDES DEMO ----
