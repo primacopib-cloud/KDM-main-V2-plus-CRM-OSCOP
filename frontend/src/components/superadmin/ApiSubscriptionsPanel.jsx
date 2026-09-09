@@ -10,9 +10,11 @@ export const ApiSubscriptionsPanel = () => {
   const [revealed, setRevealed] = useState({});
   const [showLog, setShowLog] = useState(false);
   const [calls, setCalls] = useState(null);
+  const [logQ, setLogQ] = useState('');
+  const [stats, setStats] = useState(null);
 
-  const loadCalls = () => {
-    fetch(`${API}/admin/api-subscriptions/calls?limit=50`, { credentials: 'include' })
+  const loadCalls = (q = '') => {
+    fetch(`${API}/admin/api-subscriptions/calls?limit=50&q=${encodeURIComponent(q)}`, { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => setCalls(d.calls || []))
       .catch(() => setCalls([]));
@@ -20,13 +22,18 @@ export const ApiSubscriptionsPanel = () => {
   const toggleLog = () => {
     const next = !showLog;
     setShowLog(next);
-    if (next) loadCalls();
+    if (next) loadCalls(logQ);
   };
+  const onFilterChange = (v) => { setLogQ(v); loadCalls(v); };
 
   const load = useCallback(() => {
     fetch(`${API}/admin/api-subscriptions`, { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => setData(d))
+      .catch(() => {});
+    fetch(`${API}/admin/api-subscriptions/stats`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => setStats(d))
       .catch(() => {});
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -72,6 +79,31 @@ export const ApiSubscriptionsPanel = () => {
         {data.active_count} abonnement(s) actif(s) · {Number(data.total_eur).toLocaleString('fr-FR')} € encaissés ·
         tarif annuel {Number(data.annual_price_eur).toLocaleString('fr-FR')} €
       </p>
+      {stats && (
+        <div className="mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/10" data-testid="api-subs-chart">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-white/50 m-0">Appels API par jour — 30 derniers jours</p>
+            <p className="text-[11px] text-[#E9CF8E] font-semibold m-0" data-testid="api-subs-chart-total">
+              {Number(stats.total_30d).toLocaleString('fr-FR')} appel(s)
+            </p>
+          </div>
+          <div className="flex items-end gap-[2px] h-16">
+            {stats.daily.map((d) => {
+              const max = Math.max(...stats.daily.map((x) => x.count), 1);
+              return (
+                <div key={d.day} title={`${d.day.slice(8, 10)}/${d.day.slice(5, 7)} — ${d.count} appel(s)`}
+                  data-testid={`api-chart-day-${d.day}`}
+                  className={`flex-1 rounded-t-sm ${d.count ? 'bg-gradient-to-t from-[#8CC63E] to-[#D9B35A]' : 'bg-white/[0.07]'}`}
+                  style={{ height: d.count ? `${Math.max(8, (d.count / max) * 100)}%` : '3px' }} />
+              );
+            })}
+          </div>
+          <div className="flex justify-between text-[9px] text-white/30 mt-1">
+            <span>{stats.daily[0] && `${stats.daily[0].day.slice(8, 10)}/${stats.daily[0].day.slice(5, 7)}`}</span>
+            <span>aujourd'hui</span>
+          </div>
+        </div>
+      )}
       <div className="space-y-2">
         {data.items.map((s) => (
           <div key={s.id} className="p-3 rounded-xl bg-white/[0.04] border border-white/10" data-testid={`api-sub-row-${s.reference}`}>
@@ -125,6 +157,11 @@ export const ApiSubscriptionsPanel = () => {
           <ScrollText size={13} className="text-[#D9B35A]" /> Journal des appels API {showLog ? '▾' : '▸'}
         </button>
         {showLog && (
+          <input value={logQ} onChange={(e) => onFilterChange(e.target.value)}
+            placeholder="Filtrer par abonné, référence ou endpoint…" data-testid="api-subs-log-filter"
+            className="mt-2 w-full h-8 px-2.5 rounded-lg bg-white/[0.06] border border-white/15 text-xs text-white placeholder:text-white/30" />
+        )}
+        {showLog && (
           <div className="mt-2 space-y-1 max-h-64 overflow-y-auto" data-testid="api-subs-log-list">
             {calls === null && <p className="text-xs text-white/40 m-0 py-2">Chargement…</p>}
             {calls?.map((c, i) => (
@@ -135,7 +172,7 @@ export const ApiSubscriptionsPanel = () => {
                 <span className="text-white/35 ml-auto">{new Date(c.ts).toLocaleString('fr-FR')}</span>
               </div>
             ))}
-            {calls?.length === 0 && <p className="text-xs text-white/40 m-0 py-2">Aucun appel API enregistré par les abonnés.</p>}
+            {calls?.length === 0 && <p className="text-xs text-white/40 m-0 py-2">{logQ ? 'Aucun appel ne correspond au filtre.' : 'Aucun appel API enregistré par les abonnés.'}</p>}
           </div>
         )}
       </div>
