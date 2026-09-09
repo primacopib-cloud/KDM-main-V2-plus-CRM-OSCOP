@@ -251,7 +251,7 @@ async def get_shortcut_suggestions(request: Request):
     suggestions = [
         {"label": "Catalogue", "href": "/catalogue", "icon": "ShoppingCart", "color": "#D9B35A"},
         {"label": "Commandes", "href": "/commandes", "icon": "Package", "color": "#57D19A"},
-        {"label": "Wallet", "href": "/wallet", "icon": "Wallet", "color": "#3B82F6"},
+        {"label": "CREDI'SCOP", "href": "/wallet", "icon": "Wallet", "color": "#3B82F6"},
         {"label": "Documents", "href": "/documents", "icon": "FileText", "color": "#8B5CF6"},
         {"label": "Mon Espace", "href": "/espace-acheteur", "icon": "LayoutDashboard", "color": "#EC4899"},
         {"label": "Documents légaux", "href": "/legal", "icon": "Scale", "color": "#F59E0B"},

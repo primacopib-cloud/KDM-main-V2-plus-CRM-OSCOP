@@ -3000,3 +3000,4 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Fix emails prod : cause racine = .gitignore excluait les .env (BREVO_API_KEY jamais déployé). Retiré .env/.env.*/\*.env du .gitignore (plateforme gère les valeurs prod) + seed_lolodrive rendu idempotent (upsert). deployment_agent : PASS. Emails besoin d'achat vérifiés OK en preview (Brevo 201 ×2, endpoints simple et batch). Redéploiement requis.
 - Accueil : bloc « FOGEDOM-SCIC » supprimé de la page d'accueil (LandingPage.jsx ; le composant FogedomNotice reste disponible ailleurs). Testé UI.
 - Header : libellé « Wallet » remplacé par « CREDI'SCOP » dans le menu utilisateur (nav.wallet FR/EN/ES/GCF). Testé UI : « CREDI'SCOP · 1650 cr ».
+- Header : infobulle du raccourci portefeuille « Wallet » → « CREDI'SCOP » (suggestion backend routes_user_prefs.py + raccourcis utilisateurs existants mis à jour en base). Testé UI : title="CREDI'SCOP".
