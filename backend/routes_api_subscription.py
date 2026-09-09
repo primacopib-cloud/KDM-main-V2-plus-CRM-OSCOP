@@ -9,6 +9,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from auth import get_current_user_id
 from lolodrive_helpers import require_admin
@@ -216,7 +217,8 @@ async def my_api_subscription(user: dict = Depends(_member)):
     sub["renewable"] = _is_renewable(sub) or sub["expired"]
     if sub.get("api_key_id"):
         key = await db.api_keys.find_one({"id": sub["api_key_id"]},
-                                         {"_id": 0, "month_usage": 1, "monthly_quota": 1, "usage_month": 1, "requests_count": 1})
+                                         {"_id": 0, "month_usage": 1, "monthly_quota": 1, "usage_month": 1,
+                                          "requests_count": 1, "webhook_url": 1})
         if key:
             current_month = datetime.now(timezone.utc).strftime("%Y-%m")
             sub["usage"] = {
@@ -224,7 +226,47 @@ async def my_api_subscription(user: dict = Depends(_member)):
                 "monthly_quota": key.get("monthly_quota") or 100000,
                 "requests_count": key.get("requests_count", 0),
             }
+            sub["webhook_url"] = key.get("webhook_url") or ""
     return {"subscription": sub, "is_relay": is_relay}
+
+
+class WebhookUrlBody(BaseModel):
+    webhook_url: str
+
+
+async def _my_active_sub(user: dict) -> dict:
+    sub = await db.api_subscriptions.find_one(
+        {"user_id": user["id"], "status": "ACTIVE", "api_key_id": {"$exists": True}}, sort=[("paid_at", -1)])
+    if not sub or not _is_active(sub):
+        raise HTTPException(status_code=404, detail="Aucun abonnement API actif")
+    return sub
+
+
+@api_sub_router.put("/api-subscription/me/webhook")
+async def set_my_webhook(body: WebhookUrlBody, user: dict = Depends(_member)):
+    """L'abonné configure lui-même l'URL webhook de sa clé (vide = retirer)."""
+    url = body.webhook_url.strip()
+    if url and not url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="URL invalide (http/https requis)")
+    sub = await _my_active_sub(user)
+    import secrets as _s
+    key = await db.api_keys.find_one({"id": sub["api_key_id"]}, {"_id": 0, "webhook_secret": 1})
+    upd = {"webhook_url": url}
+    if key is not None and not key.get("webhook_secret"):
+        upd["webhook_secret"] = f"whsec_{_s.token_hex(16)}"
+    await db.api_keys.update_one({"id": sub["api_key_id"]}, {"$set": upd})
+    return {"ok": True, "webhook_url": url}
+
+
+@api_sub_router.post("/api-subscription/me/webhook/test")
+async def test_my_webhook(user: dict = Depends(_member)):
+    """« Tester mon webhook » : envoie un événement d'exemple signé à l'endpoint du relais."""
+    sub = await _my_active_sub(user)
+    key = await db.api_keys.find_one({"id": sub["api_key_id"]}, {"_id": 0})
+    if not key or not key.get("webhook_url"):
+        raise HTTPException(status_code=400, detail="Configurez d'abord l'URL de votre webhook")
+    from erp_webhooks import send_test_event
+    return await send_test_event(key)
 
 
 @api_sub_router.get("/api-subscription/me/invoice.pdf")
@@ -326,13 +368,47 @@ async def api_subscription_webhook_deliveries(limit: int = 50, _: dict = Depends
     if not by_key:
         return {"deliveries": []}
     logs = await db.webhook_deliveries.find(
-        {"key_id": {"$in": list(by_key)}}, {"_id": 0}).sort("ts", -1).to_list(limit)
+        {"key_id": {"$in": list(by_key)}}).sort("ts", -1).to_list(limit)
     return {"deliveries": [{
+        "delivery_id": str(d["_id"]),
         "email": by_key[d["key_id"]]["email"], "reference": by_key[d["key_id"]]["reference"],
         "event": d.get("event"), "order_id": d.get("order_id"), "url": d.get("url"),
         "status_code": d.get("status_code"), "ok": d.get("ok", False),
         "error": d.get("error"), "ts": d.get("ts"),
     } for d in logs]}
+
+
+class RetryBody(BaseModel):
+    delivery_id: str
+
+
+@api_sub_router.post("/admin/api-subscriptions/webhook-deliveries/retry")
+async def retry_webhook_delivery(body: RetryBody, _: dict = Depends(require_admin)):
+    """Relance une livraison webhook depuis l'historique (payload reconstruit à l'état actuel)."""
+    from bson import ObjectId
+    try:
+        oid = ObjectId(body.delivery_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="delivery_id invalide") from None
+    d = await db.webhook_deliveries.find_one({"_id": oid})
+    if not d:
+        raise HTTPException(status_code=404, detail="Livraison introuvable")
+    key = await db.api_keys.find_one({"id": d["key_id"]}, {"_id": 0})
+    if not key or not key.get("webhook_url"):
+        raise HTTPException(status_code=409, detail="Clé sans URL webhook — reconfigurez-la avant de relancer")
+    from erp_webhooks import dispatch_lolodrive_order_event, send_test_event
+    if (d.get("event") or "").startswith("lolodrive."):
+        order = await db.lolodrive_orders.find_one({"id": d.get("order_id")}, {"_id": 0, "status": 1})
+        if not order:
+            raise HTTPException(status_code=409, detail="Commande d'origine introuvable")
+        extra = {"status": order.get("status")} if d["event"] == "lolodrive.order.status" else None
+        await dispatch_lolodrive_order_event(d["order_id"], event=d["event"], extra=extra)
+        last = await db.webhook_deliveries.find_one(
+            {"key_id": d["key_id"], "order_id": d["order_id"]}, sort=[("ts", -1)])
+        return {"ok": bool(last and last.get("ok")), "status_code": (last or {}).get("status_code"),
+                "error": (last or {}).get("error")}
+    result = await send_test_event(key)
+    return result
 
 
 @api_sub_router.get("/admin/api-subscriptions/export")

@@ -14,15 +14,33 @@ export const ApiSubscriptionsPanel = () => {
   const [stats, setStats] = useState(null);
   const [showHooks, setShowHooks] = useState(false);
   const [hooks, setHooks] = useState(null);
+  const [retrying, setRetrying] = useState(null);
 
-  const toggleHooks = () => {
-    const next = !showHooks;
-    setShowHooks(next);
-    if (!next) return;
+  const loadHooks = () => {
     fetch(`${API}/admin/api-subscriptions/webhook-deliveries?limit=50`, { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => setHooks(d.deliveries || []))
       .catch(() => setHooks([]));
+  };
+  const toggleHooks = () => {
+    const next = !showHooks;
+    setShowHooks(next);
+    if (next) loadHooks();
+  };
+  const retryHook = async (h) => {
+    setRetrying(h.delivery_id);
+    try {
+      const r = await fetch(`${API}/admin/api-subscriptions/webhook-deliveries/retry`, {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delivery_id: h.delivery_id }),
+      });
+      const d = await r.json();
+      if (!r.ok) toast.error(d.detail || 'Relance impossible');
+      else if (d.ok) toast.success(`Relivraison réussie — HTTP ${d.status_code}`);
+      else toast.error(`Relivraison échouée : ${d.error || `HTTP ${d.status_code}`}`);
+      loadHooks();
+    } catch { toast.error('Erreur réseau'); }
+    setRetrying(null);
   };
 
   const loadCalls = (q = '') => {
@@ -226,6 +244,13 @@ export const ApiSubscriptionsPanel = () => {
                 <code className="text-white/80">{h.event}</code>
                 <span className="text-white/45">{h.email}</span>
                 {h.error && <span className="text-red-300/80 truncate max-w-[200px]" title={h.error}>{h.error}</span>}
+                {!h.ok && (
+                  <button onClick={() => retryHook(h)} disabled={retrying === h.delivery_id}
+                    data-testid={`api-hook-retry-${i}`}
+                    className="px-2 py-0.5 rounded-md font-bold border border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/10 disabled:opacity-50">
+                    {retrying === h.delivery_id ? '…' : '↻ Relancer'}
+                  </button>
+                )}
                 <span className="text-white/35 ml-auto">{new Date(h.ts).toLocaleString('fr-FR')}</span>
               </div>
             ))}
