@@ -13,6 +13,7 @@ export const CommunityBoard = () => {
   const [joinRef, setJoinRef] = useState(null);
   const [joinEmail, setJoinEmail] = useState('');
   const [joinQty, setJoinQty] = useState(3);
+  const [joinBlocked, setJoinBlocked] = useState(null);
   const [acceptRef, setAcceptRef] = useState(null);
   const [acceptEmail, setAcceptEmail] = useState('');
   const submitAccept = async (ref) => {
@@ -38,7 +39,13 @@ export const CommunityBoard = () => {
         body: JSON.stringify({ email: joinEmail, quantity: Number(joinQty) || 1 }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.detail || 'Erreur');
+      if (!r.ok) {
+        if (d.detail && d.detail.code === 'PRO_INVITATION_REQUIRED') {
+          setJoinBlocked({ ref, message: d.detail.message });
+          return;
+        }
+        throw new Error(typeof d.detail === 'string' ? d.detail : 'Erreur');
+      }
       if (d.payment_required && d.checkout_url) {
         toast.info(`Participation mutualisée : ${d.participation_eur.toFixed(2).replace('.', ',')} € — redirection vers le paiement…`);
         setTimeout(() => { window.location.href = d.checkout_url; }, 1200);
@@ -46,8 +53,10 @@ export const CommunityBoard = () => {
       }
       setDemands((prev) => prev.map((x) => (x.reference === ref
         ? { ...x, joiners_count: d.joiners_count, joined_quantity: d.joined_quantity } : x)));
-      setJoinRef(null); setJoinEmail('');
-      toast.success('Vous avez rejoint la demande — volumes groupés !');
+      setJoinRef(null); setJoinEmail(''); setJoinBlocked(null);
+      toast.success(d.pro_member
+        ? "Membre professionnel : participation offerte — vous avez rejoint l'annonce !"
+        : 'Vous avez rejoint la demande — volumes groupés !');
     } catch (e) { toast.error(e.message); }
   };
   useEffect(() => {
@@ -190,7 +199,7 @@ export const CommunityBoard = () => {
                   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.297-.497.1-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                 </a>
                 <button type="button" data-testid={`board-join-${d.reference}`}
-                  onClick={() => { setJoinRef(joinRef === d.reference ? null : d.reference); setJoinQty(3); }}
+                  onClick={() => { setJoinRef(joinRef === d.reference ? null : d.reference); setJoinQty(3); setJoinBlocked(null); }}
                   title={d.participation_eur > 0
                     ? `Participation mutualisée : ${d.participation_eur.toFixed(2).replace('.', ',')} € — frais de publication répartis entre les ${(d.joiners_count || 0) + 1} participant(s)`
                     : 'Rejoindre gratuitement cette annonce'}
@@ -220,6 +229,23 @@ export const CommunityBoard = () => {
                     {d.participation_eur > 0 ? 'Payer & rejoindre' : 'OK'}
                   </button>
                   </div>
+                  {joinBlocked?.ref === d.reference && (
+                    <div className="mt-2 rounded-xl border border-[#D9B35A]/40 bg-[#D9B35A]/10 p-2.5" data-testid={`board-join-blocked-${d.reference}`}>
+                      <p className="text-[10.5px] text-[#E9CF8E] m-0 mb-2" data-testid={`board-join-blocked-msg-${d.reference}`}>
+                        {joinBlocked.message}
+                      </p>
+                      <div className="flex gap-1.5 flex-wrap">
+                        <a href="/tarifs" data-testid={`board-join-blocked-cta-buyer-${d.reference}`}
+                          className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#D9B35A] text-[#1F0A33] hover:brightness-110 transition-[filter]">
+                          Devenir acheteur professionnel
+                        </a>
+                        <a href="/adhesion-vendeur" data-testid={`board-join-blocked-cta-vendor-${d.reference}`}
+                          className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#8CC63E] text-[#1F2A12] hover:brightness-110 transition-[filter]">
+                          Devenir fournisseur référencé
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
