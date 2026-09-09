@@ -13,6 +13,23 @@ export const CommunityBoard = () => {
   const [joinRef, setJoinRef] = useState(null);
   const [joinEmail, setJoinEmail] = useState('');
   const [joinQty, setJoinQty] = useState(3);
+  const [acceptRef, setAcceptRef] = useState(null);
+  const [acceptEmail, setAcceptEmail] = useState('');
+  const submitAccept = async (ref) => {
+    if (!acceptEmail.includes('@')) return toast.error('Email invalide');
+    try {
+      const r = await fetch(`${API_URL}/api/public/purchase-needs/${ref}/accept-offer`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: acceptEmail }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Erreur');
+      setDemands((prev) => prev.map((x) => (x.reference === ref && d.role === 'owner' ? { ...x, status: 'OFFER_ACCEPTED' } : x)));
+      setAcceptRef(null); setAcceptEmail('');
+      toast.success("Offre acceptée ! Direction l'adhésion pour finaliser…");
+      setTimeout(() => { window.location.href = d.redirect || `/tarifs?besoin=${ref}`; }, 1400);
+    } catch (e) { toast.error(e.message); }
+  };
   const submitJoin = async (ref) => {
     if (!joinEmail.includes('@')) return toast.error('Email invalide');
     try {
@@ -81,6 +98,28 @@ export const CommunityBoard = () => {
                   🤝 Réponse {d.responder_role === 'COOPER' ? "COOPER'S" : 'vendeur'} :{' '}
                   <b>{Number(d.vendor_price_eur).toLocaleString('fr-FR')} €</b>
                   {d.vendor_delay_days != null && <> · délai {d.vendor_delay_days} j</>}
+                  {d.status === 'VENDOR_ACCEPTED' && (
+                    <button type="button" data-testid={`board-accept-${d.reference}`}
+                      onClick={() => { setAcceptRef(acceptRef === d.reference ? null : d.reference); }}
+                      className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold text-[#1F2A12] bg-[#8CC63E] hover:brightness-110 transition-[filter]">
+                      Accepter l'offre
+                    </button>
+                  )}
+                  {d.status === 'OFFER_ACCEPTED' && (
+                    <span className="ml-2 text-[10px] text-white/60">✔ acceptée</span>
+                  )}
+                  {acceptRef === d.reference && (
+                    <div className="mt-1.5 flex gap-1.5" data-testid={`board-accept-form-${d.reference}`}>
+                      <input value={acceptEmail} onChange={(e) => setAcceptEmail(e.target.value)}
+                        placeholder="Email du déposant ou participant"
+                        data-testid={`board-accept-email-${d.reference}`}
+                        className="h-8 flex-1 min-w-0 px-2 rounded-lg bg-white/[0.08] border border-white/15 text-white text-[11px] font-normal placeholder:text-white/35" />
+                      <button type="button" onClick={() => submitAccept(d.reference)} data-testid={`board-accept-submit-${d.reference}`}
+                        className="h-8 px-2.5 rounded-lg text-[11px] font-bold text-[#1F2A12] bg-[#8CC63E] hover:brightness-110 transition-[filter]">
+                        OK
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="mt-2" data-testid={`board-gauge-${d.reference}`}>

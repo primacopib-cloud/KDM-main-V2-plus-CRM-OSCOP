@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Banknote, Package, Loader2, BadgeCheck, Download } from 'lucide-react';
+import { Banknote, Package, Loader2, BadgeCheck, Download, Truck } from 'lucide-react';
 import { getAuthHeaders, getSessionToken } from '../../services/http';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -78,11 +78,11 @@ export const ProductFinancingBoard = () => {
   return (
     <div className="glass-panel-soft rounded-[22px] p-5 mb-8" data-testid="product-financing-board">
       <h2 className="text-lg font-bold flex items-center gap-2 mb-1">
-        <Banknote className="w-5 h-5 text-[#D9B35A]" /> Produits à financer
+        <Banknote className="w-5 h-5 text-[#D9B35A]" /> Produits & logistique à financer
       </h2>
       <p className="text-white/60 text-xs mb-4">
-        Produits inscrits au financement par la Centrale O'SCOP — réglez directement par carte bancaire.
-        Une fois payé, le produit est vendu et facturé par O'SCOP (facture acquittée par email).
+        Produits et prestations logistiques inscrits au financement par la Centrale O'SCOP — réglez directement par carte bancaire.
+        Une fois payé, le financement est vendu et facturé par O'SCOP (facture acquittée par email).
       </p>
       <div className="grid sm:grid-cols-2 gap-3">
         {items.map((fp) => (
@@ -102,7 +102,13 @@ export const ProductFinancingBoard = () => {
               )}
             </div>
             <p className="text-white/85 text-sm flex items-center gap-1.5 mb-1">
-              <Package className="w-3.5 h-3.5 text-[#D9B35A]" /> {fp.name}
+              {fp.kind === 'LOGISTIQUE'
+                ? <Truck className="w-3.5 h-3.5 text-sky-300" />
+                : <Package className="w-3.5 h-3.5 text-[#D9B35A]" />} {fp.name}
+              {fp.kind === 'LOGISTIQUE' && (
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase text-sky-300 bg-sky-500/10 border border-sky-400/40"
+                  data-testid={`fin-logistics-badge-${fp.reference}`}>Logistique</span>
+              )}
             </p>
             <div className="text-[12px] text-white/65 space-y-0.5">
               <div>Prix de base HT : <b className="text-white/85">{eur(fp.base_price_eur)}</b></div>

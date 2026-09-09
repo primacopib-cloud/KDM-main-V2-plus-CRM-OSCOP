@@ -104,7 +104,7 @@ def build_financing_invoice_pdf(fp: dict) -> bytes:
     c.drawString(44 * mm, h - 18 * mm, "O'SCOP — Centrale coopérative")
     c.setFillColorRGB(1, 1, 1)
     c.setFont("Helvetica", 10)
-    c.drawString(44 * mm, h - 25 * mm, "Financement produit — Espace investisseurs")
+    c.drawString(44 * mm, h - 25 * mm, "Financements — Espace investisseurs")
 
     c.setFillColorRGB(0.2, 0.55, 0.25)
     c.setFont("Helvetica-Bold", 22)
@@ -130,7 +130,8 @@ def build_financing_invoice_pdf(fp: dict) -> bytes:
     c.drawRightString(w - 19 * mm, ty + 3 * mm, "Montant TTC")
     c.setFillColorRGB(0, 0, 0)
     c.setFont("Helvetica", 10)
-    c.drawString(19 * mm, ty - 6 * mm, f"Financement produit — {fp.get('reference')} ({fp.get('name')})")
+    kind_label = "logistique" if (fp.get("kind") or "").upper() == "LOGISTIQUE" else "produit"
+    c.drawString(19 * mm, ty - 6 * mm, f"Financement {kind_label} — {fp.get('reference')} ({fp.get('name')})")
     c.drawRightString(w - 19 * mm, ty - 6 * mm, f"{total:.2f} €")
     c.setFont("Helvetica", 8)
     c.drawString(19 * mm, ty - 11 * mm, f"Base HT : {base:.2f} € · Marge bénéficiaire O'SCOP : {margin:.2f} %")

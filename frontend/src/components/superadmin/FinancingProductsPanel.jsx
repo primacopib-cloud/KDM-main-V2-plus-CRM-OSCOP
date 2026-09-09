@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Banknote, Plus, Trash2, Pencil, Loader2, Download, TrendingUp, Trophy } from 'lucide-react';
+import { Banknote, Plus, Trash2, Pencil, Loader2, Download, TrendingUp, Trophy, Truck, Package } from 'lucide-react';
 import { getAuthHeaders } from '../../services/http';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -16,7 +16,7 @@ export const FinancingProductsPanel = () => {
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState(null);
   const [catalog, setCatalog] = useState([]);
-  const [form, setForm] = useState({ product_id: '', name: '', base_price_eur: '', margin_percent: '' });
+  const [form, setForm] = useState({ kind: 'PRODUIT', product_id: '', name: '', base_price_eur: '', margin_percent: '' });
   const [busy, setBusy] = useState(false);
 
   const headers = { 'Content-Type': 'application/json', ...getAuthHeaders() };
@@ -41,8 +41,9 @@ export const FinancingProductsPanel = () => {
       const res = await fetch(`${API_URL}/api/admin/financing-products`, {
         method: 'POST', credentials: 'include', headers,
         body: JSON.stringify({
-          product_id: form.product_id || null,
-          name: form.product_id ? null : form.name,
+          kind: form.kind,
+          product_id: form.kind === 'PRODUIT' ? form.product_id || null : null,
+          name: form.kind === 'PRODUIT' && form.product_id ? null : form.name,
           base_price_eur: Number(form.base_price_eur),
           margin_percent: Number(form.margin_percent) || 0,
         }),
@@ -50,7 +51,7 @@ export const FinancingProductsPanel = () => {
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || 'Erreur');
       toast.success(`${d.reference} inscrit au financement — ${eur(d.total_price_eur)}`);
-      setForm({ product_id: '', name: '', base_price_eur: '', margin_percent: '' });
+      setForm({ kind: 'PRODUIT', product_id: '', name: '', base_price_eur: '', margin_percent: '' });
       load();
     } catch (err) { toast.error(err.message); } finally { setBusy(false); }
   };
@@ -84,8 +85,8 @@ export const FinancingProductsPanel = () => {
   };
 
   const exportCsv = () => {
-    const header = ['Référence', 'Produit', 'SKU', 'Prix base €', 'Marge %', 'Total €', 'Statut', 'Payé par', 'Payé le', 'Inscrit le'];
-    const lines = items.map((fp) => [fp.reference, fp.name, fp.sku, fp.base_price_eur, fp.margin_percent,
+    const header = ['Référence', 'Type', 'Produit', 'SKU', 'Prix base €', 'Marge %', 'Total €', 'Statut', 'Payé par', 'Payé le', 'Inscrit le'];
+    const lines = items.map((fp) => [fp.reference, fp.kind === 'LOGISTIQUE' ? 'Logistique' : 'Produit', fp.name, fp.sku, fp.base_price_eur, fp.margin_percent,
       fp.total_price_eur, STATUS[fp.status]?.[0] || fp.status, fp.paid_by, String(fp.paid_at || '').slice(0, 10),
       String(fp.created_at || '').slice(0, 10)]);
     const csv = [header, ...lines]
@@ -146,20 +147,48 @@ export const FinancingProductsPanel = () => {
               </div>
             ) : <p className="text-[11px] text-white/35 m-0">Aucun paiement pour le moment.</p>}
           </div>
+          {stats.monthly?.length > 0 && (
+            <div className="rounded-xl px-3 py-2.5 bg-white/[0.04] border border-white/10 col-span-2 lg:col-span-4" data-testid="fin-monthly-chart">
+              <div className="text-[10px] uppercase tracking-wide text-white/50 mb-2">Montant financé par mois</div>
+              <div className="flex items-end gap-2 h-20">
+                {stats.monthly.map((m) => {
+                  const max = Math.max(...stats.monthly.map((x) => x.total_eur), 1);
+                  return (
+                    <div key={m.month} className="flex-1 flex flex-col items-center gap-1 min-w-0" data-testid={`fin-month-${m.month}`}>
+                      <span className="text-[9px] text-[#8CC63E] font-bold whitespace-nowrap">{Number(m.total_eur).toLocaleString('fr-FR')} €</span>
+                      <div className="w-full max-w-[46px] rounded-t-md transition-[height] duration-500"
+                        style={{ height: `${Math.max(8, Math.round((m.total_eur / max) * 52))}px`,
+                          background: 'linear-gradient(180deg, #8CC63E, #D9B35A)' }} />
+                      <span className="text-[9px] text-white/45">{m.month.slice(5)}/{m.month.slice(2, 4)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
       <form onSubmit={create} className="flex flex-wrap items-center gap-2 mb-4">
-        <select value={form.product_id} data-testid="fin-product-select"
-          onChange={(e) => setForm({ ...form, product_id: e.target.value })}
-          className={`${inputCls} min-w-[190px]`}>
-          <option value="" className="bg-[#1F0A33]">— Produit hors catalogue —</option>
-          {catalog.map((p) => (
-            <option key={p.id} value={p.id} className="bg-[#1F0A33]">{p.name} ({p.sku})</option>
-          ))}
+        <select value={form.kind} data-testid="fin-kind-select"
+          onChange={(e) => setForm({ ...form, kind: e.target.value, product_id: '' })}
+          className={`${inputCls} w-32`}>
+          <option value="PRODUIT" className="bg-[#1F0A33]">📦 Produit</option>
+          <option value="LOGISTIQUE" className="bg-[#1F0A33]">🚚 Logistique</option>
         </select>
-        {!form.product_id && (
+        {form.kind === 'PRODUIT' && (
+          <select value={form.product_id} data-testid="fin-product-select"
+            onChange={(e) => setForm({ ...form, product_id: e.target.value })}
+            className={`${inputCls} min-w-[190px]`}>
+            <option value="" className="bg-[#1F0A33]">— Produit hors catalogue —</option>
+            {catalog.map((p) => (
+              <option key={p.id} value={p.id} className="bg-[#1F0A33]">{p.name} ({p.sku})</option>
+            ))}
+          </select>
+        )}
+        {(form.kind === 'LOGISTIQUE' || !form.product_id) && (
           <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="Nom du produit *" className={`${inputCls} min-w-[160px]`} data-testid="fin-name-input" />
+            placeholder={form.kind === 'LOGISTIQUE' ? "Prestation logistique (ex. Fret conteneur 20' GP→FR) *" : 'Nom du produit *'}
+            className={`${inputCls} min-w-[220px]`} data-testid="fin-name-input" />
         )}
         <input required type="number" min="0.01" step="0.01" value={form.base_price_eur}
           onChange={(e) => setForm({ ...form, base_price_eur: e.target.value })}
@@ -185,6 +214,14 @@ export const FinancingProductsPanel = () => {
               <div key={fp.id} className="rounded-xl px-3 py-2.5 bg-white/[0.02] border border-white/[0.06] text-[11px] text-white/70"
                 data-testid={`fin-row-${fp.reference}`}>
                 <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase border ${
+                    fp.kind === 'LOGISTIQUE'
+                      ? 'text-sky-300 bg-sky-500/10 border-sky-400/40'
+                      : 'text-[#E9CF8E] bg-[#D9B35A]/10 border-[#D9B35A]/40'}`}
+                    data-testid={`fin-kind-${fp.reference}`}>
+                    {fp.kind === 'LOGISTIQUE' ? <Truck className="w-2.5 h-2.5" /> : <Package className="w-2.5 h-2.5" />}
+                    {fp.kind === 'LOGISTIQUE' ? 'Logistique' : 'Produit'}
+                  </span>
                   <span className="text-white font-semibold">{fp.reference} · {fp.name}</span>
                   <span className="text-white/40">base {eur(fp.base_price_eur)} · marge {fp.margin_percent}%</span>
                   <span className="font-mono text-[#D9B35A] font-bold">{eur(fp.total_price_eur)}</span>

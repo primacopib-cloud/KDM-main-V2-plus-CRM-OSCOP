@@ -39,6 +39,7 @@ async def _investor(user_id: str = Depends(get_current_user_id)):
 class FinancingProductCreate(BaseModel):
     product_id: str | None = None
     name: str | None = None
+    kind: str = "PRODUIT"
     base_price_eur: float = Field(gt=0, le=10_000_000)
     margin_percent: float = Field(ge=0, le=500)
     description: str | None = None
@@ -63,19 +64,24 @@ async def financing_catalog_products(_: dict = Depends(require_admin)):
 
 @financing_router.post("/admin/financing-products")
 async def create_financing_product(body: FinancingProductCreate, admin: dict = Depends(require_admin)):
-    """Le superadmin inscrit un produit au financement avec sa marge bénéficiaire."""
+    """Le superadmin inscrit un produit OU une prestation logistique au financement avec sa marge bénéficiaire."""
+    kind = (body.kind or "PRODUIT").upper()
+    if kind not in ("PRODUIT", "LOGISTIQUE"):
+        raise HTTPException(status_code=400, detail="kind: PRODUIT ou LOGISTIQUE")
     name, sku = body.name, None
-    if body.product_id:
+    if body.product_id and kind == "PRODUIT":
         prod = await db.products.find_one({"id": body.product_id}, {"_id": 0, "name": 1, "sku": 1})
         if not prod:
             raise HTTPException(status_code=404, detail="Produit catalogue introuvable")
         name, sku = prod["name"], prod.get("sku")
     if not name or len(name.strip()) < 2:
         raise HTTPException(status_code=400, detail="Nom du produit requis")
+    prefix = "LOG" if kind == "LOGISTIQUE" else "FIN"
     doc = {
         "id": str(uuid.uuid4()),
-        "reference": f"FIN-{datetime.now(timezone.utc).strftime('%Y%m')}-{uuid.uuid4().hex[:5].upper()}",
-        "product_id": body.product_id, "name": name.strip(), "sku": sku,
+        "reference": f"{prefix}-{datetime.now(timezone.utc).strftime('%Y%m')}-{uuid.uuid4().hex[:5].upper()}",
+        "product_id": body.product_id if kind == "PRODUIT" else None,
+        "name": name.strip(), "sku": sku, "kind": kind,
         "description": body.description,
         "base_price_eur": round(body.base_price_eur, 2),
         "margin_percent": round(body.margin_percent, 2),
@@ -100,6 +106,7 @@ async def create_financing_product(body: FinancingProductCreate, admin: dict = D
         investors = await db.users.find(
             {"is_investor": True, "email": {"$exists": True}},
             {"_id": 0, "email": 1, "contact_name": 1}).to_list(500)
+        kind_label = "logistique" if kind == "LOGISTIQUE" else "produit"
         for inv in investors:
             try:
                 if (inv["email"] or "").lower() in renewal_payers:
@@ -119,10 +126,10 @@ async def create_financing_product(body: FinancingProductCreate, admin: dict = D
                     continue
                 await send_email(
                     to_email=inv["email"], to_name=inv.get("contact_name"),
-                    subject=f"💰 Nouveau produit au financement — {doc['name']} ({doc['reference']})",
+                    subject=f"💰 Nouveau financement {kind_label} — {doc['name']} ({doc['reference']})",
                     html_content=_wrap_html("Nouvelle opportunité de financement", (
                         f"<p style='font-size:14px;'>Bonjour {inv.get('contact_name') or ''},</p>"
-                        f"<p style='font-size:14px;'>La Centrale O'SCOP vient d'inscrire un produit au financement :</p>"
+                        f"<p style='font-size:14px;'>La Centrale O'SCOP vient d'inscrire un financement {kind_label} :</p>"
                         f"<p style='font-size:14px;'><b>{doc['reference']} — {doc['name']}</b><br/>"
                         f"Prix de base HT : <b>{doc['base_price_eur']:,.2f} €</b> · Marge O'SCOP : <b>{doc['margin_percent']:,.2f} %</b><br/>"
                         f"Total à régler : <b>{doc['total_price_eur']:,.2f} €</b></p>"
@@ -183,6 +190,12 @@ async def financing_products_stats(_: dict = Depends(require_admin)):
         e["products_count"] += 1
         e["total_eur"] = round(e["total_eur"] + float(i.get("total_price_eur") or 0), 2)
     top = sorted(by_investor.values(), key=lambda x: -x["total_eur"])[:5]
+    monthly_map = {}
+    for i in paid:
+        m = str(i.get("paid_at") or "")[:7]
+        if m:
+            monthly_map[m] = round(monthly_map.get(m, 0) + float(i.get("total_price_eur") or 0), 2)
+    monthly = [{"month": m, "total_eur": v} for m, v in sorted(monthly_map.items())][-12:]
     return {
         "total_financed_eur": total_paid,
         "margin_cumul_eur": margin_cumul,
@@ -190,6 +203,7 @@ async def financing_products_stats(_: dict = Depends(require_admin)):
         "open_count": sum(1 for i in all_items if i.get("status") == "OPEN"),
         "pending_count": sum(1 for i in all_items if i.get("status") == "PENDING_PAYMENT"),
         "top_investors": top,
+        "monthly": monthly,
     }
 
 
@@ -267,7 +281,7 @@ async def pay_financing_product(fp_id: str, user: dict = Depends(_investor)):
         mode="payment",
         customer_email=user.get("email"),
         line_items=[{"price_data": {"currency": "eur", "unit_amount": int(round(fp["total_price_eur"] * 100)),
-                     "product_data": {"name": f"Financement produit — {fp['reference']} {fp['name']}"}},
+                     "product_data": {"name": f"Financement {'logistique' if fp.get('kind') == 'LOGISTIQUE' else 'produit'} — {fp['reference']} {fp['name']}"}},
                      "quantity": 1}],
         metadata={"financing_product_id": fp_id, "investor_email": user.get("email") or "", "kind": "PRODUCT_FINANCING"},
         success_url=f"{base}/espace-investisseur?finprod_session_id={{CHECKOUT_SESSION_ID}}",
