@@ -58,7 +58,47 @@ class PurchaseNeedBatch(BaseModel):
     country_code: str | None = None
     deadline: str | None = None
     listing_type: str = "DEMANDE"
+    cooper_id: str | None = None
     items: List[NeedItem] = Field(min_length=1, max_length=10)
+
+
+DEFAULT_FEES = {"demand_fee_eur": 50.0, "offer_fee_eur": 25.0}
+
+
+async def _get_fees() -> dict:
+    doc = await db.communityplace_settings.find_one({"id": "fees"}, {"_id": 0}) or {}
+    return {k: float(doc.get(k) or v) for k, v in DEFAULT_FEES.items()}
+
+
+@purchase_needs_router.get("/public/communityplace/fees")
+async def get_communityplace_fees():
+    """Tarifs de publication CommunityPlace (demande / offre) — éditables par le superadmin."""
+    return await _get_fees()
+
+
+class FeesUpdate(BaseModel):
+    demand_fee_eur: float | None = Field(default=None, gt=0, le=10000)
+    offer_fee_eur: float | None = Field(default=None, gt=0, le=10000)
+
+
+@purchase_needs_router.put("/admin/communityplace/fees")
+async def update_communityplace_fees(body: FeesUpdate, admin: dict = Depends(require_admin)):
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="Aucun tarif fourni")
+    await db.communityplace_settings.update_one(
+        {"id": "fees"},
+        {"$set": {**updates, "updated_by": admin.get("email"), "updated_at": _now()}}, upsert=True)
+    return await _get_fees()
+
+
+@purchase_needs_router.get("/public/coopers")
+async def list_public_coopers():
+    """Liste publique des COOPER'S (nom uniquement) pour l'assignation au dépôt."""
+    out = []
+    async for u in db.users.find({"role": "COOPER"}, {"_id": 0, "id": 1, "contact_name": 1, "company_name": 1}):
+        out.append({"id": u["id"], "name": u.get("contact_name") or u.get("company_name") or "COOPER'S"})
+    return {"coopers": out}
 
 
 @purchase_needs_router.post("/public/purchase-needs")
@@ -131,6 +171,12 @@ async def upload_need_image(file: UploadFile = File(...)):
 async def create_purchase_needs_batch(body: PurchaseNeedBatch):
     """Multi-produits : une demande créée PAR produit (le tarif de publication s'applique par demande)."""
     now = datetime.now(timezone.utc)
+    is_offer = (body.listing_type or "").upper() == "OFFRE"
+    cooper = None
+    if body.cooper_id:
+        cooper = await db.users.find_one(
+            {"id": body.cooper_id, "role": "COOPER"},
+            {"_id": 0, "email": 1, "contact_name": 1, "company_name": 1})
     refs = []
     for item in body.items:
         ref = f"BA-{now.strftime('%Y%m')}-{str(uuid.uuid4())[:6].upper()}"
@@ -139,37 +185,68 @@ async def create_purchase_needs_batch(body: PurchaseNeedBatch):
                "phone": body.phone, "territory": body.territory, "country_code": body.country_code, "deadline": body.deadline,
                "product": item.product, "quantity": item.quantity, "budget_eur": item.budget_eur,
                "description": item.description, "images": item.images or [],
-               "listing_type": "OFFRE" if (body.listing_type or "").upper() == "OFFRE" else "DEMANDE",
-               "status": "NEW", "assigned_vendor": None, "communityplace": False, "created_at": _now()}
+               "listing_type": "OFFRE" if is_offer else "DEMANDE",
+               "status": "ASSIGNED" if cooper else "NEW",
+               "assigned_vendor": (cooper or {}).get("email", "").lower() or None,
+               "assigned_role": "COOPER" if cooper else None,
+               "assigned_by": "deposant" if cooper else None,
+               "assigned_at": _now() if cooper else None,
+               "communityplace": False, "created_at": _now()}
         await db.purchase_needs.insert_one(dict(doc))
         refs.append({"reference": ref, "product": item.product})
     n = len(refs)
+    if cooper and cooper.get("email"):
+        try:
+            from brevo_service import send_email, _wrap_html
+            kind = "offre(s) produit" if is_offer else "besoin(s) d'achat"
+            rows_c = "".join(f"<li><b>{r['reference']}</b> — {r['product']}</li>" for r in refs)
+            await send_email(
+                to_email=cooper["email"], to_name=cooper.get("contact_name"),
+                subject=f"📦 {n} {kind} vous {'sont assignés' if n > 1 else 'est assigné'} — {body.company}",
+                html_content=_wrap_html("Assignation COOPER'S", (
+                    f"<p style='font-size:14px;'>Bonjour {cooper.get('contact_name') or ''},</p>"
+                    f"<p style='font-size:14px;'>Un déposant vous a choisi comme COOPER'S sur la CommunityPlace :</p>"
+                    f"<p style='font-size:14px;'><b>{body.company}</b> ({body.contact_name}, {body.email}, "
+                    f"{body.phone}) — territoire {body.territory}</p>"
+                    f"<ul style='font-size:14px;'>{rows_c}</ul>"
+                    f"<p style='font-size:14px;'>Retrouvez ces publications dans votre espace COOPER'S "
+                    "pour y répondre (prix + délai).</p>")),
+                tags=["purchase-need-cooper"])
+        except Exception as e:
+            logger.warning(f"cooper assignment email failed: {e}")
     try:
         from brevo_service import send_email, _wrap_html
         import os
         team = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
         rows = "".join(f"<li><b>{r['reference']}</b> — {r['product']}</li>" for r in refs)
+        kind_word = "offre(s) produit" if is_offer else "besoin(s) d'achat"
+        fees = await _get_fees()
+        unit_fee = fees["offer_fee_eur"] if is_offer else fees["demand_fee_eur"]
         await send_email(
             to_email=team, to_name=None,
-            subject=f"🛒 {n} besoin(s) d'achat — {body.company}",
-            html_content=_wrap_html("Besoins d'achat reçus", (
+            subject=f"🛒 {n} {kind_word} — {body.company}" + (f" (assigné COOPER'S)" if cooper else ""),
+            html_content=_wrap_html("Publications reçues", (
                 f"<p style='font-size:14px;'><b>{body.company}</b> ({body.contact_name}, {body.email}, "
                 f"{body.phone}) — territoire {body.territory}</p><ul style='font-size:14px;'>{rows}</ul>"
-                f"<p>À traiter dans le superadmin, onglet Demandes.</p>")),
+                + (f"<p style='font-size:13px;'>Assigné au COOPER'S : <b>{(cooper or {}).get('contact_name') or (cooper or {}).get('email')}</b></p>" if cooper else "")
+                + f"<p>À traiter dans le superadmin, onglet Demandes.</p>")),
             tags=["purchase-need"])
         await send_email(
             to_email=body.email, to_name=body.contact_name,
-            subject=f"✅ Vos {n} besoins d'achat sont enregistrés" if n > 1 else f"✅ Votre besoin d'achat est enregistré — suivi n° {refs[0]['reference']}",
-            html_content=_wrap_html("Besoins d'achat reçus", (
+            subject=(f"✅ Vos {n} publications sont enregistrées" if n > 1
+                     else f"✅ Votre publication est enregistrée — suivi n° {refs[0]['reference']}"),
+            html_content=_wrap_html("Publications reçues", (
                 f"<p style='font-size:14px;'>Bonjour {body.contact_name},</p>"
-                f"<p style='font-size:14px;'>Vos demandes sont enregistrées (une demande par produit) :</p>"
+                f"<p style='font-size:14px;'>Vos {kind_word} sont enregistrés (une publication par produit) :</p>"
                 f"<ul style='font-size:14px;'>{rows}</ul>"
-                f"<p style='font-size:14px;'>Le tarif de publication CommunityPlace s'applique par demande "
-                f"(× {n}). Conservez ces numéros pour tout échange.</p>")),
+                + (f"<p style='font-size:14px;'>Assignation COOPER'S : <b>{(cooper or {}).get('contact_name') or 'confirmée'}</b> — il a été notifié.</p>" if cooper else "")
+                + f"<p style='font-size:14px;'>Le tarif de publication CommunityPlace est de <b>{unit_fee:,.0f} €</b> par publication "
+                f"(× {n}). Conservez ces numéros pour tout échange.</p>").replace(",", " ")),
             tags=["purchase-need"])
     except Exception as e:
         logger.warning(f"batch need emails failed: {e}")
-    return {"ok": True, "count": n, "references": refs}
+    return {"ok": True, "count": n, "references": refs,
+            "assigned_cooper": (cooper or {}).get("contact_name") or (cooper or {}).get("company_name")}
 
 
 @purchase_needs_router.post("/admin/purchase-needs/{need_id}/close-grouping")
@@ -466,7 +543,9 @@ async def publish_communityplace(need_id: str, payload: dict | None = None, admi
     need = await db.purchase_needs.find_one({"id": need_id})
     if not need:
         raise HTTPException(status_code=404, detail="Besoin introuvable")
-    fee_eur = float((payload or {}).get("fee_eur") or 50)
+    fees = await _get_fees()
+    default_fee = fees["offer_fee_eur"] if (need.get("listing_type") or "").upper() == "OFFRE" else fees["demand_fee_eur"]
+    fee_eur = float((payload or {}).get("fee_eur") or default_fee)
     import os
     import stripe
     stripe.api_key = os.environ.get("STRIPE_API_KEY")

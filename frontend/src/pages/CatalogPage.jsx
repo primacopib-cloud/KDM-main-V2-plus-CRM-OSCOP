@@ -42,6 +42,18 @@ import { CatalogZoneMap } from '../components/catalog/CatalogZoneMap';
 import { CheckoutDialog } from '../components/catalog/CheckoutDialog';
 import { FloatingMiniCart } from '../components/catalog/FloatingMiniCart';
 
+// Pays du catalogue (filtre à drapeaux) — le dernier choix est mémorisé (kdm_last_country)
+const WORLD_COUNTRIES = [
+  ['GUADELOUPE', 'gp', 'Guadeloupe'], ['MARTINIQUE', 'mq', 'Martinique'],
+  ['GUYANE', 'gf', 'Guyane'], ['REUNION', 're', 'La Réunion'], ['MAYOTTE', 'yt', 'Mayotte'],
+  ['CUBA', 'cu', 'Cuba'], ['HAITI', 'ht', 'Haïti'], ['BRESIL', 'br', 'Brésil'], ['MAROC', 'ma', 'Maroc'],
+  ['FRANCE', 'fr', 'France'], ['SENEGAL', 'sn', 'Sénégal'], ['COTE-DIVOIRE', 'ci', "Côte d'Ivoire"],
+  ['AFRIQUE-DU-SUD', 'za', 'Afrique du Sud'], ['MADAGASCAR', 'mg', 'Madagascar'], ['MAURICE', 'mu', 'Maurice'],
+];
+const WORLD_CODES = WORLD_COUNTRIES.map(([code]) => code);
+const saveLastCountry = (code) => { try { localStorage.setItem('kdm_last_country', code); } catch { /* quota */ } };
+const getLastCountry = () => { try { return localStorage.getItem('kdm_last_country'); } catch { return null; } };
+
 export default function CatalogPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -62,11 +74,13 @@ export default function CatalogPage() {
       setAddonZone(zones.find((z) => z.code === code) || { code, name: code });
       return;
     }
+    saveLastCountry(code);
     setSelectedZone(code);
   };
 
   const handleZoneActivated = (code) => {
     setEntitledZones((prev) => (Array.isArray(prev) ? [...prev, code] : prev));
+    saveLastCountry(code);
     setSelectedZone(code);
   };
   
@@ -138,10 +152,15 @@ export default function CatalogPage() {
         const entitled = !isAuth ? null : (myZonesData?.is_admin ? null : (myZonesData?.entitled || []));
         setEntitledZones(entitled);
 
-        // Par défaut : TOUS les territoires affichés (onglet « Tous »), sauf filtre ?zone= dans l'URL
+        // Par défaut : TOUS les territoires, sauf filtre ?zone= dans l'URL puis dernier pays mémorisé
         if (zonesData.length > 0) {
           const zoneParam = new URLSearchParams(window.location.search).get('zone');
-          const defaultZone = zoneParam && zonesData.some((z) => z.code === zoneParam) ? zoneParam : 'ALL';
+          const saved = getLastCountry();
+          const savedIsDom = saved && zonesData.some((z) => z.code === saved);
+          const savedValid = saved && (saved === 'ALL' || savedIsDom || WORLD_CODES.includes(saved))
+            && !(savedIsDom && Array.isArray(entitled) && !entitled.includes(saved));
+          const defaultZone = zoneParam && zonesData.some((z) => z.code === zoneParam)
+            ? zoneParam : (savedValid ? saved : 'ALL');
           setSelectedZone(defaultZone);
           
           // Load products and pickup locations for this zone
@@ -459,12 +478,7 @@ export default function CatalogPage() {
                 <SelectItem value="ALL">
                   <span className="inline-flex items-center gap-2">🌍 Tous les pays</span>
                 </SelectItem>
-                {[['GUADELOUPE', 'gp', 'Guadeloupe'], ['MARTINIQUE', 'mq', 'Martinique'],
-                  ['GUYANE', 'gf', 'Guyane'], ['REUNION', 're', 'La Réunion'], ['MAYOTTE', 'yt', 'Mayotte'],
-                  ['CUBA', 'cu', 'Cuba'], ['HAITI', 'ht', 'Haïti'], ['BRESIL', 'br', 'Brésil'], ['MAROC', 'ma', 'Maroc'],
-                  ['FRANCE', 'fr', 'France'], ['SENEGAL', 'sn', 'Sénégal'], ['COTE-DIVOIRE', 'ci', "Côte d'Ivoire"],
-                  ['AFRIQUE-DU-SUD', 'za', 'Afrique du Sud'], ['MADAGASCAR', 'mg', 'Madagascar'], ['MAURICE', 'mu', 'Maurice'],
-                ].map(([code, flag, label]) => (
+                {WORLD_COUNTRIES.map(([code, flag, label]) => (
                   <SelectItem key={code} value={code}>
                     <span className="inline-flex items-center gap-2">
                       <img src={`https://flagcdn.com/w20/${flag}.png`} alt="" width={18} height={12} className="rounded-[2px]" />

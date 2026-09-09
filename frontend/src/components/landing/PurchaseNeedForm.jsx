@@ -1,24 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { X, Send, Plus, Trash2, Info, ImagePlus } from 'lucide-react';
+import { X, Send, Plus, Trash2, Info, ImagePlus, Handshake } from 'lucide-react';
 import { SearchableCountryDropdown } from '../onboarding/CountryPhoneFields';
+import { authAPI } from '../../services/api';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const inputCls = 'h-10 px-3 rounded-xl bg-white/[0.06] border border-white/15 text-white text-sm w-full placeholder:text-white/35';
 const emptyItem = () => ({ product: '', quantity: '', budget_eur: '', description: '', images: [] });
 
-// Formulaire visiteur : dépôt d'un ou plusieurs besoins d'achat (une demande PAR produit)
-export const PurchaseNeedForm = ({ onClose }) => {
+// Formulaire visiteur / membre : dépôt d'un ou plusieurs besoins d'achat OU offres produit (une publication PAR produit)
+export const PurchaseNeedForm = ({ onClose, initialType = 'DEMANDE' }) => {
   const [f, setF] = useState({ company: '', contact_name: '', email: '', phone: '', territory: 'Guadeloupe', deadline: '' });
   const [countryCode, setCountryCode] = useState('GP');
   const [dial, setDial] = useState('+590');
   const [items, setItems] = useState([emptyItem()]);
-  const [listingType, setListingType] = useState('DEMANDE');
+  const [listingType, setListingType] = useState(initialType);
+  const [fees, setFees] = useState({ demand_fee_eur: 50, offer_fee_eur: 25 });
+  const [coopers, setCoopers] = useState([]);
+  const [cooperId, setCooperId] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [refs, setRefs] = useState([]);
+  const [assignedCooper, setAssignedCooper] = useState(null);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const setItem = (i, k, v) => setItems((prev) => prev.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
+  const unitFee = listingType === 'OFFRE' ? fees.offer_fee_eur : fees.demand_fee_eur;
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/public/communityplace/fees`).then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setFees(d)).catch(() => {});
+    fetch(`${API_URL}/api/public/coopers`).then((r) => (r.ok ? r.json() : { coopers: [] }))
+      .then((d) => setCoopers(d.coopers || [])).catch(() => {});
+    if (authAPI.isAuthenticated()) {
+      authAPI.getMe().then((me) => {
+        setF((prev) => ({
+          ...prev,
+          company: prev.company || me.company_name || '',
+          contact_name: prev.contact_name || me.contact_name || '',
+          email: prev.email || me.email || '',
+          phone: prev.phone || me.phone || '',
+        }));
+      }).catch(() => {});
+    }
+  }, []);
 
   const uploadImage = async (i, file) => {
     if (!file) return;
@@ -41,6 +65,7 @@ export const PurchaseNeedForm = ({ onClose }) => {
         body: JSON.stringify({
           ...f, phone: `${dial} ${f.phone}`.trim(), country_code: countryCode, deadline: f.deadline || null,
           listing_type: listingType,
+          cooper_id: cooperId || null,
           items: items.map((it) => ({
             product: it.product, quantity: it.quantity,
             budget_eur: it.budget_eur ? Number(it.budget_eur) : null,
@@ -52,6 +77,7 @@ export const PurchaseNeedForm = ({ onClose }) => {
       if (!res.ok) throw new Error((await res.json()).detail?.[0]?.msg || 'Envoi impossible — vérifiez les champs');
       const d = await res.json();
       setRefs(d.references || []);
+      setAssignedCooper(d.assigned_cooper || null);
       setSent(true);
     } catch (err) { toast.error(typeof err.message === 'string' ? err.message : 'Erreur'); }
     finally { setBusy(false); }
@@ -74,29 +100,56 @@ export const PurchaseNeedForm = ({ onClose }) => {
               {l}
             </button>
           ))}
-          <span className="text-[10px] text-white/40 self-center ml-1">Publication payante · assignée à un COOPER'S par la centrale</span>
+          <span className="text-[10px] text-white/40 self-center ml-1" data-testid="listing-fee-hint">
+            Publication payante · {Number(unitFee).toLocaleString('fr-FR')} € par {listingType === 'OFFRE' ? 'offre' : 'demande'}
+          </span>
         </div>
         {sent ? (
           <div className="py-8 text-center" data-testid="purchase-need-success">
-            <p className="text-[#8CC63E] font-bold text-base m-0">✅ {refs.length > 1 ? `${refs.length} besoins d'achat envoyés !` : "Besoin d'achat envoyé !"}</p>
+            <p className="text-[#8CC63E] font-bold text-base m-0">
+              ✅ {listingType === 'OFFRE'
+                ? (refs.length > 1 ? `${refs.length} offres produit publiées !` : 'Offre produit envoyée !')
+                : (refs.length > 1 ? `${refs.length} besoins d'achat envoyés !` : "Besoin d'achat envoyé !")}
+            </p>
             <div className="mt-2 space-y-1">
               {refs.map((r) => (
                 <p key={r.reference} className="text-white font-mono text-sm m-0" data-testid="need-tracking-ref">{r.reference} — {r.product}</p>
               ))}
             </div>
+            {assignedCooper && (
+              <p className="text-[#E9CF8E] text-sm mt-2 m-0" data-testid="need-cooper-confirm">
+                🤝 Assigné au COOPER'S <b>{assignedCooper}</b> — il vient d'être notifié par email.
+              </p>
+            )}
             <p className="text-white/60 text-sm mt-3">Un email de confirmation avec vos numéros de suivi vient de vous être envoyé. La Centrale O'SCOP vous recontacte après étude.</p>
           </div>
         ) : (
           <form onSubmit={submit}>
-            <p className="text-xs text-white/55 m-0 mb-2">Décrivez votre besoin : la Centrale l'étudie, l'assigne à un vendeur référencé ou le publie sur la CommunityPlace.</p>
-            <div className="flex items-start gap-2 rounded-xl px-3 py-2 mb-4 bg-[#8CC63E]/10 border border-[#8CC63E]/35" data-testid="need-one-product-info">
+            <p className="text-xs text-white/55 m-0 mb-2">
+              {listingType === 'OFFRE'
+                ? "Décrivez votre offre de vente : la Centrale l'étudie, l'assigne à un COOPER'S et la publie sur la CommunityPlace."
+                : "Décrivez votre besoin : la Centrale l'étudie, l'assigne à un vendeur référencé ou le publie sur la CommunityPlace."}
+            </p>
+            <div className="flex items-start gap-2 rounded-xl px-3 py-2 mb-3 bg-[#8CC63E]/10 border border-[#8CC63E]/35" data-testid="need-one-product-info">
               <Info className="w-4 h-4 text-[#8CC63E] shrink-0 mt-0.5" />
               <p className="text-[11px] text-white/75 m-0">
-                <b>Une demande = un produit.</b> Ajoutez autant de produits que nécessaire ci-dessous : une demande distincte
-                sera créée par produit, et le tarif de publication CommunityPlace s'applique <b>par demande</b>
-                (prix unitaire × nombre de produits).
+                <b>Une publication = un produit.</b> Ajoutez autant de produits que nécessaire ci-dessous : une publication distincte
+                sera créée par produit, et le tarif de publication CommunityPlace ({Number(unitFee).toLocaleString('fr-FR')} €) s'applique <b>par publication</b>
+                ({Number(unitFee).toLocaleString('fr-FR')} € × nombre de produits).
               </p>
             </div>
+            {coopers.length > 0 && (
+              <div className="flex items-center gap-2 rounded-xl px-3 py-2 mb-4 bg-white/[0.04] border border-[#D9B35A]/25">
+                <Handshake className="w-4 h-4 text-[#D9B35A] shrink-0" />
+                <select value={cooperId} onChange={(e) => setCooperId(e.target.value)} data-testid="need-cooper-select"
+                  className="h-9 flex-1 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-white text-xs">
+                  <option value="" className="bg-[#241243]">Assigner à un COOPER'S (optionnel) — sinon la Centrale assigne</option>
+                  {coopers.map((c) => (
+                    <option key={c.id} value={c.id} className="bg-[#241243]">{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="grid gap-2.5 sm:grid-cols-2">
               <input required value={f.company} onChange={set('company')} placeholder="Société / Raison sociale *" className={inputCls} data-testid="need-company" />
               <input required value={f.contact_name} onChange={set('contact_name')} placeholder="Nom du contact *" className={inputCls} data-testid="need-contact" />
@@ -125,7 +178,7 @@ export const PurchaseNeedForm = ({ onClose }) => {
                     )}
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <input required value={it.product} onChange={(e) => setItem(i, 'product', e.target.value)} placeholder="Produit recherché *" className={inputCls} data-testid={`need-product-${i}`} />
+                    <input required value={it.product} onChange={(e) => setItem(i, 'product', e.target.value)} placeholder={listingType === 'OFFRE' ? 'Produit proposé *' : 'Produit recherché *'} className={inputCls} data-testid={`need-product-${i}`} />
                     <input required value={it.quantity} onChange={(e) => setItem(i, 'quantity', e.target.value)} placeholder="Quantité (ex. 2 palettes, 500 unités) *" className={inputCls} data-testid={`need-quantity-${i}`} />
                     <input type="number" min="0" value={it.budget_eur} onChange={(e) => setItem(i, 'budget_eur', e.target.value)} placeholder="Budget estimé € (optionnel)" className={inputCls} data-testid={`need-budget-${i}`} />
                     <input value={it.description} onChange={(e) => setItem(i, 'description', e.target.value)} placeholder="Précisions : marque, normes…" className={inputCls} data-testid={`need-description-${i}`} />
@@ -157,13 +210,15 @@ export const PurchaseNeedForm = ({ onClose }) => {
             )}
             {items.length > 1 && (
               <p className="text-[11px] text-[#E9CF8E] m-0 mt-2" data-testid="need-fee-multiplier">
-                💡 {items.length} produits = {items.length} demandes — tarif de publication unitaire × {items.length} en cas de publication CommunityPlace.
+                💡 {items.length} produits = {items.length} publications — {Number(unitFee).toLocaleString('fr-FR')} € × {items.length} = {Number(unitFee * items.length).toLocaleString('fr-FR')} € en cas de publication CommunityPlace.
               </p>
             )}
             <button type="submit" disabled={busy} data-testid="purchase-need-submit"
               className="mt-4 w-full h-11 rounded-xl font-bold text-sm text-[#1F0A33] disabled:opacity-60 transition-opacity"
               style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)' }}>
-              <Send className="w-4 h-4 inline mr-2" /> {busy ? 'Envoi…' : items.length > 1 ? `Envoyer mes ${items.length} besoins d'achat` : "Envoyer mon besoin d'achat"}
+              <Send className="w-4 h-4 inline mr-2" /> {busy ? 'Envoi…' : listingType === 'OFFRE'
+                ? (items.length > 1 ? `Publier mes ${items.length} offres produit` : 'Publier mon offre produit')
+                : (items.length > 1 ? `Envoyer mes ${items.length} besoins d'achat` : "Envoyer mon besoin d'achat")}
             </button>
           </form>
         )}
