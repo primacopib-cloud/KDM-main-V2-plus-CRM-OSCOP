@@ -62,6 +62,19 @@ export default function VendorOnboardingPage() {
   useEffect(() => {
     const code = params.get('parrain');
     if (code) localStorage.setItem('referral_code', code.trim().toUpperCase());
+    const promo = params.get('promo');
+    if (promo) localStorage.setItem('pro_welcome_code', promo.trim().toUpperCase());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [welcomePromo, setWelcomePromo] = useState(null);
+  useEffect(() => {
+    const code = (params.get('promo') || localStorage.getItem('pro_welcome_code') || '').trim().toUpperCase();
+    if (!code) return;
+    fetch(`${API}/public/pro-welcome-code/${encodeURIComponent(code)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setWelcomePromo(d))
+      .catch(() => { setWelcomePromo(null); localStorage.removeItem('pro_welcome_code'); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -89,7 +102,7 @@ export default function VendorOnboardingPage() {
     try {
       const r = await fetch(`${API}/vendor-onboarding/start`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...start, referral_code: (sponsorCode || '').trim().toUpperCase(), source_cta: getLastCta(), contact_name: `${start.first_name} ${start.last_name}`.trim(), phone: `${dial.split('|')[0]} ${phoneNum}`.trim(), origin_url: window.location.origin, locale: i18n.language?.startsWith('gcf') ? 'gcf' : (i18n.language || 'fr').slice(0, 2) }),
+        body: JSON.stringify({ ...start, referral_code: (sponsorCode || '').trim().toUpperCase(), promo_code: welcomePromo?.code || '', source_cta: getLastCta(), contact_name: `${start.first_name} ${start.last_name}`.trim(), phone: `${dial.split('|')[0]} ${phoneNum}`.trim(), origin_url: window.location.origin, locale: i18n.language?.startsWith('gcf') ? 'gcf' : (i18n.language || 'fr').slice(0, 2) }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Erreur');
@@ -138,6 +151,16 @@ export default function VendorOnboardingPage() {
 
         {step === 0 && (
           <form onSubmit={launchPayment} className="glass-panel rounded-[22px] p-6 space-y-4" data-testid="vendor-start-form">
+            {welcomePromo && (
+              <div className="rounded-xl border-2 border-dashed border-[#D9B35A]/60 bg-[#D9B35A]/10 px-4 py-3" data-testid="welcome-promo-banner">
+                <p className="text-sm text-[#E9CF8E] font-bold m-0">
+                  🎁 Offre de bienvenue : -{welcomePromo.percent} % sur votre première adhésion
+                </p>
+                <p className="text-[11px] text-white/55 m-0 mt-0.5">
+                  Code <span className="font-mono font-bold text-[#E9CF8E]">{welcomePromo.code}</span> appliqué automatiquement au paiement.
+                </p>
+              </div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-white/[0.08]"
               data-testid="onboarding-language-picker">
               <span className="text-xs text-white/60">

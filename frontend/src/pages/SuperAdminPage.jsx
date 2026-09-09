@@ -35,6 +35,7 @@ import { ServiceCreditsPanel } from '../components/superadmin/ServiceCreditsPane
 import { InvestorPlansAdminPanel } from '../components/superadmin/InvestorPlansAdminPanel';
 import { PurchaseNeedsPanel } from '../components/superadmin/PurchaseNeedsPanel';
 import { CommunityInvoicesPanel } from '../components/superadmin/CommunityInvoicesPanel';
+import { ProInvitationsPanel } from '../components/superadmin/ProInvitationsPanel';
 import { BoardAcceptancesPanel } from '../components/superadmin/BoardAcceptancesPanel';
 import { ProVisitorShowcasePanel } from '../components/superadmin/ProVisitorShowcasePanel';
 import { ProductCountriesPanel } from '../components/superadmin/ProductCountriesPanel';
@@ -329,6 +330,7 @@ export default function SuperAdminPage() {
             <PurchaseNeedsPanel />
             <BoardAcceptancesPanel />
             <CommunityInvoicesPanel />
+            <ProInvitationsPanel />
             <DemandesAdminTab />
             <PassRegistrationsPanel />
           </TabsContent>

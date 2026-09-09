@@ -48,6 +48,7 @@ class StartBody(BaseModel):
     last_name: str = ""
     referral_code: str = ""
     source_cta: str = ""
+    promo_code: str = ""
 
 
 class ConventionFieldsBody(BaseModel):
@@ -84,6 +85,24 @@ async def start_onboarding(body: StartBody):
     vat = compute_vat(plan["price_cents"], body.country)
     vat_suffix = f" TTC — {vat['label']}" if vat["rate"] else f" HT — {vat['label']}"
     stripe.api_base = "https://api.stripe.com"
+    promo_code = body.promo_code.strip().upper()[:20]
+    discounts = None
+    promo_percent = 0
+    if promo_code:
+        inv = await db.communityplace_pro_invitations.find_one(
+            {"promo_code": promo_code, "promo_used_at": {"$exists": False}}, {"_id": 0, "promo_percent": 1})
+        if inv:
+            promo_percent = int(inv.get("promo_percent") or 20)
+            try:
+                coupon = stripe.Coupon.create(
+                    api_key=_stripe_key(), percent_off=promo_percent, duration="once",
+                    name=f"Bienvenue pro -{promo_percent}% ({promo_code})")
+                discounts = [{"coupon": coupon.id}]
+            except Exception as exc:
+                logger.warning("Coupon bienvenue %s : %s", promo_code, exc)
+                promo_percent = 0
+        else:
+            promo_code = ""
     session = stripe.checkout.Session.create(
         api_key=_stripe_key(),
         mode="subscription",
@@ -97,6 +116,7 @@ async def start_onboarding(body: StartBody):
             },
             "quantity": 1,
         }],
+        discounts=discounts,
         customer_email=body.email,
         success_url=f"{origin}/adhesion-vendeur?step=paid&onboarding_id={oid}&session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{origin}/adhesion-vendeur?step=cancelled&onboarding_id={oid}",
@@ -113,6 +133,7 @@ async def start_onboarding(body: StartBody):
         "legal_form": body.legal_form.strip(),
         "first_name": body.first_name.strip(), "last_name": body.last_name.strip(),
         "referral_code": body.referral_code.strip().upper()[:20],
+        "promo_code": promo_code, "promo_percent": promo_percent,
         "source_cta": body.source_cta.strip()[:40],
         "amount_ht_cents": vat["ht_cents"], "vat_rate": vat["rate"], "vat_cents": vat["vat_cents"],
         "plan_slug": body.plan_slug, "plan_name": plan["name"],
@@ -157,6 +178,11 @@ async def onboarding_status(oid: str):
                         "subscription_status": "active",
                     }})
                 ob["status"] = "PAID"
+                if ob.get("promo_code"):
+                    await db.communityplace_pro_invitations.update_one(
+                        {"promo_code": ob["promo_code"], "promo_used_at": {"$exists": False}},
+                        {"$set": {"promo_used_at": datetime.now(timezone.utc).isoformat(),
+                                  "promo_used_by_onboarding": oid}})
                 from vendor_invoice_pdf import issue_adhesion_invoice
                 await issue_adhesion_invoice(db, ob, "adhesion", ext_ref=ob.get("stripe_session_id") or "")
         except Exception as exc:

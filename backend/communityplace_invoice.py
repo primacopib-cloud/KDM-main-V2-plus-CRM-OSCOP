@@ -236,3 +236,73 @@ def build_api_subscription_invoice_pdf(sub: dict) -> bytes:
     c.showPage()
     c.save()
     return buf.getvalue()
+
+
+def build_participation_receipt_pdf(need: dict, joiner_email: str, participation_eur: float) -> bytes:
+    """Reçu PDF de participation mutualisée pour un participant ayant rejoint une annonce."""
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    w, h = A4
+    now = datetime.now(timezone.utc)
+
+    c.setFillColorRGB(*PURPLE)
+    c.rect(0, h - 34 * mm, w, 34 * mm, stroke=0, fill=1)
+    if os.path.exists(LOGO_PATH):
+        try:
+            c.drawImage(LOGO_PATH, 14 * mm, h - 30 * mm, 24 * mm, 24 * mm, mask='auto')
+        except Exception:
+            pass
+    c.setFillColorRGB(*GOLD)
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(44 * mm, h - 18 * mm, "O'SCOP — Centrale coopérative")
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica", 10)
+    c.drawString(44 * mm, h - 25 * mm, "KDMARCHÉ CommunityPlace — Participation mutualisée")
+
+    c.setFillColorRGB(0.2, 0.55, 0.25)
+    c.setFont("Helvetica-Bold", 22)
+    c.drawRightString(w - 16 * mm, h - 50 * mm, "REÇU DE PARTICIPATION")
+    c.setFillColorRGB(0, 0, 0)
+    c.setFont("Helvetica", 10)
+    c.drawString(16 * mm, h - 50 * mm, f"Reçu n° RP-{need.get('reference')}-{now.strftime('%d%m%H%M')}")
+    c.drawString(16 * mm, h - 56 * mm, f"Date : {now.strftime('%d/%m/%Y')}")
+
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(16 * mm, h - 70 * mm, "Participant :")
+    c.setFont("Helvetica", 10)
+    c.drawString(16 * mm, h - 76 * mm, joiner_email)
+
+    ty = h - 96 * mm
+    c.setFillColorRGB(*GOLD)
+    c.rect(16 * mm, ty, w - 32 * mm, 9 * mm, stroke=0, fill=1)
+    c.setFillColorRGB(*PURPLE)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(19 * mm, ty + 3 * mm, "Désignation")
+    c.drawRightString(w - 19 * mm, ty + 3 * mm, "Montant TTC")
+    c.setFillColorRGB(0, 0, 0)
+    c.setFont("Helvetica", 10)
+    label = "offre produit" if (need.get("listing_type") or "").upper() == "OFFRE" else "demande groupée"
+    c.drawString(19 * mm, ty - 6 * mm,
+                 f"Participation mutualisée — {label} {need.get('reference')} ({need.get('product')})")
+    c.drawRightString(w - 19 * mm, ty - 6 * mm, f"{participation_eur:.2f} €")
+    c.setFont("Helvetica", 8)
+    c.setFillColorRGB(0.35, 0.35, 0.35)
+    c.drawString(19 * mm, ty - 12 * mm,
+                 "Frais de publication CommunityPlace répartis entre les participants de l'annonce.")
+    c.setFillColorRGB(0, 0, 0)
+    c.line(16 * mm, ty - 16 * mm, w - 16 * mm, ty - 16 * mm)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawRightString(w - 19 * mm, ty - 24 * mm, f"TOTAL RÉGLÉ : {participation_eur:.2f} €")
+    c.setFont("Helvetica", 8)
+    c.drawString(16 * mm, ty - 32 * mm, "TVA non applicable, art. 293 B du CGI. Règlement reçu par carte bancaire (Stripe).")
+
+    c.setFillColorRGB(*PURPLE)
+    c.rect(0, 0, w, 20 * mm, stroke=0, fill=1)
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(w / 2, 12 * mm, "SCIC SAS OBJECTIF SCOP OUTREMER — Centrale coopérative multi-territoires")
+    c.drawCentredString(w / 2, 7 * mm, "contact@objectifscopoutremer.com · centrale.objectifscopoutremer.com · Guadeloupe · Martinique · Guyane · La Réunion · Mayotte")
+
+    c.showPage()
+    c.save()
+    return buf.getvalue()

@@ -14,6 +14,15 @@ export const CommunityBoard = () => {
   const [joinEmail, setJoinEmail] = useState('');
   const [joinQty, setJoinQty] = useState(3);
   const [joinBlocked, setJoinBlocked] = useState(null);
+  const [joinStatus, setJoinStatus] = useState(null);
+  useEffect(() => {
+    if (!joinEmail.includes('@') || !joinEmail.includes('.')) { setJoinStatus(null); return; }
+    const t = setTimeout(() => {
+      fetch(`${API_URL}/api/public/purchase-needs/join/status?email=${encodeURIComponent(joinEmail)}`)
+        .then((r) => (r.ok ? r.json() : null)).then(setJoinStatus).catch(() => setJoinStatus(null));
+    }, 500);
+    return () => clearTimeout(t);
+  }, [joinEmail]);
   const [acceptRef, setAcceptRef] = useState(null);
   const [acceptEmail, setAcceptEmail] = useState('');
   const submitAccept = async (ref) => {
@@ -229,6 +238,16 @@ export const CommunityBoard = () => {
                     {d.participation_eur > 0 ? 'Payer & rejoindre' : 'OK'}
                   </button>
                   </div>
+                  {joinStatus && (
+                    <p className={`text-[10px] m-0 mt-1.5 ${joinStatus.pro ? 'text-[#8CC63E]' : joinStatus.blocked ? 'text-orange-300' : 'text-white/55'}`}
+                      data-testid={`board-join-counter-${d.reference}`}>
+                      {joinStatus.pro
+                        ? '✅ Membre professionnel : participation offerte, annonces illimitées'
+                        : joinStatus.blocked
+                          ? `⚠️ ${joinStatus.paid_joins}/${joinStatus.limit} annonces rejointes — adhésion professionnelle requise pour continuer`
+                          : `${joinStatus.paid_joins}/${joinStatus.limit} annonce${joinStatus.paid_joins > 1 ? 's' : ''} rejointe${joinStatus.paid_joins > 1 ? 's' : ''} — à ${joinStatus.limit}, invitation à devenir membre professionnel`}
+                    </p>
+                  )}
                   {joinBlocked?.ref === d.reference && (
                     <div className="mt-2 rounded-xl border border-[#D9B35A]/40 bg-[#D9B35A]/10 p-2.5" data-testid={`board-join-blocked-${d.reference}`}>
                       <p className="text-[10.5px] text-[#E9CF8E] m-0 mb-2" data-testid={`board-join-blocked-msg-${d.reference}`}>

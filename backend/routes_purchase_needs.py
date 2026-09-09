@@ -360,13 +360,35 @@ async def _paid_joins_count(email: str) -> int:
          "joiners": {"$elemMatch": {"email": email.lower(), "participation_paid_at": {"$exists": True}}}})
 
 
-async def _send_pro_invitation(email: str, need: dict) -> None:
+def _pro_cta_table(base: str, promo_code: str | None = None) -> str:
+    suffix = f"?promo={promo_code}" if promo_code else ""
+    return (
+        "<table style='width:100%;margin:16px 0;'><tr>"
+        f"<td style='text-align:center;padding:6px;'><a href='{base}/tarifs{suffix}' "
+        "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;padding:12px 22px;"
+        "border-radius:12px;text-decoration:none;'>Devenir acheteur professionnel</a></td>"
+        f"<td style='text-align:center;padding:6px;'><a href='{base}/adhesion-vendeur{suffix}' "
+        "style='display:inline-block;background:#8CC63E;color:#1F2A12;font-weight:bold;padding:12px 22px;"
+        "border-radius:12px;text-decoration:none;'>Devenir fournisseur référencé</a></td>"
+        "</tr></table>")
+
+
+def _promo_block(promo_code: str) -> str:
+    return (
+        "<div style='margin:14px 0;padding:12px 16px;border:2px dashed #D9B35A;border-radius:12px;text-align:center;'>"
+        "<p style='font-size:13px;margin:0 0 4px;'>🎁 <b>Offre de bienvenue : -20 % sur votre première adhésion professionnelle</b></p>"
+        f"<p style='font-size:18px;font-weight:bold;letter-spacing:2px;margin:0;color:#B8860B;'>{promo_code}</p>"
+        "<p style='font-size:11px;margin:4px 0 0;color:#888;'>Code appliqué automatiquement en cliquant sur les boutons ci-dessous.</p>"
+        "</div>")
+
+
+async def _send_pro_invitation(email: str, need: dict, promo_code: str) -> None:
     """Invitation à devenir fournisseur ou acheteur professionnel, envoyée au seuil de 3 annonces payées."""
     from brevo_service import send_email, _wrap_html
     base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
     await send_email(
         to_email=email, to_name=None,
-        subject="🚀 3 annonces rejointes — passez professionnel pour continuer à rejoindre gratuitement",
+        subject="🚀 3 annonces rejointes — passez professionnel avec -20 % sur votre adhésion",
         html_content=_wrap_html("Rejoignez les professionnels de la coopérative", (
             "<p style='font-size:14px;'>Bonjour,</p>"
             f"<p style='font-size:14px;'>Vous venez de rejoindre votre <b>3ᵉ annonce</b> sur la CommunityPlace "
@@ -374,14 +396,7 @@ async def _send_pro_invitation(email: str, need: dict) -> None:
             "<p style='font-size:14px;'>Pour continuer à rejoindre des annonces, devenez <b>membre professionnel</b> "
             "de la coopérative O'SCOP : les participations deviennent <b>gratuites</b> et vous bénéficiez des prix "
             "négociés, du catalogue B2B multi-territoires, du règlement à réception et de la logistique LOGI'SCOP.</p>"
-            "<table style='width:100%;margin:16px 0;'><tr>"
-            f"<td style='text-align:center;padding:6px;'><a href='{base}/tarifs' "
-            "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;padding:12px 22px;"
-            "border-radius:12px;text-decoration:none;'>Devenir acheteur professionnel</a></td>"
-            f"<td style='text-align:center;padding:6px;'><a href='{base}/adhesion-vendeur' "
-            "style='display:inline-block;background:#8CC63E;color:#1F2A12;font-weight:bold;padding:12px 22px;"
-            "border-radius:12px;text-decoration:none;'>Devenir fournisseur référencé</a></td>"
-            "</tr></table>"
+            + _promo_block(promo_code) + _pro_cta_table(base, promo_code) +
             "<p style='font-size:12px;color:rgba(243,237,228,0.6);'>Vous continuerez à recevoir le suivi de "
             "l'annonce que vous avez rejointe, quel que soit votre choix.</p>")),
         tags=["purchase-need-pro-invitation"])
@@ -390,14 +405,16 @@ async def _send_pro_invitation(email: str, need: dict) -> None:
 async def _maybe_send_pro_invitation(email: str, need: dict) -> None:
     """Envoie l'invitation pro une seule fois par email (idempotent, seuil de 3 annonces payées)."""
     email = email.lower()
+    promo_code = f"PRO20-{str(uuid.uuid4())[:6].upper()}"
     res = await db.communityplace_pro_invitations.update_one(
         {"email": email},
-        {"$setOnInsert": {"email": email, "invited_at": _now(), "reference": need["reference"]}},
+        {"$setOnInsert": {"email": email, "invited_at": _now(), "reference": need["reference"],
+                          "promo_code": promo_code, "promo_percent": 20}},
         upsert=True)
     if not res.upserted_id:
         return
     try:
-        await _send_pro_invitation(email, need)
+        await _send_pro_invitation(email, need, promo_code)
     except Exception as e:
         logger.warning(f"pro invitation failed: {e}")
 
@@ -426,9 +443,20 @@ async def _register_joiner(need: dict, email: str, quantity: int, participation_
     try:
         from brevo_service import send_email, _wrap_html
         paid_line = (f"<p style='font-size:14px;'>Participation mutualisée réglée : <b>{participation_eur:.2f} €</b> "
-                     "(frais de publication répartis entre les participants).</p>") if participation_eur else ""
+                     "(frais de publication répartis entre les participants). Votre <b>reçu de participation</b> "
+                     "est joint à cet email pour votre comptabilité.</p>") if participation_eur else ""
         free_line = ("<p style='font-size:14px;'>Membre professionnel : <b>participation offerte</b> — "
                      "merci de votre engagement dans la coopérative.</p>") if free_member else ""
+        attachments = None
+        if participation_eur:
+            try:
+                import base64
+                from communityplace_invoice import build_participation_receipt_pdf
+                pdf = build_participation_receipt_pdf(need, email, participation_eur)
+                attachments = [{"content": base64.b64encode(pdf).decode(),
+                                "name": f"recu-participation-{reference}.pdf"}]
+            except Exception as e:
+                logger.warning(f"receipt pdf failed: {e}")
         await send_email(
             to_email=email, to_name=None,
             subject=f"🤝 Vous avez rejoint la demande groupée {reference} — {need['product']}",
@@ -442,6 +470,7 @@ async def _register_joiner(need: dict, email: str, quantity: int, participation_
                 f"({j_count} participant{'s' if j_count > 1 else ''})</p>" + paid_line + free_line +
                 f"<p style='font-size:14px;'>La Centrale O'SCOP vous tiendra informé de l'avancement : "
                 f"conservez ce numéro pour tout échange.</p>")),
+            attachments=attachments,
             tags=["purchase-need-join"])
         if need.get("email"):
             await send_email(
@@ -529,6 +558,38 @@ async def verify_join_payment(session_id: str):
                                     participation_eur=amount)
     return {"ok": True, "status": "PAID", "reference": need["reference"],
             "participation_eur": amount, **result}
+
+
+@purchase_needs_router.get("/public/purchase-needs/join/status")
+async def join_status(email: EmailStr):
+    """Compteur d'annonces rejointes payées pour un email + statut abonné (affiché dans le formulaire Rejoindre)."""
+    e = email.lower()
+    pro = await _is_pro_subscriber(e)
+    paid = await _paid_joins_count(e)
+    return {"email": e, "paid_joins": paid, "limit": PRO_JOIN_LIMIT, "pro": pro,
+            "blocked": (not pro) and paid >= PRO_JOIN_LIMIT}
+
+
+@purchase_needs_router.get("/admin/communityplace/pro-invitations")
+async def list_pro_invitations(_: dict = Depends(require_admin)):
+    """Liste des invitations pro envoyées (seuil 3 annonces) avec relances, code promo et conversion."""
+    out = []
+    async for inv in db.communityplace_pro_invitations.find({}, {"_id": 0}).sort("invited_at", -1):
+        inv["converted"] = await _is_pro_subscriber(inv["email"])
+        out.append(inv)
+    return {"invitations": out}
+
+
+@purchase_needs_router.get("/public/pro-welcome-code/{code}")
+async def check_pro_welcome_code(code: str):
+    """Validation publique d'un code de bienvenue pro (-20 % première adhésion)."""
+    inv = await db.communityplace_pro_invitations.find_one(
+        {"promo_code": code.strip().upper()}, {"_id": 0, "promo_code": 1, "promo_percent": 1, "promo_used_at": 1})
+    if not inv:
+        raise HTTPException(status_code=404, detail="Code de bienvenue introuvable")
+    if inv.get("promo_used_at"):
+        raise HTTPException(status_code=409, detail="Code de bienvenue déjà utilisé")
+    return {"valid": True, "code": inv["promo_code"], "percent": int(inv.get("promo_percent") or 20)}
 
 
 @purchase_needs_router.get("/admin/purchase-needs/stats/csv")
