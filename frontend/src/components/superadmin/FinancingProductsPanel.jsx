@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Banknote, Plus, Trash2, Pencil, Loader2 } from 'lucide-react';
+import { Banknote, Plus, Trash2, Pencil, Loader2, Download } from 'lucide-react';
 import { getAuthHeaders } from '../../services/http';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -80,6 +80,22 @@ export const FinancingProductsPanel = () => {
     } catch (err) { toast.error(err.message); }
   };
 
+  const exportCsv = () => {
+    const header = ['Référence', 'Produit', 'SKU', 'Prix base €', 'Marge %', 'Total €', 'Statut', 'Payé par', 'Payé le', 'Inscrit le'];
+    const lines = items.map((fp) => [fp.reference, fp.name, fp.sku, fp.base_price_eur, fp.margin_percent,
+      fp.total_price_eur, STATUS[fp.status]?.[0] || fp.status, fp.paid_by, String(fp.paid_at || '').slice(0, 10),
+      String(fp.created_at || '').slice(0, 10)]);
+    const csv = [header, ...lines]
+      .map((l) => l.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `financements-produits-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast.success('Export CSV des financements téléchargé');
+  };
+
   const inputCls = 'h-9 px-2.5 rounded-lg bg-white/[0.06] border border-white/15 text-white text-xs placeholder:text-white/35';
 
   return (
@@ -87,6 +103,12 @@ export const FinancingProductsPanel = () => {
       <div className="flex items-center gap-2 mb-1">
         <Banknote className="w-4 h-4 text-[#D9B35A]" />
         <h3 className="text-sm font-bold text-[#E9CF8E] m-0">Produits au financement investisseurs ({items.length})</h3>
+        {items.length > 0 && (
+          <button type="button" onClick={exportCsv} data-testid="fin-export-csv-btn"
+            className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-[#E9CF8E] bg-white/[0.05] border border-[#D9B35A]/30 hover:bg-white/[0.1]">
+            <Download className="w-3 h-3" /> Export CSV
+          </button>
+        )}
       </div>
       <p className="text-[11px] text-white/45 m-0 mb-3">
         Seul le superadmin inscrit un produit au financement et lui attribue une marge bénéficiaire O'SCOP.
