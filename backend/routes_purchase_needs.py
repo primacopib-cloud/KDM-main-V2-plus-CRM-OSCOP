@@ -335,20 +335,45 @@ def _participation_eur(need: dict) -> float:
     return max(1.0, round(fee / (len(need.get("joiners") or []) + 1), 2))
 
 
+PRO_JOIN_LIMIT = 3
+
+
+async def _is_pro_subscriber(email: str) -> bool:
+    """Abonné = fournisseur référencé approuvé OU membre d'une organisation à l'abonnement actif (par email)."""
+    email = email.lower()
+    if await db.vendors.find_one({"email": email, "status": "approved"}, {"_id": 0, "id": 1}):
+        return True
+    user = await db.users.find_one({"email": email}, {"_id": 0, "id": 1})
+    if not user:
+        return False
+    org_ids = [m["org_id"] async for m in db.org_memberships.find({"user_id": user["id"]}, {"_id": 0, "org_id": 1})]
+    if not org_ids:
+        return False
+    return bool(await db.subscriptions.find_one(
+        {"org_id": {"$in": org_ids}, "status": "ACTIVE"}, {"_id": 0, "id": 1}))
+
+
+async def _paid_joins_count(email: str) -> int:
+    """Nombre d'annonces CommunityPlace rejointes avec participation payée confirmée (par email)."""
+    return await db.purchase_needs.count_documents(
+        {"communityplace": True,
+         "joiners": {"$elemMatch": {"email": email.lower(), "participation_paid_at": {"$exists": True}}}})
+
+
 async def _send_pro_invitation(email: str, need: dict) -> None:
-    """Invitation automatique à devenir fournisseur ou acheteur professionnel après un join."""
+    """Invitation à devenir fournisseur ou acheteur professionnel, envoyée au seuil de 3 annonces payées."""
     from brevo_service import send_email, _wrap_html
     base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
     await send_email(
         to_email=email, to_name=None,
-        subject="🚀 Passez au niveau supérieur — devenez fournisseur ou acheteur professionnel KDMARCHÉ",
+        subject="🚀 3 annonces rejointes — passez professionnel pour continuer à rejoindre gratuitement",
         html_content=_wrap_html("Rejoignez les professionnels de la coopérative", (
             "<p style='font-size:14px;'>Bonjour,</p>"
-            f"<p style='font-size:14px;'>Vous venez de rejoindre l'annonce <b>{need['reference']} — {need['product']}</b> "
-            "sur la CommunityPlace : merci de votre confiance !</p>"
-            "<p style='font-size:14px;'>Saviez-vous que les <b>membres professionnels</b> de la coopérative O'SCOP "
-            "bénéficient de prix négociés, du catalogue B2B multi-territoires, du règlement à réception et de la "
-            "logistique LOGI'SCOP ?</p>"
+            f"<p style='font-size:14px;'>Vous venez de rejoindre votre <b>3ᵉ annonce</b> sur la CommunityPlace "
+            f"(<b>{need['reference']} — {need['product']}</b>) : merci de votre confiance !</p>"
+            "<p style='font-size:14px;'>Pour continuer à rejoindre des annonces, devenez <b>membre professionnel</b> "
+            "de la coopérative O'SCOP : les participations deviennent <b>gratuites</b> et vous bénéficiez des prix "
+            "négociés, du catalogue B2B multi-territoires, du règlement à réception et de la logistique LOGI'SCOP.</p>"
             "<table style='width:100%;margin:16px 0;'><tr>"
             f"<td style='text-align:center;padding:6px;'><a href='{base}/tarifs' "
             "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;padding:12px 22px;"
@@ -362,8 +387,24 @@ async def _send_pro_invitation(email: str, need: dict) -> None:
         tags=["purchase-need-pro-invitation"])
 
 
-async def _register_joiner(need: dict, email: str, quantity: int, participation_eur: float | None = None) -> dict:
-    """Inscrit un participant (idempotent) + emails de confirmation, notification du publieur et invitation pro."""
+async def _maybe_send_pro_invitation(email: str, need: dict) -> None:
+    """Envoie l'invitation pro une seule fois par email (idempotent, seuil de 3 annonces payées)."""
+    email = email.lower()
+    res = await db.communityplace_pro_invitations.update_one(
+        {"email": email},
+        {"$setOnInsert": {"email": email, "invited_at": _now(), "reference": need["reference"]}},
+        upsert=True)
+    if not res.upserted_id:
+        return
+    try:
+        await _send_pro_invitation(email, need)
+    except Exception as e:
+        logger.warning(f"pro invitation failed: {e}")
+
+
+async def _register_joiner(need: dict, email: str, quantity: int, participation_eur: float | None = None,
+                           free_member: bool = False) -> dict:
+    """Inscrit un participant (idempotent) + emails de confirmation, notification du publieur et invitation pro au seuil."""
     from datetime import datetime, timezone
     reference = need["reference"]
     email = email.lower()
@@ -374,6 +415,8 @@ async def _register_joiner(need: dict, email: str, quantity: int, participation_
     if participation_eur:
         joiner["participation_eur"] = participation_eur
         joiner["participation_paid_at"] = datetime.now(timezone.utc).isoformat()
+    if free_member:
+        joiner["pro_member_free"] = True
     await db.purchase_needs.update_one(
         {"reference": reference},
         {"$push": {"joiners": joiner}, "$inc": {"joined_quantity": quantity}})
@@ -384,6 +427,8 @@ async def _register_joiner(need: dict, email: str, quantity: int, participation_
         from brevo_service import send_email, _wrap_html
         paid_line = (f"<p style='font-size:14px;'>Participation mutualisée réglée : <b>{participation_eur:.2f} €</b> "
                      "(frais de publication répartis entre les participants).</p>") if participation_eur else ""
+        free_line = ("<p style='font-size:14px;'>Membre professionnel : <b>participation offerte</b> — "
+                     "merci de votre engagement dans la coopérative.</p>") if free_member else ""
         await send_email(
             to_email=email, to_name=None,
             subject=f"🤝 Vous avez rejoint la demande groupée {reference} — {need['product']}",
@@ -394,7 +439,7 @@ async def _register_joiner(need: dict, email: str, quantity: int, participation_
                 f"<b style='font-size:16px;'>{reference}</b>.</p>"
                 f"<p style='font-size:14px;'>Votre quantité : <b>{quantity}</b><br/>"
                 f"Volume groupé actuel : <b>{need['quantity']} + {j_qty}</b> "
-                f"({j_count} participant{'s' if j_count > 1 else ''})</p>" + paid_line +
+                f"({j_count} participant{'s' if j_count > 1 else ''})</p>" + paid_line + free_line +
                 f"<p style='font-size:14px;'>La Centrale O'SCOP vous tiendra informé de l'avancement : "
                 f"conservez ce numéro pour tout échange.</p>")),
             tags=["purchase-need-join"])
@@ -410,22 +455,35 @@ async def _register_joiner(need: dict, email: str, quantity: int, participation_
                     f"({j_count} participant{'s' if j_count > 1 else ''}). Plus le volume grandit, "
                     f"meilleures sont les conditions négociées par la Centrale O'SCOP.</p>")),
                 tags=["purchase-need-join"])
-        await _send_pro_invitation(email, need)
     except Exception as e:
         logger.warning(f"join emails failed: {e}")
+    if participation_eur and await _paid_joins_count(email) >= PRO_JOIN_LIMIT:
+        await _maybe_send_pro_invitation(email, need)
     return {"joiners_count": j_count, "joined_quantity": j_qty}
 
 
 @purchase_needs_router.post("/public/purchase-needs/{reference}/join")
 async def join_purchase_need(reference: str, body: JoinNeedBody):
-    """Un visiteur rejoint une annonce publiée : participation mutualisée au prorata du prix de publication."""
+    """Un visiteur rejoint une annonce publiée : participation mutualisée au prorata du prix de publication.
+    Abonnés pro (fournisseur approuvé ou organisation à l'abonnement actif) : participation offerte.
+    Après 3 annonces payées, l'invitation pro est envoyée et le join devient réservé aux abonnés."""
     need = await db.purchase_needs.find_one({"reference": reference, "communityplace": True})
     if not need:
         raise HTTPException(status_code=404, detail="Demande introuvable")
     if need.get("grouping_closed"):
         raise HTTPException(status_code=409, detail="Le groupage de cette demande est clôturé.")
-    if any(j.get("email") == body.email.lower() for j in (need.get("joiners") or [])):
+    email = body.email.lower()
+    if any(j.get("email") == email for j in (need.get("joiners") or [])):
         raise HTTPException(status_code=409, detail="Vous avez déjà rejoint cette demande.")
+    if await _is_pro_subscriber(email):
+        result = await _register_joiner(need, email, body.quantity, free_member=True)
+        return {"ok": True, "payment_required": False, "pro_member": True, "reference": reference, **result}
+    if await _paid_joins_count(email) >= PRO_JOIN_LIMIT:
+        raise HTTPException(status_code=403, detail={
+            "code": "PRO_INVITATION_REQUIRED",
+            "message": ("Vous avez déjà rejoint 3 annonces : merci de votre confiance ! Pour continuer à rejoindre "
+                        "des annonces, devenez acheteur professionnel ou fournisseur référencé — les participations "
+                        "deviennent gratuites pour les membres.")})
     participation = _participation_eur(need)
     if participation > 0:
         import stripe

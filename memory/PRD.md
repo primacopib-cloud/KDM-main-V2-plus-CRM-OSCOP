@@ -3055,3 +3055,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Export CSV factures publication : bouton « Exporter CSV » dans CommunityInvoicesPanel (facture, type, société, contact, email, produit, date, montant).
 - Bloc « Explorez le catalogue » → « Explorez le catalogue LOLODRIVE » : CTA vers /catalogue-lolodrive + bouton « Choisir mon LOLODRIVE & souscrire au PASS » (/pass) (CoopEssSection). Testé UI.
 - Parcours logistiques en images : 2 visuels ultra réalistes générés (EXW enlèvement entrepôt, RàR signature livraison) en bannières dynamiques (zoom hover, overlay dégradé, badge doré) dans LogisticsSection (props image sur JourneyRow). Testé UI.
+
+## 2026-09-09 — Règle des 3 annonces CommunityPlace (join → invitation pro)
+- Seuil : après 3 annonces rejointes ET payées (participation confirmée, comptées par email via elemMatch sur joiners.participation_paid_at), invitation automatique unique « devenir fournisseur ou acheteur professionnel » (collection communityplace_pro_invitations, upsert $setOnInsert idempotent) ; le 4ᵉ join d'un non-abonné est bloqué (HTTP 403, detail.code=PRO_INVITATION_REQUIRED, pas de session Stripe créée).
+- Abonnés (fournisseur vendors.status=approved par email OU membre org_memberships d'une org avec subscriptions.status=ACTIVE) : participation toujours offerte, même pour les 3 premières annonces (_register_joiner free_member=True, joiner.pro_member_free, réponse pro_member:true).
+- La 3ᵉ annonce reste payante ; l'invitation part à sa confirmation (remplace l'envoi à chaque join).
+- Frontend CommunityBoard.jsx : panneau de blocage inline (board-join-blocked-{ref}) avec message + CTA « Devenir acheteur professionnel » (/tarifs) et « Devenir fournisseur référencé » (/adhesion-vendeur) ; toast « participation offerte » pour les membres pro.
+- Testé curl E2E : joins 1-3 payés (webhook JOIN_FEE simulé), invitation créée 1 seule fois (retry idempotent), 4ᵉ join 403, acheteur pro + vendeur approuvé rejoignent gratuitement, doublon 409 conservé. Testé UI (panneau blocage visible). Données de test nettoyées.
