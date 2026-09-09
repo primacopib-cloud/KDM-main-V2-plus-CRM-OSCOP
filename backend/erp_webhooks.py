@@ -43,6 +43,37 @@ async def dispatch_order_event(order_id: str, event: str, extra: dict = None) ->
         logger.error("Webhook dispatch %s/%s échoué : %s", event, order_id, exc)
 
 
+async def dispatch_lolodrive_order_event(order_id: str, event: str = "lolodrive.order.paid") -> None:
+    """Notifie le relais LOLODRIVE (abonné API avec webhook) d'une nouvelle commande sur son point."""
+    try:
+        order = await db.lolodrive_orders.find_one({"id": order_id}, {
+            "_id": 0, "id": 1, "order_number": 1, "status": 1, "items": 1, "lolo_point_id": 1,
+            "fulfillment_type": 1, "total_cents": 1, "total_uc": 1, "pay_with_uc": 1,
+            "pickup_date": 1, "pickup_slot": 1, "created_at": 1})
+        if not order or not order.get("lolo_point_id"):
+            return
+        point = await db.lolodrive_points.find_one(
+            {"id": order["lolo_point_id"]}, {"_id": 0, "id": 1, "name": 1, "manager_user_id": 1})
+        if not point or not point.get("manager_user_id"):
+            return
+        sub = await db.api_subscriptions.find_one(
+            {"user_id": point["manager_user_id"], "status": "ACTIVE", "api_key_id": {"$exists": True}},
+            sort=[("valid_until", -1)])
+        if not sub:
+            return
+        key = await db.api_keys.find_one({
+            "id": sub["api_key_id"], "is_active": True,
+            "webhook_url": {"$exists": True, "$nin": ["", None]},
+        }, {"_id": 0, "id": 1, "name": 1, "webhook_url": 1, "webhook_secret": 1})
+        if not key:
+            return
+        payload = {"event": event, "ts": datetime.now(timezone.utc).isoformat(), "order": order,
+                   "data": {"lolo_point": {"id": point["id"], "name": point.get("name")}}}
+        await _deliver(key, event, order_id, json.dumps(payload, default=str))
+    except Exception as exc:
+        logger.error("Webhook relais LOLODRIVE %s/%s échoué : %s", event, order_id, exc)
+
+
 async def send_test_event(key: dict) -> dict:
     """Envoie un événement d'exemple au webhook du partenaire et renvoie le résultat."""
     payload = {

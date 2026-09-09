@@ -86,9 +86,16 @@ export const ApiSubscribeCard = () => {
       <div className="mt-10 rounded-[24px] p-7 border border-[#8CC63E]/40"
         style={{ background: 'radial-gradient(120% 160% at 50% -20%, rgba(140,198,62,0.12), rgba(20,8,38,0.5))' }}
         data-testid="api-my-subscription">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <CheckCircle2 className="w-5 h-5 text-[#8CC63E]" />
           <h2 className="font-display text-2xl m-0 text-[#B6E27A]">Votre abonnement API est actif</h2>
+          {sub.early_renewal && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-[#2a0c4a]"
+              style={{ background: 'linear-gradient(135deg, #F5A623 0%, #D9B35A 100%)' }}
+              data-testid="api-loyalty-badge">
+              ⭐ Fidélité — renouvellement anticipé
+            </span>
+          )}
         </div>
         <p className="text-white/70 text-sm mb-4" data-testid="api-sub-details">
           Référence <b className="text-white/90">{sub.reference}</b> · payé le {frDate(sub.paid_at)} · valide

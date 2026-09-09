@@ -315,6 +315,11 @@ async def pay_uc(order_id: str, user: dict = Depends(get_current_user)):
                               context="Paiement de votre commande Drive en UC")
     except Exception:
         pass
+    try:
+        from erp_webhooks import dispatch_lolodrive_order_event
+        await dispatch_lolodrive_order_event(order_id)
+    except Exception:
+        pass
     return {"ok": True, "order_id": order_id, "paid_with": "UC", "total_uc": required_uc}
 
 # =======================
