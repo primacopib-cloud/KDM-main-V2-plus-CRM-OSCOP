@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Banknote, Package, Loader2, BadgeCheck } from 'lucide-react';
+import { Banknote, Package, Loader2, BadgeCheck, Download } from 'lucide-react';
 import { getAuthHeaders, getSessionToken } from '../../services/http';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -58,7 +58,23 @@ export const ProductFinancingBoard = () => {
     } catch (e) { toast.error(e.message); setPaying(null); }
   };
 
+  const downloadInvoice = async (fp) => {
+    try {
+      const r = await fetch(`${API_URL}/api/investor/financing-products/${fp.id}/invoice.pdf`,
+        { headers: getAuthHeaders(), credentials: 'include' });
+      if (!r.ok) throw new Error('Téléchargement impossible');
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `facture-${fp.reference}.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast.success(`Facture ${fp.reference} téléchargée`);
+    } catch (e) { toast.error(e.message); }
+  };
+
   if (!items || items.length === 0) return null;
+  const mine = items.filter((fp) => fp.status === 'PAID' && fp.is_mine);
   return (
     <div className="glass-panel-soft rounded-[22px] p-5 mb-8" data-testid="product-financing-board">
       <h2 className="text-lg font-bold flex items-center gap-2 mb-1">
@@ -96,6 +112,13 @@ export const ProductFinancingBoard = () => {
                 <div className="text-[#8CC63E]">Payé par vous le {String(fp.paid_at || '').slice(0, 10)} ✓</div>
               )}
             </div>
+            {fp.status === 'PAID' && fp.is_mine && (
+              <button type="button" onClick={() => downloadInvoice(fp)}
+                data-testid={`fin-invoice-btn-${fp.reference}`}
+                className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-[10px] text-xs font-bold text-[#E9CF8E] bg-[#D9B35A]/15 border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25 transition-colors">
+                <Download className="w-3.5 h-3.5" /> Re-télécharger ma facture
+              </button>
+            )}
             {fp.status !== 'PAID' && (
               <button type="button" onClick={() => pay(fp)} disabled={paying === fp.id}
                 data-testid={`fin-pay-btn-${fp.reference}`}
@@ -107,6 +130,31 @@ export const ProductFinancingBoard = () => {
           </div>
         ))}
       </div>
+      {mine.length > 0 && (
+        <div className="mt-4 pt-3 border-t border-white/10" data-testid="my-financed-products">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-2">
+            <BadgeCheck className="w-4 h-4 text-[#8CC63E]" /> Mes produits financés ({mine.length})
+            <span className="text-[11px] font-semibold text-[#8CC63E]">
+              — total {eur(mine.reduce((s, fp) => s + Number(fp.total_price_eur || 0), 0))}
+            </span>
+          </h3>
+          <div className="space-y-1.5">
+            {mine.map((fp) => (
+              <div key={fp.id} className="flex items-center gap-2 flex-wrap rounded-[10px] px-3 py-2 bg-white/[0.02] border border-white/[0.06] text-[12px] text-white/70"
+                data-testid={`my-financed-${fp.reference}`}>
+                <span className="font-semibold text-white">{fp.reference} · {fp.name}</span>
+                <span className="text-white/45">payé le {String(fp.paid_at || '').slice(0, 10)}</span>
+                <span className="font-mono text-[#8CC63E] font-bold">{eur(fp.total_price_eur)}</span>
+                <button type="button" onClick={() => downloadInvoice(fp)}
+                  data-testid={`my-financed-invoice-${fp.reference}`}
+                  className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[11px] font-bold text-[#E9CF8E] bg-[#D9B35A]/15 border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25 transition-colors">
+                  <Download className="w-3 h-3" /> Facture PDF
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
