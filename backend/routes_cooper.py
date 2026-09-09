@@ -39,6 +39,21 @@ async def list_pending_adhesions(user_id: str = Depends(get_current_user_id)):
     return {"applications": apps, "count": len(apps)}
 
 
+@cooper_router.get("/purchase-needs")
+async def list_assigned_purchase_needs(user_id: str = Depends(get_current_user_id)):
+    """Besoins d'achat assignés au COOPER'S connecté."""
+    await require_cooper(user_id)
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1})
+    email = (user or {}).get("email", "").lower()
+    needs = await db.purchase_needs.find(
+        {"assigned_vendor": email}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    for n in needs:
+        n["photos"] = n.get("photos") or []
+        n["joiners_count"] = len(n.get("joiners") or [])
+    return {"needs": needs, "count": len(needs)}
+
+
 # ============== TRANSPORTEURS LOGI'SCOP ==============
 
 class CarrierCreate(BaseModel):
