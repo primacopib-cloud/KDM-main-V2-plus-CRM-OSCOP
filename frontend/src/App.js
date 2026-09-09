@@ -80,6 +80,7 @@ import PassLolodrivePage from "./pages/PassLolodrivePage";
 import PosLolodrivePage from "./pages/PosLolodrivePage";
 import LoloPointsAdminPage from "./pages/LoloPointsAdminPage";
 import TicketPublicPage from "./pages/TicketPublicPage";
+import FinancingTrackingPage from "./pages/FinancingTrackingPage";
 import LoloHourAdminPage from "./pages/LoloHourAdminPage";
 import CrmPartnersPage from "./pages/CrmPartnersPage";
 import EssReportingPage from "./pages/EssReportingPage";
@@ -135,6 +136,7 @@ function App() {
           <Route path="/offres" element={<OffersPage />} />
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/ticket/:orderId" element={<TicketPublicPage />} />
+          <Route path="/suivi-financement/:token" element={<FinancingTrackingPage />} />
           <Route path="/admin/connexion" element={<AdminLoginPage />} />
           <Route path="/inscription" element={<RedirectInscription />} />
           <Route path="/tarifs" element={<PricingPage />} />
