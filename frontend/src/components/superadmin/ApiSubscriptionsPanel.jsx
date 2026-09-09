@@ -12,6 +12,18 @@ export const ApiSubscriptionsPanel = () => {
   const [calls, setCalls] = useState(null);
   const [logQ, setLogQ] = useState('');
   const [stats, setStats] = useState(null);
+  const [showHooks, setShowHooks] = useState(false);
+  const [hooks, setHooks] = useState(null);
+
+  const toggleHooks = () => {
+    const next = !showHooks;
+    setShowHooks(next);
+    if (!next) return;
+    fetch(`${API}/admin/api-subscriptions/webhook-deliveries?limit=50`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => setHooks(d.deliveries || []))
+      .catch(() => setHooks([]));
+  };
 
   const loadCalls = (q = '') => {
     fetch(`${API}/admin/api-subscriptions/calls?limit=50&q=${encodeURIComponent(q)}`, { credentials: 'include' })
@@ -194,6 +206,30 @@ export const ApiSubscriptionsPanel = () => {
               </div>
             ))}
             {calls?.length === 0 && <p className="text-xs text-white/40 m-0 py-2">{logQ ? 'Aucun appel ne correspond au filtre.' : 'Aucun appel API enregistré par les abonnés.'}</p>}
+          </div>
+        )}
+      </div>
+      <div className="mt-3 pt-3 border-t border-white/10">
+        <button onClick={toggleHooks} data-testid="api-subs-hooks-toggle"
+          className="text-xs font-bold text-white/60 hover:text-white inline-flex items-center gap-1.5">
+          <ScrollText size={13} className="text-[#D9B35A]" /> Livraisons webhook (temps réel) {showHooks ? '▾' : '▸'}
+        </button>
+        {showHooks && (
+          <div className="mt-2 space-y-1 max-h-64 overflow-y-auto" data-testid="api-subs-hooks-list">
+            {hooks === null && <p className="text-xs text-white/40 m-0 py-2">Chargement…</p>}
+            {hooks?.map((h, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-x-2 text-[11px] py-1 px-2 rounded-lg bg-white/[0.03]"
+                data-testid={`api-hook-${i}`}>
+                <span className={`px-1.5 py-0.5 rounded font-bold ${h.ok ? 'bg-emerald-500/15 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>
+                  {h.ok ? '✓' : '✗'} {h.status_code || 'ERR'}
+                </span>
+                <code className="text-white/80">{h.event}</code>
+                <span className="text-white/45">{h.email}</span>
+                {h.error && <span className="text-red-300/80 truncate max-w-[200px]" title={h.error}>{h.error}</span>}
+                <span className="text-white/35 ml-auto">{new Date(h.ts).toLocaleString('fr-FR')}</span>
+              </div>
+            ))}
+            {hooks?.length === 0 && <p className="text-xs text-white/40 m-0 py-2">Aucune livraison webhook — configurez l'URL webhook sur la clé API du relais.</p>}
           </div>
         )}
       </div>

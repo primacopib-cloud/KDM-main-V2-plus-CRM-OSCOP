@@ -43,8 +43,8 @@ async def dispatch_order_event(order_id: str, event: str, extra: dict = None) ->
         logger.error("Webhook dispatch %s/%s échoué : %s", event, order_id, exc)
 
 
-async def dispatch_lolodrive_order_event(order_id: str, event: str = "lolodrive.order.paid") -> None:
-    """Notifie le relais LOLODRIVE (abonné API avec webhook) d'une nouvelle commande sur son point."""
+async def dispatch_lolodrive_order_event(order_id: str, event: str = "lolodrive.order.paid", extra: dict = None) -> None:
+    """Notifie le relais LOLODRIVE (abonné API avec webhook) d'une commande / changement de statut sur son point."""
     try:
         order = await db.lolodrive_orders.find_one({"id": order_id}, {
             "_id": 0, "id": 1, "order_number": 1, "status": 1, "items": 1, "lolo_point_id": 1,
@@ -69,6 +69,8 @@ async def dispatch_lolodrive_order_event(order_id: str, event: str = "lolodrive.
             return
         payload = {"event": event, "ts": datetime.now(timezone.utc).isoformat(), "order": order,
                    "data": {"lolo_point": {"id": point["id"], "name": point.get("name")}}}
+        if extra:
+            payload["data"].update(extra)
         await _deliver(key, event, order_id, json.dumps(payload, default=str))
     except Exception as exc:
         logger.error("Webhook relais LOLODRIVE %s/%s échoué : %s", event, order_id, exc)
