@@ -3021,3 +3021,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Page /coop-api : bloc « Exemple — récupérer le catalogue d'une zone » (curl + réponse JSON). Testé UI. Données de test nettoyées.
 - Badge board Offre/Demande : chaque carte du board affiche un badge « Offre » (vert) ou « Demande » (or) via listing_type. Testé UI (3 badges).
 - Historique factures : panneau superadmin « Factures de publication émises » (onglet Demandes) avec type, client, produit, date, montant, total encaissé et re-téléchargement PDF (GET /api/admin/communityplace/invoices + /{id}/pdf, PDF 200 application/pdf vérifié). Testé curl + UI (3 factures, 110 €).
+- Export CSV factures publication : bouton « Exporter CSV » dans CommunityInvoicesPanel (facture, type, société, contact, email, produit, date, montant).
+- Bloc « Explorez le catalogue » → « Explorez le catalogue LOLODRIVE » : CTA vers /catalogue-lolodrive + bouton « Choisir mon LOLODRIVE & souscrire au PASS » (/pass) (CoopEssSection). Testé UI.
+- Parcours logistiques en images : 2 visuels ultra réalistes générés (EXW enlèvement entrepôt, RàR signature livraison) en bannières dynamiques (zoom hover, overlay dégradé, badge doré) dans LogisticsSection (props image sur JourneyRow). Testé UI.

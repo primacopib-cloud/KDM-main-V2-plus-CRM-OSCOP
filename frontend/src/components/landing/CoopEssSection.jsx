@@ -4,13 +4,19 @@ import { Users, HeartHandshake, ArrowRight } from 'lucide-react';
 export const CoopEssSection = () => (
   <>
     <section className="max-w-[820px] mx-auto px-5 text-center mb-14" data-testid="kdm-catalog-cta">
-      <h2 className="font-display text-2xl mb-3">Explorez le catalogue coopératif</h2>
+      <h2 className="font-display text-2xl mb-3">Explorez le catalogue LOLODRIVE</h2>
       <p className="text-white/60 text-sm mb-5 max-w-[56ch] mx-auto">
-        Retrouvez l&apos;ensemble des références négociées collectivement, filtrables par territoire, catégorie et incoterm.
+        Découvrez les lots ×3 à prix mini disponibles dans le LOLODRIVE de votre pays et de votre zone.
+        Choisissez votre point LOLODRIVE, souscrivez au PASS et débloquez les prix membres.
       </p>
-      <Link to="/catalogue" className="btn-gold h-11 px-6 rounded-lg inline-flex items-center gap-2 text-sm font-semibold" data-testid="kdm-cta-catalog-full">
-        Accéder au catalogue <ArrowRight size={15} />
-      </Link>
+      <div className="flex flex-wrap justify-center gap-3">
+        <Link to="/catalogue-lolodrive" className="btn-gold h-11 px-6 rounded-lg inline-flex items-center gap-2 text-sm font-semibold" data-testid="kdm-cta-catalog-full">
+          Accéder au catalogue <ArrowRight size={15} />
+        </Link>
+        <Link to="/pass" className="h-11 px-6 rounded-lg inline-flex items-center gap-2 text-sm font-semibold text-white border border-white/25 hover:bg-white/5" data-testid="kdm-cta-choose-pass">
+          Choisir mon LOLODRIVE & souscrire au PASS
+        </Link>
+      </div>
     </section>
 
     <section className="max-w-[820px] mx-auto px-5 text-center mb-12" data-testid="kdm-coop-section">
