@@ -71,6 +71,41 @@ async def send_quota_alert(db, key: dict, usage: int, quota: int) -> None:
         logger.warning("Alerte quota API : %s", exc)
 
 
+def _fmt_order_dt(value) -> str:
+    if isinstance(value, datetime):
+        return value.strftime("%d/%m/%Y %H:%M")
+    return str(value or "")[:16].replace("T", " ")
+
+
+async def _build_weekly_orders_csv(db, orders: list, week_key: str) -> dict:
+    """CSV comptable des commandes de la semaine (UTF-8 BOM, séparateur ';') joint au résumé hebdo."""
+    import base64
+    import csv
+    import io
+    user_ids = sorted({o.get("user_id") for o in orders if o.get("user_id")})
+    customers = {}
+    if user_ids:
+        async for u in db.users.find({"id": {"$in": user_ids}},
+                                     {"_id": 0, "id": 1, "contact_name": 1, "company_name": 1, "phone": 1}):
+            customers[u["id"]] = u
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=";")
+    writer.writerow(["N° commande", "Date", "Statut", "Client", "Téléphone", "Articles",
+                     "Total (€)", "Paiement", "Créneau retrait"])
+    for o in sorted(orders, key=lambda x: str(x.get("created_at") or "")):
+        cust = customers.get(o.get("user_id"), {})
+        articles = sum(int(i.get("qty") or 0) for i in (o.get("items") or []))
+        total = f"{(int(o.get('total_cents') or 0) / 100):.2f}".replace(".", ",")
+        slot = " ".join(p for p in [str(o.get("pickup_date") or ""), str(o.get("pickup_slot_label") or "")] if p)
+        writer.writerow([
+            o.get("order_number") or "", _fmt_order_dt(o.get("created_at")), o.get("status") or "",
+            cust.get("contact_name") or cust.get("company_name") or "", cust.get("phone") or "",
+            articles, total, "UC (cagnotte)" if o.get("pay_with_uc") else "Carte bancaire", slot,
+        ])
+    return {"content": base64.b64encode(buf.getvalue().encode("utf-8-sig")).decode(),
+            "name": f"commandes-relais-{week_key}.csv"}
+
+
 async def run_api_weekly_reports(db, force: bool = False) -> int:
     """Résumé hebdomadaire (lundi) : commandes du relais + activité API de la semaine écoulée (idempotent)."""
     now = datetime.now(timezone.utc)
@@ -92,7 +127,8 @@ async def run_api_weekly_reports(db, force: bool = False) -> int:
             if point:
                 orders = await db.lolodrive_orders.find(
                     {"lolo_point_id": point["id"], "created_at": {"$gte": datetime.fromisoformat(since)}},
-                    {"_id": 0, "status": 1, "total_cents": 1}).to_list(1000)
+                    {"_id": 0, "order_number": 1, "created_at": 1, "status": 1, "user_id": 1, "items": 1,
+                     "total_cents": 1, "pay_with_uc": 1, "pickup_date": 1, "pickup_slot_label": 1}).to_list(1000)
                 total_cents = sum(int(o.get("total_cents") or 0) for o in orders)
                 for o in orders:
                     by_status[o.get("status") or "?"] = by_status.get(o.get("status") or "?", 0) + 1
@@ -100,7 +136,11 @@ async def run_api_weekly_reports(db, force: bool = False) -> int:
             hooks_ok = await db.webhook_deliveries.count_documents(
                 {"key_id": sub["api_key_id"], "ts": {"$gte": since}, "ok": True})
             hooks_ko = await db.webhook_deliveries.count_documents(
-                {"key_id": sub["api_key_id"], "ts": {"$gte": since}, "ok": False})
+                {"key_id": sub["api_key_id"], "ts": {"$gte": since}, "ok": False, "paused": {"$ne": True}})
+            key = await db.api_keys.find_one({"id": sub["api_key_id"]},
+                                             {"_id": 0, "webhook_url": 1, "webhook_paused": 1})
+            hook_paused = bool((key or {}).get("webhook_paused")) and bool((key or {}).get("webhook_url"))
+            csv_attachment = await _build_weekly_orders_csv(db, orders, week_key)
             from brevo_service import send_email, _wrap_html
             base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
             statuses = " · ".join(f"{k} : {v}" for k, v in sorted(by_status.items())) or "aucune"
@@ -115,11 +155,16 @@ async def run_api_weekly_reports(db, force: bool = False) -> int:
                     f"<li><b>{len(orders)}</b> commande(s) LOLODRIVE ({total_cents / 100:.2f} €) — {statuses}</li>"
                     f"<li><b>{api_calls}</b> appel(s) API effectué(s)</li>"
                     f"<li><b>{hooks_ok}</b> webhook(s) livré(s)" + (f" · <b style='color:#c0392b;'>{hooks_ko} en échec</b>" if hooks_ko else "") + "</li>"
-                    "</ul>"
+                    + (f"<li><b style='color:#F5A623;'>⏸ Webhook en pause</b> — les notifications temps réel sont "
+                       "suspendues ; votre configuration (URL et événements) est conservée.</li>" if hook_paused else "")
+                    + "</ul>"
+                    "<p style='font-size:13px;color:rgba(243,237,228,0.7);'>📎 Le détail comptable des commandes "
+                    "de la semaine est joint à cet email (fichier CSV, ouvrable dans Excel).</p>"
                     f"<p style='text-align:center;'><a href='{base}/coop-api' "
                     "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
                     "padding:12px 26px;border-radius:12px;text-decoration:none;'>Voir mon espace API</a></p>")),
-                tags=["api-weekly-report"])
+                tags=["api-weekly-report"],
+                attachments=[csv_attachment])
             await db.api_subscriptions.update_one({"id": sub["id"]}, {"$set": {"weekly_report_week": week_key}})
             sent += 1
         except Exception as exc:

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowRight, CheckCircle2, Copy, Download, Eye, EyeOff, FlaskConical, KeyRound, Loader2, Save, Webhook } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Copy, Download, Eye, EyeOff, FlaskConical, KeyRound, Loader2, Pause, Play, Save, Webhook } from 'lucide-react';
 import { getAuthHeaders, getSessionToken } from '../../services/http';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -14,8 +14,10 @@ const EVENT_CHOICES = [
 const WebhookSandbox = ({ sub, onSaved }) => {
   const [url, setUrl] = useState(sub.webhook_url || '');
   const [events, setEvents] = useState(sub.webhook_events || ['paid', 'preparing', 'ready', 'fulfilled']);
+  const [paused, setPaused] = useState(!!sub.webhook_paused);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [pausing, setPausing] = useState(false);
   const dirty = url !== (sub.webhook_url || '')
     || JSON.stringify([...events].sort()) !== JSON.stringify([...(sub.webhook_events || ['paid', 'preparing', 'ready', 'fulfilled'])].sort());
 
@@ -36,6 +38,24 @@ const WebhookSandbox = ({ sub, onSaved }) => {
     setSaving(false);
   };
 
+  const togglePause = async () => {
+    setPausing(true);
+    try {
+      const r = await fetch(`${API}/api-subscription/me/webhook`, {
+        method: 'PUT', headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        credentials: 'include', body: JSON.stringify({ webhook_url: url, paused: !paused }),
+      });
+      const d = await r.json();
+      if (!r.ok) toast.error(d.detail || 'Action impossible');
+      else {
+        setPaused(!paused);
+        toast.success(!paused ? 'Webhook suspendu — votre configuration est conservée' : 'Webhook réactivé — les notifications reprennent');
+        onSaved();
+      }
+    } catch { toast.error('Erreur réseau'); }
+    setPausing(false);
+  };
+
   const test = async () => {
     setTesting(true);
     try {
@@ -54,6 +74,13 @@ const WebhookSandbox = ({ sub, onSaved }) => {
     <div className="mt-4 rounded-xl border border-white/15 bg-black/20 p-4" data-testid="api-webhook-sandbox">
       <p className="text-xs font-bold uppercase tracking-wide text-white/50 mb-1 flex items-center gap-1.5">
         <Webhook className="w-3.5 h-3.5 text-[#D9B35A]" /> Webhook commandes (temps réel)
+        {paused && (
+          <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold normal-case tracking-normal text-[#2a0c4a]"
+            style={{ background: 'linear-gradient(135deg, #F5A623 0%, #D9B35A 100%)' }}
+            data-testid="api-webhook-paused-badge">
+            ⏸ En pause
+          </span>
+        )}
       </p>
       <p className="text-[11px] text-white/45 m-0 mb-2">
         Recevez chaque commande LOLODRIVE de votre relais (payée, prête, retirée) sur votre outil — testez votre
@@ -89,6 +116,22 @@ const WebhookSandbox = ({ sub, onSaved }) => {
             {events.includes(key) ? '✓ ' : ''}{label}
           </button>
         ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/10">
+        <button type="button" onClick={togglePause} disabled={pausing || !sub.webhook_url}
+          data-testid="api-webhook-pause-toggle"
+          title={!sub.webhook_url ? 'Configurez d\'abord l\'URL de votre webhook' : undefined}
+          className={`h-8 px-3 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 border disabled:opacity-50 transition-colors ${paused
+            ? 'border-[#8CC63E]/50 text-[#B6E27A] hover:bg-[#8CC63E]/10'
+            : 'border-amber-400/40 text-amber-300 hover:bg-amber-400/10'}`}>
+          {pausing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+          {paused ? 'Reprendre les notifications' : 'Suspendre temporairement (congés, maintenance)'}
+        </button>
+        {paused && (
+          <p className="text-[11px] text-amber-200/80 m-0" data-testid="api-webhook-paused-note">
+            Notifications suspendues — votre URL et vos événements sont conservés, rien à reconfigurer à la reprise.
+          </p>
+        )}
       </div>
     </div>
   );
