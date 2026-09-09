@@ -11,6 +11,7 @@ import { VideoShowcase } from '../components/kdmarche/VideoShowcase';
 import { ReferralChallengeBanner } from '../components/ReferralChallengeBanner';
 import { Reveal } from '../components/landing/Reveal';
 import { LolodriveSpotButton } from '../components/lolodrive/LolodriveSpot';
+import { ServicesBlock } from '../components/kdmarche/ServicesBlock';
 
 export default function ParticuliersPage() {
   return (
@@ -29,6 +30,7 @@ export default function ParticuliersPage() {
       <Reveal><ZoneProductsShowcase audience="lolodrive" /></Reveal>
       <Reveal variant="zoom"><div className="py-8"><TerritoryCarousel /></div></Reveal>
       <Reveal><PublicLolodriveMapSection /></Reveal>
+      <Reveal delay={60}><ServicesBlock audience="particuliers" /></Reveal>
       <Reveal variant="zoom"><ReferralChallengeBanner /></Reveal>
       <Reveal><VideoShowcase /></Reveal>
       <Footer />

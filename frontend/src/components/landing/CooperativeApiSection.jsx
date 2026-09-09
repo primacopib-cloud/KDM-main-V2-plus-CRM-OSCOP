@@ -48,7 +48,7 @@ export const CooperativeApiSection = () => {
 
             <div className="flex flex-wrap gap-3 mb-8">
               <Link
-                to="/tarifs"
+                to="/coop-api"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-[#2a0c4a] shadow-lg"
                 style={{ background: 'linear-gradient(135deg, #F5A623 0%, #D9B35A 100%)' }}
                 data-testid="coop-cta-tarifs"
