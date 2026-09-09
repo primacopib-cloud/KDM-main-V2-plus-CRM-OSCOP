@@ -5,6 +5,32 @@ import { getAuthHeaders, getSessionToken } from '../../services/http';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
+const TRACK_STEPS = [['CONFIRMEE', 'Confirmée'], ['PREPARATION', 'Préparation'], ['EXPEDITION', 'Expédiée'], ['TRANSIT', 'En transit'], ['LIVREE', 'Livrée']];
+
+const TrackingStepper = ({ fp }) => {
+  const idx = TRACK_STEPS.findIndex(([k]) => k === fp.tracking_status);
+  return (
+    <div className="mt-3" data-testid={`fin-tracking-${fp.reference}`}>
+      <div className="text-[10px] uppercase tracking-wide text-white/45 mb-1.5">Suivi logistique</div>
+      <div className="flex items-center">
+        {TRACK_STEPS.map(([key, label], i) => (
+          <div key={key} className="flex-1 flex flex-col items-center relative">
+            {i > 0 && (
+              <span className={`absolute top-[7px] right-1/2 w-full h-0.5 ${i <= idx ? 'bg-[#8CC63E]' : 'bg-white/15'}`} />
+            )}
+            <span className={`relative z-10 w-3.5 h-3.5 rounded-full border-2 ${
+              i < idx ? 'bg-[#8CC63E] border-[#8CC63E]'
+                : i === idx ? 'bg-[#8CC63E] border-[#8CC63E] ring-2 ring-[#8CC63E]/30'
+                : 'bg-[#241243] border-white/25'}`} />
+            <span className={`mt-1 text-[9px] text-center leading-tight ${i <= idx ? 'text-[#8CC63E] font-bold' : 'text-white/40'}`}>{label}</span>
+          </div>
+        ))}
+      </div>
+      {idx < 0 && <p className="text-[10px] text-white/35 m-0 mt-1">En attente de prise en charge par la Centrale.</p>}
+      {fp.tracking_status === 'LIVREE' && <p className="text-[10px] text-[#8CC63E] font-bold m-0 mt-1" data-testid={`fin-delivered-${fp.reference}`}>🎉 Livraison effectuée</p>}
+    </div>
+  );
+};
 
 // Espace investisseur : produits inscrits au financement par le superadmin — paiement Stripe direct
 export const ProductFinancingBoard = () => {
@@ -118,6 +144,7 @@ export const ProductFinancingBoard = () => {
                 <div className="text-[#8CC63E]">Payé par vous le {String(fp.paid_at || '').slice(0, 10)} ✓</div>
               )}
             </div>
+            {fp.status === 'PAID' && fp.is_mine && <TrackingStepper fp={fp} />}
             {fp.status === 'PAID' && fp.is_mine && (
               <button type="button" onClick={() => downloadInvoice(fp)}
                 data-testid={`fin-invoice-btn-${fp.reference}`}

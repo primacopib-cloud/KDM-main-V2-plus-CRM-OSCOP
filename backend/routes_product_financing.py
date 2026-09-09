@@ -176,6 +176,53 @@ async def download_financing_invoice(fp_id: str, user: dict = Depends(_investor)
                     headers={"Content-Disposition": f"attachment; filename=facture-{fp['reference']}.pdf"})
 
 
+TRACKING_STEPS = ["CONFIRMEE", "PREPARATION", "EXPEDITION", "TRANSIT", "LIVREE"]
+TRACKING_LABELS = {"CONFIRMEE": "Commande confirmée", "PREPARATION": "Préparation",
+                   "EXPEDITION": "Expédiée", "TRANSIT": "En transit", "LIVREE": "Livrée"}
+
+
+class TrackingUpdate(BaseModel):
+    step: str
+
+
+@financing_router.put("/admin/financing-products/{fp_id}/tracking")
+async def update_financing_tracking(fp_id: str, body: TrackingUpdate, admin: dict = Depends(require_admin)):
+    """Le superadmin met à jour l'étape logistique d'un financement payé (suivi investisseur)."""
+    step = (body.step or "").upper()
+    if step not in TRACKING_STEPS:
+        raise HTTPException(status_code=400, detail=f"Étape invalide. Choix : {', '.join(TRACKING_STEPS)}")
+    fp = await db.financing_products.find_one({"id": fp_id})
+    if not fp:
+        raise HTTPException(status_code=404, detail="Financement introuvable")
+    if fp.get("status") != "PAID":
+        raise HTTPException(status_code=409, detail="Le suivi n'est disponible qu'après paiement")
+    await db.financing_products.update_one({"id": fp_id}, {
+        "$set": {"tracking_status": step, "tracking_updated_at": _now(), "tracking_updated_by": admin.get("email")},
+        "$push": {"tracking_history": {"step": step, "label": TRACKING_LABELS[step], "at": _now()}}})
+    if fp.get("paid_by"):
+        try:
+            from brevo_service import send_email, _wrap_html
+            base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+            done = TRACKING_STEPS.index(step) + 1
+            bar = " → ".join(("<b style='color:#4c8a2f;'>" + TRACKING_LABELS[s] + "</b>") if i < done else TRACKING_LABELS[s]
+                             for i, s in enumerate(TRACKING_STEPS))
+            await send_email(
+                to_email=fp["paid_by"], to_name=None,
+                subject=f"🚚 Suivi de votre financement {fp['reference']} — {TRACKING_LABELS[step]}",
+                html_content=_wrap_html("Suivi logistique", (
+                    f"<p style='font-size:14px;'>Votre financement <b>{fp['reference']} — {fp['name']}</b> "
+                    f"passe à l'étape : <b style='font-size:16px;'>{TRACKING_LABELS[step]}</b>"
+                    f"{' 🎉 Livraison effectuée !' if step == 'LIVREE' else ''}</p>"
+                    f"<p style='font-size:12px;color:#666;'>{bar}</p>"
+                    f"<p style='text-align:center;'><a href='{base}/espace-investisseur' "
+                    "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
+                    "padding:12px 26px;border-radius:12px;text-decoration:none;'>Suivre dans mon espace</a></p>")),
+                tags=["financing-tracking"])
+        except Exception as exc:
+            logger.warning("Email suivi financement : %s", exc)
+    return await db.financing_products.find_one({"id": fp_id}, {"_id": 0, "stripe_session_id": 0})
+
+
 @financing_router.get("/admin/financing-products/stats")
 async def financing_products_stats(_: dict = Depends(require_admin)):
     """Statistiques financements : total financé, marge cumulée O'SCOP, top investisseurs."""

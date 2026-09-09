@@ -10,6 +10,7 @@ const STATUS = {
   PENDING_PAYMENT: ['Paiement en cours', 'text-sky-300 bg-sky-500/10 border-sky-400/40'],
   PAID: ['Vendu et facturé par O\u2019SCOP', 'text-[#8CC63E] bg-[#8CC63E]/15 border-[#8CC63E]/50'],
 };
+const TRACK_STEPS = [['CONFIRMEE', 'Confirmée'], ['PREPARATION', 'Préparation'], ['EXPEDITION', 'Expédiée'], ['TRANSIT', 'En transit'], ['LIVREE', 'Livrée']];
 
 // Superadmin : inscription de produits au financement investisseur (marge bénéficiaire O'SCOP)
 export const FinancingProductsPanel = () => {
@@ -80,6 +81,20 @@ export const FinancingProductsPanel = () => {
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || 'Erreur');
       toast.success('Produit retiré du financement');
+      load();
+    } catch (err) { toast.error(err.message); }
+  };
+
+  const updateTracking = async (fp, step) => {
+    if (!step) return;
+    try {
+      const res = await fetch(`${API_URL}/api/admin/financing-products/${fp.id}/tracking`, {
+        method: 'PUT', credentials: 'include', headers,
+        body: JSON.stringify({ step }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      toast.success(`Suivi mis à jour — ${TRACK_STEPS.find(([k]) => k === step)?.[1]} (investisseur notifié)`);
       load();
     } catch (err) { toast.error(err.message); }
   };
@@ -228,6 +243,19 @@ export const FinancingProductsPanel = () => {
                   <span className={`px-2 py-0.5 rounded-full border font-semibold ${cls}`} data-testid={`fin-status-${fp.reference}`}>{label}</span>
                   {fp.status === 'PAID' && fp.paid_by && (
                     <span className="text-white/45">payé par {fp.paid_by} le {String(fp.paid_at || '').slice(0, 10)}</span>
+                  )}
+                  {fp.status === 'PAID' && (
+                    <span className="inline-flex items-center gap-1">
+                      <span className="text-white/40">🚚</span>
+                      <select value={fp.tracking_status || ''} data-testid={`fin-tracking-select-${fp.reference}`}
+                        onChange={(e) => updateTracking(fp, e.target.value)}
+                        className="h-7 px-1.5 rounded-md bg-white/[0.08] border border-white/20 text-white text-[10px]">
+                        <option value="" disabled className="bg-[#1F0A33]">Suivi logistique…</option>
+                        {TRACK_STEPS.map(([k, l]) => (
+                          <option key={k} value={k} className="bg-[#1F0A33]">{l}</option>
+                        ))}
+                      </select>
+                    </span>
                   )}
                   <span className="ml-auto flex gap-1.5">
                     {fp.status !== 'PAID' && (
