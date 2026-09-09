@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Store, MapPin, Package, CheckCircle2, RefreshCw, Calculator, TrendingUp,
-  ShoppingBag, Wallet, Ticket, Clock, Trophy, BarChart3,
+  ShoppingBag, Wallet, Ticket, Clock, Trophy, BarChart3, Plug,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { Button } from '../components/ui/button';
@@ -77,9 +77,15 @@ export default function LoloPointManagerPage() {
       title={point ? `Relais LOLODRIVE — ${point.name}` : 'Mon relais LOLODRIVE'}
       subtitle="Tableau de bord gérant — commandes du jour, commissions, contributions."
       actions={
-        <Button variant="outline" size="sm" onClick={load} data-testid="refresh-btn">
-          <RefreshCw className="w-4 h-4 mr-2" /> Actualiser
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate('/coop-api')} data-testid="manager-api-link"
+            className="border-[#D9B35A]/50 text-[#E9CF8E] hover:bg-[#D9B35A]/10">
+            <Plug className="w-4 h-4 mr-2" /> API catalogue
+          </Button>
+          <Button variant="outline" size="sm" onClick={load} data-testid="refresh-btn">
+            <RefreshCw className="w-4 h-4 mr-2" /> Actualiser
+          </Button>
+        </div>
       }
     >
       {loading && <div className="text-center text-white/50 py-12">Chargement…</div>}
