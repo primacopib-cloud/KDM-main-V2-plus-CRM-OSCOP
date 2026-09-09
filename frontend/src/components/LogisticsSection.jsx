@@ -17,11 +17,11 @@ const getStepStyle = (responsible) => {
   }
 };
 
-const JourneyRow = ({ title, badge, steps, testId, image, imageAlt }) => (
+const JourneyRow = ({ title, badge, steps, testId, image, imageAlt, objectPosition = 'center' }) => (
   <div className="mb-6" data-testid={testId}>
     {image && (
       <div className="relative rounded-[22px] overflow-hidden mb-4 group" data-testid={`${testId}-hero`}>
-        <img src={image} alt={imageAlt || title} loading="lazy"
+        <img src={image} alt={imageAlt || title} loading="lazy" style={{ objectPosition }}
           className="w-full h-44 sm:h-56 object-cover transition-transform duration-[1.6s] ease-out group-hover:scale-[1.06]" />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(12,12,16,0.72) 0%, rgba(12,12,16,0.28) 55%, rgba(12,12,16,0.06) 100%)' }} />
         <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-9">
@@ -96,6 +96,7 @@ const LogisticsSection = () => (
         testId="journey-rar"
         image="https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/aa306afb6ddf4a87632637b08bf35bfa740b7d6b7584b52fc09ba53a330b1052.jpeg"
         imageAlt="Validation électronique de la réception — livraison professionnelle"
+        objectPosition="32% center"
       />
 
       {/* Legend */}
