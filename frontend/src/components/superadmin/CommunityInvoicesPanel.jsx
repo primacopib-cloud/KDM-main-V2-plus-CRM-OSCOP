@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Receipt, Download, Loader2 } from 'lucide-react';
+import { Receipt, Download, Loader2, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
@@ -31,6 +31,22 @@ export const CommunityInvoicesPanel = () => {
     } catch (e) { toast.error(e.message); } finally { setBusy(null); }
   };
 
+  const exportCsv = () => {
+    const header = ['Facture', 'Type', 'Société', 'Contact', 'Email', 'Produit', 'Payée le', 'Montant EUR'];
+    const lines = data.invoices.map((i) => [
+      `CP-${i.reference}`, i.listing_type === 'OFFRE' ? 'Offre' : 'Demande', i.company, i.contact_name,
+      i.email, i.product, String(i.communityplace_paid_at || '').slice(0, 10),
+      Number(i.communityplace_fee_eur || 0).toFixed(2)]);
+    const csv = [header, ...lines]
+      .map((l) => l.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `factures-publication-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   return (
     <div className="rounded-[18px] p-5 mt-6 bg-white/[0.04] border border-white/10" data-testid="community-invoices-panel">
       <div className="flex items-center justify-between gap-3 mb-3">
@@ -38,7 +54,15 @@ export const CommunityInvoicesPanel = () => {
           <Receipt className="w-4 h-4 text-[#D9B35A]" /> Factures de publication émises
           {data && <span className="text-white/40 font-normal">({data.invoices.length})</span>}
         </h3>
-        {data && <span className="text-xs font-bold text-[#8CC63E]">Total encaissé : {data.total_eur.toFixed(2)} €</span>}
+        <div className="flex items-center gap-3">
+          {data && <span className="text-xs font-bold text-[#8CC63E]">Total encaissé : {data.total_eur.toFixed(2)} €</span>}
+          {data && data.invoices.length > 0 && (
+            <button type="button" onClick={exportCsv} data-testid="invoices-export-csv"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] border border-white/15 text-white/75 hover:text-white">
+              <FileDown className="w-3.5 h-3.5" /> Exporter CSV
+            </button>
+          )}
+        </div>
       </div>
       {!data ? (
         <div className="py-5 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-white/40" /></div>
