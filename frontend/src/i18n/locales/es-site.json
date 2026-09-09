@@ -210,8 +210,8 @@
     "wallet_credits_oscop": "CREDI'SCOP",
     "systeme_de_credits_o": "Sistema de créditos O'SCOP",
     "complementaire_a_votre_abonnement": "Complementario a su suscripción",
-    "les_credits_financent": "Los créditos financian:",
-    "credits_financent_detail": "Los créditos financian el uso intensivo, el acceso prioritario, las zonas adicionales y los servicios ESS.",
+    "les_credits_financent": "Los créditos dan acceso a:",
+    "credits_financent_detail": "Los créditos dan acceso al uso intensivo, acceso prioritario, zonas adicionales y servicios ESS.",
     "credits_warning": "⚠️ Los créditos nunca afectan al precio de los productos vendidos por KDMARCHE.",
     "credits_usage": [
       "El uso intensivo",
@@ -455,7 +455,7 @@
   },
   "pro": {
     "hero_badge": "CENTRAL PROFESIONAL MULTI-TERRITORIOS",
-    "hero_title_1": "Sus compras, su financiación y su logística,",
+    "hero_title_1": "Sus compras y su logística,",
     "hero_title_2": "en un solo recorrido.",
     "hero_desc": "O'SCOP puede comprar las mercancías al proveedor, revenderlas y facturar al cliente profesional. Según la oferta, un socio referenciado también puede seguir siendo el vendedor directo. El circuito, el precio, la logística y el beneficiario del pago se definen antes del compromiso.",
     "cta_besoin": "Enviar una necesidad de compra",
@@ -465,13 +465,11 @@
     "flow_steps": [
       "Pedido del cliente confirmado",
       "El proveedor factura a O'SCOP",
-      "El financiador paga al proveedor",
       "LOGI'SCOP gestiona el transporte",
-      "O'SCOP revende y factura al cliente",
-      "Los cobros reembolsan las sumas debidas — el saldo constituye el margen de O'SCOP"
+      "O'SCOP revende y factura al cliente"
     ],
     "flow_note": "Esquema ilustrativo del circuito tipo. Ningún importe mostrado constituye una línea disponible real.",
-    "journeys_title": "Cuatro recorridos profesionales",
+    "journeys_title": "Tres recorridos profesionales",
     "journeys_sub": "Comprar, vender, financiar y organizar la logística — en un marco cooperativo único.",
     "j_acheteurs_t": "Compradores profesionales",
     "j_acheteurs_d": "Envíe sus necesidades de compra, compare las ofertas de ambos circuitos y pida a precio profesional sin IVA.",

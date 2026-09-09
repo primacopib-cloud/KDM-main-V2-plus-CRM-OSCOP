@@ -83,9 +83,6 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/espace-investisseur" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-financer">Financer une opération</Link>
-              </li>
-              <li>
                 <Link to="/calculateur-fret" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-logiscop-fret">LOGI'SCOP — Calculateur de fret</Link>
               </li>
             </ul>

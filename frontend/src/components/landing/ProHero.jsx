@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { ArrowRight, FileSearch, TrendingUp, Info } from 'lucide-react';
+import { ArrowRight, FileSearch, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { trackCta } from '../../services/ctaTracking';
 import { PurchaseNeedForm } from './PurchaseNeedForm';
@@ -36,11 +36,6 @@ export const ProHero = () => {
               className="btn-ghost inline-flex items-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold"
               data-testid="hero-cta-catalogue-pro">
               {t('pro.cta_catalogue')} <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link to="/espace-investisseur" onClick={() => trackCta('hero_financer')}
-              className="btn-ghost inline-flex items-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold"
-              data-testid="hero-cta-financer">
-              <TrendingUp className="w-4 h-4" /> {t('pro.cta_financer')}
             </Link>
           </div>
         </div>
