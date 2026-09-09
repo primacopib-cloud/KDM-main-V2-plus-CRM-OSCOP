@@ -430,7 +430,7 @@ async def publish_communityplace(need_id: str, payload: dict | None = None, admi
                      "product_data": {"name": f"Frais de publication CommunityPlace — {need['reference']} {need['product']}"}},
                      "quantity": 1}],
         metadata={"purchase_need_id": need_id, "kind": "COMMUNITYPLACE_FEE"},
-        success_url=f"{base}/?communityplace_paid={need['reference']}",
+        success_url=f"{base}/paiement/retour?session_id={{CHECKOUT_SESSION_ID}}&kind=COMMUNITYPLACE&ref={need['reference']}",
         cancel_url=f"{base}/?communityplace_cancelled=1",
     )
     await db.purchase_needs.update_one({"id": need_id}, {"$set": {

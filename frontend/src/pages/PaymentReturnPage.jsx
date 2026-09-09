@@ -20,7 +20,15 @@ export default function PaymentReturnPage() {
 
   useEffect(() => {
     if (!sessionId) {
-      setStatus({ phase: 'error', message: 'Session de paiement absente.' });
+      if (kind === 'COMMUNITYPLACE') {
+        setStatus({ phase: 'success', message: 'Paiement confirmé' });
+      } else {
+        setStatus({ phase: 'error', message: 'Session de paiement absente.' });
+      }
+      return;
+    }
+    if (kind === 'COMMUNITYPLACE') {
+      setStatus({ phase: 'success', message: 'Paiement confirmé' });
       return;
     }
     let attempts = 0;
@@ -60,8 +68,10 @@ export default function PaymentReturnPage() {
   const nextRoute = () => {
     if (kind === 'PASS' || kind === 'RECHARGE') return '/pass';
     if (kind === 'ORDER') return '/pass';
+    if (kind === 'COMMUNITYPLACE') return '/';
     return '/lolodrive';
   };
+  const nextLabel = kind === 'COMMUNITYPLACE' ? "Retour à l'accueil" : 'Voir mon espace PASS';
 
   return (
     <LolodriveLayout title="Confirmation paiement" subtitle="Stripe Checkout — mode test">
@@ -78,7 +88,8 @@ export default function PaymentReturnPage() {
             <>
               <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-emerald-400" data-testid="payment-success-icon" />
               <h2 className="text-2xl font-bold mb-2 text-emerald-400">Paiement réussi</h2>
-              <p className="text-white/70 text-sm">{successMessage(kind)}</p>
+              <p className="text-[#D9B35A] font-semibold text-base mb-3">Merci de votre confiance 🤝</p>
+              <p className="text-white/70 text-sm">{successMessage(kind, ref)}</p>
               {details && (
                 <div className="mt-4 inline-flex flex-col gap-1 p-4 rounded-xl bg-white/[0.03] border border-white/[0.07] text-xs">
                   <KV label="Montant" value={fmtEUR(details.amount_total || 0)} />
@@ -90,7 +101,7 @@ export default function PaymentReturnPage() {
                 <Button onClick={() => navigate(nextRoute())} size="lg"
                   style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}
                   data-testid="goto-pass-btn">
-                  Voir mon espace PASS <ArrowRight className="w-4 h-4 ml-2" />
+                  {nextLabel} <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             </>
@@ -112,10 +123,11 @@ export default function PaymentReturnPage() {
   );
 }
 
-const successMessage = (kind) => ({
+const successMessage = (kind, ref) => ({
   PASS: 'Votre PASS Vie Chère est désormais actif. 600 UC ont été crédités sur votre wallet.',
   RECHARGE: 'Votre wallet UC a été rechargé.',
   ORDER: 'Votre commande est confirmée et entre en préparation.',
+  COMMUNITYPLACE: `Les frais de publication de votre besoin ${ref || ''} sont réglés. Votre demande va être publiée sur la CommunityPlace et nous vous recontactons rapidement.`,
 }[kind] || 'Opération confirmée.');
 
 const KV = ({ label, value }) => (
