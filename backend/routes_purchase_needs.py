@@ -379,6 +379,29 @@ async def communityplace_webhook(payload: dict):
     return {"received": True}
 
 
+@purchase_needs_router.get("/admin/communityplace/invoices")
+async def list_communityplace_invoices(admin: dict = Depends(require_admin)):
+    """Historique des factures de publication acquittées."""
+    needs = await db.purchase_needs.find(
+        {"communityplace_payment_status": "PAID"},
+        {"_id": 0, "id": 1, "reference": 1, "product": 1, "company": 1, "contact_name": 1,
+         "email": 1, "listing_type": 1, "communityplace_fee_eur": 1, "communityplace_paid_at": 1},
+    ).sort("communityplace_paid_at", -1).to_list(500)
+    return {"invoices": needs, "total_eur": sum(float(n.get("communityplace_fee_eur") or 0) for n in needs)}
+
+
+@purchase_needs_router.get("/admin/communityplace/invoices/{need_id}/pdf")
+async def download_communityplace_invoice(need_id: str, admin: dict = Depends(require_admin)):
+    from fastapi.responses import Response
+    from communityplace_invoice import build_paid_invoice_pdf
+    need = await db.purchase_needs.find_one({"id": need_id, "communityplace_payment_status": "PAID"}, {"_id": 0})
+    if not need:
+        raise HTTPException(status_code=404, detail="Facture introuvable")
+    pdf = build_paid_invoice_pdf(need)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=facture-{need['reference']}.pdf"})
+
+
 @purchase_needs_router.get("/public/purchase-needs/accept-offer/{reference}")
 async def accept_vendor_offer(reference: str, participant: str | None = None):
     """Acceptation en ligne de l'offre vendeur → redirection vers l'adhésion pro."""
