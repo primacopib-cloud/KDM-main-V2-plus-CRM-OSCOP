@@ -94,6 +94,21 @@ export const ApiSubscribeCard = () => {
           Référence <b className="text-white/90">{sub.reference}</b> · payé le {frDate(sub.paid_at)} · valide
           jusqu'au <b className="text-white/90">{frDate(sub.valid_until)}</b> · {Number(sub.amount_eur).toLocaleString('fr-FR')} € / an
         </p>
+        {sub.usage && (
+          <div className="mb-4 rounded-xl border border-white/15 bg-black/20 p-4" data-testid="api-sub-usage">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-xs font-bold uppercase tracking-wide text-white/50 m-0">Consommation du mois</p>
+              <p className="text-xs text-white/80 font-semibold m-0" data-testid="api-sub-usage-count">
+                {Number(sub.usage.month_usage).toLocaleString('fr-FR')} / {Number(sub.usage.monthly_quota).toLocaleString('fr-FR')} requêtes
+              </p>
+            </div>
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-[#8CC63E] to-[#D9B35A]"
+                style={{ width: `${Math.min(100, Math.max(sub.usage.month_usage > 0 ? 2 : 0, (sub.usage.month_usage / sub.usage.monthly_quota) * 100))}%` }} />
+            </div>
+            <p className="text-[10px] text-white/35 m-0 mt-1">{Number(sub.usage.requests_count).toLocaleString('fr-FR')} requêtes depuis l'activation</p>
+          </div>
+        )}
         <div className="rounded-xl border border-white/15 bg-black/30 p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-white/50 mb-2 flex items-center gap-1.5">
             <KeyRound className="w-3.5 h-3.5 text-[#D9B35A]" /> Votre clé API (header X-API-Key)
@@ -112,10 +127,20 @@ export const ApiSubscribeCard = () => {
             </button>
           </div>
         </div>
-        <button type="button" onClick={downloadInvoice} data-testid="api-sub-invoice-btn"
-          className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white border border-white/25 hover:bg-white/5">
-          <Download className="w-4 h-4" /> Télécharger ma facture acquittée
-        </button>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button type="button" onClick={downloadInvoice} data-testid="api-sub-invoice-btn"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white border border-white/25 hover:bg-white/5">
+            <Download className="w-4 h-4" /> Télécharger ma facture acquittée
+          </button>
+          {sub.renewable && (
+            <button type="button" onClick={subscribe} disabled={loading} data-testid="api-sub-renew-btn"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[#2a0c4a] disabled:opacity-60"
+              style={{ background: 'linear-gradient(135deg, #F5A623 0%, #D9B35A 100%)' }}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Renouveler — 2 500 € (échéance le {frDate(sub.valid_until)})
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -126,7 +151,8 @@ export const ApiSubscribeCard = () => {
       data-testid="api-subscription-cta">
       <h2 className="font-display text-2xl mb-2 text-[#E9CF8E]">Abonnement annuel — 2 500 € / an</h2>
       <p className="text-white/70 text-sm max-w-xl mx-auto mb-4">
-        Réservé aux membres connectés. Dès le paiement confirmé, votre <b>clé API est générée automatiquement</b>,
+        Réservé <b>exclusivement aux relais LOLODRIVE</b> (gérants de LOLO POINT) pour la gestion de leur
+        catalogue. Dès le paiement confirmé, votre <b>clé API est générée automatiquement</b>,
         envoyée par email avec votre <b>facture acquittée O'SCOP</b>, et reste consultable ici à tout moment.
       </p>
       <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/75 mb-6 list-none p-0">
