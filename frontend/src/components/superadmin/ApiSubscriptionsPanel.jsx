@@ -242,6 +242,7 @@ export const ApiSubscriptionsPanel = () => {
                   {h.ok ? '✓' : '✗'} {h.status_code || 'ERR'}
                 </span>
                 <code className="text-white/80">{h.event}</code>
+                {h.attempt > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-400/15 text-sky-300 font-bold">auto ×{h.attempt}</span>}
                 <span className="text-white/45">{h.email}</span>
                 {h.error && <span className="text-red-300/80 truncate max-w-[200px]" title={h.error}>{h.error}</span>}
                 {!h.ok && (

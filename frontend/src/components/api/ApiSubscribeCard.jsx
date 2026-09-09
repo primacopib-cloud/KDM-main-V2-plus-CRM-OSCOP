@@ -7,18 +7,27 @@ import { getAuthHeaders, getSessionToken } from '../../services/http';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const frDate = (iso) => { try { return new Date(iso).toLocaleDateString('fr-FR'); } catch { return iso; } };
 
+const EVENT_CHOICES = [
+  ['paid', 'Payée'], ['preparing', 'En préparation'], ['ready', 'Prête'], ['fulfilled', 'Retirée'],
+];
+
 const WebhookSandbox = ({ sub, onSaved }) => {
   const [url, setUrl] = useState(sub.webhook_url || '');
+  const [events, setEvents] = useState(sub.webhook_events || ['paid', 'preparing', 'ready', 'fulfilled']);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const dirty = url !== (sub.webhook_url || '');
+  const dirty = url !== (sub.webhook_url || '')
+    || JSON.stringify([...events].sort()) !== JSON.stringify([...(sub.webhook_events || ['paid', 'preparing', 'ready', 'fulfilled'])].sort());
+
+  const toggleEvent = (e) => setEvents((prev) => (prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]));
 
   const save = async () => {
+    if (!events.length) return toast.error('Sélectionnez au moins un événement');
     setSaving(true);
     try {
       const r = await fetch(`${API}/api-subscription/me/webhook`, {
         method: 'PUT', headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify({ webhook_url: url }),
+        credentials: 'include', body: JSON.stringify({ webhook_url: url, events }),
       });
       const d = await r.json();
       if (!r.ok) toast.error(d.detail || 'Enregistrement impossible');
@@ -68,6 +77,18 @@ const WebhookSandbox = ({ sub, onSaved }) => {
             {testing ? 'Test en cours…' : 'Tester mon webhook'}
           </button>
         )}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 mt-2.5">
+        <span className="text-[10px] uppercase tracking-wide text-white/40 font-bold">Événements :</span>
+        {EVENT_CHOICES.map(([key, label]) => (
+          <button key={key} type="button" onClick={() => toggleEvent(key)} data-testid={`api-webhook-event-${key}`}
+            aria-pressed={events.includes(key)}
+            className={`px-2.5 py-1 rounded-full text-[11px] border transition-colors ${events.includes(key)
+              ? 'bg-[#8CC63E]/15 border-[#8CC63E]/50 text-[#B6E27A] font-bold'
+              : 'bg-white/[0.04] border-white/15 text-white/45 hover:text-white/75'}`}>
+            {events.includes(key) ? '✓ ' : ''}{label}
+          </button>
+        ))}
       </div>
     </div>
   );

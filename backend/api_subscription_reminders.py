@@ -71,6 +71,64 @@ async def send_quota_alert(db, key: dict, usage: int, quota: int) -> None:
         logger.warning("Alerte quota API : %s", exc)
 
 
+async def run_api_weekly_reports(db, force: bool = False) -> int:
+    """Résumé hebdomadaire (lundi) : commandes du relais + activité API de la semaine écoulée (idempotent)."""
+    now = datetime.now(timezone.utc)
+    if now.weekday() != 0 and not force:
+        return 0
+    week_key = now.strftime("%G-W%V")
+    since = (now - timedelta(days=7)).isoformat()
+    sent = 0
+    cursor = db.api_subscriptions.find({
+        "status": "ACTIVE", "api_key_id": {"$exists": True},
+        "weekly_report_week": {"$ne": week_key},
+    })
+    async for sub in cursor:
+        try:
+            user = await db.users.find_one({"id": sub["user_id"]}, {"_id": 0, "id": 1})
+            point = await db.lolodrive_points.find_one(
+                {"manager_user_id": (user or {}).get("id")}, {"_id": 0, "id": 1, "name": 1})
+            orders, total_cents, by_status = [], 0, {}
+            if point:
+                orders = await db.lolodrive_orders.find(
+                    {"lolo_point_id": point["id"], "created_at": {"$gte": datetime.fromisoformat(since)}},
+                    {"_id": 0, "status": 1, "total_cents": 1}).to_list(1000)
+                total_cents = sum(int(o.get("total_cents") or 0) for o in orders)
+                for o in orders:
+                    by_status[o.get("status") or "?"] = by_status.get(o.get("status") or "?", 0) + 1
+            api_calls = await db.api_call_logs.count_documents({"key_id": sub["api_key_id"], "ts": {"$gte": since}})
+            hooks_ok = await db.webhook_deliveries.count_documents(
+                {"key_id": sub["api_key_id"], "ts": {"$gte": since}, "ok": True})
+            hooks_ko = await db.webhook_deliveries.count_documents(
+                {"key_id": sub["api_key_id"], "ts": {"$gte": since}, "ok": False})
+            from brevo_service import send_email, _wrap_html
+            base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+            statuses = " · ".join(f"{k} : {v}" for k, v in sorted(by_status.items())) or "aucune"
+            await send_email(
+                to_email=sub["email"], to_name=sub.get("contact_name"),
+                subject=f"📊 Votre semaine API — {len(orders)} commande(s) sur votre relais{' ' + point['name'] if point else ''}",
+                html_content=_wrap_html("Résumé hebdomadaire — API coopérative", (
+                    f"<p style='font-size:14px;'>Bonjour {sub.get('contact_name') or ''},</p>"
+                    f"<p style='font-size:14px;'>Voici l'activité de la semaine écoulée pour votre abonnement "
+                    f"<b>{sub['reference']}</b>{' — relais <b>' + point['name'] + '</b>' if point else ''} :</p>"
+                    "<ul style='font-size:14px;'>"
+                    f"<li><b>{len(orders)}</b> commande(s) LOLODRIVE ({total_cents / 100:.2f} €) — {statuses}</li>"
+                    f"<li><b>{api_calls}</b> appel(s) API effectué(s)</li>"
+                    f"<li><b>{hooks_ok}</b> webhook(s) livré(s)" + (f" · <b style='color:#c0392b;'>{hooks_ko} en échec</b>" if hooks_ko else "") + "</li>"
+                    "</ul>"
+                    f"<p style='text-align:center;'><a href='{base}/coop-api' "
+                    "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
+                    "padding:12px 26px;border-radius:12px;text-decoration:none;'>Voir mon espace API</a></p>")),
+                tags=["api-weekly-report"])
+            await db.api_subscriptions.update_one({"id": sub["id"]}, {"$set": {"weekly_report_week": week_key}})
+            sent += 1
+        except Exception as exc:
+            logger.warning("Résumé hebdo API %s : %s", sub.get("reference"), exc)
+    if sent:
+        logger.info("Résumés hebdo API envoyés : %s", sent)
+    return sent
+
+
 async def run_api_subscription_expirations(db) -> int:
     """Désactive la clé API des abonnements arrivés à expiration sans renouvellement (idempotent)."""
     now = datetime.now(timezone.utc).isoformat()
