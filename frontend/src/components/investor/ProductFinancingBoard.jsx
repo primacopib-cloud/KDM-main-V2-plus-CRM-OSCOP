@@ -5,6 +5,7 @@ import { getAuthHeaders, getSessionToken } from '../../services/http';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
+const frDate = (iso) => { try { return new Date(iso).toLocaleDateString('fr-FR'); } catch { return iso; } };
 const TRACK_STEPS = [['CONFIRMEE', 'Confirmée'], ['PREPARATION', 'Préparation'], ['EXPEDITION', 'Expédiée'], ['TRANSIT', 'En transit'], ['LIVREE', 'Livrée']];
 
 const TrackingStepper = ({ fp }) => {
@@ -27,6 +28,18 @@ const TrackingStepper = ({ fp }) => {
         ))}
       </div>
       {idx < 0 && <p className="text-[10px] text-white/35 m-0 mt-1">En attente de prise en charge par la Centrale.</p>}
+      {fp.eta_delivery && (
+        <p className="text-[10px] text-[#E9CF8E] font-semibold m-0 mt-1" data-testid={`fin-eta-${fp.reference}`}>
+          📅 Livraison estimée : {frDate(fp.eta_delivery)}
+        </p>
+      )}
+      {fp.delivery_proof && (
+        <a href={fp.delivery_proof.startsWith('http') ? fp.delivery_proof : `${API_URL}${fp.delivery_proof}`}
+          target="_blank" rel="noreferrer" data-testid={`fin-proof-link-${fp.reference}`}
+          className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-sky-300 hover:text-sky-200 underline underline-offset-2">
+          📎 Voir la preuve de livraison
+        </a>
+      )}
       {fp.tracking_status === 'LIVREE' && <p className="text-[10px] text-[#8CC63E] font-bold m-0 mt-1" data-testid={`fin-delivered-${fp.reference}`}>🎉 Livraison effectuée</p>}
     </div>
   );

@@ -85,16 +85,35 @@ export const FinancingProductsPanel = () => {
     } catch (err) { toast.error(err.message); }
   };
 
-  const updateTracking = async (fp, step) => {
-    if (!step) return;
+  const updateTracking = async (fp, payload) => {
+    if (!payload.step && !payload.eta_delivery) return;
     try {
       const res = await fetch(`${API_URL}/api/admin/financing-products/${fp.id}/tracking`, {
         method: 'PUT', credentials: 'include', headers,
-        body: JSON.stringify({ step }),
+        body: JSON.stringify(payload),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || 'Erreur');
-      toast.success(`Suivi mis à jour — ${TRACK_STEPS.find(([k]) => k === step)?.[1]} (investisseur notifié)`);
+      toast.success(payload.eta_delivery
+        ? 'Date de livraison estimée annoncée (investisseur notifié)'
+        : `Suivi mis à jour — ${TRACK_STEPS.find(([k]) => k === payload.step)?.[1]} (investisseur notifié)`);
+      load();
+    } catch (err) { toast.error(err.message); }
+  };
+
+  const uploadProof = async (fp, file) => {
+    if (!file) return;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`${API_URL}/api/admin/financing-products/${fp.id}/delivery-proof`, {
+        method: 'POST', credentials: 'include',
+        headers: getAuthHeaders(),
+        body: fd,
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      toast.success('Preuve de livraison jointe — visible par l\'investisseur');
       load();
     } catch (err) { toast.error(err.message); }
   };
@@ -245,16 +264,27 @@ export const FinancingProductsPanel = () => {
                     <span className="text-white/45">payé par {fp.paid_by} le {String(fp.paid_at || '').slice(0, 10)}</span>
                   )}
                   {fp.status === 'PAID' && (
-                    <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1.5 flex-wrap">
                       <span className="text-white/40">🚚</span>
                       <select value={fp.tracking_status || ''} data-testid={`fin-tracking-select-${fp.reference}`}
-                        onChange={(e) => updateTracking(fp, e.target.value)}
+                        onChange={(e) => updateTracking(fp, { step: e.target.value })}
                         className="h-7 px-1.5 rounded-md bg-white/[0.08] border border-white/20 text-white text-[10px]">
                         <option value="" disabled className="bg-[#1F0A33]">Suivi logistique…</option>
                         {TRACK_STEPS.map(([k, l]) => (
                           <option key={k} value={k} className="bg-[#1F0A33]">{l}</option>
                         ))}
                       </select>
+                      <input type="date" defaultValue={fp.eta_delivery || ''} data-testid={`fin-eta-input-${fp.reference}`}
+                        title="Date de livraison estimée (annoncée à l'investisseur)"
+                        onChange={(e) => e.target.value && updateTracking(fp, { eta_delivery: e.target.value })}
+                        className="h-7 px-1.5 rounded-md bg-white/[0.08] border border-white/20 text-white text-[10px] [color-scheme:dark]" />
+                      <label title="Joindre une preuve de livraison (photo ou bon signé PDF)"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold text-[10px] cursor-pointer text-sky-300 bg-sky-500/10 border border-sky-400/40 hover:bg-sky-500/20">
+                        📎 {fp.delivery_proof ? 'Preuve ✓' : 'Preuve'}
+                        <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf" className="hidden"
+                          data-testid={`fin-proof-input-${fp.reference}`}
+                          onChange={(e) => { uploadProof(fp, e.target.files?.[0]); e.target.value = ''; }} />
+                      </label>
                     </span>
                   )}
                   <span className="ml-auto flex gap-1.5">
