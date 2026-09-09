@@ -6,7 +6,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from lolodrive_helpers import require_admin
@@ -182,38 +182,57 @@ TRACKING_LABELS = {"CONFIRMEE": "Commande confirmée", "PREPARATION": "Préparat
 
 
 class TrackingUpdate(BaseModel):
-    step: str
+    step: str | None = None
+    eta_delivery: str | None = None
 
 
 @financing_router.put("/admin/financing-products/{fp_id}/tracking")
 async def update_financing_tracking(fp_id: str, body: TrackingUpdate, admin: dict = Depends(require_admin)):
-    """Le superadmin met à jour l'étape logistique d'un financement payé (suivi investisseur)."""
-    step = (body.step or "").upper()
-    if step not in TRACKING_STEPS:
+    """Étape logistique et/ou date de livraison estimée d'un financement payé (suivi investisseur)."""
+    step = (body.step or "").upper() or None
+    if step is not None and step not in TRACKING_STEPS:
         raise HTTPException(status_code=400, detail=f"Étape invalide. Choix : {', '.join(TRACKING_STEPS)}")
+    eta = None
+    if body.eta_delivery:
+        try:
+            eta = datetime.strptime(body.eta_delivery.strip(), "%Y-%m-%d").strftime("%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Date de livraison estimée au format AAAA-MM-JJ") from None
+    if not step and not eta:
+        raise HTTPException(status_code=400, detail="Étape ou date de livraison estimée requise")
     fp = await db.financing_products.find_one({"id": fp_id})
     if not fp:
         raise HTTPException(status_code=404, detail="Financement introuvable")
     if fp.get("status") != "PAID":
         raise HTTPException(status_code=409, detail="Le suivi n'est disponible qu'après paiement")
-    await db.financing_products.update_one({"id": fp_id}, {
-        "$set": {"tracking_status": step, "tracking_updated_at": _now(), "tracking_updated_by": admin.get("email")},
-        "$push": {"tracking_history": {"step": step, "label": TRACKING_LABELS[step], "at": _now()}}})
+    updates = {"tracking_updated_at": _now(), "tracking_updated_by": admin.get("email")}
+    if step:
+        updates["tracking_status"] = step
+    if eta:
+        updates["eta_delivery"] = eta
+    op = {"$set": updates}
+    if step:
+        op["$push"] = {"tracking_history": {"step": step, "label": TRACKING_LABELS[step], "at": _now()}}
+    await db.financing_products.update_one({"id": fp_id}, op)
     if fp.get("paid_by"):
         try:
             from brevo_service import send_email, _wrap_html
             base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
-            done = TRACKING_STEPS.index(step) + 1
+            cur_step = step or fp.get("tracking_status") or "CONFIRMEE"
+            done = TRACKING_STEPS.index(cur_step) + 1
             bar = " → ".join(("<b style='color:#4c8a2f;'>" + TRACKING_LABELS[s] + "</b>") if i < done else TRACKING_LABELS[s]
                              for i, s in enumerate(TRACKING_STEPS))
+            eta_line = (f"<p style='font-size:14px;'>📅 Livraison estimée : <b>{eta[8:10]}/{eta[5:7]}/{eta[:4]}</b></p>" if eta else "")
+            subject_step = TRACKING_LABELS[cur_step]
             await send_email(
                 to_email=fp["paid_by"], to_name=None,
-                subject=f"🚚 Suivi de votre financement {fp['reference']} — {TRACKING_LABELS[step]}",
+                subject=f"🚚 Suivi de votre financement {fp['reference']} — {subject_step}" + (" · date de livraison annoncée" if eta else ""),
                 html_content=_wrap_html("Suivi logistique", (
                     f"<p style='font-size:14px;'>Votre financement <b>{fp['reference']} — {fp['name']}</b> "
-                    f"passe à l'étape : <b style='font-size:16px;'>{TRACKING_LABELS[step]}</b>"
-                    f"{' 🎉 Livraison effectuée !' if step == 'LIVREE' else ''}</p>"
-                    f"<p style='font-size:12px;color:#666;'>{bar}</p>"
+                    f"passe à l'étape : <b style='font-size:16px;'>{subject_step}</b>"
+                    f"{' 🎉 Livraison effectuée !' if cur_step == 'LIVREE' else ''}</p>"
+                    + eta_line
+                    + f"<p style='font-size:12px;color:#666;'>{bar}</p>"
                     f"<p style='text-align:center;'><a href='{base}/espace-investisseur' "
                     "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
                     "padding:12px 26px;border-radius:12px;text-decoration:none;'>Suivre dans mon espace</a></p>")),
@@ -221,6 +240,27 @@ async def update_financing_tracking(fp_id: str, body: TrackingUpdate, admin: dic
         except Exception as exc:
             logger.warning("Email suivi financement : %s", exc)
     return await db.financing_products.find_one({"id": fp_id}, {"_id": 0, "stripe_session_id": 0})
+
+
+@financing_router.post("/admin/financing-products/{fp_id}/delivery-proof")
+async def upload_delivery_proof(fp_id: str, file: UploadFile = File(...), admin: dict = Depends(require_admin)):
+    """Preuve de livraison (photo ou bon signé PDF) jointe à un financement payé."""
+    fp = await db.financing_products.find_one({"id": fp_id})
+    if not fp:
+        raise HTTPException(status_code=404, detail="Financement introuvable")
+    if fp.get("status") != "PAID":
+        raise HTTPException(status_code=409, detail="Preuve de livraison possible uniquement après paiement")
+    allowed = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "application/pdf": "pdf"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Format accepté : PNG, JPG, WEBP ou PDF")
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Fichier trop lourd (max 5 Mo)")
+    from upload_storage import save_upload
+    url = await save_upload(f"financing/proof-{uuid.uuid4().hex[:10]}.{allowed[file.content_type]}", content, file.content_type)
+    await db.financing_products.update_one({"id": fp_id}, {"$set": {
+        "delivery_proof": url, "delivery_proof_at": _now(), "delivery_proof_by": admin.get("email")}})
+    return {"ok": True, "url": url}
 
 
 @financing_router.get("/admin/financing-products/stats")
