@@ -218,7 +218,7 @@ async def my_api_subscription(user: dict = Depends(_member)):
     if sub.get("api_key_id"):
         key = await db.api_keys.find_one({"id": sub["api_key_id"]},
                                          {"_id": 0, "month_usage": 1, "monthly_quota": 1, "usage_month": 1,
-                                          "requests_count": 1, "webhook_url": 1})
+                                          "requests_count": 1, "webhook_url": 1, "webhook_events": 1})
         if key:
             current_month = datetime.now(timezone.utc).strftime("%Y-%m")
             sub["usage"] = {
@@ -227,11 +227,16 @@ async def my_api_subscription(user: dict = Depends(_member)):
                 "requests_count": key.get("requests_count", 0),
             }
             sub["webhook_url"] = key.get("webhook_url") or ""
+            sub["webhook_events"] = key.get("webhook_events") or ["paid", "preparing", "ready", "fulfilled"]
     return {"subscription": sub, "is_relay": is_relay}
+
+
+VALID_WEBHOOK_EVENTS = ["paid", "preparing", "ready", "fulfilled"]
 
 
 class WebhookUrlBody(BaseModel):
     webhook_url: str
+    events: list[str] | None = None
 
 
 async def _my_active_sub(user: dict) -> dict:
@@ -252,10 +257,15 @@ async def set_my_webhook(body: WebhookUrlBody, user: dict = Depends(_member)):
     import secrets as _s
     key = await db.api_keys.find_one({"id": sub["api_key_id"]}, {"_id": 0, "webhook_secret": 1})
     upd = {"webhook_url": url}
+    if body.events is not None:
+        events = [e for e in body.events if e in VALID_WEBHOOK_EVENTS]
+        if not events:
+            raise HTTPException(status_code=400, detail="Sélectionnez au moins un événement")
+        upd["webhook_events"] = events
     if key is not None and not key.get("webhook_secret"):
         upd["webhook_secret"] = f"whsec_{_s.token_hex(16)}"
     await db.api_keys.update_one({"id": sub["api_key_id"]}, {"$set": upd})
-    return {"ok": True, "webhook_url": url}
+    return {"ok": True, "webhook_url": url, "events": upd.get("webhook_events")}
 
 
 @api_sub_router.post("/api-subscription/me/webhook/test")
@@ -373,7 +383,7 @@ async def api_subscription_webhook_deliveries(limit: int = 50, _: dict = Depends
         "delivery_id": str(d["_id"]),
         "email": by_key[d["key_id"]]["email"], "reference": by_key[d["key_id"]]["reference"],
         "event": d.get("event"), "order_id": d.get("order_id"), "url": d.get("url"),
-        "status_code": d.get("status_code"), "ok": d.get("ok", False),
+        "status_code": d.get("status_code"), "ok": d.get("ok", False), "attempt": d.get("attempt", 0),
         "error": d.get("error"), "ts": d.get("ts"),
     } for d in logs]}
 

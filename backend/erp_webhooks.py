@@ -43,6 +43,11 @@ async def dispatch_order_event(order_id: str, event: str, extra: dict = None) ->
         logger.error("Webhook dispatch %s/%s échoué : %s", event, order_id, exc)
 
 
+EVENT_LABELS = {"paid": "lolodrive.order.paid"}
+STATUS_EVENT_KEYS = {"PREPARING": "preparing", "READY": "ready", "FULFILLED": "fulfilled"}
+RETRY_DELAYS = [300, 900]
+
+
 async def dispatch_lolodrive_order_event(order_id: str, event: str = "lolodrive.order.paid", extra: dict = None) -> None:
     """Notifie le relais LOLODRIVE (abonné API avec webhook) d'une commande / changement de statut sur son point."""
     try:
@@ -64,9 +69,18 @@ async def dispatch_lolodrive_order_event(order_id: str, event: str = "lolodrive.
         key = await db.api_keys.find_one({
             "id": sub["api_key_id"], "is_active": True,
             "webhook_url": {"$exists": True, "$nin": ["", None]},
-        }, {"_id": 0, "id": 1, "name": 1, "webhook_url": 1, "webhook_secret": 1})
+        }, {"_id": 0, "id": 1, "name": 1, "webhook_url": 1, "webhook_secret": 1, "webhook_events": 1})
         if not key:
             return
+        # Filtre des événements choisis par le relais (défaut : tous)
+        wanted = key.get("webhook_events")
+        if isinstance(wanted, list):
+            if event == "lolodrive.order.paid":
+                label = "paid"
+            else:
+                label = STATUS_EVENT_KEYS.get(((extra or {}).get("status") or "").upper())
+            if label and label not in wanted:
+                return
         payload = {"event": event, "ts": datetime.now(timezone.utc).isoformat(), "order": order,
                    "data": {"lolo_point": {"id": point["id"], "name": point.get("name")}}}
         if extra:
@@ -105,7 +119,7 @@ async def send_test_event(key: dict) -> dict:
     return {"ok": ok, "status_code": status_code, "error": error}
 
 
-async def _deliver(key: dict, event: str, order_id: str, body: str) -> None:
+async def _deliver(key: dict, event: str, order_id: str, body: str, attempt: int = 0) -> None:
     headers = {"Content-Type": "application/json", "X-KDM-Event": event}
     if key.get("webhook_secret"):
         sig = hmac.new(key["webhook_secret"].encode(), body.encode(), hashlib.sha256).hexdigest()
@@ -117,12 +131,26 @@ async def _deliver(key: dict, event: str, order_id: str, body: str) -> None:
             status_code = resp.status_code
     except Exception as exc:
         error = str(exc)[:200]
+    ok = bool(status_code and status_code < 300)
     await db.webhook_deliveries.insert_one({
         "key_id": key["id"], "key_name": key.get("name"), "event": event, "order_id": order_id,
-        "url": key["webhook_url"], "status_code": status_code, "ok": bool(status_code and status_code < 300),
-        "error": error, "ts": datetime.now(timezone.utc).isoformat(),
+        "url": key["webhook_url"], "status_code": status_code, "ok": ok,
+        "attempt": attempt, "error": error, "ts": datetime.now(timezone.utc).isoformat(),
     })
-    if error or (status_code and status_code >= 300):
-        logger.warning("Webhook %s → %s : %s %s", key.get("name"), key["webhook_url"], status_code, error or "")
+    if not ok:
+        logger.warning("Webhook %s → %s : %s %s (tentative %s)", key.get("name"), key["webhook_url"], status_code, error or "", attempt)
+        if attempt < len(RETRY_DELAYS) and event != "webhook.test":
+            asyncio.get_event_loop().create_task(_retry_later(key, event, order_id, body, attempt + 1))
     else:
-        logger.info("Webhook %s notifié (%s, commande %s)", key.get("name"), event, order_id)
+        logger.info("Webhook %s notifié (%s, commande %s, tentative %s)", key.get("name"), event, order_id, attempt)
+
+
+async def _retry_later(key: dict, event: str, order_id: str, body: str, attempt: int, delay: int = None) -> None:
+    """Relance automatique différée d'une livraison échouée (2 tentatives : +5 min puis +15 min)."""
+    await asyncio.sleep(delay if delay is not None else RETRY_DELAYS[attempt - 1])
+    fresh = await db.api_keys.find_one({"id": key["id"], "is_active": True},
+                                       {"_id": 0, "id": 1, "name": 1, "webhook_url": 1, "webhook_secret": 1})
+    if not fresh or not fresh.get("webhook_url"):
+        return
+    logger.info("Relance auto webhook %s (tentative %s, commande %s)", fresh.get("name"), attempt, order_id)
+    await _deliver(fresh, event, order_id, body, attempt=attempt)
