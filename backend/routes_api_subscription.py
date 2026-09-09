@@ -315,6 +315,26 @@ async def api_subscription_stats(_: dict = Depends(require_admin)):
     return {"daily": days, "total_30d": sum(x["count"] for x in days), "top_endpoints": top_endpoints}
 
 
+@api_sub_router.get("/admin/api-subscriptions/webhook-deliveries")
+async def api_subscription_webhook_deliveries(limit: int = 50, _: dict = Depends(require_admin)):
+    """Dernières livraisons webhook des relais abonnés (succès/échec) — diagnostic intégration."""
+    limit = max(1, min(limit, 200))
+    subs = await db.api_subscriptions.find(
+        {"api_key_id": {"$exists": True}},
+        {"_id": 0, "api_key_id": 1, "email": 1, "reference": 1}).to_list(500)
+    by_key = {s["api_key_id"]: s for s in subs}
+    if not by_key:
+        return {"deliveries": []}
+    logs = await db.webhook_deliveries.find(
+        {"key_id": {"$in": list(by_key)}}, {"_id": 0}).sort("ts", -1).to_list(limit)
+    return {"deliveries": [{
+        "email": by_key[d["key_id"]]["email"], "reference": by_key[d["key_id"]]["reference"],
+        "event": d.get("event"), "order_id": d.get("order_id"), "url": d.get("url"),
+        "status_code": d.get("status_code"), "ok": d.get("ok", False),
+        "error": d.get("error"), "ts": d.get("ts"),
+    } for d in logs]}
+
+
 @api_sub_router.get("/admin/api-subscriptions/export")
 async def export_api_subscriptions_csv(_: dict = Depends(require_admin)):
     """Export CSV comptabilité du registre des abonnements API."""

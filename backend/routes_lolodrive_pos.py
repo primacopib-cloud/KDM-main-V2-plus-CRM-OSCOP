@@ -166,6 +166,12 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
         except Exception as exc:
             logger.warning(f"Remboursement pénalité {order_id}: {exc}")
     await _broadcast_pos_event("order.status_changed", {"order_id": order_id, "status": request.status.value})
+    try:
+        from erp_webhooks import dispatch_lolodrive_order_event
+        await dispatch_lolodrive_order_event(
+            order_id, event="lolodrive.order.status", extra={"status": request.status.value})
+    except Exception:
+        pass
     # Brevo email+SMS notification on READY (best-effort)
     if request.status == OrderStatus.READY:
         try:
