@@ -48,7 +48,7 @@ const blocks = [
   },
   {
     icon: Ticket,
-    title: "CREDI'SCOP-INVEST",
+    title: "CREDI'SCOP",
     text: "Compteur d'unités de services internes : unités allouées, consommées et expirées. Aucune valeur en euros, non convertibles, non transférables, jamais un moyen de paiement des produits ou des fournisseurs.",
   },
   {
@@ -77,7 +77,7 @@ export default function InvestorSpacePage() {
           <MessagesNavLink withLabel />
         </div>
         <p className="text-white/70 max-w-[70ch] mb-8">
-          L'espace investisseur O'SCOP sépare strictement l'abonnement, le compteur CREDI'SCOP-INVEST, les
+          L'espace investisseur O'SCOP sépare strictement l'abonnement, le compteur CREDI'SCOP, les
           investissements réels et le financement logistique LOGI'SCOP.
         </p>
         <InvestorLiveDashboard />
@@ -100,7 +100,7 @@ export default function InvestorSpacePage() {
         <div className="rounded-[18px] p-4 border border-amber-400/30 bg-amber-500/10 flex gap-3" data-testid="crediscop-legal-notice">
           <ShieldAlert className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
           <p className="text-amber-100/90 text-sm">
-            Les CREDI'SCOP-INVEST sont des unités internes de services. Ils ne constituent ni un solde financier,
+            Les CREDI'SCOP sont des unités internes de services. Ils ne constituent ni un solde financier,
             ni le montant investi, ni un moyen de paiement du fournisseur. Chaque investissement réel fait
             l'objet d'un Bon d'Engagement et d'un paiement distinct en monnaie ayant cours légal.
           </p>

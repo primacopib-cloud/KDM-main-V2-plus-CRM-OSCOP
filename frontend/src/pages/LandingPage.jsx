@@ -63,7 +63,7 @@ const LandingPage = () => {
       {/* Catalogue professionnel — quatre familles */}
       <Reveal variant="left"><ProCatalogFamilies /></Reveal>
 
-      {/* Financement — quatre compartiments + CREDI'SCOP-INVEST */}
+      {/* Financement — quatre compartiments + CREDI'SCOP */}
       <Reveal><FinancingCompartments /></Reveal>
 
       {/* Ticker d'activité en direct */}

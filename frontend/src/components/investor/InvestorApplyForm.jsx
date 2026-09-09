@@ -121,7 +121,7 @@ export const InvestorApplyForm = () => {
             className={`text-left rounded-2xl p-4 border transition-colors ${form.plan_id === p.id ? 'border-[#D9B35A] bg-[#D9B35A]/10' : 'border-white/10 bg-white/[0.03] hover:border-[#D9B35A]/40'}`}>
             <p className="text-[#D9B35A] font-bold text-sm m-0">{p.name}</p>
             <p className="text-white text-lg font-bold m-0">{fmtEur(p.price_eur)} <span className="text-white/40 text-xs font-normal">/ mois</span></p>
-            <p className="text-[11px] text-[#8CC63E] m-0 mt-1">CREDI'SCOP-INVEST : {p.monthly_invest_uc.toLocaleString('fr-FR')} uc de financement / mois</p>
+            <p className="text-[11px] text-[#8CC63E] m-0 mt-1">CREDI'SCOP : {p.monthly_invest_uc.toLocaleString('fr-FR')} uc de financement / mois</p>
             <p className="text-[11px] text-white/55 m-0 mt-1.5">{p.description}</p>
             {form.plan_id === p.id && <CheckCircle2 className="w-4 h-4 text-[#D9B35A] mt-2" />}
           </button>
@@ -129,7 +129,7 @@ export const InvestorApplyForm = () => {
       </div>
 
       <div className="rounded-xl p-4 mb-4 bg-white/[0.03] border border-white/10" data-testid="crediscop-invest-explainer">
-        <p className="text-sm font-semibold text-[#E9CF8E] m-0 mb-1.5">Qu'est-ce que le Compteur d'unités de services CREDI'SCOP-INVEST ?</p>
+        <p className="text-sm font-semibold text-[#E9CF8E] m-0 mb-1.5">Qu'est-ce que le Compteur d'unités de services CREDI'SCOP ?</p>
         <p className="text-[12.5px] text-white/70 m-0 mb-2">
           C'est un compteur fermé d'unités de services internes coopératifs, sans valeur monétaire, non convertible et non transférable.
           Il n'est jamais un moyen de paiement des produits, de la logistique ou des fournisseurs. Il ouvre droit à :

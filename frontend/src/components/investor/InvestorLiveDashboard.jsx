@@ -57,7 +57,7 @@ export const InvestorLiveDashboard = () => {
           ))}
         </div>
         <div>
-          <p className="text-xs font-semibold text-white/70 uppercase mb-1.5">Compteur CREDI'SCOP-INVEST</p>
+          <p className="text-xs font-semibold text-white/70 uppercase mb-1.5">Compteur CREDI'SCOP</p>
           {!d.service_credits.account ? <p className="text-white/40 text-xs">Aucun compteur d'unités de services.</p> : (
             <>
               <p className="text-sm text-[#D9B35A] font-bold" data-testid="investor-credits">
