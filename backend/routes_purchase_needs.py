@@ -500,6 +500,49 @@ async def accept_vendor_offer(reference: str, participant: str | None = None):
     return RedirectResponse(url=f"{base}/tarifs?besoin={reference}")
 
 
+class BoardAcceptBody(BaseModel):
+    email: EmailStr
+
+
+@purchase_needs_router.post("/public/purchase-needs/{reference}/accept-offer")
+async def accept_offer_from_board(reference: str, body: BoardAcceptBody):
+    """Acceptation de l'offre COOPER'S/vendeur directement depuis la carte CommunityPlace."""
+    need = await db.purchase_needs.find_one({"reference": reference.upper().strip()})
+    if not need:
+        raise HTTPException(status_code=404, detail="Publication introuvable")
+    if need.get("status") not in ("VENDOR_ACCEPTED", "OFFER_ACCEPTED"):
+        raise HTTPException(status_code=409, detail="Aucune offre à accepter sur cette publication")
+    em = body.email.lower().strip()
+    is_owner = em == (need.get("email") or "").lower()
+    is_joiner = any((j.get("email") or "").lower() == em for j in (need.get("joiners") or []))
+    if not (is_owner or is_joiner):
+        raise HTTPException(status_code=403, detail="Cet email n'est ni le déposant ni un participant de cette publication")
+    if is_owner and need.get("status") == "VENDOR_ACCEPTED":
+        await db.purchase_needs.update_one({"id": need["id"]}, {"$set": {
+            "status": "OFFER_ACCEPTED", "offer_accepted_at": _now(), "offer_accepted_via": "board"}})
+    elif is_joiner and not any((a.get("email") or "").lower() == em for a in (need.get("participant_accepts") or [])):
+        await db.purchase_needs.update_one({"id": need["id"]}, {
+            "$push": {"participant_accepts": {"email": em, "accepted_at": _now(), "via": "board"}}})
+    try:
+        from brevo_service import send_email, _wrap_html
+        import os
+        team = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
+        who = "déposant" if is_owner else "participant"
+        await send_email(
+            to_email=team, to_name=None,
+            subject=f"🤝 Offre acceptée depuis le board — {need['reference']} ({who} {em})",
+            html_content=_wrap_html("Offre acceptée", (
+                f"<p style='font-size:14px;'>Le {who} <b>{em}</b> accepte l'offre "
+                f"({(need.get('vendor_price_eur') or 0):,.0f} €) sur <b>{need['reference']} — {need['product']}</b> "
+                "directement depuis la CommunityPlace.</p>").replace(",", " ")),
+            tags=["purchase-need"])
+    except Exception as exc:
+        logger.warning("Email acceptation board : %s", exc)
+    return {"ok": True, "role": "owner" if is_owner else "participant",
+            "status": "OFFER_ACCEPTED" if is_owner else need.get("status"),
+            "redirect": f"/tarifs?besoin={need['reference']}"}
+
+
 class AssignBody(BaseModel):
     vendor_email: EmailStr
 
