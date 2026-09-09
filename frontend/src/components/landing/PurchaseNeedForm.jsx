@@ -92,7 +92,7 @@ export const PurchaseNeedForm = ({ onClose, initialType = 'DEMANDE' }) => {
             className="ml-auto p-1.5 rounded-lg text-white/60 hover:bg-white/[0.08] transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="flex gap-1.5 mb-3" data-testid="listing-type-toggle">
-          {[['DEMANDE', "Besoin d'achat"], ['OFFRE', 'Offre produit']].map(([v, l]) => (
+          {[['DEMANDE', 'Demande produit'], ['OFFRE', 'Offre produit']].map(([v, l]) => (
             <button key={v} type="button" onClick={() => setListingType(v)} data-testid={`listing-type-${v}`}
               className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors ${listingType === v
                 ? 'bg-[#D9B35A]/25 border-[#D9B35A]/60 text-[#E9CF8E]'

@@ -15,9 +15,9 @@ PRODUCTS = [
     ('legumes', "fresh vegetables", "three small wicker baskets filled with colorful fresh vegetables (tomatoes, carrots, peppers) standing side by side on a bright supermarket produce shelf"),
     ('yaourts', "yogurts", "three glass jars of white yogurt with cream-colored lids grouped together on a refrigerated supermarket shelf"),
     ('pates', "pasta", "three transparent bags of penne pasta with small kraft labels standing side by side on a bright supermarket shelf"),
-    ('riz', "rice", "three transparent bags of long grain white rice with small kraft labels standing side by side on a bright supermarket shelf"),
+    ('riz', "rice", "three transparent bags of long grain white rice standing side by side on a bright supermarket shelf, each bag has a kraft label printed with a round golden sun logo above an elegant cursive brand name, the label is softly out of focus"),
     ('cereales', "breakfast cereals", "three identical kraft cereal boxes with a wheat icon standing side by side on a bright supermarket breakfast aisle shelf"),
-    ('huiles', "cooking oil", "three glass bottles of golden cooking oil with minimal kraft labels standing side by side on a bright supermarket shelf"),
+    ('huiles', "cooking oil", "three glass bottles of golden cooking oil standing side by side on a bright supermarket shelf, each bottle has a cream label printed with a green palm tree logo above an elegant serif brand name, the label is softly out of focus"),
     ('beurre', "butter", "three butter blocks wrapped in parchment-style paper with a small kraft band grouped together on a refrigerated dairy shelf"),
     ('lait', "milk", "three glass bottles of fresh milk with white caps standing side by side on a refrigerated supermarket dairy shelf"),
 ]

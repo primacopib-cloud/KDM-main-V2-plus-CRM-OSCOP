@@ -87,6 +87,26 @@ export default function CheckoutPage() {
   const [stripeSessionUrl, setStripeSessionUrl] = useState(null);
   const [codEligible, setCodEligible] = useState(false);
   const [rarCtx, setRarCtx] = useState(null);
+  const [cbOnly, setCbOnly] = useState(false);
+  const [cbVendors, setCbVendors] = useState([]);
+
+  useEffect(() => {
+    if (!cart?.items?.length) return;
+    const skus = cart.items.map((i) => i.product_sku).filter(Boolean).join(',');
+    fetch(`${API_URL}/api/v2/checkout/cb-only-context?skus=${encodeURIComponent(skus)}`,
+      { headers: { Authorization: `Bearer ${getSessionToken()}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.cb_only) {
+          setCbOnly(true);
+          setCbVendors(d.vendor_names || []);
+          setPaymentMethod('card');
+          setUseInstallment(false);
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart]);
 
   useEffect(() => {
     fetch(`${API_URL}/api/rar/checkout-context`, { headers: { Authorization: `Bearer ${getSessionToken()}` } })
@@ -465,7 +485,7 @@ export default function CheckoutPage() {
             <DeliveryStep currentStep={currentStep} cart={cart} zones={zones} selectedZone={selectedZone} setSelectedZone={setSelectedZone} deliveryOption={deliveryOption} setDeliveryOption={setDeliveryOption} transportContractAccepted={transportContractAccepted} setTransportContractAccepted={setTransportContractAccepted} />
             <PreparationStep currentStep={currentStep} user={user} products={products} selectedZone={selectedZone} handleTotalsChange={handleTotalsChange} handlePreparationChange={handlePreparationChange} />
             <SignatureStep currentStep={currentStep} signatureComplete={signatureComplete} signatureData={signatureData} setSignatureModalOpen={setSignatureModalOpen} />
-            <PaymentStep currentStep={currentStep} totals={totals} useInstallment={useInstallment} setUseInstallment={setUseInstallment} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} orderNotes={orderNotes} setOrderNotes={setOrderNotes} signatureComplete={signatureComplete} processingPayment={processingPayment} handlePayment={handlePayment} codEligible={codEligible} rarCtx={rarCtx} />
+            <PaymentStep currentStep={currentStep} totals={totals} useInstallment={useInstallment} setUseInstallment={setUseInstallment} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} orderNotes={orderNotes} setOrderNotes={setOrderNotes} signatureComplete={signatureComplete} processingPayment={processingPayment} handlePayment={handlePayment} codEligible={codEligible && !cbOnly} rarCtx={rarCtx} cbOnly={cbOnly} cbVendors={cbVendors} />
           </div>
 
           <OrderSummarySidebar currentStep={currentStep} totals={totals} signatureComplete={signatureComplete} submitting={submitting} setCurrentStep={setCurrentStep} handleSubmitOrder={handleSubmitOrder} nextStep={nextStep} cart={cart} />
