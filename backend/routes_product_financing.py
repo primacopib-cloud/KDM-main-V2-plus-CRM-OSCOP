@@ -84,7 +84,64 @@ async def create_financing_product(body: FinancingProductCreate, admin: dict = D
     }
     await db.financing_products.insert_one(dict(doc))
     doc.pop("_id", None)
+    # Alerte email à tous les investisseurs (nouveau produit au financement)
+    try:
+        from brevo_service import send_email, _wrap_html
+        base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+        investors = await db.users.find(
+            {"is_investor": True, "email": {"$exists": True}},
+            {"_id": 0, "email": 1, "contact_name": 1}).to_list(500)
+        for inv in investors:
+            try:
+                await send_email(
+                    to_email=inv["email"], to_name=inv.get("contact_name"),
+                    subject=f"💰 Nouveau produit au financement — {doc['name']} ({doc['reference']})",
+                    html_content=_wrap_html("Nouvelle opportunité de financement", (
+                        f"<p style='font-size:14px;'>Bonjour {inv.get('contact_name') or ''},</p>"
+                        f"<p style='font-size:14px;'>La Centrale O'SCOP vient d'inscrire un produit au financement :</p>"
+                        f"<p style='font-size:14px;'><b>{doc['reference']} — {doc['name']}</b><br/>"
+                        f"Prix de base HT : <b>{doc['base_price_eur']:,.2f} €</b> · Marge O'SCOP : <b>{doc['margin_percent']:,.2f} %</b><br/>"
+                        f"Total à régler : <b>{doc['total_price_eur']:,.2f} €</b></p>"
+                        f"<p style='text-align:center;'><a href='{base}/espace-investisseur' "
+                        "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
+                        "padding:12px 26px;border-radius:12px;text-decoration:none;'>Voir dans mon espace investisseur</a></p>"
+                        "<p style='font-size:12px;color:#888;'>Une fois payé, le produit est vendu et facturé par O'SCOP.</p>").replace(",", " ")),
+                    tags=["financing-alert"])
+            except Exception as e2:
+                logger.warning("Alerte financement %s : %s", inv.get("email"), e2)
+        doc["investors_notified"] = len(investors)
+    except Exception as exc:
+        logger.warning("Alerte nouveau financement : %s", exc)
     return doc
+
+
+@financing_router.get("/investor/financing-products/my")
+async def my_financed_products(user: dict = Depends(_investor)):
+    """Historique des produits financés par l'investisseur connecté (factures re-téléchargeables)."""
+    me = (user.get("email") or "").lower()
+    items = await db.financing_products.find(
+        {"status": "PAID", "paid_by": me},
+        {"_id": 0, "id": 1, "reference": 1, "name": 1, "base_price_eur": 1,
+         "margin_percent": 1, "total_price_eur": 1, "paid_at": 1},
+    ).sort("paid_at", -1).to_list(100)
+    return {"products": items, "total_eur": sum(float(i.get("total_price_eur") or 0) for i in items)}
+
+
+@financing_router.get("/investor/financing-products/{fp_id}/invoice.pdf")
+async def download_financing_invoice(fp_id: str, user: dict = Depends(_investor)):
+    """Re-téléchargement de la facture acquittée (propriétaire du financement ou admin)."""
+    fp = await db.financing_products.find_one({"id": fp_id, "status": "PAID"}, {"_id": 0})
+    if not fp:
+        raise HTTPException(status_code=404, detail="Facture introuvable")
+    me = (user.get("email") or "").lower()
+    is_admin = user.get("is_admin") or (user.get("role") or "").upper() in {"SUPER_ADMIN", "ADMIN"}
+    if (fp.get("paid_by") or "").lower() != me and not is_admin:
+        raise HTTPException(status_code=403, detail="Facture réservée à l'acheteur")
+    from fastapi.responses import Response
+    from communityplace_invoice import build_financing_invoice_pdf
+    pdf = build_financing_invoice_pdf(fp)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=facture-{fp['reference']}.pdf"})
 
 
 @financing_router.get("/admin/financing-products")
