@@ -100,29 +100,42 @@ async def _activate(sub_id: str):
     sub = await db.api_subscriptions.find_one({"id": sub_id})
     if not sub or sub.get("status") == "ACTIVE":
         return
-    raw_key = f"kdm_live_{secrets.token_hex(24)}"
+    # Renouvellement après expiration : réactive la clé existante du relais (déjà configurée dans son ERP)
+    raw_key, key_id, key_prefix = None, None, None
+    prev_exp = await db.api_subscriptions.find_one(
+        {"user_id": sub["user_id"], "status": "EXPIRED", "api_key_id": {"$exists": True}, "api_key": {"$exists": True}},
+        sort=[("valid_until", -1)])
+    if prev_exp:
+        res = await db.api_keys.update_one({"id": prev_exp["api_key_id"]}, {"$set": {"is_active": True}})
+        if res.matched_count:
+            raw_key, key_id, key_prefix = prev_exp["api_key"], prev_exp["api_key_id"], prev_exp.get("api_key_prefix")
+            logger.info("Clé API réactivée après renouvellement : %s (%s)", key_prefix, sub["email"])
+    if not raw_key:
+        raw_key = f"kdm_live_{secrets.token_hex(24)}"
     start = datetime.now(timezone.utc)
     prev = await db.api_subscriptions.find_one(
         {"user_id": sub["user_id"], "status": "ACTIVE", "id": {"$ne": sub_id}}, sort=[("valid_until", -1)])
     if prev and str(prev.get("valid_until") or "") > start.isoformat():
         start = datetime.fromisoformat(prev["valid_until"])
     valid_until = (start + timedelta(days=365)).isoformat()
-    key_doc = {
-        "id": str(uuid.uuid4()), "name": f"Abonnement API — {sub['email']}",
-        "prefix": raw_key[:16] + "…",
-        "key_hash": hashlib.sha256(raw_key.encode()).hexdigest(),
-        "scopes": API_KEY_SCOPES, "partner_email": sub["email"],
-        "monthly_quota": 100000, "month_usage": 0,
-        "usage_month": datetime.now(timezone.utc).strftime("%Y-%m"),
-        "webhook_url": "", "webhook_secret": f"whsec_{secrets.token_hex(16)}",
-        "is_active": True, "requests_count": 0, "last_used_at": None,
-        "created_by": "api-subscription", "subscription_id": sub_id,
-        "created_at": _now(),
-    }
-    await db.api_keys.insert_one(dict(key_doc))
+    if not key_id:
+        key_doc = {
+            "id": str(uuid.uuid4()), "name": f"Abonnement API — {sub['email']}",
+            "prefix": raw_key[:16] + "…",
+            "key_hash": hashlib.sha256(raw_key.encode()).hexdigest(),
+            "scopes": API_KEY_SCOPES, "partner_email": sub["email"],
+            "monthly_quota": 100000, "month_usage": 0,
+            "usage_month": datetime.now(timezone.utc).strftime("%Y-%m"),
+            "webhook_url": "", "webhook_secret": f"whsec_{secrets.token_hex(16)}",
+            "is_active": True, "requests_count": 0, "last_used_at": None,
+            "created_by": "api-subscription", "subscription_id": sub_id,
+            "created_at": _now(),
+        }
+        await db.api_keys.insert_one(dict(key_doc))
+        key_id, key_prefix = key_doc["id"], key_doc["prefix"]
     await db.api_subscriptions.update_one({"id": sub_id}, {"$set": {
         "status": "ACTIVE", "paid_at": _now(), "valid_until": valid_until,
-        "api_key": raw_key, "api_key_id": key_doc["id"], "api_key_prefix": key_doc["prefix"]}})
+        "api_key": raw_key, "api_key_id": key_id, "api_key_prefix": key_prefix}})
     sub = await db.api_subscriptions.find_one({"id": sub_id}, {"_id": 0})
     try:
         import base64
@@ -246,8 +259,8 @@ async def list_api_subscriptions_admin(_: dict = Depends(require_admin)):
 
 
 @api_sub_router.get("/admin/api-subscriptions/calls")
-async def api_subscription_call_log(limit: int = 50, _: dict = Depends(require_admin)):
-    """Journal des derniers appels API des abonnés (support technique)."""
+async def api_subscription_call_log(limit: int = 50, q: str = "", _: dict = Depends(require_admin)):
+    """Journal des derniers appels API des abonnés (support technique) — filtre q sur email/endpoint."""
     limit = max(1, min(limit, 200))
     subs = await db.api_subscriptions.find(
         {"api_key_id": {"$exists": True}},
@@ -256,11 +269,40 @@ async def api_subscription_call_log(limit: int = 50, _: dict = Depends(require_a
     if not by_key:
         return {"calls": []}
     logs = await db.api_call_logs.find(
-        {"key_id": {"$in": list(by_key)}}, {"_id": 0}).sort("ts", -1).to_list(limit)
-    return {"calls": [{
-        "email": by_key[l["key_id"]]["email"], "reference": by_key[l["key_id"]]["reference"],
-        "method": l.get("method"), "path": l.get("path"), "ts": l.get("ts"),
-    } for l in logs]}
+        {"key_id": {"$in": list(by_key)}}, {"_id": 0}).sort("ts", -1).to_list(500)
+    needle = (q or "").strip().lower()
+    calls = []
+    for l in logs:
+        s = by_key[l["key_id"]]
+        if needle and needle not in s["email"].lower() and needle not in (l.get("path") or "").lower() \
+                and needle not in (s.get("reference") or "").lower():
+            continue
+        calls.append({"email": s["email"], "reference": s["reference"],
+                      "method": l.get("method"), "path": l.get("path"), "ts": l.get("ts")})
+        if len(calls) >= limit:
+            break
+    return {"calls": calls}
+
+
+@api_sub_router.get("/admin/api-subscriptions/stats")
+async def api_subscription_stats(_: dict = Depends(require_admin)):
+    """Appels API par jour (30 derniers jours) — suivi de l'adoption de l'offre."""
+    key_ids = [s["api_key_id"] async for s in db.api_subscriptions.find(
+        {"api_key_id": {"$exists": True}}, {"_id": 0, "api_key_id": 1})]
+    since = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    daily_map = {}
+    if key_ids:
+        async for l in db.api_call_logs.find(
+                {"key_id": {"$in": key_ids}, "ts": {"$gte": since}}, {"_id": 0, "ts": 1}):
+            d = str(l.get("ts") or "")[:10]
+            if d:
+                daily_map[d] = daily_map.get(d, 0) + 1
+    days = []
+    today = datetime.now(timezone.utc).date()
+    for i in range(29, -1, -1):
+        d = (today - timedelta(days=i)).isoformat()
+        days.append({"day": d, "count": daily_map.get(d, 0)})
+    return {"daily": days, "total_30d": sum(x["count"] for x in days)}
 
 
 @api_sub_router.get("/admin/api-subscriptions/export")
