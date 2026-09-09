@@ -13,6 +13,8 @@ import logging
 import uuid
 import base64
 
+from auth import get_current_user_id
+
 logger = logging.getLogger(__name__)
 
 # Router
@@ -152,8 +154,12 @@ async def get_vendor_profile(vendor_id: str):
 
 
 @vendor_router.put("/profile/{vendor_id}")
-async def update_vendor_profile(vendor_id: str, data: VendorProfile):
-    """Update vendor profile"""
+async def update_vendor_profile(vendor_id: str, data: VendorProfile, user_id: str = Depends(get_current_user_id)):
+    """Update vendor profile — réservé au vendeur propriétaire ou à un admin."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "vendor_id": 1, "role": 1, "is_admin": 1})
+    is_admin = bool(user and (user.get("is_admin") or user.get("role") in ("admin", "superadmin")))
+    if not user or (not is_admin and user.get("vendor_id") != vendor_id):
+        raise HTTPException(status_code=403, detail="Accès refusé : ce profil vendeur ne vous appartient pas")
     vendor = await get_vendor_by_id(vendor_id)
     if not vendor:
         raise HTTPException(status_code=404, detail="Vendeur non trouvé")

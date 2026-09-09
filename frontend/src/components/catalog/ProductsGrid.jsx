@@ -231,6 +231,12 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               )}
               
               <SaleModelBadge product={product} />
+              {product.cb_only_payment && (
+                <span data-testid={`cb-only-badge-${product.sku}`}
+                  className="w-fit mb-2 px-1.5 py-0.5 rounded text-[9px] font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/30">
+                  ⚡ Paiement instantané par carte
+                </span>
+              )}
               {/* Fiche circuit — vendeur juridique / facture / financement */}
               <div className="grid gap-0.5 mb-2 text-[10.5px]" data-testid={`offer-legal-${product.sku}`}>
                 <div className="text-white/60">

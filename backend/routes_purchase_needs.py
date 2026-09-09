@@ -316,6 +316,7 @@ async def community_board(q: str | None = None):
                     "current_quantity": init + joined,
                     "goal_quantity": goal,
                     "grouping_closed": bool(n.get("grouping_closed")),
+                    "participation_eur": _participation_eur(n),
                     "photos_count": len(n.get("images") or []),
                     "photos": (n.get("images") or [])[:2]})
     return {"demands": out}
@@ -326,9 +327,98 @@ class JoinNeedBody(BaseModel):
     quantity: int = Field(1, ge=1, le=10000)
 
 
+def _participation_eur(need: dict) -> float:
+    """Participation mutualisée : prix de publication réparti entre le nouveau et les participants déjà inscrits."""
+    fee = float(need.get("communityplace_fee_eur") or 0)
+    if fee <= 0:
+        return 0.0
+    return max(1.0, round(fee / (len(need.get("joiners") or []) + 1), 2))
+
+
+async def _send_pro_invitation(email: str, need: dict) -> None:
+    """Invitation automatique à devenir fournisseur ou acheteur professionnel après un join."""
+    from brevo_service import send_email, _wrap_html
+    base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+    await send_email(
+        to_email=email, to_name=None,
+        subject="🚀 Passez au niveau supérieur — devenez fournisseur ou acheteur professionnel KDMARCHÉ",
+        html_content=_wrap_html("Rejoignez les professionnels de la coopérative", (
+            "<p style='font-size:14px;'>Bonjour,</p>"
+            f"<p style='font-size:14px;'>Vous venez de rejoindre l'annonce <b>{need['reference']} — {need['product']}</b> "
+            "sur la CommunityPlace : merci de votre confiance !</p>"
+            "<p style='font-size:14px;'>Saviez-vous que les <b>membres professionnels</b> de la coopérative O'SCOP "
+            "bénéficient de prix négociés, du catalogue B2B multi-territoires, du règlement à réception et de la "
+            "logistique LOGI'SCOP ?</p>"
+            "<table style='width:100%;margin:16px 0;'><tr>"
+            f"<td style='text-align:center;padding:6px;'><a href='{base}/tarifs' "
+            "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;padding:12px 22px;"
+            "border-radius:12px;text-decoration:none;'>Devenir acheteur professionnel</a></td>"
+            f"<td style='text-align:center;padding:6px;'><a href='{base}/adhesion-vendeur' "
+            "style='display:inline-block;background:#8CC63E;color:#1F2A12;font-weight:bold;padding:12px 22px;"
+            "border-radius:12px;text-decoration:none;'>Devenir fournisseur référencé</a></td>"
+            "</tr></table>"
+            "<p style='font-size:12px;color:rgba(243,237,228,0.6);'>Vous continuerez à recevoir le suivi de "
+            "l'annonce que vous avez rejointe, quel que soit votre choix.</p>")),
+        tags=["purchase-need-pro-invitation"])
+
+
+async def _register_joiner(need: dict, email: str, quantity: int, participation_eur: float | None = None) -> dict:
+    """Inscrit un participant (idempotent) + emails de confirmation, notification du publieur et invitation pro."""
+    from datetime import datetime, timezone
+    reference = need["reference"]
+    email = email.lower()
+    if any(j.get("email") == email for j in (need.get("joiners") or [])):
+        updated = await db.purchase_needs.find_one({"reference": reference}, {"_id": 0, "joiners": 1, "joined_quantity": 1})
+        return {"joiners_count": len(updated.get("joiners") or []), "joined_quantity": int(updated.get("joined_quantity") or 0)}
+    joiner = {"email": email, "quantity": quantity, "joined_at": datetime.now(timezone.utc).isoformat()}
+    if participation_eur:
+        joiner["participation_eur"] = participation_eur
+        joiner["participation_paid_at"] = datetime.now(timezone.utc).isoformat()
+    await db.purchase_needs.update_one(
+        {"reference": reference},
+        {"$push": {"joiners": joiner}, "$inc": {"joined_quantity": quantity}})
+    updated = await db.purchase_needs.find_one({"reference": reference}, {"_id": 0, "joiners": 1, "joined_quantity": 1})
+    j_count = len(updated.get("joiners") or [])
+    j_qty = int(updated.get("joined_quantity") or 0)
+    try:
+        from brevo_service import send_email, _wrap_html
+        paid_line = (f"<p style='font-size:14px;'>Participation mutualisée réglée : <b>{participation_eur:.2f} €</b> "
+                     "(frais de publication répartis entre les participants).</p>") if participation_eur else ""
+        await send_email(
+            to_email=email, to_name=None,
+            subject=f"🤝 Vous avez rejoint la demande groupée {reference} — {need['product']}",
+            html_content=_wrap_html("Demande groupée rejointe", (
+                f"<p style='font-size:14px;'>Bonjour,</p>"
+                f"<p style='font-size:14px;'>Vous avez rejoint l'annonce groupée "
+                f"<b>{need['product']}</b> (territoire {need['territory']}) sous le numéro de suivi "
+                f"<b style='font-size:16px;'>{reference}</b>.</p>"
+                f"<p style='font-size:14px;'>Votre quantité : <b>{quantity}</b><br/>"
+                f"Volume groupé actuel : <b>{need['quantity']} + {j_qty}</b> "
+                f"({j_count} participant{'s' if j_count > 1 else ''})</p>" + paid_line +
+                f"<p style='font-size:14px;'>La Centrale O'SCOP vous tiendra informé de l'avancement : "
+                f"conservez ce numéro pour tout échange.</p>")),
+            tags=["purchase-need-join"])
+        if need.get("email"):
+            await send_email(
+                to_email=need["email"], to_name=need.get("contact_name"),
+                subject=f"📈 Votre annonce {reference} groupe les volumes — +{quantity} qté",
+                html_content=_wrap_html("Nouveau participant sur votre annonce", (
+                    f"<p style='font-size:14px;'>Bonjour {need.get('contact_name', '')},</p>"
+                    f"<p style='font-size:14px;'>Bonne nouvelle : un nouveau participant vient de rejoindre votre "
+                    f"annonce <b>{need['product']}</b> (suivi <b>{reference}</b>) pour <b>+{quantity}</b> en quantité.</p>"
+                    f"<p style='font-size:14px;'>Volume groupé actuel : <b>{need['quantity']} + {j_qty}</b> "
+                    f"({j_count} participant{'s' if j_count > 1 else ''}). Plus le volume grandit, "
+                    f"meilleures sont les conditions négociées par la Centrale O'SCOP.</p>")),
+                tags=["purchase-need-join"])
+        await _send_pro_invitation(email, need)
+    except Exception as e:
+        logger.warning(f"join emails failed: {e}")
+    return {"joiners_count": j_count, "joined_quantity": j_qty}
+
+
 @purchase_needs_router.post("/public/purchase-needs/{reference}/join")
 async def join_purchase_need(reference: str, body: JoinNeedBody):
-    """Un visiteur rejoint une demande publiée pour grouper les volumes."""
+    """Un visiteur rejoint une annonce publiée : participation mutualisée au prorata du prix de publication."""
     need = await db.purchase_needs.find_one({"reference": reference, "communityplace": True})
     if not need:
         raise HTTPException(status_code=404, detail="Demande introuvable")
@@ -336,48 +426,51 @@ async def join_purchase_need(reference: str, body: JoinNeedBody):
         raise HTTPException(status_code=409, detail="Le groupage de cette demande est clôturé.")
     if any(j.get("email") == body.email.lower() for j in (need.get("joiners") or [])):
         raise HTTPException(status_code=409, detail="Vous avez déjà rejoint cette demande.")
-    from datetime import datetime, timezone
-    await db.purchase_needs.update_one(
-        {"reference": reference},
-        {"$push": {"joiners": {"email": body.email.lower(), "quantity": body.quantity,
-                               "joined_at": datetime.now(timezone.utc).isoformat()}},
-         "$inc": {"joined_quantity": body.quantity}})
-    updated = await db.purchase_needs.find_one({"reference": reference}, {"_id": 0, "joiners": 1, "joined_quantity": 1})
-    j_count = len(updated.get("joiners") or [])
-    j_qty = int(updated.get("joined_quantity") or 0)
+    participation = _participation_eur(need)
+    if participation > 0:
+        import stripe
+        stripe.api_key = os.environ.get("STRIPE_API_KEY")
+        base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            customer_email=body.email.lower(),
+            line_items=[{"price_data": {"currency": "eur", "unit_amount": int(round(participation * 100)),
+                         "product_data": {"name": f"Participation mutualisée — {reference} {need['product']}",
+                                          "description": "Frais de publication répartis entre les participants"}},
+                         "quantity": 1}],
+            metadata={"kind": "JOIN_FEE", "purchase_need_reference": reference,
+                      "joiner_email": body.email.lower(), "joiner_quantity": str(body.quantity)},
+            success_url=f"{base}/?join_paid={reference}&join_session={{CHECKOUT_SESSION_ID}}#community-board",
+            cancel_url=f"{base}/?join_cancelled={reference}#community-board",
+        )
+        return {"ok": True, "payment_required": True, "participation_eur": participation,
+                "checkout_url": session.url, "reference": reference}
+    result = await _register_joiner(need, body.email, body.quantity)
+    return {"ok": True, "payment_required": False, "reference": reference, **result}
+
+
+@purchase_needs_router.get("/public/purchase-needs/join/verify")
+async def verify_join_payment(session_id: str):
+    """Retour Stripe du join : vérifie le paiement et inscrit le participant (idempotent)."""
+    import stripe
+    stripe.api_key = os.environ.get("STRIPE_API_KEY")
     try:
-        from brevo_service import send_email, _wrap_html
-        await send_email(
-            to_email=body.email.lower(), to_name=None,
-            subject=f"🤝 Vous avez rejoint la demande groupée {reference} — {need['product']}",
-            html_content=_wrap_html("Demande groupée rejointe", (
-                f"<p style='font-size:14px;'>Bonjour,</p>"
-                f"<p style='font-size:14px;'>Vous avez rejoint la demande d'achat groupée "
-                f"<b>{need['product']}</b> (territoire {need['territory']}) sous le numéro de suivi "
-                f"<b style='font-size:16px;'>{reference}</b>.</p>"
-                f"<p style='font-size:14px;'>Votre quantité : <b>{body.quantity}</b><br/>"
-                f"Volume groupé actuel : <b>{need['quantity']} + {j_qty}</b> "
-                f"({j_count} participant{'s' if j_count > 1 else ''})</p>"
-                f"<p style='font-size:14px;'>La Centrale O'SCOP vous tiendra informé de l'avancement : "
-                f"conservez ce numéro pour tout échange.</p>")),
-            tags=["purchase-need-join"])
-        if need.get("email"):
-            await send_email(
-                to_email=need["email"], to_name=need.get("contact_name"),
-                subject=f"📈 Votre demande {reference} groupe les volumes — +{body.quantity} qté",
-                html_content=_wrap_html("Nouveau participant sur votre demande", (
-                    f"<p style='font-size:14px;'>Bonjour {need.get('contact_name', '')},</p>"
-                    f"<p style='font-size:14px;'>Bonne nouvelle : un nouveau participant vient de rejoindre votre "
-                    f"demande <b>{need['product']}</b> (suivi <b>{reference}</b>) pour <b>+{body.quantity}</b> en quantité.</p>"
-                    f"<p style='font-size:14px;'>Volume groupé actuel : <b>{need['quantity']} + {j_qty}</b> "
-                    f"({j_count} participant{'s' if j_count > 1 else ''}). Plus le volume grandit, "
-                    f"meilleures sont les conditions négociées par la Centrale O'SCOP.</p>")),
-                tags=["purchase-need-join"])
-    except Exception as e:
-        logger.warning(f"join emails failed: {e}")
-    return {"ok": True, "reference": reference,
-            "joiners_count": j_count,
-            "joined_quantity": j_qty}
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Session de paiement introuvable")
+    meta = session.get("metadata") or {}
+    if meta.get("kind") != "JOIN_FEE":
+        raise HTTPException(status_code=400, detail="Session invalide")
+    if session.get("payment_status") != "paid":
+        return {"ok": False, "status": "PENDING"}
+    need = await db.purchase_needs.find_one({"reference": meta.get("purchase_need_reference")})
+    if not need:
+        raise HTTPException(status_code=404, detail="Annonce introuvable")
+    amount = (session.get("amount_total") or 0) / 100
+    result = await _register_joiner(need, meta["joiner_email"], int(meta.get("joiner_quantity") or 1),
+                                    participation_eur=amount)
+    return {"ok": True, "status": "PAID", "reference": need["reference"],
+            "participation_eur": amount, **result}
 
 
 @purchase_needs_router.get("/admin/purchase-needs/stats/csv")
@@ -433,7 +526,16 @@ async def communityplace_webhook(payload: dict):
     if payload.get("type") != "checkout.session.completed":
         return {"received": True}
     obj = (payload.get("data") or {}).get("object") or {}
-    need_id = (obj.get("metadata") or {}).get("purchase_need_id")
+    meta = obj.get("metadata") or {}
+    # Participation mutualisée d'un join payée → inscription du participant
+    if meta.get("kind") == "JOIN_FEE" and obj.get("payment_status") == "paid":
+        need = await db.purchase_needs.find_one({"reference": meta.get("purchase_need_reference")})
+        if need and meta.get("joiner_email"):
+            amount = (obj.get("amount_total") or 0) / 100
+            await _register_joiner(need, meta["joiner_email"], int(meta.get("joiner_quantity") or 1),
+                                   participation_eur=amount)
+        return {"received": True}
+    need_id = meta.get("purchase_need_id")
     if need_id and obj.get("payment_status") == "paid":
         await db.purchase_needs.update_one({"id": need_id}, {"$set": {
             "communityplace_payment_status": "PAID", "communityplace_paid_at": _now()}})
