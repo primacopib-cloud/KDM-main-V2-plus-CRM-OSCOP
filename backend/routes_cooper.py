@@ -1,7 +1,7 @@
 """Espace COOPER — adhésions en attente, transporteurs LOGI'SCOP et assignation."""
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -52,6 +52,52 @@ async def list_assigned_purchase_needs(user_id: str = Depends(get_current_user_i
         n["photos"] = n.get("photos") or []
         n["joiners_count"] = len(n.get("joiners") or [])
     return {"needs": needs, "count": len(needs)}
+
+
+class CooperNeedResponse(BaseModel):
+    price_eur: float = Field(gt=0)
+    delay_days: Optional[int] = None
+    note: Optional[str] = None
+
+
+@cooper_router.post("/purchase-needs/{need_id}/respond")
+async def cooper_respond_need(need_id: str, body: CooperNeedResponse, user_id: str = Depends(get_current_user_id)):
+    """Le COOPER'S répond à un besoin assigné : offre de prix + délai."""
+    await require_cooper(user_id)
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "contact_name": 1})
+    email = (user or {}).get("email", "").lower()
+    need = await db.purchase_needs.find_one({"id": need_id, "assigned_vendor": email}, {"_id": 0})
+    if not need:
+        raise HTTPException(status_code=404, detail="Besoin introuvable ou non assigné à ce COOPER'S")
+    now = datetime.now(timezone.utc).isoformat()
+    await db.purchase_needs.update_one({"id": need_id}, {"$set": {
+        "status": "VENDOR_ACCEPTED", "vendor_price_eur": body.price_eur,
+        "vendor_delay_days": body.delay_days, "vendor_note": body.note,
+        "vendor_responded_at": now}})
+    try:
+        import os
+        from brevo_service import send_email, _wrap_html
+        base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+        delay_txt = f" · Délai : {body.delay_days} jours" if body.delay_days else ""
+        html = _wrap_html("Offre reçue", (
+            f"<p style='font-size:14px;'>Bonne nouvelle ! Un COOPER'S de la Centrale O'SCOP propose "
+            f"<b style='font-size:16px;'>{body.price_eur:,.0f} €</b>{delay_txt} pour "
+            f"<b>{need['reference']} — {need['product']}</b>."
+            + (f"<br/>Note : {body.note}" if body.note else "") + "</p>"
+            f"<p style='text-align:center;'><a href='{base}/api/public/purchase-needs/accept-offer/{need['reference']}' "
+            "style='display:inline-block;background:#8CC63E;color:#1F0A33;font-weight:bold;"
+            "padding:12px 26px;border-radius:12px;text-decoration:none;'>Accepter l'offre</a></p>").replace(",", " "))
+        recipients = [need.get("email")] + [j.get("email") for j in (need.get("joiners") or [])]
+        for to in {r.lower() for r in recipients if r}:
+            try:
+                await send_email(to_email=to, to_name=None,
+                                 subject=f"💼 Offre COOPER'S reçue — {need['reference']}",
+                                 html_content=html, tags=["purchase-need"])
+            except Exception:
+                pass
+    except Exception:
+        logger.warning("Emails offre COOPER non envoyés")
+    return {"status": "VENDOR_ACCEPTED", "price_eur": body.price_eur}
 
 
 # ============== TRANSPORTEURS LOGI'SCOP ==============

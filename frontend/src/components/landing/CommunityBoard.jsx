@@ -34,12 +34,13 @@ export const CommunityBoard = () => {
   }, []);
   if (!demands.length) return null;
   const OFFER_STATUSES = ['VENDOR_ACCEPTED', 'OFFER_ACCEPTED'];
+  const isOffer = (d) => d.listing_type === 'OFFRE' || OFFER_STATUSES.includes(d.status);
   const match = (d, q) => {
     const ql = q.trim().toLowerCase();
     return !ql || `${d.product} ${d.territory} ${d.reference}`.toLowerCase().includes(ql);
   };
-  const offres = demands.filter((d) => OFFER_STATUSES.includes(d.status) && match(d, qOffres));
-  const dems = demands.filter((d) => !OFFER_STATUSES.includes(d.status) && match(d, qDemandes));
+  const offres = demands.filter((d) => isOffer(d) && match(d, qOffres));
+  const dems = demands.filter((d) => !isOffer(d) && match(d, qDemandes));
   const renderCard = (d) => (
             <div key={d.reference} className="rounded-2xl p-4 bg-white/[0.03] border border-white/[0.08] hover:border-[#D9B35A]/40 transition-colors"
               data-testid={`board-demand-${d.reference}`}>

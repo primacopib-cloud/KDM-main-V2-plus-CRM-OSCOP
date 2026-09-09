@@ -13,6 +13,7 @@ export const PurchaseNeedForm = ({ onClose }) => {
   const [countryCode, setCountryCode] = useState('GP');
   const [dial, setDial] = useState('+590');
   const [items, setItems] = useState([emptyItem()]);
+  const [listingType, setListingType] = useState('DEMANDE');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [refs, setRefs] = useState([]);
@@ -39,6 +40,7 @@ export const PurchaseNeedForm = ({ onClose }) => {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...f, phone: `${dial} ${f.phone}`.trim(), country_code: countryCode, deadline: f.deadline || null,
+          listing_type: listingType,
           items: items.map((it) => ({
             product: it.product, quantity: it.quantity,
             budget_eur: it.budget_eur ? Number(it.budget_eur) : null,
@@ -59,9 +61,20 @@ export const PurchaseNeedForm = ({ onClose }) => {
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" data-testid="purchase-need-modal">
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 bg-[#241243] border border-[#D9B35A]/30">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-lg font-bold text-[#E9CF8E] m-0">Déposer un besoin d'achat</h3>
+          <h3 className="text-lg font-bold text-[#E9CF8E] m-0">{listingType === 'OFFRE' ? 'Publier une offre produit' : "Déposer un besoin d'achat"}</h3>
           <button type="button" onClick={onClose} data-testid="purchase-need-close"
             className="ml-auto p-1.5 rounded-lg text-white/60 hover:bg-white/[0.08] transition-colors"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="flex gap-1.5 mb-3" data-testid="listing-type-toggle">
+          {[['DEMANDE', "Besoin d'achat"], ['OFFRE', 'Offre produit']].map(([v, l]) => (
+            <button key={v} type="button" onClick={() => setListingType(v)} data-testid={`listing-type-${v}`}
+              className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors ${listingType === v
+                ? 'bg-[#D9B35A]/25 border-[#D9B35A]/60 text-[#E9CF8E]'
+                : 'bg-white/[0.04] border-white/15 text-white/55 hover:text-white'}`}>
+              {l}
+            </button>
+          ))}
+          <span className="text-[10px] text-white/40 self-center ml-1">Publication payante · assignée à un COOPER'S par la centrale</span>
         </div>
         {sent ? (
           <div className="py-8 text-center" data-testid="purchase-need-success">
