@@ -109,7 +109,7 @@ export const PurchaseNeedForm = ({ onClose, initialType = 'DEMANDE' }) => {
             <p className="text-[#8CC63E] font-bold text-base m-0">
               ✅ {listingType === 'OFFRE'
                 ? (refs.length > 1 ? `${refs.length} offres produit publiées !` : 'Offre produit envoyée !')
-                : (refs.length > 1 ? `${refs.length} besoins d'achat envoyés !` : "Besoin d'achat envoyé !")}
+                : (refs.length > 1 ? `${refs.length} demandes produit envoyées !` : 'Demande produit envoyée !')}
             </p>
             <div className="mt-2 space-y-1">
               {refs.map((r) => (
@@ -218,7 +218,7 @@ export const PurchaseNeedForm = ({ onClose, initialType = 'DEMANDE' }) => {
               style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)' }}>
               <Send className="w-4 h-4 inline mr-2" /> {busy ? 'Envoi…' : listingType === 'OFFRE'
                 ? (items.length > 1 ? `Publier mes ${items.length} offres produit` : 'Publier mon offre produit')
-                : (items.length > 1 ? `Envoyer mes ${items.length} besoins d'achat` : "Envoyer mon besoin d'achat")}
+                : (items.length > 1 ? `Envoyer mes ${items.length} demandes produit` : 'Envoyer ma demande produit')}
             </button>
           </form>
         )}

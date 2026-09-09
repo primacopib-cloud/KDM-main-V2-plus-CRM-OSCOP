@@ -10,15 +10,15 @@ const IMG = 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4ef
  * Note test : le Chromium headless n'a pas le codec H.264 → repli image auto ; navigateurs réels OK (Range 206 côté serveur).
  */
 const SCENES = [
-  { img: `${IMG}6c56ab7e6014f75dd19aa182a53b71d7c629d8369cfce46ce5c0c4d308299bc8.jpeg`,
-    imgMobile: `${IMG}a091c41c190351bb90597d3297306fb13e85be328121e0d12a32f327433143a3.jpeg`,
+  { img: '/images/spot/scene1-paniers.jpg',
+    imgMobile: '/images/spot/scene1-paniers.jpg', pos: 'center 82%',
     duration: 4000, kicker: 'LOLODRIVE by O’SCOP', title: 'VOTRE TERRITOIRE, VOS PRODUITS', sub: 'L’épicerie, par lot de 3.' },
-  { img: `${IMG}e75eaa357fdbbd5691f0ca0cb0b494e86beb3f3c76d2f6b1422a25a0ec4b5c93.jpeg`,
-    imgMobile: `${IMG}115eb4dadb3a253b4bb75394a4001db5a35825fb88fc119f3b06e1bb6dccc307.jpeg`,
+  { img: '/images/spot/scene2-riz.jpg',
+    imgMobile: '/images/spot/scene2-riz.jpg', pos: 'center 55%',
     duration: 4000, kicker: 'LE CONCEPT', title: 'ACHETEZ PAR LOT \u00d73', sub: '3 fois plus malin. 3 fois moins cher \u00e0 l\u2019unit\u00e9.' },
   { video: '/api/uploads/videos/lolospot_products.mp4',
-    img: `${IMG}0cf29917f13c278e3b19b8be49129ca514173f41acb07096e6b1ed7ef07f1b86.jpeg`,
-    imgMobile: `${IMG}e57486ece7d5da11eb12d89fd66def5a8cd77cad5d927c17ea2b25e0e583752a.jpeg`,
+    img: '/images/spot/scene3-rayon.jpg',
+    imgMobile: '/images/spot/scene3-rayon.jpg',
     duration: 4000, kicker: 'TOUS VOS ESSENTIELS', title: 'TOUJOURS PAR 3', sub: 'Des volumes group\u00e9s, des prix n\u00e9goci\u00e9s par la coop\u00e9rative.' },
   { video: '/api/uploads/videos/lolospot_order.mp4',
     poster: `${IMG}ed2ed1e5a423c20f9be1f285167fdf1fe6c2defebfc13b5be0b193fc982668ef.jpeg`,
@@ -162,7 +162,7 @@ export const LolodriveSpot = ({ onClose }) => {
         ) : (
           <picture className="contents">
             {s.imgMobile && <source media="(max-width: 640px)" srcSet={mediaUrl(s.imgMobile)} data-testid={`spot-scene-src-mobile-${scene}`} />}
-            <img src={mediaUrl(s.img)} alt="" className="w-full h-full object-cover" />
+            <img src={mediaUrl(s.img)} alt="" className="w-full h-full object-cover" style={s.pos ? { objectPosition: s.pos } : undefined} />
           </picture>
         )}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,4,16,0.30) 0%, rgba(8,4,16,0.10) 45%, rgba(8,4,16,0.85) 100%)' }} />
