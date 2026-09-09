@@ -1,4 +1,4 @@
-"""Plans d'abonnement investisseur (ULTIMATE/VIP/ELITE), paiement Stripe, espace CREDI'SCOP-INVEST."""
+"""Plans d'abonnement investisseur (ULTIMATE/VIP/ELITE), paiement Stripe, espace CREDI'SCOP."""
 from __future__ import annotations
 
 import logging
@@ -230,14 +230,14 @@ async def stripe_webhook(request: Request):
                 body = (f"<p style='font-size:14px;'>Bonjour {user.get('contact_name') or ''},</p>"
                         f"<p style='font-size:14px;'>Après <b>2 échecs de prélèvement consécutifs</b> de votre "
                         f"abonnement <b>{account['plan_code']}</b>, votre capacité de financement "
-                        "CREDI'SCOP-INVEST est <b>suspendue</b>. Mettez à jour votre carte bancaire : "
+                        "CREDI'SCOP est <b>suspendue</b>. Mettez à jour votre carte bancaire : "
                         "elle sera rétablie automatiquement au prochain paiement réussi.</p>")
             else:
                 subject = "⚠ Échec du prélèvement de votre abonnement investisseur KDMARCHÉ"
                 body = (f"<p style='font-size:14px;'>Bonjour {user.get('contact_name') or ''},</p>"
                         f"<p style='font-size:14px;'>Le prélèvement mensuel de votre abonnement <b>{account['plan_code']}</b> a échoué. "
                         "Une nouvelle tentative automatique sera effectuée. Attention : un second échec "
-                        "suspendra votre capacité de financement CREDI'SCOP-INVEST.</p>")
+                        "suspendra votre capacité de financement CREDI'SCOP.</p>")
             await send_email(to_email=email, to_name=user.get("contact_name"), subject=subject,
                              html_content=_wrap_html("Suspension" if suspended else "Échec de paiement", body),
                              tags=["investor-billing"])
@@ -248,7 +248,7 @@ async def stripe_webhook(request: Request):
 
 @investor_plans_router.get("/my-credits")
 async def my_invest_credits(user: dict = Depends(_current_user)):
-    """Solde CREDI'SCOP-INVEST temps réel, historique et alertes."""
+    """Solde CREDI'SCOP temps réel, historique et alertes."""
     account = await db.investor_accounts.find_one(
         {"user_id": user["id"], "status": {"$in": ["ACTIVE", "PAST_DUE", "SUSPENDED"]}}, {"_id": 0})
     if not account:

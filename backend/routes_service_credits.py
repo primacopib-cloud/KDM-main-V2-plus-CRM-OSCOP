@@ -1,4 +1,4 @@
-"""CREDI'SCOP-INVEST : compteur d'unités de services internes, catalogue fermé, ledger. Aucune valeur monétaire."""
+"""CREDI'SCOP : compteur d'unités de services internes, catalogue fermé, ledger. Aucune valeur monétaire."""
 from datetime import datetime, timezone
 from typing import Optional
 import logging
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from routes_v2 import get_current_user_v2
 
 logger = logging.getLogger(__name__)
-sc_router = APIRouter(prefix="/api/admin/service-credits", tags=["CREDI'SCOP-INVEST"])
+sc_router = APIRouter(prefix="/api/admin/service-credits", tags=["CREDI'SCOP"])
 db = None
 
 
@@ -36,7 +36,7 @@ DEFAULT_CATALOG = [
     ("CLOSING_ARCHIVE", "Clôture et archivage", 5),
 ]
 
-DISCLAIMER = ("Les CREDI'SCOP-INVEST sont des unités internes de services : aucune valeur en euros, "
+DISCLAIMER = ("Les CREDI'SCOP sont des unités internes de services : aucune valeur en euros, "
               "non convertibles, non transférables, non remboursables, jamais un moyen de paiement "
               "des produits, de la logistique ou des fournisseurs.")
 
@@ -120,7 +120,7 @@ async def get_ledger(account_id: str, admin: dict = Depends(_admin)):
 async def create_entry(account_id: str, payload: LedgerEntryCreate, admin: dict = Depends(_admin)):
     raw = payload.dict()
     if any(k in FORBIDDEN_KEYS for k in raw):
-        raise HTTPException(status_code=409, detail="Aucune valeur monétaire ne peut être associée aux CREDI'SCOP-INVEST")
+        raise HTTPException(status_code=409, detail="Aucune valeur monétaire ne peut être associée aux CREDI'SCOP")
     if payload.entry_type not in ENTRY_TYPES:
         raise HTTPException(status_code=400, detail=f"Type invalide. Autorisés : {ENTRY_TYPES} — aucun transfert entre utilisateurs")
     acc = await db.service_credit_accounts.find_one({"id": account_id}, {"_id": 0})
@@ -130,7 +130,7 @@ async def create_entry(account_id: str, payload: LedgerEntryCreate, admin: dict 
     item = None
     if payload.entry_type in ("DEBIT", "RESERVATION"):
         if not payload.service_catalog_item_id:
-            raise HTTPException(status_code=409, detail="Un débit CREDI'SCOP-INVEST exige un service du catalogue fermé")
+            raise HTTPException(status_code=409, detail="Un débit CREDI'SCOP exige un service du catalogue fermé")
         item = await db.service_catalog_items.find_one({"id": payload.service_catalog_item_id, "active": True}, {"_id": 0})
         if not item:
             raise HTTPException(status_code=409, detail="Service introuvable dans le catalogue fermé ou inactif")

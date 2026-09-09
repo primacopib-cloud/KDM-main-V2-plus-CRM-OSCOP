@@ -277,7 +277,7 @@ async def financing_opportunities():
          "purchase_amount_ex_vat": 1, "resale_amount_ex_vat": 1,
          "logistics_mode": 1, "expected_margin_ex_vat": 1, "created_at": 1},
     ).sort("created_at", -1).to_list(50)
-    return {"opportunities": ops, "notice": "Financement en euros ou devises uniquement. Les CREDI'SCOP-INVEST n'y participent jamais."}
+    return {"opportunities": ops, "notice": "Financement en euros ou devises uniquement. Les CREDI'SCOP n'y participent jamais."}
 
 
 @pr_router.get("/admin/purchase-resale/operations")

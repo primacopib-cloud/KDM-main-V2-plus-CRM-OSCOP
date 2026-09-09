@@ -41,7 +41,7 @@ def _header(c, w, h, title, subtitle, number):
 def _footer(c, w):
     c.setFillColor(GREY)
     c.setFont("Helvetica", 7)
-    c.drawCentredString(w / 2, 12 * mm, "Document confidentiel — O'SCOP OUTRE-MER. CREDI'SCOP-INVEST est un compteur "
+    c.drawCentredString(w / 2, 12 * mm, "Document confidentiel — O'SCOP OUTRE-MER. CREDI'SCOP est un compteur "
                                         "d'unités de services internes, sans valeur monétaire ni conversion possible.")
 
 
@@ -58,7 +58,7 @@ def build_subscription_invoice_pdf(invoice: dict) -> bytes:
         ("Plan", invoice["plan_code"]),
         ("Période", invoice["period_label"]),
         ("Abonnement mensuel HT", _eur(invoice["amount_eur"])),
-        ("Capacité CREDI'SCOP-INVEST allouée", f"{invoice['monthly_invest_uc']:,} uc".replace(",", " ")),
+        ("Capacité CREDI'SCOP allouée", f"{invoice['monthly_invest_uc']:,} uc".replace(",", " ")),
         ("Mode de règlement", "Prélèvement carte bancaire (Stripe)"),
         ("Statut", "PAYÉE"),
     ]
@@ -144,7 +144,7 @@ async def send_monthly_invoice(db, user: dict, account: dict, plan: dict):
                 f"<p style='font-size:14px;'>Bonjour {invoice['client_name']},</p>"
                 f"<p style='font-size:14px;'>Votre prélèvement mensuel <b>{account['plan_code']}</b> de "
                 f"<b>{_eur(plan['price_eur'])}</b> a bien été effectué. Vous trouverez votre facture "
-                f"<b>{number}</b> en pièce jointe. Votre capacité CREDI'SCOP-INVEST a été rechargée.</p>")),
+                f"<b>{number}</b> en pièce jointe. Votre capacité CREDI'SCOP a été rechargée.</p>")),
             attachments=[{"content": base64.b64encode(pdf).decode(), "name": f"{number}.pdf"}],
             tags=["investor-billing"],
         )
@@ -202,7 +202,7 @@ def build_annual_statement_pdf(user: dict, account: dict, year: int, invoices: l
     section(f"ABONNEMENTS RÉGLÉS ({len(invoices)})", ("MOIS", "FACTURE", "MONTANT"),
             [(i["period_label"], f"{i['number']} — plan {i['plan_code']}", _eur(i["amount_eur"])) for i in invoices],
             "TOTAL ABONNEMENTS", _eur(sum(i["amount_eur"] for i in invoices)))
-    section(f"FINANCEMENTS CREDI'SCOP-INVEST ({len(financings)})", ("DATE", "OPÉRATION", "MONTANT (uc)"),
+    section(f"FINANCEMENTS CREDI'SCOP ({len(financings)})", ("DATE", "OPÉRATION", "MONTANT (uc)"),
             [(e["created_at"][:10], e.get("label") or "", f"{-e['amount_uc']:,}".replace(",", " ")) for e in financings],
             "TOTAL FINANCÉ", f"{-sum(e['amount_uc'] for e in financings):,} uc".replace(",", " "))
     section(f"REMBOURSEMENTS REÇUS ({len(repayments)})", ("DATE", "RÉFÉRENCE VIREMENT", "MONTANT"),
@@ -269,7 +269,7 @@ def build_investor_360_pdf(data: dict) -> bytes:
         ("Quota mensuel", _uc(sub.get("monthly_invest_uc"))),
     ])
     cr = data["credits"]
-    block("CREDI'SCOP-INVEST", [
+    block("CREDI'SCOP", [
         ("Solde", _uc(cr.get("balance_uc"))),
         ("Consommé", _uc(cr.get("consumed_uc"))),
         ("Mouvements", cr.get("entries")),
@@ -322,10 +322,10 @@ async def check_low_quota_alert(db, user_id: str):
         from brevo_service import send_email, _wrap_html
         await send_email(
             to_email=user["email"], to_name=user.get("contact_name"),
-            subject="⚠ Votre CREDI'SCOP-INVEST passe sous 10 % du quota",
+            subject="⚠ Votre CREDI'SCOP passe sous 10 % du quota",
             html_content=_wrap_html("Capacité presque épuisée", (
                 f"<p style='font-size:14px;'>Bonjour {user.get('contact_name') or ''},</p>"
-                f"<p style='font-size:14px;'>Votre solde CREDI'SCOP-INVEST est de "
+                f"<p style='font-size:14px;'>Votre solde CREDI'SCOP est de "
                 f"<b>{balance:,} uc</b>, soit moins de 10 % de votre quota mensuel "
                 f"<b>{quota:,} uc</b> (plan {account['plan_code']}). "
                 "Pensez à acheter un pack Crédits INVEST depuis votre espace pour continuer à financer.</p>"

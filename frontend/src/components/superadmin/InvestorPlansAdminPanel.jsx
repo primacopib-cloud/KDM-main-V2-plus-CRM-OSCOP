@@ -276,7 +276,7 @@ const InvestorSubscribersTable = () => {
               </>) : <p className="m-0 text-white/40">Aucun abonnement</p>}
             </div>
             <div className="rounded-lg p-3 bg-white/[0.02] border border-white/[0.06]">
-              <p className="font-bold text-white/90 m-0 mb-1">CREDI'SCOP-INVEST</p>
+              <p className="font-bold text-white/90 m-0 mb-1">CREDI'SCOP</p>
               <p className="m-0">Solde <b className="text-[#8CC63E]">{(fiche.credits.balance_uc ?? 0).toLocaleString('fr-FR')} uc</b> / quota {(fiche.credits.quota_uc ?? 0).toLocaleString('fr-FR')} uc</p>
               <p className="m-0 text-white/40">Consommé : {(fiche.credits.consumed_uc ?? 0).toLocaleString('fr-FR')} uc · {fiche.credits.entries} mouvement(s)</p>
             </div>

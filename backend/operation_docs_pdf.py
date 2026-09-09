@@ -25,7 +25,7 @@ DOC_TYPES = {
     "FREIGHT_QUOTE": {"prefix": "DF", "title": "DEVIS DE FRET MARITIME LOGI'SCOP",
                       "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER, agissant par son établissement LOGI'SCOP"},
     "DATAROOM": {"prefix": "DR", "title": "DATA ROOM DE L'OPÉRATION",
-                 "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER — dossier de synthèse (service interne CREDI'SCOP-INVEST)"},
+                 "issuer": "SCIC SAS OBJECTIF SCOP OUTREMER — dossier de synthèse (service interne CREDI'SCOP)"},
 }
 
 
@@ -62,7 +62,7 @@ def doc_sections(doc_type: str, op: dict, extra: dict) -> list:
             ("Engagement total", _eur(extra.get("total_amount",
                 float(op.get("purchase_amount_ex_vat", 0)) + float(op.get("logistics_budget_ex_vat", 0))))),
             ("Mention", "Paiements réalisés pour le compte de la SCIC SAS OBJECTIF SCOP OUTREMER. "
-                        "Les CREDI'SCOP-INVEST ne constituent pas le montant investi."),
+                        "Les CREDI'SCOP ne constituent pas le montant investi."),
         ]
     if doc_type == "DATAROOM":
         rows = common + [
@@ -81,8 +81,8 @@ def doc_sections(doc_type: str, op: dict, extra: dict) -> list:
             rows.append((f"Document archivé {i}", f"{d.get('doc_number')} — {d.get('doc_type')} ({str(d.get('created_at', ''))[:10]})"))
         for i, it in enumerate(extra.get("interests", []), 1):
             rows.append((f"Intérêt investisseur {i}", f"{it.get('investor_name')} — statut {it.get('status')}"))
-        rows.append(("Mention", "Data room : service interne activable par CREDI'SCOP-INVEST. "
-                                "Les CREDI'SCOP-INVEST ne constituent ni un moyen de paiement, ni le montant investi."))
+        rows.append(("Mention", "Data room : service interne activable par CREDI'SCOP. "
+                                "Les CREDI'SCOP ne constituent ni un moyen de paiement, ni le montant investi."))
         return rows
     if doc_type == "FOGEDOM_REPORT":
         blockers = extra.get("blockers", [])

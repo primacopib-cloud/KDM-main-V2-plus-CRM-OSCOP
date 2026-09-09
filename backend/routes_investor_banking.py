@@ -330,7 +330,7 @@ async def send_360_to_committee(user_id: str, body: CommitteeSend, admin: dict =
                 subject=f"📋 Fiche investisseur 360 — {inv.get('name') or inv.get('email')}",
                 html_content=_wrap_html("Comité d'investissement", (
                     f"<p style='font-size:14px;'>Veuillez trouver en pièce jointe la fiche investisseur 360 de "
-                    f"<b>{inv.get('name') or inv.get('email')}</b> (abonnement, crédits CREDI'SCOP-INVEST, "
+                    f"<b>{inv.get('name') or inv.get('email')}</b> (abonnement, crédits CREDI'SCOP, "
                     f"financements, RIB, virements, factures), transmise par {admin.get('email')}.</p>")),
                 attachments=[{"content": base64.b64encode(pdf).decode(),
                               "name": f"fiche-investisseur-360-{(inv.get('name') or 'investisseur').replace(' ', '-')}.pdf"}],

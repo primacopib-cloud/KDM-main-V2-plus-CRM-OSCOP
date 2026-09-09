@@ -48,7 +48,7 @@ async def run_investor_monthly_report(db, force: bool = False):
         f"<p style='font-size:13px;'>Statuts : " +
         " · ".join(f"<b>{s}</b> : {n}" for s, n in sorted(by_status.items())) + "</p>"
         f"<p style='font-size:13px;'>Encaissements abonnements : <b>{encaisse:,.0f} €</b> ({len(invoices)} facture(s))</p>"
-        f"<p style='font-size:13px;'>Financements CREDI'SCOP-INVEST : <b>{financed_uc:,.0f} uc</b> "
+        f"<p style='font-size:13px;'>Financements CREDI'SCOP : <b>{financed_uc:,.0f} uc</b> "
         f"({len(financings)} opération(s))</p>").replace(",", " "))
     recipients = {TEAM_EMAIL.lower()}
     async for u in db.users.find({"is_admin": True}, {"_id": 0, "email": 1}):
@@ -101,7 +101,7 @@ async def run_investor_annual_statements(db, force_year: int | None = None):
                 html_content=_wrap_html("Relevé annuel", (
                     f"<p style='font-size:14px;'>Bonjour {user.get('contact_name') or ''},</p>"
                     f"<p style='font-size:14px;'>Veuillez trouver en pièce jointe votre relevé annuel <b>{year}</b> "
-                    "(abonnements, financements CREDI'SCOP-INVEST et remboursements) pour votre déclaration comptable.</p>")),
+                    "(abonnements, financements CREDI'SCOP et remboursements) pour votre déclaration comptable.</p>")),
                 attachments=[{"content": base64.b64encode(pdf).decode(), "name": f"releve-annuel-{year}.pdf"}],
                 tags=["investor-report"])
             sent += 1
@@ -175,7 +175,7 @@ async def run_investor_j3_reminders(db):
                     f"<b>{a['plan_code']}</b> ({plan.get('price_eur', 0):,.0f} €) aura lieu le "
                     f"<b>{due.strftime('%d/%m/%Y')}</b>. Merci de vérifier que votre carte bancaire "
                     "est valide et approvisionnée afin d'éviter toute interruption de votre capacité "
-                    "CREDI'SCOP-INVEST.</p>").replace(",", " ")),
+                    "CREDI'SCOP.</p>").replace(",", " ")),
                 tags=["investor-billing"],
             )
             await db.investor_accounts.update_one({"id": a["id"]}, {"$set": {"j3_reminder_period": period_key}})

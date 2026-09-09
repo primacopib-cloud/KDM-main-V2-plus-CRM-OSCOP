@@ -137,14 +137,14 @@
     "fam_agriculture": "Agrikilti & végétal",
     "fam_commerce": "Komès jénéral, ijyèn & bazar",
     "fin_title": "Finansman : kat konpartiman séparé",
-    "fin_sub": "Sé CREDI'SCOP-INVEST la ka aktivé sèvis entèn-yo. Sé éro-la oben déviz-la ka finansé opérasyon-la.",
+    "fin_sub": "Sé CREDI'SCOP la ka aktivé sèvis entèn-yo. Sé éro-la oben déviz-la ka finansé opérasyon-la.",
     "fin_compartments": [
       {
         "t": "Abònman mansuèl O'SCOP",
         "d": "Aksè a sèvis santral-la, fakturé an éro."
       },
       {
-        "t": "Kontè inité sèvis CREDI'SCOP-INVEST",
+        "t": "Kontè inité sèvis CREDI'SCOP",
         "d": "Ka aktivé sèvis entèn koopératif-yo. San valè monétè."
       },
       {
@@ -156,7 +156,7 @@
         "d": "Vantilé sèlon kaskad ankesman chak opérasyon."
       }
     ],
-    "fin_can_title": "Sé CREDI'SCOP-INVEST la pé aktivé",
+    "fin_can_title": "Sé CREDI'SCOP la pé aktivé",
     "fin_can_list": [
       "Data room",
       "Kalifikasyon founisè",

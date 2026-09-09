@@ -6,7 +6,7 @@ import { getAuthHeaders } from '../../services/http';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const fmtUc = (n) => (n ?? 0).toLocaleString('fr-FR') + ' uc';
 
-// Solde CREDI'SCOP-INVEST temps réel + historique + alertes + packs
+// Solde CREDI'SCOP temps réel + historique + alertes + packs
 export const InvestCreditsWidget = () => {
   const [data, setData] = useState(null);
   const [none, setNone] = useState(false);
@@ -70,7 +70,7 @@ export const InvestCreditsWidget = () => {
       )}
       <div className="flex items-center gap-2 mb-2">
         <Coins className="w-4 h-4 text-[#D9B35A]" />
-        <h3 className="text-sm font-bold text-[#E9CF8E] m-0">CREDI'SCOP-INVEST — plan {data.plan}</h3>
+        <h3 className="text-sm font-bold text-[#E9CF8E] m-0">CREDI'SCOP — plan {data.plan}</h3>
         <span className="ml-auto text-[11px] text-white/40">quota mensuel {fmtUc(data.monthly_invest_uc)}</span>
       </div>
       <div className="flex items-end gap-4 flex-wrap mb-2">

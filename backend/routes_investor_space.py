@@ -1,4 +1,4 @@
-"""Espace investisseur connecté : engagements, tranches, CREDI'SCOP-INVEST et remboursements réels."""
+"""Espace investisseur connecté : engagements, tranches, CREDI'SCOP et remboursements réels."""
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, timezone
@@ -86,8 +86,8 @@ async def decide_application(app_id: str, payload: dict, admin: dict = Depends(_
                 f"<p style='font-size:14px;'>Bonjour {app_doc['name']},</p>"
                 "<p style='font-size:14px;'>Votre candidature a été <b>approuvée</b> par l'équipe O'SCOP. "
                 "Connectez-vous avec votre email et le mot de passe choisi lors de votre candidature, "
-                "puis accédez à votre espace investisseur (engagements, remboursements, CREDI'SCOP-INVEST).</p>"
-                "<p style='font-size:12px;color:#B8A98F;'>Les CREDI'SCOP-INVEST sont des unités internes de services : "
+                "puis accédez à votre espace investisseur (engagements, remboursements, CREDI'SCOP).</p>"
+                "<p style='font-size:12px;color:#B8A98F;'>Les CREDI'SCOP sont des unités internes de services : "
                 "ils ne constituent ni un solde financier, ni le montant investi, ni un moyen de paiement du fournisseur.</p>"))
             subject = "Compte investisseur O'SCOP approuvé"
         else:
@@ -102,7 +102,7 @@ async def decide_application(app_id: str, payload: dict, admin: dict = Depends(_
     return {"success": True, "status": decision}
 
 
-DISCLAIMER = ("Les CREDI'SCOP-INVEST sont des unités internes de services. Ils ne constituent ni un solde financier, "
+DISCLAIMER = ("Les CREDI'SCOP sont des unités internes de services. Ils ne constituent ni un solde financier, "
               "ni le montant investi, ni un moyen de paiement du fournisseur. Chaque investissement réel fait "
               "l'objet d'un Bon d'Engagement et d'un paiement distinct en monnaie ayant cours légal.")
 
@@ -154,7 +154,7 @@ async def decide_financing_interest(interest_id: str, payload: dict, admin: dict
         {"id": interest_id},
         {"$set": {"status": new_status, "decided_by": admin.get("email"),
                   "decided_at": datetime.now(timezone.utc).isoformat()}})
-    # Consommation automatique des uc CREDI'SCOP-INVEST au montant financé
+    # Consommation automatique des uc CREDI'SCOP au montant financé
     consumed_uc = 0
     if decision == "accept":
         try:
@@ -181,7 +181,7 @@ async def decide_financing_interest(interest_id: str, payload: dict, admin: dict
                 "a été <b>retenu</b>. L'équipe O'SCOP vous contacte pour établir le Bon d'Engagement et les modalités "
                 "(montant, tranche marchandises ou logistique, instrument juridique).</p>"
                 "<p style='font-size:12px;color:#B8A98F;'>Tout investissement réel s'effectue en euros ou devises. "
-                "Les CREDI'SCOP-INVEST n'y participent jamais.</p>"))
+                "Les CREDI'SCOP n'y participent jamais.</p>"))
             subject = f"Financement {doc['operation_reference']} — proposition retenue"
         else:
             html = _wrap_html("Votre proposition de financement", (
@@ -243,7 +243,7 @@ async def notify_dataroom_investors(operation: dict, doc_number: str, doc_type: 
                 f"{' (' + operation['linked_product_name'] + ')' if operation.get('linked_product_name') else ''}.</p>"
                 "<p style='font-size:14px;'>Retrouvez-le en lecture seule dans la section « Ma data room » "
                 "de votre espace investisseur.</p>"
-                "<p style='font-size:12px;color:#B8A98F;'>Les CREDI'SCOP-INVEST sont des unités internes de services : "
+                "<p style='font-size:12px;color:#B8A98F;'>Les CREDI'SCOP sont des unités internes de services : "
                 "ils ne constituent ni un moyen de paiement, ni le montant investi.</p>"))
             await send_email(inv["investor_email"], inv["investor_name"],
                              f"[O'SCOP] Nouveau document — {operation.get('reference')}", html, tags=["investisseur"])
