@@ -3019,3 +3019,5 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Facture acquittée automatique : webhook Stripe communityplace → communityplace_invoice.build_paid_invoice_pdf (logo O'SCOP icon-512, bandeau, FACTURE ACQUITTÉE, pied de page SCIC) envoyée en PJ Brevo. Testé : webhook simulé → Brevo 201 avec attachment.
 - Réponse COOPER : POST /api/cooper/purchase-needs/{id}/respond (prix, délai, note) → VENDOR_ACCEPTED + emails demandeur/participants avec bouton Accepter l'offre ; formulaire inline dans CooperNeedsTab. Testé curl (890 € → VENDOR_ACCEPTED).
 - Page /coop-api : bloc « Exemple — récupérer le catalogue d'une zone » (curl + réponse JSON). Testé UI. Données de test nettoyées.
+- Badge board Offre/Demande : chaque carte du board affiche un badge « Offre » (vert) ou « Demande » (or) via listing_type. Testé UI (3 badges).
+- Historique factures : panneau superadmin « Factures de publication émises » (onglet Demandes) avec type, client, produit, date, montant, total encaissé et re-téléchargement PDF (GET /api/admin/communityplace/invoices + /{id}/pdf, PDF 200 application/pdf vérifié). Testé curl + UI (3 factures, 110 €).

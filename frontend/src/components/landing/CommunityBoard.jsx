@@ -47,6 +47,13 @@ export const CommunityBoard = () => {
               <div className="flex items-center gap-2">
                 <img src={`https://flagcdn.com/w40/${d.flag.toLowerCase()}.png`} alt={d.territory} width={24} height={16} className="rounded-[2px]" />
                 <span className="text-white font-semibold text-sm truncate">{d.product}</span>
+                <span data-testid={`board-type-badge-${d.reference}`}
+                  className={`shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide border ${
+                    d.listing_type === 'OFFRE'
+                      ? 'text-[#8CC63E] bg-[#8CC63E]/10 border-[#8CC63E]/40'
+                      : 'text-[#E9CF8E] bg-[#D9B35A]/10 border-[#D9B35A]/40'}`}>
+                  {d.listing_type === 'OFFRE' ? 'Offre' : 'Demande'}
+                </span>
                 {d.photos_count > 0 && (
                   <span className="ml-auto shrink-0 relative group/photos">
                     <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-[#8CC63E] bg-[#8CC63E]/10 border border-[#8CC63E]/35 cursor-help"
