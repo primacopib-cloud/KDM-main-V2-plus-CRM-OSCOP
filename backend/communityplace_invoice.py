@@ -80,3 +80,77 @@ def build_paid_invoice_pdf(need: dict) -> bytes:
     c.showPage()
     c.save()
     return buf.getvalue()
+
+
+def build_financing_invoice_pdf(fp: dict) -> bytes:
+    """Facture acquittée — financement produit investisseur, vendu et facturé par O'SCOP."""
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    w, h = A4
+    now = datetime.now(timezone.utc)
+    total = float(fp.get("total_price_eur") or 0)
+    base = float(fp.get("base_price_eur") or 0)
+    margin = float(fp.get("margin_percent") or 0)
+
+    c.setFillColorRGB(*PURPLE)
+    c.rect(0, h - 34 * mm, w, 34 * mm, stroke=0, fill=1)
+    if os.path.exists(LOGO_PATH):
+        try:
+            c.drawImage(LOGO_PATH, 14 * mm, h - 30 * mm, 24 * mm, 24 * mm, mask='auto')
+        except Exception:
+            pass
+    c.setFillColorRGB(*GOLD)
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(44 * mm, h - 18 * mm, "O'SCOP — Centrale coopérative")
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica", 10)
+    c.drawString(44 * mm, h - 25 * mm, "Financement produit — Espace investisseurs")
+
+    c.setFillColorRGB(0.2, 0.55, 0.25)
+    c.setFont("Helvetica-Bold", 22)
+    c.drawRightString(w - 16 * mm, h - 50 * mm, "FACTURE ACQUITTÉE")
+    c.setFillColorRGB(0, 0, 0)
+    c.setFont("Helvetica", 10)
+    c.drawString(16 * mm, h - 50 * mm, f"Facture n° {fp.get('reference')}")
+    c.drawString(16 * mm, h - 56 * mm, f"Date : {now.strftime('%d/%m/%Y')}")
+    paid_at = str(fp.get("paid_at") or "")[:10]
+    c.drawString(16 * mm, h - 62 * mm, f"Payée le : {paid_at or now.strftime('%Y-%m-%d')}")
+
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(16 * mm, h - 76 * mm, "Facturé à (investisseur) :")
+    c.setFont("Helvetica", 10)
+    c.drawString(16 * mm, h - 82 * mm, str(fp.get("paid_by") or ""))
+
+    ty = h - 100 * mm
+    c.setFillColorRGB(*GOLD)
+    c.rect(16 * mm, ty, w - 32 * mm, 9 * mm, stroke=0, fill=1)
+    c.setFillColorRGB(*PURPLE)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(19 * mm, ty + 3 * mm, "Désignation")
+    c.drawRightString(w - 19 * mm, ty + 3 * mm, "Montant TTC")
+    c.setFillColorRGB(0, 0, 0)
+    c.setFont("Helvetica", 10)
+    c.drawString(19 * mm, ty - 6 * mm, f"Financement produit — {fp.get('reference')} ({fp.get('name')})")
+    c.drawRightString(w - 19 * mm, ty - 6 * mm, f"{total:.2f} €")
+    c.setFont("Helvetica", 8)
+    c.drawString(19 * mm, ty - 11 * mm, f"Base HT : {base:.2f} € · Marge bénéficiaire O'SCOP : {margin:.2f} %")
+    c.line(16 * mm, ty - 15 * mm, w - 16 * mm, ty - 15 * mm)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawRightString(w - 19 * mm, ty - 23 * mm, f"TOTAL ACQUITTÉ : {total:.2f} €")
+    c.setFillColorRGB(0.2, 0.55, 0.25)
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(16 * mm, ty - 33 * mm, "✔ Produit vendu et facturé par O'SCOP")
+    c.setFillColorRGB(0, 0, 0)
+    c.setFont("Helvetica", 8)
+    c.drawString(16 * mm, ty - 40 * mm, "Règlement reçu par carte bancaire (Stripe). TVA non applicable, art. 293 B du CGI.")
+
+    c.setFillColorRGB(*PURPLE)
+    c.rect(0, 0, w, 20 * mm, stroke=0, fill=1)
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(w / 2, 12 * mm, "SCIC SAS OBJECTIF SCOP OUTREMER — Centrale coopérative multi-territoires")
+    c.drawCentredString(w / 2, 7 * mm, "contact@objectifscopoutremer.com · centrale.objectifscopoutremer.com · Guadeloupe · Martinique · Guyane · La Réunion · Mayotte")
+
+    c.showPage()
+    c.save()
+    return buf.getvalue()

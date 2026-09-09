@@ -6,6 +6,7 @@ import { BreadcrumbPill } from '../components/Breadcrumb';
 import { SpaceHeaderActions } from '../components/SpaceHeaderActions';
 import { InvestorLiveDashboard } from '../components/investor/InvestorLiveDashboard';
 import { FinancingOpportunities } from '../components/investor/FinancingOpportunities';
+import { ProductFinancingBoard } from '../components/investor/ProductFinancingBoard';
 import { MessagesNavLink } from '../components/MessagesNavLink';
 import { InvestorDataroom } from '../components/investor/InvestorDataroom';
 import { InvestorApplyForm } from '../components/investor/InvestorApplyForm';
@@ -83,6 +84,7 @@ export default function InvestorSpacePage() {
         <InvestorLiveDashboard />
         <InvestorDataroom />
         <FinancingOpportunities />
+        <ProductFinancingBoard />
         <CheckoutResultBanner />
         <InvestCreditsWidget />
         <InvestorBankDetails />

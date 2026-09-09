@@ -30,6 +30,7 @@ import { CoopersConventionsTab } from '../components/superadmin/CoopersConventio
 import { VendorAdhesionsPanel } from '../components/superadmin/VendorAdhesionsPanel';
 import { AccountingTab } from '../components/superadmin/AccountingTab';
 import { PurchaseResaleTab } from '../components/superadmin/PurchaseResaleTab';
+import { FinancingProductsPanel } from '../components/superadmin/FinancingProductsPanel';
 import { ServiceCreditsPanel } from '../components/superadmin/ServiceCreditsPanel';
 import { InvestorPlansAdminPanel } from '../components/superadmin/InvestorPlansAdminPanel';
 import { PurchaseNeedsPanel } from '../components/superadmin/PurchaseNeedsPanel';
@@ -253,6 +254,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="achat-revente">
             <PurchaseResaleTab />
+            <FinancingProductsPanel />
             <MarginsChart />
             <ReminderSettings />
             <DisputedOrdersPanel />
