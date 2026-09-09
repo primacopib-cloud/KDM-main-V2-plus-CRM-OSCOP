@@ -13,16 +13,35 @@ export const canUseFreight = (u) =>
   !!u && (u.is_admin || ['admin', 'superadmin', 'buyer'].includes(u.role));
 
 export const FreightAccessGate = () => (
-  <div className="max-w-[560px] mx-auto my-16 glass-panel-soft rounded-[22px] p-8 text-center" data-testid="freight-access-gate">
+  <div className="max-w-[640px] mx-auto my-16 glass-panel-soft rounded-[22px] p-8 text-center" data-testid="freight-access-gate">
     <Lock className="w-8 h-8 text-[#D9B35A] mx-auto mb-3" />
     <h2 className="text-lg font-bold text-white mb-2">Accès réservé</h2>
     <p className="text-white/70 text-sm mb-4">
       Le calculateur de fret maritime LOGI'SCOP est accessible exclusivement aux acheteurs
       professionnels et à l'administration O'SCOP.
     </p>
-    <a href="/connexion" className="on-gold inline-flex items-center px-4 py-2.5 rounded-[12px] bg-[#D9B35A] hover:bg-[#F2D07A] text-sm font-bold">
-      Se connecter
-    </a>
+    <div className="text-left rounded-xl border border-white/12 bg-white/[0.04] p-4 mb-5" data-testid="freight-gate-presentation">
+      <p className="text-[13px] font-bold text-[#E9CF8E] m-0 mb-2">🚢 LOGI'SCOP, la logistique coopérative multi-territoires</p>
+      <ul className="m-0 pl-4 space-y-1 text-[12.5px] text-white/70">
+        <li>Enlèvement et groupage de vos marchandises en métropole et en zone</li>
+        <li>Fret maritime ou aérien vers les Antilles, la Guyane, La Réunion et Mayotte</li>
+        <li>Dédouanement, stockage et livraison du dernier kilomètre</li>
+        <li>Calculateur de fret : estimez vos coûts au conteneur, à la palette ou au m³</li>
+      </ul>
+      <p className="text-[12px] text-white/50 m-0 mt-2">
+        Adhérez à la centrale O'SCOP pour débloquer le calculateur et organiser vos flux au tarif coopératif.
+      </p>
+    </div>
+    <div className="flex flex-wrap items-center justify-center gap-3">
+      <a href="/connexion" data-testid="freight-gate-login"
+        className="on-gold inline-flex items-center px-4 py-2.5 rounded-[12px] bg-[#D9B35A] hover:bg-[#F2D07A] text-sm font-bold">
+        Se connecter
+      </a>
+      <a href="/tarifs" data-testid="freight-gate-join"
+        className="inline-flex items-center px-4 py-2.5 rounded-[12px] border border-[#8CC63E]/50 text-[#B6E27A] hover:bg-[#8CC63E]/10 text-sm font-bold">
+        Adhérer à la centrale
+      </a>
+    </div>
   </div>
 );
 

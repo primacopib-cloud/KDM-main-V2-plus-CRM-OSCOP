@@ -394,7 +394,12 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
     gallery = [i for i in gallery if i]
     if product.get("image_url") and product["image_url"] not in gallery:
         gallery.insert(0, product["image_url"])
-    
+
+    cb_only = False
+    if product.get("supplier_id"):
+        cb_only = bool(await db.vendors.find_one(
+            {"id": product["supplier_id"], "cb_only_payment": True}, {"_id": 0, "id": 1}))
+
     resp = ProductResponse(
         id=product["id"],
         sku=product["sku"],
@@ -423,6 +428,7 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
         sale_model=product.get("sale_model", "PARTNER_DIRECT_SALE"),
         seller_name=product.get("seller_name"),
         financing_eligible=product.get("financing_eligible"),
+        cb_only_payment=cb_only,
         oscop_price_ht_cents=product.get("oscop_price_ht_cents"),
         oscop_logistics_price_ht_cents=product.get("oscop_logistics_price_ht_cents"),
         oscop_vat_rate=product.get("oscop_vat_rate"),

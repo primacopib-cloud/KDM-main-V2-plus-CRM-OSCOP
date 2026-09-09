@@ -39,6 +39,11 @@ export const CommunityBoard = () => {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Erreur');
+      if (d.payment_required && d.checkout_url) {
+        toast.info(`Participation mutualisée : ${d.participation_eur.toFixed(2).replace('.', ',')} € — redirection vers le paiement…`);
+        setTimeout(() => { window.location.href = d.checkout_url; }, 1200);
+        return;
+      }
       setDemands((prev) => prev.map((x) => (x.reference === ref
         ? { ...x, joiners_count: d.joiners_count, joined_quantity: d.joined_quantity } : x)));
       setJoinRef(null); setJoinEmail('');
@@ -48,6 +53,25 @@ export const CommunityBoard = () => {
   useEffect(() => {
     fetch(`${API_URL}/api/public/community-board`)
       .then((r) => (r.ok ? r.json() : { demands: [] })).then((d) => setDemands(d.demands || [])).catch(() => {});
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('join_session');
+    if (params.get('join_paid') && sessionId) {
+      fetch(`${API_URL}/api/public/purchase-needs/join/verify?session_id=${encodeURIComponent(sessionId)}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.ok) {
+            toast.success(`Participation de ${(d.participation_eur || 0).toFixed(2).replace('.', ',')} € confirmée — vous avez rejoint l'annonce ${d.reference} !`);
+            setDemands((prev) => prev.map((x) => (x.reference === d.reference
+              ? { ...x, joiners_count: d.joiners_count, joined_quantity: d.joined_quantity } : x)));
+          }
+        })
+        .catch(() => {});
+      window.history.replaceState({}, '', window.location.pathname + '#community-board');
+    }
+    if (params.get('join_cancelled')) {
+      toast.info('Paiement de la participation annulé — vous pouvez réessayer à tout moment.');
+      window.history.replaceState({}, '', window.location.pathname + '#community-board');
+    }
   }, []);
   if (!demands.length) return null;
   const OFFER_STATUSES = ['VENDOR_ACCEPTED', 'OFFER_ACCEPTED'];
@@ -167,14 +191,24 @@ export const CommunityBoard = () => {
                 </a>
                 <button type="button" data-testid={`board-join-${d.reference}`}
                   onClick={() => { setJoinRef(joinRef === d.reference ? null : d.reference); setJoinQty(3); }}
+                  title={d.participation_eur > 0
+                    ? `Participation mutualisée : ${d.participation_eur.toFixed(2).replace('.', ',')} € — frais de publication répartis entre les ${(d.joiners_count || 0) + 1} participant(s)`
+                    : 'Rejoindre gratuitement cette annonce'}
                   className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#D9B35A]/15 text-[#E9CF8E] border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25 transition-colors">
-                  Rejoindre
+                  Rejoindre{d.participation_eur > 0 ? ` · ${d.participation_eur.toFixed(2).replace('.', ',')} €` : ''}
                 </button>
                 </span>
                 )}
               </div>
               {joinRef === d.reference && (
-                <div className="mt-2 flex gap-1.5" data-testid={`board-join-form-${d.reference}`}>
+                <div className="mt-2" data-testid={`board-join-form-${d.reference}`}>
+                  {d.participation_eur > 0 && (
+                    <p className="text-[10.5px] text-[#E9CF8E]/90 m-0 mb-1.5" data-testid={`board-join-fee-${d.reference}`}>
+                      💳 Participation mutualisée : <b>{d.participation_eur.toFixed(2).replace('.', ',')} €</b>{' '}
+                      <span className="text-white/45">(prix de publication ÷ {(d.joiners_count || 0) + 1} participant{(d.joiners_count || 0) + 1 > 1 ? 's' : ''})</span>
+                    </p>
+                  )}
+                  <div className="flex gap-1.5">
                   <input value={joinEmail} onChange={(e) => setJoinEmail(e.target.value)} placeholder="votre@email.fr"
                     data-testid={`board-join-email-${d.reference}`}
                     className="h-8 flex-1 min-w-0 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-white text-[11px] placeholder:text-white/35" />
@@ -183,8 +217,9 @@ export const CommunityBoard = () => {
                     className="h-8 w-14 px-1.5 rounded-lg bg-white/[0.06] border border-white/15 text-white text-[11px]" />
                   <button type="button" onClick={() => submitJoin(d.reference)} data-testid={`board-join-submit-${d.reference}`}
                     className="h-8 px-2.5 rounded-lg text-[11px] font-bold text-[#1F2A12] bg-[#D9B35A] hover:brightness-110 transition-[filter]">
-                    OK
+                    {d.participation_eur > 0 ? 'Payer & rejoindre' : 'OK'}
                   </button>
+                  </div>
                 </div>
               )}
             </div>

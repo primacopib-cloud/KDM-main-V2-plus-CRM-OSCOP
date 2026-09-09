@@ -22,6 +22,7 @@ export const VendorPaymentSettings = ({ vendorId }) => {
     try {
       const r = await fetch(`${API_URL}/api/vendor/profile/${vendorId}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ cb_only_payment: value }),
       });
       if (!r.ok) throw new Error();
