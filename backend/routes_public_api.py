@@ -39,6 +39,15 @@ async def _resolve_key(x_api_key: Optional[str], request: Optional[Request] = No
         "$set": {"last_used_at": datetime.now(timezone.utc).isoformat()},
         "$inc": {"requests_count": 1, "month_usage": 1},
     })
+    new_usage = (key.get("month_usage") or 0) + 1
+    if new_usage >= quota * 0.8 and key.get("partner_email") and key.get("quota_alert_month") != month:
+        res = await db.api_keys.update_one(
+            {"id": key["id"], "quota_alert_month": {"$ne": month}},
+            {"$set": {"quota_alert_month": month}})
+        if res.modified_count:
+            import asyncio
+            from api_subscription_reminders import send_quota_alert
+            asyncio.create_task(send_quota_alert(db, key, new_usage, quota))
     if request is not None:
         await db.api_call_logs.insert_one({
             "key_id": key["id"], "method": request.method, "path": request.url.path,

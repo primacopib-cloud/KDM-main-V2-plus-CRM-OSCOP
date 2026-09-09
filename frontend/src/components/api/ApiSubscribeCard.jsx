@@ -1,11 +1,77 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowRight, CheckCircle2, Copy, Download, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Copy, Download, Eye, EyeOff, FlaskConical, KeyRound, Loader2, Save, Webhook } from 'lucide-react';
 import { getAuthHeaders, getSessionToken } from '../../services/http';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const frDate = (iso) => { try { return new Date(iso).toLocaleDateString('fr-FR'); } catch { return iso; } };
+
+const WebhookSandbox = ({ sub, onSaved }) => {
+  const [url, setUrl] = useState(sub.webhook_url || '');
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const dirty = url !== (sub.webhook_url || '');
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch(`${API}/api-subscription/me/webhook`, {
+        method: 'PUT', headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        credentials: 'include', body: JSON.stringify({ webhook_url: url }),
+      });
+      const d = await r.json();
+      if (!r.ok) toast.error(d.detail || 'Enregistrement impossible');
+      else { toast.success(url ? 'Webhook enregistré' : 'Webhook retiré'); onSaved(); }
+    } catch { toast.error('Erreur réseau'); }
+    setSaving(false);
+  };
+
+  const test = async () => {
+    setTesting(true);
+    try {
+      const r = await fetch(`${API}/api-subscription/me/webhook/test`, {
+        method: 'POST', headers: getAuthHeaders(), credentials: 'include',
+      });
+      const d = await r.json();
+      if (!r.ok) toast.error(d.detail || 'Test impossible');
+      else if (d.ok) toast.success(`Webhook OK — votre endpoint a répondu ${d.status_code} ✓`);
+      else toast.error(`Échec du webhook : ${d.error || `HTTP ${d.status_code}`}`);
+    } catch { toast.error('Erreur réseau'); }
+    setTesting(false);
+  };
+
+  return (
+    <div className="mt-4 rounded-xl border border-white/15 bg-black/20 p-4" data-testid="api-webhook-sandbox">
+      <p className="text-xs font-bold uppercase tracking-wide text-white/50 mb-1 flex items-center gap-1.5">
+        <Webhook className="w-3.5 h-3.5 text-[#D9B35A]" /> Webhook commandes (temps réel)
+      </p>
+      <p className="text-[11px] text-white/45 m-0 mb-2">
+        Recevez chaque commande LOLODRIVE de votre relais (payée, prête, retirée) sur votre outil — testez votre
+        endpoint avant la mise en production.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <input value={url} onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://mon-outil.fr/hooks/lolodrive" data-testid="api-webhook-url-input"
+          className="h-9 px-3 rounded-lg bg-white/[0.06] border border-white/15 text-xs text-white placeholder:text-white/30 flex-1 min-w-[220px]" />
+        {dirty && (
+          <button type="button" onClick={save} disabled={saving} data-testid="api-webhook-save-btn"
+            className="h-9 px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 text-[#1F0A33] disabled:opacity-60"
+            style={{ background: '#D4AF37' }}>
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Enregistrer
+          </button>
+        )}
+        {!dirty && sub.webhook_url && (
+          <button type="button" onClick={test} disabled={testing} data-testid="api-webhook-test-btn"
+            className="h-9 px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border border-emerald-400/40 text-emerald-300 hover:bg-emerald-400/10 disabled:opacity-60">
+            {testing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FlaskConical className="w-3.5 h-3.5" />}
+            {testing ? 'Test en cours…' : 'Tester mon webhook'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export const ApiSubscribeCard = () => {
   const navigate = useNavigate();
@@ -134,6 +200,7 @@ export const ApiSubscribeCard = () => {
             </button>
           </div>
         </div>
+        <WebhookSandbox sub={sub} onSaved={loadMe} />
         <div className="mt-4 flex flex-wrap gap-3">
           <button type="button" onClick={downloadInvoice} data-testid="api-sub-invoice-btn"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white border border-white/25 hover:bg-white/5">

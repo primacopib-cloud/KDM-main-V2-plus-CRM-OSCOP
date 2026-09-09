@@ -46,6 +46,31 @@ async def run_api_subscription_expiry_reminders(db) -> int:
     return sent
 
 
+async def send_quota_alert(db, key: dict, usage: int, quota: int) -> None:
+    """Alerte 80 % du quota mensuel — envoyée une fois par mois et par clé (best-effort)."""
+    try:
+        from brevo_service import send_email, _wrap_html
+        base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+        pct = round(usage / quota * 100)
+        await send_email(
+            to_email=key["partner_email"], to_name=None,
+            subject=f"⚠️ Votre clé API a atteint {pct} % de son quota mensuel ({usage:,}/{quota:,} requêtes)",
+            html_content=_wrap_html("Alerte quota API", (
+                "<p style='font-size:14px;'>Bonjour,</p>"
+                f"<p style='font-size:14px;'>Votre clé API <b>{key.get('prefix')}</b> a consommé "
+                f"<b>{usage:,}</b> requêtes sur <b>{quota:,}</b> ce mois-ci ({pct} %).</p>"
+                "<p style='font-size:14px;'>Au-delà du quota, les appels seront refusés jusqu'au début du "
+                "mois suivant. Pensez à optimiser vos synchronisations ou contactez la Centrale pour "
+                "ajuster votre quota.</p>"
+                f"<p style='text-align:center;'><a href='{base}/coop-api' "
+                "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
+                "padding:12px 26px;border-radius:12px;text-decoration:none;'>Voir ma consommation</a></p>")),
+            tags=["api-quota-alert"])
+        logger.info("Alerte quota 80%% envoyée : %s (%s/%s)", key.get("partner_email"), usage, quota)
+    except Exception as exc:
+        logger.warning("Alerte quota API : %s", exc)
+
+
 async def run_api_subscription_expirations(db) -> int:
     """Désactive la clé API des abonnements arrivés à expiration sans renouvellement (idempotent)."""
     now = datetime.now(timezone.utc).isoformat()
