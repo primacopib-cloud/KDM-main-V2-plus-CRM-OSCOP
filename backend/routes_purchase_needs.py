@@ -543,6 +543,34 @@ async def accept_offer_from_board(reference: str, body: BoardAcceptBody):
             "redirect": f"/tarifs?besoin={need['reference']}"}
 
 
+@purchase_needs_router.get("/admin/purchase-needs/acceptances")
+async def board_acceptances(admin: dict = Depends(require_admin)):
+    """Historique superadmin : qui a accepté quelles offres (email/board) et quand."""
+    needs = await db.purchase_needs.find(
+        {"$or": [{"status": "OFFER_ACCEPTED"}, {"participant_accepts.0": {"$exists": True}}]},
+        {"_id": 0, "reference": 1, "product": 1, "listing_type": 1, "email": 1, "company": 1,
+         "vendor_price_eur": 1, "assigned_vendor": 1, "assigned_role": 1, "status": 1,
+         "offer_accepted_at": 1, "offer_accepted_via": 1, "participant_accepts": 1},
+    ).sort("offer_accepted_at", -1).to_list(200)
+    out = []
+    for n in needs:
+        entries = []
+        if n.get("status") == "OFFER_ACCEPTED":
+            entries.append({"email": n.get("email"), "role": "déposant",
+                            "accepted_at": n.get("offer_accepted_at"),
+                            "via": n.get("offer_accepted_via") or "email"})
+        for a in (n.get("participant_accepts") or []):
+            entries.append({"email": a.get("email"), "role": "participant",
+                            "accepted_at": a.get("accepted_at"), "via": a.get("via") or "email"})
+        out.append({"reference": n["reference"], "product": n["product"],
+                    "listing_type": n.get("listing_type") or "DEMANDE",
+                    "company": n.get("company"),
+                    "vendor_price_eur": n.get("vendor_price_eur"),
+                    "responder": n.get("assigned_vendor"), "responder_role": n.get("assigned_role"),
+                    "acceptances": entries})
+    return {"needs": out, "total_acceptances": sum(len(x["acceptances"]) for x in out)}
+
+
 class AssignBody(BaseModel):
     vendor_email: EmailStr
 
