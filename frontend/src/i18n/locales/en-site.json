@@ -210,8 +210,8 @@
     "wallet_credits_oscop": "CREDI'SCOP",
     "systeme_de_credits_o": "O'SCOP credits system",
     "complementaire_a_votre_abonnement": "Complementary to your subscription",
-    "les_credits_financent": "Credits fund:",
-    "credits_financent_detail": "Credits fund intensive usage, priority access, additional zones and SSE services.",
+    "les_credits_financent": "Credits give access to:",
+    "credits_financent_detail": "Credits give access to heavy usage, priority access, additional zones and ESS services.",
     "credits_warning": "⚠️ Credits never affect the price of products sold by KDMARCHE.",
     "credits_usage": [
       "Intensive usage",
@@ -455,7 +455,7 @@
   },
   "pro": {
     "hero_badge": "MULTI-TERRITORY PROFESSIONAL PURCHASING CENTRE",
-    "hero_title_1": "Your purchasing, financing and logistics,",
+    "hero_title_1": "Your purchasing and logistics,",
     "hero_title_2": "in a single journey.",
     "hero_desc": "O'SCOP can buy goods from the supplier, resell them and invoice the professional client. Depending on the offer, a referenced partner may also remain the direct seller. The circuit, price, logistics and payment beneficiary are defined before any commitment.",
     "cta_besoin": "Submit a purchasing need",
@@ -465,14 +465,12 @@
     "flow_steps": [
       "Client order confirmed",
       "Supplier invoices O'SCOP",
-      "Financer pays the supplier",
       "LOGI'SCOP manages transport",
-      "O'SCOP resells and invoices the client",
-      "Collections repay the amounts due — the balance is O'SCOP's margin"
+      "O'SCOP resells and invoices the client"
     ],
     "flow_note": "Illustrative diagram of the typical circuit. No amount shown represents an actual available line.",
-    "journeys_title": "Four professional journeys",
-    "journeys_sub": "Buy, sell, finance and organise logistics — within a single cooperative framework.",
+    "journeys_title": "Three professional journeys",
+    "journeys_sub": "Buy, sell and organise logistics — within a unique cooperative framework.",
     "j_acheteurs_t": "Professional buyers",
     "j_acheteurs_d": "Submit your purchasing needs, compare offers from both circuits and order at professional prices excl. VAT.",
     "j_acheteurs_c": "Buy",

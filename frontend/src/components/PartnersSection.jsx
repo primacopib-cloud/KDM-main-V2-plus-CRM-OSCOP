@@ -129,10 +129,10 @@ const PartnersSection = () => {
         {/* Carte 3 : LOGI'SCOP */}
         <div className="glass-panel-soft rounded-[22px] p-5 mt-3.5 relative overflow-hidden" data-testid="logiscop-card">
           <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, #4FC3F7, #81D4FA)' }}></div>
-          <h4 className="text-base font-bold text-white/95 mb-1.5">Logistique intégrée et finançable avec LOGI'SCOP</h4>
+          <h4 className="text-base font-bold text-white/95 mb-1.5">Logistique intégrée avec LOGI'SCOP</h4>
           <p className="text-white/70 text-sm">
             O'SCOP peut intégrer au devis le transport, le fret, le transit, le stockage, la préparation de commandes
-            et la livraison. L'investisseur peut financer une tranche logistique distincte, suivie par LOGI'SCOP.
+            et la livraison, pilotés par LOGI'SCOP.
           </p>
           <p className="text-white/45 text-xs mt-2">
             LOGI'SCOP est l'établissement logistique de la SCIC SAS OBJECTIF SCOP OUTREMER. Les engagements

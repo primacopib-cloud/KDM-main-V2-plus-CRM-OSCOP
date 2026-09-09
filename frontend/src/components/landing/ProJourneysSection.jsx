@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Factory, TrendingUp, Ship, ArrowRight } from 'lucide-react';
+import { ShoppingCart, Factory, Ship, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const JOURNEYS = [
   { icon: ShoppingCart, color: '#D9B35A', key: 'acheteurs', to: '/espace-acheteur', testid: 'journey-acheter' },
   { icon: Factory, color: '#8CC63E', key: 'fournisseurs', to: '/adhesion-vendeur', testid: 'journey-fournisseurs' },
-  { icon: TrendingUp, color: '#B37BE8', key: 'investisseurs', to: '/espace-investisseur', testid: 'journey-financer' },
   { icon: Ship, color: '#5AA7D9', key: 'logiscop', to: '/calculateur-fret', testid: 'journey-logiscop' },
 ];
 

@@ -210,8 +210,8 @@
     "wallet_credits_oscop": "CREDI'SCOP",
     "systeme_de_credits_o": "Système de crédits O'SCOP",
     "complementaire_a_votre_abonnement": "Complémentaire à votre abonnement",
-    "les_credits_financent": "Les crédits financent :",
-    "credits_financent_detail": "Les crédits financent l'usage intensif, l'accès prioritaire, les zones supplémentaires et les services ESS.",
+    "les_credits_financent": "Les crédits donnent accès à :",
+    "credits_financent_detail": "Les crédits donnent accès à l'usage intensif, à l'accès prioritaire, aux zones supplémentaires et aux services ESS.",
     "credits_warning": "⚠️ Les crédits n'impactent jamais le prix des produits vendus par KDMARCHE.",
     "credits_usage": [
       "L'usage intensif",
@@ -455,7 +455,7 @@
   },
   "pro": {
     "hero_badge": "CENTRALE PROFESSIONNELLE MULTI-TERRITOIRES",
-    "hero_title_1": "Vos achats, votre financement et votre logistique,",
+    "hero_title_1": "Vos achats et votre logistique,",
     "hero_title_2": "dans un seul parcours.",
     "hero_desc": "O'SCOP peut acheter les marchandises auprès du fournisseur, les revendre et facturer le client professionnel. Selon l'offre, un partenaire référencé peut également demeurer le vendeur direct. Le circuit, le prix, la logistique et le bénéficiaire du paiement sont définis avant l'engagement.",
     "cta_besoin": "Déposer un besoin d'achat",
@@ -465,14 +465,12 @@
     "flow_steps": [
       "Commande client confirmée",
       "Fournisseur facture O'SCOP",
-      "Financeur paie le fournisseur",
       "LOGI'SCOP pilote le transport",
-      "O'SCOP revend et facture le client",
-      "Les encaissements remboursent les sommes dues — le solde constitue la marge O'SCOP"
+      "O'SCOP revend et facture le client"
     ],
     "flow_note": "Schéma illustratif du circuit type. Aucun montant présenté ne constitue une ligne disponible réelle.",
-    "journeys_title": "Quatre parcours professionnels",
-    "journeys_sub": "Acheter, vendre, financer et organiser la logistique — dans un cadre coopératif unique.",
+    "journeys_title": "Trois parcours professionnels",
+    "journeys_sub": "Acheter, vendre et organiser la logistique — dans un cadre coopératif unique.",
     "j_acheteurs_t": "Acheteurs professionnels",
     "j_acheteurs_d": "Déposez vos besoins d'achat, comparez les offres des deux circuits et commandez au tarif professionnel HT.",
     "j_acheteurs_c": "Acheter",
@@ -486,7 +484,7 @@
     "j_logiscop_d": "Enlèvement, groupage, fret maritime ou aérien, douane, stockage et dernier kilomètre multi-territoires.",
     "j_logiscop_c": "Organiser la logistique",
     "families_title": "Catalogue professionnel",
-    "families_sub": "Chaque fiche affiche le vendeur juridique, l'émetteur de la facture, le territoire, la disponibilité, la logistique, l'éligibilité au financement et le prix HT.",
+    "families_sub": "Chaque fiche affiche le vendeur juridique, l'émetteur de la facture, le territoire, la disponibilité, la logistique et le prix HT.",
     "families_cta": "Ouvrir le catalogue Pro",
     "fam_alimentaire": "Alimentaire & épicerie",
     "fam_btp": "BTP & équipements",

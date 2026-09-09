@@ -37,7 +37,6 @@ import { AudienceSwitcher } from '../components/landing/AudienceSwitcher';
 import { ProHero } from '../components/landing/ProHero';
 import { ProJourneysSection } from '../components/landing/ProJourneysSection';
 import { ProCatalogFamilies } from '../components/landing/ProCatalogFamilies';
-import { FinancingCompartments } from '../components/landing/FinancingCompartments';
 import { CooperSignupAccordion } from '../components/landing/CooperSignupAccordion';
 import { LolodriveSection } from '../components/landing/LolodriveSection';
 export { PublicLolodriveMapSection };
@@ -64,8 +63,6 @@ const LandingPage = () => {
       {/* Catalogue professionnel — quatre familles */}
       <Reveal variant="left"><ProCatalogFamilies /></Reveal>
 
-      {/* Financement — quatre compartiments + CREDI'SCOP */}
-      <Reveal><FinancingCompartments /></Reveal>
 
       {/* Ticker d'activité en direct */}
       <ActivityTicker />
