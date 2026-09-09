@@ -1,0 +1,26 @@
+{
+  "summary": "Iter86 — Validated Financement produits investisseurs, Relance 48h CommunityPlace, and Vitrine offres vendeur end-to-end. Backend pytest: 21/21 PASS (auth guards 401/403, validations 422 base<=0 & margin>500, missing name 400, 404 unknown, CRUD flow: create OOC 1000€×15% → total 1150 & status OPEN, update recalculates 25% → 1250, investor list hides created_by/stripe_session_id/pending_by, non-investor buyer 403, investor /pay returns Stripe checkout_url + PENDING_PAYMENT, webhook checkout.session.completed → PAID + paid_by + facture email, webhook idempotent 2nd call, edit/delete/pay-after-PAID all 409, vendor /my-listings 401 unauth + 200 auth, pay-link 404 wrong owner). Communityplace reminder: antidated PENDING >48h → 1 email sent + reminder_sent=True + new checkout_id; 2nd run 0; fresh <48h → 0. Frontend UI: /superadmin > Achat-Revente > financing-products-panel — created OOC product 1000€×15% (preview '= 1 150,00 €'), row appeared with À financer badge, Marge button (prompt→25) updated total to 1 250,00 €, delete removed row (0 remaining). /espace-investisseur > product-financing-board — OPEN product shows Payer button + total 960€, PAID product shows fin-sold-badge-* «Vendu et facturé par O'SCOP» + 'Payé par vous'. /vendor > vendor-my-offers-panel — OFFRE badge, BA reference, statut 'Reçue — en étude', 'Frais 25 € en attente' + Payer btn; pay-link API returns 200 with valid Stripe checkout_url. Stripe LIVE preserved — NO real payment clicked; paid state simulated via webhook.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter86_financing_and_reminders.py",
+    "/app/test_reports/pytest/iter86.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_product_financing._investor gate correctly allows is_investor OR is_admin OR role in {SUPER_ADMIN,ADMIN}; non-investor buyer receives 403 as required.",
+    "_mark_paid is properly idempotent (early return when status==PAID) → no duplicate invoice emails.",
+    "GET /api/investor/financing-products projection excludes created_by & stripe_session_id and manually pops pending_by → confirmed no info leak.",
+    "Webhook /api/public/financing-products/webhook accepts unsigned payload (per spec, Emergent internal). For production hardening add stripe.Webhook.construct_event with STRIPE_WEBHOOK_SECRETS_OSCOP.",
+    "communityplace_reminders uses load_dotenv NOT — the module relies on env already loaded by scheduler at startup. In standalone scripts callers must load_dotenv('.env', override=True) as noted by main agent (documented in task).",
+    "routes_vendor_listings.my_listings correctly scopes by user's email — 404 on foreign need_id verified."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter86_financing_and_reminders.py"],
+  "success_rate": {"backend": "100% (21/21)", "frontend": "100% (superadmin panel create/edit/delete, investor board sold badge + pay btn, vendor my-offers panel + pay-link OK)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal:admin); invest.test.i@test.fr / InvestTest2026!; vendor-pro@kdmarche.fr / Demo2026!; acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "Created during tests: financing_products TEST_Iter86_Rhum/Ananas/UI_Rhum (all deleted post-test), purchase_need TEST_Iter86 offer BA-202609-FDF4BA (deleted), reminder test doc (deleted). Verified via mongo delete_many.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Suite iter86 pytest est réutilisable comme régression pour financing + vendor listings + 48h reminder. Toutes les données TEST_Iter86 sont nettoyées. Le webhook financement accepte payload non-signé (spec Emergent). Stripe est en LIVE — pour retester le flux paiement investisseur, utiliser exclusivement le webhook POST /api/public/financing-products/webhook avec metadata.financing_product_id + investor_email.",
+  "rca of the issue": "N/A — aucun bug détecté. Toutes les fonctionnalités des 3 lots validées."
+}
