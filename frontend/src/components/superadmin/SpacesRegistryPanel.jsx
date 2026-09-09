@@ -211,6 +211,7 @@ export const SpacesRegistryPanel = () => {
               )}
               {rows.map((r) => {
                 const suspended = ['SUSPENDED', 'REJECTED', 'CANCELLED'].includes(r.status);
+                const isNew = r.created_at && (Date.now() - new Date(r.created_at).getTime()) < 14 * 24 * 3600 * 1000;
                 return (
                   <tr key={r.id} className="border-b border-white/5" data-testid={`spaces-row-${r.id}`}>
                     <td className="py-2.5 pr-3">
@@ -218,6 +219,12 @@ export const SpacesRegistryPanel = () => {
                         className="text-white/90 font-medium hover:text-[#E9CF8E] underline-offset-2 hover:underline text-left">
                         {r.name}
                       </button>
+                      {isNew && (
+                        <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide text-[#8CC63E] bg-[#8CC63E]/12 border border-[#8CC63E]/45 align-middle"
+                          data-testid={`new-badge-${r.id}`} title="Inscrit il y a moins de 14 jours">
+                          Nouveau
+                        </span>
+                      )}
                     </td>
                     <td className="py-2.5 pr-3 text-white/60">{r.email || '—'}</td>
                     <td className="py-2.5 pr-3 text-white/60">

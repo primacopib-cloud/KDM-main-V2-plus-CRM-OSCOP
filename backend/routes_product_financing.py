@@ -84,6 +84,15 @@ async def create_financing_product(body: FinancingProductCreate, admin: dict = D
     }
     await db.financing_products.insert_one(dict(doc))
     doc.pop("_id", None)
+    # Investisseurs ayant déjà financé ce produit → notification de renouvellement dédiée
+    renewal_payers = set()
+    match_name = name.strip().lower()
+    async for old in db.financing_products.find(
+            {"status": "PAID", "id": {"$ne": doc["id"]}}, {"_id": 0, "paid_by": 1, "name": 1, "product_id": 1}):
+        same = (body.product_id and old.get("product_id") == body.product_id) or \
+               (old.get("name") or "").strip().lower() == match_name
+        if same and old.get("paid_by"):
+            renewal_payers.add(old["paid_by"].lower())
     # Alerte email à tous les investisseurs (nouveau produit au financement)
     try:
         from brevo_service import send_email, _wrap_html
@@ -93,6 +102,21 @@ async def create_financing_product(body: FinancingProductCreate, admin: dict = D
             {"_id": 0, "email": 1, "contact_name": 1}).to_list(500)
         for inv in investors:
             try:
+                if (inv["email"] or "").lower() in renewal_payers:
+                    await send_email(
+                        to_email=inv["email"], to_name=inv.get("contact_name"),
+                        subject=f"🔄 Le produit que vous aviez financé est de retour — {doc['name']} ({doc['reference']})",
+                        html_content=_wrap_html("Renouvellement de financement", (
+                            f"<p style='font-size:14px;'>Bonjour {inv.get('contact_name') or ''},</p>"
+                            f"<p style='font-size:14px;'>Bonne nouvelle : le produit <b>{doc['name']}</b>, que vous aviez "
+                            "déjà financé, vient d'être <b>réinscrit au financement</b> par la Centrale O'SCOP :</p>"
+                            f"<p style='font-size:14px;'><b>{doc['reference']}</b> — Prix de base HT : <b>{doc['base_price_eur']:,.2f} €</b> · "
+                            f"Marge O'SCOP : <b>{doc['margin_percent']:,.2f} %</b> · Total : <b>{doc['total_price_eur']:,.2f} €</b></p>"
+                            f"<p style='text-align:center;'><a href='{base}/espace-investisseur' "
+                            "style='display:inline-block;background:#8CC63E;color:#1F2A12;font-weight:bold;"
+                            "padding:12px 26px;border-radius:12px;text-decoration:none;'>Financer à nouveau ce produit</a></p>").replace(",", " ")),
+                        tags=["financing-renewal"])
+                    continue
                 await send_email(
                     to_email=inv["email"], to_name=inv.get("contact_name"),
                     subject=f"💰 Nouveau produit au financement — {doc['name']} ({doc['reference']})",
@@ -110,6 +134,7 @@ async def create_financing_product(body: FinancingProductCreate, admin: dict = D
             except Exception as e2:
                 logger.warning("Alerte financement %s : %s", inv.get("email"), e2)
         doc["investors_notified"] = len(investors)
+        doc["renewal_notified"] = len(renewal_payers)
     except Exception as exc:
         logger.warning("Alerte nouveau financement : %s", exc)
     return doc

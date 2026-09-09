@@ -75,6 +75,14 @@ export const CommunityBoard = () => {
               <span className="inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-semibold text-[#E9CF8E] bg-white/[0.05] border border-[#D9B35A]/30">
                 {STATUS_FR[d.status] || d.status}
               </span>
+              {d.vendor_price_eur != null && (
+                <div className="mt-2 rounded-lg px-2.5 py-1.5 bg-[#8CC63E]/10 border border-[#8CC63E]/35 text-[11px] text-[#8CC63E] font-semibold"
+                  data-testid={`board-cooper-offer-${d.reference}`}>
+                  🤝 Réponse {d.responder_role === 'COOPER' ? "COOPER'S" : 'vendeur'} :{' '}
+                  <b>{Number(d.vendor_price_eur).toLocaleString('fr-FR')} €</b>
+                  {d.vendor_delay_days != null && <> · délai {d.vendor_delay_days} j</>}
+                </div>
+              )}
               <div className="mt-2" data-testid={`board-gauge-${d.reference}`}>
                 <div className="flex justify-between text-[9px] text-white/45 mb-0.5">
                   <span>Volume groupé : {d.current_quantity}</span>
