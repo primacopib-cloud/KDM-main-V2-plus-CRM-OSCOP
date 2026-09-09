@@ -84,7 +84,7 @@ export const CommunityInvoicesPanel = () => {
             </thead>
             <tbody>
               {data.invoices.map((inv) => (
-                <tr key={inv.id} className="border-b border-white/5" data-testid={`invoice-row-${inv.reference}`}>
+                <tr key={inv.id || inv.reference} className="border-b border-white/5" data-testid={`invoice-row-${inv.reference}`}>
                   <td className="py-2 pr-3 font-mono text-xs text-white/80">CP-{inv.reference}</td>
                   <td className="py-2 pr-3">
                     <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase border ${

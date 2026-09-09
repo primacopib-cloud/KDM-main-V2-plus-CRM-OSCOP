@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   Package, Plus, CheckCircle2, Building2, TrendingUp, ShoppingCart,
-  Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Coins, FileSignature, FileText, Ticket,
+  Search, RefreshCw, AlertCircle, ArrowLeft, Filter, Coins, FileSignature, FileText, Ticket, Megaphone,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { BreadcrumbPill } from '../components/Breadcrumb';
 import { VendorNeedsPanel } from '../components/vendor/VendorNeedsPanel';
+import { PurchaseNeedForm } from '../components/landing/PurchaseNeedForm';
 import { VendorProductAssistant } from '../components/VendorProductAssistant';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 import { HeaderBackButton } from '../components/HeaderBackButton';
@@ -53,6 +54,7 @@ const VendorSpacePage = () => {
   const navigate = useNavigate();
   const [vendorId, setVendorId] = useState(null);
   const [suspension, setSuspension] = useState(null);
+  const [showOfferForm, setShowOfferForm] = useState(false);
 
   useEffect(() => {
     fetch(`${API_URL}/api/vendor-onboarding/my-vendor`, { credentials: 'include' })
@@ -259,6 +261,16 @@ const VendorSpacePage = () => {
               </Link>
               <span className="[&_svg]:!text-white/70 [&_button:hover]:!bg-white/10"><NotificationsBell /></span>
 
+              <Button
+                variant="outline"
+                onClick={() => setShowOfferForm(true)}
+                className="gap-2 border-[#8CC63E]/50 text-[#8CC63E] hover:bg-[#8CC63E]/10 hover:text-[#8CC63E]"
+                data-testid="vendor-publish-offer-btn"
+                title="Publier une offre de vente payante sur la CommunityPlace"
+              >
+                <Megaphone className="w-4 h-4" />
+                <span className="hidden sm:inline">Publier une offre</span>
+              </Button>
               <Button 
                 onClick={() => setIsFormOpen(true)}
                 className="gap-2 bg-[#D9B35A] hover:bg-[#c9a34a] text-[#1F0A33] font-semibold"
@@ -271,6 +283,7 @@ const VendorSpacePage = () => {
           </div>
         </div>
       </header>
+      {showOfferForm && <PurchaseNeedForm initialType="OFFRE" onClose={() => setShowOfferForm(false)} />}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}

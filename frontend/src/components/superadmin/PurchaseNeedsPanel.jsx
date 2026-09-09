@@ -18,13 +18,34 @@ const STATUS = {
 export const PurchaseNeedsPanel = () => {
   const [needs, setNeeds] = useState([]);
   const [stats, setStats] = useState(null);
+  const [fees, setFees] = useState({ demand_fee_eur: 50, offer_fee_eur: 25 });
+  const [feeEdit, setFeeEdit] = useState(null);
   const load = () => {
     fetch(`${API_URL}/api/admin/purchase-needs`, { headers: getAuthHeaders(), credentials: 'include' })
       .then((r) => (r.ok ? r.json() : { needs: [] })).then((d) => setNeeds(d.needs || [])).catch(() => {});
     fetch(`${API_URL}/api/admin/purchase-needs/stats`, { headers: getAuthHeaders(), credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null)).then(setStats).catch(() => {});
+    fetch(`${API_URL}/api/public/communityplace/fees`)
+      .then((r) => (r.ok ? r.json() : null)).then((d) => d && setFees(d)).catch(() => {});
   };
   useEffect(load, []);
+
+  const saveFees = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/communityplace/fees`, {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({
+          demand_fee_eur: Number(feeEdit.demand_fee_eur) || undefined,
+          offer_fee_eur: Number(feeEdit.offer_fee_eur) || undefined,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      setFees(d); setFeeEdit(null);
+      toast.success('Tarifs de publication mis à jour');
+    } catch (e) { toast.error(e.message); }
+  };
 
   const post = async (url, body, okMsg) => {
     try {
@@ -62,9 +83,34 @@ export const PurchaseNeedsPanel = () => {
 
   return (
     <div className="rounded-2xl p-5 mt-6 bg-white/[0.03] border border-white/[0.08]" data-testid="purchase-needs-panel">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
         <ShoppingCart className="w-4 h-4 text-[#D9B35A]" />
         <h3 className="text-sm font-bold text-[#E9CF8E] m-0">Besoins d'achat visiteurs ({needs.length})</h3>
+        <span className="ml-auto flex items-center gap-1.5 text-[10px] text-white/60" data-testid="communityplace-fees-badge">
+          {feeEdit ? (
+            <>
+              Demande €<input type="number" min="1" value={feeEdit.demand_fee_eur} data-testid="fee-demand-input"
+                onChange={(e) => setFeeEdit({ ...feeEdit, demand_fee_eur: e.target.value })}
+                className="w-16 h-7 px-1.5 rounded-md bg-white/[0.08] border border-white/20 text-white text-[11px]" />
+              Offre €<input type="number" min="1" value={feeEdit.offer_fee_eur} data-testid="fee-offer-input"
+                onChange={(e) => setFeeEdit({ ...feeEdit, offer_fee_eur: e.target.value })}
+                className="w-16 h-7 px-1.5 rounded-md bg-white/[0.08] border border-white/20 text-white text-[11px]" />
+              <button type="button" onClick={saveFees} data-testid="fee-save-btn"
+                className="px-2 py-1 rounded-md text-[10px] font-bold text-[#1F2A12] bg-[#8CC63E] hover:brightness-110">OK</button>
+              <button type="button" onClick={() => setFeeEdit(null)}
+                className="px-2 py-1 rounded-md text-[10px] text-white/50 border border-white/15 hover:bg-white/[0.08]">Annuler</button>
+            </>
+          ) : (
+            <>
+              <span>Tarif publication : demande {Number(fees.demand_fee_eur).toLocaleString('fr-FR')} € · offre {Number(fees.offer_fee_eur).toLocaleString('fr-FR')} €</span>
+              <button type="button" data-testid="fee-edit-btn"
+                onClick={() => setFeeEdit({ demand_fee_eur: fees.demand_fee_eur, offer_fee_eur: fees.offer_fee_eur })}
+                className="px-2 py-1 rounded-md text-[10px] font-bold text-[#E9CF8E] border border-[#D9B35A]/40 bg-[#D9B35A]/10 hover:bg-[#D9B35A]/20">
+                Modifier
+              </button>
+            </>
+          )}
+        </span>
       </div>
       {stats && stats.count > 0 && (
         <div className="mb-3 rounded-xl p-3 bg-white/[0.04] border border-white/[0.08]" data-testid="communityplace-revenue-stats">
@@ -100,7 +146,7 @@ export const PurchaseNeedsPanel = () => {
           {needs.map((n) => {
             const [label, cls] = STATUS[n.status] || STATUS.NEW;
             return (
-              <div key={n.id} className="rounded-xl px-3 py-2.5 bg-white/[0.02] border border-white/[0.06] text-[11px] text-white/70" data-testid={`need-row-${n.id}`}>
+              <div key={n.id || n.reference} className="rounded-xl px-3 py-2.5 bg-white/[0.02] border border-white/[0.06] text-[11px] text-white/70" data-testid={`need-row-${n.id}`}>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-white font-semibold">{n.reference ? `${n.reference} · ` : ''}{n.product}</span>
                   <span className="text-white/40">qté {n.quantity} · {n.territory}</span>
@@ -120,7 +166,8 @@ export const PurchaseNeedsPanel = () => {
                     {!n.communityplace && (
                       <button type="button" data-testid={`need-community-${n.id}`}
                         onClick={() => {
-                          const fee = window.prompt('Frais de publication CommunityPlace (€) facturés au demandeur :', '50');
+                          const def = n.listing_type === 'OFFRE' ? fees.offer_fee_eur : fees.demand_fee_eur;
+                          const fee = window.prompt(`Frais de publication CommunityPlace (€) facturés au ${n.listing_type === 'OFFRE' ? 'vendeur' : 'demandeur'} :`, String(def));
                           if (fee && Number(fee) > 0) post(`${API_URL}/api/admin/purchase-needs/${n.id}/communityplace`, { fee_eur: Number(fee) }, 'Publié — lien de paiement Stripe envoyé au demandeur');
                         }}
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold text-[#E9CF8E] bg-white/[0.05] border border-[#D9B35A]/30 hover:bg-white/[0.1] transition-colors">

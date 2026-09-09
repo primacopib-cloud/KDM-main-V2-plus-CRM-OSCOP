@@ -1,0 +1,29 @@
+{
+  "summary": "Iter85 CommunityPlace offers (OFFRE/DEMANDE + COOPER assignment + fees + webhook invoice). Backend: 11/11 pytest PASS — public fees GET (25/50), admin PUT fees requires auth (401), admin PUT updates + restores, public coopers list (id+name only, no email), batch OFFRE with valid cooper_id → status ASSIGNED + assigned_role=COOPER + assigned_vendor email, batch without cooper_id → status NEW, batch with invalid cooper_id → falls back to NEW (graceful), publish CommunityPlace default fee 25€ for OFFRE and 50€ for DEMANDE, webhook checkout.session.completed → PAID + invoice PDF %PDF valid, cooper login sees /api/cooper/purchase-needs. Frontend E2E: visitor landing hero-cta-besoin-achat opens purchase-need-modal, OFFRE toggle shows 'Publication payante · 25 € par offre' listing-fee-hint, need-cooper-select lists 'Cooper Test', submit → purchase-need-success with need-tracking-ref BA-* and need-cooper-confirm '🤝 Assigné au COOPER'S Cooper Test'. Superadmin /superadmin → tab Demandes shows communityplace-fees-badge 'Tarif publication : demande 50 € · offre 25 €', fee-edit-btn opens inputs, fee-save-btn updates badge to 27 € then restored to 25 €. Catalog /catalogue in visitor mode: selecting Cuba in catalog-country-filter persists kdm_last_country=CUBA in localStorage and after reload the filter displays 'Cuba' automatically.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "SuperAdmin > Demandes", "issues": ["React console warning 'Each child in a list should have a unique key prop' — reported in PurchaseNeedsPanel AND CommunityInvoicesPanel (same as iter84 for PurchaseNeedsPanel, but CommunityInvoicesPanel is a new occurrence). Non-blocking but should be fixed."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iter85_communityplace_offers.py", "/app/test_reports/pytest/iter85.xml"],
+  "action_items": [
+    "Fix React 'unique key' warnings in /app/frontend/src/components/superadmin/PurchaseNeedsPanel.jsx AND /app/frontend/src/components/superadmin/CommunityInvoicesPanel.jsx (add key prop on iterated children).",
+    "Optional hardening: /api/public/purchase-needs/batch silently ignores unknown cooper_id and falls back to NEW — behavior is intentional and safe, but could log a warning to detect malformed submissions."
+  ],
+  "critical_code_review_comments": [
+    "routes_purchase_needs._get_fees correctly falls back to DEFAULT_FEES {demand:50, offer:25}. publish_communityplace default fee correctly derived from listing_type. Webhook signature is NOT verified — acceptable per spec (Emergent internal), but production hardening would require Stripe signature check.",
+    "PUT /api/admin/communityplace/fees: FeesUpdate has gt=0 and le=10000 constraints — good.",
+    "GET /api/public/coopers correctly projects only id+name (email/phone excluded)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter85_communityplace_offers.py"],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (landing OFFRE flow + cooper assign + success screen OK, superadmin fee editor OK, catalog country memory OK)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (portal:admin), cooper-test@kdmarche.fr / CooperNew2026!",
+  "seed_data_creation": "Created ~7 test purchase_needs (TEST_Iter85_*) via API tests + 1 via UI flow. All purged post-test (delete_many company:^TEST_Iter85). Fees restored to demand=50 offer=25. Verified via mongo.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iter85 CommunityPlace features validated end-to-end. Backend pytest suite lives at /app/backend/tests/test_iter85_communityplace_offers.py and includes cleanup. Only outstanding nit is the React key warning in two superadmin panels (PurchaseNeedsPanel + CommunityInvoicesPanel).",
+  "rca of the issue": "N/A — no bugs found. React key warnings are cosmetic and don't affect functionality."
+}
