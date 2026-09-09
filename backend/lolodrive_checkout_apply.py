@@ -147,6 +147,11 @@ async def _apply_payment_success(tx: dict):
             })
         except Exception:
             pass
+        try:
+            from erp_webhooks import dispatch_lolodrive_order_event
+            await dispatch_lolodrive_order_event(order_id)
+        except Exception as exc:
+            logger.warning("Webhook relais commande %s : %s", order_id, exc)
 
 
 async def _apply_payment_refund(tx: dict):

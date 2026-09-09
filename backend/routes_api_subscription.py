@@ -113,10 +113,12 @@ async def _activate(sub_id: str):
     if not raw_key:
         raw_key = f"kdm_live_{secrets.token_hex(24)}"
     start = datetime.now(timezone.utc)
+    early_renewal = False
     prev = await db.api_subscriptions.find_one(
         {"user_id": sub["user_id"], "status": "ACTIVE", "id": {"$ne": sub_id}}, sort=[("valid_until", -1)])
     if prev and str(prev.get("valid_until") or "") > start.isoformat():
         start = datetime.fromisoformat(prev["valid_until"])
+        early_renewal = True
     valid_until = (start + timedelta(days=365)).isoformat()
     if not key_id:
         key_doc = {
@@ -135,6 +137,7 @@ async def _activate(sub_id: str):
         key_id, key_prefix = key_doc["id"], key_doc["prefix"]
     await db.api_subscriptions.update_one({"id": sub_id}, {"$set": {
         "status": "ACTIVE", "paid_at": _now(), "valid_until": valid_until,
+        "early_renewal": early_renewal,
         "api_key": raw_key, "api_key_id": key_id, "api_key_prefix": key_prefix}})
     sub = await db.api_subscriptions.find_one({"id": sub_id}, {"_id": 0})
     try:

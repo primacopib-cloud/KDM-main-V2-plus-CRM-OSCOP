@@ -132,6 +132,13 @@ export const ApiSubscriptionsPanel = () => {
               ) : (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">EN ATTENTE DE PAIEMENT</span>
               )}
+              {s.early_renewal && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-bold text-[#2a0c4a]"
+                  style={{ background: 'linear-gradient(135deg, #F5A623, #D9B35A)' }}
+                  data-testid={`api-sub-loyalty-${s.reference}`} title="Renouvelé avant l'échéance">
+                  ⭐ FIDÉLITÉ
+                </span>
+              )}
               <span className="text-xs text-white/60">{s.email}{s.company ? ` · ${s.company}` : ''}</span>
               <span className="text-xs text-white/40 ml-auto">
                 {Number(s.amount_eur).toLocaleString('fr-FR')} € · souscrit le {frDate(s.created_at)}
