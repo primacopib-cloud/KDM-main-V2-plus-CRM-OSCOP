@@ -11,26 +11,33 @@ const IMG = 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4ef
  */
 const SCENES = [
   { img: `${IMG}6c56ab7e6014f75dd19aa182a53b71d7c629d8369cfce46ce5c0c4d308299bc8.jpeg`,
+    imgMobile: `${IMG}a091c41c190351bb90597d3297306fb13e85be328121e0d12a32f327433143a3.jpeg`,
     duration: 4000, kicker: 'LOLODRIVE by O’SCOP', title: 'VOTRE TERRITOIRE, VOS PRODUITS', sub: 'L’épicerie, par lot de 3.' },
   { img: `${IMG}e75eaa357fdbbd5691f0ca0cb0b494e86beb3f3c76d2f6b1422a25a0ec4b5c93.jpeg`,
+    imgMobile: `${IMG}115eb4dadb3a253b4bb75394a4001db5a35825fb88fc119f3b06e1bb6dccc307.jpeg`,
     duration: 4000, kicker: 'LE CONCEPT', title: 'ACHETEZ PAR LOT \u00d73', sub: '3 fois plus malin. 3 fois moins cher \u00e0 l\u2019unit\u00e9.' },
   { video: '/api/uploads/videos/lolospot_products.mp4',
     img: `${IMG}0cf29917f13c278e3b19b8be49129ca514173f41acb07096e6b1ed7ef07f1b86.jpeg`,
+    imgMobile: `${IMG}e57486ece7d5da11eb12d89fd66def5a8cd77cad5d927c17ea2b25e0e583752a.jpeg`,
     duration: 4000, kicker: 'TOUS VOS ESSENTIELS', title: 'TOUJOURS PAR 3', sub: 'Des volumes group\u00e9s, des prix n\u00e9goci\u00e9s par la coop\u00e9rative.' },
   { video: '/api/uploads/videos/lolospot_order.mp4',
     poster: `${IMG}ed2ed1e5a423c20f9be1f285167fdf1fe6c2defebfc13b5be0b193fc982668ef.jpeg`,
     img: `${IMG}ed2ed1e5a423c20f9be1f285167fdf1fe6c2defebfc13b5be0b193fc982668ef.jpeg`,
+    imgMobile: `${IMG}3eb7e909af822d8bee4a2945d40a93f4465399b835bbcfcc7a555d57527ac45e.jpeg`,
     duration: 5000, kicker: 'EN LIGNE', title: 'COMMANDEZ EN 3 CLICS', sub: 'Tout le catalogue \u00e0 prix mini, depuis votre canap\u00e9.' },
   { video: '/api/uploads/videos/lolospot_prep3.mp4',
     img: `${IMG}fa54989012e3b561d3aa55de0d3af3fcca6df2ed139aab997e9b6804ff79540f.jpeg`,
+    imgMobile: `${IMG}53e97ce3eeb653344afa45510ff5095de03f6370b1efd973b63dc6b4dd2b3ea9.jpeg`,
     duration: 4000, kicker: 'VOTRE RELAIS PR\u00c9PARE', title: 'VOS COURSES PR\u00c9PAR\u00c9ES AVEC SOIN', sub: 'Vos essentiels regroup\u00e9s et pr\u00e9par\u00e9s pour vous.' },
   { video: '/api/uploads/videos/lolospot_pickup3.mp4',
     poster: `${IMG}1d44d39839da8cf759365ab785c891742cf1999c05a103315d8f229f5cf6c455.jpeg`,
     img: `${IMG}1d44d39839da8cf759365ab785c891742cf1999c05a103315d8f229f5cf6c455.jpeg`,
+    imgMobile: `${IMG}e60c1ff0ae184631bc39136afbd62932c14607d478bfb3248910ff67ed5c2791.jpeg`,
     duration: 5000, kicker: 'PR\u00c8S DE CHEZ VOUS', title: 'RETRAIT EN POINT RELAIS', sub: 'Votre relais LOLODRIVE vous attend au coin de la rue.' },
   { video: '/api/uploads/videos/lolospot_final.mp4',
     poster: `${IMG}2c4c4c0249af14104048ae27f62936bf211c576e43239ccd602020c7c5483ffa.jpeg`,
     img: `${IMG}2c4c4c0249af14104048ae27f62936bf211c576e43239ccd602020c7c5483ffa.jpeg`,
+    imgMobile: `${IMG}5a23665bd1ac32b48f3c636d27c1ec6d4a4564a6105c1671e4a1c0436b4b8388.jpeg`,
     duration: 4000, kicker: 'LOLODRIVE by O\u2019SCOP', title: 'LA VIE MOINS CH\u00c8RE, ENSEMBLE', sub: 'Le PASS qui change vos courses. Rejoignez la coop\u00e9rative.', final: true },
 ];
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -153,7 +160,10 @@ export const LolodriveSpot = ({ onClose }) => {
             }}
           />
         ) : (
-          <img src={mediaUrl(s.img)} alt="" className="w-full h-full object-cover" />
+          <picture className="contents">
+            {s.imgMobile && <source media="(max-width: 640px)" srcSet={mediaUrl(s.imgMobile)} data-testid={`spot-scene-src-mobile-${scene}`} />}
+            <img src={mediaUrl(s.img)} alt="" className="w-full h-full object-cover" />
+          </picture>
         )}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,4,16,0.30) 0%, rgba(8,4,16,0.10) 45%, rgba(8,4,16,0.85) 100%)' }} />
         {/* Bandes ciné */}
