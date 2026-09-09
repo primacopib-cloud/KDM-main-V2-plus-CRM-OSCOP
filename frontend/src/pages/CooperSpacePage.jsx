@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { LayoutDashboard, FileCheck, PackageCheck, ShoppingCart } from 'lucide-react';
+import { LayoutDashboard, FileCheck, PackageCheck, ShoppingCart, Megaphone } from 'lucide-react';
 import { RoleSpaceLayout, KpiCard, QuickLink } from '../components/RoleSpaceLayout';
 import { CooperAdhesionsTab } from '../components/cooper/CooperAdhesionsTab';
 import { CooperProductsTab } from '../components/cooper/CooperProductsTab';
 import { CooperOrdersTab } from '../components/cooper/CooperOrdersTab';
+import { CooperNeedsTab } from '../components/cooper/CooperNeedsTab';
 
 const fmtDate = (iso) => { try { return new Date(iso).toLocaleDateString('fr-FR'); } catch (_e) { return '—'; } };
 
 const TABS = [
   { value: 'apercu', label: 'Aperçu', icon: LayoutDashboard },
+  { value: 'besoins', label: 'Besoins assignés', icon: Megaphone },
   { value: 'adhesions', label: 'Adhésions', icon: FileCheck },
   { value: 'produits', label: 'Produits vendeurs', icon: PackageCheck },
   { value: 'commandes', label: 'Commandes & Transport', icon: ShoppingCart },
@@ -76,6 +78,7 @@ export default function CooperSpacePage() {
           </div>
 
           {tab === 'apercu' && <Overview overview={overview} />}
+          {tab === 'besoins' && <CooperNeedsTab />}
           {tab === 'adhesions' && <CooperAdhesionsTab />}
           {tab === 'produits' && <CooperProductsTab />}
           {tab === 'commandes' && <CooperOrdersTab />}
