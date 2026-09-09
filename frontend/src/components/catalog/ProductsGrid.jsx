@@ -244,12 +244,6 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                   </b>
                 </div>
               </div>
-              {product.financing_eligible && (
-                <span data-testid={`financing-badge-${product.sku}`}
-                  className="w-fit mb-2 px-1.5 py-0.5 rounded text-[9px] font-bold text-violet-300 bg-violet-400/10 border border-violet-400/30">
-                  ✓ Éligible au financement d'opération
-                </span>
-              )}
               {product.sale_model === 'OSCOP_DIRECT_RESALE' && product.oscop_price_ht_cents > 0 && (
                 <Button
                   size="sm"

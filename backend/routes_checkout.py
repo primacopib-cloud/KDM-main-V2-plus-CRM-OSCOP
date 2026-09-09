@@ -60,7 +60,14 @@ async def create_checkout_session(
     # Get org for customer info
     org = await db.orgs.find_one({"id": order["org_id"]})
     org_name = org.get("legal_name", "Client") if org else "Client"
-    
+
+    # Vendeur(s) « carte bancaire uniquement » : paiement instantané par carte imposé
+    from routes_cod import _cb_only_vendor_names
+    cb_vendors = await _cb_only_vendor_names(order.get("items"))
+    if cb_vendors and order.get("is_installment"):
+        raise HTTPException(status_code=400,
+                            detail=f"Paiement échelonné indisponible : {', '.join(cb_vendors)} exige un paiement instantané par carte bancaire")
+
     # Calculate amount
     if order.get("is_installment") and order.get("installment_plan"):
         # For installment, charge total with fees
@@ -122,7 +129,7 @@ async def create_checkout_session(
         
         # Create Stripe Checkout Session
         session = stripe.checkout.Session.create(
-            payment_method_types=["card", "sepa_debit"],
+            payment_method_types=["card"] if cb_vendors else ["card", "sepa_debit"],
             mode="payment",
             line_items=line_items,
             success_url=success_url,

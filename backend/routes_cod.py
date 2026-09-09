@@ -25,6 +25,27 @@ async def _is_cod_eligible(user: dict) -> bool:
     return bool(org and org.get("status") == "APPROVED" and subscription and subscription.get("status") == "ACTIVE")
 
 
+async def _cb_only_vendor_names(items: list) -> list:
+    """Noms des vendeurs 'carte bancaire uniquement' présents dans les lignes (product_sku)."""
+    skus = [i.get("product_sku") for i in (items or []) if i.get("product_sku")]
+    if not skus:
+        return []
+    supplier_ids = [p["supplier_id"] async for p in db.products.find(
+        {"sku": {"$in": skus}, "supplier_id": {"$exists": True, "$ne": None}}, {"_id": 0, "supplier_id": 1})]
+    if not supplier_ids:
+        return []
+    return [v.get("company_name") or v["id"] async for v in db.vendors.find(
+        {"id": {"$in": list(set(supplier_ids))}, "cb_only_payment": True}, {"_id": 0, "id": 1, "company_name": 1})]
+
+
+@cod_router.get("/cb-only-context")
+async def cb_only_context(skus: str = Query(""), current_user: dict = Depends(get_current_user_checkout)):
+    """Le panier contient-il des produits d'un vendeur exigeant le paiement par carte (instantané) ?"""
+    items = [{"product_sku": s.strip()} for s in skus.split(",") if s.strip()]
+    names = await _cb_only_vendor_names(items)
+    return {"cb_only": bool(names), "vendor_names": names}
+
+
 @cod_router.get("/cod-eligibility")
 async def cod_eligibility(current_user: dict = Depends(get_current_user_checkout)):
     if not await _is_cod_eligible(current_user):
@@ -41,6 +62,10 @@ async def confirm_cod(order_id: str = Query(...), current_user: dict = Depends(g
     order, _ = await get_order_with_access_check(order_id, current_user)
     if order["status"] not in ["PENDING", "CONFIRMED"]:
         raise HTTPException(status_code=400, detail="Commande non éligible")
+    cb_vendors = await _cb_only_vendor_names(order.get("items"))
+    if cb_vendors:
+        raise HTTPException(status_code=403,
+                            detail=f"Paiement par carte bancaire requis : {', '.join(cb_vendors)} n'accepte que le paiement instantané par carte")
     if order.get("payment_status") in ("succeeded", "paid"):
         raise HTTPException(status_code=400, detail="Commande déjà payée")
     amount = order["total_ttc_cents"]

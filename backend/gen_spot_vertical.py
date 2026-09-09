@@ -1,4 +1,5 @@
-"""Génère la version verticale (9:16, stories/réseaux) du spot LOLODRIVE : textes incrustés via PIL (pas de drawtext), montage ffmpeg."""
+"""Génère la version verticale (9:16, stories/réseaux) du spot LOLODRIVE : 7 scènes images (textes PIL,
+zoompan) + séquence des 8 clips produits Veo recadrés 9:16 avec bandeau texte en overlay PNG (pas de drawtext)."""
 import os
 import subprocess
 import urllib.request
@@ -8,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 IMG = 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/'
+VID_DIR = '/app/backend/uploads/videos'
 FONT = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
 OUT_DIR = '/tmp/spotv'
 W, H = 1240, 2205
@@ -18,8 +20,14 @@ SCENES = [
          kicker="LOLODRIVE by O'SCOP", title=['VOTRE TERRITOIRE,', 'VOS PRODUITS'], sub="L'épicerie, par lot de 3."),
     dict(file='115eb4dadb3a253b4bb75394a4001db5a35825fb88fc119f3b06e1bb6dccc307.jpeg', dur=4,
          kicker='LE CONCEPT', title=['ACHETEZ PAR LOT ×3'], sub="3 fois plus malin, 3 fois moins cher à l'unité."),
-    dict(file='e57486ece7d5da11eb12d89fd66def5a8cd77cad5d927c17ea2b25e0e583752a.jpeg', dur=4,
-         kicker='TOUS VOS ESSENTIELS', title=['TOUJOURS PAR 3'], sub='Des volumes groupés, des prix négociés par la coopérative.'),
+    dict(clip='lolospot_prod_legumes.mp4', dur=2.5, kicker='TOUS VOS ESSENTIELS', title=['LÉGUMES DU SOLEIL'], sub='Par lot de 3 — prix négociés.'),
+    dict(clip='lolospot_prod_yaourts.mp4', dur=2.5, kicker='TOUS VOS ESSENTIELS', title=['YAOURTS'], sub='Par lot de 3 — prix négociés.'),
+    dict(clip='lolospot_prod_pates.mp4', dur=2.5, kicker='TOUS VOS ESSENTIELS', title=['PÂTES'], sub='Par lot de 3 — prix négociés.'),
+    dict(clip='lolospot_prod_riz.mp4', dur=2.5, kicker='TOUS VOS ESSENTIELS', title=['RIZ'], sub='Par lot de 3 — prix négociés.'),
+    dict(clip='lolospot_prod_cereales.mp4', dur=2.5, kicker='TOUS VOS ESSENTIELS', title=['CÉRÉALES'], sub='Par lot de 3 — prix négociés.'),
+    dict(clip='lolospot_prod_huiles.mp4', dur=2.5, kicker='TOUS VOS ESSENTIELS', title=['HUILES'], sub='Par lot de 3 — prix négociés.'),
+    dict(clip='lolospot_prod_beurre.mp4', dur=2.5, kicker='TOUS VOS ESSENTIELS', title=['BEURRE'], sub='Par lot de 3 — prix négociés.'),
+    dict(clip='lolospot_prod_lait.mp4', dur=2.5, kicker='TOUS VOS ESSENTIELS', title=['LAIT'], sub='Par lot de 3 — prix négociés.'),
     dict(file='3eb7e909af822d8bee4a2945d40a93f4465399b835bbcfcc7a555d57527ac45e.jpeg', dur=5,
          kicker='EN LIGNE', title=['COMMANDEZ EN 3 CLICS'], sub='Tout le catalogue à prix mini, depuis votre canapé.'),
     dict(file='53e97ce3eeb653344afa45510ff5095de03f6370b1efd973b63dc6b4dd2b3ea9.jpeg', dur=4,
@@ -33,14 +41,18 @@ SCENES = [
 f_kicker = ImageFont.truetype(FONT, 44)
 f_title = ImageFont.truetype(FONT, 80)
 f_sub = ImageFont.truetype(FONT, 40)
+VW, VH = 1080, 1920
+fv_kicker = ImageFont.truetype(FONT, 38)
+fv_title = ImageFont.truetype(FONT, 68)
+fv_sub = ImageFont.truetype(FONT, 34)
 
 
-def centered(draw, text, font, y, color):
+def centered(draw, text, font, y, color, width=W):
     box = draw.textbbox((0, 0), text, font=font)
-    draw.text(((W - (box[2] - box[0])) / 2, y), text, font=font, fill=color)
+    draw.text(((width - (box[2] - box[0])) / 2, y), text, font=font, fill=color)
 
 
-def prepare(i, s):
+def prepare_image(i, s):
     src = f'{OUT_DIR}/s{i}.jpg'
     if not os.path.exists(src):
         urllib.request.urlretrieve(IMG + s['file'], src)
@@ -65,20 +77,51 @@ def prepare(i, s):
     return out
 
 
+def prepare_clip_overlay(i, s):
+    """PNG transparent 1080x1920 : dégradé bas + textes, overlay sur le clip recadré."""
+    ov = Image.new('RGBA', (VW, VH), (0, 0, 0, 0))
+    od = ImageDraw.Draw(ov)
+    for y in range(VH):
+        a = 0 if y < 1150 else int(165 * (y - 1150) / (VH - 1150))
+        od.line([(0, y), (VW, y)], fill=(6, 3, 12, a))
+    y0 = 1330
+    centered(od, s['kicker'], fv_kicker, y0, (140, 198, 62, 255), VW)
+    for j, line in enumerate(s['title']):
+        centered(od, line, fv_title, y0 + 60 + j * 80, (255, 255, 255, 255), VW)
+    centered(od, s['sub'], fv_sub, y0 + 60 + len(s['title']) * 80 + 16, (232, 232, 232, 255), VW)
+    out = f'{OUT_DIR}/ov{i}.png'
+    ov.save(out)
+    return out
+
+
 inputs, filters, concat_in = [], [], []
-total = sum(s['dur'] for s in SCENES)
+n_in = 0
 for i, s in enumerate(SCENES):
-    path = prepare(i, s)
-    inputs += ['-framerate', '1', '-loop', '1', '-t', str(s['dur']), '-i', path]
-    frames = int(s['dur'] * 25)
-    zoom = (f"zoompan=z='min(zoom+0.0012,1.14)':d=25:x='iw/2-(iw/zoom/2)':"
-            f"y='ih*0.42-(ih/zoom*0.42)':s=1080x1920:fps=25")
-    filters.append(f'[{i}:v]{zoom},setsar=1,fade=t=in:st=0:d=0.4,fade=t=out:st={s["dur"] - 0.4}:d=0.4[v{i}]')
+    if 'clip' in s:
+        clip_path = os.path.join(VID_DIR, s['clip'])
+        ov_path = prepare_clip_overlay(i, s)
+        inputs += ['-ss', '1.5', '-t', str(s['dur']), '-i', clip_path]
+        clip_idx = n_in; n_in += 1
+        inputs += ['-i', ov_path]
+        ov_idx = n_in; n_in += 1
+        filters.append(
+            f"[{clip_idx}:v]crop=405:720:437:0,scale={VW}:{VH}:flags=lanczos,fps=25,setsar=1[c{i}];"
+            f"[c{i}][{ov_idx}:v]overlay=0:0,fade=t=in:st=0:d=0.3,fade=t=out:st={s['dur'] - 0.3}:d=0.3[v{i}]")
+    else:
+        path = prepare_image(i, s)
+        inputs += ['-framerate', '1', '-loop', '1', '-t', str(s['dur']), '-i', path]
+        idx = n_in; n_in += 1
+        zoom = (f"zoompan=z='min(zoom+0.0012,1.14)':d=25:x='iw/2-(iw/zoom/2)':"
+                f"y='ih*0.42-(ih/zoom*0.42)':s={VW}x{VH}:fps=25")
+        filters.append(f'[{idx}:v]{zoom},setsar=1,fade=t=in:st=0:d=0.4,fade=t=out:st={s["dur"] - 0.4}:d=0.4[v{i}]')
     concat_in.append(f'[v{i}]')
+
+total = sum(s['dur'] for s in SCENES)
 inputs += ['-f', 'lavfi', '-t', str(total), '-i', 'anullsrc=r=44100:cl=stereo']
+audio_idx = n_in
 graph = ';'.join(filters) + ';' + ''.join(concat_in) + f'concat=n={len(SCENES)}:v=1:a=0[vout]'
 out = '/app/backend/uploads/videos/lolospot_vertical.mp4'
-cmd = [FFMPEG, '-y', *inputs, '-filter_complex', graph, '-map', '[vout]', '-map', f'{len(SCENES)}:a',
+cmd = [FFMPEG, '-y', *inputs, '-filter_complex', graph, '-map', '[vout]', '-map', f'{audio_idx}:a',
        '-c:v', 'libx264', '-preset', 'medium', '-crf', '22', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
        '-c:a', 'aac', '-shortest', out]
 print('running ffmpeg…')

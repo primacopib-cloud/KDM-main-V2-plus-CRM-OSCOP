@@ -13,7 +13,7 @@ import { Input } from '../ui/input';
 import { formatCurrency, MIN_INSTALLMENT_CENTS } from './checkoutUtils';
 import { CarrierScoreBadge } from './CarrierScoreBadge';
 
-export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstallment, paymentMethod, setPaymentMethod, orderNotes, setOrderNotes, signatureComplete, processingPayment, handlePayment, codEligible = false, rarCtx = null }) => (
+export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstallment, paymentMethod, setPaymentMethod, orderNotes, setOrderNotes, signatureComplete, processingPayment, handlePayment, codEligible = false, rarCtx = null, cbOnly = false, cbVendors = [] }) => (
   <>
             {/* Step 4: Payment */}
             {currentStep === 4 && (
@@ -24,10 +24,22 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                     <CreditCard className="w-5 h-5 text-[#D9B35A]" />
                     {i18n.t('checkout.mode_de_paiement')}
                   </h2>
+
+                  {cbOnly && (
+                    <div className="mb-4 p-3 rounded-xl border border-[#D9B35A]/40 bg-[#D9B35A]/10 flex items-start gap-2.5"
+                      data-testid="cb-only-banner">
+                      <CreditCard className="w-4 h-4 text-[#D9B35A] mt-0.5 shrink-0" />
+                      <p className="text-xs text-white/85 m-0">
+                        <b className="text-[#E9CF8E]">Paiement instantané par carte bancaire requis</b> —{' '}
+                        {cbVendors.length ? cbVendors.join(', ') : 'le vendeur'} accepte exclusivement le paiement
+                        par carte : votre commande est réglée et confirmée immédiatement.
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="space-y-4">
                     {/* Installment Option */}
-                    {totals.totalHT >= MIN_INSTALLMENT_CENTS && (
+                    {!cbOnly && totals.totalHT >= MIN_INSTALLMENT_CENTS && (
                       <div className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         useInstallment 
                           ? 'border-purple-500 bg-purple-500/10' 
@@ -92,6 +104,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                     </div>
 
                     {/* SEPA Payment */}
+                    {!cbOnly && (
                     <div className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
                       !useInstallment && paymentMethod === 'sepa'
                         ? 'border-blue-500 bg-blue-500/10' 
@@ -117,6 +130,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                         <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">SEPA</Badge>
                       </div>
                     </div>
+                    )}
 
                     {/* Paiement à la livraison (COD) — acheteurs Pro abonnés */}
                     {codEligible && (

@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { BreadcrumbPill } from '../components/Breadcrumb';
 import { VendorNeedsPanel } from '../components/vendor/VendorNeedsPanel';
 import { VendorMyOffersPanel } from '../components/vendor/VendorMyOffersPanel';
+import { VendorPaymentSettings } from '../components/vendor/VendorPaymentSettings';
 import { PurchaseNeedForm } from '../components/landing/PurchaseNeedForm';
 import { VendorProductAssistant } from '../components/VendorProductAssistant';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
@@ -293,6 +294,7 @@ const VendorSpacePage = () => {
         </div>
         <VendorNeedsPanel />
         <VendorMyOffersPanel />
+        <VendorPaymentSettings vendorId={vendorId} />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white/[0.06] border border-white/10">
             <TabsTrigger value="dashboard" className="gap-2">
