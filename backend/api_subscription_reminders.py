@@ -77,8 +77,8 @@ def _fmt_order_dt(value) -> str:
     return str(value or "")[:16].replace("T", " ")
 
 
-async def _build_weekly_orders_csv(db, orders: list, week_key: str) -> dict:
-    """CSV comptable des commandes de la semaine (UTF-8 BOM, séparateur ';') joint au résumé hebdo."""
+async def _build_weekly_orders_csv(db, orders: list, label: str) -> dict:
+    """CSV comptable des commandes du relais (UTF-8 BOM, séparateur ';') joint aux résumés hebdo/mensuel."""
     import base64
     import csv
     import io
@@ -103,7 +103,7 @@ async def _build_weekly_orders_csv(db, orders: list, week_key: str) -> dict:
             articles, total, "UC (cagnotte)" if o.get("pay_with_uc") else "Carte bancaire", slot,
         ])
     return {"content": base64.b64encode(buf.getvalue().encode("utf-8-sig")).decode(),
-            "name": f"commandes-relais-{week_key}.csv"}
+            "name": f"commandes-relais-{label}.csv"}
 
 
 async def run_api_weekly_reports(db, force: bool = False) -> int:
@@ -171,6 +171,65 @@ async def run_api_weekly_reports(db, force: bool = False) -> int:
             logger.warning("Résumé hebdo API %s : %s", sub.get("reference"), exc)
     if sent:
         logger.info("Résumés hebdo API envoyés : %s", sent)
+    return sent
+
+
+async def run_api_monthly_reports(db, force: bool = False) -> int:
+    """Résumé mensuel consolidé (1er-5 du mois) : CSV comptable des commandes du mois écoulé (idempotent)."""
+    now = datetime.now(timezone.utc)
+    if now.day > 5 and not force:
+        return 0
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    prev_start = (month_start - timedelta(days=1)).replace(day=1)
+    month_key = prev_start.strftime("%Y-%m")
+    month_label = prev_start.strftime("%m/%Y")
+    sent = 0
+    cursor = db.api_subscriptions.find({
+        "status": "ACTIVE", "api_key_id": {"$exists": True},
+        "monthly_report_month": {"$ne": month_key},
+    })
+    async for sub in cursor:
+        try:
+            user = await db.users.find_one({"id": sub["user_id"]}, {"_id": 0, "id": 1})
+            point = await db.lolodrive_points.find_one(
+                {"manager_user_id": (user or {}).get("id")}, {"_id": 0, "id": 1, "name": 1})
+            orders, total_cents, by_status = [], 0, {}
+            if point:
+                orders = await db.lolodrive_orders.find(
+                    {"lolo_point_id": point["id"], "created_at": {"$gte": prev_start, "$lt": month_start}},
+                    {"_id": 0, "order_number": 1, "created_at": 1, "status": 1, "user_id": 1, "items": 1,
+                     "total_cents": 1, "pay_with_uc": 1, "pickup_date": 1, "pickup_slot_label": 1}).to_list(5000)
+                total_cents = sum(int(o.get("total_cents") or 0) for o in orders)
+                for o in orders:
+                    by_status[o.get("status") or "?"] = by_status.get(o.get("status") or "?", 0) + 1
+            csv_attachment = await _build_weekly_orders_csv(db, orders, month_key)
+            from brevo_service import send_email, _wrap_html
+            base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+            statuses = " · ".join(f"{k} : {v}" for k, v in sorted(by_status.items())) or "aucune"
+            await send_email(
+                to_email=sub["email"], to_name=sub.get("contact_name"),
+                subject=f"🧾 Clôture {month_label} — {len(orders)} commande(s) sur votre relais{' ' + point['name'] if point else ''} (CSV joint)",
+                html_content=_wrap_html("Résumé mensuel — clôture comptable", (
+                    f"<p style='font-size:14px;'>Bonjour {sub.get('contact_name') or ''},</p>"
+                    f"<p style='font-size:14px;'>Voici le consolidé du mois de <b>{month_label}</b> pour votre abonnement "
+                    f"<b>{sub['reference']}</b>{' — relais <b>' + point['name'] + '</b>' if point else ''} :</p>"
+                    "<ul style='font-size:14px;'>"
+                    f"<li><b>{len(orders)}</b> commande(s) LOLODRIVE — total <b>{total_cents / 100:.2f} €</b></li>"
+                    f"<li>Ventilation par statut : {statuses}</li>"
+                    "</ul>"
+                    "<p style='font-size:13px;color:rgba(243,237,228,0.7);'>📎 Le détail complet des commandes du mois "
+                    "est joint à cet email (fichier CSV, ouvrable dans Excel) pour votre clôture comptable.</p>"
+                    f"<p style='text-align:center;'><a href='{base}/coop-api' "
+                    "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
+                    "padding:12px 26px;border-radius:12px;text-decoration:none;'>Voir mon espace API</a></p>")),
+                tags=["api-monthly-report"],
+                attachments=[csv_attachment])
+            await db.api_subscriptions.update_one({"id": sub["id"]}, {"$set": {"monthly_report_month": month_key}})
+            sent += 1
+        except Exception as exc:
+            logger.warning("Résumé mensuel API %s : %s", sub.get("reference"), exc)
+    if sent:
+        logger.info("Résumés mensuels API envoyés : %s", sent)
     return sent
 
 
