@@ -81,6 +81,10 @@ const TIERS = [
 ];
 
 const PricingPage = () => {
+  React.useEffect(() => {
+    const promo = new URLSearchParams(window.location.search).get('promo');
+    if (promo) localStorage.setItem('pro_welcome_code', promo.trim().toUpperCase());
+  }, []);
   const [apiPlans, setApiPlans] = React.useState(null);
 
   React.useEffect(() => {
