@@ -362,6 +362,10 @@ app.include_router(purchase_needs_router)
 from routes_product_financing import financing_router, set_product_financing_database
 set_product_financing_database(db)
 app.include_router(financing_router)
+
+from routes_api_subscription import api_sub_router, set_api_subscription_database
+set_api_subscription_database(db)
+app.include_router(api_sub_router)
 from routes_vendor_listings import vendor_listings_router, set_vendor_listings_database
 set_vendor_listings_database(db)
 app.include_router(vendor_listings_router)

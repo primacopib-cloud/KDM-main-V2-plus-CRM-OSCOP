@@ -64,6 +64,7 @@ import { PassRegistrationsPanel } from '../components/superadmin/PassRegistratio
 import { PassPlansPanel } from '../components/superadmin/PassPlansPanel';
 import { LicensesPanel } from '../components/superadmin/LicensesPanel';
 import { ApiKeysPanel } from '../components/superadmin/ApiKeysPanel';
+import { ApiSubscriptionsPanel } from '../components/superadmin/ApiSubscriptionsPanel';
 import { AIAgentsPanel } from '../components/superadmin/AIAgentsPanel';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -280,7 +281,8 @@ export default function SuperAdminPage() {
             <LegalPagesPanel />
           </TabsContent>
 
-          <TabsContent value="api-erp">
+          <TabsContent value="api-erp" className="space-y-6">
+            <ApiSubscriptionsPanel />
             <ApiKeysPanel />
           </TabsContent>
 

@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom';
 import Seo from '../components/Seo';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
-import { Code2, Package, RefreshCw, ShieldCheck, Layers, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Code2, Package, RefreshCw, ShieldCheck, Layers } from 'lucide-react';
 import { Reveal } from '../components/landing/Reveal';
+import { ApiSubscribeCard } from '../components/api/ApiSubscribeCard';
 
 const FEATURES = [
   { icon: Package, title: 'Catalogue en temps réel', desc: 'Interrogez le catalogue coopératif multi-zones : produits, prix HT négociés, disponibilité et logistique par pays.' },
@@ -70,31 +70,7 @@ export default function ApiCooperativePage() {
         </Reveal>
 
         <Reveal delay={140}>
-          <div className="mt-10 rounded-[24px] p-7 border border-[#D9B35A]/30 text-center"
-            style={{ background: 'radial-gradient(120% 160% at 50% -20%, rgba(217,179,90,0.14), rgba(20,8,38,0.5))' }}
-            data-testid="api-subscription-cta">
-            <h2 className="font-display text-2xl mb-2 text-[#E9CF8E]">Accès inclus dans la souscription annuelle</h2>
-            <p className="text-white/70 text-sm max-w-xl mx-auto mb-4">
-              L'API est réservée aux adhérents de la centrale. La souscription annuelle inclut la clé API de votre
-              organisation, l'accès multi-zones, l'assistance technique et les mises à jour du catalogue.
-            </p>
-            <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/75 mb-6 list-none p-0">
-              {['Clé API par organisation', 'Support technique coopératif', 'Catalogue & prix en continu'].map((li) => (
-                <li key={li} className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#8CC63E]" /> {li}</li>
-              ))}
-            </ul>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Link to="/tarifs" data-testid="api-cta-souscription"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-[#2a0c4a]"
-                style={{ background: 'linear-gradient(135deg, #F5A623 0%, #D9B35A 100%)' }}>
-                Souscrire l'abonnement annuel <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link to="/adhesion-vendeur" data-testid="api-cta-adhesion"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white border border-white/25 hover:bg-white/5">
-                Adhérer à la centrale
-              </Link>
-            </div>
-          </div>
+          <ApiSubscribeCard />
         </Reveal>
       </main>
       <Footer />
