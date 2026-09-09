@@ -291,18 +291,25 @@ async def api_subscription_stats(_: dict = Depends(require_admin)):
         {"api_key_id": {"$exists": True}}, {"_id": 0, "api_key_id": 1})]
     since = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     daily_map = {}
+    endpoint_map = {}
     if key_ids:
         async for l in db.api_call_logs.find(
-                {"key_id": {"$in": key_ids}, "ts": {"$gte": since}}, {"_id": 0, "ts": 1}):
+                {"key_id": {"$in": key_ids}, "ts": {"$gte": since}}, {"_id": 0, "ts": 1, "path": 1}):
             d = str(l.get("ts") or "")[:10]
             if d:
                 daily_map[d] = daily_map.get(d, 0) + 1
+            p = (l.get("path") or "").replace("/api/public/v1", "")
+            if p:
+                endpoint_map[p] = endpoint_map.get(p, 0) + 1
+    top_endpoints = sorted(
+        ({"path": p, "count": c} for p, c in endpoint_map.items()),
+        key=lambda x: -x["count"])[:5]
     days = []
     today = datetime.now(timezone.utc).date()
     for i in range(29, -1, -1):
         d = (today - timedelta(days=i)).isoformat()
         days.append({"day": d, "count": daily_map.get(d, 0)})
-    return {"daily": days, "total_30d": sum(x["count"] for x in days)}
+    return {"daily": days, "total_30d": sum(x["count"] for x in days), "top_endpoints": top_endpoints}
 
 
 @api_sub_router.get("/admin/api-subscriptions/export")

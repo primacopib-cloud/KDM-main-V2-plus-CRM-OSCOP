@@ -62,4 +62,24 @@ async def run_api_subscription_expirations(db) -> int:
             "status": "EXPIRED", "key_deactivated_at": now}})
         deactivated += 1
         logger.info("Clé API désactivée (abonnement expiré) : %s (%s)", sub.get("reference"), sub.get("email"))
+        try:
+            from brevo_service import send_email, _wrap_html
+            base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+            await send_email(
+                to_email=sub["email"], to_name=sub.get("contact_name"),
+                subject=f"🔴 Votre clé API a été désactivée — renouvelez pour la réactiver ({sub['reference']})",
+                html_content=_wrap_html("Abonnement API expiré", (
+                    f"<p style='font-size:14px;'>Bonjour {sub.get('contact_name') or ''},</p>"
+                    f"<p style='font-size:14px;'>Votre abonnement annuel à l'API coopérative "
+                    f"(<b>{sub['reference']}</b>) est arrivé à échéance : votre clé API a été "
+                    "<b>désactivée</b> et les appels depuis votre outil sont bloqués.</p>"
+                    "<p style='font-size:14px;'>Renouvelez dès maintenant : votre <b>clé existante sera "
+                    "réactivée automatiquement</b>, sans rien reconfigurer.</p>"
+                    f"<p style='text-align:center;'><a href='{base}/coop-api' "
+                    "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
+                    "padding:12px 26px;border-radius:12px;text-decoration:none;'>Renouveler mon abonnement — "
+                    f"{float(sub.get('amount_eur') or 2500):,.0f} €</a></p>")),
+                tags=["api-subscription-expired"])
+        except Exception as exc:
+            logger.warning("Email relance expiration %s : %s", sub.get("reference"), exc)
     return deactivated
