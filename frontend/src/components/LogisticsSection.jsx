@@ -17,12 +17,15 @@ const getStepStyle = (responsible) => {
   }
 };
 
-const JourneyRow = ({ title, badge, steps, testId, image, imageAlt, objectPosition = 'center' }) => (
+const JourneyRow = ({ title, badge, steps, testId, image, imageAlt, imageMobile, objectPosition = 'center' }) => (
   <div className="mb-6" data-testid={testId}>
     {image && (
       <div className="relative rounded-[22px] overflow-hidden mb-4 group" data-testid={`${testId}-hero`}>
-        <img src={image} alt={imageAlt || title} loading="lazy" style={{ objectPosition, filter: 'brightness(1.12) saturate(1.06)' }}
-          className="w-full h-44 sm:h-56 object-cover transition-transform duration-[1.6s] ease-out group-hover:scale-[1.06]" />
+        <picture>
+          {imageMobile && <source media="(max-width: 640px)" srcSet={imageMobile} data-testid={`${testId}-hero-src-mobile`} />}
+          <img src={image} alt={imageAlt || title} loading="lazy" style={{ objectPosition, filter: 'brightness(1.12) saturate(1.06)' }}
+            className="w-full h-72 sm:h-56 object-cover transition-transform duration-[1.6s] ease-out group-hover:scale-[1.06]" />
+        </picture>
         <div className="absolute inset-0 sm:hidden" style={{ background: 'linear-gradient(90deg, rgba(12,12,16,0.58) 0%, rgba(12,12,16,0.24) 60%, rgba(12,12,16,0.06) 100%)' }} />
         <div className="absolute inset-0 hidden sm:block" style={{ background: 'linear-gradient(90deg, rgba(12,12,16,0.34) 0%, rgba(12,12,16,0.10) 55%, rgba(12,12,16,0.02) 100%)' }} />
         <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-9">
@@ -89,6 +92,8 @@ const LogisticsSection = () => (
         testId="journey-exw"
         image="https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/b30b2453209512b1e3870b267a5354e954559464eec55fa287521ee93e988956.jpeg"
         imageAlt="Enlèvement EXW à l'entrepôt — acheteur professionnel"
+        imageMobile="https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/c657021752b621f98a951c6c9de398aa6d342d6612d216aec85c20da03bc491f.jpeg"
+        objectPosition="center 30%"
       />
       <JourneyRow
         title="Parcours 2 — Règlement à Réception Pro"
@@ -97,7 +102,8 @@ const LogisticsSection = () => (
         testId="journey-rar"
         image="https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/aa306afb6ddf4a87632637b08bf35bfa740b7d6b7584b52fc09ba53a330b1052.jpeg"
         imageAlt="Validation électronique de la réception — livraison professionnelle"
-        objectPosition="32% center"
+        imageMobile="https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/7443f572110064775fe6c19af4295100b29c2d19d930bb73a68d839f24aa42ad.jpeg"
+        objectPosition="32% 30%"
       />
 
       {/* Legend */}
