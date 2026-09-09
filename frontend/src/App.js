@@ -28,6 +28,7 @@ import SignatureDemoPage from "./pages/SignatureDemoPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import InvestorSpacePage from "./pages/InvestorSpacePage";
 import ParticuliersPage from "./pages/ParticuliersPage";
+import ApiCooperativePage from "./pages/ApiCooperativePage";
 import TerritoiresPage from "./pages/TerritoiresPage";
 import PointsRelaisPage from "./pages/PointsRelaisPage";
 import LogiscopSpacePage from "./pages/LogiscopSpacePage";
@@ -180,6 +181,7 @@ function App() {
           <Route path="/superadmin" element={<RequireMember admin><SuperAdminPage /></RequireMember>} />
           <Route path="/espace-investisseur" element={<InvestorSpacePage />} />
           <Route path="/particuliers" element={<ParticuliersPage />} />
+          <Route path="/coop-api" element={<ApiCooperativePage />} />
           <Route path="/territoires" element={<TerritoiresPage />} />
           <Route path="/points-relais" element={<PointsRelaisPage />} />
           <Route path="/espace-logiscop" element={<LogiscopSpacePage />} />
