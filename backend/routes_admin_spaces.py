@@ -108,6 +108,21 @@ async def _pass_registry():
     return items
 
 
+async def _coopers_registry():
+    items = []
+    async for u in db.users.find({"role": "COOPER"}, {"_id": 0, "password_hash": 0}):
+        items.append({"id": u.get("id"), "name": u.get("contact_name") or u.get("company_name"),
+                      "email": u.get("email"), "phone": u.get("phone"), "country": u.get("country"),
+                      "status": "SUSPENDED" if u.get("suspended") else "ACTIVE",
+                      "created_at": _iso(u.get("created_at")), "account_connected": True})
+    async for a in db.cooper_applications.find({"status": "PENDING"}, {"_id": 0}):
+        items.append({"id": a.get("id"), "name": a.get("name"), "email": a.get("email"),
+                      "phone": a.get("phone"), "country": a.get("country"), "status": "CANDIDATURE",
+                      "detail": (a.get("motivation") or "")[:80],
+                      "created_at": _iso(a.get("created_at")), "account_connected": False})
+    return items
+
+
 @admin_spaces_router.get("/registries")
 async def get_registries(admin: dict = Depends(require_admin)):
     return {
@@ -115,6 +130,7 @@ async def get_registries(admin: dict = Depends(require_admin)):
         "investors": await _investors_registry(),
         "relays": await _relays_registry(),
         "pass_members": await _pass_registry(),
+        "coopers": await _coopers_registry(),
     }
 
 
@@ -147,6 +163,108 @@ async def link_relay_manager(item_id: str, body: ManagerBody, admin: dict = Depe
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Relais introuvable")
     return {"ok": True, "manager": manager.get("contact_name"), "email": email}
+
+
+@admin_spaces_router.get("/assignees")
+async def list_assignees(admin: dict = Depends(require_admin)):
+    """Vendeurs et COOPER'S assignables aux besoins d'achat."""
+    vendors, coopers = [], []
+    async for v in db.vendors.find({}, {"_id": 0, "company_name": 1, "email": 1}):
+        if v.get("email"):
+            vendors.append({"name": v.get("company_name"), "email": v["email"]})
+    async for u in db.users.find({"role": "COOPER"}, {"_id": 0, "contact_name": 1, "company_name": 1, "email": 1}):
+        coopers.append({"name": u.get("contact_name") or u.get("company_name"), "email": u.get("email")})
+    return {"vendors": vendors, "coopers": coopers}
+
+
+class CooperCreate(BaseModel):
+    name: str
+    email: str
+    phone: str | None = None
+    country: str | None = None
+    password: str | None = None
+
+
+@admin_spaces_router.get("/coopers")
+async def list_coopers(admin: dict = Depends(require_admin)):
+    return {"coopers": await _coopers_registry()}
+
+
+@admin_spaces_router.post("/coopers")
+async def create_cooper(body: CooperCreate, admin: dict = Depends(require_admin)):
+    """Crée un espace COOPER'S (compte utilisateur rôle COOPER)."""
+    import secrets
+    from auth import get_password_hash
+    email = body.email.strip().lower()
+    if await db.users.find_one({"email": email}):
+        raise HTTPException(status_code=409, detail="Un compte existe déjà avec cet email")
+    password = body.password or secrets.token_urlsafe(9)
+    user = {
+        "id": f"user-cooper-{secrets.token_hex(4)}", "email": email,
+        "password_hash": get_password_hash(password), "role": "COOPER",
+        "contact_name": body.name, "company_name": body.name,
+        "phone": body.phone, "country": body.country,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.users.insert_one(user)
+    await db.cooper_applications.update_many({"email": email}, {"$set": {"status": "ACCEPTED"}})
+    try:
+        from brevo_service import send_email, _wrap_html
+        import os
+        base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+        await send_email(
+            to_email=email, to_name=body.name,
+            subject="🤝 Votre espace COOPER'S est ouvert — Centrale O'SCOP",
+            html_content=_wrap_html("Bienvenue COOPER'S", (
+                f"<p style='font-size:14px;'>Bonjour {body.name},</p>"
+                f"<p>Votre espace COOPER'S est créé. Identifiant : <b>{email}</b><br/>"
+                f"Mot de passe provisoire : <b>{password}</b> (à changer à la première connexion)</p>"
+                f"<p style='text-align:center;'><a href='{base}/connexion' "
+                "style='display:inline-block;background:#D9B35A;color:#1F0A33;font-weight:bold;"
+                "padding:12px 26px;border-radius:12px;text-decoration:none;'>Accéder à mon espace COOPER'S</a></p>")),
+            tags=["cooper"])
+    except Exception:
+        pass
+    return {"ok": True, "id": user["id"], "email": email, "temp_password": None if body.password else password}
+
+
+class CooperApplication(BaseModel):
+    name: str
+    email: str
+    phone: str | None = None
+    country: str | None = None
+    motivation: str | None = None
+
+
+cooper_public_router = APIRouter(prefix="/api/public", tags=["Public COOPER"])
+
+
+@cooper_public_router.post("/cooper-applications")
+async def apply_cooper(body: CooperApplication):
+    """Inscription publique en tant que COOPER'S (pied de page d'accueil)."""
+    import uuid as _uuid
+    email = body.email.strip().lower()
+    doc = {
+        "id": str(_uuid.uuid4()), "name": body.name.strip(), "email": email,
+        "phone": body.phone, "country": body.country, "motivation": (body.motivation or "").strip()[:800],
+        "status": "PENDING", "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.cooper_applications.insert_one(dict(doc))
+    await notify_admin_signup("Nouvelle candidature COOPER'S",
+                              f"{doc['name']} ({email}) souhaite devenir COOPER'S.", "cooper")
+    try:
+        from brevo_service import send_email, _wrap_html
+        await send_email(
+            to_email=email, to_name=doc["name"],
+            subject="🤝 Candidature COOPER'S bien reçue — Centrale O'SCOP",
+            html_content=_wrap_html("Candidature reçue", (
+                f"<p style='font-size:14px;'>Bonjour {doc['name']},</p>"
+                "<p>Votre candidature pour devenir <b>COOPER'S</b> de la Centrale O'SCOP est bien enregistrée. "
+                "Notre équipe l'étudie et vous recontacte rapidement pour ouvrir votre espace.</p>")),
+            tags=["cooper"])
+    except Exception:
+        pass
+    return {"received": True, "id": doc["id"]}
 
 
 def _fmt_order(o):
@@ -214,6 +332,19 @@ async def get_space_detail(kind: str, item_id: str, admin: dict = Depends(requir
         activity.append({"date": _iso(user.get("created_at")), "label": "Création du compte"})
         if user.get("last_login_at"):
             activity.insert(0, {"date": _iso(user.get("last_login_at")), "label": "Dernière connexion"})
+    elif kind == "coopers":
+        user = await db.users.find_one({"id": item_id, "role": "COOPER"}, {"_id": 0, "password_hash": 0})
+        if not user:
+            raise HTTPException(status_code=404, detail="COOPER'S introuvable")
+        profile = {"name": user.get("contact_name") or user.get("company_name"), "email": user.get("email"),
+                   "phone": user.get("phone"), "country": user.get("country"),
+                   "status": "SUSPENDED" if user.get("suspended") else "ACTIVE",
+                   "created_at": _iso(user.get("created_at"))}
+        async for n in db.purchase_needs.find({"assigned_vendor": (user.get("email") or "").lower()}, {"_id": 0}).sort("created_at", -1).limit(10):
+            extra.append({"label": f"{n.get('reference')} — {n.get('product')}", "value": n.get("status")})
+        activity.append({"date": _iso(user.get("created_at")), "label": "Ouverture de l'espace COOPER'S"})
+        if user.get("last_login_at"):
+            activity.insert(0, {"date": _iso(user.get("last_login_at")), "label": "Dernière connexion"})
     else:
         raise HTTPException(status_code=404, detail="Type d'espace inconnu")
     activity = [a for a in activity if a.get("date")]
@@ -238,6 +369,13 @@ async def update_space_status(kind: str, item_id: str, body: StatusBody, admin: 
             {"user_id": item_id}, {"$set": {"status": status, "updated_at": now}}, upsert=False)
         if res.matched_count == 0:
             raise HTTPException(status_code=404, detail="Aucun PASS pour ce membre")
+        return {"ok": True, "status": status}
+    if kind == "coopers":
+        res = await db.users.update_one(
+            {"id": item_id, "role": "COOPER"},
+            {"$set": {"suspended": status == "SUSPENDED", "updated_at": now}})
+        if res.matched_count == 0:
+            raise HTTPException(status_code=404, detail="COOPER'S introuvable")
         return {"ok": True, "status": status}
     if kind not in _KINDS:
         raise HTTPException(status_code=404, detail="Type d'espace inconnu")

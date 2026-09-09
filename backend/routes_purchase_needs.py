@@ -384,11 +384,14 @@ async def assign_purchase_need(need_id: str, body: AssignBody, admin: dict = Dep
     need = await db.purchase_needs.find_one({"id": need_id})
     if not need:
         raise HTTPException(status_code=404, detail="Besoin introuvable")
-    vendor = await db.users.find_one({"email": body.vendor_email.lower()})
+    vendor = await db.users.find_one({"email": body.vendor_email.lower()}) \
+        or await db.vendors.find_one({"email": body.vendor_email.lower()})
     if not vendor:
-        raise HTTPException(status_code=404, detail="Aucun utilisateur avec cet email vendeur")
+        raise HTTPException(status_code=404, detail="Aucun utilisateur (vendeur ou COOPER'S) avec cet email")
+    role_label = "COOPER'S" if vendor.get("role") == "COOPER" else "vendeur"
     await db.purchase_needs.update_one({"id": need_id}, {"$set": {
         "status": "ASSIGNED", "assigned_vendor": body.vendor_email.lower(),
+        "assigned_role": vendor.get("role"),
         "assigned_by": admin.get("email"), "assigned_at": _now()}})
     try:
         from brevo_service import send_email, _wrap_html

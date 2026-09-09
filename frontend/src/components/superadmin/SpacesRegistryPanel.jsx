@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Store, TrendingUp, MapPin, IdCard, ExternalLink, Ban, CheckCircle2, Loader2, Link2, Download, UserCog, Search, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { Store, TrendingUp, MapPin, IdCard, ExternalLink, Ban, CheckCircle2, Loader2, Link2, Download, UserCog, Search, ArrowUp, ArrowDown, ArrowUpDown, Handshake, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { TerritoryFlag } from '../Flag';
 import { SpaceDetailDialog, RelayManagerDialog } from './SpaceDetailDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
 
 const SPACES = [
   { key: 'vendors', label: 'Vendeurs', icon: Store, route: '/vendor', active: 'APPROVED', suspend: 'SUSPENDED' },
   { key: 'investors', label: 'Investisseurs', icon: TrendingUp, route: '/espace-investisseur', active: 'ACTIVE', suspend: 'SUSPENDED' },
   { key: 'relays', label: 'Relais LOLODRIVE', icon: MapPin, route: '/lolo-point/dashboard', active: 'ACTIVE', suspend: 'SUSPENDED' },
   { key: 'pass_members', label: 'Membres PASS', icon: IdCard, route: '/pass', active: 'ACTIVE', suspend: 'SUSPENDED', patchKind: 'pass-members' },
+  { key: 'coopers', label: "COOPER'S", icon: Handshake, route: '/espace-cooper', active: 'ACTIVE', suspend: 'SUSPENDED' },
 ];
 
 const statusColor = (s) => {
@@ -27,6 +30,28 @@ export const SpacesRegistryPanel = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sort, setSort] = useState({ key: null, dir: 1 });
+  const [cooperDialog, setCooperDialog] = useState(false);
+  const [cooperForm, setCooperForm] = useState({ name: '', email: '', phone: '' });
+  const [cooperBusy, setCooperBusy] = useState(false);
+
+  const createCooper = async () => {
+    setCooperBusy(true);
+    try {
+      const r = await fetch(`${API}/admin/spaces/coopers`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(cooperForm),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Erreur');
+      toast.success(d.temp_password
+        ? `Espace COOPER'S créé — mot de passe provisoire : ${d.temp_password} (envoyé par email)`
+        : "Espace COOPER'S créé", { duration: 12000 });
+      setCooperDialog(false);
+      setCooperForm({ name: '', email: '', phone: '' });
+      load();
+    } catch (e) { toast.error(e.message); } finally { setCooperBusy(false); }
+  };
 
   const load = useCallback(() => {
     fetch(`${API}/admin/spaces/registries`, { headers: getAuthHeaders(), credentials: 'include' })
@@ -106,12 +131,20 @@ export const SpacesRegistryPanel = () => {
           <h2 className="text-base font-semibold text-white">Registres des espaces</h2>
           <p className="text-xs text-white/50">Comptes enregistrés automatiquement et connectés à leur espace</p>
         </div>
-        <button type="button" onClick={exportCsv} data-testid="spaces-export-csv"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] border border-white/15 text-white/75 hover:text-white">
-          <Download className="w-3.5 h-3.5" /> Exporter CSV ({rows.length})
-        </button>
+        <div className="flex items-center gap-2">
+          {tab === 'coopers' && (
+            <button type="button" onClick={() => setCooperDialog(true)} data-testid="create-cooper-btn"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[#D9B35A]/20 border border-[#D9B35A]/50 text-[#E9CF8E] hover:bg-[#D9B35A]/30">
+              <Plus className="w-3.5 h-3.5" /> Créer un espace COOPER'S
+            </button>
+          )}
+          <button type="button" onClick={exportCsv} data-testid="spaces-export-csv"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.06] border border-white/15 text-white/75 hover:text-white">
+            <Download className="w-3.5 h-3.5" /> Exporter CSV ({rows.length})
+          </button>
+        </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4" data-testid="spaces-month-stats">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 mb-4" data-testid="spaces-month-stats">
         {monthStats.map((s) => (
           <div key={s.key} className="rounded-xl p-3 bg-white/[0.03] border border-white/[0.08]" data-testid={`month-stat-${s.key}`}>
             <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-white/45">
@@ -244,6 +277,27 @@ export const SpacesRegistryPanel = () => {
         kind={space.patchKind || space.key} row={detailRow} spaceLabel={space.label} />
       <RelayManagerDialog open={!!managerRow} onClose={() => setManagerRow(null)}
         relay={managerRow} onLinked={load} />
+      <Dialog open={cooperDialog} onOpenChange={setCooperDialog}>
+        <DialogContent className="bg-[#1F0A33] border-white/15 text-white max-w-md" data-testid="create-cooper-dialog">
+          <DialogHeader><DialogTitle className="text-white">Créer un espace COOPER'S</DialogTitle></DialogHeader>
+          <div className="space-y-2.5">
+            {[['name', 'Nom complet'], ['email', 'Email'], ['phone', 'Téléphone (optionnel)']].map(([k, ph]) => (
+              <input key={k} value={cooperForm[k]} onChange={(e) => setCooperForm({ ...cooperForm, [k]: e.target.value })}
+                placeholder={ph} data-testid={`cooper-form-${k}`}
+                className="w-full h-9 px-2.5 rounded-md text-sm text-white bg-white/[0.05] border border-white/15" />
+            ))}
+            <p className="text-[11px] text-white/40 m-0">Un mot de passe provisoire est généré et envoyé par email au COOPER'S.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCooperDialog(false)} className="text-white/60">Annuler</Button>
+            <Button onClick={createCooper} disabled={cooperBusy || !cooperForm.name || !cooperForm.email}
+              data-testid="cooper-form-submit"
+              style={{ background: 'linear-gradient(135deg, #D9B35A, #b8933e)', color: '#1F0A33' }}>
+              {cooperBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Créer l'espace"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

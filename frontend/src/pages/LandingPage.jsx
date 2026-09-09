@@ -38,6 +38,7 @@ import { ProHero } from '../components/landing/ProHero';
 import { ProJourneysSection } from '../components/landing/ProJourneysSection';
 import { ProCatalogFamilies } from '../components/landing/ProCatalogFamilies';
 import { FinancingCompartments } from '../components/landing/FinancingCompartments';
+import { CooperSignupAccordion } from '../components/landing/CooperSignupAccordion';
 import { LolodriveSection } from '../components/landing/LolodriveSection';
 export { PublicLolodriveMapSection };
 export { CooperativeApiSection };
@@ -227,6 +228,8 @@ const LandingPage = () => {
         </div>
       </section>
       </Reveal>
+
+      <CooperSignupAccordion />
 
       <Footer />
     </div>

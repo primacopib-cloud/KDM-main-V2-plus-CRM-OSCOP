@@ -569,8 +569,9 @@ from routes_member_profiles import member_profiles_router, set_member_profiles_d
 app.include_router(member_profiles_router)
 set_member_profiles_database(db)
 
-from routes_admin_spaces import admin_spaces_router, set_admin_spaces_database
+from routes_admin_spaces import admin_spaces_router, set_admin_spaces_database, cooper_public_router
 app.include_router(admin_spaces_router)
+app.include_router(cooper_public_router)
 set_admin_spaces_database(db)
 from routes_accounting import accounting_router, set_accounting_database
 app.include_router(accounting_router)

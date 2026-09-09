@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { ShoppingCart, UserPlus, Globe } from 'lucide-react';
+import { ShoppingCart, UserPlus, Globe, Loader2 } from 'lucide-react';
 import { getAuthHeaders } from '../../services/http';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const STATUS = {
@@ -38,9 +40,24 @@ export const PurchaseNeedsPanel = () => {
     } catch (e) { toast.error(e.message); }
   };
 
+  const [assignNeed, setAssignNeed] = useState(null);
+  const [assignees, setAssignees] = useState(null);
+  const [assignEmail, setAssignEmail] = useState('');
+
   const assign = (n) => {
-    const email = window.prompt(`Email du vendeur à qui assigner « ${n.product} » :`, n.assigned_vendor || '');
-    if (email) post(`${API_URL}/api/admin/purchase-needs/${n.id}/assign`, { vendor_email: email.trim() }, 'Besoin assigné — vendeur notifié par email');
+    setAssignNeed(n);
+    setAssignEmail(n.assigned_vendor || '');
+    if (!assignees) {
+      fetch(`${API_URL}/api/admin/spaces/assignees`, { headers: getAuthHeaders(), credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : { vendors: [], coopers: [] })).then(setAssignees).catch(() => setAssignees({ vendors: [], coopers: [] }));
+    }
+  };
+
+  const confirmAssign = async () => {
+    if (!assignEmail.trim()) return;
+    await post(`${API_URL}/api/admin/purchase-needs/${assignNeed.id}/assign`,
+      { vendor_email: assignEmail.trim() }, 'Besoin assigné — notifié par email');
+    setAssignNeed(null);
   };
 
   return (
@@ -149,6 +166,50 @@ export const PurchaseNeedsPanel = () => {
           })}
         </div>
       )}
+      <Dialog open={!!assignNeed} onOpenChange={(v) => !v && setAssignNeed(null)}>
+        <DialogContent className="bg-[#1F0A33] border-white/15 text-white max-w-md" data-testid="assign-dialog">
+          <DialogHeader>
+            <DialogTitle className="text-white">Assigner « {assignNeed?.product} »</DialogTitle>
+          </DialogHeader>
+          {!assignees ? (
+            <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-white/40" /></div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-white/60">Vendeur ou COOPER'S</label>
+                <select value={assignEmail} onChange={(e) => setAssignEmail(e.target.value)} data-testid="assign-select"
+                  className="w-full mt-1 h-9 px-2.5 rounded-md text-sm text-white bg-white/[0.05] border border-white/15">
+                  <option value="" className="bg-[#1F0A33]">— Choisir —</option>
+                  <optgroup label="Vendeurs" className="bg-[#1F0A33]">
+                    {assignees.vendors.map((v) => (
+                      <option key={v.email} value={v.email} className="bg-[#1F0A33]">{v.name} — {v.email}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="COOPER'S" className="bg-[#1F0A33]">
+                    {assignees.coopers.length === 0 && <option disabled className="bg-[#1F0A33]">Aucun COOPER'S</option>}
+                    {assignees.coopers.map((c) => (
+                      <option key={c.email} value={c.email} className="bg-[#1F0A33]">{c.name} — {c.email}</option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-white/60">Ou saisir un email directement</label>
+                <input value={assignEmail} onChange={(e) => setAssignEmail(e.target.value)} data-testid="assign-email-input"
+                  placeholder="email@exemple.com"
+                  className="w-full mt-1 h-9 px-2.5 rounded-md text-sm text-white bg-white/[0.05] border border-white/15" />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAssignNeed(null)} className="text-white/60">Annuler</Button>
+            <Button onClick={confirmAssign} disabled={!assignEmail.trim()} data-testid="assign-confirm"
+              style={{ background: 'linear-gradient(135deg, #D9B35A, #b8933e)', color: '#1F0A33' }}>
+              Assigner
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
