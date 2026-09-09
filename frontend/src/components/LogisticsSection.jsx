@@ -21,9 +21,9 @@ const JourneyRow = ({ title, badge, steps, testId, image, imageAlt, objectPositi
   <div className="mb-6" data-testid={testId}>
     {image && (
       <div className="relative rounded-[22px] overflow-hidden mb-4 group" data-testid={`${testId}-hero`}>
-        <img src={image} alt={imageAlt || title} loading="lazy" style={{ objectPosition }}
+        <img src={image} alt={imageAlt || title} loading="lazy" style={{ objectPosition, filter: 'brightness(1.12) saturate(1.06)' }}
           className="w-full h-44 sm:h-56 object-cover transition-transform duration-[1.6s] ease-out group-hover:scale-[1.06]" />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(12,12,16,0.72) 0%, rgba(12,12,16,0.28) 55%, rgba(12,12,16,0.06) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(12,12,16,0.34) 0%, rgba(12,12,16,0.10) 55%, rgba(12,12,16,0.02) 100%)' }} />
         <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-9">
           <h4 className="text-lg sm:text-2xl font-bold tracking-wide uppercase text-white m-0 drop-shadow-lg">{title}</h4>
           {badge && (
