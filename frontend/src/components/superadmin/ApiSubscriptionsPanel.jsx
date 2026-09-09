@@ -102,6 +102,20 @@ export const ApiSubscriptionsPanel = () => {
             <span>{stats.daily[0] && `${stats.daily[0].day.slice(8, 10)}/${stats.daily[0].day.slice(5, 7)}`}</span>
             <span>aujourd'hui</span>
           </div>
+          {stats.top_endpoints?.length > 0 && (
+            <div className="mt-3 pt-2 border-t border-white/10" data-testid="api-top-endpoints">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-white/45 m-0 mb-1.5">Endpoints les plus appelés</p>
+              <div className="space-y-1">
+                {stats.top_endpoints.map((e, i) => (
+                  <div key={e.path} className="flex items-center gap-2 text-[11px]" data-testid={`api-top-endpoint-${i}`}>
+                    <span className="w-5 text-center font-bold text-[#D9B35A]">{i + 1}.</span>
+                    <code className="text-white/80 flex-1 truncate">{e.path}</code>
+                    <span className="text-[#B6E27A] font-semibold">{e.count} appel(s)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
       <div className="space-y-2">
