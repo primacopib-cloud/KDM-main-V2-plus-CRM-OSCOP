@@ -57,6 +57,7 @@ class PurchaseNeedBatch(BaseModel):
     territory: str
     country_code: str | None = None
     deadline: str | None = None
+    listing_type: str = "DEMANDE"
     items: List[NeedItem] = Field(min_length=1, max_length=10)
 
 
@@ -138,6 +139,7 @@ async def create_purchase_needs_batch(body: PurchaseNeedBatch):
                "phone": body.phone, "territory": body.territory, "country_code": body.country_code, "deadline": body.deadline,
                "product": item.product, "quantity": item.quantity, "budget_eur": item.budget_eur,
                "description": item.description, "images": item.images or [],
+               "listing_type": "OFFRE" if (body.listing_type or "").upper() == "OFFRE" else "DEMANDE",
                "status": "NEW", "assigned_vendor": None, "communityplace": False, "created_at": _now()}
         await db.purchase_needs.insert_one(dict(doc))
         refs.append({"reference": ref, "product": item.product})
@@ -228,6 +230,7 @@ async def community_board(q: str | None = None):
                     "territory": n["territory"],
                     "flag": (n.get("country_code") or TERRITORY_FLAG.get(n["territory"], "FR")),
                     "status": n["status"], "created_at": n["created_at"],
+                    "listing_type": n.get("listing_type") or "DEMANDE",
                     "joiners_count": len(n.get("joiners") or []),
                     "joined_quantity": joined,
                     "current_quantity": init + joined,
@@ -354,6 +357,25 @@ async def communityplace_webhook(payload: dict):
     if need_id and obj.get("payment_status") == "paid":
         await db.purchase_needs.update_one({"id": need_id}, {"$set": {
             "communityplace_payment_status": "PAID", "communityplace_paid_at": _now()}})
+        need = await db.purchase_needs.find_one({"id": need_id}, {"_id": 0})
+        if need and need.get("email"):
+            try:
+                from communityplace_invoice import build_paid_invoice_pdf
+                from brevo_service import send_email, _wrap_html
+                import base64
+                pdf = build_paid_invoice_pdf(need)
+                await send_email(
+                    to_email=need["email"], to_name=need.get("contact_name"),
+                    subject=f"🧾 Facture acquittée — publication CommunityPlace {need['reference']}",
+                    html_content=_wrap_html("Facture acquittée", (
+                        f"<p style='font-size:14px;'>Bonjour {need.get('contact_name', '')},</p>"
+                        f"<p>Votre paiement des frais de publication de <b>{need['reference']} — {need.get('product')}</b> "
+                        "est confirmé. Vous trouverez ci-joint votre <b>facture acquittée</b>.</p>"
+                        "<p>Merci de votre confiance 🤝</p>")),
+                    attachments=[{"content": base64.b64encode(pdf).decode(), "name": f"facture-{need['reference']}.pdf"}],
+                    tags=["communityplace-invoice"])
+            except Exception as e:
+                logger.warning("Facture acquittée non envoyée : %s", e)
     return {"received": True}
 
 

@@ -45,6 +45,30 @@ export default function ApiCooperativePage() {
           </div>
         </Reveal>
 
+        <Reveal delay={110}>
+          <div className="mt-10 rounded-[20px] border border-white/10 overflow-hidden" data-testid="api-code-example">
+            <div className="px-5 py-3 bg-white/[0.04] border-b border-white/10 flex items-center gap-2">
+              <Code2 className="w-4 h-4 text-[#8CC63E]" />
+              <span className="text-xs font-bold uppercase tracking-wide text-white/60">Exemple — récupérer le catalogue d'une zone</span>
+            </div>
+            <pre className="m-0 p-5 text-[13px] leading-relaxed overflow-x-auto bg-[#150724] text-[#B6E27A]">
+{`curl -X GET "https://centrale.objectifscopoutremer.com/api/v2/catalog/products?zone_code=GUADELOUPE" \\
+  -H "Authorization: Bearer VOTRE_CLE_API"
+
+# Réponse (extrait)
+[
+  {
+    "sku": "RIZ-5KG",
+    "name": "Riz parfumé 5 kg",
+    "price_ht_cents": 780,
+    "zone_code": "GUADELOUPE",
+    "in_stock": true
+  }
+]`}
+            </pre>
+          </div>
+        </Reveal>
+
         <Reveal delay={140}>
           <div className="mt-10 rounded-[24px] p-7 border border-[#D9B35A]/30 text-center"
             style={{ background: 'radial-gradient(120% 160% at 50% -20%, rgba(217,179,90,0.14), rgba(20,8,38,0.5))' }}
