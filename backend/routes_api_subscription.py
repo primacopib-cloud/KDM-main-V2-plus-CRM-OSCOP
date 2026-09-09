@@ -18,7 +18,8 @@ api_sub_router = APIRouter(prefix="/api", tags=["Abonnement API"])
 db = None
 
 API_ANNUAL_PRICE_EUR = 2500.0
-API_KEY_SCOPES = ["catalog:read", "orders:read", "territories:read"]
+API_KEY_SCOPES = ["catalog:read", "orders:read", "territories:read", "stock:write"]
+RENEW_WINDOW_DAYS = 30
 
 
 def set_api_subscription_database(database):
@@ -41,12 +42,29 @@ def _is_active(sub: dict) -> bool:
     return sub.get("status") == "ACTIVE" and str(sub.get("valid_until") or "") >= _now()
 
 
+def _is_renewable(sub: dict) -> bool:
+    """Renouvelable si l'abonnement actif expire dans moins de 30 jours."""
+    limit = (datetime.now(timezone.utc) + timedelta(days=RENEW_WINDOW_DAYS)).isoformat()
+    return _is_active(sub) and str(sub.get("valid_until") or "") <= limit
+
+
+async def _require_relay_manager(user: dict):
+    """L'abonnement API est réservé aux relais LOLODRIVE (gestion de leur catalogue)."""
+    if (user.get("role") or "").upper() == "GERANT_LOLO_POINT":
+        return
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0, "id": 1})
+    if not point:
+        raise HTTPException(status_code=403,
+                            detail="Abonnement réservé aux relais LOLODRIVE (gérants de LOLO POINT)")
+
+
 @api_sub_router.post("/api-subscription/checkout")
 async def api_subscription_checkout(user: dict = Depends(_member)):
     """Le membre connecté souscrit l'abonnement annuel API (montant fixé côté serveur)."""
+    await _require_relay_manager(user)
     email = (user.get("email") or "").lower()
     existing = await db.api_subscriptions.find_one({"user_id": user["id"]}, sort=[("created_at", -1)])
-    if existing and _is_active(existing):
+    if existing and _is_active(existing) and not _is_renewable(existing):
         raise HTTPException(status_code=409, detail="Vous disposez déjà d'un abonnement API actif")
     import stripe
     stripe.api_key = os.environ.get("STRIPE_API_KEY")
@@ -83,7 +101,12 @@ async def _activate(sub_id: str):
     if not sub or sub.get("status") == "ACTIVE":
         return
     raw_key = f"kdm_live_{secrets.token_hex(24)}"
-    valid_until = (datetime.now(timezone.utc) + timedelta(days=365)).isoformat()
+    start = datetime.now(timezone.utc)
+    prev = await db.api_subscriptions.find_one(
+        {"user_id": sub["user_id"], "status": "ACTIVE", "id": {"$ne": sub_id}}, sort=[("valid_until", -1)])
+    if prev and str(prev.get("valid_until") or "") > start.isoformat():
+        start = datetime.fromisoformat(prev["valid_until"])
+    valid_until = (start + timedelta(days=365)).isoformat()
     key_doc = {
         "id": str(uuid.uuid4()), "name": f"Abonnement API — {sub['email']}",
         "prefix": raw_key[:16] + "…",
@@ -166,10 +189,26 @@ async def api_subscription_webhook(payload: dict):
 async def my_api_subscription(user: dict = Depends(_member)):
     sub = await db.api_subscriptions.find_one(
         {"user_id": user["id"], "status": "ACTIVE"}, {"_id": 0, "stripe_session_id": 0}, sort=[("paid_at", -1)])
+    is_relay = True
+    try:
+        await _require_relay_manager(user)
+    except HTTPException:
+        is_relay = False
     if not sub:
-        return {"subscription": None}
+        return {"subscription": None, "is_relay": is_relay}
     sub["expired"] = not _is_active(sub)
-    return {"subscription": sub}
+    sub["renewable"] = _is_renewable(sub) or sub["expired"]
+    if sub.get("api_key_id"):
+        key = await db.api_keys.find_one({"id": sub["api_key_id"]},
+                                         {"_id": 0, "month_usage": 1, "monthly_quota": 1, "usage_month": 1, "requests_count": 1})
+        if key:
+            current_month = datetime.now(timezone.utc).strftime("%Y-%m")
+            sub["usage"] = {
+                "month_usage": key.get("month_usage", 0) if key.get("usage_month") == current_month else 0,
+                "monthly_quota": key.get("monthly_quota") or 100000,
+                "requests_count": key.get("requests_count", 0),
+            }
+    return {"subscription": sub, "is_relay": is_relay}
 
 
 @api_sub_router.get("/api-subscription/me/invoice.pdf")
@@ -204,6 +243,25 @@ async def list_api_subscriptions_admin(_: dict = Depends(require_admin)):
     total = round(sum(float(i.get("amount_eur") or 0) for i in items if i.get("status") == "ACTIVE"), 2)
     return {"items": items, "active_count": sum(1 for i in items if i.get("status") == "ACTIVE"),
             "total_eur": total, "annual_price_eur": API_ANNUAL_PRICE_EUR}
+
+
+@api_sub_router.get("/admin/api-subscriptions/export")
+async def export_api_subscriptions_csv(_: dict = Depends(require_admin)):
+    """Export CSV comptabilité du registre des abonnements API."""
+    items = await db.api_subscriptions.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    rows = ["reference;email;societe;montant_eur;statut;souscrit_le;paye_le;valide_jusqu_au;cle_prefixe"]
+    for s in items:
+        rows.append(";".join([
+            s.get("reference") or "", s.get("email") or "",
+            (s.get("company") or "").replace(";", ","),
+            f"{float(s.get('amount_eur') or 0):.2f}",
+            s.get("status") or "",
+            str(s.get("created_at") or "")[:10], str(s.get("paid_at") or "")[:10],
+            str(s.get("valid_until") or "")[:10], s.get("api_key_prefix") or ""]))
+    from fastapi.responses import Response
+    csv = "\ufeff" + "\n".join(rows)
+    return Response(content=csv, media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": "attachment; filename=abonnements-api.csv"})
 
 
 @api_sub_router.get("/admin/api-subscriptions/{sub_id}/invoice.pdf")

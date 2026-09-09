@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { BadgeCheck, Copy, Download, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { BadgeCheck, Copy, Download, Eye, EyeOff, FileSpreadsheet, KeyRound } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const frDate = (iso) => { try { return new Date(iso).toLocaleDateString('fr-FR'); } catch { return iso || '—'; } };
@@ -30,12 +30,30 @@ export const ApiSubscriptionsPanel = () => {
     URL.revokeObjectURL(a.href);
   };
 
+  const exportCsv = async () => {
+    const r = await fetch(`${API}/admin/api-subscriptions/export`, { credentials: 'include' });
+    if (!r.ok) return toast.error('Export impossible');
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'abonnements-api.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast.success('Export CSV téléchargé');
+  };
+
   return (
     <div className="glass-panel-soft rounded-[18px] p-5" data-testid="api-subscriptions-panel">
-      <h3 className="font-display text-lg text-white flex items-center gap-2 mb-1">
-        <KeyRound size={16} style={{ color: '#D9B35A' }} /> Abonnements API annuels
-        <span className="text-sm font-normal text-white/50">({data.items.length})</span>
-      </h3>
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-display text-lg text-white flex items-center gap-2 m-0">
+          <KeyRound size={16} style={{ color: '#D9B35A' }} /> Abonnements API annuels
+          <span className="text-sm font-normal text-white/50">({data.items.length})</span>
+        </h3>
+        <button onClick={exportCsv} data-testid="api-subs-export-csv-btn"
+          className="h-8 px-3 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/10">
+          <FileSpreadsheet size={13} /> CSV
+        </button>
+      </div>
       <p className="text-xs text-white/45 mb-4" data-testid="api-subs-summary">
         {data.active_count} abonnement(s) actif(s) · {Number(data.total_eur).toLocaleString('fr-FR')} € encaissés ·
         tarif annuel {Number(data.annual_price_eur).toLocaleString('fr-FR')} €

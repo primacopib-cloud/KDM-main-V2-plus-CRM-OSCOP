@@ -4,6 +4,7 @@ import Footer from '../components/Footer';
 import { Code2, Package, RefreshCw, ShieldCheck, Layers } from 'lucide-react';
 import { Reveal } from '../components/landing/Reveal';
 import { ApiSubscribeCard } from '../components/api/ApiSubscribeCard';
+import { ApiDocsExplorer } from '../components/api/ApiDocsExplorer';
 
 const FEATURES = [
   { icon: Package, title: 'Catalogue en temps réel', desc: 'Interrogez le catalogue coopératif multi-zones : produits, prix HT négociés, disponibilité et logistique par pays.' },
@@ -71,6 +72,10 @@ export default function ApiCooperativePage() {
 
         <Reveal delay={140}>
           <ApiSubscribeCard />
+        </Reveal>
+
+        <Reveal delay={160}>
+          <ApiDocsExplorer />
         </Reveal>
       </main>
       <Footer />

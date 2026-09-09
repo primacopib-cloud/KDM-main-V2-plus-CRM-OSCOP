@@ -289,6 +289,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler CommunityPlace reminders crashed: %s", exc)
         try:
+            from api_subscription_reminders import run_api_subscription_expiry_reminders
+            await run_api_subscription_expiry_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler API subscription reminders crashed: %s", exc)
+        try:
             from routes_price_schedule import process_scheduled_price_changes
             await process_scheduled_price_changes(_db)
         except Exception as exc:
