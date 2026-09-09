@@ -347,8 +347,14 @@ async def list_financing_products_investor(user: dict = Depends(_investor)):
     me = (user.get("email") or "").lower()
     for i in items:
         i["is_mine"] = (i.get("paid_by") or i.get("pending_by") or "").lower() == me
+        if i["is_mine"] and i.get("status") == "PAID" and not i.get("tracking_token"):
+            i["tracking_token"] = uuid.uuid4().hex
+            await db.financing_products.update_one({"id": i["id"]}, {"$set": {"tracking_token": i["tracking_token"]}})
         if i.get("status") != "PAID":
             i.pop("paid_by", None)
+            i.pop("tracking_token", None)
+        if not i["is_mine"]:
+            i.pop("tracking_token", None)
         i.pop("pending_by", None)
     return {"products": items}
 
@@ -387,7 +393,9 @@ async def _mark_paid(fp_id: str, investor_email: str | None):
         return
     email = (investor_email or fp.get("pending_by") or "").lower()
     await db.financing_products.update_one({"id": fp_id}, {"$set": {
-        "status": "PAID", "paid_at": _now(), "paid_by": email}})
+        "status": "PAID", "paid_at": _now(), "paid_by": email,
+        "tracking_status": "CONFIRMEE", "tracking_token": uuid.uuid4().hex,
+        "tracking_history": [{"step": "CONFIRMEE", "label": "Commande confirmée", "at": _now()}]}})
     if not email:
         return
     try:
@@ -409,6 +417,51 @@ async def _mark_paid(fp_id: str, investor_email: str | None):
             tags=["financing-invoice"])
     except Exception as e:
         logger.warning("Facture financement non envoyée : %s", e)
+
+
+@financing_router.post("/investor/financing-products/{fp_id}/confirm-receipt")
+async def confirm_receipt(fp_id: str, user: dict = Depends(_investor)):
+    """L'investisseur confirme lui-même la réception → clôture du suivi."""
+    fp = await db.financing_products.find_one({"id": fp_id})
+    if not fp:
+        raise HTTPException(status_code=404, detail="Financement introuvable")
+    if (fp.get("paid_by") or "").lower() != (user.get("email") or "").lower():
+        raise HTTPException(status_code=403, detail="Réservé à l'investisseur payeur")
+    if fp.get("status") != "PAID":
+        raise HTTPException(status_code=409, detail="Financement non payé")
+    if fp.get("tracking_status") != "LIVREE":
+        raise HTTPException(status_code=409, detail="La livraison n'est pas encore marquée « Livrée » par la Centrale")
+    if fp.get("receipt_confirmed_at"):
+        return {"ok": True, "receipt_confirmed_at": fp["receipt_confirmed_at"], "already": True}
+    now = _now()
+    await db.financing_products.update_one({"id": fp_id}, {"$set": {
+        "receipt_confirmed_at": now, "receipt_confirmed_by": (user.get("email") or "").lower()}})
+    try:
+        from brevo_service import send_email, _wrap_html
+        team = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
+        await send_email(
+            to_email=team, to_name=None,
+            subject=f"✅ Réception confirmée par l'investisseur — {fp['reference']} ({fp['name']})",
+            html_content=_wrap_html("Réception confirmée", (
+                f"<p style='font-size:14px;'>L'investisseur <b>{user.get('email')}</b> a confirmé la réception du financement "
+                f"<b>{fp['reference']} — {fp['name']}</b> ({fp['total_price_eur']:.2f} €) le {now[:10]}. "
+                "Le suivi est clôturé.</p>")),
+            tags=["financing-receipt"])
+    except Exception as exc:
+        logger.warning("Email confirmation réception : %s", exc)
+    return {"ok": True, "receipt_confirmed_at": now, "already": False}
+
+
+@financing_router.get("/public/financing-products/track/{token}")
+async def public_tracking(token: str):
+    """Suivi logistique en lecture seule, partageable sans connexion (aucune donnée personnelle)."""
+    fp = await db.financing_products.find_one(
+        {"tracking_token": token},
+        {"_id": 0, "reference": 1, "name": 1, "kind": 1, "status": 1, "tracking_status": 1,
+         "tracking_history": 1, "eta_delivery": 1, "receipt_confirmed_at": 1})
+    if not fp:
+        raise HTTPException(status_code=404, detail="Lien de suivi invalide")
+    return fp
 
 
 @financing_router.get("/investor/financing-products/checkout-status/{session_id}")

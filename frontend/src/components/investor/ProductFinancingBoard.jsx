@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Banknote, Package, Loader2, BadgeCheck, Download, Truck } from 'lucide-react';
+import { Banknote, Package, Loader2, BadgeCheck, Download, Truck, Share2, CheckCircle2 } from 'lucide-react';
 import { getAuthHeaders, getSessionToken } from '../../services/http';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -8,7 +8,7 @@ const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDi
 const frDate = (iso) => { try { return new Date(iso).toLocaleDateString('fr-FR'); } catch { return iso; } };
 const TRACK_STEPS = [['CONFIRMEE', 'Confirmée'], ['PREPARATION', 'Préparation'], ['EXPEDITION', 'Expédiée'], ['TRANSIT', 'En transit'], ['LIVREE', 'Livrée']];
 
-const TrackingStepper = ({ fp }) => {
+const TrackingStepper = ({ fp, onShare, onConfirm, confirming }) => {
   const idx = TRACK_STEPS.findIndex(([k]) => k === fp.tracking_status);
   return (
     <div className="mt-3" data-testid={`fin-tracking-${fp.reference}`}>
@@ -40,7 +40,28 @@ const TrackingStepper = ({ fp }) => {
           📎 Voir la preuve de livraison
         </a>
       )}
-      {fp.tracking_status === 'LIVREE' && <p className="text-[10px] text-[#8CC63E] font-bold m-0 mt-1" data-testid={`fin-delivered-${fp.reference}`}>🎉 Livraison effectuée</p>}
+      {fp.tracking_status === 'LIVREE' && !fp.receipt_confirmed_at && (
+        <button type="button" onClick={() => onConfirm(fp)} disabled={confirming === fp.id}
+          data-testid={`fin-confirm-receipt-${fp.reference}`}
+          className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-[10px] text-[11px] font-bold text-[#1F2A12] bg-[#8CC63E] hover:brightness-110 disabled:opacity-60 transition-[filter]">
+          {confirming === fp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+          Je confirme la réception
+        </button>
+      )}
+      {fp.tracking_status === 'LIVREE' && fp.receipt_confirmed_at && (
+        <p className="text-[10px] text-[#8CC63E] font-bold m-0 mt-1" data-testid={`fin-delivered-${fp.reference}`}>
+          🎉 Livrée — réception confirmée le {frDate(fp.receipt_confirmed_at)}
+        </p>
+      )}
+      {fp.tracking_status === 'LIVREE' && !fp.receipt_confirmed_at && (
+        <p className="text-[10px] text-[#8CC63E] font-bold m-0 mt-1">🎉 Livraison effectuée</p>
+      )}
+      {fp.tracking_token && (
+        <button type="button" onClick={() => onShare(fp)} data-testid={`fin-share-tracking-${fp.reference}`}
+          className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-[10px] text-[11px] font-bold text-sky-300 bg-sky-500/10 border border-sky-400/40 hover:bg-sky-500/20 transition-colors">
+          <Share2 className="w-3.5 h-3.5" /> Partager le suivi (lien sans connexion)
+        </button>
+      )}
     </div>
   );
 };
@@ -49,6 +70,28 @@ const TrackingStepper = ({ fp }) => {
 export const ProductFinancingBoard = () => {
   const [items, setItems] = useState(null);
   const [paying, setPaying] = useState(null);
+  const [confirming, setConfirming] = useState(null);
+
+  const shareTracking = (fp) => {
+    const url = `${window.location.origin}/suivi-financement/${fp.tracking_token}`;
+    navigator.clipboard.writeText(url)
+      .then(() => toast.success('Lien de suivi copié — partageable sans connexion'))
+      .catch(() => toast.info(url));
+  };
+
+  const confirmReceipt = async (fp) => {
+    setConfirming(fp.id);
+    try {
+      const res = await fetch(`${API_URL}/api/investor/financing-products/${fp.id}/confirm-receipt`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      toast.success('Réception confirmée — suivi clôturé. Merci !');
+      load();
+    } catch (e) { toast.error(e.message); } finally { setConfirming(null); }
+  };
 
   const load = useCallback(() => {
     if (!getSessionToken()) return;
@@ -157,7 +200,7 @@ export const ProductFinancingBoard = () => {
                 <div className="text-[#8CC63E]">Payé par vous le {String(fp.paid_at || '').slice(0, 10)} ✓</div>
               )}
             </div>
-            {fp.status === 'PAID' && fp.is_mine && <TrackingStepper fp={fp} />}
+            {fp.status === 'PAID' && fp.is_mine && <TrackingStepper fp={fp} onShare={shareTracking} onConfirm={confirmReceipt} confirming={confirming} />}
             {fp.status === 'PAID' && fp.is_mine && (
               <button type="button" onClick={() => downloadInvoice(fp)}
                 data-testid={`fin-invoice-btn-${fp.reference}`}
