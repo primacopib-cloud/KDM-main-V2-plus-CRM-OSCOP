@@ -87,7 +87,7 @@ export const PurchaseNeedForm = ({ onClose, initialType = 'DEMANDE' }) => {
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" data-testid="purchase-need-modal">
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 bg-[#241243] border border-[#D9B35A]/30">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-lg font-bold text-[#E9CF8E] m-0" data-testid="purchase-need-title">Déposer une demande ou une offre produit</h3>
+          <h3 className="text-lg font-bold text-[#E9CF8E] m-0" data-testid="purchase-need-title">Déposer une offre produit</h3>
           <button type="button" onClick={onClose} data-testid="purchase-need-close"
             className="ml-auto p-1.5 rounded-lg text-white/60 hover:bg-white/[0.08] transition-colors"><X className="w-4 h-4" /></button>
         </div>
