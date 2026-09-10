@@ -90,6 +90,13 @@ const LandingPage = () => {
       {/* Les quatre services professionnels */}
       <Reveal delay={80}><ServicesBlock /></Reveal>
 
+      {/* Section territoriale professionnelle — juste avant Règlement à Réception Pro */}
+      <Reveal variant="zoom">
+      <div className="py-8">
+        <TerritoryCarousel />
+      </div>
+      </Reveal>
+
       {/* Règlement à Réception Pro — bloc commercial */}
       <Reveal><ReceptionProSection /></Reveal>
 
@@ -188,13 +195,6 @@ const LandingPage = () => {
 
       {/* ============ PONT PARTICULIERS (détails sur /particuliers) ============ */}
       <Reveal><LolodriveSection /></Reveal>
-
-      {/* Section territoriale professionnelle */}
-      <Reveal variant="zoom">
-      <div className="py-8">
-        <TerritoryCarousel />
-      </div>
-      </Reveal>
 
       {/* Témoignages membres */}
       <Reveal variant="left"><TestimonialsSection /></Reveal>
