@@ -18,6 +18,7 @@ import { BreadcrumbPill } from '../components/Breadcrumb';
 import { VendorNeedsPanel } from '../components/vendor/VendorNeedsPanel';
 import { VendorMyOffersPanel } from '../components/vendor/VendorMyOffersPanel';
 import { VendorPaymentSettings } from '../components/vendor/VendorPaymentSettings';
+import { ProReferralShareCard } from '../components/ProReferralShareCard';
 import { PurchaseNeedForm } from '../components/landing/PurchaseNeedForm';
 import { VendorProductAssistant } from '../components/VendorProductAssistant';
 import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
@@ -295,6 +296,7 @@ const VendorSpacePage = () => {
         <VendorNeedsPanel />
         <VendorMyOffersPanel />
         <VendorPaymentSettings vendorId={vendorId} />
+        <ProReferralShareCard />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white/[0.06] border border-white/10">
             <TabsTrigger value="dashboard" className="gap-2">

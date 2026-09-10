@@ -72,7 +72,13 @@ export default function VendorOnboardingPage() {
     const code = (params.get('promo') || localStorage.getItem('pro_welcome_code') || '').trim().toUpperCase();
     if (!code) return;
     fetch(`${API}/public/pro-welcome-code/${encodeURIComponent(code)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(async (r) => {
+        if (r.ok) return r.json();
+        const d = await r.json().catch(() => ({}));
+        if (r.status === 410) toast.info('Votre code de bienvenue -20 % a expiré (validité 30 jours).');
+        else if (r.status === 409) toast.info('Ce code de bienvenue a déjà été utilisé.');
+        throw new Error(d.detail || 'Code invalide');
+      })
       .then((d) => setWelcomePromo(d))
       .catch(() => { setWelcomePromo(null); localStorage.removeItem('pro_welcome_code'); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,6 +164,7 @@ export default function VendorOnboardingPage() {
                 </p>
                 <p className="text-[11px] text-white/55 m-0 mt-0.5">
                   Code <span className="font-mono font-bold text-[#E9CF8E]">{welcomePromo.code}</span> appliqué automatiquement au paiement.
+                  {welcomePromo.expires_at && <span className="text-orange-300/90"> Valable jusqu'au {new Date(welcomePromo.expires_at).toLocaleDateString('fr-FR')}.</span>}
                 </p>
               </div>
             )}

@@ -34,7 +34,7 @@ async def run_pro_invitation_reminders(db) -> int:
                 {"email": inv["email"]}, {"$set": {"converted_at": now.isoformat()}})
             continue
         code = inv.get("promo_code") or ""
-        promo = _promo_block(code) if code else ""
+        promo = _promo_block(code, inv.get("promo_expires_at")) if code else ""
         if step == 1:
             subject = "⏰ Votre invitation professionnelle KDMARCHÉ vous attend (-20 %)"
             body = (

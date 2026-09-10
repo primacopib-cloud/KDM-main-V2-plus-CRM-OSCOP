@@ -65,6 +65,11 @@ class PurchaseNeedBatch(BaseModel):
 DEFAULT_FEES = {"demand_fee_eur": 50.0, "offer_fee_eur": 25.0}
 
 
+def _need_current_user():
+    from routes_investor_plans import _current_user
+    return _current_user
+
+
 async def _get_fees() -> dict:
     doc = await db.communityplace_settings.find_one({"id": "fees"}, {"_id": 0}) or {}
     return {k: float(doc.get(k) or v) for k, v in DEFAULT_FEES.items()}
@@ -336,6 +341,7 @@ def _participation_eur(need: dict) -> float:
 
 
 PRO_JOIN_LIMIT = 3
+PROMO_VALIDITY_DAYS = 30
 
 
 async def _is_pro_subscriber(email: str) -> bool:
@@ -373,16 +379,24 @@ def _pro_cta_table(base: str, promo_code: str | None = None) -> str:
         "</tr></table>")
 
 
-def _promo_block(promo_code: str) -> str:
+def _promo_block(promo_code: str, expires_at: str | None = None) -> str:
+    expiry_line = ""
+    if expires_at:
+        try:
+            d = datetime.fromisoformat(expires_at).strftime("%d/%m/%Y")
+            expiry_line = f"<p style='font-size:11px;margin:4px 0 0;color:#B85C38;font-weight:bold;'>⏳ Valable jusqu'au {d}</p>"
+        except Exception:
+            pass
     return (
         "<div style='margin:14px 0;padding:12px 16px;border:2px dashed #D9B35A;border-radius:12px;text-align:center;'>"
         "<p style='font-size:13px;margin:0 0 4px;'>🎁 <b>Offre de bienvenue : -20 % sur votre première adhésion professionnelle</b></p>"
         f"<p style='font-size:18px;font-weight:bold;letter-spacing:2px;margin:0;color:#B8860B;'>{promo_code}</p>"
         "<p style='font-size:11px;margin:4px 0 0;color:#888;'>Code appliqué automatiquement en cliquant sur les boutons ci-dessous.</p>"
+        + expiry_line +
         "</div>")
 
 
-async def _send_pro_invitation(email: str, need: dict, promo_code: str) -> None:
+async def _send_pro_invitation(email: str, need: dict, promo_code: str, expires_at: str | None = None) -> None:
     """Invitation à devenir fournisseur ou acheteur professionnel, envoyée au seuil de 3 annonces payées."""
     from brevo_service import send_email, _wrap_html
     base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
@@ -396,7 +410,7 @@ async def _send_pro_invitation(email: str, need: dict, promo_code: str) -> None:
             "<p style='font-size:14px;'>Pour continuer à rejoindre des annonces, devenez <b>membre professionnel</b> "
             "de la coopérative O'SCOP : les participations deviennent <b>gratuites</b> et vous bénéficiez des prix "
             "négociés, du catalogue B2B multi-territoires, du règlement à réception et de la logistique LOGI'SCOP.</p>"
-            + _promo_block(promo_code) + _pro_cta_table(base, promo_code) +
+            + _promo_block(promo_code, expires_at) + _pro_cta_table(base, promo_code) +
             "<p style='font-size:12px;color:rgba(243,237,228,0.6);'>Vous continuerez à recevoir le suivi de "
             "l'annonce que vous avez rejointe, quel que soit votre choix.</p>")),
         tags=["purchase-need-pro-invitation"])
@@ -406,15 +420,18 @@ async def _maybe_send_pro_invitation(email: str, need: dict) -> None:
     """Envoie l'invitation pro une seule fois par email (idempotent, seuil de 3 annonces payées)."""
     email = email.lower()
     promo_code = f"PRO20-{str(uuid.uuid4())[:6].upper()}"
+    from datetime import timedelta
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=PROMO_VALIDITY_DAYS)).isoformat()
     res = await db.communityplace_pro_invitations.update_one(
         {"email": email},
         {"$setOnInsert": {"email": email, "invited_at": _now(), "reference": need["reference"],
-                          "promo_code": promo_code, "promo_percent": 20}},
+                          "promo_code": promo_code, "promo_percent": 20,
+                          "promo_expires_at": expires_at}},
         upsert=True)
     if not res.upserted_id:
         return
     try:
-        await _send_pro_invitation(email, need, promo_code)
+        await _send_pro_invitation(email, need, promo_code, expires_at)
     except Exception as e:
         logger.warning(f"pro invitation failed: {e}")
 
@@ -572,24 +589,108 @@ async def join_status(email: EmailStr):
 
 @purchase_needs_router.get("/admin/communityplace/pro-invitations")
 async def list_pro_invitations(_: dict = Depends(require_admin)):
-    """Liste des invitations pro envoyées (seuil 3 annonces) avec relances, code promo et conversion."""
+    """Liste des invitations pro envoyées + stats de conversion en adhésions."""
     out = []
     async for inv in db.communityplace_pro_invitations.find({}, {"_id": 0}).sort("invited_at", -1):
         inv["converted"] = await _is_pro_subscriber(inv["email"])
         out.append(inv)
-    return {"invitations": out}
+    total = len(out)
+    converted = sum(1 for i in out if i["converted"])
+    used = sum(1 for i in out if i.get("promo_used_at"))
+    return {"invitations": out,
+            "stats": {"total": total, "converted": converted, "promo_used": used,
+                      "conversion_rate": round(converted / total * 100, 1) if total else 0.0}}
+
+
+class RemindBody(BaseModel):
+    email: EmailStr
+
+
+@purchase_needs_router.post("/admin/communityplace/pro-invitations/remind")
+async def manual_pro_invitation_remind(body: RemindBody, admin: dict = Depends(require_admin)):
+    """Relance manuelle immédiate d'un prospect invité pro (bouton admin)."""
+    email = body.email.lower()
+    inv = await db.communityplace_pro_invitations.find_one({"email": email}, {"_id": 0})
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invitation introuvable")
+    if await _is_pro_subscriber(email):
+        raise HTTPException(status_code=409, detail="Ce prospect est déjà membre professionnel")
+    from brevo_service import send_email, _wrap_html
+    base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+    code = inv.get("promo_code") or ""
+    await send_email(
+        to_email=email, to_name=None,
+        subject="🤝 KDMARCHÉ — votre place de membre professionnel vous attend (-20 %)",
+        html_content=_wrap_html("Devenez membre professionnel", (
+            "<p style='font-size:14px;'>Bonjour,</p>"
+            "<p style='font-size:14px;'>La coopérative O'SCOP revient vers vous personnellement : après vos 3 annonces "
+            "rejointes sur la CommunityPlace, votre <b>invitation professionnelle</b> est toujours ouverte.</p>"
+            "<p style='font-size:14px;'>En tant que membre, vous rejoignez les annonces <b>gratuitement</b> et profitez "
+            "des prix négociés, du catalogue B2B multi-territoires et de la logistique LOGI'SCOP.</p>"
+            + (_promo_block(code, inv.get("promo_expires_at")) if code else "")
+            + _pro_cta_table(base, code or None))),
+        tags=["pro-invitation-manual-reminder"])
+    now = _now()
+    await db.communityplace_pro_invitations.update_one(
+        {"email": email},
+        {"$set": {"last_manual_reminder_at": now, "last_manual_reminder_by": admin.get("email")},
+         "$inc": {"manual_reminders": 1}})
+    return {"ok": True, "sent_at": now}
+
+
+def _promo_expired(inv: dict) -> bool:
+    exp = inv.get("promo_expires_at")
+    if not exp:
+        return False
+    try:
+        return datetime.now(timezone.utc) > datetime.fromisoformat(exp)
+    except Exception:
+        return False
+
+
+async def find_valid_promo(code: str) -> dict:
+    """Résout un code -20 % : invitation de bienvenue (usage unique, 30 j) ou code de partage membre (multi-usage).
+    Retourne {source, percent, code} ou lève HTTPException."""
+    code = code.strip().upper()
+    inv = await db.communityplace_pro_invitations.find_one({"promo_code": code}, {"_id": 0})
+    if inv:
+        if inv.get("promo_used_at"):
+            raise HTTPException(status_code=409, detail="Code de bienvenue déjà utilisé")
+        if _promo_expired(inv):
+            raise HTTPException(status_code=410, detail="Code de bienvenue expiré (validité 30 jours)")
+        return {"source": "welcome", "percent": int(inv.get("promo_percent") or 20), "code": code}
+    share = await db.pro_share_codes.find_one({"code": code}, {"_id": 0})
+    if share:
+        return {"source": "share", "percent": int(share.get("percent") or 20), "code": code}
+    raise HTTPException(status_code=404, detail="Code de réduction introuvable")
 
 
 @purchase_needs_router.get("/public/pro-welcome-code/{code}")
 async def check_pro_welcome_code(code: str):
-    """Validation publique d'un code de bienvenue pro (-20 % première adhésion)."""
-    inv = await db.communityplace_pro_invitations.find_one(
-        {"promo_code": code.strip().upper()}, {"_id": 0, "promo_code": 1, "promo_percent": 1, "promo_used_at": 1})
-    if not inv:
-        raise HTTPException(status_code=404, detail="Code de bienvenue introuvable")
-    if inv.get("promo_used_at"):
-        raise HTTPException(status_code=409, detail="Code de bienvenue déjà utilisé")
-    return {"valid": True, "code": inv["promo_code"], "percent": int(inv.get("promo_percent") or 20)}
+    """Validation publique d'un code -20 % (bienvenue 3 annonces ou parrainage membre)."""
+    promo = await find_valid_promo(code)
+    resp = {"valid": True, "code": promo["code"], "percent": promo["percent"], "source": promo["source"]}
+    if promo["source"] == "welcome":
+        inv = await db.communityplace_pro_invitations.find_one({"promo_code": promo["code"]}, {"_id": 0, "promo_expires_at": 1})
+        resp["expires_at"] = inv.get("promo_expires_at")
+    return resp
+
+
+@purchase_needs_router.get("/pro-referral/my-code")
+async def get_my_share_code(user: dict = Depends(_need_current_user())):
+    """Code de parrainage -20 % du membre professionnel connecté (créé au premier appel)."""
+    email = (user.get("email") or "").lower()
+    if not await _is_pro_subscriber(email):
+        raise HTTPException(status_code=403, detail="Réservé aux membres professionnels (fournisseur référencé ou abonnement actif)")
+    existing = await db.pro_share_codes.find_one({"owner_email": email}, {"_id": 0})
+    if not existing:
+        code = f"AMI20-{str(uuid.uuid4())[:6].upper()}"
+        existing = {"code": code, "owner_email": email, "percent": 20, "uses": 0, "created_at": _now()}
+        await db.pro_share_codes.insert_one(dict(existing))
+    base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+    return {"code": existing["code"], "percent": existing.get("percent", 20),
+            "uses": int(existing.get("uses") or 0),
+            "share_url": f"{base}/adhesion-vendeur?promo={existing['code']}"}
 
 
 @purchase_needs_router.get("/admin/purchase-needs/stats/csv")
@@ -877,11 +978,6 @@ async def publish_communityplace(need_id: str, payload: dict | None = None, admi
     except Exception as exc:
         logger.warning("Email frais CommunityPlace : %s", exc)
     return {"communityplace": True, "fee_eur": fee_eur, "checkout_url": session.url}
-
-
-def _need_current_user():
-    from routes_investor_plans import _current_user
-    return _current_user
 
 
 @purchase_needs_router.get("/vendor/purchase-needs")
