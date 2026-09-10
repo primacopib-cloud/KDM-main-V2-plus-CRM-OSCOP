@@ -138,7 +138,7 @@ export const cgOscopContent = {
 - **Forme** : {{OSCOP_FORM}} — **Capital** : {{OSCOP_CAPITAL}}
 - **SIREN/SIRET** : {{OSCOP_SIRET}} — **RCS** : {{OSCOP_RCS}}
 - **Siège** : {{OSCOP_ADDRESS}}
-- **Email** : {{OSCOP_EMAIL}} — **Téléphone** : {{OSCOP_PHONE}}
+- **Email** : {{OSCOP_EMAIL}}
 - **TVA intracom** : {{OSCOP_TVA}}`
     },
     {
