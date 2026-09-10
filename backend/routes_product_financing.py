@@ -43,15 +43,32 @@ class FinancingProductCreate(BaseModel):
     base_price_eur: float = Field(gt=0, le=10_000_000)
     margin_percent: float = Field(ge=0, le=500)
     description: str | None = None
+    # Option logistique LOGI'SCOP (coût + marge, soumise au financement)
+    logistics_cost_eur: float | None = Field(default=None, ge=0, le=10_000_000)
+    logistics_margin_percent: float | None = Field(default=None, ge=0, le=500)
+    # Modalités de remboursement de l'investisseur
+    repayment_amount_eur: float | None = Field(default=None, ge=0, le=10_000_000)
+    repayment_duration_months: int | None = Field(default=None, ge=1, le=600)
+    repayment_date: str | None = None
 
 
 class FinancingProductUpdate(BaseModel):
     base_price_eur: float | None = Field(default=None, gt=0, le=10_000_000)
     margin_percent: float | None = Field(default=None, ge=0, le=500)
+    logistics_cost_eur: float | None = Field(default=None, ge=0, le=10_000_000)
+    logistics_margin_percent: float | None = Field(default=None, ge=0, le=500)
+    repayment_amount_eur: float | None = Field(default=None, ge=0, le=10_000_000)
+    repayment_duration_months: int | None = Field(default=None, ge=1, le=600)
+    repayment_date: str | None = None
 
 
-def _total(base: float, margin: float) -> float:
-    return round(base * (1 + margin / 100), 2)
+def _total(base: float, margin: float, logistics_cost: float = 0, logistics_margin: float = 0) -> float:
+    """Total financé = produit (base + marge O'SCOP) + logistique (coût + marge LOGI'SCOP)."""
+    return round(base * (1 + margin / 100) + (logistics_cost or 0) * (1 + (logistics_margin or 0) / 100), 2)
+
+
+def _logi_total(cost, margin):
+    return round((cost or 0) * (1 + (margin or 0) / 100), 2)
 
 
 @financing_router.get("/admin/financing-products/catalog")
@@ -85,7 +102,14 @@ async def create_financing_product(body: FinancingProductCreate, admin: dict = D
         "description": body.description,
         "base_price_eur": round(body.base_price_eur, 2),
         "margin_percent": round(body.margin_percent, 2),
-        "total_price_eur": _total(body.base_price_eur, body.margin_percent),
+        "logistics_cost_eur": round(body.logistics_cost_eur, 2) if body.logistics_cost_eur else None,
+        "logistics_margin_percent": round(body.logistics_margin_percent, 2) if body.logistics_margin_percent is not None else None,
+        "logistics_total_eur": _logi_total(body.logistics_cost_eur, body.logistics_margin_percent) if body.logistics_cost_eur else None,
+        "repayment_amount_eur": round(body.repayment_amount_eur, 2) if body.repayment_amount_eur is not None else None,
+        "repayment_duration_months": body.repayment_duration_months,
+        "repayment_date": body.repayment_date,
+        "total_price_eur": _total(body.base_price_eur, body.margin_percent, body.logistics_cost_eur, body.logistics_margin_percent),
+        "sold_invoiced_by": "O'SCOP",
         "status": "OPEN", "created_by": admin.get("email"), "created_at": _now(),
     }
     await db.financing_products.insert_one(dict(doc))
@@ -154,7 +178,10 @@ async def my_financed_products(user: dict = Depends(_investor)):
     items = await db.financing_products.find(
         {"status": "PAID", "paid_by": me},
         {"_id": 0, "id": 1, "reference": 1, "name": 1, "base_price_eur": 1,
-         "margin_percent": 1, "total_price_eur": 1, "paid_at": 1},
+         "margin_percent": 1, "total_price_eur": 1, "paid_at": 1,
+         "logistics_cost_eur": 1, "logistics_margin_percent": 1, "logistics_total_eur": 1,
+         "repayment_amount_eur": 1, "repayment_duration_months": 1, "repayment_date": 1,
+         "sold_invoiced_by": 1},
     ).sort("paid_at", -1).to_list(100)
     return {"products": items, "total_eur": sum(float(i.get("total_price_eur") or 0) for i in items)}
 
@@ -314,18 +341,37 @@ async def list_financing_products_admin(_: dict = Depends(require_admin)):
 
 @financing_router.put("/admin/financing-products/{fp_id}")
 async def update_financing_product(fp_id: str, body: FinancingProductUpdate, admin: dict = Depends(require_admin)):
-    """Ajuste prix / marge bénéficiaire — uniquement avant paiement."""
+    """Ajuste prix / marge bénéficiaire / logistique — avant paiement ; modalités de remboursement à tout moment."""
     fp = await db.financing_products.find_one({"id": fp_id})
     if not fp:
         raise HTTPException(status_code=404, detail="Produit introuvable")
+    updates = {}
     if fp.get("status") == "PAID":
-        raise HTTPException(status_code=409, detail="Déjà payé — la marge ne peut plus être modifiée")
-    base = body.base_price_eur if body.base_price_eur is not None else fp["base_price_eur"]
-    margin = body.margin_percent if body.margin_percent is not None else fp["margin_percent"]
-    await db.financing_products.update_one({"id": fp_id}, {"$set": {
-        "base_price_eur": round(base, 2), "margin_percent": round(margin, 2),
-        "total_price_eur": _total(base, margin),
-        "updated_by": admin.get("email"), "updated_at": _now()}})
+        if body.base_price_eur is not None or body.margin_percent is not None \
+                or body.logistics_cost_eur is not None or body.logistics_margin_percent is not None:
+            raise HTTPException(status_code=409, detail="Déjà payé — seules les modalités de remboursement restent modifiables")
+    else:
+        base = body.base_price_eur if body.base_price_eur is not None else fp["base_price_eur"]
+        margin = body.margin_percent if body.margin_percent is not None else fp["margin_percent"]
+        logi_c = body.logistics_cost_eur if body.logistics_cost_eur is not None else fp.get("logistics_cost_eur")
+        logi_m = body.logistics_margin_percent if body.logistics_margin_percent is not None else fp.get("logistics_margin_percent")
+        updates = {
+            "base_price_eur": round(base, 2), "margin_percent": round(margin, 2),
+            "logistics_cost_eur": round(logi_c, 2) if logi_c else None,
+            "logistics_margin_percent": round(logi_m, 2) if logi_m is not None else None,
+            "logistics_total_eur": _logi_total(logi_c, logi_m) if logi_c else None,
+            "total_price_eur": _total(base, margin, logi_c, logi_m),
+        }
+    # Modalités de remboursement : enregistrables/modifiables même après paiement
+    for f in ("repayment_amount_eur", "repayment_duration_months", "repayment_date"):
+        v = getattr(body, f)
+        if v is not None:
+            updates[f] = v
+    if not updates:
+        raise HTTPException(status_code=400, detail="Aucune modification fournie")
+    updates["updated_by"] = admin.get("email")
+    updates["updated_at"] = _now()
+    await db.financing_products.update_one({"id": fp_id}, {"$set": updates})
     return await db.financing_products.find_one({"id": fp_id}, {"_id": 0})
 
 
