@@ -71,6 +71,29 @@ def _logi_total(cost, margin):
     return round((cost or 0) * (1 + (margin or 0) / 100), 2)
 
 
+def build_repayment_schedule(fp: dict) -> list[dict]:
+    """Échéancier mensuel : mensualités égales se terminant à repayment_date (dernière ajustée aux arrondis)."""
+    amount = float(fp.get("repayment_amount_eur") or 0)
+    months = int(fp.get("repayment_duration_months") or 0)
+    end = fp.get("repayment_date")
+    if not amount or not months or not end:
+        return []
+    from dateutil.relativedelta import relativedelta
+    from datetime import date
+    try:
+        end_d = date.fromisoformat(str(end)[:10])
+    except ValueError:
+        return []
+    monthly = round(amount / months, 2)
+    done = set(fp.get("repayments_done") or [])
+    schedule = []
+    for i in range(months):
+        due = end_d - relativedelta(months=months - 1 - i)
+        amt = round(amount - monthly * (months - 1), 2) if i == months - 1 else monthly
+        schedule.append({"due_date": due.isoformat(), "amount_eur": amt, "paid": due.isoformat() in done})
+    return schedule
+
+
 @financing_router.get("/admin/financing-products/catalog")
 async def financing_catalog_products(_: dict = Depends(require_admin)):
     """Produits du catalogue sélectionnables pour le financement."""
@@ -181,9 +204,56 @@ async def my_financed_products(user: dict = Depends(_investor)):
          "margin_percent": 1, "total_price_eur": 1, "paid_at": 1,
          "logistics_cost_eur": 1, "logistics_margin_percent": 1, "logistics_total_eur": 1,
          "repayment_amount_eur": 1, "repayment_duration_months": 1, "repayment_date": 1,
-         "sold_invoiced_by": 1},
+         "sold_invoiced_by": 1, "repayments_done": 1, "repayment_status": 1},
     ).sort("paid_at", -1).to_list(100)
+    for i in items:
+        i["repayment_schedule"] = build_repayment_schedule(i)
+        i.pop("repayments_done", None)
     return {"products": items, "total_eur": sum(float(i.get("total_price_eur") or 0) for i in items)}
+
+
+class RepaymentToggle(BaseModel):
+    due_date: str
+
+
+@financing_router.post("/admin/financing-products/{fp_id}/repayments/toggle")
+async def toggle_repayment(fp_id: str, body: RepaymentToggle, admin: dict = Depends(require_admin)):
+    """Marque/démarque une échéance « Remboursé » ; statut global REPAID quand tout est honoré (investisseur notifié)."""
+    fp = await db.financing_products.find_one({"id": fp_id})
+    if not fp:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    schedule = build_repayment_schedule(fp)
+    if body.due_date not in [s["due_date"] for s in schedule]:
+        raise HTTPException(status_code=400, detail="Échéance inconnue de l'échéancier")
+    done = set(fp.get("repayments_done") or [])
+    if body.due_date in done:
+        done.discard(body.due_date)
+    else:
+        done.add(body.due_date)
+    all_done = done >= {s["due_date"] for s in schedule}
+    was_repaid = fp.get("repayment_status") == "REPAID"
+    await db.financing_products.update_one({"id": fp_id}, {"$set": {
+        "repayments_done": sorted(done),
+        "repayment_status": "REPAID" if all_done else ("IN_PROGRESS" if done else None),
+        "repayment_updated_by": admin.get("email"), "repayment_updated_at": _now()}})
+    if all_done and not was_repaid and fp.get("paid_by"):
+        try:
+            from brevo_service import send_email, _wrap_html
+            await send_email(
+                to_email=fp["paid_by"], to_name=None,
+                subject=f"✅ Remboursement intégral — {fp['reference']} · {fp['name']}",
+                html_content=_wrap_html("Financement intégralement remboursé", (
+                    f"<p style='font-size:14px;'>Bonjour,</p>"
+                    f"<p style='font-size:14px;'>Toutes les échéances de votre financement <b>{fp['reference']} — "
+                    f"{fp['name']}</b> ({fp.get('repayment_amount_eur', 0):,.2f} € sur "
+                    f"{fp.get('repayment_duration_months')} mois) ont été honorées par O'SCOP. "
+                    f"Merci de votre confiance !</p>")),
+                tags=["financing-repaid"])
+        except Exception as exc:
+            logger.warning("Email remboursement intégral %s : %s", fp_id, exc)
+    out = await db.financing_products.find_one({"id": fp_id}, {"_id": 0})
+    out["repayment_schedule"] = build_repayment_schedule(out)
+    return out
 
 
 @financing_router.get("/investor/financing-products/{fp_id}/invoice.pdf")
@@ -324,6 +394,8 @@ async def financing_products_stats(_: dict = Depends(require_admin)):
 @financing_router.get("/admin/financing-products")
 async def list_financing_products_admin(_: dict = Depends(require_admin)):
     items = await db.financing_products.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    for i in items:
+        i["repayment_schedule"] = build_repayment_schedule(i)
     pending = [i for i in items if i.get("status") == "PENDING_PAYMENT" and i.get("stripe_session_id")][:10]
     if pending:
         import stripe

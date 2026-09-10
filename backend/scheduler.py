@@ -127,6 +127,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler pro invitation reminders crashed: %s", exc)
         try:
+            from repayment_alerts import run_repayment_alerts
+            await run_repayment_alerts(_db)
+        except Exception as exc:
+            logger.exception("Scheduler repayment alerts crashed: %s", exc)
+        try:
             from referral_reminders import run_referral_filleul_reminders
             await run_referral_filleul_reminders(_db)
         except Exception as exc:
