@@ -13,7 +13,16 @@ export const cgvKdmarcheContent = {
       title: "Champ d'application",
       content: `Les présentes CGV s'appliquent aux ventes de marchandises réalisées par KDMARCHE auprès de clients professionnels disposant d'un accès B2B valide.
 
-**Identité du vendeur** : KDMARCHÉ, service exploité par **PRIMACOP INTERNATIONAL BUSINESS** — SIRET 433 230 703 00020. Cette identité figure sur les bons de commande, bons de livraison et factures.`
+**Identité du vendeur** :
+- **Enseigne** : KDMARCHÉ
+- **Exploitant / vendeur juridique** : {{KDM_LEGAL_NAME}}
+- **SIRET** : {{KDM_SIRET}} — **RCS** : {{KDM_RCS}}
+- **Siège** : {{KDM_ADDRESS}}
+- **Email** : {{KDM_EMAIL}} — **Téléphone** : {{KDM_PHONE}}
+- **TVA intracommunautaire** : {{KDM_TVA}}
+- **Représentant** : {{KDM_REP_NAME}} ({{KDM_REP_TITLE}})
+
+Cette identité figure sur les bons de commande, bons de livraison et factures. **Chaque offre du catalogue identifie son vendeur juridique et l'émetteur de la facture** (voir article 5 bis — circuits de vente).`
     },
     {
       number: "2",
@@ -33,13 +42,32 @@ export const cgvKdmarcheContent = {
     },
     {
       number: "5",
-      title: "Incoterm EXW (enlèvement)",
-      content: `Lorsque EXW s'applique, l'acheteur organise l'enlèvement à l'adresse EXW de la zone, selon les créneaux et modalités communiqués. Les risques sont transférés conformément aux règles EXW.`
+      title: "Livraison, incoterms et zones de disponibilité",
+      content: `**5.1.** Chaque fiche produit précise, lorsqu'ils sont renseignés : le **type de livraison** proposé (livraison standard, express, réfrigérée, sur palette, retrait entrepôt EXW, point relais, fret maritime ou aérien), l'**incoterm** applicable (EXW, FCA, FAS, FOB, CFR, CIF, CPT, CIP, DAP, DPU, DDP — Incoterms® 2020) et les **zones de disponibilité** de l'offre.
+
+**5.2.** Lorsque EXW s'applique, l'acheteur organise l'enlèvement à l'adresse EXW de la zone, selon les créneaux et modalités communiqués. Les risques sont transférés conformément aux règles de l'incoterm indiqué sur la fiche produit.
+
+**5.3.** Une option de livraison LOGI'SCOP peut être proposée en complément de la mise à disposition EXW locale, selon l'annexe CGV LOGI'SCOP (prestation de transport distincte).`
+    },
+    {
+      number: "5 bis",
+      title: "Circuits de vente — identification du vendeur (CLAUSE INTÉGRÉE)",
+      highlight: true,
+      content: `Le catalogue distingue plusieurs circuits de vente, **identifiés sur chaque offre** :
+
+- **Vente partenaire directe** : la vente est conclue avec le partenaire vendeur référencé (KDMARCHÉ / PRIMACOP INTERNATIONAL BUSINESS ou un fournisseur référencé), qui facture et encaisse.
+- **Achat-revente O'SCOP** : sur les offres expressément marquées « Vendu et facturé par O'SCOP », la vente est conclue avec la SCIC SAS OBJECTIF SCOP OUTREMER, régie par les CGV O'SCOP propres à ce circuit (page « CGV O'SCOP »).
+
+Le vendeur juridique, l'émetteur de la facture et le bénéficiaire du paiement sont toujours identifiés **avant la commande** et rappelés sur la facture.`
     },
     {
       number: "6",
       title: "Facturation et paiement",
-      content: `KDMARCHE émet la facture des marchandises. Le paiement est effectué directement à KDMARCHE selon les moyens proposés. Aucun paiement marchandises n'est encaissé par O'SCOP.`
+      content: `Le vendeur identifié sur l'offre émet la facture des marchandises. Le paiement est effectué directement auprès de ce vendeur selon les moyens proposés ({{MOYENS_PAIEMENT}}).
+
+Certains vendeurs peuvent restreindre le règlement à la **carte bancaire uniquement** ; cette mention est affichée sur l'offre concernée avant la commande.
+
+Aucun paiement de marchandises du circuit partenaire n'est encaissé par O'SCOP ; sur le circuit achat-revente, le paiement est encaissé par O'SCOP en qualité de vendeur.`
     },
     {
       number: "6 bis",
@@ -119,9 +147,9 @@ export const cgOscopContent = {
       content: `**2.1.** Les présentes conditions générales (« CG ») régissent l'accès et l'usage des services O'SCOP :
 - validation B2B, gestion d'accès, abonnements, wallet crédits, droits par zones, services ESS associés.
 
-**2.2.** O'SCOP ne vend aucune marchandise, ne facture aucun produit, et n'encaisse aucun paiement relatif aux marchandises.
+**2.2.** Par principe, O'SCOP ne vend aucune marchandise du circuit partenaire et n'encaisse aucun paiement relatif à celles-ci. **Exception** : sur les offres du circuit achat-revente expressément marquées « Vendu et facturé par O'SCOP », O'SCOP agit en qualité de vendeur-facturier selon ses CGV propres à ce circuit.
 
-**2.3.** Les ventes de marchandises sont conclues directement entre l'Acheteur et KDMARCHE, selon les CGV KDMARCHE B2B.`
+**2.3.** Les ventes de marchandises du circuit partenaire sont conclues directement entre l'Acheteur et le vendeur référencé (KDMARCHÉ / PRIMACOP INTERNATIONAL BUSINESS ou fournisseur référencé), selon les CGV applicables au vendeur identifié sur l'offre.`
     },
     {
       number: "3",
@@ -164,7 +192,9 @@ export const cgOscopContent = {
 
 **6.3.** Renouvellement : tacite reconduction jusqu'à résiliation.
 
-**6.4.** Factures : émises par O'SCOP, distinctes des factures de marchandises KDMARCHE.`
+**6.4.** Factures : émises par O'SCOP, distinctes des factures de marchandises KDMARCHE.
+
+**6.5. Abonnement API coopérative (relais LOLODRIVE)** : un abonnement annuel « API Coopérative B2B2C » (2 500 € HT/an) est proposé exclusivement aux gérants de relais LOLODRIVE. Il donne accès à l'API catalogue/commandes (clé nominative, quota mensuel d'appels, webhooks temps réel). L'abonnement est renouvelable à échéance ; à défaut de renouvellement, la clé est désactivée et réactivée telle quelle lors d'un renouvellement ultérieur, sans reconfiguration.`
     },
     {
       number: "7",
@@ -192,6 +222,22 @@ export const cgOscopContent = {
 **8.4.** Les crédits peuvent être achetés sous forme de packs (facture distincte « crédits »).
 
 **8.5.** O'SCOP peut refuser une consommation en cas d'insuffisance de solde, compte suspendu, ou fraude suspectée.`
+    },
+    {
+      number: "8 bis",
+      title: "CommunityPlace — offres, demandes et participations",
+      content: `**8 bis.1.** Le service CommunityPlace permet le dépôt public d'offres produits et de demandes d'achat. Le dépôt peut être soumis à des **frais de publication** affichés avant validation (montants en vigueur consultables sur la plateforme).
+
+**8 bis.2.** La **participation mutualisée** permet de rejoindre une demande groupée moyennant une participation calculée au prorata du nombre de participants (minimum 1 €), affichée avant paiement. Elle rémunère le service de mise en relation et d'ingénierie collective ; elle ne constitue ni un acompte sur des marchandises, ni un investissement.
+
+**8 bis.3.** Les membres disposant d'un abonnement actif (acheteurs professionnels) ou d'un référencement fournisseur approuvé bénéficient de conditions de participation adaptées, affichées sur la plateforme.`
+    },
+    {
+      number: "8 ter",
+      title: "Espace investisseurs — CREDI'SCOP-INVEST",
+      content: `O'SCOP propose aux membres éligibles un espace investisseurs permettant de financer des opérations d'achat-revente ou des prestations logistiques identifiées, vendues et facturées par O'SCOP.
+
+Les conditions spécifiques (unités CREDI'SCOP, engagements, échéanciers de remboursement, risques) sont fixées par les documents dédiés : « Conditions CREDI'SCOP-I et investissement », « Convention investisseur » et « Financement logistique investisseur », accessibles depuis l'espace investisseur. **Les CREDI'SCOP sont des unités internes de services : ils ne constituent ni un placement financier, ni une monnaie, ni un instrument de paiement ; ils ne sont ni remboursables en espèces ni productifs d'intérêts.**`
     },
     {
       number: "9",

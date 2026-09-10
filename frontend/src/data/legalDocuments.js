@@ -7,6 +7,7 @@ import { cgvKdmarcheContent, cgOscopContent } from './legal/cgv';
 import { conventionContent, auditComplianceTable, invoiceTemplate } from './legal/convention';
 import { charteESSContent, annexeLogiscopContent } from './legal/ess';
 import { contratTransportLogiscopContent, annexeTourneesESSContent } from './legal/logiscop';
+import { privacyContent } from './legal/privacy';
 
 export {
   legalVariables,
@@ -19,6 +20,7 @@ export {
   annexeLogiscopContent,
   contratTransportLogiscopContent,
   annexeTourneesESSContent,
+  privacyContent,
 };
 
 export const allLegalDocuments = [
@@ -28,7 +30,8 @@ export const allLegalDocuments = [
   charteESSContent,
   annexeLogiscopContent,
   contratTransportLogiscopContent,
-  annexeTourneesESSContent
+  annexeTourneesESSContent,
+  privacyContent
 ];
 
 // Helper function to replace template variables

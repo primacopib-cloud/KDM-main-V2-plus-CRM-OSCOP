@@ -39,6 +39,13 @@ Elle porte sur l'**accès** (abonnement), l'**usage** (crédits), la **priorisat
 - **Droits par zone** : accès limité aux zones autorisées selon droits souscrits.`
     },
     {
+      number: "4 bis",
+      title: "Transparence CommunityPlace (frais et participations)",
+      content: `- Les **frais de publication** d'une offre ou d'une demande sont publics, affichés avant validation, et rémunèrent le service d'ingénierie collective — jamais indexés sur la valeur des marchandises.
+- La **participation mutualisée** d'une demande groupée est calculée au prorata des participants (minimum 1 €), affichée avant paiement.
+- Chaque participation donne lieu à un **reçu** et est journalisée (audit probant).`
+    },
+    {
       number: "5",
       title: "Mutualisation des volumes et priorités",
       content: `Les priorités d'accès aux volumes mutualisés sont déterminées par des critères objectifs, notamment :

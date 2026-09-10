@@ -15,6 +15,7 @@ import {
   annexeLogiscopContent,
   contratTransportLogiscopContent,
   annexeTourneesESSContent,
+  privacyContent,
   auditComplianceTable,
   replaceVariables, 
   legalVariables,
@@ -37,6 +38,7 @@ export default function LegalPage() {
     if (docId === 'annexe-logiscop') return 'logiscop';
     if (docId === 'contrat-transport') return 'transport';
     if (docId === 'annexe-ess-route' || docId === 'annexe-tournees-ess') return 'ess-route';
+    if (docId === 'politique-confidentialite') return 'privacy';
     return 'kdmarche';
   };
   
@@ -58,7 +60,8 @@ export default function LegalPage() {
       'charte-ess': '/legal/charte-ess',
       'logiscop': '/legal/annexe-logiscop',
       'transport': '/legal/contrat-transport',
-      'ess-route': '/legal/annexe-ess-route'
+      'ess-route': '/legal/annexe-ess-route',
+      'privacy': '/legal/politique-confidentialite'
     };
     navigate(routes[value] || '/legal/cgv-kdmarche');
   };
@@ -111,7 +114,7 @@ export default function LegalPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid grid-cols-7 w-full max-w-5xl mx-auto bg-white/[0.04] border border-white/[0.08] p-1 h-auto">
+          <TabsList className="grid grid-cols-8 w-full max-w-5xl mx-auto bg-white/[0.04] border border-white/[0.08] p-1 h-auto">
             <TabsTrigger 
               value="kdmarche"
               className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] flex items-center gap-1 py-2.5 text-xs sm:text-sm"
@@ -169,6 +172,14 @@ export default function LegalPage() {
               <Route className="w-4 h-4" />
               <span className="hidden lg:inline">Tournées</span> ESS
             </TabsTrigger>
+            <TabsTrigger 
+              value="privacy"
+              className="data-[state=active]:bg-[#0B4D87]/30 data-[state=active]:text-sky-300 flex items-center gap-1 py-2.5 text-xs sm:text-sm"
+              data-testid="tab-privacy"
+            >
+              <Shield className="w-4 h-4" />
+              <span className="hidden lg:inline">Confidentialité</span><span className="lg:hidden">Confid.</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="kdmarche" data-testid="content-cgv-kdmarche">
@@ -185,6 +196,10 @@ export default function LegalPage() {
           
           <TabsContent value="charte-ess" data-testid="content-charte-ess">
             <LegalDocument document={charteESSContent} />
+          </TabsContent>
+
+          <TabsContent value="privacy" data-testid="content-privacy">
+            <LegalDocument document={privacyContent} />
           </TabsContent>
 
           <TabsContent value="logiscop" data-testid="content-logiscop">

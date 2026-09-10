@@ -39,14 +39,17 @@ export const conventionContent = {
 - de la facturation des marchandises, de la TVA et de la conformité produit ;
 - des conditions de vente et d'exécution des commandes (incluant l'Incoterm EXW lorsque requis).
 
-**2.2 Rôle d'O'SCOP.** O'SCOP agit exclusivement comme centrale coopérative d'ingénierie ESS et gestionnaire d'accès (abonnements, crédits, droits, mutualisation). **O'SCOP ne vend aucune marchandise, ne facture aucun produit, et ne perçoit aucun paiement relatif aux marchandises.**`
+**2.2 Rôle d'O'SCOP.** O'SCOP agit comme centrale coopérative d'ingénierie ESS et gestionnaire d'accès (abonnements, crédits, droits, mutualisation). **Par principe, O'SCOP ne vend aucune marchandise du circuit partenaire et ne perçoit aucun paiement relatif à celles-ci.**
+
+**Exception — circuit achat-revente O'SCOP** : sur les offres expressément et visiblement identifiées « Vendu et facturé par O'SCOP », O'SCOP intervient en qualité de vendeur-facturier, dans le cadre de ses CGV propres à ce circuit, avec une comptabilité et des flux bancaires distincts du circuit partenaire.`
     },
     {
       number: "3",
       title: "Séparation des flux financiers",
       content: `Les flux financiers sont strictement séparés :
-— Abonnements, crédits, services : facturés et encaissés exclusivement par **O'SCOP** ;
-— Marchandises : facturées et encaissées exclusivement par **KDMARCHE**.
+— Abonnements, crédits, services (dont API coopérative) : facturés et encaissés exclusivement par **O'SCOP** ;
+— Marchandises du circuit partenaire : facturées et encaissées exclusivement par **KDMARCHE** (PRIMACOP INTERNATIONAL BUSINESS) ou le fournisseur référencé ;
+— Marchandises du circuit achat-revente « Vendu et facturé par O'SCOP » : facturées et encaissées par **O'SCOP**, dans une comptabilité distincte.
 
 Aucune commission, rétrocession ou rémunération indexée sur le prix ou le volume des marchandises n'est due entre les Parties, sauf stipulation expresse et distincte validée par écrit, compatible ESS et sans indexation aux ventes.`
     },
@@ -104,15 +107,17 @@ export const auditComplianceTable = {
   title: "Tableau de lecture rapide (Audit / Contrôle)",
   headers: ["Élément analysé", "KDMARCHE", "O'SCOP"],
   rows: [
-    { element: "Encaissement marchandises", kdmarche: true, oscop: false },
+    { element: "Encaissement marchandises (circuit partenaire)", kdmarche: true, oscop: false },
     { element: "Marge commerciale", kdmarche: true, oscop: false },
     { element: "Abonnements", kdmarche: false, oscop: true },
     { element: "Crédits / wallet", kdmarche: false, oscop: true },
+    { element: "API coopérative (relais LOLODRIVE)", kdmarche: false, oscop: true },
+    { element: "Achat-revente « Vendu et facturé par O'SCOP »", kdmarche: false, oscop: true },
     { element: "Commission croisée", kdmarche: false, oscop: false },
     { element: "Subvention interne", kdmarche: false, oscop: false }
   ],
   officialPhrase: `« KDMARCHE est rémunérée exclusivement par sa marge commerciale sur les marchandises qu'elle vend en B2B.
-O'SCOP est rémunérée exclusivement par les abonnements et crédits d'accès à la plateforme.
+O'SCOP est rémunérée par les abonnements, crédits et services d'accès à la plateforme, ainsi que par sa marge propre sur le circuit achat-revente expressément identifié « Vendu et facturé par O'SCOP ».
 Les flux sont indépendants, non indexés et non subventionnés. »`
 };
 
