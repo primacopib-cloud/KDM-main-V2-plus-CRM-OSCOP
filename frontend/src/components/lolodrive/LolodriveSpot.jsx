@@ -55,6 +55,9 @@ const wordGroups = (title) => {
   return groups;
 };
 
+// Voix off FR par scène (narratif complet, synchronisé sur le découpage du spot)
+const VOICE = { 0: 'intro', 1: 'concept', 2: 'produits', 10: 'commande', 11: 'preparation', 12: 'retrait', 13: 'final' };
+
 // Spot publicitaire LOLODRIVE — montage 30 s, vidéo quand disponible, repli image sobre
 export const LolodriveSpot = ({ onClose }) => {
   const navigate = useNavigate();
@@ -70,7 +73,30 @@ export const LolodriveSpot = ({ onClose }) => {
   const autoPausedRef = useRef(false);
   const viewedRef = useRef(false);
   const videoRef = useRef(null);
+  const voiceRef = useRef(typeof Audio !== 'undefined' ? new Audio() : null);
   const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Voix off : démarrage automatique à l'ouverture (le clic « Regarder le spot » est un geste utilisateur) ;
+  // si le navigateur bloque l'autoplay, le son reste coupé et le bouton « Activer le son » prend le relais
+  useEffect(() => {
+    const a = voiceRef.current;
+    if (!a) return;
+    a.src = `/api/uploads/videos/voice/voice_${VOICE[0]}.mp3`;
+    a.play().then(() => setMuted(false)).catch(() => {});
+    return () => a.pause();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Lecture de la voix off de la scène courante, synchronisée avec pause/fin/mute
+  useEffect(() => {
+    const a = voiceRef.current;
+    if (!a) return;
+    const key = VOICE[scene];
+    if (done || paused || muted || !key) { a.pause(); return; }
+    if (!a.src.endsWith(`voice_${key}.mp3`)) a.src = `/api/uploads/videos/voice/voice_${key}.mp3`;
+    a.currentTime = 0;
+    a.play().catch(() => {});
+  }, [scene, done, paused, muted]);
 
   useEffect(() => {
     if (viewedRef.current) return;
