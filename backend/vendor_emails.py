@@ -433,7 +433,44 @@ CATALOG_EMAIL = {
 </ul>
 <p>Nous vous remercions pour votre collaboration qui participe au développement d'un circuit de distribution performant et mutualisé pour nos territoires.</p>
 <p>Je vous prie d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées.</p>
-<p><b>L'équipe Direction Réseau</b><br/>O'SCOP &amp; KDMARCHE SAS</p>""",
+<p><b>L'équipe Direction Réseau</b><br/>O'SCOP &amp; KDMARCHE SAS</p>
+<hr style="border:none;border-top:1px solid #e5d9f2;margin:24px 0"/>
+<h2 style="color:#451F6B;font-size:16px;margin:0 0 8px">🛠️ CHECKLIST : avant d'envoyer votre catalogue produits</h2>
+<p>Veuillez valider ces 6 points indispensables pour éviter tout rejet automatique de votre fichier par la plateforme.</p>
+<p><b>1. 📄 Format &amp; structure du fichier</b></p>
+<ul>
+<li><b>Le format est correct</b> : mon fichier est bien enregistré au format Excel (.xlsx) ou CSV (.csv).</li>
+<li><b>Les en-têtes sont intacts</b> : je n'ai pas modifié, supprimé ou traduit les noms des colonnes de la première ligne (ex : <code>sku_fournisseur</code> doit rester écrit exactement ainsi).</li>
+<li><b>L'ordre est respecté</b> : les colonnes sont restées dans le même ordre que le modèle fourni.</li>
+</ul>
+<p><b>2. 🔢 Données obligatoires &amp; identifiants</b></p>
+<ul>
+<li><b>Pas de SKU manquant</b> : chaque produit possède sa référence unique (<code>sku_fournisseur</code>), sans aucun espace.</li>
+<li><b>Codes EAN conformes</b> : la colonne <code>code_ean</code> contient des codes-barres valides à 13 chiffres (attention aux formats Excel qui coupent parfois les 0 au début).</li>
+<li><b>Conditionnement explicite</b> : le type d'unité (Carton, Palette, etc.) est clairement indiqué pour chaque ligne.</li>
+</ul>
+<p><b>3. 💶 Tarifs &amp; TVA (cadre Guadeloupe / DROM)</b></p>
+<ul>
+<li><b>Séparateur de prix</b> : les centimes de mon <code>prix_unitaire_ht</code> utilisent bien un point . et non une virgule , (ex : 5.45 et non 5,45).</li>
+<li><b>Taux de TVA valides</b> : j'ai appliqué exclusivement un taux légal local de la Guadeloupe (0, 2.1 ou 8.5).</li>
+</ul>
+<p><b>4. 📦 Gestion des stocks</b></p>
+<ul>
+<li><b>Quantités réelles</b> : la colonne <code>quantite_stock</code> contient des nombres entiers (pas de texte comme « Disponible » ou « En rupture »).</li>
+<li><b>Alerte rupture</b> : j'ai bien noté 0 pour les produits temporairement épuisés afin qu'ils passent automatiquement en statut « Indisponible » sans casser mon catalogue.</li>
+</ul>
+<p><b>5. 🌍 Encodage (pour les fichiers .csv uniquement)</b></p>
+<ul>
+<li><b>Séparateur correct</b> : le fichier CSV utilise bien le point-virgule ; comme séparateur.</li>
+<li><b>Format UTF-8</b> : le fichier est encodé en UTF-8 pour éviter que les accents (é, è, à) ne se transforment en caractères illisibles.</li>
+</ul>
+<p><b>6. 🖼️ Liens images (facultatif)</b></p>
+<ul>
+<li><b>Liens publics</b> : les adresses internet dans <code>url_image</code> commencent bien par https:// et finissent par une extension d'image (.jpg, .png). Elles doivent être accessibles sans mot de passe.</li>
+</ul>
+<p style="background:#f6f1fa;border-left:4px solid #b8933e;padding:12px 14px"><b>🚨 Mon fichier est-il prêt ?</b><br/>
+Si toutes les cases sont cochées [X] : vous pouvez téléverser votre fichier sur votre espace sécurisé en toute confiance !<br/>
+<b>Une anomalie ?</b> Un rapport d'erreur automatique vous sera envoyé par e-mail en cas de rejet par notre système informatique pour vous indiquer la ligne à corriger.</p>""",
     },
     "en": {
         "subject": "CommunityPlace launch (O'SCOP × KDMARCHE) – Integrating your product catalogue",
@@ -444,7 +481,44 @@ CATALOG_EMAIL = {
 <li>The <b>template file</b> (.xlsx or .csv) matching the structure expected by our system.</li></ul>
 <p><b>Procedure:</b> fill in the template keeping the exact column headers and order (<code>sku_fournisseur</code>, <code>code_ean</code>, <code>prix_unitaire_ht</code> and <code>quantite_stock</code> are mandatory), then upload it to your secure Supplier space or via your assigned SFTP server. Automatic synchronisation runs every 24 hours.</p>
 <p>Technical support: <b>tech@objectifscopoutremer.com</b> — Commercial validation: <b>data@kdmarche.com</b></p>
-<p>Kind regards,<br/><b>Network Management Team</b><br/>O'SCOP &amp; KDMARCHE SAS</p>""",
+<p>Kind regards,<br/><b>Network Management Team</b><br/>O'SCOP &amp; KDMARCHE SAS</p>
+<hr style="border:none;border-top:1px solid #e5d9f2;margin:24px 0"/>
+<h2 style="color:#451F6B;font-size:16px;margin:0 0 8px">🛠️ CHECKLIST: before sending your product catalogue</h2>
+<p>Please validate these 6 essential points to avoid any automatic rejection of your file by the platform.</p>
+<p><b>1. 📄 File format &amp; structure</b></p>
+<ul>
+<li><b>Correct format</b>: my file is saved as Excel (.xlsx) or CSV (.csv).</li>
+<li><b>Headers intact</b>: I have not modified, deleted or translated the column names on the first line (e.g. <code>sku_fournisseur</code> must stay written exactly like this).</li>
+<li><b>Order respected</b>: the columns remain in the same order as the provided template.</li>
+</ul>
+<p><b>2. 🔢 Mandatory data &amp; identifiers</b></p>
+<ul>
+<li><b>No missing SKU</b>: each product has its unique reference (<code>sku_fournisseur</code>), without any space.</li>
+<li><b>Valid EAN codes</b>: the <code>code_ean</code> column contains valid 13-digit barcodes (beware of Excel formats that sometimes strip leading 0s).</li>
+<li><b>Explicit packaging</b>: the unit type (Carton, Pallet, etc.) is clearly stated on each line.</li>
+</ul>
+<p><b>3. 💶 Prices &amp; VAT (Guadeloupe / DROM framework)</b></p>
+<ul>
+<li><b>Price separator</b>: the cents of my <code>prix_unitaire_ht</code> use a dot . and not a comma , (e.g. 5.45 not 5,45).</li>
+<li><b>Valid VAT rates</b>: I applied exclusively a legal local Guadeloupe rate (0, 2.1 or 8.5).</li>
+</ul>
+<p><b>4. 📦 Stock management</b></p>
+<ul>
+<li><b>Real quantities</b>: the <code>quantite_stock</code> column contains whole numbers (no text such as "Available" or "Out of stock").</li>
+<li><b>Shortage alert</b>: I entered 0 for temporarily unavailable products so they automatically switch to "Unavailable" status without breaking my catalogue.</li>
+</ul>
+<p><b>5. 🌍 Encoding (.csv files only)</b></p>
+<ul>
+<li><b>Correct separator</b>: the CSV file uses the semicolon ; as separator.</li>
+<li><b>UTF-8 format</b>: the file is UTF-8 encoded so accents (é, è, à) do not turn into unreadable characters.</li>
+</ul>
+<p><b>6. 🖼️ Image links (optional)</b></p>
+<ul>
+<li><b>Public links</b>: the internet addresses in <code>url_image</code> start with https:// and end with an image extension (.jpg, .png). They must be accessible without a password.</li>
+</ul>
+<p style="background:#f6f1fa;border-left:4px solid #b8933e;padding:12px 14px"><b>🚨 Is my file ready?</b><br/>
+If all boxes are ticked [X]: you can upload your file to your secure space with confidence!<br/>
+<b>An anomaly?</b> An automatic error report will be emailed to you if our system rejects the file, showing the line to fix.</p>""",
     },
     "es": {
         "subject": "Lanzamiento CommunityPlace (O'SCOP × KDMARCHE) – Integración de su catálogo de productos",
@@ -455,7 +529,44 @@ CATALOG_EMAIL = {
 <li>El <b>archivo modelo</b> (.xlsx o .csv) conforme a la estructura esperada por nuestro sistema.</li></ul>
 <p><b>Procedimiento:</b> complete el archivo modelo respetando el orden y el nombre exacto de las columnas (<code>sku_fournisseur</code>, <code>code_ean</code>, <code>prix_unitaire_ht</code> y <code>quantite_stock</code> son obligatorias), luego súbalo a su espacio Proveedor seguro o mediante el servidor SFTP asignado. La sincronización automática se ejecuta cada 24 horas.</p>
 <p>Soporte técnico: <b>tech@objectifscopoutremer.com</b> — Validación comercial: <b>data@kdmarche.com</b></p>
-<p>Atentamente,<br/><b>Equipo de Dirección de Red</b><br/>O'SCOP &amp; KDMARCHE SAS</p>""",
+<p>Atentamente,<br/><b>Equipo de Dirección de Red</b><br/>O'SCOP &amp; KDMARCHE SAS</p>
+<hr style="border:none;border-top:1px solid #e5d9f2;margin:24px 0"/>
+<h2 style="color:#451F6B;font-size:16px;margin:0 0 8px">🛠️ LISTA DE VERIFICACIÓN: antes de enviar su catálogo de productos</h2>
+<p>Valide estos 6 puntos indispensables para evitar cualquier rechazo automático de su archivo por la plataforma.</p>
+<p><b>1. 📄 Formato y estructura del archivo</b></p>
+<ul>
+<li><b>Formato correcto</b>: mi archivo está guardado en formato Excel (.xlsx) o CSV (.csv).</li>
+<li><b>Encabezados intactos</b>: no he modificado, eliminado ni traducido los nombres de las columnas de la primera línea (ej.: <code>sku_fournisseur</code> debe permanecer escrito exactamente así).</li>
+<li><b>Orden respetado</b>: las columnas permanecen en el mismo orden que el modelo proporcionado.</li>
+</ul>
+<p><b>2. 🔢 Datos obligatorios e identificadores</b></p>
+<ul>
+<li><b>Sin SKU faltante</b>: cada producto tiene su referencia única (<code>sku_fournisseur</code>), sin ningún espacio.</li>
+<li><b>Códigos EAN conformes</b>: la columna <code>code_ean</code> contiene códigos de barras válidos de 13 dígitos (cuidado con los formatos de Excel que a veces eliminan los 0 iniciales).</li>
+<li><b>Embalaje explícito</b>: el tipo de unidad (Caja, Paleta, etc.) está claramente indicado en cada línea.</li>
+</ul>
+<p><b>3. 💶 Tarifas e IVA (marco Guadalupe / DROM)</b></p>
+<ul>
+<li><b>Separador de precios</b>: los céntimos de mi <code>prix_unitaire_ht</code> usan un punto . y no una coma , (ej.: 5.45 y no 5,45).</li>
+<li><b>Tasas de IVA válidas</b>: he aplicado exclusivamente una tasa legal local de Guadalupe (0, 2.1 u 8.5).</li>
+</ul>
+<p><b>4. 📦 Gestión de existencias</b></p>
+<ul>
+<li><b>Cantidades reales</b>: la columna <code>quantite_stock</code> contiene números enteros (sin texto como «Disponible» o «Agotado»).</li>
+<li><b>Alerta de ruptura</b>: he anotado 0 para los productos temporalmente agotados para que pasen automáticamente al estado «No disponible» sin romper mi catálogo.</li>
+</ul>
+<p><b>5. 🌍 Codificación (solo archivos .csv)</b></p>
+<ul>
+<li><b>Separador correcto</b>: el archivo CSV utiliza el punto y coma ; como separador.</li>
+<li><b>Formato UTF-8</b>: el archivo está codificado en UTF-8 para evitar que los acentos (é, è, à) se conviertan en caracteres ilegibles.</li>
+</ul>
+<p><b>6. 🖼️ Enlaces de imágenes (opcional)</b></p>
+<ul>
+<li><b>Enlaces públicos</b>: las direcciones de internet en <code>url_image</code> comienzan con https:// y terminan con una extensión de imagen (.jpg, .png). Deben ser accesibles sin contraseña.</li>
+</ul>
+<p style="background:#f6f1fa;border-left:4px solid #b8933e;padding:12px 14px"><b>🚨 ¿Está listo mi archivo?</b><br/>
+Si todas las casillas están marcadas [X]: ¡puede subir su archivo a su espacio seguro con total confianza!<br/>
+<b>¿Una anomalía?</b> Se le enviará automáticamente un informe de error por correo electrónico en caso de rechazo por nuestro sistema informático, indicándole la línea a corregir.</p>""",
     },
 }
 
