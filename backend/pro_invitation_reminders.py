@@ -30,8 +30,8 @@ async def run_pro_invitation_reminders(db) -> int:
         if not step:
             continue
         if await _is_pro_subscriber(inv["email"]):
-            await db.communityplace_pro_invitations.update_one(
-                {"email": inv["email"]}, {"$set": {"converted_at": now.isoformat()}})
+            from routes_purchase_needs import handle_pro_conversion
+            await handle_pro_conversion(inv["email"], "détectée lors des relances")
             continue
         code = inv.get("promo_code") or ""
         promo = _promo_block(code, inv.get("promo_expires_at")) if code else ""

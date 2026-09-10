@@ -22,10 +22,11 @@ export const ProReferralShareCard = () => {
         <Gift className="w-4 h-4 text-[#D9B35A]" /> Parrainez vos contacts — offrez-leur -{ref.percent} %
       </h3>
       <p className="text-[11px] text-white/55 m-0 mb-3">
-        Partagez votre lien : vos contacts bénéficient de <b className="text-[#E9CF8E]">-{ref.percent} % sur leur première adhésion professionnelle</b>.
+        Partagez votre lien : vos contacts bénéficient de <b className="text-[#E9CF8E]">-{ref.percent} % sur leur première adhésion professionnelle</b>,
+        et vous gagnez <b className="text-[#8CC63E]">+{ref.reward_per_use} crédits</b> à chaque adhésion générée.
         {ref.uses > 0 && (
           <span className="ml-1 inline-flex items-center gap-1 text-[#8CC63E]" data-testid="pro-referral-uses">
-            <Users className="w-3 h-3" /> {ref.uses} adhésion{ref.uses > 1 ? 's' : ''} grâce à vous
+            <Users className="w-3 h-3" /> {ref.uses} adhésion{ref.uses > 1 ? 's' : ''} · {ref.reward_credits_total} crédits gagnés
           </span>
         )}
       </p>
