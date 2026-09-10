@@ -17,13 +17,13 @@ os.makedirs(OUT, exist_ok=True)
 
 # (clé, texte lu, durée de la scène en secondes)
 FRAGMENTS = [
-    ('intro', "LOLODRIVE, l'épicerie, propose des produits du terroir.", 4.0),
-    ('concept', "Des articles exclusivement accessibles par lot de trois,", 4.0),
-    ('produits', "au meilleur prix coopératif négocié.", 20.0),
-    ('commande', "Commandez en ligne et en relais, avec votre PASS LOLODRIVE,", 5.0),
-    ('preparation', "L'équipe LOLODRIVE prépare vos paniers,", 4.0),
-    ('retrait', "et optez pour une livraison ou un retrait drive.", 5.0),
-    ('final', "et vous accueille avec plaisir !", 4.0),
+    ('intro', "Bienvenue chez LoloDrive by O'SCOP, l'épicerie de votre territoire ! Ici, on sélectionne le bon, le local et tous les essentiels de votre quotidien.", 6.5),
+    ('concept', "Le concept ? Des produits proposés exclusivement par lots de trois, au meilleur prix coopératif négocié !", 5.5),
+    ('produits', "Légumes du soleil, yaourts, pâtes, riz, céréales, huiles, beurre… Remplissez votre panier et profitez de prix vraiment malins !", 20.0),
+    ('commande', "Avec votre PASS LoloDrive, commandez en quelques clics, en ligne ou auprès de votre relais.", 5.0),
+    ('preparation', "Notre équipe prépare soigneusement votre panier.", 4.0),
+    ('retrait', "Ensuite, c'est vous qui choisissez : livraison ou retrait drive près de chez vous !", 5.0),
+    ('final', "LoloDrive : achetez par trois, profitez trois fois plus !", 4.0),
 ]
 
 VOICE = 'nova'

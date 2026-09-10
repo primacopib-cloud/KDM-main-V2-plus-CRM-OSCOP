@@ -18,7 +18,7 @@ MUSIC = f'{OUT}/music_bed.mp3'
 NARRATION = f'{OUT}/narration_full.mp3'
 MIX = f'{OUT}/narration_music_mix.mp3'
 VERT = '/app/backend/uploads/videos/lolospot_vertical.mp4'
-SPOT_DUR = 46.0
+SPOT_DUR = 50.0
 
 PROMPT = ("Soft warm uplifting acoustic advertising background music for a tropical Caribbean grocery "
           "co-op ad: gentle marimba and ukulele melody, light acoustic guitar, subtle soft percussion "
@@ -35,7 +35,7 @@ if not os.path.exists(MUSIC_RAW):
     urllib.request.urlretrieve(url, MUSIC_RAW)
 
 # Normalise à 46 s avec fondu d'entrée/sortie, encode mp3
-subprocess.run([FFMPEG, '-y', '-loglevel', 'error', '-i', MUSIC_RAW,
+subprocess.run([FFMPEG, '-y', '-loglevel', 'error', '-stream_loop', '-1', '-i', MUSIC_RAW,
                 '-af', f'atrim=0:{SPOT_DUR},apad,atrim=0:{SPOT_DUR},afade=t=in:st=0:d=1.5,afade=t=out:st={SPOT_DUR-2.5}:d=2.5',
                 '-b:a', '160k', MUSIC], check=True)
 
