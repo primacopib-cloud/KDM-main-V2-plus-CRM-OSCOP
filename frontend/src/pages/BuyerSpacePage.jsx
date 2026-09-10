@@ -16,6 +16,7 @@ import { CrediscopBadge } from '../components/CrediscopBadge';
 
 import { authAPI, ordersAPIV2, walletAPIV2, invoicesAPI } from '../services/api';
 import { BuyerDashboardTab } from '../components/buyer/BuyerDashboardTab';
+import { ProReferralShareCard } from '../components/ProReferralShareCard';
 import { BuyerOrdersTab } from '../components/buyer/BuyerOrdersTab';
 import { BuyerInvoicesTab } from '../components/buyer/BuyerInvoicesTab';
 import { BuyerWalletTab } from '../components/buyer/BuyerWalletTab';
