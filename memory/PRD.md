@@ -3101,3 +3101,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Cause racine : les gardes de pages privées faisaient navigate('/connexion?...') SANS replace → la page gardée restait dans l'historique.
 - Fix : 12 navigations de garde passées en { replace: true } (BuyerSpacePage, CheckoutPage, OnboardingPage, OrdersPage, WalletPage, AdminPage, AdminPlansPage, AdminV2Page, DashboardPage x2, LoloPointManagerPage, PassSpacePage, StatsPage). Les CTA volontaires vers /connexion (CatalogFiltersNotices, ApiSubscribeCard, ResetPassword) conservent un push normal (retour vers la page d'origine souhaité).
 - Testé : accès /espace-acheteur déconnecté → /connexion?redirect=… → clic Retour → retour accueil sans boucle.
+
+## 2026-09-10 — Parcours « Acheteurs professionnels » → adhésion
+- Bloc « Acheteurs professionnels » (ProJourneysSection, accueil) pointait vers /espace-acheteur (gardé → /connexion). Désormais → /adhesion-vendeur?type=acheteur_pro : titre adapté « Adhésion Acheteur Pro », carte « Acheteur Pro » présélectionnée, atterrissage en haut de page (scroll fix précédent). Testé par clic réel.

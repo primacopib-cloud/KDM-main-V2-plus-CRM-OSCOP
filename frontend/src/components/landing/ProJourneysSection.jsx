@@ -3,7 +3,7 @@ import { ShoppingCart, Factory, Ship, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const JOURNEYS = [
-  { icon: ShoppingCart, color: '#D9B35A', key: 'acheteurs', to: '/espace-acheteur', testid: 'journey-acheter' },
+  { icon: ShoppingCart, color: '#D9B35A', key: 'acheteurs', to: '/adhesion-vendeur?type=acheteur_pro', testid: 'journey-acheter' },
   { icon: Factory, color: '#8CC63E', key: 'fournisseurs', to: '/adhesion-vendeur', testid: 'journey-fournisseurs' },
   { icon: Ship, color: '#5AA7D9', key: 'logiscop', to: '/calculateur-fret', testid: 'journey-logiscop' },
 ];
