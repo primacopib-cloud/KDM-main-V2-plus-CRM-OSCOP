@@ -3139,3 +3139,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Voix off : fragments préparation/retrait échangés pour coller aux visuels (2 clips régénérés), narration_full reconstruite, remixée avec la musique.
 - Story verticale régénérée avec les nouveaux textes + piste voix+musique réincrustée. Vérifié : textes des 14 scènes horizontales capturés sans doublon ; frames verticales (produit = nom seul, final propre).
 - Le badge « LOT ×3 » en haut à gauche reste volontairement présent (filigrane de marque, pas du narratif).
+
+## 2026-09-10 — Bloc Territoires repositionné (accueil, onglet Professionnels)
+- Le carrousel territoires (TerritoryCarousel) était après la section LOLODRIVE ; il s'affiche désormais exclusivement juste avant le bloc « Règlement à Réception Pro » (LandingPage.jsx : déplacé après ServicesBlock). Vérifié : Y territoires 3167 < Y RàR 3890, plus de bloc territoires en bas de page.
