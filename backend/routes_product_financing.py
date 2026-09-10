@@ -557,6 +557,35 @@ async def annual_statement(year: int | None = None, user: dict = Depends(_invest
                     headers={"Content-Disposition": f"attachment; filename=releve-investisseur-{y}.pdf"})
 
 
+@financing_router.post("/admin/financing-products/{fp_id}/repayments/remind")
+async def remind_repayment(fp_id: str, body: RepaymentToggle, admin: dict = Depends(require_admin)):
+    """Relance immédiate (email équipe) pour une échéance en retard ou à venir."""
+    fp = await db.financing_products.find_one({"id": fp_id}, {"_id": 0})
+    if not fp:
+        raise HTTPException(status_code=404, detail="Financement introuvable")
+    step = next((s for s in build_repayment_schedule(fp) if s["due_date"] == body.due_date), None)
+    if not step:
+        raise HTTPException(status_code=400, detail="Échéance inconnue")
+    from brevo_service import send_email, _wrap_html
+    from datetime import date
+    team = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
+    late = step["due_date"] < date.today().isoformat()
+    await send_email(
+        to_email=team, to_name=None,
+        subject=f"{'🔴 ÉCHÉANCE EN RETARD' if late else '⏰ Rappel échéance'} — {fp['reference']} · {fp['name']} ({step['due_date']})",
+        html_content=_wrap_html("Relance de remboursement investisseur", (
+            f"<p style='font-size:14px;'>Relance manuelle de {admin.get('email')} : l'échéance du "
+            f"<b>{step['due_date']}</b> ({step['amount_eur']:,.2f} €) du financement "
+            f"<b>{fp['reference']} — {fp['name']}</b> "
+            f"{'est <b>EN RETARD</b>' if late else 'arrive à échéance'}.</p>"
+            f"<p style='font-size:14px;'>Investisseur : <b>{fp.get('paid_by') or '—'}</b>. "
+            "Effectuez le virement puis marquez l'échéance « Remboursé » dans le superadmin.</p>")),
+        tags=["repayment-manual-remind"])
+    await db.financing_products.update_one(
+        {"id": fp_id}, {"$set": {"last_repayment_remind_at": _now()}})
+    return {"ok": True, "late": late}
+
+
 @financing_router.get("/admin/financing-products")
 async def list_financing_products_admin(_: dict = Depends(require_admin)):
     items = await db.financing_products.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)

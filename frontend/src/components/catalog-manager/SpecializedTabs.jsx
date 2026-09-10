@@ -172,10 +172,39 @@ export const TechnicalTab = ({ formData, handleChange }) => (
               </TabsContent>
 );
 
+export const DELIVERY_TYPES = [
+  'Livraison standard', 'Livraison express', 'Livraison réfrigérée', 'Livraison sur palette',
+  'Retrait entrepôt (EXW)', 'Point relais', 'Fret maritime', 'Fret aérien',
+];
+
+export const INCOTERMS = ['EXW', 'FCA', 'FAS', 'FOB', 'CFR', 'CIF', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP'];
+
 export const LogisticsTab = ({ formData, handleChange }) => (
             <TabsContent value="logistics" className="space-y-4">
               <FormSection title="Livraison" icon={Truck}>
                 <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-white/70 text-xs">Type de livraison</Label>
+                    <Select value={formData.delivery_type || ''} onValueChange={(v) => handleChange('delivery_type', v)}>
+                      <SelectTrigger className="mt-1 bg-white/[0.04] border-white/10" data-testid="product-delivery-type-select">
+                        <SelectValue placeholder="Choisir…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DELIVERY_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-white/70 text-xs">Incoterm</Label>
+                    <Select value={formData.incoterm || ''} onValueChange={(v) => handleChange('incoterm', v)}>
+                      <SelectTrigger className="mt-1 bg-white/[0.04] border-white/10" data-testid="product-incoterm-select">
+                        <SelectValue placeholder="Choisir…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INCOTERMS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div>
                     <Label className="text-white/70 text-xs">Délai standard (jours)</Label>
                     <Input type="number" value={formData.lead_time_days} onChange={(e) => handleChange('lead_time_days', e.target.value)} className="mt-1 bg-white/[0.04] border-white/10 text-white text-sm" />
@@ -211,6 +240,25 @@ export const LogisticsTab = ({ formData, handleChange }) => (
                       <span className="text-sm text-white/80">{z.name}</span>
                     </label>
                   ))}
+                  {(formData.custom_zones || []).map((z) => (
+                    <span key={z} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs text-[#E9CF8E] bg-[#D9B35A]/10 border border-[#D9B35A]/30"
+                      data-testid={`product-custom-zone-${z}`}>
+                      {z}
+                      <button type="button" className="text-white/40 hover:text-red-400"
+                        onClick={() => handleChange('custom_zones', (formData.custom_zones || []).filter((x) => x !== z))}>×</button>
+                    </span>
+                  ))}
+                  <button type="button" data-testid="product-add-zone-btn"
+                    onClick={() => {
+                      const z = window.prompt('Nouvelle zone de disponibilité (ex : Saint-Martin, Dominique, Métropole)');
+                      if (!z || !z.trim()) return;
+                      const val = z.trim();
+                      if ((formData.custom_zones || []).includes(val)) return;
+                      handleChange('custom_zones', [...(formData.custom_zones || []), val]);
+                    }}
+                    className="px-2 py-1 rounded-full text-xs font-bold text-white/60 bg-white/[0.04] border border-dashed border-white/25 hover:text-[#E9CF8E] hover:border-[#D9B35A]/50">
+                    ＋ Ajouter une zone
+                  </button>
                 </div>
               </FormSection>
 
@@ -232,6 +280,25 @@ export const LogisticsTab = ({ formData, handleChange }) => (
                     <Checkbox checked={formData.reach_compliant} onCheckedChange={(v) => handleChange('reach_compliant', v)} />
                     <span className="text-sm text-white/80">REACH</span>
                   </label>
+                  {(formData.custom_compliances || []).map((cc) => (
+                    <span key={cc} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs text-[#8CC63E] bg-[#8CC63E]/10 border border-[#8CC63E]/30"
+                      data-testid={`product-custom-compliance-${cc}`}>
+                      {cc}
+                      <button type="button" className="text-white/40 hover:text-red-400"
+                        onClick={() => handleChange('custom_compliances', (formData.custom_compliances || []).filter((x) => x !== cc))}>×</button>
+                    </span>
+                  ))}
+                  <button type="button" data-testid="product-add-compliance-btn"
+                    onClick={() => {
+                      const c = window.prompt('Nouveau type de conformité (ex : IFS Food, Label Rouge, Halal, MSC)');
+                      if (!c || !c.trim()) return;
+                      const val = c.trim();
+                      if ((formData.custom_compliances || []).includes(val)) return;
+                      handleChange('custom_compliances', [...(formData.custom_compliances || []), val]);
+                    }}
+                    className="px-2 py-1 rounded-full text-xs font-bold text-white/60 bg-white/[0.04] border border-dashed border-white/25 hover:text-[#8CC63E] hover:border-[#8CC63E]/50">
+                    ＋ Ajouter une conformité
+                  </button>
                 </div>
               </FormSection>
             </TabsContent>

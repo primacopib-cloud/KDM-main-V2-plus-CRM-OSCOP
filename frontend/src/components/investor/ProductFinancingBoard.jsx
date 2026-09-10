@@ -70,6 +70,7 @@ const TrackingStepper = ({ fp, onShare, onConfirm, confirming }) => {
 export const ProductFinancingBoard = () => {
   const [items, setItems] = useState(null);
   const [paying, setPaying] = useState(null);
+  const [statementYear, setStatementYear] = useState(null);
   const [confirming, setConfirming] = useState(null);
 
   const shareTracking = (fp) => {
@@ -171,17 +172,23 @@ export const ProductFinancingBoard = () => {
   };
 
   const downloadStatement = async () => {
+    const y = new Date().getFullYear();
+    const year = window.prompt('Année du relevé :', String(statementYear || y)) ;
+    if (year === null) return;
+    const yr = parseInt(year, 10);
+    if (Number.isNaN(yr) || yr < 2020 || yr > y) { toast.error('Année invalide'); return; }
+    setStatementYear(yr);
     try {
-      const r = await fetch(`${API_URL}/api/investor/financing-products/annual-statement.pdf`,
+      const r = await fetch(`${API_URL}/api/investor/financing-products/annual-statement.pdf?year=${yr}`,
         { headers: getAuthHeaders(), credentials: 'include' });
       if (!r.ok) throw new Error('Téléchargement impossible');
       const blob = await r.blob();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `releve-investisseur-${new Date().getFullYear()}.pdf`;
+      a.download = `releve-investisseur-${yr}.pdf`;
       a.click();
       URL.revokeObjectURL(a.href);
-      toast.success('Relevé annuel téléchargé');
+      toast.success(`Relevé ${yr} téléchargé`);
     } catch (e) { toast.error(e.message); }
   };
 
