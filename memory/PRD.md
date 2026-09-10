@@ -3107,3 +3107,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-09-10 — Flèche retour dans le header secondaire
 - Le composant Header (pages calculateur-fret, offres, particuliers, etc.) n'avait pas de flèche retour : ajout du HeaderBackButton (flèche seule, masquée sur l'accueil) avant le logo — même composant que la NavBar principale. Testé : /calculateur-fret → flèche visible → clic → retour accueil.
+
+## 2026-09-10 — « Vérifier mon éligibilité » → gate acheteurs pro
+- Nouvelle page /reglement-reception (ReceptionProPage, route + import App.js) : visiteur ou membre non pro → carte « Accès réservé aux acheteurs professionnels » avec présentation du Règlement à Réception Pro (aucun acompte, validation électronique livraison LOGI'SCOP, plafond d'encours) + CTA « Se connecter » (/connexion?redirect=/reglement-reception) et « Adhérer à la centrale » (/adhesion-vendeur?type=acheteur_pro). Membre pro connecté (statut vérifié via /api/public/purchase-needs/join/status?email=) → redirection /espace-acheteur (plafond à réception).
+- Le bouton « Vérifier mon éligibilité » (ReceptionProSection, accueil) pointe désormais vers /reglement-reception au lieu de /espace-acheteur. Testé : visiteur → gate OK ; acheteur pro connecté → redirection espace OK.
