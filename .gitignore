@@ -203,3 +203,6 @@ frontend/node_modules/.cache/default-development/162.pack
 frontend/node_modules/.cache/default-development/163.pack
 frontend/node_modules/.cache/default-development/164.pack
 frontend/node_modules/.cache/default-development/25.pack
+.env
+.env.*
+*.env
