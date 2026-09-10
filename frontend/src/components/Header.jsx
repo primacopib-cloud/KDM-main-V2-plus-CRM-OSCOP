@@ -5,6 +5,7 @@ import { partners } from '../data/mock';
 import { BrandLogos } from './BrandLogos';
 import { Menu, X, User, LogIn, Download } from 'lucide-react';
 import CommunityplaceBadge from './CommunityplaceBadge';
+import { HeaderBackButton } from './HeaderBackButton';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -39,6 +40,7 @@ const Header = () => {
     >
       <div className="max-w-[1160px] mx-auto px-5">
         <div className="flex items-center justify-between h-14 gap-3">
+          <HeaderBackButton withLabel={false} />
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3">
             <div className="flex items-center gap-2">

@@ -3104,3 +3104,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-09-10 — Parcours « Acheteurs professionnels » → adhésion
 - Bloc « Acheteurs professionnels » (ProJourneysSection, accueil) pointait vers /espace-acheteur (gardé → /connexion). Désormais → /adhesion-vendeur?type=acheteur_pro : titre adapté « Adhésion Acheteur Pro », carte « Acheteur Pro » présélectionnée, atterrissage en haut de page (scroll fix précédent). Testé par clic réel.
+
+## 2026-09-10 — Flèche retour dans le header secondaire
+- Le composant Header (pages calculateur-fret, offres, particuliers, etc.) n'avait pas de flèche retour : ajout du HeaderBackButton (flèche seule, masquée sur l'accueil) avant le logo — même composant que la NavBar principale. Testé : /calculateur-fret → flèche visible → clic → retour accueil.
