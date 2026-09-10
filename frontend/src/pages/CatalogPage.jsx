@@ -89,6 +89,7 @@ export default function CatalogPage() {
   const [saleFilter, setSaleFilter] = useState('all');
   const [financingOnly, setFinancingOnly] = useState(false);
   const [selectedIncoterm, setSelectedIncoterm] = useState('all');
+  const [selectedDeliveryType, setSelectedDeliveryType] = useState('all');
   const [minRating, setMinRating] = useState('all');
   const [sortByRating, setSortByRating] = useState(false);
   const [selectedZone, setSelectedZone] = useState('');
@@ -250,6 +251,8 @@ export default function CatalogPage() {
         const sp = new URLSearchParams({ zone_code: selectedZone });
         if (selectedCategory && selectedCategory !== 'all') sp.append('category_id', selectedCategory);
         if (searchTerm) sp.append('search', searchTerm);
+        if (selectedIncoterm && selectedIncoterm !== 'all') sp.append('incoterm', selectedIncoterm);
+        if (selectedDeliveryType && selectedDeliveryType !== 'all') sp.append('delivery_type', selectedDeliveryType);
         const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/v2/catalog/products?${sp}`, { credentials: 'omit' });
         setProducts(await r.json());
         return;
@@ -264,6 +267,9 @@ export default function CatalogPage() {
       if (selectedIncoterm && selectedIncoterm !== 'all') {
         params.incoterm = selectedIncoterm;
       }
+      if (selectedDeliveryType && selectedDeliveryType !== 'all') {
+        params.deliveryType = selectedDeliveryType;
+      }
       if (minRating !== 'all') {
         params.minRating = minRating;
       }
@@ -276,7 +282,7 @@ export default function CatalogPage() {
     } catch (error) {
       console.error('Error loading products:', error);
     }
-  }, [selectedZone, selectedCategory, searchTerm, selectedIncoterm, minRating, sortByRating]);
+  }, [selectedZone, selectedCategory, searchTerm, selectedIncoterm, selectedDeliveryType, minRating, sortByRating]);
 
   useEffect(() => {
     if (selectedZone) {
@@ -516,6 +522,8 @@ export default function CatalogPage() {
           setSelectedCategory={setSelectedCategory}
           selectedIncoterm={selectedIncoterm}
           setSelectedIncoterm={setSelectedIncoterm}
+          selectedDeliveryType={selectedDeliveryType}
+          setSelectedDeliveryType={setSelectedDeliveryType}
           minRating={minRating}
           setMinRating={setMinRating}
           sortByRating={sortByRating}

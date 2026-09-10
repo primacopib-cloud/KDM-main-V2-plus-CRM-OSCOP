@@ -230,6 +230,15 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                 </div>
               )}
               
+              {(product.available_zones || []).length > 0 && (
+                <div className="flex flex-wrap items-center gap-1 mb-2" data-testid={`product-zones-${product.sku}`}>
+                  <span className="text-[9px] uppercase tracking-wide text-white/40">Zones :</span>
+                  {product.available_zones.map((z) => (
+                    <span key={z} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">{z}</span>
+                  ))}
+                </div>
+              )}
+
               <SaleModelBadge product={product} />
               {product.cb_only_payment && (
                 <span data-testid={`cb-only-badge-${product.sku}`}
@@ -291,13 +300,16 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                 <ProductShareButtons product={product} />
               </div>
 
-              {/* Incoterms badges */}
-              {product.incoterms && Object.keys(product.incoterms).length > 0 && (
+              {/* Incoterms badges (par zone + champ fiche) */}
+              {((product.incoterms && Object.keys(product.incoterms).length > 0) || product.incoterm) && (
                 <div className="flex flex-wrap gap-1 mb-3" data-testid={`product-incoterms-${product.sku}`}>
-                  {[...new Set(Object.values(product.incoterms).flat())].map((code) => (
+                  {[...new Set([
+                    ...(product.incoterms ? Object.values(product.incoterms).flat() : []),
+                    ...(product.incoterm ? [product.incoterm] : []),
+                  ])].map((code) => (
                     <span
                       key={code}
-                      title={`Incoterm ${code} — ${Object.entries(product.incoterms).filter(([, c]) => (c || []).includes(code)).map(([z]) => z).join(', ')}`}
+                      title={`Incoterm ${code}${product.incoterms ? ` — ${Object.entries(product.incoterms).filter(([, c]) => (c || []).includes(code)).map(([z]) => z).join(', ')}` : ''}`}
                       className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wide bg-[#D9B35A]/15 text-[#D9B35A] border border-[#D9B35A]/30"
                     >
                       {code}

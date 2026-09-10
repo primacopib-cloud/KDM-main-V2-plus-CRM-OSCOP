@@ -40,6 +40,16 @@ export const LogisticsTab = ({ product }) => (
             <Section title="Transport & Livraison" icon={Truck}>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  {(product.logistics.incoterm || product.logistics.delivery_type) && (
+                    <div className="flex flex-wrap gap-2 pb-1" data-testid="fiche-incoterm-delivery">
+                      {product.logistics.incoterm && (
+                        <Badge data-testid="fiche-incoterm-badge" className="bg-amber-500/20 text-amber-300 border-amber-500/30">Incoterm {product.logistics.incoterm}</Badge>
+                      )}
+                      {product.logistics.delivery_type && (
+                        <Badge data-testid="fiche-delivery-type-badge" className="bg-sky-500/20 text-sky-300 border-sky-500/30">{product.logistics.delivery_type}</Badge>
+                      )}
+                    </div>
+                  )}
                   <DataRow label="Délai standard" value={`${product.logistics.lead_time_days} jours`} icon={Clock} />
                   <DataRow label="Qté min commande" value={product.logistics.min_order_quantity} />
                   <DataRow label="Multiple commande" value={product.logistics.order_multiple} />

@@ -230,6 +230,7 @@ async def list_products(
     tags: Optional[str] = None,
     zone_code: Optional[str] = None,
     incoterm: Optional[str] = None,
+    delivery_type: Optional[str] = None,
     min_rating: Optional[float] = None,
     sort: Optional[str] = None,
     skip: int = 0,
@@ -286,16 +287,28 @@ async def list_products(
         tag_list = [t.strip() for t in tags.split(",")]
         query["tags"] = {"$in": tag_list}
 
-    # Filtre incoterm (par zone si connue, sinon toutes zones)
+    # Filtre incoterm : ancien champ par zone OU champ plat logistics.incoterm.
+    # Non strict : les produits sans aucune donnée incoterm restent affichés.
     if incoterm:
         incoterm = incoterm.upper()
+        incoterm_or = [{"logistics.incoterm": incoterm}]
         if zone_code and not show_all:
-            query[f"incoterms.{zone_code}"] = incoterm
+            incoterm_or.append({f"incoterms.{zone_code}": incoterm})
         else:
             zone_codes = [z["code"] async for z in db.zones_v2.find({}, {"code": 1})]
-            if zone_codes:
-                query.setdefault("$and", []).append(
-                    {"$or": [{f"incoterms.{z}": incoterm} for z in zone_codes]})
+            incoterm_or.extend({f"incoterms.{z}": incoterm} for z in zone_codes)
+        incoterm_or.append({
+            "logistics.incoterm": {"$in": [None, ""]},
+            "incoterms": {"$in": [None, {}]},
+        })
+        query.setdefault("$and", []).append({"$or": incoterm_or})
+
+    # Filtre type de livraison (non strict : produits sans type renseigné conservés)
+    if delivery_type:
+        query.setdefault("$and", []).append({"$or": [
+            {"logistics.delivery_type": delivery_type},
+            {"logistics.delivery_type": {"$in": [None, ""]}},
+        ]})
     
     # Filtre note minimale (avis adhérents)
     if min_rating is not None:
@@ -423,6 +436,9 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
         price_visible=price_visible,
         in_stock=True,
         incoterms=product.get("incoterms") or None,
+        delivery_type=(product.get("logistics") or {}).get("delivery_type") or None,
+        incoterm=(product.get("logistics") or {}).get("incoterm") or None,
+        available_zones=(product.get("logistics") or {}).get("available_zones") or [],
         rating_avg=product.get("rating_avg"),
         rating_count=product.get("rating_count") or 0,
         sale_model=product.get("sale_model", "PARTNER_DIRECT_SALE"),
