@@ -129,6 +129,10 @@ export default function ProductCatalogManager({ onProductSaved }) {
       lead_time_days: product.logistics?.lead_time_days || 3,
       min_order_quantity: product.logistics?.min_order_quantity || 1,
       available_zones: product.logistics?.available_zones || ZONES.map(z => z.code),
+      custom_zones: product.logistics?.custom_zones || [],
+      delivery_type: product.logistics?.delivery_type || '',
+      incoterm: product.logistics?.incoterm || '',
+      custom_compliances: product.compliance?.custom_compliances || [],
       is_fragile: product.logistics?.is_fragile || false,
       requires_adr: product.logistics?.requires_adr || false
     });
@@ -218,6 +222,9 @@ export default function ProductCatalogManager({ onProductSaved }) {
           lead_time_days: parseInt(formData.lead_time_days) || 3,
           min_order_quantity: parseInt(formData.min_order_quantity) || 1,
           available_zones: formData.available_zones || [],
+          custom_zones: formData.custom_zones || [],
+          delivery_type: formData.delivery_type || null,
+          incoterm: formData.incoterm || null,
           is_fragile: formData.is_fragile,
           requires_adr: formData.requires_adr
         }
@@ -263,7 +270,8 @@ export default function ProductCatalogManager({ onProductSaved }) {
         ce_marking: formData.ce_marking,
         haccp_compliant: formData.haccp_compliant,
         organic_certified: formData.organic_certified,
-        reach_compliant: formData.reach_compliant
+        reach_compliant: formData.reach_compliant,
+        custom_compliances: formData.custom_compliances || []
       };
 
       const url = editingProduct 

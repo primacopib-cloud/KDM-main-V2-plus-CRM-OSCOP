@@ -194,6 +194,18 @@ export const FinancingProductsPanel = () => {
     } catch (err) { toast.error(err.message); }
   };
 
+  const remindRepayment = async (fp, dueDate) => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/financing-products/${fp.id}/repayments/remind`, {
+        method: 'POST', credentials: 'include', headers,
+        body: JSON.stringify({ due_date: dueDate }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      toast.success(d.late ? 'Relance échéance EN RETARD envoyée à l\'équipe' : 'Rappel d\'échéance envoyé');
+    } catch (err) { toast.error(err.message); }
+  };
+
   const toggleRepayment = async (fp, dueDate) => {
     try {
       const res = await fetch(`${API_URL}/api/admin/financing-products/${fp.id}/repayments/toggle`, {
@@ -480,17 +492,31 @@ export const FinancingProductsPanel = () => {
                 )}
                 {fp.repayment_schedule?.length > 0 && repayFor !== fp.id && (
                   <div className="mt-1.5 flex flex-wrap gap-1.5" data-testid={`fin-schedule-${fp.reference}`}>
-                    {fp.repayment_schedule.map((s) => (
-                      <button key={s.due_date} type="button" onClick={() => toggleRepayment(fp, s.due_date)}
-                        title={s.paid ? 'Cliquez pour annuler le remboursement de cette échéance' : 'Cliquez pour marquer cette échéance remboursée'}
-                        data-testid={`fin-schedule-step-${fp.reference}-${s.due_date}`}
-                        className={`px-2 py-1 rounded-md border text-[9.5px] font-semibold transition-colors ${
-                          s.paid
-                            ? 'text-[#8CC63E] bg-[#8CC63E]/15 border-[#8CC63E]/50'
-                            : 'text-white/55 bg-white/[0.04] border-white/15 hover:border-sky-400/50 hover:text-sky-300'}`}>
-                        {new Date(s.due_date).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })} · {eur(s.amount_eur)} {s.paid ? '✓' : ''}
-                      </button>
-                    ))}
+                    {fp.repayment_schedule.map((s) => {
+                      const late = !s.paid && s.due_date < new Date().toISOString().slice(0, 10);
+                      return (
+                        <span key={s.due_date} className="inline-flex items-center">
+                          <button type="button" onClick={() => toggleRepayment(fp, s.due_date)}
+                            title={s.paid ? 'Cliquez pour annuler le remboursement de cette échéance' : 'Cliquez pour marquer cette échéance remboursée'}
+                            data-testid={`fin-schedule-step-${fp.reference}-${s.due_date}`}
+                            className={`px-2 py-1 rounded-md border text-[9.5px] font-semibold transition-colors ${
+                              s.paid
+                                ? 'text-[#8CC63E] bg-[#8CC63E]/15 border-[#8CC63E]/50'
+                                : late
+                                  ? 'text-red-300 bg-red-500/15 border-red-400/60 animate-pulse'
+                                  : 'text-white/55 bg-white/[0.04] border-white/15 hover:border-sky-400/50 hover:text-sky-300'}`}>
+                            {late ? '🔴 ' : ''}{new Date(s.due_date).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })} · {eur(s.amount_eur)} {s.paid ? '✓' : late ? 'EN RETARD' : ''}
+                          </button>
+                          {late && (
+                            <button type="button" onClick={() => remindRepayment(fp, s.due_date)}
+                              title="Relance immédiate par email" data-testid={`fin-remind-late-${fp.reference}-${s.due_date}`}
+                              className="ml-0.5 px-1.5 py-1 rounded-md border text-[9.5px] font-bold text-red-200 bg-red-500/25 border-red-400/70 hover:bg-red-500/40">
+                              Relancer
+                            </button>
+                          )}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
                 {repayFor === fp.id && (
