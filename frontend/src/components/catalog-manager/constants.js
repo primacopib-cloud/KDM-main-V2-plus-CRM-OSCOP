@@ -347,9 +347,12 @@ export const getEmptyProduct = (category = 'alimentaire') => ({
   organic_certified: false,
   reach_compliant: false,
   // Logistics
+  // Logistics
   lead_time_days: 3,
   min_order_quantity: 1,
   available_zones: ['GUADELOUPE', 'MARTINIQUE', 'GUYANE', 'REUNION', 'MAYOTTE'],
+  delivery_type: category === 'alimentaire' ? 'Fret maritime' : 'Livraison standard',
+  incoterm: category === 'alimentaire' ? 'CIF' : 'DDP',
   is_fragile: false,
   requires_adr: false
 });
