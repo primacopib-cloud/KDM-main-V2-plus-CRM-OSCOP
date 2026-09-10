@@ -171,7 +171,7 @@
     ],
     "client": "Cliente",
     "legend_oscop": "O'SCOP (Acceso y Suscripción)",
-    "legend_kdm": "KDMARCHE (Productos y Facturación)",
+    "legend_kdm": "KDMARCHE O'SCOP SOCIOS (Productos y Facturación)",
     "legend_client": "Cliente (Transporte EXW)"
   },
   "contact": {

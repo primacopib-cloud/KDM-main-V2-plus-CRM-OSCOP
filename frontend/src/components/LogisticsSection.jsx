@@ -8,6 +8,10 @@ const getStepStyle = (responsible) => {
       return { color: '#D4AF37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.20)' };
     case 'KDMARCHE':
       return { color: '#D9B35A', bg: 'rgba(217,179,90,0.08)', border: 'rgba(217,179,90,0.20)' };
+    case "KDMARCHE O'SCOP":
+      return { color: '#E8C97E', bg: 'rgba(212,175,55,0.10)', border: 'rgba(212,175,55,0.28)' };
+    case "KDMARCHE O'SCOP PARTENAIRES":
+      return { color: '#D9B35A', bg: 'rgba(217,179,90,0.10)', border: 'rgba(217,179,90,0.28)' };
     case "LOGI'SCOP":
       return { color: '#4FD1A5', bg: 'rgba(79,209,165,0.10)', border: 'rgba(79,209,165,0.35)' };
     case 'Client':
@@ -114,7 +118,7 @@ const LogisticsSection = () => (
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-[#D9B35A]"></div>
-          <span className="text-xs text-white/65">{i18n.t('logistics.legend_kdm', 'KDMARCHÉ — vente & facturation')}</span>
+          <span className="text-xs text-white/65">{i18n.t('logistics.legend_kdm', "KDMARCHE O'SCOP PARTENAIRES (Produits & Facturation)")}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ background: '#4FD1A5' }}></div>

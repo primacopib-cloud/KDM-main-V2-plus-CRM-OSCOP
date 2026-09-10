@@ -101,23 +101,23 @@ export const logisticsSteps = [
 
 export const exwJourney = [
   { step: "Accès et abonnement", responsible: "O'SCOP" },
-  { step: "Catalogue et prix", responsible: "KDMARCHE" },
-  { step: "Commande", responsible: "KDMARCHE" },
-  { step: "Mise à disposition au point convenu", responsible: "KDMARCHE" },
+  { step: "Catalogue et prix", responsible: "KDMARCHE O'SCOP PARTENAIRES" },
+  { step: "Commande", responsible: "KDMARCHE O'SCOP PARTENAIRES" },
+  { step: "Mise à disposition au point convenu", responsible: "KDMARCHE O'SCOP PARTENAIRES" },
   { step: "Règlement à l'enlèvement", responsible: "Client" },
   { step: "Transport organisé par l'acheteur", responsible: "Client" }
 ];
 
 export const rarJourney = [
   { step: "Adhésion active", responsible: "O'SCOP" },
-  { step: "Éligibilité et plafond", responsible: "KDMARCHE" },
+  { step: "Éligibilité et plafond", responsible: "KDMARCHE O'SCOP" },
   { step: "Commande sans acompte", responsible: "Client" },
-  { step: "Réservation du montant sur le plafond disponible", responsible: "KDMARCHE" },
-  { step: "Préparation et expédition", responsible: "KDMARCHE" },
+  { step: "Réservation du montant sur le plafond disponible", responsible: "KDMARCHE O'SCOP PARTENAIRES" },
+  { step: "Préparation et expédition", responsible: "KDMARCHE O'SCOP PARTENAIRES" },
   { step: "Livraison", responsible: "LOGI'SCOP" },
   { step: "Validation électronique de la réception", responsible: "Client" },
-  { step: "Facturation et déclenchement du règlement", responsible: "KDMARCHE" },
-  { step: "Réouverture du plafond après encaissement définitif", responsible: "KDMARCHE" }
+  { step: "Facturation et déclenchement du règlement", responsible: "KDMARCHE O'SCOP" },
+  { step: "Réouverture du plafond après encaissement définitif", responsible: "KDMARCHE O'SCOP" }
 ];
 
 export const walletCreditsUsage = [
