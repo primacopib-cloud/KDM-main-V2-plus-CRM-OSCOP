@@ -1,4 +1,4 @@
-"""Convention tripartite V1.5 — génération PDF dynamique multilingue (fiche remplie + document original fusionné)."""
+"""Convention tripartite de partenariat économique — PDF dynamique multilingue (fiche remplie + texte du contrat généré)."""
 import io
 import os
 from datetime import datetime, timezone
@@ -10,9 +10,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-TEMPLATE_PATH = "/app/backend/assets/convention_cadre_v1_5.pdf"
-TEMPLATE_V2_PATH = "/app/backend/assets/convention_cadre_v2_0.pdf"
-ATTESTATION_V2_PATH = "/app/backend/assets/attestation_nominative_v2_0.pdf"
+from convention_tripartite import build_tripartite_pages
 
 VIOLET = colors.HexColor("#451F6B")
 VIOLET_DARK = colors.HexColor("#2A1045")
@@ -25,9 +23,9 @@ _BODY = ParagraphStyle("b", fontName="Helvetica", fontSize=9, textColor=colors.H
 
 CONV_I18N = {
     "fr": {
-        "title": "CONVENTION-CADRE D'ADHÉSION TRIPARTITE D'AGRÉGATION DE VOLUMES<br/>ET DE RETENUE CONTRIBUTIVE REMBOURSABLE — V1.5",
-        "title_buyer": "CONVENTION-CADRE D'ADHÉSION TRIPARTITE D'ACHAT DE VOLUMES DE PRODUITS PRÉDÉFINIS<br/>ET DE RATTACHEMENT À LA RCR FOGEDOM-SCIC — V2.0",
-        "ref_line": "Référence : {ref} · Fiche d'identification et de signature complétée dynamiquement — générée le {date} UTC · Le texte intégral de la Convention-cadre{attest} est joint ci-après et fait partie intégrante du présent exemplaire.",
+        "title": "CONVENTION TRIPARTITE DE PARTENARIAT ÉCONOMIQUE<br/>CADRE D'INTÉGRATION ET DISTRIBUTION INTRACUMUNAUTAIRE OUTRE-MER",
+        "title_buyer": "CONVENTION TRIPARTITE DE PARTENARIAT ÉCONOMIQUE<br/>CADRE D'INTÉGRATION ET DISTRIBUTION INTRACUMUNAUTAIRE OUTRE-MER",
+        "ref_line": "Référence : {ref} · Fiche d'identification et de signature complétée dynamiquement — générée le {date} UTC · Le texte intégral de la Convention tripartite est joint ci-après et fait partie intégrante du présent exemplaire.",
         "attest": " et le modèle d'Attestation nominative FOGEDOM-SCIC",
         "supplier": "3. LE FOURNISSEUR", "denomination": "Dénomination", "contact": "Contact",
         "forme": "Forme sociale", "capital": "Capital social", "siret": "SIRET / SIREN", "rcs": "RCS",
@@ -40,15 +38,16 @@ CONV_I18N = {
         "oscop_body": "Plafond-cible RCR, référence du règlement FOGEDOM-RCR, composition du Comité FOGEDOM-RCR, PFH / support RCR et annexes techniques (2 à 7) : à compléter par O'SCOP conformément à l'Article 2 avant toute Attestation nominative.",
         "esign": "Signature électronique",
         "done_at": "Fait à", "on": "Le", "for_supplier": "Pour LE FOURNISSEUR — Nom",
+        "for_buyer": "Pour L'ACHETEUR PROFESSIONNEL — Nom",
         "quality": "Qualité", "mention": "Mention", "mention_val": "« Lu et approuvé » — acceptée électroniquement",
         "verif": "Code de vérification", "ip": "Empreinte (IP)",
-        "legal": "Signature électronique réalisée conformément à l'Article 29 de la Convention-cadre (articles 1366 et 1367 du Code civil). Ce document et son code de vérification font preuve entre les parties. Un exemplaire est archivé dans la GED de la coopérative.",
+        "legal": "Signature électronique réalisée par le membre adhérent (articles 1366 et 1367 du Code civil). Ce document et son code de vérification font preuve entre les parties. Un exemplaire est archivé dans la GED de la coopérative.",
         "unsigned": "Document non signé — aperçu avant signature électronique.",
     },
     "en": {
-        "title": "TRIPARTITE MEMBERSHIP FRAMEWORK AGREEMENT ON VOLUME AGGREGATION<br/>AND REFUNDABLE CONTRIBUTORY RETENTION — V1.5",
-        "title_buyer": "TRIPARTITE MEMBERSHIP FRAMEWORK AGREEMENT FOR THE PURCHASE OF PREDEFINED PRODUCT VOLUMES<br/>AND ATTACHMENT TO THE RCR FOGEDOM-SCIC — V2.0",
-        "ref_line": "Reference: {ref} · Identification and signature sheet completed dynamically — generated on {date} UTC · The full French text of the Framework Agreement{attest} is attached hereafter and forms an integral part of this copy. In case of discrepancy, the French version prevails.",
+        "title": "TRIPARTITE ECONOMIC PARTNERSHIP AGREEMENT<br/>FRAMEWORK FOR INTEGRATION AND INTRA-COMMUNITY DISTRIBUTION — OVERSEAS",
+        "title_buyer": "TRIPARTITE ECONOMIC PARTNERSHIP AGREEMENT<br/>FRAMEWORK FOR INTEGRATION AND INTRA-COMMUNITY DISTRIBUTION — OVERSEAS",
+        "ref_line": "Reference: {ref} · Identification and signature sheet completed dynamically — generated on {date} UTC · The full text of the Tripartite Agreement is attached hereafter and forms an integral part of this copy. In case of discrepancy, the French version prevails.",
         "attest": " and the FOGEDOM-SCIC nominative Certificate template",
         "supplier": "3. THE SUPPLIER", "denomination": "Company name", "contact": "Contact",
         "forme": "Legal form", "capital": "Share capital", "siret": "SIRET / SIREN", "rcs": "Trade register (RCS)",
@@ -61,15 +60,16 @@ CONV_I18N = {
         "oscop_body": "RCR target ceiling, FOGEDOM-RCR regulation reference, FOGEDOM-RCR Committee composition, PFH / RCR support and technical annexes (2 to 7): to be completed by O'SCOP in accordance with Article 2 before any nominative Certificate.",
         "esign": "Electronic signature",
         "done_at": "Done at", "on": "On", "for_supplier": "For THE SUPPLIER — Name",
+        "for_buyer": "For THE PROFESSIONAL BUYER — Name",
         "quality": "Title", "mention": "Statement", "mention_val": "\"Read and approved\" — accepted electronically",
         "verif": "Verification code", "ip": "Fingerprint (IP)",
         "legal": "Electronic signature made in accordance with Article 29 of the Framework Agreement (articles 1366 and 1367 of the French Civil Code). This document and its verification code constitute proof between the parties. A copy is archived in the cooperative's document management system.",
         "unsigned": "Unsigned document — preview before electronic signature.",
     },
     "es": {
-        "title": "CONVENIO-MARCO DE ADHESIÓN TRIPARTITO DE AGREGACIÓN DE VOLÚMENES<br/>Y DE RETENCIÓN CONTRIBUTIVA REEMBOLSABLE — V1.5",
-        "title_buyer": "CONVENIO-MARCO DE ADHESIÓN TRIPARTITO DE COMPRA DE VOLÚMENES DE PRODUCTOS PREDEFINIDOS<br/>Y DE VINCULACIÓN A LA RCR FOGEDOM-SCIC — V2.0",
-        "ref_line": "Referencia: {ref} · Ficha de identificación y firma completada dinámicamente — generada el {date} UTC · El texto íntegro en francés del Convenio-marco{attest} se adjunta a continuación y forma parte integrante del presente ejemplar. En caso de discrepancia, prevalece la versión francesa.",
+        "title": "CONVENIO TRIPARTITO DE ASOCIACIÓN ECONÓMICA<br/>MARCO DE INTEGRACIÓN Y DISTRIBUCIÓN INTRACOMUNITARIA — ULTRAMAR",
+        "title_buyer": "CONVENIO TRIPARTITO DE ASOCIACIÓN ECONÓMICA<br/>MARCO DE INTEGRACIÓN Y DISTRIBUCIÓN INTRACOMUNITARIA — ULTRAMAR",
+        "ref_line": "Referencia: {ref} · Ficha de identificación y firma completada dinámicamente — generada el {date} UTC · El texto íntegro del Convenio tripartito se adjunta a continuación y forma parte integrante del presente ejemplar. En caso de discrepancia, prevalece la versión francesa.",
         "attest": " y el modelo de Certificado nominativo FOGEDOM-SCIC",
         "supplier": "3. EL PROVEEDOR", "denomination": "Denominación", "contact": "Contacto",
         "forme": "Forma jurídica", "capital": "Capital social", "siret": "SIRET / SIREN", "rcs": "Registro mercantil (RCS)",
@@ -82,6 +82,7 @@ CONV_I18N = {
         "oscop_body": "Techo objetivo RCR, referencia del reglamento FOGEDOM-RCR, composición del Comité FOGEDOM-RCR, PFH / soporte RCR y anexos técnicos (2 a 7): a completar por O'SCOP conforme al Artículo 2 antes de cualquier Certificado nominativo.",
         "esign": "Firma electrónica",
         "done_at": "Hecho en", "on": "El", "for_supplier": "Por EL PROVEEDOR — Nombre",
+        "for_buyer": "Por EL COMPRADOR PROFESIONAL — Nombre",
         "quality": "Cargo", "mention": "Mención", "mention_val": "«Leído y aprobado» — aceptada electrónicamente",
         "verif": "Código de verificación", "ip": "Huella (IP)",
         "legal": "Firma electrónica realizada conforme al Artículo 29 del Convenio-marco (artículos 1366 y 1367 del Código Civil francés). Este documento y su código de verificación constituyen prueba entre las partes. Un ejemplar queda archivado en la GED de la cooperativa.",
@@ -110,8 +111,7 @@ def _fiche_pages(ob: dict, signature: dict | None) -> bytes:
     tr = CONV_I18N.get(ob.get("locale") or "fr", CONV_I18N["fr"])
     conv = ob.get("convention") or {}
     is_buyer = _is_buyer_template(ob)
-    ref_prefix = "OSC/KDM/ACH" if is_buyer else "OSC/KDM/FOUR"
-    ref = f"{ref_prefix}/CADRE-AGR-RCR-FOGEDOM/{ob['id'][:8].upper()}"
+    ref = f"OSC/KDM/TRI-PARTENARIAT/{ob['id'][:8].upper()}"
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=15 * mm, bottomMargin=13 * mm,
                             leftMargin=17 * mm, rightMargin=17 * mm)
@@ -126,8 +126,8 @@ def _fiche_pages(ob: dict, signature: dict | None) -> bytes:
         ]),
         Paragraph("2. KDMARCHE", _H2),
         _table([
-            [tr["denomination"], "KDMARCHE — marque KDMARCHE PRO (Communityplace B2B ESS)"],
-            [tr["contact"], "contact@objectifscopoutremer.com"],
+            [tr["denomination"], "KDMARCHE SAS — Centrale d'achat gros / demi-gros (CommunityPlace B2B)"],
+            [tr["contact"], "contact@kdmarche.com"],
         ]),
         Paragraph(tr["supplier"], _H2),
         _table([
@@ -144,15 +144,13 @@ def _fiche_pages(ob: dict, signature: dict | None) -> bytes:
             [tr["member_quality"], tr["buyer_val"] if ob.get("member_type") == "buyer" else tr["vendor_val"]],
             [tr["plan"], ob.get("plan_name") or ob.get("plan_slug") or ""],
         ]),
-        Paragraph(tr["oscop_fields"], _H2),
-        Paragraph(tr["oscop_body"], _BODY),
         Paragraph(tr["esign"], _H2),
     ]
     if signature:
         el.append(_table([
             [tr["done_at"], conv.get("lieu_signature") or tr["tbd"]],
             [tr["on"], signature.get("signed_at_display") or ""],
-            [tr["for_supplier"], signature.get("nom") or ""],
+            [(tr["for_buyer"] if is_buyer else tr["for_supplier"]), signature.get("nom") or ""],
             [tr["quality"], signature.get("qualite") or ""],
             [tr["mention"], tr["mention_val"]],
             [tr["verif"], signature.get("verification_code") or ""],
@@ -173,18 +171,12 @@ def _is_buyer_template(ob: dict) -> bool:
 
 
 def build_convention_pdf(ob: dict, signature: dict | None = None) -> bytes:
-    """Fiche remplie + texte intégral du contrat adapté au profil (V1.5 vendeur / V2.0 acheteur + attestation)."""
+    """Fiche d'identification remplie + texte intégral de la convention tripartite (langue du membre)."""
     writer = PdfWriter()
     for page in PdfReader(io.BytesIO(_fiche_pages(ob, signature))).pages:
         writer.add_page(page)
-    if _is_buyer_template(ob):
-        templates = [TEMPLATE_V2_PATH, ATTESTATION_V2_PATH]
-    else:
-        templates = [TEMPLATE_PATH]
-    for path in templates:
-        if os.path.exists(path):
-            for page in PdfReader(path).pages:
-                writer.add_page(page)
+    for page in PdfReader(io.BytesIO(build_tripartite_pages(ob))).pages:
+        writer.add_page(page)
     out = io.BytesIO()
     writer.write(out)
     return out.getvalue()
