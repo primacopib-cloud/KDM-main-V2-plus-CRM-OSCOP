@@ -430,6 +430,8 @@ export default function BuyerSpacePage() {
           </div>
         )}
 
+        <ProReferralShareCard />
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <BuyerTabsNav pendingOrders={stats.pendingOrders} />
