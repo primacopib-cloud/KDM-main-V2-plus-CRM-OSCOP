@@ -3126,3 +3126,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Story verticale : narration_full.mp3 (46,06 s, concat par créneau, zéro chevauchement) incrustée en piste AAC dans lolospot_vertical.mp4 (vidéo copiée sans ré-encodage).
 - NOTE ACCENT : les voix OpenAI sont optimisées anglais → léger accent anglophone en français ; si le rendu ne convient pas, basculer sur ElevenLabs eleven_multilingual_v2 (clé utilisateur requise) — décision utilisateur en attente.
 - Piste regen : supprimer les mp3 de uploads/videos/voice/ et relancer python3 gen_spot_voiceover.py.
+
+## 2026-09-10 — Musique d'ambiance du spot LOLODRIVE
+- Génération CassetteAI/music-generator via fal.ai (FAL_KEY projet, BYOK) : prompt acoustique tropical doux (marimba, ukulélé, percussions légères, sans voix), 46 s, fondu entrée/sortie → uploads/videos/voice/music_bed.mp3 (160 kbps).
+- Story verticale : mix voix off (100 %) + musique (16 %) via amix → narration_music_mix.mp3 incrusté en AAC dans lolospot_vertical.mp4 (gen_spot_music.py).
+- Spot horizontal : LolodriveSpot.jsx — <Audio> musique en boucle (volume 0.16) synchronisé avec mute/pause/fin/fermeture, démarre avec l'activation du son. Vérifié par instrumentation Audio : playOk musique + voix après activation du son. NB debug : les requêtes réseau des éléments média ne sont pas toutes visibles via page.on('request') Playwright — instrumenter window.Audio pour tracer.
+- Regen musique : supprimer uploads/videos/voice/music_bed_raw.wav + music_bed.mp3 et relancer python3 gen_spot_music.py (re-mix + réincruste).

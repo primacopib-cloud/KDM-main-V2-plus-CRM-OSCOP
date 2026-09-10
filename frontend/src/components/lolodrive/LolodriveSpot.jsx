@@ -74,7 +74,23 @@ export const LolodriveSpot = ({ onClose }) => {
   const viewedRef = useRef(false);
   const videoRef = useRef(null);
   const voiceRef = useRef(typeof Audio !== 'undefined' ? new Audio() : null);
+  const musicRef = useRef(null);
   const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Musique d'ambiance en boucle sous la voix off (bas volume, synchronisée pause/mute/fermeture)
+  useEffect(() => {
+    const m = typeof Audio !== 'undefined' ? new Audio('/api/uploads/videos/voice/music_bed.mp3') : null;
+    if (m) { m.loop = true; m.volume = 0.16; }
+    musicRef.current = m;
+    return () => { m?.pause(); voiceRef.current?.pause(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    const m = musicRef.current;
+    if (!m) return;
+    if (muted || paused || done) { m.pause(); return; }
+    m.play().catch(() => {});
+  }, [muted, paused, done]);
 
   // Voix off : démarrage automatique à l'ouverture (le clic « Regarder le spot » est un geste utilisateur) ;
   // si le navigateur bloque l'autoplay, le son reste coupé et le bouton « Activer le son » prend le relais
