@@ -752,11 +752,57 @@ async def get_my_share_code(user: dict = Depends(_need_current_user())):
         existing = {"code": code, "owner_email": email, "percent": 20, "uses": 0, "created_at": _now()}
         await db.pro_share_codes.insert_one(dict(existing))
     base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+    history = [{"email": u.get("email"), "at": u.get("at"), "credits": SHARE_REWARD_CREDITS}
+               for u in (existing.get("used_by") or [])]
+    history.sort(key=lambda h: h.get("at") or "", reverse=True)
     return {"code": existing["code"], "percent": existing.get("percent", 20),
             "uses": int(existing.get("uses") or 0),
             "reward_per_use": SHARE_REWARD_CREDITS,
             "reward_credits_total": int(existing.get("reward_credits_total") or 0),
+            "history": history,
             "share_url": f"{base}/adhesion-vendeur?promo={existing['code']}"}
+
+
+class ShareEmailBody(BaseModel):
+    to_email: EmailStr
+
+
+SHARE_EMAIL_DAILY_LIMIT = 20
+
+
+@purchase_needs_router.post("/pro-referral/share-email")
+async def send_share_email(body: ShareEmailBody, user: dict = Depends(_need_current_user())):
+    """Le parrain envoie son lien -20 % par email à un contact (max 20/jour)."""
+    email = (user.get("email") or "").lower()
+    share = await db.pro_share_codes.find_one({"owner_email": email}, {"_id": 0})
+    if not share:
+        raise HTTPException(status_code=404, detail="Générez d'abord votre lien de parrainage")
+    today = _now()[:10]
+    sent_today = int(share.get("emails_sent_today") or 0) if share.get("emails_sent_date") == today else 0
+    if sent_today >= SHARE_EMAIL_DAILY_LIMIT:
+        raise HTTPException(status_code=429, detail=f"Limite de {SHARE_EMAIL_DAILY_LIMIT} invitations par jour atteinte")
+    to_email = body.to_email.lower()
+    base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+    code = share["code"]
+    sender_name = user.get("contact_name") or user.get("company_name") or email
+    from brevo_service import send_email, _wrap_html
+    await send_email(
+        to_email=to_email, to_name=None,
+        subject=f"🎁 {sender_name} vous offre -20 % sur votre adhésion professionnelle KDMARCHÉ",
+        html_content=_wrap_html("Une invitation de votre contact", (
+            "<p style='font-size:14px;'>Bonjour,</p>"
+            f"<p style='font-size:14px;'><b>{sender_name}</b>, membre professionnel de la coopérative "
+            "KDMARCHÉ × O'SCOP, vous invite à rejoindre la centrale : prix négociés, catalogue B2B "
+            "multi-territoires, règlement à réception et logistique LOGI'SCOP.</p>"
+            + _promo_block(code) + _pro_cta_table(base, code) +
+            "<p style='font-size:12px;color:rgba(243,237,228,0.6);'>Cette invitation vous a été envoyée "
+            f"personnellement par {sender_name} via son espace membre KDMARCHÉ.</p>")),
+        tags=["pro-referral-share-email"])
+    await db.pro_share_codes.update_one(
+        {"code": code},
+        {"$set": {"emails_sent_date": today, "emails_sent_today": sent_today + 1},
+         "$push": {"emails_sent_to": {"email": to_email, "at": _now()}}})
+    return {"ok": True, "sent_to": to_email, "remaining_today": SHARE_EMAIL_DAILY_LIMIT - sent_today - 1}
 
 
 @purchase_needs_router.get("/admin/purchase-needs/stats/csv")

@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Gift, Copy, Users } from 'lucide-react';
+import { Gift, Copy, Users, History, Send, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../services/http';
 
-// Carte de parrainage membre pro : lien -20 % à partager avec ses contacts
+const d10 = (s) => String(s || '').slice(0, 10);
+
+// Carte de parrainage membre pro : lien -20 %, historique des gains, envoi email direct
 export const ProReferralShareCard = () => {
   const [ref, setRef] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/pro-referral/my-code`, { headers: getAuthHeaders(), credentials: 'include' })
@@ -14,8 +19,25 @@ export const ProReferralShareCard = () => {
       .catch(() => {});
   }, []);
 
+  const sendInvite = async () => {
+    if (!inviteEmail.includes('@')) return toast.error('Email invalide');
+    setSending(true);
+    try {
+      const r = await fetch(`${API}/pro-referral/share-email`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ to_email: inviteEmail }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(typeof d.detail === 'string' ? d.detail : 'Erreur');
+      toast.success(`Invitation -20 % envoyée à ${d.sent_to}`);
+      setInviteEmail('');
+    } catch (e) { toast.error(e.message); } finally { setSending(false); }
+  };
+
   if (!ref) return null;
   const waText = `🎁 Rejoignez la coopérative KDMARCHÉ × O'SCOP avec -${ref.percent} % sur votre première adhésion professionnelle grâce à mon lien : ${ref.share_url}`;
+  const history = ref.history || [];
   return (
     <div className="glass-panel rounded-[22px] p-5 mt-6 border border-[#D9B35A]/25" data-testid="pro-referral-card">
       <h3 className="text-sm font-bold text-white m-0 mb-1 flex items-center gap-2">
@@ -47,6 +69,37 @@ export const ProReferralShareCard = () => {
           WhatsApp
         </a>
       </div>
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)}
+          placeholder="email-de-votre-contact@exemple.fr" data-testid="pro-referral-invite-email"
+          className="h-9 flex-1 min-w-[200px] px-3 rounded-lg bg-white/[0.06] border border-white/15 text-white text-[11px] placeholder:text-white/35" />
+        <button type="button" onClick={sendInvite} disabled={sending} data-testid="pro-referral-invite-send"
+          className="inline-flex items-center gap-1.5 h-9 text-[11px] font-bold px-3 rounded-lg bg-[#8CC63E] text-[#1F2A12] hover:brightness-110 transition-[filter] disabled:opacity-50">
+          {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+          Envoyer l'invitation -{ref.percent} %
+        </button>
+      </div>
+      {history.length > 0 && (
+        <div className="mt-3">
+          <button type="button" onClick={() => setShowHistory(!showHistory)} data-testid="pro-referral-history-toggle"
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#E9CF8E]/90 hover:text-[#E9CF8E] transition-colors bg-transparent border-0 p-0 cursor-pointer">
+            <History className="w-3.5 h-3.5" /> Historique de mes gains ({history.length})
+            {showHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+          {showHistory && (
+            <div className="mt-2 rounded-xl bg-white/[0.03] border border-white/10 overflow-hidden" data-testid="pro-referral-history">
+              {history.map((h, idx) => (
+                <div key={`${h.email}-${idx}`} className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] last:border-0"
+                  data-testid={`pro-referral-history-row-${idx}`}>
+                  <span className="text-[11px] text-white/80 truncate">{h.email}</span>
+                  <span className="text-[10px] text-white/45 mx-2 shrink-0">{d10(h.at)}</span>
+                  <span className="text-[11px] font-bold text-[#8CC63E] shrink-0">+{h.credits} crédits</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
