@@ -80,7 +80,7 @@ export default function AdminV2Page() {
     const init = async () => {
       if (!authAPI.isAuthenticated()) {
         toast.error(i18n.t('adm.veuillez_vous_connecter'));
-        navigate('/connexion');
+        navigate('/connexion', { replace: true });
         return;
       }
 

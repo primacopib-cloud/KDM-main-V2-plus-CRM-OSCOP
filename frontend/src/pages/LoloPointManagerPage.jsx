@@ -30,7 +30,7 @@ export default function LoloPointManagerPage() {
 
   useEffect(() => {
     if (!authAPI.isAuthenticated()) {
-      navigate('/connexion');
+      navigate('/connexion', { replace: true });
       return;
     }
     load();

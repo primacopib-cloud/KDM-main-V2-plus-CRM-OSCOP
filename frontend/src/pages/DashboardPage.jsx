@@ -38,7 +38,7 @@ const DashboardPage = () => {
   useEffect(() => {
     const loadUser = async () => {
       if (!authAPI.isAuthenticated()) {
-        navigate('/connexion');
+        navigate('/connexion', { replace: true });
         return;
       }
       
@@ -52,7 +52,7 @@ const DashboardPage = () => {
       } catch (error) {
         console.error('Failed to load user:', error);
         authAPI.logout();
-        navigate('/connexion');
+        navigate('/connexion', { replace: true });
       } finally {
         setIsLoading(false);
       }

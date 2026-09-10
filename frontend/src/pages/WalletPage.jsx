@@ -136,7 +136,7 @@ export default function WalletPage() {
     const init = async () => {
       if (!authAPI.isAuthenticated()) {
         toast.error('Veuillez vous connecter');
-        navigate('/connexion?redirect=/wallet');
+        navigate('/connexion?redirect=/wallet', { replace: true });
         return;
       }
 

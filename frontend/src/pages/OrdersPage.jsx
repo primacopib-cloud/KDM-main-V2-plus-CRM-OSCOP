@@ -79,7 +79,7 @@ export default function OrdersPage() {
     const loadOrders = async () => {
       if (!authAPI.isAuthenticated()) {
         toast.error('Veuillez vous connecter');
-        navigate('/connexion?redirect=/commandes');
+        navigate('/connexion?redirect=/commandes', { replace: true });
         return;
       }
 

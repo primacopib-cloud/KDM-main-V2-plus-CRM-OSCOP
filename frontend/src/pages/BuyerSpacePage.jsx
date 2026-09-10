@@ -78,7 +78,7 @@ export default function BuyerSpacePage() {
     const init = async () => {
       if (!authAPI.isAuthenticated()) {
         toast.error('Veuillez vous connecter');
-        navigate('/connexion?redirect=/espace-acheteur');
+        navigate('/connexion?redirect=/espace-acheteur', { replace: true });
         return;
       }
 

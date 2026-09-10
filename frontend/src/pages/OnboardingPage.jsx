@@ -75,7 +75,7 @@ export default function OnboardingPage() {
         const currentUser = authAPI.getCurrentUser();
         if (!currentUser) {
           toast.error(i18n.t('onboarding.toast_connecter'));
-          navigate('/connexion?redirect=/onboarding');
+          navigate('/connexion?redirect=/onboarding', { replace: true });
           return;
         }
         setUser(currentUser);

@@ -3095,3 +3095,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Fix App.js : ScrollToHash étendu en scroll-to-top à chaque changement de pathname sans hash (prevPath via useRef ; les changements de query string sur la même page ne scrollent pas).
 - Bonus : section CommunityBoard reçoit id="community-board" (n'existait pas) → les ancres #community-board (retour Stripe join, liens partagés) scrollent désormais réellement vers le bloc. Vérifié : scrollY 1932 avec ancre, 0 après navigation /coop-api.
 - NB : déploiement nécessaire pour appliquer en production (bouton « Publier »/Republier).
+
+## 2026-09-10 — Fix bouton « Retour » (boucle de redirection connexion)
+- Problème : sur /connexion?redirect=/espace-acheteur, le bouton « ← Retour » (BackLink) faisait navigate(-1) → page gardée → redirection vers /connexion → boucle, le bouton paraissait inopérant.
+- Cause racine : les gardes de pages privées faisaient navigate('/connexion?...') SANS replace → la page gardée restait dans l'historique.
+- Fix : 12 navigations de garde passées en { replace: true } (BuyerSpacePage, CheckoutPage, OnboardingPage, OrdersPage, WalletPage, AdminPage, AdminPlansPage, AdminV2Page, DashboardPage x2, LoloPointManagerPage, PassSpacePage, StatsPage). Les CTA volontaires vers /connexion (CatalogFiltersNotices, ApiSubscribeCard, ResetPassword) conservent un push normal (retour vers la page d'origine souhaité).
+- Testé : accès /espace-acheteur déconnecté → /connexion?redirect=… → clic Retour → retour accueil sans boucle.

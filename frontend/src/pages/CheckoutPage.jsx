@@ -135,7 +135,7 @@ export default function CheckoutPage() {
     const init = async () => {
       if (!authAPI.isAuthenticated()) {
         toast.error('Veuillez vous connecter');
-        navigate('/connexion?redirect=/checkout');
+        navigate('/connexion?redirect=/checkout', { replace: true });
         return;
       }
 
