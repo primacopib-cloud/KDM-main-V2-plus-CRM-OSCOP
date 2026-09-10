@@ -216,6 +216,66 @@ class RepaymentToggle(BaseModel):
     due_date: str
 
 
+@financing_router.get("/investor/financing-products/{fp_id}/repayment-certificate.pdf")
+async def repayment_certificate(fp_id: str, user: dict = Depends(_investor)):
+    """Attestation PDF de remboursement intégral (réservée à l'investisseur payeur, financement REPAID)."""
+    me = (user.get("email") or "").lower()
+    fp = await db.financing_products.find_one({"id": fp_id, "paid_by": me}, {"_id": 0})
+    if not fp:
+        raise HTTPException(status_code=404, detail="Financement introuvable")
+    if fp.get("repayment_status") != "REPAID":
+        raise HTTPException(status_code=409, detail="Le remboursement intégral n'est pas encore constaté")
+    import io as _io
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.pdfgen import canvas as _canvas
+    buf = _io.BytesIO()
+    c = _canvas.Canvas(buf, pagesize=A4)
+    w, h = A4
+    c.setFillColorRGB(0.16, 0.05, 0.28)
+    c.rect(0, h - 32 * mm, w, 32 * mm, stroke=0, fill=1)
+    c.setFillColorRGB(0.85, 0.7, 0.35)
+    c.setFont("Helvetica-Bold", 17)
+    c.drawString(16 * mm, h - 17 * mm, "O'SCOP — Centrale coopérative")
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica", 10)
+    c.drawString(16 * mm, h - 25 * mm, "Attestation de remboursement intégral — financement investisseur")
+    c.setFillColorRGB(0, 0, 0)
+    c.setFont("Helvetica-Bold", 15)
+    c.drawCentredString(w / 2, h - 55 * mm, "ATTESTATION DE REMBOURSEMENT INTÉGRAL")
+    c.setFont("Helvetica", 11)
+    y = h - 72 * mm
+    schedule = build_repayment_schedule(fp)
+    lines = [
+        "La SCIC SAS OBJECTIF SCOP OUTREMER atteste que le financement suivant a été",
+        "intégralement remboursé à l'investisseur :",
+        "",
+        f"Investisseur : {me}",
+        f"Référence : {fp['reference']} — {fp['name']}",
+        f"Montant financé : {float(fp.get('total_price_eur') or 0):,.2f} €",
+        f"Remboursement : {float(fp.get('repayment_amount_eur') or 0):,.2f} € sur {fp.get('repayment_duration_months')} mois",
+        f"Dernière échéance honorée le : {str(fp.get('repayment_updated_at') or '')[:10]}",
+        "",
+        "Détail des échéances honorées :",
+    ] + [f"   • {s['due_date']} — {s['amount_eur']:,.2f} € ✓" for s in schedule] + [
+        "",
+        f"Fait le {datetime.now(timezone.utc).strftime('%d/%m/%Y')} — vendu et facturé par O'SCOP.",
+    ]
+    for line in lines:
+        c.drawString(20 * mm, y, line)
+        y -= 7 * mm
+    c.setFillColorRGB(0.16, 0.05, 0.28)
+    c.rect(0, 0, w, 16 * mm, stroke=0, fill=1)
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(w / 2, 9 * mm, "SCIC SAS OBJECTIF SCOP OUTREMER — contact@objectifscopoutremer.com · centrale.objectifscopoutremer.com")
+    c.showPage()
+    c.save()
+    from fastapi.responses import Response
+    return Response(content=buf.getvalue(), media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=attestation-remboursement-{fp['reference']}.pdf"})
+
+
 @financing_router.post("/admin/financing-products/{fp_id}/repayments/toggle")
 async def toggle_repayment(fp_id: str, body: RepaymentToggle, admin: dict = Depends(require_admin)):
     """Marque/démarque une échéance « Remboursé » ; statut global REPAID quand tout est honoré (investisseur notifié)."""
@@ -380,6 +440,15 @@ async def financing_products_stats(_: dict = Depends(require_admin)):
         if m:
             monthly_map[m] = round(monthly_map.get(m, 0) + float(i.get("total_price_eur") or 0), 2)
     monthly = [{"month": m, "total_eur": v} for m, v in sorted(monthly_map.items())][-12:]
+    # Trésorerie : remboursements à venir (échéances non honorées) agrégés par mois
+    upcoming_map = {}
+    today = datetime.now(timezone.utc).date().isoformat()
+    for i in paid:
+        for step in build_repayment_schedule(i):
+            if not step["paid"] and step["due_date"] >= today[:10]:
+                m = step["due_date"][:7]
+                upcoming_map[m] = round(upcoming_map.get(m, 0) + step["amount_eur"], 2)
+    upcoming = [{"month": m, "total_eur": v} for m, v in sorted(upcoming_map.items())][:12]
     return {
         "total_financed_eur": total_paid,
         "margin_cumul_eur": margin_cumul,
@@ -388,6 +457,8 @@ async def financing_products_stats(_: dict = Depends(require_admin)):
         "pending_count": sum(1 for i in all_items if i.get("status") == "PENDING_PAYMENT"),
         "top_investors": top,
         "monthly": monthly,
+        "upcoming_repayments": upcoming,
+        "upcoming_repayments_total_eur": round(sum(upcoming_map.values()), 2),
     }
 
 

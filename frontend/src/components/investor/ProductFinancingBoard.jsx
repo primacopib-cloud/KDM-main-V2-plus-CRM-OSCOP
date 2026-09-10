@@ -155,6 +155,21 @@ export const ProductFinancingBoard = () => {
     } catch (e) { toast.error(e.message); }
   };
 
+  const downloadCertificate = async (fp) => {
+    try {
+      const r = await fetch(`${API_URL}/api/investor/financing-products/${fp.id}/repayment-certificate.pdf`,
+        { headers: getAuthHeaders(), credentials: 'include' });
+      if (!r.ok) throw new Error('Téléchargement impossible');
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `attestation-remboursement-${fp.reference}.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast.success(`Attestation ${fp.reference} téléchargée`);
+    } catch (e) { toast.error(e.message); }
+  };
+
   if (!items || items.length === 0) return null;
   const mine = items.filter((fp) => fp.status === 'PAID' && fp.is_mine);
   return (
@@ -238,6 +253,13 @@ export const ProductFinancingBoard = () => {
                 {fp.repayment_status === 'REPAID' && (
                   <span className="px-1.5 py-0.5 rounded-full border font-bold text-[9px] uppercase text-[#8CC63E] bg-[#8CC63E]/15 border-[#8CC63E]/50"
                     data-testid={`my-financed-repaid-${fp.reference}`}>✓ Intégralement remboursé</span>
+                )}
+                {fp.repayment_status === 'REPAID' && (
+                  <button type="button" onClick={() => downloadCertificate(fp)}
+                    data-testid={`my-financed-certificate-${fp.reference}`}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[11px] font-bold text-[#8CC63E] bg-[#8CC63E]/10 border border-[#8CC63E]/40 hover:bg-[#8CC63E]/20 transition-colors">
+                    <Download className="w-3 h-3" /> Attestation PDF
+                  </button>
                 )}
                 <button type="button" onClick={() => downloadInvoice(fp)}
                   data-testid={`my-financed-invoice-${fp.reference}`}

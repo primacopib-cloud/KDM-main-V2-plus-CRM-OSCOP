@@ -257,6 +257,27 @@ export const FinancingProductsPanel = () => {
               </div>
             </div>
           )}
+          {stats.upcoming_repayments?.length > 0 && (
+            <div className="rounded-xl px-3 py-2.5 bg-sky-500/[0.06] border border-sky-400/20 col-span-2 lg:col-span-4" data-testid="fin-treasury-block">
+              <div className="text-[10px] uppercase tracking-wide text-sky-300 mb-2">
+                💶 Trésorerie — remboursements à venir : <b>{eur(stats.upcoming_repayments_total_eur)}</b>
+              </div>
+              <div className="flex items-end gap-2 h-20">
+                {stats.upcoming_repayments.map((m) => {
+                  const max = Math.max(...stats.upcoming_repayments.map((x) => x.total_eur), 1);
+                  return (
+                    <div key={m.month} className="flex-1 flex flex-col items-center gap-1 min-w-0" data-testid={`fin-treasury-${m.month}`}>
+                      <span className="text-[9px] text-sky-300 font-bold whitespace-nowrap">{Number(m.total_eur).toLocaleString('fr-FR')} €</span>
+                      <div className="w-full max-w-[46px] rounded-t-md transition-[height] duration-500"
+                        style={{ height: `${Math.max(8, Math.round((m.total_eur / max) * 52))}px`,
+                          background: 'linear-gradient(180deg, #38BDF8, #0EA5E9)' }} />
+                      <span className="text-[9px] text-white/45">{m.month.slice(5)}/{m.month.slice(2, 4)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
       <form onSubmit={create} className="flex flex-wrap items-center gap-2 mb-4">
@@ -309,6 +330,9 @@ export const FinancingProductsPanel = () => {
             <input type="number" min="0" step="0.1" value={form.logistics_margin_percent}
               onChange={(e) => setForm({ ...form, logistics_margin_percent: e.target.value })}
               placeholder="Marge LOGI'SCOP %" className={`${inputCls} w-36`} data-testid="fin-logistics-margin-input" />
+            <span className="text-[11px] text-sky-300 font-bold" data-testid="fin-logistics-total-preview">
+              {form.logistics_cost_eur ? `= ${eur(logiTotal)} logistique` : ''}
+            </span>
           </>
         )}
         <span className="inline-flex items-center gap-1 text-[11px] text-[#E9CF8E]/80 ml-2">
