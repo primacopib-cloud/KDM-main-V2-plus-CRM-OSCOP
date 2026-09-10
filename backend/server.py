@@ -221,6 +221,10 @@ from routes_catalog_admin import catalog_admin_router, set_catalog_admin_databas
 set_catalog_admin_database(db)
 app.include_router(catalog_admin_router)
 
+from routes_catalog_logistics_export import logistics_export_router, set_logistics_export_database
+set_logistics_export_database(db)
+app.include_router(logistics_export_router)
+
 # Import and include Invoices routes
 from routes_invoices import invoices_router, set_invoices_database
 set_invoices_database(db)

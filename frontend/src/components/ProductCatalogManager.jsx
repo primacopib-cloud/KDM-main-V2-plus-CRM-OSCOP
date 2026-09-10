@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Package, Search, Plus, Trash2, Edit, Rocket, Sparkles,
+  Package, Search, Plus, Trash2, Edit, Rocket, Sparkles, FileDown,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -373,6 +373,29 @@ export default function ProductCatalogManager({ onProductSaved }) {
           <p className="text-sm text-white/50">{products.length} produits</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            className="border-white/10 text-white/80"
+            data-testid="logistics-export-btn"
+            onClick={async () => {
+              try {
+                const r = await fetch(`${API_URL}/api/catalog/admin/logistics-export`, { credentials: 'include' });
+                if (!r.ok) throw new Error();
+                const blob = await r.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'catalogue-logistique.csv';
+                a.click();
+                URL.revokeObjectURL(a.href);
+                toast.success('Export logistique téléchargé');
+              } catch {
+                toast.error("Export impossible");
+              }
+            }}
+          >
+            <FileDown className="w-4 h-4 mr-2" />
+            Export logistique
+          </Button>
           <MarginSettings />
           <TranslateCatalogButton />
           <AiPriceDraftsButton products={products} onDone={fetchProducts} />
