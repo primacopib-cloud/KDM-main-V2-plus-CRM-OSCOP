@@ -1,16 +1,18 @@
 import i18n from '@/i18n';
-import { AlertCircle, Ship, Star, Truck } from 'lucide-react';
+import { AlertCircle, MapPin, Ship, Star, Truck } from 'lucide-react';
 import { tData } from '@/i18n/tData';
 import { Button } from '../ui/button';
 import { INCOTERMS } from '../vendor/vendorConstants';
 import { DELIVERY_TYPES } from '../catalog-manager/SpecializedTabs';
+import { ZONES } from '../catalog-manager/constants';
 import { IncotermAlertBell } from './IncotermAlertBell';
 
-// Rangée de catégories + filtres incoterm/type livraison/note + bandeaux (COD, tarifs adhérents)
+// Rangée de catégories + filtres incoterm/type livraison/zone/note + bandeaux (COD, tarifs adhérents)
 export const CatalogFiltersNotices = ({
   categories, selectedCategory, setSelectedCategory, products, user, navigate,
   selectedIncoterm, setSelectedIncoterm, minRating, setMinRating, sortByRating, setSortByRating,
   selectedDeliveryType, setSelectedDeliveryType,
+  selectedAvailZone, setSelectedAvailZone,
   zoneName, saleFilter, setSaleFilter, financingOnly, setFinancingOnly,
 }) => (
   <>
@@ -125,6 +127,41 @@ export const CatalogFiltersNotices = ({
             }`}
           >
             {dt}
+          </button>
+        ))}
+      </div>
+    )}
+
+    {/* Filtre zone de disponibilité fiche */}
+    {setSelectedAvailZone && (
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1" data-testid="avail-zone-filter-row">
+        <span className="inline-flex items-center gap-1.5 text-xs text-white/50 shrink-0">
+          <MapPin className="w-3.5 h-3.5" />
+          {i18n.t('catalog.zone_dispo', 'Zone de disponibilité')} :
+        </span>
+        <button
+          onClick={() => setSelectedAvailZone('all')}
+          data-testid="avail-zone-filter-all"
+          className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+            selectedAvailZone === 'all'
+              ? 'bg-[#D9B35A]/20 text-[#D9B35A] border border-[#D9B35A]/30'
+              : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
+          }`}
+        >
+          {i18n.t('lolodrive.tous')}
+        </button>
+        {ZONES.map((z) => (
+          <button
+            key={z.code}
+            onClick={() => setSelectedAvailZone(selectedAvailZone === z.code ? 'all' : z.code)}
+            data-testid={`avail-zone-filter-${z.code}`}
+            className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+              selectedAvailZone === z.code
+                ? 'bg-[#D9B35A]/20 text-[#D9B35A] border border-[#D9B35A]/30'
+                : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
+            }`}
+          >
+            {z.name}
           </button>
         ))}
       </div>

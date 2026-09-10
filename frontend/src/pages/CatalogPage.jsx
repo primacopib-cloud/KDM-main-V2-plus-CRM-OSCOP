@@ -90,6 +90,7 @@ export default function CatalogPage() {
   const [financingOnly, setFinancingOnly] = useState(false);
   const [selectedIncoterm, setSelectedIncoterm] = useState('all');
   const [selectedDeliveryType, setSelectedDeliveryType] = useState('all');
+  const [selectedAvailZone, setSelectedAvailZone] = useState('all');
   const [minRating, setMinRating] = useState('all');
   const [sortByRating, setSortByRating] = useState(false);
   const [selectedZone, setSelectedZone] = useState('');
@@ -253,6 +254,7 @@ export default function CatalogPage() {
         if (searchTerm) sp.append('search', searchTerm);
         if (selectedIncoterm && selectedIncoterm !== 'all') sp.append('incoterm', selectedIncoterm);
         if (selectedDeliveryType && selectedDeliveryType !== 'all') sp.append('delivery_type', selectedDeliveryType);
+        if (selectedAvailZone && selectedAvailZone !== 'all') sp.append('availability_zone', selectedAvailZone);
         const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/v2/catalog/products?${sp}`, { credentials: 'omit' });
         setProducts(await r.json());
         return;
@@ -270,6 +272,9 @@ export default function CatalogPage() {
       if (selectedDeliveryType && selectedDeliveryType !== 'all') {
         params.deliveryType = selectedDeliveryType;
       }
+      if (selectedAvailZone && selectedAvailZone !== 'all') {
+        params.availabilityZone = selectedAvailZone;
+      }
       if (minRating !== 'all') {
         params.minRating = minRating;
       }
@@ -282,7 +287,7 @@ export default function CatalogPage() {
     } catch (error) {
       console.error('Error loading products:', error);
     }
-  }, [selectedZone, selectedCategory, searchTerm, selectedIncoterm, selectedDeliveryType, minRating, sortByRating]);
+  }, [selectedZone, selectedCategory, searchTerm, selectedIncoterm, selectedDeliveryType, selectedAvailZone, minRating, sortByRating]);
 
   useEffect(() => {
     if (selectedZone) {
@@ -524,6 +529,8 @@ export default function CatalogPage() {
           setSelectedIncoterm={setSelectedIncoterm}
           selectedDeliveryType={selectedDeliveryType}
           setSelectedDeliveryType={setSelectedDeliveryType}
+          selectedAvailZone={selectedAvailZone}
+          setSelectedAvailZone={setSelectedAvailZone}
           minRating={minRating}
           setMinRating={setMinRating}
           sortByRating={sortByRating}

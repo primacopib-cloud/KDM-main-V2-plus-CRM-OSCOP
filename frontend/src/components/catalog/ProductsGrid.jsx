@@ -300,8 +300,8 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                 <ProductShareButtons product={product} />
               </div>
 
-              {/* Incoterms badges (par zone + champ fiche) */}
-              {((product.incoterms && Object.keys(product.incoterms).length > 0) || product.incoterm) && (
+              {/* Incoterms + type de livraison badges */}
+              {((product.incoterms && Object.keys(product.incoterms).length > 0) || product.incoterm || product.delivery_type) && (
                 <div className="flex flex-wrap gap-1 mb-3" data-testid={`product-incoterms-${product.sku}`}>
                   {[...new Set([
                     ...(product.incoterms ? Object.values(product.incoterms).flat() : []),
@@ -315,6 +315,12 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
                       {code}
                     </span>
                   ))}
+                  {product.delivery_type && (
+                    <span data-testid={`delivery-type-badge-${product.sku}`}
+                      className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                      🚚 {product.delivery_type}
+                    </span>
+                  )}
                 </div>
               )}
               

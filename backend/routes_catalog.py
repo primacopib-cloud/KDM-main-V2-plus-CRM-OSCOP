@@ -231,6 +231,7 @@ async def list_products(
     zone_code: Optional[str] = None,
     incoterm: Optional[str] = None,
     delivery_type: Optional[str] = None,
+    availability_zone: Optional[str] = None,
     min_rating: Optional[float] = None,
     sort: Optional[str] = None,
     skip: int = 0,
@@ -308,6 +309,13 @@ async def list_products(
         query.setdefault("$and", []).append({"$or": [
             {"logistics.delivery_type": delivery_type},
             {"logistics.delivery_type": {"$in": [None, ""]}},
+        ]})
+
+    # Filtre zone de disponibilité fiche (non strict)
+    if availability_zone:
+        query.setdefault("$and", []).append({"$or": [
+            {"logistics.available_zones": availability_zone.upper()},
+            {"logistics.available_zones": {"$in": [None, []]}},
         ]})
     
     # Filtre note minimale (avis adhérents)
