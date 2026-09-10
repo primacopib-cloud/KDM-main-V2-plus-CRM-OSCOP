@@ -18,7 +18,7 @@ MUSIC = f'{OUT}/music_bed.mp3'
 NARRATION = f'{OUT}/narration_full.mp3'
 MIX = f'{OUT}/narration_music_mix.mp3'
 VERT = '/app/backend/uploads/videos/lolospot_vertical.mp4'
-SPOT_DUR = 50.0
+SPOT_DUR = 51.5
 
 PROMPT = ("Soft warm uplifting acoustic advertising background music for a tropical Caribbean grocery "
           "co-op ad: gentle marimba and ukulele melody, light acoustic guitar, subtle soft percussion "

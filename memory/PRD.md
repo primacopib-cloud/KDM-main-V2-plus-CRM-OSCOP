@@ -3149,3 +3149,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Voix off régénérée intégralement (7 clips nova tts-1-hd, texte exact réparti par scène ; chaque clip tient dans son créneau sans atempo) ; narration_full 50,06 s.
 - Story verticale régénérée avec les nouveaux textes + voix + musique rebouclée à 50 s (music_bed en stream_loop avec fondu). Vérifié : 14 scènes horizontales capturées, frames verticales intro/retrait conformes, piste audio présente.
 - NB : déploiement (« Republier ») requis pour la production — l'utilisateur a été notifié que les versions précédentes n'étaient visibles qu'en preview.
+
+## 2026-09-10 — Fix cacophonie audio du spot (doublon de voix + voix rapide)
+- Cause « doublon de voix » : les 5+ clips vidéo IA contiennent des pistes audio (voix synthétiques) ; l'activation du son les démutait en plus de la voix off TTS + musique. Fix : les vidéos restent TOUJOURS muettes (v.muted=true permanent, unmute ne touche plus la vidéo) — le son du spot = voix off + musique uniquement.
+- Cause « voix rapide » : le clip intro (7,15 s) dépassait son créneau de 6,5 s → atempo ~1,13×. Fix : créneau intro porté à 8 s (JSX + vertical + slot TTS), clip régénéré à vitesse naturelle (7,92 s sans atempo). Durée totale spot : 51,5 s (musique rebouclée en conséquence).
+- Régénération chaînée : gen_spot_vertical.py → gen_spot_voiceover.py → gen_spot_music.py. Vérifié par instrumentation Audio : séquence musique → voice_intro → voice_concept → voice_produits en playOk, vidéos muted=true.
+- IMPORTANT (à ne pas reproduire) : toujours vérifier les pistes audio des clips générés par IA avant de les démuter.

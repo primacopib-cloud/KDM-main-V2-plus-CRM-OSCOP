@@ -12,7 +12,7 @@ const IMG = 'https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4ef
 const SCENES = [
   { img: '/images/spot/scene1-paniers.jpg',
     imgMobile: '/images/spot/scene1-paniers.jpg', pos: 'center 82%',
-    duration: 6500, kicker: 'BIENVENUE CHEZ LOLODRIVE BY O’SCOP', title: 'L’ÉPICERIE DE VOTRE TERRITOIRE', sub: 'Le bon, le local et tous les essentiels de votre quotidien.' },
+    duration: 8000, kicker: 'BIENVENUE CHEZ LOLODRIVE BY O’SCOP', title: 'L’ÉPICERIE DE VOTRE TERRITOIRE', sub: 'Le bon, le local et tous les essentiels de votre quotidien.' },
   { img: '/images/spot/scene2-riz.jpg',
     imgMobile: '/images/spot/scene2-riz.jpg', pos: 'center 55%',
     duration: 5500, kicker: 'LE CONCEPT', title: 'EXCLUSIVEMENT PAR LOTS DE TROIS', sub: 'Au meilleur prix coopératif négocié !' },
@@ -152,28 +152,18 @@ export const LolodriveSpot = ({ onClose }) => {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
-  // Synchronise lecture vidéo / pause / son (fondu d'entrée à l'activation du son)
+  // Synchronise lecture vidéo / pause (les clips IA restent TOUJOURS muets : le son = voix off + musique)
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    v.muted = muted;
+    v.muted = true;
     if (paused || done) { v.pause(); return; }
     const p = v.play();
     // Ne replier sur l'image qu'en cas d'erreur média réelle (AbortError transitoire ignoré)
     if (p && p.catch) p.catch(() => { if (v.error) setFailed((f) => ({ ...f, [scene]: true })); });
-  }, [scene, paused, muted, done]);
+  }, [scene, paused, done]);
   const unmute = () => {
     setMuted(false);
-    const v = videoRef.current;
-    if (v) {
-      v.volume = 0;
-      let vol = 0;
-      const iv = setInterval(() => {
-        vol = Math.min(1, vol + 0.12);
-        v.volume = vol;
-        if (vol >= 1) clearInterval(iv);
-      }, 70);
-    }
   };
 
   const s = SCENES[scene];

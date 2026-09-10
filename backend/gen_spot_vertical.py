@@ -16,7 +16,7 @@ W, H = 1240, 2205
 os.makedirs(OUT_DIR, exist_ok=True)
 
 SCENES = [
-    dict(file='a091c41c190351bb90597d3297306fb13e85be328121e0d12a32f327433143a3.jpeg', dur=6.5,
+    dict(file='a091c41c190351bb90597d3297306fb13e85be328121e0d12a32f327433143a3.jpeg', dur=8,
          kicker="BIENVENUE CHEZ LOLODRIVE BY O'SCOP", title=["L'ÉPICERIE DE", "VOTRE TERRITOIRE"], sub="Le bon, le local et tous les essentiels de votre quotidien."),
     dict(file='115eb4dadb3a253b4bb75394a4001db5a35825fb88fc119f3b06e1bb6dccc307.jpeg', dur=5.5,
          kicker='LE CONCEPT', title=['EXCLUSIVEMENT', 'PAR LOTS DE TROIS'], sub='Au meilleur prix coopératif négocié !'),
