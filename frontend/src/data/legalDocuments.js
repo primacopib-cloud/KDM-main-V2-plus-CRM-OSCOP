@@ -3,7 +3,8 @@
 // Template variables are replaced at runtime with actual values
 
 import { legalVariables } from './legal/variables';
-import { cgvKdmarcheContent, cgOscopContent } from './legal/cgv';
+import { cgvKdmarcheContent } from './legal/cgv';
+import { cgOscopContent, mentionsLegalesContent } from './legal/cgu_mentions';
 import { conventionContent, auditComplianceTable, invoiceTemplate } from './legal/convention';
 import { charteESSContent, annexeLogiscopContent } from './legal/ess';
 import { contratTransportLogiscopContent, annexeTourneesESSContent } from './legal/logiscop';
@@ -13,6 +14,7 @@ export {
   legalVariables,
   cgvKdmarcheContent,
   cgOscopContent,
+  mentionsLegalesContent,
   conventionContent,
   auditComplianceTable,
   invoiceTemplate,
@@ -26,6 +28,7 @@ export {
 export const allLegalDocuments = [
   cgvKdmarcheContent,
   cgOscopContent,
+  mentionsLegalesContent,
   conventionContent,
   charteESSContent,
   annexeLogiscopContent,

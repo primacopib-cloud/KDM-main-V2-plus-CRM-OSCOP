@@ -16,6 +16,7 @@ import {
   contratTransportLogiscopContent,
   annexeTourneesESSContent,
   privacyContent,
+  mentionsLegalesContent,
   auditComplianceTable,
   replaceVariables, 
   legalVariables,
@@ -39,6 +40,7 @@ export default function LegalPage() {
     if (docId === 'contrat-transport') return 'transport';
     if (docId === 'annexe-ess-route' || docId === 'annexe-tournees-ess') return 'ess-route';
     if (docId === 'politique-confidentialite') return 'privacy';
+    if (docId === 'mentions-legales') return 'mentions';
     return 'kdmarche';
   };
   
@@ -61,7 +63,8 @@ export default function LegalPage() {
       'logiscop': '/legal/annexe-logiscop',
       'transport': '/legal/contrat-transport',
       'ess-route': '/legal/annexe-ess-route',
-      'privacy': '/legal/politique-confidentialite'
+      'privacy': '/legal/politique-confidentialite',
+      'mentions': '/legal/mentions-legales'
     };
     navigate(routes[value] || '/legal/cgv-kdmarche');
   };
@@ -114,7 +117,15 @@ export default function LegalPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid grid-cols-8 w-full max-w-5xl mx-auto bg-white/[0.04] border border-white/[0.08] p-1 h-auto">
+          <TabsList className="grid grid-cols-9 w-full max-w-5xl mx-auto bg-white/[0.04] border border-white/[0.08] p-1 h-auto">
+            <TabsTrigger
+              value="mentions"
+              className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] flex items-center gap-1 py-2.5 text-xs sm:text-sm"
+              data-testid="tab-mentions-legales"
+            >
+              <Scale className="w-4 h-4" />
+              <span className="hidden lg:inline">Mentions</span><span className="lg:hidden">Ment.</span>
+            </TabsTrigger>
             <TabsTrigger 
               value="kdmarche"
               className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] flex items-center gap-1 py-2.5 text-xs sm:text-sm"
@@ -129,7 +140,7 @@ export default function LegalPage() {
               data-testid="tab-cg-oscop"
             >
               <CreditCard className="w-4 h-4" />
-              <span className="hidden lg:inline">CG</span> O&apos;SCOP
+              <span className="hidden lg:inline">CGU</span> CommunityPlace
             </TabsTrigger>
             <TabsTrigger 
               value="convention"
@@ -200,6 +211,10 @@ export default function LegalPage() {
 
           <TabsContent value="privacy" data-testid="content-privacy">
             <LegalDocument document={privacyContent} />
+          </TabsContent>
+
+          <TabsContent value="mentions" data-testid="content-mentions-legales">
+            <LegalDocument document={mentionsLegalesContent} />
           </TabsContent>
 
           <TabsContent value="logiscop" data-testid="content-logiscop">
