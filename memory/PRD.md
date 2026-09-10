@@ -3132,3 +3132,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Story verticale : mix voix off (100 %) + musique (16 %) via amix → narration_music_mix.mp3 incrusté en AAC dans lolospot_vertical.mp4 (gen_spot_music.py).
 - Spot horizontal : LolodriveSpot.jsx — <Audio> musique en boucle (volume 0.16) synchronisé avec mute/pause/fin/fermeture, démarre avec l'activation du son. Vérifié par instrumentation Audio : playOk musique + voix après activation du son. NB debug : les requêtes réseau des éléments média ne sont pas toutes visibles via page.on('request') Playwright — instrumenter window.Audio pour tracer.
 - Regen musique : supprimer uploads/videos/voice/music_bed_raw.wav + music_bed.mp3 et relancer python3 gen_spot_music.py (re-mix + réincruste).
+
+## 2026-09-10 — Narratif spot : suppression totale des doublons (retour utilisateur)
+- Problèmes signalés : sous-titre « Par lot de 3 — prix coopératif négocié » répété sur les 8 scènes produits, « en ligne » en double titre+sous-titre, « L'équipe LOLODRIVE » répété 2×, désynchronisation voix/visuel (la voix parlait livraison pendant la scène préparation).
+- Correctif narratif final (chaque phrase une seule fois) : Intro « L'épicerie de votre territoire » (produits du terroir) → Concept « Exclusivement par lot de 3 » (meilleur prix coopératif négocié) → 8 produits = nom seul, sans sous-titre (kicker « Tous vos essentiels » sur le 1er uniquement) → « Commandez en ligne » (avec votre PASS, depuis chez vous) → « Vos paniers prêts avec soin » (préparée à la main) → « Livraison ou retrait drive » (c'est vous qui choisissez) → « On vous accueille avec plaisir » (rejoignez la coopérative dès aujourd'hui).
+- Voix off : fragments préparation/retrait échangés pour coller aux visuels (2 clips régénérés), narration_full reconstruite, remixée avec la musique.
+- Story verticale régénérée avec les nouveaux textes + piste voix+musique réincrustée. Vérifié : textes des 14 scènes horizontales capturés sans doublon ; frames verticales (produit = nom seul, final propre).
+- Le badge « LOT ×3 » en haut à gauche reste volontairement présent (filigrane de marque, pas du narratif).

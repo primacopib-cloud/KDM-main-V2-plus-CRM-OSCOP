@@ -21,8 +21,8 @@ FRAGMENTS = [
     ('concept', "Des articles exclusivement accessibles par lot de trois,", 4.0),
     ('produits', "au meilleur prix coopératif négocié.", 20.0),
     ('commande', "Commandez en ligne et en relais, avec votre PASS LOLODRIVE,", 5.0),
-    ('preparation', "et optez pour une livraison ou un retrait drive.", 4.0),
-    ('retrait', "L'équipe LOLODRIVE prépare vos paniers,", 5.0),
+    ('preparation', "L'équipe LOLODRIVE prépare vos paniers,", 4.0),
+    ('retrait', "et optez pour une livraison ou un retrait drive.", 5.0),
     ('final', "et vous accueille avec plaisir !", 4.0),
 ]
 
