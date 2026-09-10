@@ -42,7 +42,7 @@ const AdminPage = () => {
   useEffect(() => {
     const loadData = async () => {
       if (!authAPI.isAuthenticated()) {
-        navigate('/connexion');
+        navigate('/connexion', { replace: true });
         return;
       }
       

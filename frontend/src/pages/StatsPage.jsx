@@ -28,7 +28,7 @@ const StatsPage = () => {
   useEffect(() => {
     const loadStats = async () => {
       if (!authAPI.isAuthenticated()) {
-        navigate('/connexion');
+        navigate('/connexion', { replace: true });
         return;
       }
       

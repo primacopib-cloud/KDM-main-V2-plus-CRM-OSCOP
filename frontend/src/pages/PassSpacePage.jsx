@@ -36,7 +36,7 @@ export default function PassSpacePage() {
 
   useEffect(() => {
     if (!authAPI.isAuthenticated()) {
-      navigate('/connexion');
+      navigate('/connexion', { replace: true });
       return;
     }
     load();

@@ -48,7 +48,7 @@ const AdminPlansPage = () => {
   useEffect(() => {
     const check = async () => {
       if (!authAPI.isAuthenticated()) {
-        navigate('/connexion');
+        navigate('/connexion', { replace: true });
         return;
       }
       try {
