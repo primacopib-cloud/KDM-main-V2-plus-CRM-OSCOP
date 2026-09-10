@@ -676,6 +676,70 @@ async def check_pro_welcome_code(code: str):
     return resp
 
 
+SHARE_REWARD_CREDITS = 50
+
+
+async def handle_pro_conversion(email: str, via: str) -> None:
+    """Marque l'invitation convertie et notifie l'admin par email (une seule fois)."""
+    email = email.lower()
+    inv = await db.communityplace_pro_invitations.find_one(
+        {"email": email, "converted_notified_at": {"$exists": False}}, {"_id": 0})
+    if not inv:
+        return
+    now = _now()
+    await db.communityplace_pro_invitations.update_one(
+        {"email": email}, {"$set": {"converted_at": inv.get("converted_at") or now, "converted_notified_at": now}})
+    try:
+        from brevo_service import send_email, _wrap_html
+        team = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
+        base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
+        await send_email(
+            to_email=team, to_name=None,
+            subject=f"🎉 Conversion CommunityPlace — {email} devient membre professionnel",
+            html_content=_wrap_html("Prospect converti en membre pro", (
+                f"<p style='font-size:14px;'>Bonne nouvelle : <b>{email}</b>, invité après 3 annonces rejointes "
+                f"(déclencheur <b>{inv.get('reference')}</b>, invité le {str(inv.get('invited_at'))[:10]}), "
+                f"vient de devenir <b>membre professionnel</b> ({via}).</p>"
+                f"<p style='font-size:14px;'>Code -20 % : <b>{inv.get('promo_code') or '—'}</b>"
+                f"{' (utilisé)' if inv.get('promo_used_at') else ''} · "
+                f"Relances : J+7 {'✔' if inv.get('reminder1_sent_at') else '—'} / "
+                f"J+14 {'✔' if inv.get('reminder2_sent_at') else '—'} / "
+                f"manuelles ×{int(inv.get('manual_reminders') or 0)}</p>"
+                f"<p style='font-size:13px;'><a href='{base}/superadmin'>Voir le tableau des invitations pro</a></p>")),
+            tags=["pro-invitation-converted"])
+    except Exception as e:
+        logger.warning(f"notification conversion pro failed: {e}")
+
+
+async def reward_share_code_owner(code: str, new_member_email: str) -> None:
+    """Crédite le parrain de 50 crédits à chaque adhésion générée par son lien + email de félicitations."""
+    share = await db.pro_share_codes.find_one({"code": code}, {"_id": 0, "owner_email": 1})
+    if not share:
+        return
+    owner = share["owner_email"]
+    credited = await db.users.update_one({"email": owner}, {"$inc": {"credits": SHARE_REWARD_CREDITS}})
+    if not credited.modified_count:
+        await db.vendors.update_one({"email": owner}, {"$inc": {"credits": SHARE_REWARD_CREDITS}})
+    await db.pro_share_codes.update_one(
+        {"code": code}, {"$inc": {"reward_credits_total": SHARE_REWARD_CREDITS}})
+    try:
+        from brevo_service import send_email, _wrap_html
+        await send_email(
+            to_email=owner, to_name=None,
+            subject=f"🎁 +{SHARE_REWARD_CREDITS} crédits — votre parrainage a généré une adhésion !",
+            html_content=_wrap_html("Merci pour votre parrainage", (
+                "<p style='font-size:14px;'>Bonjour,</p>"
+                f"<p style='font-size:14px;'>Félicitations : <b>{new_member_email}</b> vient d'adhérer à la "
+                f"coopérative grâce à votre lien de parrainage (code <b>{code}</b>).</p>"
+                f"<p style='font-size:15px;'>🎉 <b>+{SHARE_REWARD_CREDITS} crédits</b> viennent d'être ajoutés à votre "
+                "compte KDMARCHÉ.</p>"
+                "<p style='font-size:13px;'>Continuez à partager votre lien : chaque nouvelle adhésion vous "
+                f"rapporte {SHARE_REWARD_CREDITS} crédits supplémentaires.</p>")),
+            tags=["pro-referral-reward"])
+    except Exception as e:
+        logger.warning(f"reward email failed: {e}")
+
+
 @purchase_needs_router.get("/pro-referral/my-code")
 async def get_my_share_code(user: dict = Depends(_need_current_user())):
     """Code de parrainage -20 % du membre professionnel connecté (créé au premier appel)."""
@@ -690,6 +754,8 @@ async def get_my_share_code(user: dict = Depends(_need_current_user())):
     base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"
     return {"code": existing["code"], "percent": existing.get("percent", 20),
             "uses": int(existing.get("uses") or 0),
+            "reward_per_use": SHARE_REWARD_CREDITS,
+            "reward_credits_total": int(existing.get("reward_credits_total") or 0),
             "share_url": f"{base}/adhesion-vendeur?promo={existing['code']}"}
 
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Mail, BadgeCheck, Clock, Send, Loader2, TrendingUp } from 'lucide-react';
+import { Mail, BadgeCheck, Clock, Send, Loader2, TrendingUp, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
@@ -37,14 +37,37 @@ export const ProInvitationsPanel = () => {
   if (!data) return null;
   const invs = data.invitations || [];
   const stats = data.stats || {};
+  const exportCsv = () => {
+    const header = ['Email', 'Invité le', 'Annonce', 'Code -20 %', 'Expire le', 'Code utilisé', 'Relance J+7', 'Relance J+14', 'Relances manuelles', 'Statut'];
+    const lines = invs.map((i) => [
+      i.email, d10(i.invited_at), i.reference, i.promo_code || '', d10(i.promo_expires_at),
+      i.promo_used_at ? 'oui' : 'non', d10(i.reminder1_sent_at), d10(i.reminder2_sent_at),
+      String(i.manual_reminders || 0), i.converted ? 'Membre pro' : 'Prospect']);
+    const csv = '\ufeff' + [header, ...lines].map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'invitations-pro-communityplace.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
   return (
     <div className="glass-panel rounded-[22px] p-5 mt-6" data-testid="pro-invitations-panel">
-      <h3 className="text-sm font-bold text-white m-0 mb-1 flex items-center gap-2">
-        <Mail className="w-4 h-4 text-[#D9B35A]" /> Invitations pro CommunityPlace ({invs.length})
-      </h3>
-      <p className="text-[11px] text-white/50 m-0 mb-3">
-        Participants ayant rejoint 3 annonces payées — invitation -20 % (valable 30 jours), relances J+7 / J+14 et relance manuelle.
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold text-white m-0 mb-1 flex items-center gap-2">
+            <Mail className="w-4 h-4 text-[#D9B35A]" /> Invitations pro CommunityPlace ({invs.length})
+          </h3>
+          <p className="text-[11px] text-white/50 m-0 mb-3">
+            Participants ayant rejoint 3 annonces payées — invitation -20 % (valable 30 jours), relances J+7 / J+14 et relance manuelle.
+          </p>
+        </div>
+        {invs.length > 0 && (
+          <button type="button" onClick={exportCsv} data-testid="pro-invitations-export-csv"
+            className="shrink-0 inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full bg-white/[0.06] text-white/80 border border-white/20 hover:bg-white/[0.12] transition-colors">
+            <FileDown className="w-3.5 h-3.5" /> Exporter CSV
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" data-testid="pro-invitations-stats">
         <div className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2">
           <p className="text-[9.5px] uppercase tracking-wide text-white/45 m-0">Invitations</p>

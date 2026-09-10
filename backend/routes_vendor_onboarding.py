@@ -179,18 +179,24 @@ async def onboarding_status(oid: str):
                         "subscription_status": "active",
                     }})
                 ob["status"] = "PAID"
-                if ob.get("promo_code"):
-                    if ob.get("promo_source") == "share":
-                        await db.pro_share_codes.update_one(
-                            {"code": ob["promo_code"]},
-                            {"$inc": {"uses": 1},
-                             "$push": {"used_by": {"email": ob["email"], "onboarding_id": oid,
-                                                   "at": datetime.now(timezone.utc).isoformat()}}})
-                    else:
-                        await db.communityplace_pro_invitations.update_one(
-                            {"promo_code": ob["promo_code"], "promo_used_at": {"$exists": False}},
-                            {"$set": {"promo_used_at": datetime.now(timezone.utc).isoformat(),
-                                      "promo_used_by_onboarding": oid}})
+                try:
+                    from routes_purchase_needs import handle_pro_conversion, reward_share_code_owner
+                    if ob.get("promo_code"):
+                        if ob.get("promo_source") == "share":
+                            await db.pro_share_codes.update_one(
+                                {"code": ob["promo_code"]},
+                                {"$inc": {"uses": 1},
+                                 "$push": {"used_by": {"email": ob["email"], "onboarding_id": oid,
+                                                       "at": datetime.now(timezone.utc).isoformat()}}})
+                            await reward_share_code_owner(ob["promo_code"], ob["email"])
+                        else:
+                            await db.communityplace_pro_invitations.update_one(
+                                {"promo_code": ob["promo_code"], "promo_used_at": {"$exists": False}},
+                                {"$set": {"promo_used_at": datetime.now(timezone.utc).isoformat(),
+                                          "promo_used_by_onboarding": oid}})
+                    await handle_pro_conversion(ob["email"], "adhésion payée")
+                except Exception as exc:
+                    logger.warning("Post-paiement promo/conversion %s : %s", oid, exc)
                 from vendor_invoice_pdf import issue_adhesion_invoice
                 await issue_adhesion_invoice(db, ob, "adhesion", ext_ref=ob.get("stripe_session_id") or "")
         except Exception as exc:
