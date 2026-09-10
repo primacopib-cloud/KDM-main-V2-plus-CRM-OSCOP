@@ -10,7 +10,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from convention_tripartite import build_tripartite_pages
+from convention_tripartite import build_annex_pages, build_tripartite_pages
 
 VIOLET = colors.HexColor("#451F6B")
 VIOLET_DARK = colors.HexColor("#2A1045")
@@ -177,6 +177,9 @@ def build_convention_pdf(ob: dict, signature: dict | None = None) -> bytes:
         writer.add_page(page)
     for page in PdfReader(io.BytesIO(build_tripartite_pages(ob))).pages:
         writer.add_page(page)
+    if not _is_buyer_template(ob):
+        for page in PdfReader(io.BytesIO(build_annex_pages())).pages:
+            writer.add_page(page)
     out = io.BytesIO()
     writer.write(out)
     return out.getvalue()

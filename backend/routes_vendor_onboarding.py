@@ -304,6 +304,12 @@ async def _post_sign_tasks(oid: str, ob: dict, signature: dict, pdf: bytes, acti
         await send_activation_email({**ob, "id": oid, "signature": signature}, activation_token, pdf)
     except Exception as exc:
         logger.warning("Email activation vendeur %s : %s", oid, exc)
+    if ob.get("member_type") != "buyer":
+        try:
+            from vendor_emails import send_catalog_integration_email
+            await send_catalog_integration_email({**ob, "id": oid})
+        except Exception as exc:
+            logger.warning("Email intégration catalogue fournisseur %s : %s", oid, exc)
 
 
 @vendor_onboarding_router.post("/activate")

@@ -1,0 +1,4 @@
+sku_fournisseur;code_ean;designation_produit;categorie;description;prix_unitaire_ht;taux_tva;quantite_stock;conditionnement;poids_kg;url_image
+KD-MILK-001;3017620422003;Lait UHT Demi-Écrémé 1L x6;Alimentaire > Épicerie;Lait d origine France enrichi en vitamines;5.45;2.1;150;Carton de 6 briques;6.2;https://site.com/images/lait.jpg
+KD-JUICE-005;3250390001234;Jus d Orange Pur Jus 1L x12;Boissons > Jus de fruits;Pur jus d orange sans sucres ajoutes;14.2;2.1;85;Carton de 12 bouteilles;12.8;https://site.com/images/orange.jpg
+KD-RICE-012;3087941234567;Riz Basmati Sac 5kg;Alimentaire > Épicerie;Riz blanc basmati longue conservation;8.9;2.1;300;Sac individuel 5kg;5.0;https://site.com/images/riz.jpg

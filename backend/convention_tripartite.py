@@ -12,7 +12,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 VIOLET = colors.HexColor("#451F6B")
 VIOLET_DARK = colors.HexColor("#2A1045")
@@ -306,5 +306,74 @@ def build_tripartite_pages(ob: dict) -> bytes:
     for col in tr["sig_cols"]:
         el.append(Paragraph(f"• {col.format(third=third)}", _B))
     el.append(Paragraph(tr["version_note"].format(gen=datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')), _META))
+    doc.build(el)
+    return buf.getvalue()
+
+
+_CELL = ParagraphStyle("cell", fontName="Helvetica", fontSize=7.3, leading=9, textColor=colors.HexColor("#2a2233"))
+_CELLB = ParagraphStyle("cellb", fontName="Helvetica-Bold", fontSize=7.3, leading=9, textColor=VIOLET)
+
+ANNEX_COLUMNS = [
+    ("sku_fournisseur", "Texte", "Oui", "Identifiant unique de l'article chez le Fournisseur (sans espace).", "KD-MILK-001"),
+    ("code_ean", "Numérique", "Oui", "Code-barres international du produit (13 chiffres).", "3017620422003"),
+    ("designation_produit", "Texte", "Oui", "Nom commercial clair de l'article (max. 150 caractères).", "Lait UHT Demi-Écrémé 1L x6"),
+    ("categorie", "Texte", "Oui", "Arborescence de la catégorie (séparée par un chevron >).", "Alimentaire > Épicerie"),
+    ("description", "Texte", "Non", "Description détaillée ou caractéristiques techniques.", "Lait d'origine France…"),
+    ("prix_unitaire_ht", "Décimal", "Oui", "Prix de gros facturé à KDMARCHE. Séparateur décimal : point (.)", "5.45"),
+    ("taux_tva", "Décimal", "Oui", "Taux applicable en Guadeloupe (0, 2.1, 8.5).", "2.1"),
+    ("quantite_stock", "Entier", "Oui", "Quantité physique disponible immédiatement au dépôt.", "150"),
+    ("conditionnement", "Texte", "Oui", "Unité minimale de commande (Palette, Carton, Unité).", "Carton de 6 briques"),
+    ("poids_kg", "Décimal", "Non", "Poids brut de l'unité de conditionnement.", "6.20"),
+    ("url_image", "Texte (URL)", "Non", "Lien direct vers la photo du produit (format JPG/PNG public).", "https://site.com"),
+]
+
+
+def build_annex_pages() -> bytes:
+    """Annexe technique : spécifications des flux d'intégration catalogue (V1.0 — septembre 2026)."""
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=15 * mm, bottomMargin=13 * mm,
+                            leftMargin=15 * mm, rightMargin=15 * mm)
+    rows = [[Paragraph(h, _CELLB) for h in ("Colonne", "Type", "Oblig.", "Description / format attendu", "Exemple")]]
+    for c in ANNEX_COLUMNS:
+        rows.append([Paragraph(str(v), _CELL) for v in c])
+    table = Table(rows, colWidths=[33 * mm, 17 * mm, 12 * mm, 76 * mm, 42 * mm])
+    table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#cbb8e0")),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#efe6f8")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8f4fc")]),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING", (0, 0), (-1, -1), 2.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
+        ("LEFTPADDING", (0, 0), (-1, -1), 3.5),
+    ]))
+    el = [
+        Paragraph("ANNEXE TECHNIQUE : SPÉCIFICATIONS DES FLUX D'INTÉGRATION CATALOGUE", _T),
+        Paragraph("Version : 1.0 (Septembre 2026) — Rattachée à : la Convention Tripartite de Partenariat Économique", _T2),
+        Paragraph("1. Généralités et canaux de transmission", _H),
+        Paragraph("Pour assurer l'intégration ou la mise à jour automatique des produits (prix, descriptions, niveaux de stocks) "
+                  "sur la plateforme lacentrale.objectifscopoutremer.com, le Fournisseur doit fournir un fichier structuré selon "
+                  "l'un des deux formats acceptés :<br/>"
+                  "— <b>Format CSV</b> (séparateur : point-virgule « ; », encodage : UTF-8 impératif pour la gestion des accents).<br/>"
+                  "— <b>Format Microsoft Excel</b> (extension .xlsx).<br/><br/>"
+                  "Le fichier peut être déposé automatiquement par le Fournisseur sur le serveur SFTP sécurisé fourni par O'SCOP, "
+                  "ou téléversé manuellement depuis l'espace Fournisseur de la plateforme. La fréquence d'actualisation par défaut "
+                  "est fixée à une fois par jour (24 h).", _B),
+        Paragraph("2. Structure obligatoire du fichier d'échange", _H),
+        Paragraph("Le tableau ci-dessous liste les colonnes (en-têtes) obligatoires que le fichier doit contenir. "
+                  "<b>L'ordre des colonnes doit être strictement respecté.</b>", _B),
+        table,
+        Paragraph("3. Règles de gestion et validation des données", _H),
+        Paragraph("— <b>Gestion des stocks à zéro</b> : si un produit affiche 0 dans la colonne quantite_stock, il passera "
+                  "automatiquement en statut « Rupture de stock » sur la marketplace sans être supprimé, empêchant les Acheteurs de le commander.<br/>"
+                  "— <b>Mise à jour des prix</b> : toute modification de la colonne prix_unitaire_ht est répercutée automatiquement "
+                  "sur la marketplace après validation par le système de tarification structurelle mutualisée de KDMARCHE.<br/>"
+                  "— <b>Gestion des erreurs</b> : si le fichier comporte des caractères spéciaux corrompus (mauvais encodage) ou s'il "
+                  "manque une donnée obligatoire, l'intégration est rejetée. Un e-mail d'erreur automatique contenant le rapport "
+                  "d'anomalie est immédiatement envoyé au contact technique du Fournisseur.", _B),
+        Paragraph("4. Contacts techniques", _H),
+        Paragraph("— Support Plateforme (O'SCOP) : <b>tech@objectifscopoutremer.com</b><br/>"
+                  "— Logistique &amp; Validation (KDMARCHE) : <b>data@kdmarche.com</b>", _B),
+        Paragraph(f"Annexe générée le {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC — version française faisant foi.", _META),
+    ]
     doc.build(el)
     return buf.getvalue()

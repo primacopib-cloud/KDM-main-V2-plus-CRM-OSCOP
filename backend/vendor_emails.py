@@ -405,3 +405,75 @@ async def check_abandoned_onboardings(db):
                 logger.info("Rappel final adhésion abandonnée envoyé à %s", ob["email"])
         except Exception as exc:
             logger.warning("Relance abandon %s : %s", ob.get("id"), exc)
+
+
+CATALOG_ASSETS_DIR = "/app/backend/assets/catalogue"
+
+CATALOG_EMAIL = {
+    "fr": {
+        "subject": "Lancement CommunityPlace (O'SCOP × KDMARCHE) – Intégration de votre catalogue produits",
+        "html": """<p>Madame, Monsieur,</p>
+<p>Dans le cadre de notre partenariat et du déploiement de la plateforme B2B <b>CommunityPlace</b> opérée par la SCIC O'SCOP en collaboration avec KDMARCHE, nous entamons la phase d'intégration automatisée des catalogues produits.</p>
+<p>Cette plateforme permet de digitaliser et d'accélérer la distribution de vos produits auprès de notre réseau d'acheteurs professionnels dans les Outre-mer, tout en s'appuyant sur la gestion logistique de KDMARCHE.</p>
+<p>Pour intégrer ou mettre à jour vos articles sur la marketplace, vous trouverez en pièces jointes :</p>
+<ul>
+<li>L'<b>Annexe Technique</b> détaillant les règles de gestion de nos flux.</li>
+<li>Le <b>fichier modèle</b> (au choix au format .xlsx ou .csv) respectant la structure attendue par notre système informatique.</li>
+</ul>
+<p><b>📋 Procédure pour l'envoi de vos données :</b></p>
+<ol>
+<li><b>Remplir le fichier d'exemple</b> en conservant scrupuleusement l'ordre et le nom des en-têtes de colonnes (les colonnes <code>sku_fournisseur</code>, <code>code_ean</code>, <code>prix_unitaire_ht</code> et <code>quantite_stock</code> sont indispensables).</li>
+<li><b>Déposer votre fichier</b> mis à jour directement sur votre espace Fournisseur sécurisé ou via le serveur SFTP qui vous a été attribué.</li>
+<li>Une <b>synchronisation automatique</b> est configurée toutes les 24 heures pour actualiser vos stocks et vos prix sur la plateforme.</li>
+</ol>
+<p>Nos équipes techniques se tiennent à votre entière disposition pour vous accompagner lors de ce premier dépôt :</p>
+<ul>
+<li>Pour toute question technique sur le fichier ou les accès : <b>tech@objectifscopoutremer.com</b></li>
+<li>Pour la validation commerciale de vos tarifs de gros : <b>data@kdmarche.com</b></li>
+</ul>
+<p>Nous vous remercions pour votre collaboration qui participe au développement d'un circuit de distribution performant et mutualisé pour nos territoires.</p>
+<p>Je vous prie d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées.</p>
+<p><b>L'équipe Direction Réseau</b><br/>O'SCOP &amp; KDMARCHE SAS</p>""",
+    },
+    "en": {
+        "subject": "CommunityPlace launch (O'SCOP × KDMARCHE) – Integrating your product catalogue",
+        "html": """<p>Dear Sir or Madam,</p>
+<p>As part of our partnership and the rollout of the <b>CommunityPlace</b> B2B platform operated by SCIC O'SCOP in collaboration with KDMARCHE, we are starting the automated product catalogue integration phase.</p>
+<p>Attached you will find:</p>
+<ul><li>The <b>Technical Annex</b> detailing our flow management rules (French version prevails).</li>
+<li>The <b>template file</b> (.xlsx or .csv) matching the structure expected by our system.</li></ul>
+<p><b>Procedure:</b> fill in the template keeping the exact column headers and order (<code>sku_fournisseur</code>, <code>code_ean</code>, <code>prix_unitaire_ht</code> and <code>quantite_stock</code> are mandatory), then upload it to your secure Supplier space or via your assigned SFTP server. Automatic synchronisation runs every 24 hours.</p>
+<p>Technical support: <b>tech@objectifscopoutremer.com</b> — Commercial validation: <b>data@kdmarche.com</b></p>
+<p>Kind regards,<br/><b>Network Management Team</b><br/>O'SCOP &amp; KDMARCHE SAS</p>""",
+    },
+    "es": {
+        "subject": "Lanzamiento CommunityPlace (O'SCOP × KDMARCHE) – Integración de su catálogo de productos",
+        "html": """<p>Estimados señores:</p>
+<p>En el marco de nuestra colaboración y del despliegue de la plataforma B2B <b>CommunityPlace</b> operada por la SCIC O'SCOP en colaboración con KDMARCHE, iniciamos la fase de integración automatizada de los catálogos de productos.</p>
+<p>Adjunto encontrará:</p>
+<ul><li>El <b>Anexo Técnico</b> con las reglas de gestión de nuestros flujos (prevalece la versión francesa).</li>
+<li>El <b>archivo modelo</b> (.xlsx o .csv) conforme a la estructura esperada por nuestro sistema.</li></ul>
+<p><b>Procedimiento:</b> complete el archivo modelo respetando el orden y el nombre exacto de las columnas (<code>sku_fournisseur</code>, <code>code_ean</code>, <code>prix_unitaire_ht</code> y <code>quantite_stock</code> son obligatorias), luego súbalo a su espacio Proveedor seguro o mediante el servidor SFTP asignado. La sincronización automática se ejecuta cada 24 horas.</p>
+<p>Soporte técnico: <b>tech@objectifscopoutremer.com</b> — Validación comercial: <b>data@kdmarche.com</b></p>
+<p>Atentamente,<br/><b>Equipo de Dirección de Red</b><br/>O'SCOP &amp; KDMARCHE SAS</p>""",
+    },
+}
+
+
+async def send_catalog_integration_email(ob: dict):
+    """Courriel d'accompagnement fournisseur (annexe technique + modèles xlsx/csv joints) après abonnement."""
+    from brevo_service import send_email
+    from convention_tripartite import build_annex_pages
+    ob = await _with_member_locale(ob)
+    t = CATALOG_EMAIL.get(_locale(ob), CATALOG_EMAIL["fr"])
+    attachments = [{"content": base64.b64encode(build_annex_pages()).decode(),
+                    "name": "annexe-technique-flux-catalogue.pdf"}]
+    for fname in ("modele_catalogue_fournisseur.xlsx", "modele_catalogue_fournisseur.csv"):
+        path = os.path.join(CATALOG_ASSETS_DIR, fname)
+        if os.path.exists(path):
+            with open(path, "rb") as f:
+                attachments.append({"content": base64.b64encode(f.read()).decode(), "name": fname})
+    await send_email(to_email=ob["email"], to_name=ob.get("contact_name") or ob.get("company"),
+                     subject=t["subject"], html_content=t["html"],
+                     tags=["vendor-catalog-integration"], attachments=attachments)
+    await _log_reminder(ob, "catalog_integration")
