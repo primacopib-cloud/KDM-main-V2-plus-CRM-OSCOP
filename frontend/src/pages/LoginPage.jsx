@@ -54,7 +54,8 @@ const LoginPage = () => {
       const u = data?.user;
       const isSuperAdmin = u?.is_admin || ['SUPER_ADMIN', 'ADMIN', 'admin'].includes(u?.role);
       const isVendor = (u?.role || '').toLowerCase() === 'vendor';
-      navigate(next && next.startsWith('/') ? next : (isSuperAdmin ? '/superadmin' : isVendor ? '/vendor' : '/dashboard'));
+      const isInvestor = !!u?.is_investor;
+      navigate(next && next.startsWith('/') ? next : (isSuperAdmin ? '/superadmin' : isVendor ? '/vendor' : isInvestor ? '/espace-investisseur' : '/dashboard'));
     } catch (error) {
       toast.error(error.message || t('auth.invalid_credentials'));
     } finally {

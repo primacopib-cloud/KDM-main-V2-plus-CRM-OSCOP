@@ -43,6 +43,7 @@ class UserResponse(UserBase):
     subscription: str
     credits: int
     is_admin: bool = False
+    is_investor: bool = False
     role: Optional[str] = None
     must_change_password: bool = False
     from_quote_id: Optional[str] = None
