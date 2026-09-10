@@ -114,9 +114,10 @@ export const CountryFlag = ({ countryCode, size = 24 }) => {
   };
   
   return flags[countryCode] || (
-    <svg viewBox="0 0 900 600" width={size} height={size * 0.67} className="inline-block rounded shadow-sm">
-      <rect width="900" height="600" fill="#cccccc"/>
-      <text x="450" y="320" textAnchor="middle" fontSize="200" fill="#666666">{countryCode}</text>
-    </svg>
+    <span style={{ fontSize: size * 0.75, lineHeight: 1 }} className="inline-block">
+      {countryCode && /^[A-Z]{2}$/.test(countryCode)
+        ? String.fromCodePoint(...[...countryCode].map((c) => 127397 + c.charCodeAt(0)))
+        : '🏳️'}
+    </span>
   );
 };

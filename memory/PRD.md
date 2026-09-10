@@ -3155,3 +3155,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Cause « voix rapide » : le clip intro (7,15 s) dépassait son créneau de 6,5 s → atempo ~1,13×. Fix : créneau intro porté à 8 s (JSX + vertical + slot TTS), clip régénéré à vitesse naturelle (7,92 s sans atempo). Durée totale spot : 51,5 s (musique rebouclée en conséquence).
 - Régénération chaînée : gen_spot_vertical.py → gen_spot_voiceover.py → gen_spot_music.py. Vérifié par instrumentation Audio : séquence musique → voice_intro → voice_concept → voice_produits en playOk, vidéos muted=true.
 - IMPORTANT (à ne pas reproduire) : toujours vérifier les pistes audio des clips générés par IA avant de les démuter.
+
+## 2026-09-10 — Fiche produit superadmin : TVA/unité créables, duplication, 208 pays
+- Taux TVA : option « ＋ Créer un taux de TVA… » dans le select (prompt %, validation 0-100, persistance localStorage kdm_custom_tva, affiché « X% (Personnalisé) », taux inconnus des fiches existantes auto-ajoutés). Composant TvaSelect (BasicPricingTabs.jsx).
+- Unité de vente : option « ＋ Créer une unité de vente… » (prompt libre, persistance kdm_custom_units). Composant UnitSelect.
+- Duplication : bouton Copy par ligne (duplicate-product-{id}, ProductRow.jsx) → duplicateProduct (ProductCatalogManager.jsx) ouvre le formulaire pré-rempli en mode création (SKU-COPIE, EAN vidé, nom « (copie) », toast d'info). Testé E2E : 3→4 produits, « Produit créé », copie supprimée après test.
+- Pays d'origine : COUNTRIES passe de 15 à 208 pays (français, tri alphabétique, DOM inclus Guadeloupe/Martinique/Guyane/Réunion/Mayotte) ; CountryFlag fallback = drapeau emoji Unicode depuis le code ISO (les 20 SVG existants restent prioritaires). Vérifié : 208 options avec drapeaux dans le select.

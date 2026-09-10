@@ -1,4 +1,4 @@
-import { Package, Edit, Trash2, Rocket, Sparkles, TrendingUp } from 'lucide-react';
+import { Package, Edit, Trash2, Rocket, Sparkles, TrendingUp, Copy } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { getAuthHeaders } from '../../services/http';
@@ -43,7 +43,7 @@ const FinancingToggle = ({ product }) => {
 };
 
 export const ProductRow = ({
-  product, checked, onToggle, pricingId, suggestPrice, publishProduct, openEditProduct, handleDelete,
+  product, checked, onToggle, pricingId, suggestPrice, publishProduct, openEditProduct, handleDelete, duplicateProduct,
 }) => (
   <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] flex items-center gap-4 hover:bg-white/[0.04] transition-colors">
     <input type="checkbox" checked={checked} onChange={onToggle}
@@ -105,6 +105,10 @@ export const ProductRow = ({
       )}
       <Button size="sm" variant="ghost" onClick={() => openEditProduct(product)} data-testid={`edit-product-${product.id}`} className="text-white/60 hover:text-white">
         <Edit className="w-4 h-4" />
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => duplicateProduct(product)} data-testid={`duplicate-product-${product.id}`}
+        title="Dupliquer la fiche produit" className="text-white/60 hover:text-[#E9CF8E]">
+        <Copy className="w-4 h-4" />
       </Button>
       <Button size="sm" variant="ghost" onClick={() => handleDelete(product.id)} className="text-white/60 hover:text-red-400">
         <Trash2 className="w-4 h-4" />
