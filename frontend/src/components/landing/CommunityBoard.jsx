@@ -280,7 +280,7 @@ export const CommunityBoard = () => {
   );
 
   return (
-    <section className="py-10 px-5" data-testid="community-board">
+    <section id="community-board" className="py-10 px-5" data-testid="community-board">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-lg md:text-lg font-bold m-0 flex items-center gap-2 mb-5" style={{ color: '#F7F2E9' }}>
           <Megaphone className="w-5 h-5 text-[#D9B35A]" /> Offres & demandes de produits

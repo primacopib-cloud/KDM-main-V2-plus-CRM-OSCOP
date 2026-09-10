@@ -3089,3 +3089,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Envoi email direct : POST /api/pro-referral/share-email {to_email} (auth membre pro, limite 20/jour via emails_sent_date/emails_sent_today, journal emails_sent_to) → email Brevo personnalisé au nom du parrain avec bloc code -20 % et CTA. UI : champ + bouton « Envoyer l'invitation -20 % » dans la carte (pro-referral-invite-email / -send). Testé : envoi réel OK (remaining 19), email invalide 422, sans auth 401.
 - BUGFIX : import ProReferralShareCard manquant dans BuyerSpacePage (runtime error écran rouge introduit au lot 2, seul /vendor avait été vérifié) → corrigé, /espace-acheteur validé par screenshot (carte + historique 2 lignes + invitation).
 - Données de test nettoyées (used_by/reward fictifs remis à zéro sur AMI20-817DC6).
+
+## 2026-09-10 — Fix atterrissage « Accéder à l'API » / scroll navigation
+- Problème : clic « Accéder à l'API » (section Accueil, bas de page) → /coop-api s'ouvrait en conservant la position de scroll (atterrissage en bas/milieu de page au lieu du titre « Connectez vos outils à la centrale »).
+- Fix App.js : ScrollToHash étendu en scroll-to-top à chaque changement de pathname sans hash (prevPath via useRef ; les changements de query string sur la même page ne scrollent pas).
+- Bonus : section CommunityBoard reçoit id="community-board" (n'existait pas) → les ancres #community-board (retour Stripe join, liens partagés) scrollent désormais réellement vers le bloc. Vérifié : scrollY 1932 avec ancre, 0 après navigation /coop-api.
+- NB : déploiement nécessaire pour appliquer en production (bouton « Publier »/Republier).
