@@ -1,6 +1,7 @@
 import {
   Tag, Info, CheckCircle2, Ruler, Box, Globe,
 } from 'lucide-react';
+import { useState } from 'react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -13,6 +14,82 @@ import { CountryFlag } from './CountryFlag';
 import { FormSection, TagInput } from './FormInputs';
 import { CategorySelector } from './CategorySelector';
 import { UNITS, TVA_RATES, COUNTRIES, formatPrice } from './constants';
+
+const readCustom = (key) => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } };
+const saveCustom = (key, list) => { try { localStorage.setItem(key, JSON.stringify(list)); } catch { /* plein */ } };
+
+// Sélecteur TVA avec création directe d'un taux personnalisé
+const TvaSelect = ({ formData, handleChange }) => {
+  const [customs, setCustoms] = useState(() => readCustom('kdm_custom_tva'));
+  const all = [...TVA_RATES, ...customs.filter((c) => !TVA_RATES.some((t) => t.value === c.value))];
+  const current = parseFloat(formData.tva_rate);
+  if (!Number.isNaN(current) && !all.some((t) => t.value === current)) {
+    all.push({ value: current, label: `${current}% (Personnalisé)` });
+  }
+  const onChange = (v) => {
+    if (v === '__new__') {
+      const input = window.prompt('Nouveau taux de TVA en % (ex : 8.5)');
+      if (input === null) return;
+      const rate = parseFloat(String(input).replace(',', '.'));
+      if (Number.isNaN(rate) || rate < 0 || rate > 100) { window.alert('Taux invalide (0 à 100).'); return; }
+      const next = [...customs.filter((c) => c.value !== rate), { value: rate, label: `${rate}% (Personnalisé)` }];
+      setCustoms(next);
+      saveCustom('kdm_custom_tva', next);
+      handleChange('tva_rate', rate);
+      return;
+    }
+    handleChange('tva_rate', parseFloat(v));
+  };
+  return (
+    <Select value={String(formData.tva_rate)} onValueChange={onChange}>
+      <SelectTrigger className="mt-1 bg-white/[0.04] border-white/10" data-testid="product-tva-select">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {all.sort((a, b) => a.value - b.value).map((t) => (
+          <SelectItem key={t.value} value={String(t.value)}>{t.label}</SelectItem>
+        ))}
+        <SelectItem value="__new__" data-testid="product-tva-create">＋ Créer un taux de TVA…</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+};
+
+// Sélecteur unité de vente avec création directe d'une unité personnalisée
+const UnitSelect = ({ formData, handleChange }) => {
+  const [customs, setCustoms] = useState(() => readCustom('kdm_custom_units'));
+  const all = [...UNITS, ...customs.filter((c) => !UNITS.some((u) => u.value === c.value))];
+  if (formData.unit_type && !all.some((u) => u.value === formData.unit_type)) {
+    all.push({ value: formData.unit_type, label: formData.unit_type });
+  }
+  const onChange = (v) => {
+    if (v === '__new__') {
+      const input = window.prompt("Nouvelle unité de vente (ex : Botte, Fût 30L, Rouleau)");
+      if (input === null) return;
+      const label = String(input).trim();
+      if (!label) return;
+      const next = [...customs.filter((c) => c.value !== label), { value: label, label }];
+      setCustoms(next);
+      saveCustom('kdm_custom_units', next);
+      handleChange('unit_type', label);
+      return;
+    }
+    handleChange('unit_type', v);
+  };
+  return (
+    <Select value={formData.unit_type} onValueChange={onChange}>
+      <SelectTrigger className="mt-1 bg-white/[0.04] border-white/10" data-testid="product-unit-select">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {all.map((u) => (
+          <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+        ))}
+        <SelectItem value="__new__" data-testid="product-unit-create">＋ Créer une unité de vente…</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+};
 
 export const BasicTab = ({ formData, handleChange }) => (
             <TabsContent value="basic" className="space-y-4">
@@ -254,29 +331,11 @@ export const PricingTab = ({ formData, handleChange }) => (
                   </div>
                   <div>
                     <Label className="text-white/70 text-xs">Taux TVA</Label>
-                    <Select value={String(formData.tva_rate)} onValueChange={(v) => handleChange('tva_rate', parseFloat(v))}>
-                      <SelectTrigger className="mt-1 bg-white/[0.04] border-white/10">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TVA_RATES.map(t => (
-                          <SelectItem key={t.value} value={String(t.value)}>{t.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <TvaSelect formData={formData} handleChange={handleChange} />
                   </div>
                   <div>
                     <Label className="text-white/70 text-xs">Unité de vente</Label>
-                    <Select value={formData.unit_type} onValueChange={(v) => handleChange('unit_type', v)}>
-                      <SelectTrigger className="mt-1 bg-white/[0.04] border-white/10">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {UNITS.map(u => (
-                          <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <UnitSelect formData={formData} handleChange={handleChange} />
                   </div>
                 </div>
                 <div>

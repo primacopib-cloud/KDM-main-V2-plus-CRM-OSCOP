@@ -136,6 +136,20 @@ export default function ProductCatalogManager({ onProductSaved }) {
     setIsFormOpen(true);
   };
 
+  // Duplicate product : ouvre le formulaire pré-rempli en mode création (nouveau SKU)
+  const duplicateProduct = (product) => {
+    openEditProduct(product);
+    setEditingProduct(null);
+    setFormData((f) => ({
+      ...f,
+      id: undefined,
+      sku: `${product.sku || 'REF'}-COPIE`,
+      ean: '',
+      name: `${product.name} (copie)`,
+    }));
+    toast.info('Fiche dupliquée — ajustez le SKU puis enregistrez pour créer le produit.');
+  };
+
   // Save product
   const handleSave = async () => {
     if (!formData.sku || !formData.name) {
@@ -427,7 +441,7 @@ export default function ProductCatalogManager({ onProductSaved }) {
             <ProductRow key={product.id} product={product}
               checked={selected.includes(product.id)} onToggle={() => toggleSelect(product.id)}
               pricingId={pricingId} suggestPrice={suggestPrice} publishProduct={publishProduct}
-              openEditProduct={openEditProduct} handleDelete={handleDelete} />
+              openEditProduct={openEditProduct} handleDelete={handleDelete} duplicateProduct={duplicateProduct} />
           ))
         )}
       </div>
