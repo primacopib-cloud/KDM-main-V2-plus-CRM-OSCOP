@@ -117,7 +117,7 @@ export default function LegalPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid grid-cols-9 w-full max-w-5xl mx-auto bg-white/[0.04] border border-white/[0.08] p-1 h-auto">
+          <TabsList className="flex flex-wrap justify-center w-full max-w-5xl mx-auto bg-white/[0.04] border border-white/[0.08] p-1 h-auto">
             <TabsTrigger
               value="mentions"
               className="data-[state=active]:bg-[#D9B35A]/20 data-[state=active]:text-[#D9B35A] flex items-center gap-1 py-2.5 text-xs sm:text-sm"

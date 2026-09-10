@@ -1,128 +1,66 @@
+// CGV KDMARCHE — texte officiel fourni par l'éditeur (10/09/2026)
+// CG O'SCOP : voir ./cgu_mentions.js (CGU CommunityPlace officielles)
+
 export const cgvKdmarcheContent = {
   id: "cgv-kdmarche",
-  title: "CGV KDMARCHE B2B",
-  subtitle: "Marchandises – EXW – Version consolidée avec clause rémunération",
+  title: "Conditions Générales de Vente (CGV) – KDMARCHE",
+  subtitle: "Marchandises — Gros et demi-gros — Marketplace CommunityPlace",
   version: "{{VERSION}}",
   dateEffet: "{{DATE_EFFET}}",
-  reference: "{{REF_CGV_KDM}}",
+  reference: "CGV-KDM-2026-004",
   entity: "KDMARCHE",
   accentColor: "#D9B35A",
   sections: [
     {
       number: "1",
-      title: "Champ d'application",
-      content: `Les présentes CGV s'appliquent aux ventes de marchandises réalisées par KDMARCHE auprès de clients professionnels disposant d'un accès B2B valide.
+      title: "Champ d'application et Identification du Vendeur",
+      content: `Les présentes Conditions Générales de Vente (CGV) s'appliquent de plein droit à toutes les ventes de marchandises conclues par le Vendeur :
+- **Dénomination sociale** : KDMARCHE E.I
+- **Forme juridique** : E.I
+- **Siège social** : Chemin Symphart Lampecinado, 97170 Petit-Bourg — Morne Bourg
+- **Adresse e-mail de contact** : contact@kdmarche.com
 
-**Identité du vendeur** :
-- **Enseigne** : KDMARCHÉ
-- **Exploitant / vendeur juridique** : {{KDM_LEGAL_NAME}}
-- **SIRET** : {{KDM_SIRET}} — **RCS** : {{KDM_RCS}}
-- **Siège** : {{KDM_ADDRESS}}
-- **Email** : {{KDM_EMAIL}} — **Téléphone** : {{KDM_PHONE}}
-- **TVA intracommunautaire** : {{KDM_TVA}}
-- **Représentant** : {{KDM_REP_NAME}} ({{KDM_REP_TITLE}})
-
-**Hébergeur du site** : {{HOST_NAME}} — {{HOST_ADDRESS}} — SIRET {{HOST_SIRET}} ({{HOST_RCS}}) — Tél. {{HOST_PHONE}}
-
-**Éditeur du site** : {{OSCOP_LEGAL_NAME}} — SIREN {{OSCOP_SIREN}}, {{OSCOP_SIEGE_ADDRESS}} — Directeur de la publication : {{OSCOP_REP_NAME}}, {{OSCOP_REP_TITLE}}.
-
-Cette identité figure sur les bons de commande, bons de livraison et factures. **Chaque offre du catalogue identifie son vendeur juridique et l'émetteur de la facture** (voir article 5 bis — circuits de vente).`
+Les présentes CGV régissent l'activité de vente de gros et demi-gros de KDMARCHE sur la marketplace accessible depuis le sous-domaine lacentrale.objectifscopoutremer.com (ci-après la « Plateforme »). Elles s'adressent principalement aux acheteurs professionnels inscrits (ci-après « l'Acheteur »).`
     },
     {
       number: "2",
-      title: "Accès B2B et zones",
-      content: `Les prix et disponibilités sont déterminés par zone. L'accès à certaines zones peut être conditionné (validation, abonnement actif et droits par zone selon le dispositif).`
+      title: "Produits, Prix structurels et Commandes",
+      content: `- **Offres** : KDMARCHE propose un catalogue de produits de grande consommation (alimentaire, boissons, hygiène, bazar).
+- **Prix mutualisés** : en tant que membre de l'écosystème coopératif des Outre-mer, l'Acheteur bénéficie de tarifs préférentiels dits « prix structurels mutualisés ». Les prix s'entendent Hors Taxes (HT) au départ ou franco de port selon l'Incoterm choisi lors de la validation. La TVA locale s'applique selon les taux en vigueur en Guadeloupe et dans les DROM.
+- **Commandes** : toute commande n'est définitive qu'après validation électronique sur la Plateforme et émission du bon de commande.`
     },
     {
       number: "3",
-      title: "Prix",
-      content: `Les prix sont exprimés HT, déterminés par zone, et peuvent varier selon la disponibilité et la logistique. Les prix dits "jusqu'à –50%" sont des prix structurels B2B issus de l'organisation et non des promotions artificielles.`
+      title: "Facturation et Modalités de paiement",
+      content: `- **Émission de la facture** : conformément aux accords de la Plateforme, KDMARCHE émet directement la facture correspondant aux marchandises commandées. Aucun flux de paiement lié aux marchandises n'est collecté par l'opérateur technique O'SCOP.
+- **Règlement** : sauf accord ou délai de paiement octroyé spécifiquement (type paiement à réception après confirmation électronique), le règlement s'effectue via les moyens de paiement sécurisés proposés par la Plateforme.`
     },
     {
       number: "4",
-      title: "Commande",
-      content: `- Commande via espace B2B ; quantités souvent vendues en lots/palettes selon produits.
-- Validation sous réserve de disponibilité stock et respect des règles de zone.`
+      title: "Livraison et Réception des marchandises",
+      content: `- **Incoterms et Transport** : les conditions de livraison varient selon les options du catalogue (EXW, FOB, CIF, DAP ou DDP).
+- **Transfert des risques** : le transfert des risques s'effectue au moment de la remise des marchandises selon l'Incoterm retenu. L'Acheteur Pro est tenu de vérifier la conformité des produits (quantité, état des palettes/colis) dès la réception et de formuler toute réserve caractérisée de manière électronique ou sur le bon de livraison.`
     },
     {
       number: "5",
-      title: "Livraison, incoterms et zones de disponibilité",
-      content: `**5.1.** Chaque fiche produit précise, lorsqu'ils sont renseignés : le **type de livraison** proposé (livraison standard, express, réfrigérée, sur palette, retrait entrepôt EXW, point relais, fret maritime ou aérien), l'**incoterm** applicable (EXW, FCA, FAS, FOB, CFR, CIF, CPT, CIP, DAP, DPU, DDP — Incoterms® 2020) et les **zones de disponibilité** de l'offre.
-
-**5.2.** Lorsque EXW s'applique, l'acheteur organise l'enlèvement à l'adresse EXW de la zone, selon les créneaux et modalités communiqués. Les risques sont transférés conformément aux règles de l'incoterm indiqué sur la fiche produit.
-
-**5.3.** Une option de livraison LOGI'SCOP peut être proposée en complément de la mise à disposition EXW locale, selon l'annexe CGV LOGI'SCOP (prestation de transport distincte).`
-    },
-    {
-      number: "5 bis",
-      title: "Circuits de vente — identification du vendeur (CLAUSE INTÉGRÉE)",
-      highlight: true,
-      content: `Le catalogue distingue plusieurs circuits de vente, **identifiés sur chaque offre** :
-
-- **Vente partenaire directe** : la vente est conclue avec le partenaire vendeur référencé (KDMARCHÉ / PRIMACOP INTERNATIONAL BUSINESS ou un fournisseur référencé), qui facture et encaisse.
-- **Achat-revente O'SCOP** : sur les offres expressément marquées « Vendu et facturé par O'SCOP », la vente est conclue avec la SCIC SAS OBJECTIF SCOP OUTREMER, régie par les CGV O'SCOP propres à ce circuit (page « CGV O'SCOP »).
-
-Le vendeur juridique, l'émetteur de la facture et le bénéficiaire du paiement sont toujours identifiés **avant la commande** et rappelés sur la facture.`
+      title: "Exclusion du droit de rétractation (Transactions B2B)",
+      content: `Les ventes conclues sur la Plateforme B2B entre professionnels pour les besoins de leur activité n'ouvrent droit à aucun droit de rétractation, conformément aux règles du Code de commerce. Les retours de marchandises ne sont acceptés qu'en cas de défaut avéré de conformité ou de vice caché dûment validé par KDMARCHE.`
     },
     {
       number: "6",
-      title: "Facturation et paiement",
-      content: `Le vendeur identifié sur l'offre émet la facture des marchandises. Le paiement est effectué directement auprès de ce vendeur selon les moyens proposés ({{MOYENS_PAIEMENT}}).
-
-Certains vendeurs peuvent restreindre le règlement à la **carte bancaire uniquement** ; cette mention est affichée sur l'offre concernée avant la commande.
-
-Aucun paiement de marchandises du circuit partenaire n'est encaissé par O'SCOP ; sur le circuit achat-revente, le paiement est encaissé par O'SCOP en qualité de vendeur.`
-    },
-    {
-      number: "6 bis",
-      title: "Rémunération de KDMARCHE (CLAUSE INTÉGRÉE)",
+      title: "Clause de réserve de propriété",
       highlight: true,
-      content: `**KDMARCHE se rémunère exclusivement par la marge commerciale intégrée au prix de vente des marchandises qu'elle vend en qualité de vendeur B2B, conformément aux présentes CGV.**
-
-Cette marge correspond à la différence entre le coût d'acquisition des marchandises (incluant, le cas échéant, les frais logistiques amont, taxes et charges applicables) et le prix de vente facturé à l'acheteur.
-
-**KDMARCHE ne perçoit aucune commission, aucun abonnement, aucun crédit, aucun droit d'accès, ni aucune rémunération liée aux services d'accès, de mutualisation ou d'ingénierie fournis par O'SCOP.**
-
-La rémunération de KDMARCHE n'est ni indexée sur les abonnements O'SCOP, ni sur les crédits O'SCOP, ni sur le volume ou la valeur des services fournis par O'SCOP.
-
-Il n'existe **aucune subvention croisée** entre KDMARCHE et O'SCOP, ni aucun mécanisme de compensation financière visant à financer une réduction de prix des marchandises.`
-    },
-    {
-      number: "6 ter",
-      title: "Règlement à Réception Pro (CLAUSE INTÉGRÉE)",
-      highlight: true,
-      content: `Certaines commandes peuvent, après validation expresse par KDMARCHÉ, bénéficier du dispositif **« Règlement à Réception Pro »**. Ce dispositif permet à l'Acheteur professionnel de commander les marchandises éligibles sans versement préalable d'un acompte sur leur prix.
-
-Le prix devient exigible à la réception effective des marchandises au lieu de livraison convenu, matérialisée par la signature électronique du bon de livraison, la validation d'un code sécurisé ou toute preuve électronique équivalente.
-
-L'Acheteur autorise KDMARCHÉ à déclencher le moyen de paiement enregistré immédiatement après cette confirmation.
-
-En cas de réserve précise, circonstanciée et portée sur le bon de livraison, seule la valeur des marchandises directement concernées peut être temporairement suspendue. La valeur des marchandises reçues sans réserve demeure exigible.
-
-L'accès au dispositif est **personnel, révocable** et subordonné au maintien d'une adhésion O'SCOP active, à la validation préalable de KDMARCHÉ, à l'existence d'un moyen de paiement valide, à l'absence d'incident et à la disponibilité du plafond attribué.
-
-KDMARCHÉ peut réduire, suspendre ou supprimer le plafond en cas d'incident de paiement, de modification de la situation économique de l'Acheteur ou d'utilisation non conforme du dispositif.`
+      content: `KDMARCHE SAS conserve la propriété exclusive des marchandises vendues jusqu'au paiement intégral de leur prix en principal et accessoires. À défaut de paiement à l'échéance, KDMARCHE se réserve le droit de revendiquer et de reprendre les marchandises aux frais et risques de l'Acheteur.`
     },
     {
       number: "7",
-      title: "Retours / Avoirs / Remboursements (B2B)",
-      content: `Les retours sont encadrés B2B : conditions, délais, état produit, preuve d'achat, et conditions particulières liées aux DLC. KDMARCHE peut proposer un avoir ou un remboursement selon la politique applicable.`
+      title: "Propriété intellectuelle",
+      content: `L'utilisation de la marque KDMARCHE, de ses logos, de ses fiches techniques ou de ses photographies de produits sur des canaux externes est strictement interdite sans un accord écrit préalable de KDMARCHE SAS.`
     },
     {
       number: "8",
-      title: "Responsabilité",
-      content: `La responsabilité de KDMARCHE est limitée aux obligations résultant de la vente de marchandises, dans la limite autorisée par la loi.`
-    },
-    {
-      number: "9",
-      title: "Droit applicable",
-      content: `- **Droit applicable** : {{DROIT_APPLICABLE}}.
-- **Juridiction compétente** : {{JURIDICTION}}.`
+      title: "Droit applicable et Attribution de juridiction",
+      content: `Les présentes CGV sont soumises à la loi française. En cas de contestation ou de litige commercial entre professionnels portant sur l'exécution des commandes, la facturation ou la livraison, et à défaut de résolution amiable, compétence exclusive est attribuée au Tribunal de Commerce de Pointe-à-Pitre.`
     }
   ]
 };
-
-// CG O'SCOP remplacées par les CGU CommunityPlace officielles (voir ./cgu_mentions.js) — 10/09/2026
-
-
-// Convention de partenariat KDMARCHE-O'SCOP (Version consolidée avec clause rémunération)
