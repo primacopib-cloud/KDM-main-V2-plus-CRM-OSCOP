@@ -3142,3 +3142,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-09-10 — Bloc Territoires repositionné (accueil, onglet Professionnels)
 - Le carrousel territoires (TerritoryCarousel) était après la section LOLODRIVE ; il s'affiche désormais exclusivement juste avant le bloc « Règlement à Réception Pro » (LandingPage.jsx : déplacé après ServicesBlock). Vérifié : Y territoires 3167 < Y RàR 3890, plus de bloc territoires en bas de page.
+
+## 2026-09-10 — Narratif spot v3 (texte exact utilisateur)
+- Texte final fourni par l'utilisateur appliqué partout : « Bienvenue chez LoloDrive by O'SCOP… » → « LoloDrive : achetez par trois, profitez trois fois plus ! ».
+- Horizontal (LolodriveSpot.jsx) : intro allongée à 6,5 s et concept à 5,5 s pour laisser respirer la voix ; scènes produits = nom seul (kicker « Remplissez votre panier » + « prix vraiment malins » sur la 1re) ; final « ACHETEZ PAR TROIS / Profitez trois fois plus ! ». Durée totale 50 s.
+- Voix off régénérée intégralement (7 clips nova tts-1-hd, texte exact réparti par scène ; chaque clip tient dans son créneau sans atempo) ; narration_full 50,06 s.
+- Story verticale régénérée avec les nouveaux textes + voix + musique rebouclée à 50 s (music_bed en stream_loop avec fondu). Vérifié : 14 scènes horizontales capturées, frames verticales intro/retrait conformes, piste audio présente.
+- NB : déploiement (« Republier ») requis pour la production — l'utilisateur a été notifié que les versions précédentes n'étaient visibles qu'en preview.

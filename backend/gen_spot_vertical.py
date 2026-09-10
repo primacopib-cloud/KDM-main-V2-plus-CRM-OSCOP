@@ -16,11 +16,11 @@ W, H = 1240, 2205
 os.makedirs(OUT_DIR, exist_ok=True)
 
 SCENES = [
-    dict(file='a091c41c190351bb90597d3297306fb13e85be328121e0d12a32f327433143a3.jpeg', dur=4,
-         kicker="LOLODRIVE by O'SCOP", title=["L'ÉPICERIE DE", "VOTRE TERRITOIRE"], sub="Des produits du terroir sélectionnés pour vous."),
-    dict(file='115eb4dadb3a253b4bb75394a4001db5a35825fb88fc119f3b06e1bb6dccc307.jpeg', dur=4,
-         kicker='LE CONCEPT', title=['EXCLUSIVEMENT', 'PAR LOT DE 3'], sub='Au meilleur prix coopératif négocié.'),
-    dict(clip='lolospot_prod_legumes.mp4', dur=2.5, kicker='TOUS VOS ESSENTIELS', title=['LÉGUMES DU SOLEIL'], sub=''),
+    dict(file='a091c41c190351bb90597d3297306fb13e85be328121e0d12a32f327433143a3.jpeg', dur=6.5,
+         kicker="BIENVENUE CHEZ LOLODRIVE BY O'SCOP", title=["L'ÉPICERIE DE", "VOTRE TERRITOIRE"], sub="Le bon, le local et tous les essentiels de votre quotidien."),
+    dict(file='115eb4dadb3a253b4bb75394a4001db5a35825fb88fc119f3b06e1bb6dccc307.jpeg', dur=5.5,
+         kicker='LE CONCEPT', title=['EXCLUSIVEMENT', 'PAR LOTS DE TROIS'], sub='Au meilleur prix coopératif négocié !'),
+    dict(clip='lolospot_prod_legumes.mp4', dur=2.5, kicker='REMPLISSEZ VOTRE PANIER', title=['LÉGUMES DU SOLEIL'], sub='Et profitez de prix vraiment malins !'),
     dict(clip='lolospot_prod_yaourts.mp4', dur=2.5, kicker='', title=['YAOURTS'], sub=''),
     dict(clip='lolospot_prod_pates.mp4', dur=2.5, kicker='', title=['PÂTES'], sub=''),
     dict(clip='lolospot_prod_riz.mp4', dur=2.5, kicker='', title=['RIZ'], sub=''),
@@ -29,13 +29,13 @@ SCENES = [
     dict(clip='lolospot_prod_beurre.mp4', dur=2.5, kicker='', title=['BEURRE'], sub=''),
     dict(clip='lolospot_prod_lait.mp4', dur=2.5, kicker='', title=['LAIT'], sub=''),
     dict(file='3eb7e909af822d8bee4a2945d40a93f4465399b835bbcfcc7a555d57527ac45e.jpeg', dur=5,
-         kicker='AVEC VOTRE PASS LOLODRIVE', title=['COMMANDEZ EN LIGNE'], sub='Depuis chez vous, en quelques clics.'),
+         kicker='AVEC VOTRE PASS LOLODRIVE', title=['COMMANDEZ EN QUELQUES CLICS'], sub='En ligne ou auprès de votre relais.'),
     dict(file='53e97ce3eeb653344afa45510ff5095de03f6370b1efd973b63dc6b4dd2b3ea9.jpeg', dur=4,
-         kicker='VOTRE RELAIS PRÉPARE', title=['VOS PANIERS PRÊTS', 'AVEC SOIN'], sub='Chaque commande préparée à la main.'),
+         kicker='VOTRE RELAIS PRÉPARE', title=['VOTRE PANIER PRÊT', 'AVEC SOIN'], sub="Notre équipe s'occupe de tout."),
     dict(file='e60c1ff0ae184631bc39136afbd62932c14607d478bfb3248910ff67ed5c2791.jpeg', dur=5,
-         kicker='PRÈS DE CHEZ VOUS', title=['LIVRAISON OU', 'RETRAIT DRIVE'], sub="C'est vous qui choisissez à la commande."),
+         kicker="C'EST VOUS QUI CHOISISSEZ", title=['LIVRAISON OU', 'RETRAIT DRIVE'], sub='Près de chez vous.'),
     dict(file='5a23665bd1ac32b48f3c636d27c1ec6d4a4564a6105c1671e4a1c0436b4b8388.jpeg', dur=4,
-         kicker="LOLODRIVE by O'SCOP", title=['ON VOUS ACCUEILLE', 'AVEC PLAISIR'], sub="Rejoignez la coopérative dès aujourd'hui."),
+         kicker="LOLODRIVE by O'SCOP", title=['ACHETEZ PAR TROIS,', 'PROFITEZ 3 FOIS PLUS !'], sub=''),
 ]
 
 f_kicker = ImageFont.truetype(FONT, 44)
