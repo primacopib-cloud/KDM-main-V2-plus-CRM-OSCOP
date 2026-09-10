@@ -149,6 +149,10 @@ class ProductResponse(BaseModel):
     stock_quantity: Optional[int] = None
     # Incoterms par zone : {"GUADELOUPE": ["EXW", "CIF"]}
     incoterms: Optional[dict] = None
+    # Logistique fiche produit (formulaire catalogue)
+    delivery_type: Optional[str] = None
+    incoterm: Optional[str] = None
+    available_zones: List[str] = []
     # Avis adhérents
     rating_avg: Optional[float] = None
     rating_count: int = 0
