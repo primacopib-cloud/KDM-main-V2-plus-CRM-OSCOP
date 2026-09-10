@@ -24,6 +24,8 @@ export const cgvKdmarcheContent = {
 
 **Hébergeur du site** : {{HOST_NAME}} — {{HOST_ADDRESS}} — SIRET {{HOST_SIRET}} ({{HOST_RCS}}) — Tél. {{HOST_PHONE}}
 
+**Éditeur du site** : {{OSCOP_LEGAL_NAME}} — SIREN {{OSCOP_SIREN}}, {{OSCOP_SIEGE_ADDRESS}} — Directeur de la publication : {{OSCOP_REP_NAME}}, {{OSCOP_REP_TITLE}}.
+
 Cette identité figure sur les bons de commande, bons de livraison et factures. **Chaque offre du catalogue identifie son vendeur juridique et l'émetteur de la facture** (voir article 5 bis — circuits de vente).`
     },
     {
@@ -134,12 +136,14 @@ export const cgOscopContent = {
     {
       number: "1",
       title: "Identification de l'Opérateur",
-      content: `**O'SCOP** (ci-après « O'SCOP »)
+      content: `**O'SCOP** (ci-après « O'SCOP ») — Éditeur du site www.objectifscopoutremer.com
 
 - **Dénomination** : {{OSCOP_LEGAL_NAME}}
 - **Forme** : {{OSCOP_FORM}} — **Capital** : {{OSCOP_CAPITAL}}
-- **SIREN/SIRET** : {{OSCOP_SIRET}} — **RCS** : {{OSCOP_RCS}}
-- **Siège** : {{OSCOP_ADDRESS}}
+- **SIREN** : {{OSCOP_SIREN}} — **SIRET (siège)** : {{OSCOP_SIRET}} — **RCS** : {{OSCOP_RCS}}
+- **Siège social** : {{OSCOP_SIEGE_ADDRESS}}
+- **Établissement éditeur** : {{OSCOP_ADDRESS}}
+- **Directeur de la publication** : {{OSCOP_REP_NAME}}, {{OSCOP_REP_TITLE}}
 - **Email** : {{OSCOP_EMAIL}} — **Téléphone** : {{OSCOP_PHONE}}
 - **TVA intracom** : {{OSCOP_TVA}}
 
@@ -295,6 +299,13 @@ Les conditions spécifiques (unités CREDI'SCOP, engagements, échéanciers de r
     },
     {
       number: "15",
+      title: "Propriété intellectuelle",
+      content: `Le site www.objectifscopoutremer.com est la plateforme officielle du dispositif **Communityplace**, la centrale professionnelle multi-territoires dédiée à l'économie sociale ultramarine (Guadeloupe, Martinique, Guyane, La Réunion, Mayotte).
+
+L'ensemble de son contenu (structure, textes, visuels, logos, bases de données, logiciels) est protégé par le droit de la propriété intellectuelle. Toute reproduction, représentation ou diffusion de son contenu, en dehors des outils de vérification d'authenticité intégrés (signatures cryptographiques), est interdite sans autorisation préalable écrite d'O'SCOP.`
+    },
+    {
+      number: "16",
       title: "Droit applicable – Litiges",
       content: `- **Droit applicable** : {{DROIT_APPLICABLE}}.
 - **Tribunal compétent** : {{JURIDICTION_COMPETENTE}} (entre professionnels).`
