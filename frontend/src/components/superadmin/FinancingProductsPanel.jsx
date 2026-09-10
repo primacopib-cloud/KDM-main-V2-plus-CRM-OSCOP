@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Banknote, Plus, Trash2, Pencil, Loader2, Download, TrendingUp, Trophy, Truck, Package, CalendarClock, Save, X } from 'lucide-react';
 import { getAuthHeaders } from '../../services/http';
+import { FinancingCountersign } from './FinancingCountersign';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
@@ -459,6 +460,7 @@ export const FinancingProductsPanel = () => {
                       className="inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold text-sky-300 bg-sky-500/10 border border-sky-400/40 hover:bg-sky-500/20">
                       <CalendarClock className="w-3 h-3" /> Modalités
                     </button>
+                    {fp.status === 'PAID' && <FinancingCountersign fp={fp} onDone={load} />}
                     {fp.status !== 'PAID' && (
                       <>
                         <button type="button" onClick={() => addLogistics(fp)} data-testid={`fin-add-logi-${fp.reference}`}

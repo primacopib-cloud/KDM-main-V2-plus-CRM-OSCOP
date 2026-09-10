@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Banknote, Package, Loader2, BadgeCheck, Download, Truck, Share2, CheckCircle2 } from 'lucide-react';
 import { getAuthHeaders, getSessionToken } from '../../services/http';
+import { FinancingContract } from './FinancingContract';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
@@ -292,6 +293,7 @@ export const ProductFinancingBoard = () => {
                   className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[11px] font-bold text-[#E9CF8E] bg-[#D9B35A]/15 border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25 transition-colors">
                   <Download className="w-3 h-3" /> Facture PDF
                 </button>
+                <FinancingContract fp={fp} />
                 </div>
                 {fp.repayment_schedule?.length > 0 && (
                   <div className="mt-1.5" data-testid={`my-financed-schedule-${fp.reference}`}>
