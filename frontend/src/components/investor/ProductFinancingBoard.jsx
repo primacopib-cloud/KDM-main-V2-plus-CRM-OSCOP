@@ -229,16 +229,41 @@ export const ProductFinancingBoard = () => {
           </h3>
           <div className="space-y-1.5">
             {mine.map((fp) => (
-              <div key={fp.id} className="flex items-center gap-2 flex-wrap rounded-[10px] px-3 py-2 bg-white/[0.02] border border-white/[0.06] text-[12px] text-white/70"
+              <div key={fp.id} className="rounded-[10px] px-3 py-2 bg-white/[0.02] border border-white/[0.06] text-[12px] text-white/70"
                 data-testid={`my-financed-${fp.reference}`}>
+                <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-white">{fp.reference} · {fp.name}</span>
                 <span className="text-white/45">payé le {String(fp.paid_at || '').slice(0, 10)}</span>
                 <span className="font-mono text-[#8CC63E] font-bold">{eur(fp.total_price_eur)}</span>
+                {fp.repayment_status === 'REPAID' && (
+                  <span className="px-1.5 py-0.5 rounded-full border font-bold text-[9px] uppercase text-[#8CC63E] bg-[#8CC63E]/15 border-[#8CC63E]/50"
+                    data-testid={`my-financed-repaid-${fp.reference}`}>✓ Intégralement remboursé</span>
+                )}
                 <button type="button" onClick={() => downloadInvoice(fp)}
                   data-testid={`my-financed-invoice-${fp.reference}`}
                   className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[11px] font-bold text-[#E9CF8E] bg-[#D9B35A]/15 border border-[#D9B35A]/40 hover:bg-[#D9B35A]/25 transition-colors">
                   <Download className="w-3 h-3" /> Facture PDF
                 </button>
+                </div>
+                {fp.repayment_schedule?.length > 0 && (
+                  <div className="mt-1.5" data-testid={`my-financed-schedule-${fp.reference}`}>
+                    <p className="m-0 mb-1 text-[10px] text-sky-200/80">
+                      💶 Échéancier de remboursement — {eur(fp.repayment_amount_eur)} sur {fp.repayment_duration_months} mois
+                      {' '}· {fp.repayment_schedule.filter((s) => s.paid).length}/{fp.repayment_schedule.length} échéance(s) honorée(s)
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {fp.repayment_schedule.map((s) => (
+                        <span key={s.due_date} data-testid={`my-financed-step-${fp.reference}-${s.due_date}`}
+                          className={`px-2 py-1 rounded-md border text-[9.5px] font-semibold ${
+                            s.paid
+                              ? 'text-[#8CC63E] bg-[#8CC63E]/15 border-[#8CC63E]/50'
+                              : 'text-white/50 bg-white/[0.04] border-white/15'}`}>
+                          {new Date(s.due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })} · {eur(s.amount_eur)} {s.paid ? '✓ remboursé' : 'à venir'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

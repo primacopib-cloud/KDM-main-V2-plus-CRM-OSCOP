@@ -174,6 +174,21 @@ export const FinancingProductsPanel = () => {
     toast.success('Export CSV des financements téléchargé');
   };
 
+  const toggleRepayment = async (fp, dueDate) => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/financing-products/${fp.id}/repayments/toggle`, {
+        method: 'POST', credentials: 'include', headers,
+        body: JSON.stringify({ due_date: dueDate }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      toast.success(d.repayment_status === 'REPAID'
+        ? `${fp.reference} intégralement remboursé — investisseur notifié 🎉`
+        : 'Échéancier mis à jour');
+      load();
+    } catch (err) { toast.error(err.message); }
+  };
+
   const inputCls = 'h-9 px-2.5 rounded-lg bg-white/[0.06] border border-white/15 text-white text-xs placeholder:text-white/35';
 
   return (
@@ -391,7 +406,26 @@ export const FinancingProductsPanel = () => {
                     💶 Remboursement investisseur : <b>{fp.repayment_amount_eur ? eur(fp.repayment_amount_eur) : '—'}</b>
                     {fp.repayment_duration_months ? ` sur ${fp.repayment_duration_months} mois` : ''}
                     {fp.repayment_date ? ` — échéance ${new Date(fp.repayment_date).toLocaleDateString('fr-FR')}` : ''}
+                    {fp.repayment_status === 'REPAID' && (
+                      <span className="ml-2 px-1.5 py-0.5 rounded-full border font-bold text-[9px] uppercase text-[#8CC63E] bg-[#8CC63E]/15 border-[#8CC63E]/50"
+                        data-testid={`fin-repaid-badge-${fp.reference}`}>✓ Remboursé</span>
+                    )}
                   </p>
+                )}
+                {fp.repayment_schedule?.length > 0 && repayFor !== fp.id && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5" data-testid={`fin-schedule-${fp.reference}`}>
+                    {fp.repayment_schedule.map((s) => (
+                      <button key={s.due_date} type="button" onClick={() => toggleRepayment(fp, s.due_date)}
+                        title={s.paid ? 'Cliquez pour annuler le remboursement de cette échéance' : 'Cliquez pour marquer cette échéance remboursée'}
+                        data-testid={`fin-schedule-step-${fp.reference}-${s.due_date}`}
+                        className={`px-2 py-1 rounded-md border text-[9.5px] font-semibold transition-colors ${
+                          s.paid
+                            ? 'text-[#8CC63E] bg-[#8CC63E]/15 border-[#8CC63E]/50'
+                            : 'text-white/55 bg-white/[0.04] border-white/15 hover:border-sky-400/50 hover:text-sky-300'}`}>
+                        {new Date(s.due_date).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })} · {eur(s.amount_eur)} {s.paid ? '✓' : ''}
+                      </button>
+                    ))}
+                  </div>
                 )}
                 {repayFor === fp.id && (
                   <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-sky-500/[0.07] border border-sky-400/25 p-2"
