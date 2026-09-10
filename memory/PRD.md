@@ -3174,3 +3174,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Statut « Remboursé » cliquable ADMIN : POST /admin/financing-products/{id}/repayments/toggle {due_date} (toggle, repayments_done, statut IN_PROGRESS/REPAID) ; à la dernière échéance → email Brevo automatique à l'investisseur « Remboursement intégral ». UI : échéances cliquables sous chaque ligne (fin-schedule-step-{ref}-{date}) + badge Remboursé.
 - Alerte J-7 : repayment_alerts.py (run_repayment_alerts, branché au scheduler 6 h) — email admin QUOTE_NOTIFY_EMAIL pour chaque échéance non honorée à ≤7 jours, idempotent via repayment_alerts_sent. Testé : 1 alerte à J+5, 2e run = 0.
 - Testé curl complet : échéancier exact, toggle→IN_PROGRESS→REPAID, vue investisseur avec flags paid, alerte J-7 idempotente. UI validée par screenshot. Modalités de démo laissées sur le produit TEST-HIST (cohérentes avec la démo).
+
+## 2026-09-10 — Lot 4 financement : aperçu logi, attestation PDF, trésorerie
+- Aperçu montant logistique avec marge dans le formulaire d'inscription : « = X € logistique » (fin-logistics-total-preview) à côté des champs coût/marge, comme le total produit.
+- Attestation PDF de remboursement intégral : GET /api/investor/financing-products/{id}/repayment-certificate.pdf (réservée au payeur, 409 tant que non REPAID ; reportlab, échéances détaillées, en-tête O'SCOP). Bouton « Attestation PDF » vert dans ProductFinancingBoard quand REPAID. Testé : 409 avant, 200 PDF valide (%PDF-1.3) après REPAID complet.
+- Tableau trésorerie admin : stats renvoient upcoming_repayments (échéances non honorées à venir agrégées par mois, 12 max) + upcoming_repayments_total_eur ; bloc bleu « 💶 Trésorerie — remboursements à venir » avec barres mensuelles (fin-treasury-block). Testé : nov 183,33 + déc 183,34 = 366,67 €.
+- Produit démo TEST-HIST restauré à l'état 1/3 échéances honorées (IN_PROGRESS).
