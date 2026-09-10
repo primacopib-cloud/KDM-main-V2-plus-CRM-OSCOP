@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
@@ -105,8 +105,14 @@ const isCustomDomain = !PLATFORM_HOST_SUFFIXES.some(
 
 const ScrollToHash = () => {
   const location = useLocation();
+  const prevPath = useRef(location.pathname);
   useEffect(() => {
-    if (!location.hash) return undefined;
+    if (!location.hash) {
+      if (prevPath.current !== location.pathname) window.scrollTo(0, 0);
+      prevPath.current = location.pathname;
+      return undefined;
+    }
+    prevPath.current = location.pathname;
     const id = location.hash.slice(1);
     let tries = 0;
     const t = setInterval(() => {
