@@ -22,6 +22,8 @@ export const cgvKdmarcheContent = {
 - **TVA intracommunautaire** : {{KDM_TVA}}
 - **Représentant** : {{KDM_REP_NAME}} ({{KDM_REP_TITLE}})
 
+**Hébergeur du site** : {{HOST_NAME}} — {{HOST_ADDRESS}} — SIRET {{HOST_SIRET}} ({{HOST_RCS}}) — Tél. {{HOST_PHONE}}
+
 Cette identité figure sur les bons de commande, bons de livraison et factures. **Chaque offre du catalogue identifie son vendeur juridique et l'émetteur de la facture** (voir article 5 bis — circuits de vente).`
     },
     {
@@ -138,8 +140,10 @@ export const cgOscopContent = {
 - **Forme** : {{OSCOP_FORM}} — **Capital** : {{OSCOP_CAPITAL}}
 - **SIREN/SIRET** : {{OSCOP_SIRET}} — **RCS** : {{OSCOP_RCS}}
 - **Siège** : {{OSCOP_ADDRESS}}
-- **Email** : {{OSCOP_EMAIL}}
-- **TVA intracom** : {{OSCOP_TVA}}`
+- **Email** : {{OSCOP_EMAIL}} — **Téléphone** : {{OSCOP_PHONE}}
+- **TVA intracom** : {{OSCOP_TVA}}
+
+**Hébergeur du site** : {{HOST_NAME}} — {{HOST_ADDRESS}} — SIRET {{HOST_SIRET}} ({{HOST_RCS}}) — Tél. {{HOST_PHONE}}`
     },
     {
       number: "2",

@@ -17,7 +17,9 @@ export const privacyContent = {
 - **SCIC SAS OBJECTIF SCOP OUTREMER (O'SCOP)** — SIRET {{OSCOP_SIRET}}, {{OSCOP_ADDRESS}} — pour les services d'accès, abonnements, CommunityPlace, espace investisseurs et services coopératifs.
 - **PRIMACOP INTERNATIONAL BUSINESS (KDMARCHÉ)** — SIRET {{KDM_SIRET}}, {{KDM_ADDRESS}} — pour les ventes de marchandises du circuit partenaire (commandes, facturation, livraison).
 
-Contact vie privée : {{OSCOP_EMAIL}} (délégué à la protection des données : à compléter).`
+Contact vie privée : {{OSCOP_EMAIL}} (délégué à la protection des données : à compléter).
+
+**Hébergeur du site** : {{HOST_NAME}} — {{HOST_ADDRESS}} — SIRET {{HOST_SIRET}} ({{HOST_RCS}}) — Tél. {{HOST_PHONE}}.`
     },
     {
       number: "2",
