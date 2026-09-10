@@ -174,6 +174,26 @@ export const FinancingProductsPanel = () => {
     toast.success('Export CSV des financements téléchargé');
   };
 
+  const addLogistics = async (fp) => {
+    const cost = window.prompt(`Coût logistique LOGI'SCOP (€) pour ${fp.reference} :`, fp.logistics_cost_eur || '');
+    if (cost === null) return;
+    const margin = window.prompt("Marge LOGI'SCOP (%) :", fp.logistics_margin_percent ?? '');
+    if (margin === null) return;
+    const c = parseFloat(String(cost).replace(',', '.'));
+    const m = parseFloat(String(margin).replace(',', '.')) || 0;
+    if (Number.isNaN(c) || c <= 0) { toast.error('Coût logistique invalide'); return; }
+    try {
+      const res = await fetch(`${API_URL}/api/admin/financing-products/${fp.id}`, {
+        method: 'PUT', credentials: 'include', headers,
+        body: JSON.stringify({ logistics_cost_eur: c, logistics_margin_percent: m }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      toast.success(`Logistique inscrite au financement — total ${eur(d.total_price_eur)}`);
+      load();
+    } catch (err) { toast.error(err.message); }
+  };
+
   const toggleRepayment = async (fp, dueDate) => {
     try {
       const res = await fetch(`${API_URL}/api/admin/financing-products/${fp.id}/repayments/toggle`, {
@@ -259,8 +279,25 @@ export const FinancingProductsPanel = () => {
           )}
           {stats.upcoming_repayments?.length > 0 && (
             <div className="rounded-xl px-3 py-2.5 bg-sky-500/[0.06] border border-sky-400/20 col-span-2 lg:col-span-4" data-testid="fin-treasury-block">
-              <div className="text-[10px] uppercase tracking-wide text-sky-300 mb-2">
-                💶 Trésorerie — remboursements à venir : <b>{eur(stats.upcoming_repayments_total_eur)}</b>
+              <div className="text-[10px] uppercase tracking-wide text-sky-300 mb-2 flex items-center justify-between">
+                <span>💶 Trésorerie — remboursements à venir : <b>{eur(stats.upcoming_repayments_total_eur)}</b></span>
+                <button type="button" data-testid="fin-treasury-csv"
+                  onClick={async () => {
+                    try {
+                      const r = await fetch(`${API_URL}/api/admin/financing-products/treasury.csv`, { headers: getAuthHeaders(), credentials: 'include' });
+                      if (!r.ok) throw new Error('Export impossible');
+                      const blob = await r.blob();
+                      const a = document.createElement('a');
+                      a.href = URL.createObjectURL(blob);
+                      a.download = 'tresorerie-remboursements.csv';
+                      a.click();
+                      URL.revokeObjectURL(a.href);
+                      toast.success('Export trésorerie téléchargé');
+                    } catch (err) { toast.error(err.message); }
+                  }}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full font-bold text-[10px] normal-case tracking-normal text-sky-200 bg-sky-500/15 border border-sky-400/40 hover:bg-sky-500/25">
+                  <Download className="w-3 h-3" /> CSV comptable
+                </button>
               </div>
               <div className="flex items-end gap-2 h-20">
                 {stats.upcoming_repayments.map((m) => {
@@ -412,6 +449,11 @@ export const FinancingProductsPanel = () => {
                     </button>
                     {fp.status !== 'PAID' && (
                       <>
+                        <button type="button" onClick={() => addLogistics(fp)} data-testid={`fin-add-logi-${fp.reference}`}
+                          title="Inscrire l'option logistique LOGI'SCOP (coût + marge) au financement"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold text-sky-300 bg-sky-500/10 border border-sky-400/40 hover:bg-sky-500/20">
+                          <Truck className="w-3 h-3" /> {fp.logistics_cost_eur > 0 ? 'Logistique' : '+ Logistique'}
+                        </button>
                         <button type="button" onClick={() => editMargin(fp)} data-testid={`fin-edit-${fp.reference}`}
                           title="Modifier la marge bénéficiaire"
                           className="inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold text-[#E9CF8E] bg-white/[0.05] border border-[#D9B35A]/30 hover:bg-white/[0.1]">

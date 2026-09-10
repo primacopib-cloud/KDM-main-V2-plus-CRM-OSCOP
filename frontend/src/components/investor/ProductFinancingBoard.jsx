@@ -170,6 +170,21 @@ export const ProductFinancingBoard = () => {
     } catch (e) { toast.error(e.message); }
   };
 
+  const downloadStatement = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/investor/financing-products/annual-statement.pdf`,
+        { headers: getAuthHeaders(), credentials: 'include' });
+      if (!r.ok) throw new Error('Téléchargement impossible');
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `releve-investisseur-${new Date().getFullYear()}.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast.success('Relevé annuel téléchargé');
+    } catch (e) { toast.error(e.message); }
+  };
+
   if (!items || items.length === 0) return null;
   const mine = items.filter((fp) => fp.status === 'PAID' && fp.is_mine);
   return (
@@ -241,6 +256,10 @@ export const ProductFinancingBoard = () => {
             <span className="text-[11px] font-semibold text-[#8CC63E]">
               — total {eur(mine.reduce((s, fp) => s + Number(fp.total_price_eur || 0), 0))}
             </span>
+            <button type="button" onClick={downloadStatement} data-testid="my-financed-annual-statement"
+              className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[11px] font-bold text-sky-200 bg-sky-500/15 border border-sky-400/40 hover:bg-sky-500/25 transition-colors">
+              <Download className="w-3 h-3" /> Relevé annuel PDF
+            </button>
           </h3>
           <div className="space-y-1.5">
             {mine.map((fp) => (

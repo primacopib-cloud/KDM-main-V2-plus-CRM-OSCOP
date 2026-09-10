@@ -462,6 +462,101 @@ async def financing_products_stats(_: dict = Depends(require_admin)):
     }
 
 
+@financing_router.get("/admin/financing-products/treasury.csv")
+async def treasury_csv(_: dict = Depends(require_admin)):
+    """Export CSV comptable des échéances de remboursement non honorées (à venir et en retard)."""
+    import csv as _csv
+    import io as _io
+    from fastapi.responses import Response
+    today = datetime.now(timezone.utc).date().isoformat()
+    buf = _io.StringIO()
+    wtr = _csv.writer(buf, delimiter=';')
+    wtr.writerow(["Mois", "Échéance", "Référence", "Produit", "Investisseur", "Montant €", "Statut"])
+    rows = []
+    async for fp in db.financing_products.find({"status": "PAID", "repayment_date": {"$ne": None}}, {"_id": 0}):
+        for s in build_repayment_schedule(fp):
+            if s["paid"]:
+                continue
+            rows.append([s["due_date"][:7], s["due_date"], fp["reference"], fp["name"],
+                         fp.get("paid_by") or "", f"{s['amount_eur']:.2f}".replace('.', ','),
+                         "En retard" if s["due_date"] < today else "À venir"])
+    for r in sorted(rows, key=lambda x: x[1]):
+        wtr.writerow(r)
+    return Response(content='\ufeff' + buf.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": "attachment; filename=tresorerie-remboursements.csv"})
+
+
+@financing_router.get("/investor/financing-products/annual-statement.pdf")
+async def annual_statement(year: int | None = None, user: dict = Depends(_investor)):
+    """Relevé annuel PDF : financements payés et échéances de l'année pour l'investisseur connecté."""
+    me = (user.get("email") or "").lower()
+    y = year or datetime.now(timezone.utc).year
+    items = await db.financing_products.find({"status": "PAID", "paid_by": me}, {"_id": 0}).to_list(200)
+    financed = [i for i in items if str(i.get("paid_at") or "").startswith(str(y))]
+    repaid_steps = []
+    for i in items:
+        done = set(i.get("repayments_done") or [])
+        for s in build_repayment_schedule(i):
+            if s["due_date"].startswith(str(y)) and s["due_date"] in done:
+                repaid_steps.append((s["due_date"], i["reference"], i["name"], s["amount_eur"]))
+    import io as _io
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.pdfgen import canvas as _canvas
+    buf = _io.BytesIO()
+    c = _canvas.Canvas(buf, pagesize=A4)
+    w, h = A4
+    c.setFillColorRGB(0.16, 0.05, 0.28)
+    c.rect(0, h - 32 * mm, w, 32 * mm, stroke=0, fill=1)
+    c.setFillColorRGB(0.85, 0.7, 0.35)
+    c.setFont("Helvetica-Bold", 17)
+    c.drawString(16 * mm, h - 17 * mm, "O'SCOP — Centrale coopérative")
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica", 10)
+    c.drawString(16 * mm, h - 25 * mm, f"Relevé annuel investisseur {y} — {me}")
+    c.setFillColorRGB(0, 0, 0)
+    y_pos = h - 48 * mm
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(16 * mm, y_pos, f"Financements payés en {y} ({len(financed)})")
+    y_pos -= 8 * mm
+    c.setFont("Helvetica", 10)
+    total_f = 0.0
+    for i in sorted(financed, key=lambda x: str(x.get("paid_at"))):
+        total_f += float(i.get("total_price_eur") or 0)
+        c.drawString(20 * mm, y_pos, f"{str(i.get('paid_at'))[:10]} — {i['reference']} · {i['name']}")
+        c.drawRightString(w - 20 * mm, y_pos, f"{float(i.get('total_price_eur') or 0):,.2f} €")
+        y_pos -= 6 * mm
+        if y_pos < 40 * mm:
+            c.showPage(); y_pos = h - 30 * mm; c.setFont("Helvetica", 10)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawRightString(w - 20 * mm, y_pos, f"Total financé : {total_f:,.2f} €")
+    y_pos -= 12 * mm
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(16 * mm, y_pos, f"Remboursements honorés en {y} ({len(repaid_steps)})")
+    y_pos -= 8 * mm
+    c.setFont("Helvetica", 10)
+    total_r = 0.0
+    for due, ref, name, amt in sorted(repaid_steps):
+        total_r += amt
+        c.drawString(20 * mm, y_pos, f"{due} — {ref} · {name}")
+        c.drawRightString(w - 20 * mm, y_pos, f"{amt:,.2f} € ✓")
+        y_pos -= 6 * mm
+        if y_pos < 40 * mm:
+            c.showPage(); y_pos = h - 30 * mm; c.setFont("Helvetica", 10)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawRightString(w - 20 * mm, y_pos, f"Total remboursé : {total_r:,.2f} €")
+    c.setFillColorRGB(0.16, 0.05, 0.28)
+    c.rect(0, 0, w, 16 * mm, stroke=0, fill=1)
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(w / 2, 9 * mm, "SCIC SAS OBJECTIF SCOP OUTREMER — Tous les produits sont vendus et facturés par O'SCOP")
+    c.showPage()
+    c.save()
+    from fastapi.responses import Response
+    return Response(content=buf.getvalue(), media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=releve-investisseur-{y}.pdf"})
+
+
 @financing_router.get("/admin/financing-products")
 async def list_financing_products_admin(_: dict = Depends(require_admin)):
     items = await db.financing_products.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)

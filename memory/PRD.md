@@ -3180,3 +3180,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Attestation PDF de remboursement intégral : GET /api/investor/financing-products/{id}/repayment-certificate.pdf (réservée au payeur, 409 tant que non REPAID ; reportlab, échéances détaillées, en-tête O'SCOP). Bouton « Attestation PDF » vert dans ProductFinancingBoard quand REPAID. Testé : 409 avant, 200 PDF valide (%PDF-1.3) après REPAID complet.
 - Tableau trésorerie admin : stats renvoient upcoming_repayments (échéances non honorées à venir agrégées par mois, 12 max) + upcoming_repayments_total_eur ; bloc bleu « 💶 Trésorerie — remboursements à venir » avec barres mensuelles (fin-treasury-block). Testé : nov 183,33 + déc 183,34 = 366,67 €.
 - Produit démo TEST-HIST restauré à l'état 1/3 échéances honorées (IN_PROGRESS).
+
+## 2026-09-10 — Lot 5 financement : CSV trésorerie, relevé annuel, bouton + Logistique
+- Export CSV comptable : GET /api/admin/financing-products/treasury.csv (BOM UTF-8, ; , colonnes Mois/Échéance/Référence/Produit/Investisseur/Montant/Statut À venir-En retard) — bouton « CSV comptable » dans le bloc trésorerie (fin-treasury-csv). Testé : 2 lignes exactes.
+- Relevé annuel investisseur : GET /api/investor/financing-products/annual-statement.pdf?year= (défaut année courante) — PDF reportlab : financements payés dans l'année + remboursements honorés + totaux. Bouton « Relevé annuel PDF » en tête de « Mes produits financés » (my-financed-annual-statement). Testé : 200 PDF valide.
+- Bouton « + Logistique » par ligne non payée (fin-add-logi-{ref}) : prompts coût €/marge % → PUT existant → recalcul total (testé : 2500 € +1,4 % → 2 535 € logi, total 403 206,96 €, rollback démo fait).
+- ATTENTION ordre routes FastAPI : treasury.csv et annual-statement.pdf déclarés avant les routes {fp_id} — pas de collision (vérifié).
