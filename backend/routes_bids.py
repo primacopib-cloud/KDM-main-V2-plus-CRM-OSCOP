@@ -117,6 +117,46 @@ async def _vendor_user(user_id: str) -> dict:
     return await _require_vendor(user_id)
 
 
+async def _notify_outbid(c: dict, new_entry: dict, new_amount: int, prev_amount: Optional[int] = None):
+    """Alerte email le(s) fournisseur(s) leader(s) dont l'offre vient d'être battue (enchère inversée)."""
+    bids = await db.bids.find({"consultation_id": c["id"], "status": "VALIDE"},
+                              {"_id": 0, "entry_id": 1, "amount_ht_cents": 1}).to_list(500)
+    comp = {}
+    for b in bids:
+        eid = b["entry_id"]
+        if eid == new_entry["id"] or not b.get("amount_ht_cents"):
+            continue
+        if eid not in comp or b["amount_ht_cents"] < comp[eid]:
+            comp[eid] = b["amount_ht_cents"]
+    if not comp:
+        return
+    best_amt = min(comp.values())
+    if new_amount >= best_amt:
+        return
+    if prev_amount is not None and prev_amount < best_amt:
+        return
+    beaten = [eid for eid, amt in comp.items() if amt == best_amt]
+    from brevo_service import send_email
+    from routes_prefs import channel_allowed
+    entries = await db.consultation_entries.find({"id": {"$in": beaten}}, {"_id": 0}).to_list(20)
+    closes = str(c.get("closes_at") or "")[:16].replace("T", " à ")
+    for e in entries:
+        u = await db.users.find_one({"id": e["vendor_user_id"]}, {"_id": 0, "email": 1, "full_name": 1, "name": 1})
+        if not (u and u.get("email")) or not await channel_allowed(e["vendor_user_id"], "outbid", "email"):
+            continue
+        await send_email(
+            to_email=u["email"], to_name=u.get("full_name") or u.get("name"),
+            subject=f"⚡ Votre offre a été battue — {c.get('ref')} {c.get('title', '')}",
+            html_content=(f"<p>Bonjour,</p><p>Un concurrent vient de déposer une offre <b>plus basse que la vôtre</b> "
+                          f"sur la consultation <b>{c.get('ref')}</b> (« {c.get('title')} »).</p>"
+                          f"<p>Vous pouvez répondre en déposant une nouvelle offre inférieure depuis votre espace vendeur, "
+                          f"onglet Enchères, <b>avant la clôture le {closes}</b> (dans la limite de {c.get('max_rounds', 3)} tours).</p>"
+                          f"<p><i>Les montants des concurrents restent anonymes : seul votre rang est communiqué.</i></p>"
+                          "<p>L'équipe CommunityPlace — O'SCOP × KDMARCHÉ</p>"),
+            tags=["auction-outbid"])
+
+
+
 async def _my_entry(cid: str, user_id: str) -> Optional[dict]:
     return await db.consultation_entries.find_one(
         {"consultation_id": cid, "vendor_user_id": user_id, "status": "INSCRIT"}, {"_id": 0})
@@ -240,6 +280,11 @@ async def submit_bid(cid: str, body: BidBody, user_id: str = Depends(get_current
                "server_ts": now, "status": "VALIDE"}
         await db.bids.insert_one({**doc})
         await audit("BID_SUBMITTED", user_id, cid, {"entry_id": entry["id"], "round": rnd})
+        try:
+            await _notify_outbid(c, entry, body.amount_ht_cents,
+                                 my_bids[-1]["amount_ht_cents"] if my_bids else None)
+        except Exception as exc:
+            logger.warning("Notification surenchère %s : %s", cid, exc)
         return {"ok": True, "round": rnd, **await _rank_info(c, entry)}
     # SCELLEE : remplacement versionné, contenu chiffré jusqu'à la clôture
     payload = json.dumps({"amount_ht_cents": body.amount_ht_cents, "details": body.details})

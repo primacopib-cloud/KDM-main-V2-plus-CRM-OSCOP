@@ -27,6 +27,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import { SpaceHeaderActions } from '../components/SpaceHeaderActions';
 import { getStatusBadge } from '../components/vendor/vendorConstants';
 import { VendorProductFormModal as ProductFormModal } from '../components/vendor/VendorProductFormModal';
+import { CatalogImportButton } from '../components/vendor/CatalogImportButton';
 import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
 import { AIStudioModal } from '../components/vendor/AIStudioModal';
 import { ProductActions } from '../components/vendor/ProductActions';
@@ -329,6 +330,9 @@ const VendorSpacePage = () => {
 
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-6">
+            <div className="flex justify-end">
+              <CatalogImportButton vendorId={vendorId} onImported={fetchProducts} />
+            </div>
             {/* Filters */}
             <Card>
               <CardContent className="pt-6">

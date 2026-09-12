@@ -35,6 +35,7 @@ async def main():
             "contact_name": "Lucie Karukera", "company_name": "Épices Karukera SARL",
             "role": "vendor", "account_type": "vendor", "vendor_id": VENDOR_ID,
             "is_admin": False, "siret": "88877766600014", "phone": "+590690000002",
+            "subscription": "ess-acces-pro", "credits": 0,
             "created_at": now_iso})
         print("User vendeur2@kdmarche.fr créé")
 

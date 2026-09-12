@@ -855,6 +855,10 @@ from routes_legal_review import legal_review_router, set_legal_review_database
 set_legal_review_database(db)
 app.include_router(legal_review_router)
 
+from routes_catalog_import import catalog_import_router, set_catalog_import_database
+set_catalog_import_database(db)
+app.include_router(catalog_import_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)
