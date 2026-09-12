@@ -160,7 +160,7 @@ export const ConsultationsTab = () => {
     <div className="space-y-4" data-testid="consultations-tab">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-white flex items-center gap-2">
-          <Gavel className="w-4 h-4 text-[#D9B35A]" /> Consultations compétitives
+          <Gavel className="w-4 h-4 text-[#D9B35A]" /> Ventes aux enchères inversées &amp; consultations compétitives
         </h2>
         <button type="button" onClick={() => setModal(true)} data-testid="cons-create-btn"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold"
