@@ -132,6 +132,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler repayment alerts crashed: %s", exc)
         try:
+            from routes_catalog_import import run_catalog_syncs
+            await run_catalog_syncs(_db)
+        except Exception as exc:
+            logger.exception("Scheduler catalog syncs crashed: %s", exc)
+        try:
             from referral_reminders import run_referral_filleul_reminders
             await run_referral_filleul_reminders(_db)
         except Exception as exc:

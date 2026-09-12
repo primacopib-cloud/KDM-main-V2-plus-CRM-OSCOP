@@ -322,6 +322,14 @@ async def list_products(
     if min_rating is not None:
         query["rating_avg"] = {"$gte": min_rating}
 
+    # Rupture catalogue : masque les produits dont toutes les zones suivies sont à 0
+    tracked_ids = await db.zone_stocks.distinct("product_id")
+    if tracked_ids:
+        in_stock_ids = set(await db.zone_stocks.distinct("product_id", {"quantity_available": {"$gt": 0}}))
+        out_ids = [pid for pid in tracked_ids if pid not in in_stock_ids]
+        if out_ids:
+            query.setdefault("$and", []).append({"id": {"$nin": out_ids}})
+
     # Disponibilité par zone : uniquement les produits avec un prix actif dans la zone demandée
     if country_filter:
         query["countries"] = country_filter

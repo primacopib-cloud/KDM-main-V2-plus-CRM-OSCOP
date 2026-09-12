@@ -365,6 +365,23 @@ async def get_product_detail(vendor_id: str, product_id: str):
     return product
 
 
+@vendor_router.put("/products-threshold/{vendor_id}")
+async def bulk_low_stock_threshold(vendor_id: str, data: dict, request: Request):
+    """Applique le seuil d'alerte stock bas à tous les produits du vendeur."""
+    from role_guards import ensure_seller_request
+    await ensure_seller_request(db, request, vendor_id)
+    threshold = data.get("threshold")
+    if not isinstance(threshold, int) or threshold < 0:
+        raise HTTPException(status_code=400, detail="Seuil invalide : entier positif ou 0 requis")
+    now = datetime.now(timezone.utc).isoformat()
+    r = await db.vendor_products.update_many(
+        {"vendor_id": vendor_id}, {"$set": {"low_stock_threshold": threshold, "updated_at": now}})
+    ids = [p["id"] async for p in db.vendor_products.find({"vendor_id": vendor_id}, {"_id": 0, "id": 1})]
+    await db.products.update_many({"id": {"$in": ids}}, {"$set": {"low_stock_threshold": threshold}})
+    return {"success": True, "updated": r.modified_count,
+            "message": f"Seuil {threshold} appliqué à {r.modified_count} produit(s)"}
+
+
 @vendor_router.put("/products/{vendor_id}/{product_id}")
 async def update_product(vendor_id: str, product_id: str, data: ProductUpdate, request: Request):
     """Update a product"""

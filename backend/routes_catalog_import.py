@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +203,11 @@ async def import_catalog(vendor_id: str, request: Request, file: UploadFile = Fi
         return {"ok": True, "preview": True, "total": len(valid),
                 "products": [{k: p[k] for k in ("sku", "name", "category", "price_ht", "tva_rate",
                                                 "stock_quantity", "conditionnement", "image_url")} for p in valid]}
+    return await _apply_products(vendor_id, file.filename, valid)
+
+
+async def _apply_products(vendor_id: str, filename: str, valid: list) -> dict:
+    """Crée / met à jour les produits validés et télécharge les images ; trace l'historique."""
     created = updated = images_downloaded = 0
     now = datetime.now(timezone.utc).isoformat()
     for p in valid:
@@ -236,9 +242,116 @@ async def import_catalog(vendor_id: str, request: Request, file: UploadFile = Fi
                 images_downloaded += 1
             except Exception as exc:
                 logger.warning("Image import %s (%s) : %s", p["sku"], p["image_url"], exc)
-    await _log_import(vendor_id, file.filename, "success", created=created, updated=updated,
+    await _log_import(vendor_id, filename, "success", created=created, updated=updated,
                       total=len(valid), images_downloaded=images_downloaded)
     return {"ok": True, "created": created, "updated": updated, "total": len(valid),
             "images_downloaded": images_downloaded,
             "message": f"{created} produit(s) créé(s), {updated} mis à jour"
                        + (f", {images_downloaded} image(s) téléchargée(s)" if images_downloaded else "")}
+
+
+# ---------- Synchronisation planifiée (import quotidien depuis une URL) ----------
+
+class SyncConfig(BaseModel):
+    url: str = ""
+    enabled: bool = False
+
+
+@catalog_import_router.get("/{vendor_id}/catalog-sync")
+async def get_catalog_sync(vendor_id: str, request: Request):
+    from role_guards import ensure_seller_request
+    await ensure_seller_request(db, request, vendor_id)
+    doc = await db.vendor_catalog_sync.find_one({"vendor_id": vendor_id}, {"_id": 0})
+    return doc or {"vendor_id": vendor_id, "url": "", "enabled": False}
+
+
+@catalog_import_router.put("/{vendor_id}/catalog-sync")
+async def save_catalog_sync(vendor_id: str, body: SyncConfig, request: Request):
+    from role_guards import ensure_seller_request
+    await ensure_seller_request(db, request, vendor_id)
+    url = body.url.strip()
+    if body.enabled and not url.startswith("https://"):
+        raise HTTPException(status_code=400, detail="L'URL du fichier doit commencer par https://")
+    await db.vendor_catalog_sync.update_one(
+        {"vendor_id": vendor_id},
+        {"$set": {"url": url, "enabled": body.enabled,
+                  "updated_at": datetime.now(timezone.utc).isoformat()},
+         "$setOnInsert": {"id": str(uuid.uuid4()), "vendor_id": vendor_id}},
+        upsert=True)
+    return {"ok": True, "url": url, "enabled": body.enabled}
+
+
+@catalog_import_router.post("/{vendor_id}/catalog-sync/run")
+async def run_catalog_sync_now(vendor_id: str, request: Request):
+    from role_guards import ensure_seller_request
+    await ensure_seller_request(db, request, vendor_id)
+    sync = await db.vendor_catalog_sync.find_one({"vendor_id": vendor_id}, {"_id": 0})
+    if not sync or not sync.get("url"):
+        raise HTTPException(status_code=400, detail="Aucune URL de synchronisation enregistrée")
+    return await _run_one_sync(sync)
+
+
+async def _run_one_sync(sync: dict) -> dict:
+    """Télécharge le fichier catalogue distant d'un vendeur et applique l'import."""
+    vendor_id, url = sync["vendor_id"], sync["url"]
+    now = datetime.now(timezone.utc).isoformat()
+    vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
+
+    async def _finish(status: str, message: str, result: dict | None = None):
+        await db.vendor_catalog_sync.update_one(
+            {"vendor_id": vendor_id},
+            {"$set": {"last_run_at": now, "last_status": status, "last_message": message}})
+        return {"ok": status == "success", "status": status, "message": message, **(result or {})}
+
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=30, follow_redirects=True,
+                                     headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36"}) as cl:
+            r = await cl.get(url)
+        r.raise_for_status()
+        if len(r.content) > 5 * 1024 * 1024:
+            return await _finish("error", "Fichier distant trop volumineux (max 5 Mo)")
+    except Exception as exc:
+        return await _finish("error", f"Téléchargement impossible : {exc}")
+    fname = url.split("?")[0].rstrip("/").rsplit("/", 1)[-1] or "catalogue-distant"
+    if not fname.lower().endswith((".csv", ".xlsx")):
+        ctype = (r.headers.get("content-type") or "").lower()
+        fname += ".xlsx" if "spreadsheet" in ctype or "excel" in ctype else ".csv"
+    try:
+        rows = _parse_rows(fname, r.content)
+        valid, errors = _validate(rows)
+    except HTTPException as exc:
+        return await _finish("error", f"Fichier illisible : {exc.detail}")
+    if errors:
+        try:
+            await _send_error_report(vendor, fname, errors)
+        except Exception as exc:
+            logger.warning("Email rapport sync %s : %s", vendor_id, exc)
+        await _log_import(vendor_id, f"{fname} (sync auto)", "rejected", error_count=len(errors), errors=errors[:20])
+        return await _finish("rejected", f"{len(errors)} anomalie(s) — rapport envoyé par email")
+    result = await _apply_products(vendor_id, f"{fname} (sync auto)", valid)
+    return await _finish("success", result["message"], result)
+
+
+async def run_catalog_syncs(database):
+    """Cron quotidien : synchronise les catalogues distants activés (au plus une fois par 22 h)."""
+    global db
+    if db is None:
+        db = database
+    now = datetime.now(timezone.utc)
+    ran = 0
+    async for sync in db.vendor_catalog_sync.find({"enabled": True, "url": {"$ne": ""}}):
+        last = sync.get("last_run_at")
+        if last:
+            try:
+                if (now - datetime.fromisoformat(last)).total_seconds() < 22 * 3600:
+                    continue
+            except ValueError:
+                pass
+        try:
+            res = await _run_one_sync(sync)
+            logger.info("Sync catalogue %s : %s", sync["vendor_id"], res.get("message"))
+            ran += 1
+        except Exception as exc:
+            logger.exception("Sync catalogue %s : %s", sync["vendor_id"], exc)
+    return ran

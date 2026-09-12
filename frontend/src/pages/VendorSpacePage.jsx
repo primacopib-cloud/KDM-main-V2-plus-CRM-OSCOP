@@ -28,6 +28,7 @@ import { SpaceHeaderActions } from '../components/SpaceHeaderActions';
 import { getStatusBadge } from '../components/vendor/vendorConstants';
 import { VendorProductFormModal as ProductFormModal } from '../components/vendor/VendorProductFormModal';
 import { CatalogImportButton } from '../components/vendor/CatalogImportButton';
+import { VendorStockSettings } from '../components/vendor/VendorStockSettings';
 import { VendorProductViewModal } from '../components/vendor/VendorProductViewModal';
 import { AIStudioModal } from '../components/vendor/AIStudioModal';
 import { ProductActions } from '../components/vendor/ProductActions';
@@ -344,6 +345,7 @@ const VendorSpacePage = () => {
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-6">
             <CatalogImportButton vendorId={vendorId} onImported={fetchProducts} />
+            <VendorStockSettings vendorId={vendorId} onChanged={fetchProducts} />
             {/* Filters */}
             <Card>
               <CardContent className="pt-6">
