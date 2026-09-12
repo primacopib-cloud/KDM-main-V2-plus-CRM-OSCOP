@@ -38,7 +38,7 @@ export const LolodriveSection = () => {
               className="btn-ghost inline-flex items-center gap-2 rounded-[14px] px-4 py-3 text-sm font-semibold">
               <MapPin className="w-4 h-4" /> {t('pro.lolo_cta_relais')} <ArrowRight className="w-3.5 h-3.5" />
             </Link>
-            {relayCount != null && (
+                            {relayCount > 0 && (
               <span className="text-white/70 text-sm" data-testid="lolo-relay-count">
                 <strong className="text-[#8CC63E]">{relayCount}</strong> {t('pro.lolo_relays_active', { count: relayCount })}
                 {territories.length > 0 && <> · {territories.length} {t('pro.lolo_territories')}</>}

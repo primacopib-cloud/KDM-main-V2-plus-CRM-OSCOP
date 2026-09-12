@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -27,38 +27,56 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
+  const [mapError, setMapError] = useState(false);
 
-  // Initial map setup (run once with the territory present at mount)
-  // We capture the initial territory in a ref so the effect deps can be empty without lying.
+  // Initial map setup. WebGL peut être indisponible sur certains appareils :
+  // dans ce cas, le composant affiche une liste de relais sans casser la page.
   const initialTerritoryRef = useRef(territory);
   useEffect(() => {
-    if (!TOKEN) return;
-    if (mapRef.current || !containerRef.current) return;
+    if (!TOKEN || mapRef.current || !containerRef.current) return undefined;
     const init = TERRITORY_DEFAULTS[initialTerritoryRef.current] || TERRITORY_DEFAULTS.GP;
-    mapRef.current = new mapboxgl.Map({
-      container: containerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          basemap: {
-            type: 'raster',
-            tiles: [
-              'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-            ],
-            tileSize: 256,
-            maxzoom: 16,
-            attribution: '© Esri © OpenStreetMap contributors',
+
+    try {
+      const map = new mapboxgl.Map({
+        container: containerRef.current,
+        style: {
+          version: 8,
+          sources: {
+            basemap: {
+              type: 'raster',
+              tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+              ],
+              tileSize: 256,
+              maxzoom: 16,
+              attribution: '© Esri © OpenStreetMap contributors',
+            },
           },
+          layers: [{ id: 'basemap-dark', type: 'raster', source: 'basemap' }],
         },
-        layers: [{ id: 'basemap-dark', type: 'raster', source: 'basemap' }],
-      },
-      center: [init.lng, init.lat],
-      zoom: init.zoom,
-      attributionControl: true,
-    });
-    mapRef.current.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+        center: [init.lng, init.lat],
+        zoom: init.zoom,
+        attributionControl: true,
+      });
+      map.on('error', (event) => {
+        if (!event?.error) return;
+        console.error('LOLODRIVE map error:', event.error);
+      });
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+      mapRef.current = map;
+    } catch (error) {
+      console.error('LOLODRIVE map unavailable:', error);
+      mapRef.current = null;
+      setMapError(true);
+      return undefined;
+    }
+
     return () => {
-      mapRef.current?.remove();
+      try {
+        mapRef.current?.remove();
+      } catch (error) {
+        console.debug('Map cleanup skipped:', error);
+      }
       mapRef.current = null;
     };
   }, []);
@@ -131,14 +149,32 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
     }
   }, [points, territory, onSelect, focusCode, ratings]);
 
-  if (!TOKEN) {
+  if (!TOKEN || mapError) {
+    const visiblePoints = points.filter((point) => point?.name).slice(0, 8);
     return (
       <div
-        data-testid="map-no-token"
-        className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center text-white/60"
-        style={{ height }}
+        data-testid="map-fallback"
+        className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-white/80"
       >
-        Carte indisponible : `REACT_APP_MAPBOX_TOKEN` non configuré.
+        <p className="text-center font-semibold text-white">La carte interactive n’est pas disponible sur cet appareil.</p>
+        <p className="mt-2 text-center text-sm text-white/60">Vous pouvez tout de même sélectionner un relais dans la liste.</p>
+        {visiblePoints.length > 0 ? (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {visiblePoints.map((point) => (
+              <button
+                key={point.id || point.code}
+                type="button"
+                onClick={() => onSelect?.(point)}
+                className="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-left transition-colors hover:bg-white/[0.08]"
+              >
+                <span className="block font-semibold text-white">{point.name}</span>
+                <span className="mt-1 block text-xs text-white/60">{[point.city, point.territory].filter(Boolean).join(' · ')}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-5 text-center text-sm text-white/60">Les relais seront affichés dès qu’ils seront disponibles.</p>
+        )}
       </div>
     );
   }

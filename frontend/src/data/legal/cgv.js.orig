@@ -15,17 +15,12 @@ export const cgvKdmarcheContent = {
       number: "1",
       title: "Champ d'application et Identification du Vendeur",
       content: `Les présentes Conditions Générales de Vente (CGV) s'appliquent de plein droit à toutes les ventes de marchandises conclues par le Vendeur :
-- **Entrepreneure individuelle** : Félixia Vanessa PIPEROL
-- **Nom commercial** : PRIMACOP INTERNATIONAL BUSINESS
-- **Enseigne** : KDMARCHÉ
-- **Forme juridique** : Entrepreneur individuel (EI)
-- **SIREN** : 433 230 703
-- **SIRET** : 433 230 703 00020
-- **Adresse professionnelle** : Morne Bourg, chemin Symphart Lampecinado, 97170 Petit-Bourg, Guadeloupe (France)
-- **Téléphone** : +590 690 90 64 29
-- **Adresse e-mail de contact** : contact@primacop.com
+- **Dénomination sociale** : KDMARCHE E.I
+- **Forme juridique** : E.I
+- **Siège social** : Chemin Symphart Lampecinado, 97170 Petit-Bourg — Morne Bourg
+- **Adresse e-mail de contact** : contact@kdmarche.com
 
-Les présentes CGV régissent l'activité de vente de gros et demi-gros de KDMARCHÉ sur la marketplace accessible depuis le sous-domaine centrale.objectifscopoutremer.com (ci-après la « Plateforme »). Elles s'adressent aux acheteurs professionnels agissant pour les besoins de leur activité (ci-après « l'Acheteur »).`
+Les présentes CGV régissent l'activité de vente de gros et demi-gros de KDMARCHE sur la marketplace accessible depuis le sous-domaine lacentrale.objectifscopoutremer.com (ci-après la « Plateforme »). Elles s'adressent principalement aux acheteurs professionnels inscrits (ci-après « l'Acheteur »).`
     },
     {
       number: "2",

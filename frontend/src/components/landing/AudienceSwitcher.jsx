@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+      import { Link, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Building2, ShoppingBasket, Home, Ticket, ShoppingCart, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -43,7 +43,7 @@ export const AudienceSwitcher = () => {
         </Link>
       </div>
       {isLolo && (
-        <nav data-testid="lolo-subnav" className="overflow-x-auto"
+              <nav data-testid="lolo-subnav" className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ background: '#243311', borderTop: '1px solid rgba(140,198,62,0.35)' }}>
           <div className="max-w-[1160px] mx-auto flex items-center gap-1 px-2">
             {LOLO_NAV.map(({ to, label, icon: Icon, testid }) => {

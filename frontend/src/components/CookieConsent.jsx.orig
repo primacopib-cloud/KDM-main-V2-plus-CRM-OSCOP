@@ -1,0 +1,70 @@
+import { useState } from "react";
+
+const STORAGE_KEY = "oscop-cookie-consent";
+
+export default function CookieConsent() {
+  const [choice, setChoice] = useState(() => localStorage.getItem(STORAGE_KEY) || "");
+  const [open, setOpen] = useState(() => !localStorage.getItem(STORAGE_KEY));
+
+  const decide = (value) => {
+    localStorage.setItem(STORAGE_KEY, value);
+    setChoice(value);
+    setOpen(false);
+    if (value === "refused") {
+      window.posthog?.opt_out_capturing?.();
+    }
+    window.location.reload();
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="fixed bottom-3 right-3 z-[100] rounded-full border border-white/20 bg-slate-950/95 px-3 py-2 text-xs font-semibold text-white shadow-xl backdrop-blur hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
+        aria-label="Gérer mes préférences de cookies"
+      >
+        Gérer mes cookies
+      </button>
+    );
+  }
+
+  return (
+    <section
+      className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-3xl rounded-2xl border border-white/15 bg-slate-950/95 p-4 text-white shadow-2xl backdrop-blur md:p-5"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cookie-title"
+      aria-describedby="cookie-description"
+    >
+      <div className="md:flex md:items-center md:gap-6">
+        <div className="min-w-0 flex-1">
+          <h2 id="cookie-title" className="text-base font-bold">Votre choix en matière de cookies</h2>
+          <p id="cookie-description" className="mt-1 text-sm leading-6 text-slate-200">
+            Les cookies nécessaires assurent le fonctionnement du site. Avec votre accord, nous utilisons aussi des statistiques de fréquentation et l'enregistrement de session pour améliorer nos services.
+          </p>
+          <a href="/legal/politique-confidentialite" className="mt-2 inline-block text-sm font-semibold text-amber-300 underline underline-offset-2">
+            Consulter la politique de confidentialité
+          </a>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 md:mt-0 md:w-72">
+          <button
+            type="button"
+            onClick={() => decide("refused")}
+            className="rounded-xl border border-white/30 px-4 py-3 text-sm font-bold hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white"
+          >
+            Tout refuser
+          </button>
+          <button
+            type="button"
+            onClick={() => decide("accepted")}
+            className="rounded-xl bg-amber-400 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-200"
+          >
+            Tout accepter
+          </button>
+        </div>
+      </div>
+      {choice && <p className="sr-only">Choix actuel : {choice === "accepted" ? "accepté" : "refusé"}.</p>}
+    </section>
+  );
+}

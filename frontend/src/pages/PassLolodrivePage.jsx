@@ -119,7 +119,7 @@ export default function PassLolodrivePage() {
             </div>
             <div className="mt-4 pt-4 border-t border-[#D9B35A]/20">
               <button type="button" data-testid="pass-pay-adhesion-btn"
-                onClick={() => navigate(authAPI.isAuthenticated() ? '/espace-pass' : '/connexion')}
+                onClick={() => navigate(authAPI.isAuthenticated() ? '/espace-pass' : '/pass-lolodrive/inscription')}
                 className="btn-gold inline-flex items-center gap-2 rounded-[14px] px-6 py-3 text-sm font-semibold">
                 <CreditCard className="w-4 h-4" /> {i18n.t('passPage.payer_adhesion', { price: plans.adhesion.price_eur })}
               </button>
@@ -148,7 +148,7 @@ export default function PassLolodrivePage() {
           </div>
         )}
         <div className="flex flex-wrap gap-3">
-          <Link to="/lolodrive">
+          <Link to="/catalogue-lolodrive">
             <button className="btn-gold inline-flex items-center gap-2 rounded-[14px] px-6 py-3 text-sm font-semibold" data-testid="pass-cta-catalogue">
               {i18n.t('passPage.cta_catalogue')} <ArrowRight className="w-4 h-4" />
             </button>

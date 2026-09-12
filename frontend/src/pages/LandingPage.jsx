@@ -14,24 +14,18 @@ import Footer from '../components/Footer';
 import WhyCommunityplaceSection from '../components/WhyCommunityplaceSection';
 import { ZoneProductsShowcase } from '../components/landing/ZoneProductsShowcase';
 import PartnerCarousel from '../components/PartnerCarousel';
-import { TestimonialsSection } from '../components/TestimonialsSection';
-import { ReferralChallengeBanner } from '../components/ReferralChallengeBanner';
-import { CommunityStatsStrip } from '../components/CommunityStatsStrip';
 import { PublicLolodriveMapSection } from '../components/landing/PublicLolodriveMapSection';
 import { ReceptionProSection } from '../components/landing/ReceptionProSection';
 import { TerritoryCarousel } from '../components/kdmarche/TerritoryCarousel';
 import { ServicesBlock } from '../components/kdmarche/ServicesBlock';
-import { VideoShowcase } from '../components/kdmarche/VideoShowcase';
 import { AudienceBanner } from '../components/landing/AudienceBanner';
 import { KdmPillarsSection } from '../components/landing/KdmPillarsSection';
 import { CoopEssSection } from '../components/landing/CoopEssSection';
-import { CommunityBoard } from '../components/landing/CommunityBoard';
 import { CooperativeApiSection } from '../components/landing/CooperativeApiSection';
 import { FloatingToc } from '../components/landing/FloatingToc';
 import { Reveal } from '../components/landing/Reveal';
 import { ParallaxOrbs } from '../components/landing/ParallaxOrbs';
 import { ScrollProgressBar } from '../components/landing/ScrollProgressBar';
-import { ActivityTicker } from '../components/landing/ActivityTicker';
 import { BackToTop } from '../components/landing/BackToTop';
 import { AudienceSwitcher } from '../components/landing/AudienceSwitcher';
 import { ProHero } from '../components/landing/ProHero';
@@ -64,15 +58,8 @@ const LandingPage = () => {
       <Reveal variant="left"><ProCatalogFamilies /></Reveal>
 
 
-      {/* Ticker d'activité en direct */}
-      <ActivityTicker />
-
-      {/* Compteurs publics de la coopérative */}
-      <Reveal variant="zoom"><CommunityStatsStrip /></Reveal>
-
       {/* Pourquoi Communityplace ? */}
       <Reveal><WhyCommunityplaceSection /></Reveal>
-      <Reveal><CommunityBoard /></Reveal>
 
       {/* ============ PARTIE PROFESSIONNELS ============ */}
       <Reveal variant="left">
@@ -195,15 +182,6 @@ const LandingPage = () => {
 
       {/* ============ PONT PARTICULIERS (détails sur /particuliers) ============ */}
       <Reveal><LolodriveSection /></Reveal>
-
-      {/* Témoignages membres */}
-      <Reveal variant="left"><TestimonialsSection /></Reveal>
-
-      {/* Défi parrainage */}
-      <Reveal variant="zoom"><ReferralChallengeBanner /></Reveal>
-
-      {/* Galerie spots vidéo IA */}
-      <Reveal><VideoShowcase /></Reveal>
 
       {/* Catalogue + cadre coopératif ESS */}
       <Reveal><CoopEssSection /></Reveal>

@@ -115,16 +115,15 @@ export const mentionsLegalesContent = {
     {
       number: "§",
       title: "Cadre légal",
-      content: `Conformément aux dispositions de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique (LCEN), il est précisé aux utilisateurs du site **lacentrale.objectifscopoutremer.com** l'identité des différents intervenants dans le cadre de sa réalisation et de son suivi.`
+      content: `Conformément aux dispositions de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique (LCEN), il est précisé aux utilisateurs du site **centrale.objectifscopoutremer.com** l'identité des différents intervenants dans le cadre de sa réalisation et de son suivi.`
     },
     {
       number: "1",
       title: "Éditeur du site",
       content: `Le présent site internet est édité par la société :
 - **Dénomination sociale** : OBJECTIF SCOP OUTREMER (Enseigne : O'SCOP)
-- **Forme juridique** : SCIC SAS (Société Coopérative d'Intérêt Collectif sous forme de Société par Actions Simplifiée) à capital variable
-- **Adresse de l'établissement éditeur** : 13 rue Rodrigue YOUYOUTE, 97139 Les Abymes
-- **Adresse du siège social** : Imm. SCI Fort l'Union - Z.I. Jarry, 387 rue de l'Industrie, 97122 Baie-Mahault
+- **Forme juridique** : SCIC SAS (Société Coopérative d'Intérêt Collectif sous forme de Société par Actions Simplifiée) à capital variable — capital souscrit déclaré : 10 500 €
+- **Adresse du siège social et de l'établissement éditeur** : 13 rue Rodrigue YOUYOUTE, 97139 Les Abymes, Guadeloupe (France)
 - **Numéro SIREN** : 903 459 139
 - **Numéro SIRET (siège)** : 903 459 139 00015
 - **Inscription au RCS** : immatriculée au Registre du Commerce et des Sociétés (RCS) de Pointe-à-Pitre sous le numéro 903 459 139
@@ -134,22 +133,23 @@ export const mentionsLegalesContent = {
     {
       number: "2",
       title: "Direction de la publication",
-      content: `**Directeur de la publication** : Félixia PIPEROL, Président de la SCIC.`
+      content: `**Direction de la publication** : Félixia PIPEROL, présidente de la SCIC.`
     },
     {
       number: "3",
       title: "Hébergement du site",
-      content: `Le prestataire assurant le stockage direct et permanent du sous-domaine lacentrale.objectifscopoutremer.com est la société IONOS :
-- **Raison sociale** : IONOS SARL
-- **Siège social** : 7, place de la Gare - BP 70109, 57201 Sarreguemines Cedex
-- **Numéro SIRET** : 431 303 775 000 16
-- **Inscription au RCS** : Sarreguemines
-- **Numéro de téléphone** : 09 70 80 89 11`
+      content: `Le site **centrale.objectifscopoutremer.com** est déployé au moyen de l'infrastructure applicative d'Emergent :
+- **Prestataire technique** : Emergent Labs Inc.
+- **Adresse** : 2380 Via Espada, Pleasanton, CA 94566, États-Unis
+- **Assistance** : support@emergent.sh
+- **Infrastructure de diffusion** : services cloud et réseau de diffusion de contenu utilisés par Emergent
+
+Les traitements et transferts associés sont décrits dans la politique de confidentialité.`
     },
     {
       number: "4",
       title: "Propriété intellectuelle et conditions d'accès",
-      content: `L'ensemble des contenus présents sur le sous-domaine lacentrale.objectifscopoutremer.com est protégé par les lois en vigueur au titre de la propriété intellectuelle. Toute reproduction, modification ou distribution non autorisée de ces éléments est strictement interdite.`
+      content: `L'ensemble des contenus présents sur le sous-domaine centrale.objectifscopoutremer.com est protégé par les lois en vigueur au titre de la propriété intellectuelle. Toute reproduction, modification ou distribution non autorisée de ces éléments est strictement interdite.`
     }
   ]
 };

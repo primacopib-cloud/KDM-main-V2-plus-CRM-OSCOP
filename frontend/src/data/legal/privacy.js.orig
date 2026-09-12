@@ -80,7 +80,7 @@ Vous pouvez introduire une réclamation auprès de la **CNIL** (www.cnil.fr).`
     {
       number: "8",
       title: "Cookies et traceurs",
-      content: `La plateforme utilise des traceurs strictement nécessaires au fonctionnement (session, sécurité, panier et préférences), qui ne requièrent pas de consentement. Les traceurs de mesure d'audience, d'enregistrement de session ou de conversion ne sont activés qu'après un consentement libre, spécifique et préalable. Le bandeau permet de tout accepter ou tout refuser avec le même degré de simplicité. Le choix peut être retiré à tout moment depuis le bouton permanent « Gérer mes cookies ». Le refus des traceurs non essentiels n'empêche pas l'accès au service.`
+      content: `La plateforme utilise des traceurs strictement nécessaires au fonctionnement (session, sécurité, panier et préférences), qui ne requièrent pas de consentement. Les traceurs de mesure d'audience, d'enregistrement de session ou de conversion ne sont activés qu'après un consentement libre, spécifique et préalable. Le bandeau permet de tout accepter, tout refuser ou personnaliser les choix avec le même degré de simplicité. Le choix peut être retiré à tout moment depuis le lien « Gérer mes cookies » présent en pied de page. Le refus des traceurs non essentiels n'empêche pas l'accès au service.`
     },
     {
       number: "9",

@@ -48,7 +48,6 @@ import KdmarchePage from "./pages/KdmarchePage";
 import SupportContactPage from "./pages/SupportContactPage";
 import PartnershipPage from "./pages/PartnershipPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
-import CookieConsent from "./components/CookieConsent";
 import AdminProductsPage from "./pages/AdminProductsPage";
 import BuyerSpacePage from "./pages/BuyerSpacePage";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -288,4 +287,3 @@ function App() {
 }
 
 export default App;
-        <CookieConsent />

@@ -58,6 +58,7 @@ export default function CatalogPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState('');
   
   // Catalog data
   const [categories, setCategories] = useState([]);
@@ -130,8 +131,14 @@ export default function CatalogPage() {
 
         // Load zones, entitlements and categories in parallel
         const [zonesData, categoriesData, myZonesData] = await Promise.all([
-          zonesAPIV2.list(),
-          catalogAPI.getCategories(),
+          zonesAPIV2.list().catch((error) => {
+            console.error('Zones loading error:', error);
+            return [];
+          }),
+          catalogAPI.getCategories().catch((error) => {
+            console.error('Categories loading error:', error);
+            return [];
+          }),
           isAuth ? catalogAPI.myZones().catch(() => null) : Promise.resolve(null),
         ]);
 
@@ -154,33 +161,34 @@ export default function CatalogPage() {
         const entitled = !isAuth ? null : (myZonesData?.is_admin ? null : (myZonesData?.entitled || []));
         setEntitledZones(entitled);
 
-        // Par défaut : TOUS les territoires, sauf filtre ?zone= dans l'URL puis dernier pays mémorisé
-        if (zonesData.length > 0) {
-          const zoneParam = new URLSearchParams(window.location.search).get('zone');
-          const saved = getLastCountry();
-          const savedIsDom = saved && zonesData.some((z) => z.code === saved);
-          const savedValid = saved && (saved === 'ALL' || savedIsDom || WORLD_CODES.includes(saved))
-            && !(savedIsDom && Array.isArray(entitled) && !entitled.includes(saved));
-          const defaultZone = zoneParam && zonesData.some((z) => z.code === zoneParam)
-            ? zoneParam : (savedValid ? saved : 'ALL');
-          setSelectedZone(defaultZone);
-          
-          // Load products and pickup locations for this zone
-          const [productsData, locationsData] = await Promise.all([
-            catalogAPI.getProducts({ zoneCode: defaultZone }),
-            catalogAPI.getPickupLocations(),
-          ]);
-          setProducts(productsData);
-          setPickupLocations(locationsData);
+        // Le catalogue doit rester chargeable même si la liste des zones est indisponible.
+        const zoneParam = new URLSearchParams(window.location.search).get('zone');
+        const saved = getLastCountry();
+        const savedIsDom = saved && zonesData.some((z) => z.code === saved);
+        const savedValid = saved && (saved === 'ALL' || savedIsDom || WORLD_CODES.includes(saved))
+          && !(savedIsDom && Array.isArray(entitled) && !entitled.includes(saved));
+        const defaultZone = zoneParam && (zonesData.some((z) => z.code === zoneParam) || WORLD_CODES.includes(zoneParam))
+          ? zoneParam : (savedValid ? saved : 'ALL');
+        setSelectedZone(defaultZone);
 
-          // Deep-link fiche produit partagée : /catalogue?produit={id}
-          const sharedId = new URLSearchParams(window.location.search).get('produit');
-          if (sharedId) {
-            try {
-              const shared = await catalogAPI.getProduct(sharedId, defaultZone);
-              if (shared?.name) setSearchTerm(shared.name);
-            } catch { /* produit introuvable : catalogue complet */ }
-          }
+        const [productsData, locationsData] = await Promise.all([
+          catalogAPI.getProducts({ zoneCode: defaultZone }).catch((error) => {
+            console.error('Products loading error:', error);
+            setCatalogError('Le catalogue est momentanément indisponible. Réessayez dans quelques instants.');
+            return [];
+          }),
+          catalogAPI.getPickupLocations().catch(() => []),
+        ]);
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setPickupLocations(Array.isArray(locationsData) ? locationsData : []);
+
+        // Deep-link fiche produit partagée : /catalogue?produit={id}
+        const sharedId = new URLSearchParams(window.location.search).get('produit');
+        if (sharedId) {
+          try {
+            const shared = await catalogAPI.getProduct(sharedId, defaultZone);
+            if (shared?.name) setSearchTerm(shared.name);
+          } catch { /* produit introuvable : catalogue complet */ }
         }
 
         // Load cart (membres connectés uniquement)
@@ -205,6 +213,7 @@ export default function CatalogPage() {
 
       } catch (error) {
         console.error('Init error:', error);
+        setCatalogError('Le catalogue est momentanément indisponible. Réessayez dans quelques instants.');
         toast.error('Erreur de chargement');
       } finally {
         setLoading(false);
@@ -248,6 +257,7 @@ export default function CatalogPage() {
     if (!selectedZone) return;
     
     try {
+      setCatalogError('');
       if (visitorPreview) {
         const sp = new URLSearchParams({ zone_code: selectedZone });
         if (selectedCategory && selectedCategory !== 'all') sp.append('category_id', selectedCategory);
@@ -286,6 +296,7 @@ export default function CatalogPage() {
       setProducts(data);
     } catch (error) {
       console.error('Error loading products:', error);
+      setCatalogError('Impossible d’actualiser le catalogue. Vérifiez votre connexion puis réessayez.');
     }
   }, [selectedZone, selectedCategory, searchTerm, selectedIncoterm, selectedDeliveryType, selectedAvailZone, minRating, sortByRating]);
 
@@ -476,7 +487,9 @@ export default function CatalogPage() {
           <div>
             <h1 className="text-2xl font-bold mb-1">{i18n.t('catalog.catalogue_kdmarche')}</h1>
             <p className="text-white/60 text-sm">
-              {i18n.t('catalog.disponibles', { count: products.length })}
+              {products.length > 0
+                ? i18n.t('catalog.disponibles', { count: products.length })
+                : (catalogError || 'Catalogue en cours de mise à jour')}
             </p>
           </div>
           
@@ -545,12 +558,24 @@ export default function CatalogPage() {
           navigate={navigate}
         />
 
-        <ProductsGrid
-          products={(saleFilter === 'all' ? products : products.filter((p) => (p.sale_model || 'PARTNER_DIRECT_SALE') === saleFilter)).filter((p) => !financingOnly || p.financing_eligible)}
-          cart={cart}
-          cartLoading={cartLoading}
-          handleAddToCart={handleAddToCart}
-        />
+        {catalogError && (
+          <div role="alert" className="mb-5 flex flex-col gap-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-5 text-amber-50 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm">{catalogError}</p>
+            <Button variant="outline" onClick={loadProducts} className="border-amber-200/30 text-amber-50 hover:bg-amber-200/10">
+              Réessayer
+            </Button>
+          </div>
+        )}
+
+                  {!catalogError && (
+            <ProductsGrid
+              products={(saleFilter === 'all' ? products : products.filter((p) => (p.sale_model || 'PARTNER_DIRECT_SALE') === saleFilter)).filter((p) => !financingOnly || p.financing_eligible)}
+              cart={cart}
+              cartLoading={cartLoading}
+              handleAddToCart={handleAddToCart}
+            />
+          )}
+
       </div>
 
       <FloatingMiniCart

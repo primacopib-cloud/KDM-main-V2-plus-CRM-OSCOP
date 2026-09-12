@@ -55,9 +55,9 @@ export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
   const k = Math.sqrt(Number(vb.split(' ')[2]) / 1000);
 
   return (
-  <div className="relative rounded-3xl overflow-hidden border border-white/[0.08] mb-6" data-testid="territory-map"
+  <div className="relative rounded-3xl overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden border border-white/[0.08] mb-6" data-testid="territory-map"
     style={{ background: 'radial-gradient(120% 140% at 50% -20%, rgba(217,179,90,0.10), rgba(20,8,38,0.4) 45%, rgba(12,4,24,0.6))' }}>
-    <div style={{ aspectRatio: '1000 / 420' }}>
+    <div className="min-w-[560px] sm:min-w-0" style={{ aspectRatio: '1000 / 420' }}>
     <svg viewBox={vb} preserveAspectRatio="xMidYMid meet" className="w-full h-full block" role="img" aria-label="Carte des territoires d'Outre-mer et pays du monde">
       <defs>
         <linearGradient id="tm-arc" x1="0" y1="0" x2="1" y2="0">
@@ -123,7 +123,7 @@ export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
               <text x={t.x + t.dx * k} y={t.y + 19 * k} fontSize={10 * k} fontWeight="500"
                 fill={active ? 'rgba(140,198,62,0.95)' : 'rgba(140,198,62,0.6)'} textAnchor={t.anchor}
                 data-testid={`map-stats-${t.code}`} style={{ userSelect: 'none' }}>
-                {stats[t.code].products} {i18n.t('landing.map_produits', 'produits')} · {stats[t.code].members} {i18n.t('landing.map_adherents', 'adhérents')}
+                                            {[stats[t.code].products > 0 ? stats[t.code].products + ' ' + i18n.t('landing.map_products', 'produits') : null, stats[t.code].members > 0 ? stats[t.code].members + ' ' + i18n.t('landing.map_adherents', 'adhérents') : null].filter(Boolean).join(' · ')}
               </text>
             )}
           </g>
@@ -157,7 +157,7 @@ export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
               <text x={t.x + t.dx * k} y={t.y + 22 * k} fontSize={10.5 * k} fontWeight="500"
                 fill={active ? 'rgba(217,179,90,0.95)' : 'rgba(217,179,90,0.6)'} textAnchor={t.anchor}
                 data-testid={`map-stats-${t.code}`} style={{ userSelect: 'none' }}>
-                {stats[t.code].products} {i18n.t('landing.map_produits', 'produits')} · {stats[t.code].members} {i18n.t('landing.map_adherents', 'adhérents')}
+                                {[stats[t.code].products > 0 ? stats[t.code].products + ' ' + i18n.t('landing.map_produits', 'produits') : null, stats[t.code].members > 0 ? stats[t.code].members + ' ' + i18n.t('landing.map_adherents', 'adhérents') : null].filter(Boolean).join(' · ')}
               </text>
             )}
           </g>
@@ -172,7 +172,7 @@ export const TerritoryMap = ({ zone, onSelect, showAll = false }) => {
       <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#D9B35A' }} /> Outre-mer O'SCOP</span>
       <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#8CC63E' }} /> Pays & territoires du monde</span>
     </div>
-    <div className="absolute top-3 right-3 flex flex-wrap gap-1.5" data-testid="map-bassins">
+    <div className="absolute top-3 right-3 hidden sm:flex flex-wrap gap-1.5" data-testid="map-bassins">
       {BASSINS.map((b) => (
         <button key={b.key} type="button" onClick={() => setBassin(b.key)} data-testid={`map-bassin-${b.key}`}
           className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${bassin === b.key

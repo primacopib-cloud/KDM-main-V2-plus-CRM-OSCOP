@@ -24,21 +24,21 @@ DEFAULT_PAGES = [
 
 1. Formation de la vente — La commande devient ferme après validation par O'SCOP et émission de la confirmation correspondante. O'SCOP est le vendeur juridique, l'émetteur de la facture et le bénéficiaire du paiement. Le paiement intervient selon l'échéance indiquée sur l'offre ou la facture, y compris, lorsque l'offre le prévoit, à réception de la marchandise.
 
-2. Prix et taxes — Les prix sont indiqués hors taxes et toutes taxes comprises. La TVA et taxes applicables figurent sur chaque facture.
+2. Prix, barème et réductions — Les prix sont ceux du barème, catalogue, devis ou offre accepté au jour de la commande. Ils sont indiqués hors taxes et toutes taxes comprises ; la TVA et les taxes applicables figurent sur chaque facture. Les remises, ristournes ou autres réductions éventuellement applicables sont précisées dans l'offre, le devis ou l'accord-cadre. À défaut de mention, aucune réduction n'est acquise.
 
-3. Livraison — Selon l'offre : retrait, logistique organisée par le client ou logistique intégrée LOGI'SCOP, établissement de la {SCIC}. Le lieu, le délai indicatif ou impératif et, le cas échéant, l'Incoterm applicable sont indiqués sur l'offre ou la confirmation de commande.
+3. Livraison — Selon l'offre : retrait, logistique organisée par le client ou logistique intégrée LOGI'SCOP, établissement de la {SCIC}.
 
 4. Transfert des risques — Le transfert des risques intervient à la remise des marchandises selon l'incoterm ou la modalité de livraison indiquée sur l'offre.
 
 5. Réserve de propriété — Les marchandises demeurent la propriété d'O'SCOP jusqu'au paiement intégral du prix.
 
-6. Conformité et réclamations — Toute réclamation doit être formulée par écrit, avec les justificatifs utiles, à l'adresse de contact indiquée sur la facture, dans les délais légaux et sans préjudice des vérifications à la livraison. O'SCOP assume les obligations attachées à sa qualité de vendeur professionnel.
+6. Conformité et réclamations — Toute réclamation doit être formulée par écrit dans les délais légaux. O'SCOP assume les obligations attachées à sa qualité de vendeur.
 
-7. Garanties — Les garanties légales applicables entre professionnels, notamment celle relative aux vices cachés, s'appliquent dans les conditions prévues par la loi. La garantie légale de conformité du Code de la consommation ne s'applique que lorsque ses conditions légales sont réunies.
+7. Garanties — Les garanties légales de conformité et des vices cachés s'appliquent.
 
-8. Paiement et retard — Sauf délai plus court indiqué sur l'offre ou la facture, le paiement est exigible à 30 jours à compter de la réception des marchandises ou de l'exécution de la prestation. Tout retard entraîne, de plein droit et sans rappel, des pénalités calculées au taux de refinancement de la Banque centrale européenne le plus récent majoré de 10 points, sans pouvoir être inférieur à trois fois le taux d'intérêt légal, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement. Une indemnisation complémentaire peut être demandée sur justificatifs lorsque les frais exposés dépassent 40 €. Aucun escompte n'est accordé pour paiement anticipé, sauf accord écrit.
+8. Retards de paiement — Tout retard entraîne les pénalités légales et l'indemnité forfaitaire de recouvrement applicable entre professionnels.
 
-9. Annulation — Les conditions d'annulation sont précisées sur chaque offre ou devis. O'SCOP peut suspendre l'exécution ou résoudre la vente en cas de défaut de paiement persistant après mise en demeure, sans préjudice des sommes dues.
+9. Annulation — Les conditions d'annulation sont précisées sur chaque offre ou devis.
 
 10. Droit applicable et litiges — Droit français. Compétence des tribunaux du ressort du siège d'O'SCOP, sous réserve des règles impératives."""),
     ("conditions-offres-partenaires", "Conditions des offres partenaires",
