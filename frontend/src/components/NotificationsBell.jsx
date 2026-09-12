@@ -2,34 +2,59 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { apiCall } from '../services/http';
+import { getAuthHeaders, getSessionToken } from '../services/http';
+
+const BACKEND = process.env.REACT_APP_BACKEND_URL;
+const fmt = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '');
 
 export const NotificationsBell = ({ className = '' }) => {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const wsRef = useRef(null);
   const navigate = useNavigate();
-  const isLoggedIn = !!localStorage.getItem('user');
+  const rawUser = localStorage.getItem('user');
+  const userId = (() => { try { return JSON.parse(rawUser || 'null')?.id; } catch { return null; } })();
+
+  const load = () => fetch(`${BACKEND}/api/notifications/mine?limit=15`,
+    { credentials: 'include', headers: getAuthHeaders() })
+    .then((r) => (r.ok ? r.json() : null)).then((d) => d && setData(d)).catch(() => {});
 
   useEffect(() => {
-    if (!isLoggedIn) return undefined;
-    let active = true;
-    const load = () => apiCall('/notifications?limit=15').then((d) => {
-      if (!active) return;
-      setData((prev) => {
-        if (prev) {
-          const known = new Set((prev.notifications || []).map((n) => n.id));
-          (d.notifications || []).filter((n) => !n.is_read && !known.has(n.id)).forEach((n) => {
-            toast(n.title, { description: n.message, duration: 8000 });
-          });
-        }
-        return d;
-      });
-    }).catch(() => {});
+    if (!rawUser) return undefined;
     load();
     const interval = setInterval(load, 60000);
-    return () => { active = false; clearInterval(interval); };
-  }, [isLoggedIn]);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawUser]);
+
+  // Temps réel : nouvelle notification → badge + toast sans recharger
+  useEffect(() => {
+    if (!userId) return undefined;
+    let closedByUs = false;
+    const connect = () => {
+      const token = getSessionToken() || '';
+      const ws = new WebSocket(`${BACKEND.replace(/^http/, 'ws')}/api/notifications/ws/${userId}${token ? `?token=${token}` : ''}`);
+      wsRef.current = ws;
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === 'notification') {
+            const n = msg.data || msg.notification || {};
+            toast(n.title || 'Nouvelle notification', {
+              description: n.message, duration: 8000,
+              action: { label: 'Voir', onClick: () => navigate('/notifications') },
+            });
+            load();
+          }
+        } catch { /* ping/pong */ }
+      };
+      ws.onclose = () => { if (!closedByUs) setTimeout(connect, 15000); };
+    };
+    connect();
+    return () => { closedByUs = true; wsRef.current?.close(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   useEffect(() => {
     const onClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -37,21 +62,20 @@ export const NotificationsBell = ({ className = '' }) => {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  if (!isLoggedIn || !data) return null;
+  if (!rawUser || !data) return null;
   const unread = data.unread_count || 0;
-
-  const toggle = () => setOpen((o) => !o);
+  const items = data.items || [];
 
   const markAllRead = () => {
-    apiCall('/notifications/read-all', { method: 'POST' })
-      .then(() => apiCall('/notifications?limit=15').then(setData))
+    fetch(`${BACKEND}/api/notifications/mine-read-all`, { method: 'PUT', credentials: 'include', headers: getAuthHeaders() })
+      .then(load)
       .then(() => toast.success('Toutes les notifications sont marquées comme lues'))
       .catch(() => {});
   };
 
   return (
     <div className={`relative ${className}`} ref={ref}>
-      <button type="button" onClick={toggle} data-testid="notifications-bell"
+      <button type="button" onClick={() => setOpen((o) => !o)} data-testid="notifications-bell"
         className="relative p-2 rounded-lg hover:bg-white/[0.06] transition-colors"
         title="Notifications">
         <Bell className="w-4 h-4 text-white/70" />
@@ -62,48 +86,32 @@ export const NotificationsBell = ({ className = '' }) => {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-2xl z-50 shadow-2xl"
-          style={{ background: '#2A1045', border: '1px solid rgba(217,179,90,0.3)' }} data-testid="notifications-dropdown">
-          <div className="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
-            <p className="text-xs font-bold text-white">Notifications</p>
-            <CheckCheck className="w-3.5 h-3.5 text-white/40" />
+        <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-white/15 bg-[#2c1247] shadow-2xl z-[70] p-2"
+          data-testid="notifications-bell-dropdown">
+          <div className="flex items-center justify-between px-2 py-1.5">
+            <p className="text-xs font-bold text-white/80">Notifications</p>
+            {unread > 0 && (
+              <button type="button" onClick={markAllRead} data-testid="notifications-bell-mark-all"
+                className="inline-flex items-center gap-1 text-[10px] font-bold text-[#D9B35A] hover:underline">
+                <CheckCheck className="w-3.5 h-3.5" /> Tout lu
+              </button>
+            )}
           </div>
-          {unread > 0 && (
-            <button type="button" data-testid="notifications-mark-all-read-btn"
-              onClick={markAllRead}
-              className="w-full px-4 py-2.5 flex items-center justify-center gap-2 text-[11px] font-bold text-[#D9B35A] bg-[#D9B35A]/10 hover:bg-[#D9B35A]/20 transition-colors">
-              <CheckCheck className="w-3.5 h-3.5" />
-              Tout marquer comme lu ({unread})
+          {items.length === 0 ? (
+            <p className="text-xs text-white/40 px-2 py-4 text-center">Aucune notification.</p>
+          ) : items.slice(0, 8).map((n) => (
+            <button key={n.id} type="button"
+              onClick={() => { setOpen(false); navigate('/notifications'); }}
+              className={`w-full text-left rounded-lg px-2 py-2 text-xs transition-colors ${n.is_read ? 'text-white/45 hover:bg-white/5' : 'text-white bg-[#D9B35A]/[0.08] hover:bg-[#D9B35A]/[0.14]'}`}>
+              <p className="font-semibold line-clamp-1">{n.title}</p>
+              <p className="line-clamp-2 mt-0.5 opacity-80">{n.message}</p>
+              <p className="text-[9px] text-white/30 mt-1">{fmt(n.created_at)}</p>
             </button>
-          )}
-          {!(data.notifications || []).length && (
-            <p className="px-4 py-6 text-xs text-white/40 text-center">Aucune notification.</p>
-          )}
-          {(data.notifications || []).map((n) => {
-            const link = n.data?.link
-              || (n.type === 'application_decision'
-                ? (n.data?.decision === 'APPROVED' ? '/catalogue' : '/adhesion')
-                : null);
-            return (
-            <button key={n.id} type="button" data-testid={`notification-item-${n.id}`}
-              onClick={() => {
-                setOpen(false);
-                if (!n.is_read) {
-                  apiCall(`/notifications/${n.id}/read`, { method: 'POST' }).catch(() => {});
-                }
-                if (link) navigate(link);
-              }}
-              className={`w-full text-left px-4 py-2.5 border-b border-white/5 hover:bg-white/[0.05] transition-colors ${n.is_read ? 'opacity-60' : ''}`}>
-              <p className="text-xs font-semibold text-[#E9CF8E]">{n.title}</p>
-              <p className="text-[11px] text-white/65 mt-0.5">{n.message}</p>
-              <p className="text-[10px] text-white/35 mt-0.5">{String(n.created_at || '').slice(0, 16).replace('T', ' ')}</p>
-            </button>
-            );
-          })}
-          <button type="button" data-testid="notifications-see-all-btn"
-            onClick={() => { setOpen(false); navigate('/notifications'); }}
-            className="w-full px-4 py-2.5 text-center text-[11px] font-bold text-[#D9B35A] hover:bg-white/[0.05] transition-colors">
-            Voir tout l'historique
+          ))}
+          <button type="button" onClick={() => { setOpen(false); navigate('/notifications'); }}
+            data-testid="notifications-bell-see-all"
+            className="w-full mt-1 py-2 rounded-lg text-xs font-bold text-[#1F0A33]" style={{ background: '#D9B35A' }}>
+            Voir toutes mes notifications
           </button>
         </div>
       )}

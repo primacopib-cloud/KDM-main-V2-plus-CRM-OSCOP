@@ -32,6 +32,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import { SpaceHeaderActions } from '../components/SpaceHeaderActions';
 import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
+import { NotificationsBell } from '../components/NotificationsBell';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -318,6 +319,7 @@ export default function BuyerSpacePage() {
                   <h1 className="text-lg font-bold text-white">{i18n.t('buyer.espace_acheteur_pro')}</h1>
                   <BuyerProBadge />
                   <MessagesNavLink withLabel />
+                  <NotificationsBell />
                 </div>
                 <p className="text-xs text-white/50">{user?.company_name || i18n.t('buyer.mon_compte_b2b')}</p>
               </div>

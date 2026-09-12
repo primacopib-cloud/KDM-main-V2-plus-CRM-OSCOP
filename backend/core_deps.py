@@ -71,4 +71,15 @@ async def create_notification(
     }
     await db.notifications.insert_one(notification)
     logger.info(f"Notification created: {notification_type} - {title}")
+    if target_user_id:
+        try:
+            from routes_notifications import manager
+            await manager.send_personal_message({
+                "type": "notification",
+                "data": {"id": notification["id"], "type": notification_type,
+                         "title": title, "message": message, "data": data or {}},
+                "timestamp": notification["created_at"].isoformat(),
+            }, target_user_id)
+        except Exception as exc:
+            logger.debug(f"WS push notification skipped: {exc}")
     return notification

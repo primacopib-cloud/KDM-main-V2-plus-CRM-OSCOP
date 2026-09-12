@@ -867,6 +867,10 @@ from routes_my_notifications import my_notifications_router, set_my_notification
 set_my_notifications_database(db)
 app.include_router(my_notifications_router)
 
+from routes_notifications import notifications_router, set_notifications_database
+set_notifications_database(db)
+app.include_router(notifications_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)

@@ -38,6 +38,27 @@ const autoSpeakCreole = (text) => {
     .catch(() => {});
 };
 
+const speakUnreadNotifications = () => {
+  const today = new Date().toISOString().slice(0, 10);
+  if (localStorage.getItem('oracle_notif_summary') === today) return;
+  fetch(`${API}/notifications/mine?limit=5`, { credentials: 'include', headers: getAuthHeaders() })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => {
+      if (!d || !d.unread_count) return;
+      localStorage.setItem('oracle_notif_summary', today);
+      const titles = (d.items || []).filter((n) => !n.is_read).slice(0, 3)
+        .map((n) => (n.title || '').replace(/[^\p{L}\p{N}\s'’\-—:,.]/gu, '').trim()).join('. ');
+      const text = `Bonjour, ici Oracle. Vous avez ${d.unread_count} notification${d.unread_count > 1 ? 's' : ''} non lue${d.unread_count > 1 ? 's' : ''}. ${titles}. Retrouvez le détail dans la page Mes notifications.`;
+      fetch(`${API}/ai-guide/tts`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ text }),
+      }).then((r) => (r.ok ? r.blob() : null))
+        .then((b) => { if (b) new Audio(URL.createObjectURL(b)).play().catch(() => {}); })
+        .catch(() => {});
+    }).catch(() => {});
+};
+
 export const AiGuideWidget = () => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -69,6 +90,7 @@ export const AiGuideWidget = () => {
         if (!d) return;
         setWelcome(d);
         autoSpeakCreole(d.greeting);
+        speakUnreadNotifications();
         if (!sessionStorage.getItem('guidia_welcomed')) {
           sessionStorage.setItem('guidia_welcomed', '1');
           setOpen(true);
