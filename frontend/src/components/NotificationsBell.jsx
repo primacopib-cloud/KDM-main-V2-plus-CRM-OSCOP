@@ -1,15 +1,43 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthHeaders, getSessionToken } from '../services/http';
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '');
 
+let lastChimeId = null;
+const playChime = (notifId) => {
+  if (localStorage.getItem('notif_sound_muted') === '1') return;
+  if (notifId) {
+    if (notifId === lastChimeId) return;
+    lastChimeId = notifId;
+  }
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new Ctx();
+    [880, 1174.66].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + i * 0.14;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.1, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.55);
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 1200);
+  } catch { /* autoplay bloqué */ }
+};
+
 export const NotificationsBell = ({ className = '' }) => {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
+  const [muted, setMuted] = useState(localStorage.getItem('notif_sound_muted') === '1');
   const ref = useRef(null);
   const wsRef = useRef(null);
   const navigate = useNavigate();
@@ -41,6 +69,7 @@ export const NotificationsBell = ({ className = '' }) => {
           const msg = JSON.parse(e.data);
           if (msg.type === 'notification') {
             const n = msg.data || msg.notification || {};
+            playChime(n.id);
             toast(n.title || 'Nouvelle notification', {
               description: n.message, duration: 8000,
               action: { label: 'Voir', onClick: () => navigate('/notifications') },
@@ -90,12 +119,26 @@ export const NotificationsBell = ({ className = '' }) => {
           data-testid="notifications-bell-dropdown">
           <div className="flex items-center justify-between px-2 py-1.5">
             <p className="text-xs font-bold text-white/80">Notifications</p>
-            {unread > 0 && (
-              <button type="button" onClick={markAllRead} data-testid="notifications-bell-mark-all"
-                className="inline-flex items-center gap-1 text-[10px] font-bold text-[#D9B35A] hover:underline">
-                <CheckCheck className="w-3.5 h-3.5" /> Tout lu
+            <div className="flex items-center gap-1">
+              <button type="button"
+                onClick={() => {
+                  const next = !muted;
+                  setMuted(next);
+                  localStorage.setItem('notif_sound_muted', next ? '1' : '0');
+                  if (!next) playChime();
+                }}
+                data-testid="notifications-sound-toggle"
+                title={muted ? 'Activer le son des notifications' : 'Couper le son des notifications'}
+                className="p-1.5 rounded-lg text-white/50 hover:bg-white/10 transition-colors">
+                {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
               </button>
-            )}
+              {unread > 0 && (
+                <button type="button" onClick={markAllRead} data-testid="notifications-bell-mark-all"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-[#D9B35A] hover:underline">
+                  <CheckCheck className="w-3.5 h-3.5" /> Tout lu
+                </button>
+              )}
+            </div>
           </div>
           {items.length === 0 ? (
             <p className="text-xs text-white/40 px-2 py-4 text-center">Aucune notification.</p>

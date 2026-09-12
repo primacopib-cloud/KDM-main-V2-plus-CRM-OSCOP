@@ -7,9 +7,25 @@ import { BackLink } from '../components/BackLink';
 const API = process.env.REACT_APP_BACKEND_URL;
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '');
 
+const FILTERS = [
+  { key: 'all', label: 'Toutes' },
+  { key: 'stock', label: 'Stock' },
+  { key: 'promo', label: 'Promotions' },
+  { key: 'auction', label: 'Enchères' },
+  { key: 'other', label: 'Autres' },
+];
+const classify = (n) => {
+  const t = (n.type || '').toLowerCase();
+  if (t.includes('stock') || t.includes('restock')) return 'stock';
+  if (t.includes('promo')) return 'promo';
+  if (t.includes('bid') || t.includes('enchere') || t.includes('auction')) return 'auction';
+  return 'other';
+};
+
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [filter, setFilter] = useState('all');
 
   const load = useCallback(() => {
     fetch(`${API}/api/notifications/mine`, { credentials: 'include' })
@@ -56,7 +72,23 @@ export default function NotificationsPage() {
             </span>
           )}
         </h1>
-        <p className="text-sm text-white/50 mb-6">Surenchères, stock bas, promos, retours en stock…</p>
+        <p className="text-sm text-white/50 mb-4">Surenchères, stock bas, promos, retours en stock…</p>
+        <div className="flex flex-wrap gap-2 mb-6" data-testid="notifications-filters">
+          {FILTERS.map((f) => {
+            const count = f.key === 'all'
+              ? (data?.items.length || 0)
+              : (data?.items || []).filter((n) => classify(n) === f.key).length;
+            return (
+              <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+                data-testid={`notifications-filter-${f.key}`}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${filter === f.key
+                  ? 'bg-[#D9B35A] text-[#1F0A33]'
+                  : 'bg-white/[0.06] text-white/60 hover:bg-white/[0.12]'}`}>
+                {f.label}{count > 0 ? ` (${count})` : ''}
+              </button>
+            );
+          })}
+        </div>
         {!data ? (
           <Loader2 className="w-6 h-6 animate-spin text-white/40" />
         ) : data.items.length === 0 ? (
@@ -64,9 +96,16 @@ export default function NotificationsPage() {
             <BellOff className="w-12 h-12 mx-auto mb-3 opacity-40" />
             <p>Aucune notification pour le moment.</p>
           </div>
-        ) : (
+        ) : (() => {
+          const filtered = data.items.filter((n) => filter === 'all' || classify(n) === filter);
+          return filtered.length === 0 ? (
+            <div className="text-center py-16 text-white/40" data-testid="notifications-filter-empty">
+              <BellOff className="w-12 h-12 mx-auto mb-3 opacity-40" />
+              <p>Aucune notification dans cette catégorie.</p>
+            </div>
+          ) : (
           <div className="space-y-2" data-testid="notifications-list">
-            {data.items.map((n) => (
+            {filtered.map((n) => (
               <button key={n.id} type="button" onClick={() => open(n)}
                 data-testid={`notification-item-${n.id}`}
                 className={`w-full text-left rounded-xl border p-4 transition-colors ${n.is_read
@@ -92,7 +131,8 @@ export default function NotificationsPage() {
               </button>
             ))}
           </div>
-        )}
+          );
+        })()}
       </main>
     </div>
   );
