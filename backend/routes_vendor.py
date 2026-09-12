@@ -326,6 +326,27 @@ async def submit_product(vendor_id: str, data: ProductSubmission, request: Reque
     }
 
 
+@vendor_router.get("/missing-logistics/{vendor_id}")
+async def get_vendor_missing_logistics(vendor_id: str):
+    """Produits du vendeur sans poids et/ou volume — la garantie 45 % RàR ne s'applique pas sans ces données."""
+    vendor = await get_vendor_by_id(vendor_id)
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendeur non trouvé")
+    items = []
+    async for p in db.vendor_products.find(
+            {"vendor_id": vendor_id, "status": {"$nin": ["archived", "rejected"]}},
+            {"_id": 0, "id": 1, "name": 1, "sku": 1, "weight_per_unit": 1,
+             "volume_per_unit": 1, "weight_kg": 1, "volume_m3": 1}):
+        missing = []
+        if not (p.get("weight_per_unit") or p.get("weight_kg")):
+            missing.append("poids")
+        if not (p.get("volume_per_unit") or p.get("volume_m3")):
+            missing.append("volume")
+        if missing:
+            items.append({"id": p["id"], "name": p.get("name"), "sku": p.get("sku"), "missing": missing})
+    return {"count": len(items), "items": items[:50]}
+
+
 @vendor_router.get("/products/{vendor_id}")
 async def get_vendor_products(vendor_id: str, status: Optional[str] = None):
     """Get all products for a vendor"""

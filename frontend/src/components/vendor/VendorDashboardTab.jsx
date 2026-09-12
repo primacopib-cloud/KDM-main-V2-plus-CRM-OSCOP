@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { MySpotsWidget } from './MySpotsWidget';
 import { VendorShowcasePanel } from './VendorShowcasePanel';
 import { VendorReviewsCard } from './VendorReviewsCard';
+import { MissingLogisticsCard } from './MissingLogisticsCard';
 import { getStatusBadge } from './vendorConstants';
 
 export const VendorDashboardTab = ({ dashboard, vendorId, formatCurrency }) => (
   <div className="space-y-6" data-testid="vendor-dashboard-tab">
+    <MissingLogisticsCard vendorId={vendorId} />
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <Card>
         <CardHeader className="pb-2">

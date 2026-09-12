@@ -180,7 +180,7 @@ async def rar_gate(user: dict, amount_cents: int = 0, order_or_cart: dict = None
             missing = required - cv
             packs = await db.cpc_packs.find(
                 {"active": True, "price_ht_cents": {"$gt": 0}},
-                {"_id": 0, "label": 1, "credits": 1, "price_ht_cents": 1}).sort("price_ht_cents", 1).to_list(20)
+                {"_id": 0, "id": 1, "label": 1, "credits": 1, "price_ht_cents": 1}).sort("price_ht_cents", 1).to_list(20)
             pack = next((p for p in packs if p["price_ht_cents"] >= missing), packs[-1] if packs else None)
             return {"allowed": False,
                     "reason": (f"Garantie CREDI'SCOP insuffisante : la valeur de vos crédits ({cv / 100:.2f} €) "

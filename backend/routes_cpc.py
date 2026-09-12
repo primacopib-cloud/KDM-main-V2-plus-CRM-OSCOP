@@ -136,22 +136,30 @@ async def my_suggested_pack(user_id: str = Depends(get_current_user_id)):
 class CheckoutBody(BaseModel):
     pack_id: str
     origin_url: str
+    return_path: Optional[str] = None
 
 
 @cpc_router.post("/checkout")
 async def cpc_checkout(body: CheckoutBody, user_id: str = Depends(get_current_user_id)):
-    user = await _require_vendor(user_id)
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "email": 1, "role": 1,
+                                                     "name": 1, "full_name": 1, "country": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Compte introuvable")
     pack = await db.cpc_packs.find_one({"id": body.pack_id, "active": True}, {"_id": 0})
     if not pack:
         raise HTTPException(status_code=404, detail="Pack introuvable")
-    return await create_pack_checkout(user, pack, body.origin_url)
+    return await create_pack_checkout(user, pack, body.origin_url, body.return_path)
 
 
-async def create_pack_checkout(user: dict, pack: dict, origin_url: str) -> dict:
+async def create_pack_checkout(user: dict, pack: dict, origin_url: str, return_path: str = None) -> dict:
     country = await _user_country(user)
     vat = compute_vat(pack["price_ht_cents"], country)
     pid = str(uuid.uuid4())
     origin = origin_url.rstrip("/")
+    path = return_path if (return_path or "").startswith("/") and not (return_path or "").startswith("//") else None
+    success_url = (f"{origin}{path}?cpc_session={{CHECKOUT_SESSION_ID}}" if path
+                   else f"{origin}/vendor?tab=cpc&cpc_session={{CHECKOUT_SESSION_ID}}")
+    cancel_url = f"{origin}{path}?cpc_cancelled=1" if path else f"{origin}/vendor?tab=cpc&cpc_cancelled=1"
     stripe.api_base = "https://api.stripe.com"
     session = stripe.checkout.Session.create(
         api_key=_stripe_key(), mode="payment", payment_method_types=["card"],
@@ -161,8 +169,8 @@ async def create_pack_checkout(user: dict, pack: dict, origin_url: str) -> dict:
                 "product_data": {"name": f"CPC — {pack['label']} ({pack['credits']} crédits) — service numérique O'SCOP"},
             }, "quantity": 1}],
         customer_email=user.get("email"),
-        success_url=f"{origin}/vendor?tab=cpc&cpc_session={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{origin}/vendor?tab=cpc&cpc_cancelled=1",
+        success_url=success_url,
+        cancel_url=cancel_url,
         metadata={"kind": "CPC_PACK", "user_id": user["id"], "pack_id": pack["id"],
                   "credits": str(pack["credits"]), "territory": country, "internal_ref": pid})
     now = datetime.now(timezone.utc)
@@ -180,10 +188,21 @@ async def create_pack_checkout(user: dict, pack: dict, origin_url: str) -> dict:
 
 @cpc_router.get("/purchase-status/{session_id}")
 async def purchase_status(session_id: str, user_id: str = Depends(get_current_user_id)):
-    """Statut d'un achat — le crédit n'a lieu QUE via le webhook Stripe, jamais ici."""
+    """Statut d'un achat — crédit via webhook Stripe, avec repli par vérification directe de la session (idempotent)."""
     p = await db.cpc_purchases.find_one({"stripe_session_id": session_id, "user_id": user_id}, {"_id": 0})
     if not p:
         raise HTTPException(status_code=404, detail="Achat introuvable")
+    if p["status"] == "PENDING":
+        try:
+            stripe.api_base = "https://api.stripe.com"
+            sess = stripe.checkout.Session.retrieve(session_id, api_key=_stripe_key())
+            if sess.get("payment_status") == "paid":
+                await handle_cpc_stripe_event({"type": "checkout.session.completed",
+                                               "id": f"poll:{session_id}",
+                                               "data": {"object": sess}})
+                p = await db.cpc_purchases.find_one({"stripe_session_id": session_id, "user_id": user_id}, {"_id": 0})
+        except Exception as exc:
+            logger.warning("Vérification Stripe session %s : %s", session_id, exc)
     acc = await get_cpc_account(user_id)
     return {"status": p["status"], "credits": p["credits"], "balance": acc.get("cpc_balance", 0),
             "invoice_number": p.get("invoice_number")}

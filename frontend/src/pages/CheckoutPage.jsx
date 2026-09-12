@@ -108,7 +108,7 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart]);
 
-  useEffect(() => {
+  const loadRarContext = () => {
     fetch(`${API_URL}/api/rar/checkout-context`, { headers: { Authorization: `Bearer ${getSessionToken()}` } })
       .then((r) => r.json())
       .then((d) => {
@@ -117,6 +117,42 @@ export default function CheckoutPage() {
         setCodEligible(rarVisible && !!d.rar?.allowed);
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadRarContext();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Retour de Recharge Express (achat pack CPC depuis l'alerte garantie) : crédite puis réactive le RàR
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get('cpc_session');
+    if (params.get('cpc_cancelled')) {
+      window.history.replaceState({}, '', '/checkout');
+      return;
+    }
+    if (!sid) return;
+    let tries = 0;
+    const poll = setInterval(async () => {
+      tries += 1;
+      try {
+        const r = await fetch(`${API_URL}/api/cpc/purchase-status/${sid}`,
+          { headers: { Authorization: `Bearer ${getSessionToken()}` } });
+        const d = await r.json();
+        if (r.ok && d.status === 'SETTLED') {
+          clearInterval(poll);
+          toast.success(`${d.credits} crédits CREDI'SCOP ajoutés — solde : ${d.balance}`, { duration: 6000 });
+          window.history.replaceState({}, '', '/checkout');
+          loadRarContext();
+        } else if (!r.ok || tries > 20) {
+          clearInterval(poll);
+          if (tries > 20) toast.info('Paiement en cours de confirmation — vos crédits arriveront sous peu.');
+        }
+      } catch { clearInterval(poll); }
+    }, 3000);
+    return () => clearInterval(poll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Build products from cart for DynamicOrderForm

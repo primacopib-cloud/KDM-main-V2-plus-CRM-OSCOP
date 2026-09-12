@@ -1,0 +1,28 @@
+{
+  "summary": "Frontend-only testing des 3 nouvelles fonctionnalités : Carte Poids Manquants (vendeur), Recharge Express au checkout acheteur (bouton d'achat pack CPC), et retour d'annulation Stripe vers /checkout. Tous les flows critiques PASS. Un bug UX mineur détecté sur le deep-link intra-page de la carte Poids Manquants (Fix bouton ne rouvre pas la fiche produit quand on est déjà sur /vendor).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "VendorSpacePage useEffect deep-link", "issue": "Le clic sur le bouton 'Compléter' (data-testid=missing-logistics-fix-*) depuis la carte Poids Manquants sur /vendor met à jour l'URL (?tab=products&edit=<id>) mais NE ROUVRE PAS la fiche d'édition, car l'useEffect a pour dépendance [products] et ne se ré-exécute pas quand seul searchParams change. La navigation initiale (URL fraîche externe) fonctionne correctement — vérifié : le modal 'Modifier : Confiture goyave-rhum 300g' s'ouvre bien. Fix suggéré : ajouter `rechargeParams` (ou searchParams.get('edit')) aux dépendances du useEffect ligne 119 de VendorSpacePage.jsx.", "selector": "[data-testid^='missing-logistics-fix-']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Corriger l'useEffect deep-link de VendorSpacePage.jsx (ligne 109-119) : ajouter `searchParams` aux dépendances OU dériver `target` via useSearchParams et déclencher setEditProduct dans un useEffect dépendant de `[products, rechargeParams]`. Ceci permettra à l'utilisateur qui clique 'Compléter' depuis la carte de voir immédiatement la fiche d'édition."
+  ],
+  "critical_code_review_comments": [
+    "VendorSpacePage.jsx L109-119 : useEffect avec dep=[products] ignore les changements de query string — bug de navigation intra-app.",
+    "CheckoutPayment.jsx L20-69 (RarGuaranteeWarning) : code propre, testids conformes, appel POST /api/cpc/checkout correct avec pack_id, origin_url et return_path='/checkout'. Redirection window.location.href OK.",
+    "CheckoutPage.jsx L128-156 : gestion cpc_cancelled + polling cpc_session correcte, nettoyage URL via history.replaceState — fonctionne comme attendu."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "95% (3/3 flows fonctionnels, 1 bug mineur UX sur deep-link intra-page)"},
+  "test_credentials": "vendor-pro@kdmarche.fr / Demo2026! ; acheteur-pro@kdmarche.fr / Demo2026!",
+  "seed_data_creation": "Aucune. Nettoyé 1 cpc_purchases status=PENDING (user-buyer-pro) et 3 signatures document_ref=CART-* générées pendant le test.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "FLOW A: carte data-testid=missing-logistics-card OK avec 3 items (Confiture, Rhum blanc AOC 1L, Rhum VSOP 70cl) et boutons Compléter présents. Deep-link via URL directe /vendor?tab=products&edit=vp-damoiseau-confiture ouvre bien le modal d'édition. Mais clic intra-page depuis dashboard : URL change, modal ne s'ouvre pas. FLOW B: rar-guarantee-warning s'affiche au step Paiement avec le texte 'garantie CREDI'SCOP insuffisante', il manque 34,02 €, Pack Régulier (150 crédits — 60,00 € HT), bouton 'Acheter ce pack maintenant — votre panier est conservé' + lien 'Voir mes crédits' → /mon-crediscop. Clic sur bouton redirige vers checkout.stripe.com/g/pay/cs_live_... affichant 'CPC — Pack Régulier (150 crédits) — service numérique O'SCOP' (montant affiché en USD $78.54 = conversion locale de ~65€ TTC, pas un bug). FLOW C: navigation manuelle vers /checkout?cpc_cancelled=1 → URL nettoyée en /checkout, panier préservé (60 x Huile tournesol 5L 552,00€), aucun toast d'erreur. Note : les steps du checkout sont réinitialisés (retour à Récapitulatif) après retour cancel, MAIS le panier lui-même n'est pas perdu — ce qui correspond au critère exigé.",
+  "rca of the issue": "Bug deep-link intra-page (mineur) : dans /app/frontend/src/pages/VendorSpacePage.jsx L109-119, l'useEffect qui lit `?edit=<id>` a `[products]` comme seule dépendance. Quand l'utilisateur est déjà sur /vendor et clique 'Compléter', react-router-dom met à jour searchParams mais products reste la même référence → useEffect ne se ré-exécute pas → editProduct non setté → modal ne s'ouvre pas. Reproduction : login vendor-pro → /vendor → cliquer 'Compléter' sur un item de la carte Poids Manquants. Mitigation : `useEffect(...,[products, rechargeParams])` OU écouter searchParams.get('edit') directement."
+}

@@ -4,6 +4,7 @@ from typing import Optional, List, Dict
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 import os
+import re
 import logging
 import uuid
 import hashlib
@@ -156,14 +157,36 @@ async def add_audit_entry(signature_id: str, action: str, details: dict = None, 
 
 
 async def send_sms_otp(phone: str, otp: str, signer_name: str, document_type: str, signer_email: str = None):
-    """
-    Send OTP via SMS and/or Email
-    Currently sends via email (SendGrid) as SMS provider not yet integrated
-    TODO: Integrate Twilio or OVH SMS for production
-    """
+    """Send OTP via Brevo transactional SMS, with email backup."""
     # Log for development/testing
     logger.info(f"[SMS OTP] To: {phone} | Code: {otp} | Document: {document_type}")
-    
+
+    phone_clean = re.sub(r"[^0-9+]", "", phone or "")
+    api_key = os.environ.get("BREVO_API_KEY")
+    if api_key and phone_clean.startswith("+") and len(phone_clean) >= 11:
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.post(
+                    "https://api.brevo.com/v3/transactionalSMS/send",
+                    headers={"api-key": api_key, "accept": "application/json",
+                             "content-type": "application/json"},
+                    json={
+                        "sender": os.environ.get("BREVO_SMS_SENDER", "KDMARCHE"),
+                        "recipient": phone_clean,
+                        "content": f"KDMARCHE : votre code de signature est {otp}. Valable {OTP_EXPIRY_MINUTES} minutes. Ne le partagez pas.",
+                        "type": "transactional",
+                        "tag": "signature-otp",
+                    })
+            if resp.status_code == 201:
+                logger.info(f"[BREVO SMS] Envoyé à ***{phone_clean[-4:]} | messageId={resp.json().get('messageId')}")
+            else:
+                logger.warning(f"[BREVO SMS] Échec {resp.status_code} pour ***{phone_clean[-4:]} : {resp.text[:200]}")
+        except Exception as e:
+            logger.error(f"[BREVO SMS] Erreur envoi : {e}")
+    else:
+        logger.warning(f"[BREVO SMS] Non envoyé — clé absente ou numéro invalide (***{phone_clean[-4:] if phone_clean else ''})")
+
     # Send via email if available (backup/alternative)
     if signer_email and is_email_configured():
         try:

@@ -85,7 +85,7 @@ const VendorSpacePage = () => {
   const [credits, setCredits] = useState(null);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [contractsByProduct, setContractsByProduct] = useState({});
-  const [rechargeParams] = useSearchParams();
+  const [rechargeParams, setRechargeParams] = useSearchParams();
 
   useEffect(() => {
     if (!vendorId) return;
@@ -108,15 +108,17 @@ const VendorSpacePage = () => {
   // Deep-link réapprovisionnement : /vendor?tab=products&edit=<product_id> ouvre la fiche d'édition
   useEffect(() => {
     const target = rechargeParams.get('edit');
-    if (!target || !products.length || editProduct) return;
+    if (!target || !products.length) return;
     const p = products.find((pr) => pr.id === target);
     if (p) {
       setActiveTab('products');
       setEditProduct(p);
       setIsFormOpen(true);
+      rechargeParams.delete('edit');
+      setRechargeParams(rechargeParams, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products]);
+  }, [products, rechargeParams]);
 
   // Fetch dashboard data
   const fetchDashboard = useCallback(async () => {

@@ -12,6 +12,61 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { formatCurrency, MIN_INSTALLMENT_CENTS } from './checkoutUtils';
 import { CarrierScoreBadge } from './CarrierScoreBadge';
+import { getSessionToken } from '../../services/http';
+import { toast } from 'sonner';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+const RarGuaranteeWarning = ({ rar }) => {
+  const [buying, setBuying] = React.useState(false);
+  if (!(rar?.credits_required_cents > 0) || (rar.credits_value_cents || 0) >= rar.credits_required_cents) return null;
+  const buyPack = async () => {
+    setBuying(true);
+    try {
+      const r = await fetch(`${API_URL}/api/cpc/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSessionToken()}` },
+        body: JSON.stringify({ pack_id: rar.suggested_pack.id, origin_url: window.location.origin, return_path: '/checkout' }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.checkout_url) throw new Error(d.detail || 'Erreur');
+      window.location.href = d.checkout_url;
+    } catch (e) {
+      toast.error(`Impossible de lancer le paiement du pack : ${e.message}`);
+      setBuying(false);
+    }
+  };
+  return (
+    <div className="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs text-amber-200 space-y-1.5" data-testid="rar-guarantee-warning">
+      <p className="font-bold flex items-center gap-1.5">
+        <AlertCircle className="w-4 h-4 shrink-0" /> Règlement à Réception indisponible — garantie CREDI'SCOP insuffisante
+      </p>
+      <p>
+        Vos crédits doivent couvrir <b>{rar.credit_coverage_pct || 45}&nbsp;%</b> du coût logistique
+        ({formatCurrency(rar.logistics_cost_cents)}), soit <b>{formatCurrency(rar.credits_required_cents)}</b>.
+        Valeur actuelle : {formatCurrency(rar.credits_value_cents || 0)} — il manque <b data-testid="rar-guarantee-missing">{formatCurrency(rar.credits_missing_cents)}</b>.
+      </p>
+      {rar.suggested_pack && (
+        <p>
+          Pack conseillé : <b>{rar.suggested_pack.label}</b> ({rar.suggested_pack.credits} crédits — {formatCurrency(rar.suggested_pack.price_ht_cents)} HT).
+        </p>
+      )}
+      <div className="flex flex-wrap items-center gap-2 mt-1">
+        {rar.suggested_pack?.id && (
+          <button type="button" onClick={buyPack} disabled={buying} data-testid="rar-guarantee-buy-pack"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-400 text-black font-bold hover:bg-amber-300 disabled:opacity-60">
+            {buying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+            Acheter ce pack maintenant — votre panier est conservé
+          </button>
+        )}
+        <a href="/mon-crediscop" data-testid="rar-guarantee-recharge-link"
+          className="inline-block px-2.5 py-1 rounded-md border border-amber-400/50 text-amber-200 font-bold hover:bg-amber-400/10">
+          Voir mes crédits
+        </a>
+      </div>
+    </div>
+  );
+};
 
 export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstallment, paymentMethod, setPaymentMethod, orderNotes, setOrderNotes, signatureComplete, processingPayment, handlePayment, codEligible = false, rarCtx = null, cbOnly = false, cbVendors = [] }) => (
   <>
@@ -169,27 +224,7 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                         </div>
                       </div>
                     )}
-                    {rarCtx?.rar?.credits_required_cents > 0 && (rarCtx.rar.credits_value_cents || 0) < rarCtx.rar.credits_required_cents && (
-                      <div className="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs text-amber-200 space-y-1.5" data-testid="rar-guarantee-warning">
-                        <p className="font-bold flex items-center gap-1.5">
-                          <AlertCircle className="w-4 h-4 shrink-0" /> Règlement à Réception indisponible — garantie CREDI'SCOP insuffisante
-                        </p>
-                        <p>
-                          Vos crédits doivent couvrir <b>{rarCtx.rar.credit_coverage_pct || 45}&nbsp;%</b> du coût logistique
-                          ({formatCurrency(rarCtx.rar.logistics_cost_cents)}), soit <b>{formatCurrency(rarCtx.rar.credits_required_cents)}</b>.
-                          Valeur actuelle : {formatCurrency(rarCtx.rar.credits_value_cents || 0)} — il manque <b data-testid="rar-guarantee-missing">{formatCurrency(rarCtx.rar.credits_missing_cents)}</b>.
-                        </p>
-                        {rarCtx.rar.suggested_pack && (
-                          <p>
-                            Pack conseillé : <b>{rarCtx.rar.suggested_pack.label}</b> ({rarCtx.rar.suggested_pack.credits} crédits — {formatCurrency(rarCtx.rar.suggested_pack.price_ht_cents)} HT).
-                          </p>
-                        )}
-                        <a href="/mon-crediscop" data-testid="rar-guarantee-recharge-link"
-                          className="inline-block mt-0.5 px-2.5 py-1 rounded-md bg-amber-400 text-black font-bold hover:bg-amber-300">
-                          Recharger mes crédits
-                        </a>
-                      </div>
-                    )}
+                    <RarGuaranteeWarning rar={rarCtx?.rar} />
                   </div>
                 </div>
 
