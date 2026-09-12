@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { CheckCircle2, History, Loader2, Upload, XCircle } from 'lucide-react';
+import { CheckCircle2, FileDown, History, Loader2, Upload, XCircle } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -60,7 +60,18 @@ export const CatalogImportButton = ({ vendorId, onImported }) => {
 
   return (
     <div className="w-full space-y-3">
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end items-center gap-2 flex-wrap">
+        <span className="text-xs text-white/50 mr-1">Modèle officiel :</span>
+        <a href={`${API}/api/vendors/catalog-template/csv`} download
+          data-testid="catalog-template-csv-link"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white/70 border border-white/10 hover:bg-white/5">
+          <FileDown className="w-4 h-4" /> CSV
+        </a>
+        <a href={`${API}/api/vendors/catalog-template/xlsx`} download
+          data-testid="catalog-template-xlsx-link"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white/70 border border-white/10 hover:bg-white/5">
+          <FileDown className="w-4 h-4" /> XLSX
+        </a>
         <input ref={inputRef} type="file" accept=".csv,.xlsx" className="hidden"
           data-testid="catalog-import-input"
           onChange={(e) => upload(e.target.files?.[0])} />

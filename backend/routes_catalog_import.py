@@ -155,6 +155,20 @@ async def _log_import(vendor_id: str, filename: str, status: str, **extra):
         "created_at": datetime.now(timezone.utc).isoformat(), **extra})
 
 
+@catalog_import_router.get("/catalog-template/{fmt}")
+async def catalog_template(fmt: str):
+    """Modèle officiel de catalogue fournisseur (annexe technique V1.0)."""
+    import os
+    from fastapi.responses import FileResponse
+    if fmt not in ("csv", "xlsx"):
+        raise HTTPException(status_code=404, detail="Format inconnu : csv ou xlsx")
+    path = os.path.join(os.path.dirname(__file__), "assets", "catalogue", f"modele_catalogue_fournisseur.{fmt}")
+    if not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="Modèle indisponible")
+    media = "text/csv" if fmt == "csv" else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    return FileResponse(path, media_type=media, filename=f"modele_catalogue_fournisseur.{fmt}")
+
+
 @catalog_import_router.get("/{vendor_id}/catalog-imports")
 async def import_history(vendor_id: str, request: Request):
     from role_guards import ensure_seller_request

@@ -154,6 +154,42 @@ async def reserve_for_cart(db, org_id: str, zone_code: str, product_id: str, qua
     return expires
 
 
+async def _alert_vendor_low_stock(db, product_id: str, zone_code: str, new_qty: int, threshold: int, order_number: str):
+    """Alerte le vendeur (in-app + email) quand le stock d'une zone passe sous le seuil de réapprovisionnement."""
+    import logging
+    logger = logging.getLogger(__name__)
+    product = await db.products.find_one({"id": product_id}, {"_id": 0, "name": 1, "sku": 1, "vendor_id": 1})
+    vendor_id = (product or {}).get("vendor_id")
+    if not vendor_id:
+        return
+    label = f"{product.get('name')} ({product.get('sku', product_id)})"
+    body = (f"Le stock de « {label} » sur la zone {zone_code} est passé à {new_qty} unité(s) "
+            f"(seuil de réapprovisionnement : {threshold}) suite à la commande {order_number}.")
+    user = await db.users.find_one({"vendor_id": vendor_id}, {"_id": 0, "id": 1})
+    if user:
+        try:
+            from core_deps import create_notification
+            await create_notification("low_stock", f"Stock bas — {product.get('name')}", body,
+                                      target_roles=["direct"], target_user_id=user["id"],
+                                      data={"link": "/vendor?tab=products"})
+        except Exception as exc:
+            logger.warning("Notif in-app stock bas %s : %s", product_id, exc)
+    vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "email": 1, "company_name": 1})
+    if vendor and vendor.get("email"):
+        try:
+            from brevo_service import send_email
+            await send_email(
+                to_email=vendor["email"], to_name=vendor.get("company_name"),
+                subject=f"⚠️ Stock bas — {product.get('name')} ({zone_code}) : {new_qty} unité(s) restante(s)",
+                html_content=(f"<p>Bonjour,</p><p>{body}</p>"
+                              "<p>Pensez à réapprovisionner pour éviter une rupture : mettez à jour la quantité "
+                              "depuis votre espace vendeur, onglet Mes produits, ou via un import catalogue.</p>"
+                              "<p>L'équipe CommunityPlace — O'SCOP × KDMARCHÉ</p>"),
+                tags=["vendor-low-stock"])
+        except Exception as exc:
+            logger.warning("Email stock bas %s : %s", product_id, exc)
+
+
 async def decrement_stock_for_order(db, org_id: str, zone_code: str, items: list, order_number: str, author_email: str = "") -> int:
     """Déduit le stock du territoire à la confirmation d'une commande, trace l'historique et libère les réservations."""
     decremented = 0
@@ -183,6 +219,9 @@ async def decrement_stock_for_order(db, org_id: str, zone_code: str, items: list
             "created_at": now_iso,
         })
         decremented += 1
+        threshold = stock.get("reorder_point") or 5
+        if new_qty <= threshold < old_qty:
+            await _alert_vendor_low_stock(db, it["product_id"], zone_code, new_qty, threshold, order_number)
     await release_org_zone(db, org_id, zone_code)
     return decremented
 
