@@ -109,7 +109,34 @@ async def countersign_contract(fp_id: str, body: CountersignBody, request: Reque
         },
         "contract.updated_at": now,
     }})
+    op = await _load_op(fp_id)
+    if (op.get("contract") or {}).get("signatures", {}).get("investor"):
+        try:
+            await _email_signed_contract(op, admin.get("email"))
+        except Exception as exc:
+            logger.warning("Email convention signée %s : %s", fp_id, exc)
     return {"ok": True, "verification_code": code}
+
+
+async def _email_signed_contract(op: dict, admin_email: str | None):
+    """Envoie le PDF intégralement signé aux deux parties (Financeur + O'SCOP)."""
+    import base64
+    from brevo_service import send_email
+    from financing_contract import build_financing_contract_pdf
+    pdf = build_financing_contract_pdf(op, lang="fr", verify_base=_verify_base())
+    att = [{"content": base64.b64encode(pdf).decode(),
+            "name": f"convention-financement-{op.get('reference', op['id'][:8])}-signee.pdf"}]
+    funder_email = ((op.get("contract") or {}).get("funder") or {}).get("email") or op.get("paid_by")
+    verify_url = f"{_verify_base()}/verifier-financement/{op['id']}"
+    html = (f"<p>Bonjour,</p><p>La <b>convention de financement ponctuel {op.get('reference')}</b> "
+            f"(« {op.get('name')} ») est désormais <b>signée par les deux parties</b> (Financeur et O'SCOP).</p>"
+            f"<p>Vous trouverez ci-joint l'exemplaire PDF signé, portant les codes de vérification et le QR code d'authenticité.</p>"
+            f"<p>Vérification publique : <a href=\"{verify_url}\">{verify_url}</a></p>"
+            f"<p>Cordialement,<br/><b>SCIC SAS OBJECTIF SCOP OUTREMER</b></p>")
+    subject = f"Convention {op.get('reference')} signée par les deux parties"
+    for to in filter(None, {funder_email, admin_email, "contact@objectifscopoutremer.com"}):
+        await send_email(to_email=to, to_name=None, subject=subject, html_content=html,
+                         tags=["financing-contract-signed"], attachments=att)
 
 
 @financing_contract_router.get("/product-financing/{fp_id}/contract.pdf")

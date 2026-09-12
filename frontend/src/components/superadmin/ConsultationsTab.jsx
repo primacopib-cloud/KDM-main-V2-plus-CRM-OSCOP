@@ -9,6 +9,7 @@ import { CampaignsPanel } from './CampaignsPanel';
 import { EvaluationModal } from './EvaluationModal';
 import { FreightEstimateInline } from './FreightEstimateInline';
 import { CoopiaProcedureHint } from './CoopiaProcedureHint';
+import { LiveAuctionRoom } from './LiveAuctionRoom';
 
 const opts = () => ({ headers: getAuthHeaders(), credentials: 'include' });
 const jsonOpts = (method, body) => ({ method, headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, credentials: 'include', body: JSON.stringify(body) });
@@ -86,6 +87,7 @@ export const ConsultationsTab = () => {
   const [items, setItems] = useState([]);
   const [modal, setModal] = useState(false);
   const [evalC, setEvalC] = useState(null);
+  const [liveId, setLiveId] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${API}/admin/consultations`, opts()).then((r) => r.json()).then((d) => setItems(d.items || [])).catch(() => {});
@@ -145,6 +147,9 @@ export const ConsultationsTab = () => {
     }
     if (c.status === 'VALIDEE') out.push(<B key="p" onClick={() => act(`/admin/consultations/${c.id}/publish`, null, 'Publiée — paramètres verrouillés')} label="Publier" testid={`cons-publish-${c.id}`} gold />);
     if (c.status === 'PUBLIEE') out.push(<B key="o" onClick={() => act(`/admin/consultations/${c.id}/transition`, { to: 'INSCRIPTIONS_OUVERTES' }, 'Inscriptions ouvertes')} label="Ouvrir inscriptions" testid={`cons-open-${c.id}`} gold />);
+    if (['INSCRIPTIONS_OUVERTES', 'EN_COURS', 'CLOTUREE', 'EN_EVALUATION', 'ATTRIBUEE'].includes(c.status)) {
+      out.push(<B key="live" onClick={() => setLiveId(c.id)} label="🔴 Salle live" testid={`cons-live-${c.id}`} gold />);
+    }
     if (c.status === 'INSCRIPTIONS_OUVERTES') out.push(<B key="r" onClick={() => act(`/admin/consultations/${c.id}/transition`, { to: 'EN_COURS' }, 'Consultation en cours')} label="Démarrer" gold />);
     if (c.status === 'EN_COURS') out.push(<B key="c" onClick={() => act(`/admin/consultations/${c.id}/transition`, { to: 'CLOTUREE' }, 'Clôturée')} label="Clôturer" />);
     if (c.status === 'CLOTUREE') out.push(<B key="e" onClick={() => act(`/admin/consultations/${c.id}/transition`, { to: 'EN_EVALUATION' }, 'En évaluation')} label="Évaluer" />);
@@ -162,11 +167,29 @@ export const ConsultationsTab = () => {
         <h2 className="text-base font-semibold text-white flex items-center gap-2">
           <Gavel className="w-4 h-4 text-[#D9B35A]" /> Ventes aux enchères inversées &amp; consultations compétitives
         </h2>
+        <div className="flex items-center gap-2">
+          <button type="button" data-testid="annual-summary-btn"
+            onClick={async () => {
+              const year = new Date().getFullYear() - 1;
+              const r = await fetch(`${API}/admin/annual-transactions-summary/${year}.pdf`, { headers: getAuthHeaders(), credentials: 'include' });
+              if (!r.ok) { toast.error('Export impossible'); return; }
+              const blob = await r.blob();
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = `recapitulatif-transactions-${year}.pdf`;
+              a.click();
+              URL.revokeObjectURL(a.href);
+              toast.success(`Récapitulatif ${year} téléchargé (art. 242 bis CGI)`);
+            }}
+            className="px-3 py-2 rounded-xl text-xs font-bold text-white/80 border border-white/15 hover:bg-white/5">
+            Récapitulatif annuel 242 bis
+          </button>
         <button type="button" onClick={() => setModal(true)} data-testid="cons-create-btn"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold"
           style={{ background: 'linear-gradient(135deg, #D9B35A, #b8933e)', color: '#1F0A33' }}>
           <Plus className="w-3.5 h-3.5" /> Nouvelle consultation
         </button>
+        </div>
       </div>
 
       <LegalMatrixPanel onChanged={load} />
@@ -200,6 +223,7 @@ export const ConsultationsTab = () => {
       </div>
       {modal && <CreateModal onClose={() => setModal(false)} onSaved={() => { setModal(false); load(); }} />}
       {evalC && <EvaluationModal consultation={evalC} onClose={() => setEvalC(null)} onChanged={load} />}
+      {liveId && <LiveAuctionRoom cid={liveId} onClose={() => setLiveId(null)} />}
     </div>
   );
 };

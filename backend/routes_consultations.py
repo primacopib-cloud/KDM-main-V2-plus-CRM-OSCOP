@@ -399,3 +399,37 @@ async def _refund_entries(c: dict) -> int:
             count += 1
             await audit("CPC_CREDIT", "system", c["id"], {"user_id": e["vendor_user_id"], "qty": c["cpc_cost"]})
     return count
+
+
+@consultations_router.get("/{cid}/live")
+async def live_auction_room(cid: str, admin: dict = Depends(require_admin)):
+    """Salle d'enchère live : lot + inscrits + offres en temps réel (montants masqués si scellées non closes)."""
+    c = await db.consultations.find_one({"id": cid}, {"_id": 0, "published_snapshot": 0})
+    if not c:
+        raise HTTPException(status_code=404, detail="Consultation introuvable")
+    closed = c.get("status") in ("CLOTUREE", "EN_EVALUATION", "ATTRIBUEE", "SANS_SUITE", "ARCHIVEE")
+    sealed = (c.get("procedure") or "").upper().startswith("SCELLEE") or c.get("procedure") == "SCELLEE"
+    hide_amounts = sealed and not closed
+    entries = await db.consultation_entries.find(
+        {"consultation_id": cid}, {"_id": 0, "id": 1, "vendor_name": 1, "vendor_email": 1, "status": 1, "created_at": 1}
+    ).to_list(200)
+    bids = await db.bids.find({"consultation_id": cid}, {"_id": 0, "sealed_payload": 0}).sort("server_ts", -1).to_list(300)
+    entry_names = {e["id"]: e.get("vendor_name") or e.get("vendor_email") or "Fournisseur" for e in entries}
+    out_bids, best = [], None
+    for b in bids:
+        amt = b.get("amount_ht_cents")
+        if amt and not hide_amounts and b.get("status") == "VALIDE" and (best is None or amt < best):
+            best = amt
+        out_bids.append({
+            "id": b.get("id"), "vendor": entry_names.get(b.get("entry_id"), "Fournisseur"),
+            "amount_ht_cents": None if hide_amounts else amt,
+            "sealed": bool(hide_amounts), "round": b.get("round"), "status": b.get("status"),
+            "server_ts": str(b.get("server_ts") or ""),
+        })
+    return {
+        "consultation": {k: c.get(k) for k in ("id", "ref", "title", "type", "procedure", "status", "closes_at", "max_rounds")},
+        "entries_count": len([e for e in entries if e.get("status") == "INSCRIT"]),
+        "bids": out_bids,
+        "best_amount_ht_cents": best,
+        "amounts_hidden": hide_amounts,
+    }

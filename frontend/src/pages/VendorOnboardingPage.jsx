@@ -43,7 +43,7 @@ export default function VendorOnboardingPage() {
   const [busy, setBusy] = useState(false);
   const [, setOb] = useState(null);
   const buyerOnly = params.get('type') === 'acheteur_pro';
-  const [start, setStart] = useState({ company: '', legal_form: '', first_name: '', last_name: '', email: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro', member_type: buyerOnly ? 'buyer' : 'vendor', country: 'GP' });
+  const [start, setStart] = useState({ company: '', legal_form: '', first_name: '', last_name: '', email: '', siret: '', plan_slug: params.get('plan') || 'ess-acces-pro', member_type: buyerOnly ? 'buyer' : 'vendor', country: 'GP', cgu_accepted: false });
   const [dial, setDial] = useState('+590|GP');
   const [phoneNum, setPhoneNum] = useState('');
   const [profiles, setProfiles] = useState([]);
@@ -247,6 +247,20 @@ export default function VendorOnboardingPage() {
                 Code parrain {sponsorCode.toUpperCase()} détecté — il sera appliqué automatiquement à votre première connexion, aucune saisie nécessaire.
               </p>
             )}
+            <label className="flex items-start gap-2.5 text-xs text-white/75 cursor-pointer rounded-lg p-3"
+              style={{ background: 'rgba(217,179,90,0.06)', border: '1px solid rgba(217,179,90,0.25)' }}>
+              <input type="checkbox" required checked={start.cgu_accepted}
+                onChange={(e) => setStart({ ...start, cgu_accepted: e.target.checked })}
+                data-testid="cgu-accept-checkbox" className="mt-0.5 accent-[#D9B35A]" />
+              <span>
+                J'accepte pleinement et sans réserve les{' '}
+                <a href="/legal/cg-oscop" target="_blank" rel="noreferrer" className="underline text-[#E9CF8E]" data-testid="cgu-link">
+                  Conditions Générales d'Utilisation de la plateforme CommunityPlace
+                </a>{' '}
+                (article 1.1) ainsi que la{' '}
+                <a href="/legal/politique-confidentialite" target="_blank" rel="noreferrer" className="underline text-[#E9CF8E]">politique de confidentialité</a>.
+              </span>
+            </label>
             <button type="submit" disabled={busy} data-testid="vendor-pay-btn"
               className="w-full h-13 py-3.5 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #D9B35A 0%, #b8933e 100%)', color: '#1F0A33' }}>

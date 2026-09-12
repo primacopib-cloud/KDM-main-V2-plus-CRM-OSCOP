@@ -847,6 +847,10 @@ from routes_financing_contract import financing_contract_router, set_financing_c
 set_financing_contract_database(db)
 app.include_router(financing_contract_router)
 
+from routes_annual_summary import annual_summary_router, set_annual_summary_database
+set_annual_summary_database(db)
+app.include_router(annual_summary_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)

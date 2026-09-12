@@ -49,6 +49,7 @@ class StartBody(BaseModel):
     referral_code: str = ""
     source_cta: str = ""
     promo_code: str = ""
+    cgu_accepted: bool = False
 
 
 class ConventionFieldsBody(BaseModel):
@@ -76,6 +77,8 @@ class ActivateBody(BaseModel):
 
 @vendor_onboarding_router.post("/start")
 async def start_onboarding(body: StartBody):
+    if not body.cgu_accepted:
+        raise HTTPException(status_code=400, detail="L'acceptation des CGU CommunityPlace est obligatoire (article 1.1)")
     plan = await db.subscription_plans.find_one({"slug": body.plan_slug, "active": True}, {"_id": 0})
     if not plan:
         raise HTTPException(status_code=400, detail="Formule d'adhésion invalide")
@@ -129,6 +132,7 @@ async def start_onboarding(body: StartBody):
         "email": body.email.lower(), "phone": body.phone,
         "siret": "".join(c for c in body.siret if c.isdigit()),
         "member_type": body.member_type if body.member_type else "vendor",
+        "cgu_accepted": True, "cgu_accepted_at": datetime.now(timezone.utc).isoformat(),
         "locale": body.locale if body.locale in ("fr", "en", "es", "gcf") else "fr",
         "country": (body.country or "GP").upper(),
         "legal_form": body.legal_form.strip(),
