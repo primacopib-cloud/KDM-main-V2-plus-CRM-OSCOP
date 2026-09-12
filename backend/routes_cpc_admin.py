@@ -49,6 +49,21 @@ class SettingsBody(BaseModel):
     low_balance_alert: bool = True
 
 
+@cpc_admin_router.get("/click-billing/revenue")
+async def click_billing_revenue(admin: dict = Depends(require_admin)):
+    """Crédits générés par la facturation aux clics, mois par mois."""
+    pipeline = [
+        {"$match": {"type": "CLICK_ACTION"}},
+        {"$group": {"_id": {"$substr": ["$created_at", 0, 7]},
+                    "credits": {"$sum": {"$abs": "$qty"}}, "actions": {"$sum": 1}}},
+        {"$sort": {"_id": -1}}, {"$limit": 24},
+    ]
+    rows = [{"month": r["_id"], "credits": r["credits"], "actions": r["actions"]}
+            async for r in db.cpc_ledger.aggregate(pipeline)]
+    return {"items": rows, "total_credits": sum(r["credits"] for r in rows),
+            "total_actions": sum(r["actions"] for r in rows)}
+
+
 @cpc_admin_router.get("/click-billing/export.csv")
 async def click_billing_export(admin: dict = Depends(require_admin)):
     """Export CSV des actions facturées au clic (date, membre, action, montant, solde après)."""

@@ -46,6 +46,11 @@ export const CpcAdminTab = () => {
     URL.revokeObjectURL(url);
   };
 
+  const [clickRevenue, setClickRevenue] = useState(null);
+  useEffect(() => {
+    fetch(`${API}/admin/cpc/click-billing/revenue`, opts()).then((r) => r.json()).then(setClickRevenue).catch(() => {});
+  }, []);
+
   const load = useCallback(() => {
     fetch(`${API}/admin/cpc/packs`, opts()).then((r) => r.json()).then((d) => setPacks(d.items || [])).catch(() => {});
     fetch(`${API}/admin/cpc/accounts`, opts()).then((r) => r.json()).then((d) => setAccounts(d.items || [])).catch(() => {});
@@ -118,8 +123,31 @@ export const CpcAdminTab = () => {
             className="px-3 py-1.5 rounded-lg text-[10.5px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>Export PDF</button>
           <button type="button" onClick={downloadClickJournal} data-testid="cpc-click-journal-btn"
             className="px-3 py-1.5 rounded-lg text-[10.5px] font-bold bg-white/10 text-white/70 hover:text-white">Journal des clics (CSV)</button>
-          <span className="text-[10px] text-white/40">Mois vide = export intégral</span>
         </div>
+        {clickRevenue && (
+          <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4" data-testid="click-revenue-panel">
+            <p className="text-xs font-bold text-white/80 mb-2">
+              Revenus de la facturation aux clics — total : <span className="text-[#D9B35A]">{clickRevenue.total_credits} CREDI'SCOP</span> ({clickRevenue.total_actions} actions)
+            </p>
+            {(clickRevenue.items || []).length === 0 ? (
+              <p className="text-[11px] text-white/40">Aucune action facturée pour le moment.</p>
+            ) : (
+              <table className="w-full text-[11px]">
+                <thead><tr className="text-left text-white/40"><th className="py-1 pr-3">Mois</th><th className="py-1 pr-3">Actions</th><th className="py-1">Crédits générés</th></tr></thead>
+                <tbody>
+                  {clickRevenue.items.map((r) => (
+                    <tr key={r.month} className="border-t border-white/5 text-white/70" data-testid={`click-revenue-row-${r.month}`}>
+                      <td className="py-1 pr-3">{r.month}</td>
+                      <td className="py-1 pr-3">{r.actions}</td>
+                      <td className="py-1 font-semibold text-[#D9B35A]">{r.credits}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+        <span className="text-[10px] text-white/40 block mt-2">Mois vide = export intégral</span>
       </div>
 
       <div className="glass-panel-soft rounded-[14px] p-4">

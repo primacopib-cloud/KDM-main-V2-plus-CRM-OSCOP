@@ -863,6 +863,10 @@ import routes_promo_extend
 routes_promo_extend.set_database(db)
 app.include_router(routes_promo_extend.promo_extend_router)
 
+from routes_my_notifications import my_notifications_router, set_my_notifications_database
+set_my_notifications_database(db)
+app.include_router(my_notifications_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)

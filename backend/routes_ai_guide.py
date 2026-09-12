@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 ai_guide_router = APIRouter(prefix="/api/ai-guide", tags=["ai-guide"])
 
 SPACE_LABELS = {
-    "buyer": "Espace Acheteur Pro (catalogue B2B, commandes, factures, consultations, transport LOGI'SCOP)",
-    "vendor": "Espace Vendeur Pro (produits, commandes reçues, attestations RCR, crédits)",
-    "admin": "Espace Super Admin (pilotage complet : membres, comptabilité, trésorerie, LOGICOOP, litiges, GEDESS)",
+    "buyer": "Espace Acheteur Pro (catalogue B2B avec fiches produits détaillées partageables, commandes, factures, consultations, transport LOGI'SCOP, alertes retour en stock, compteur d'actions CREDI'SCOP)",
+    "vendor": "Espace Vendeur Pro (produits, import catalogue CSV/XLSX avec aperçu et synchronisation quotidienne, alertes stock bas et seuils, promotions avec prolongation un clic, enchères inversées avec alerte surenchère, commandes reçues, attestations RCR, crédits CREDI'SCOP)",
+    "admin": "Espace Super Admin (pilotage complet : membres, comptabilité, trésorerie, LOGICOOP, litiges, GEDESS, journal des prolongations promo, revenus de facturation aux clics, rapport promos hebdo)",
     "operator": "Espace Opérateur LOGICOOP (missions de transport, ePOD, médias cargaison, rémunération)",
     "pos": "Espace Opérateur POS (encaissement et retraits LOLODRIVE)",
     "lolo_point": "Espace Gérant Lolo Point (réassorts B2B, réception clients, statistiques)",
@@ -58,6 +58,11 @@ ACTIONS = {
     "buyer_tools": ("Outils d'achat", "/espace-acheteur?tab=tools"),
     "buyer_credits": ("Mon CREDI'SCOP", "/espace-acheteur?tab=crediscop"),
     "vendor_products": ("Gérer mes produits", "/espace-vendeur"),
+    "vendor_import": ("Importer mon catalogue (CSV/XLSX)", "/vendor?tab=products"),
+    "vendor_cpc": ("Mon CREDI'SCOP et packs", "/vendor?tab=cpc"),
+    "vendor_consultations": ("Mes enchères inversées", "/vendor?tab=consultations"),
+    "my_notifications": ("Mes notifications", "/notifications"),
+    "my_statement": ("Mon relevé CREDI'SCOP", "/mon-crediscop"),
     "admin_accounting": ("Ouvrir la Comptabilité", "/superadmin?tab=accounting"),
     "admin_logicoop": ("Ouvrir LOGICOOP", "/superadmin?tab=logicoop"),
     "admin_users": ("Gérer les membres", "/superadmin?tab=users"),
@@ -70,12 +75,12 @@ ACTIONS = {
 }
 SPACE_ACTIONS = {
     "buyer": ["buyer_orders", "buyer_invoices", "buyer_transport", "buyer_consultations",
-              "buyer_catalog", "buyer_tools", "buyer_credits"],
-    "vendor": ["vendor_products"],
+              "buyer_catalog", "buyer_tools", "buyer_credits", "my_notifications", "my_statement"],
+    "vendor": ["vendor_products", "vendor_import", "vendor_cpc", "vendor_consultations", "my_notifications"],
     "admin": ["admin_accounting", "admin_logicoop", "admin_users", "admin_support",
               "admin_registres", "admin_stats"],
-    "operator": ["operator_missions"],
-    "member": ["member_pass", "member_catalog"],
+    "operator": ["operator_missions", "my_notifications"],
+    "member": ["member_pass", "member_catalog", "my_notifications", "my_statement"],
     "pos": [], "lolo_point": [], "general": ["member_pass", "member_catalog"],
 }
 
@@ -89,6 +94,17 @@ SYSTEM_PROMPT = (
     "30 j, avoirs de service article 22, litiges température article 12), garanties RCR (retenue de "
     "cautionnement réciproque, FOGEDOM-SCIC), PASS Vie Chère et LOLODRIVE (wallet UC, Lolo Points), "
     "adhésions vendeur/acheteur, archivage GEDESS, paiements Stripe.\n"
+    "Nouveautés à connaître : import catalogue fournisseur CSV (séparateur ;) ou XLSX avec aperçu avant "
+    "confirmation, modèles officiels téléchargeables, historique des imports et synchronisation quotidienne "
+    "depuis une URL (onglet « Mes produits » de l'espace vendeur) ; alertes stock bas par email et cloche avec "
+    "seuil personnalisable par produit ou en masse ; promotions avec compte à rebours sur le catalogue, "
+    "relance à J-3 et prolongation de 7 jours en un clic depuis l'email ; produits masqués automatiquement du "
+    "catalogue en cas de rupture totale ou de promos expirées ; alerte de retour en stock pour les acheteurs "
+    "abonnés ; fiche produit détaillée partageable (/catalogue?produit=id) avec galerie photos et ajout "
+    "panier ; facturation CREDI'SCOP des actions métier : 4 crédits par action (ajout panier, commande, offre "
+    "d'enchère, import catalogue), 8 crédits au-delà de 100 actions dans le mois, compteur visible dans "
+    "l'espace CREDI'SCOP, action bloquée avec invitation à recharger si le solde est insuffisant ; page "
+    "« Mes notifications » avec marquage lu/non-lu.\n"
     "Règles : réponds dans la langue de l'utilisateur (français par défaut), en 2 à 6 phrases claires, "
     "orientées action (indique les onglets/boutons à utiliser). N'utilise JAMAIS de Markdown ni "
     "d'astérisques : texte brut uniquement, avec les noms d'onglets entre guillemets « ». "

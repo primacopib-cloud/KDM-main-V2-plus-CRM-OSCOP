@@ -117,6 +117,22 @@ async def my_ledger(user_id: str = Depends(get_current_user_id)):
     return {"items": items}
 
 
+@cpc_router.get("/me/suggested-pack")
+async def my_suggested_pack(user_id: str = Depends(get_current_user_id)):
+    """Pack CREDI'SCOP conseillé selon la consommation CPC du mois en cours."""
+    from datetime import datetime, timezone
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    spent = 0
+    async for m in db.cpc_ledger.find({"user_id": user_id, "qty": {"$lt": 0},
+                                       "created_at": {"$regex": f"^{month}"}}, {"_id": 0, "qty": 1}):
+        spent += -m["qty"]
+    packs = await db.cpc_packs.find({"active": True}, {"_id": 0}).sort("credits", 1).to_list(20)
+    if not packs:
+        return {"monthly_spend": spent, "pack": None}
+    suggested = next((p for p in packs if p["credits"] >= max(spent, 1)), packs[-1])
+    return {"monthly_spend": spent, "month": month, "pack": suggested}
+
+
 class CheckoutBody(BaseModel):
     pack_id: str
     origin_url: str
