@@ -37,6 +37,15 @@ export const CpcAdminTab = () => {
     URL.revokeObjectURL(url);
   };
 
+  const downloadClickJournal = async () => {
+    const r = await fetch(`${API}/admin/cpc/click-billing/export.csv`, opts());
+    if (!r.ok) return toast.error('Export impossible');
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = 'journal_clics_cpc.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const load = useCallback(() => {
     fetch(`${API}/admin/cpc/packs`, opts()).then((r) => r.json()).then((d) => setPacks(d.items || [])).catch(() => {});
     fetch(`${API}/admin/cpc/accounts`, opts()).then((r) => r.json()).then((d) => setAccounts(d.items || [])).catch(() => {});
@@ -107,6 +116,8 @@ export const CpcAdminTab = () => {
             className="px-3 py-1.5 rounded-lg text-[10.5px] font-bold bg-white/10 text-white/70 hover:text-white">Export CSV</button>
           <button type="button" onClick={() => downloadExport('pdf')} data-testid="cpc-export-pdf-btn"
             className="px-3 py-1.5 rounded-lg text-[10.5px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>Export PDF</button>
+          <button type="button" onClick={downloadClickJournal} data-testid="cpc-click-journal-btn"
+            className="px-3 py-1.5 rounded-lg text-[10.5px] font-bold bg-white/10 text-white/70 hover:text-white">Journal des clics (CSV)</button>
           <span className="text-[10px] text-white/40">Mois vide = export intégral</span>
         </div>
       </div>

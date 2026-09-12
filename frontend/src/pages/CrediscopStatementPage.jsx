@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BackLink } from '../components/BackLink';
 import { ArrowLeft, Coins, Download, Ticket, Wallet, Building2 } from 'lucide-react';
 import { BrandLogos } from '../components/BrandLogos';
+import { ClickCounterWidget } from '../components/ClickCounterWidget';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const KIND_META = {
@@ -52,6 +53,7 @@ export default function CrediscopStatementPage() {
                 );
               })}
             </div>
+            <ClickCounterWidget />
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5">
               <h2 className="text-sm font-semibold text-white mb-3">Mouvements récents (tous registres)</h2>
               {!(data.entries || []).length && <p className="text-sm text-white/40">Aucun mouvement.</p>}

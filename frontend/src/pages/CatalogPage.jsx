@@ -332,7 +332,14 @@ export default function CatalogPage() {
       setCart(updatedCart);
       toast.success(i18n.t('catalog.toast_ajoute_panier', { name: product.name }));
     } catch (error) {
-      toast.error(error.message || 'Erreur lors de l\'ajout');
+      if ((error.message || '').includes('Rechargez vos crédits')) {
+        toast.error(error.message, {
+          action: { label: 'Recharger mes crédits', onClick: () => window.location.assign('/mon-crediscop') },
+          duration: 8000,
+        });
+      } else {
+        toast.error(error.message || 'Erreur lors de l\'ajout');
+      }
     } finally {
       setCartLoading(false);
     }

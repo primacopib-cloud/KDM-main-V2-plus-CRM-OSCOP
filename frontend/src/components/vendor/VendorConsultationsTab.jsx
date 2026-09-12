@@ -75,7 +75,15 @@ const ConsultationCard = ({ c, onChanged }) => {
       body: JSON.stringify({ amount_ht_cents: cents }),
     });
     const d = await r.json();
-    if (!r.ok) return toast.error(d.detail || 'Erreur');
+    if (!r.ok) {
+      if ((d.detail || '').includes('Rechargez vos crédits')) {
+        return toast.error(d.detail, {
+          action: { label: 'Recharger mes crédits', onClick: () => window.location.assign('/vendor?tab=cpc') },
+          duration: 8000,
+        });
+      }
+      return toast.error(d.detail || 'Erreur');
+    }
     toast.success(sealed ? 'Offre scellée déposée (chiffrée jusqu\'à la clôture)' : `Offre enregistrée — tour ${d.round}`);
     setAmount('');
     loadStatus();

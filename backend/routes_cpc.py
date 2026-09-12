@@ -98,6 +98,19 @@ async def my_cpc(user_id: str = Depends(get_current_user_id)):
     return {"balance": acc.get("cpc_balance", 0), "status": acc.get("status", "ACTIF")}
 
 
+@cpc_router.get("/me/click-counter")
+async def my_click_counter(user_id: str = Depends(get_current_user_id)):
+    """Compteur d'actions facturées du mois et tarif en cours (4 CPC ≤ 100, 8 au-delà)."""
+    from datetime import datetime, timezone
+    from click_billing import CLICK_COST, CLICK_COST_PREMIUM, MONTHLY_THRESHOLD
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    counter = await db.click_counters.find_one({"user_id": user_id, "month": month}, {"_id": 0, "count": 1})
+    count = (counter or {}).get("count", 0)
+    return {"month": month, "count": count, "threshold": MONTHLY_THRESHOLD,
+            "current_rate": CLICK_COST if count < MONTHLY_THRESHOLD else CLICK_COST_PREMIUM,
+            "standard_rate": CLICK_COST, "premium_rate": CLICK_COST_PREMIUM}
+
+
 @cpc_router.get("/me/ledger")
 async def my_ledger(user_id: str = Depends(get_current_user_id)):
     items = await db.cpc_ledger.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).limit(100).to_list(100)

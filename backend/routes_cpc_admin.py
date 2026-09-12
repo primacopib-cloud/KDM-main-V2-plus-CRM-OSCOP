@@ -49,6 +49,30 @@ class SettingsBody(BaseModel):
     low_balance_alert: bool = True
 
 
+@cpc_admin_router.get("/click-billing/export.csv")
+async def click_billing_export(admin: dict = Depends(require_admin)):
+    """Export CSV des actions facturées au clic (date, membre, action, montant, solde après)."""
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+    emails = {}
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["date", "membre", "email", "action", "montant_cpc", "solde_apres"])
+    async for m in db.cpc_ledger.find({"type": "CLICK_ACTION"}, {"_id": 0}).sort("created_at", -1).limit(5000):
+        uid = m["user_id"]
+        if uid not in emails:
+            u = await db.users.find_one({"id": uid}, {"_id": 0, "email": 1, "full_name": 1, "name": 1, "company_name": 1})
+            emails[uid] = ((u or {}).get("full_name") or (u or {}).get("name") or (u or {}).get("company_name") or uid,
+                           (u or {}).get("email", ""))
+        name, email = emails[uid]
+        w.writerow([m.get("created_at", "")[:19], name, email, m.get("reason", ""), abs(m.get("qty", 0)),
+                    m.get("balance_after", "")])
+    buf.seek(0)
+    return StreamingResponse(iter([buf.getvalue()]), media_type="text/csv; charset=utf-8",
+                             headers={"Content-Disposition": "attachment; filename=journal_clics_cpc.csv"})
+
+
 @cpc_admin_router.get("/settings")
 async def read_settings(admin: dict = Depends(require_admin)):
     return await get_cpc_settings()

@@ -6,6 +6,7 @@ import { CpcSubscriptionPanel } from './CpcSubscriptionPanel';
 import { CpcRechargePanel } from './CpcRechargePanel';
 import { ReferralPanel } from './ReferralPanel';
 import { VendorPreferencesPanel } from './VendorPreferencesPanel';
+import { ClickCounterWidget } from '../ClickCounterWidget';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const eur = (c) => `${((c || 0) / 100).toFixed(2).replace('.', ',')} €`;
@@ -82,6 +83,7 @@ export const VendorCpcTab = () => {
 
   return (
     <div className="space-y-6" data-testid="vendor-cpc-tab">
+      <ClickCounterWidget />
       <div className={`${panel} p-5 flex flex-wrap items-center gap-4`}>
         <div className="w-12 h-12 rounded-xl bg-[#D9B35A]/15 flex items-center justify-center">
           <Ticket className="w-6 h-6 text-[#D9B35A]" />
