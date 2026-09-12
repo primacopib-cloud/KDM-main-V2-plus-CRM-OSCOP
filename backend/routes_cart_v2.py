@@ -127,7 +127,7 @@ async def add_to_cart(
     if not membership:
         raise HTTPException(status_code=400, detail="Aucune organisation associée")
     await ensure_member_active(membership["org_id"])
-    
+
     zone_code = await _resolve_zone(current_user, membership["org_id"], zone_code)
     if not zone_code:
         raise HTTPException(status_code=400, detail="Sélectionnez une zone d'abord")
@@ -162,6 +162,10 @@ async def add_to_cart(
             status_code=400,
             detail=f"Quantité maximum: {product['max_order_qty']}"
         )
+
+    # Facturation CPC de l'action (uniquement si toutes les validations passent)
+    from click_billing import charge_click
+    await charge_click(db, current_user["id"], f"Ajout panier — {product.get('name', item.product_id)}")
     
     # Get or create cart
     cart = await db.carts.find_one({

@@ -203,6 +203,11 @@ async def import_catalog(vendor_id: str, request: Request, file: UploadFile = Fi
         return {"ok": True, "preview": True, "total": len(valid),
                 "products": [{k: p[k] for k in ("sku", "name", "category", "price_ht", "tva_rate",
                                                 "stock_quantity", "conditionnement", "image_url")} for p in valid]}
+    from auth import extract_user_id_from_request
+    from click_billing import charge_click
+    click_user = extract_user_id_from_request(request)
+    if click_user:
+        await charge_click(db, click_user, f"Import catalogue — {file.filename} ({len(valid)} produits)")
     return await _apply_products(vendor_id, file.filename, valid)
 
 

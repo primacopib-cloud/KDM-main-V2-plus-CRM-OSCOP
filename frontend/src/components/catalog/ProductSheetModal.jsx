@@ -1,4 +1,5 @@
-import { Timer, Package, ShoppingCart, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Timer, Package, ShoppingCart, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -7,6 +8,7 @@ import { tData } from '@/i18n/tData';
 const eur = (cents) => `${((cents || 0) / 100).toFixed(2).replace('.', ',')} €`;
 
 export const ProductSheetModal = ({ product, onClose, onAddToCart, cartLoading }) => {
+  const [idx, setIdx] = useState(0);
   if (!product) return null;
   const imgs = (product.images || []).map((i) => i.url || i).filter(Boolean);
   const incoterms = [...new Set([
@@ -22,9 +24,34 @@ export const ProductSheetModal = ({ product, onClose, onAddToCart, cartLoading }
           </DialogTitle>
         </DialogHeader>
         <div className="grid sm:grid-cols-2 gap-5">
-          <div className="rounded-xl overflow-hidden bg-white/5 aspect-square flex items-center justify-center">
+          <div className="relative rounded-xl overflow-hidden bg-white/5 aspect-square flex items-center justify-center" data-testid="product-sheet-gallery">
             {imgs.length > 0 ? (
-              <img src={imgs[0]} alt={product.name} className="w-full h-full object-cover" />
+              <>
+                <img src={imgs[idx % imgs.length]} alt={product.name} className="w-full h-full object-cover" />
+                {imgs.length > 1 && (
+                  <>
+                    <button type="button" aria-label="Photo précédente"
+                      onClick={() => setIdx((i) => (i - 1 + imgs.length) % imgs.length)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 rounded-full p-1.5 text-white"
+                      data-testid="product-sheet-gallery-prev">
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button type="button" aria-label="Photo suivante"
+                      onClick={() => setIdx((i) => (i + 1) % imgs.length)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 rounded-full p-1.5 text-white"
+                      data-testid="product-sheet-gallery-next">
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      {imgs.map((_, i) => (
+                        <button key={i} type="button" onClick={() => setIdx(i)} aria-label={`Photo ${i + 1}`}
+                          data-testid={`product-sheet-gallery-dot-${i}`}
+                          className={`w-2 h-2 rounded-full ${i === idx % imgs.length ? 'bg-[#D9B35A]' : 'bg-white/40'}`} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
             ) : (
               <Package className="w-16 h-16 text-white/20" />
             )}

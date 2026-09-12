@@ -69,7 +69,7 @@ async def create_order(
     # Check role
     if membership["role"] not in [CustomerRole.CUSTOMER_ORG_OWNER.value, CustomerRole.CUSTOMER_ORG_BUYER.value]:
         raise HTTPException(status_code=403, detail="Rôle non autorisé à commander")
-    
+
     # Get cart
     cart = await db.carts.find_one({"id": order_data.cart_id})
     if not cart or cart["org_id"] != membership["org_id"]:
@@ -103,7 +103,11 @@ async def create_order(
     })
     if not pickup:
         raise HTTPException(status_code=400, detail="Point de retrait invalide pour cette zone")
-    
+
+    # Facturation CPC de l'action (uniquement si toutes les validations passent)
+    from click_billing import charge_click
+    await charge_click(db, current_user["id"], "Validation de commande")
+
     # Create order
     order_dict = {
         "id": str(uuid.uuid4()),

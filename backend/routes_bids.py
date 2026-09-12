@@ -284,6 +284,8 @@ async def submit_bid(cid: str, body: BidBody, user_id: str = Depends(get_current
             raise HTTPException(status_code=409, detail=f"Nombre maximal de tours atteint ({c.get('max_rounds', 3)})")
         if my_bids and body.amount_ht_cents >= my_bids[-1]["amount_ht_cents"]:
             raise HTTPException(status_code=400, detail="Enchère inversée : votre nouvelle offre doit être inférieure à la précédente")
+        from click_billing import charge_click
+        await charge_click(db, user_id, f"Dépôt d'offre — consultation {c.get('ref', cid)} tour {rnd}")
         doc = {"id": str(uuid.uuid4()), "consultation_id": cid, "entry_id": entry["id"], "round": rnd,
                "amount_ht_cents": body.amount_ht_cents, "currency": "EUR", "details": body.details,
                "sealed_payload": None, "payload_sha256": hashlib.sha256(str(body.amount_ht_cents).encode()).hexdigest(),

@@ -63,6 +63,7 @@ export default function CatalogPage() {
   // Catalog data
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [sharedSheet, setSharedSheet] = useState(null);
   const [pickupLocations, setPickupLocations] = useState([]);
   const [zones, setZones] = useState([]);
   const [entitledZones, setEntitledZones] = useState(null);
@@ -182,12 +183,12 @@ export default function CatalogPage() {
         setProducts(Array.isArray(productsData) ? productsData : []);
         setPickupLocations(Array.isArray(locationsData) ? locationsData : []);
 
-        // Deep-link fiche produit partagée : /catalogue?produit={id}
+        // Deep-link fiche produit partagée : /catalogue?produit={id} → ouverture directe de la fiche détaillée
         const sharedId = new URLSearchParams(window.location.search).get('produit');
         if (sharedId) {
           try {
             const shared = await catalogAPI.getProduct(sharedId, defaultZone);
-            if (shared?.name) setSearchTerm(shared.name);
+            if (shared?.name) setSharedSheet(shared);
           } catch { /* produit introuvable : catalogue complet */ }
         }
 
@@ -573,6 +574,7 @@ export default function CatalogPage() {
               cart={cart}
               cartLoading={cartLoading}
               handleAddToCart={handleAddToCart}
+              initialSheetProduct={sharedSheet}
             />
           )}
 

@@ -148,7 +148,7 @@ const COUNTRY_FLAGS = {
   'COTE-DIVOIRE': 'ci', 'AFRIQUE-DU-SUD': 'za', MADAGASCAR: 'mg', MAURICE: 'mu',
 };
 
-export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) => {
+export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, initialSheetProduct = null }) => {
   const restockZone = cart?.zone_code || null;
   const [subscribedSet, setSubscribedSet] = useState(new Set());
   useEffect(() => {
@@ -169,6 +169,9 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
   const [zoom, setZoom] = useState(null);
   const [reviewsProduct, setReviewsProduct] = useState(null);
   const [sheetProduct, setSheetProduct] = useState(null);
+  useEffect(() => {
+    if (initialSheetProduct) setSheetProduct(initialSheetProduct);
+  }, [initialSheetProduct]);
   const [oscopBuyProduct, setOscopBuyProduct] = useState(null);
   const promos = useCatalogPromos();
   const lang = (i18n.language || 'fr').slice(0, 2);
