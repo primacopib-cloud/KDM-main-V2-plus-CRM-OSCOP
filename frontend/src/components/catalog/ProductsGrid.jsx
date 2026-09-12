@@ -410,7 +410,8 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
         {videoProduct && <ProductVideoModal product={videoProduct} onClose={() => setVideoProduct(null)} />}
         {oscopBuyProduct && <OscopBuyDialog product={oscopBuyProduct} onClose={() => setOscopBuyProduct(null)} />}
         {reviewsProduct && <ProductReviewsModal product={reviewsProduct} onClose={() => setReviewsProduct(null)} />}
-        {sheetProduct && <ProductSheetModal product={sheetProduct} onClose={() => setSheetProduct(null)} />}
+        {sheetProduct && <ProductSheetModal product={sheetProduct} onClose={() => setSheetProduct(null)}
+          onAddToCart={handleAddToCart} cartLoading={cartLoading} />}
         {zoom && <ProductLightbox key={`${zoom.product.id}-${zoom.index}`} zoom={zoom} onClose={() => setZoom(null)} />}
   </>
   );

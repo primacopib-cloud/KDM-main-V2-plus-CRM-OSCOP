@@ -1,11 +1,12 @@
-import { Timer, Package } from 'lucide-react';
+import { Timer, Package, ShoppingCart, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { tData } from '@/i18n/tData';
 
 const eur = (cents) => `${((cents || 0) / 100).toFixed(2).replace('.', ',')} €`;
 
-export const ProductSheetModal = ({ product, onClose }) => {
+export const ProductSheetModal = ({ product, onClose, onAddToCart, cartLoading }) => {
   if (!product) return null;
   const imgs = (product.images || []).map((i) => i.url || i).filter(Boolean);
   const incoterms = [...new Set([
@@ -77,6 +78,16 @@ export const ProductSheetModal = ({ product, onClose }) => {
             )}
             {!product.in_stock && (
               <p className="text-xs text-red-400">Rupture de stock sur ce territoire</p>
+            )}
+            {onAddToCart && (
+              <Button
+                onClick={() => onAddToCart(product)}
+                disabled={!product.price_visible || !product.in_stock || cartLoading}
+                className="w-full bg-[#D9B35A] hover:bg-[#c9a34a] text-black font-bold"
+                data-testid="product-sheet-add-to-cart">
+                {cartLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShoppingCart className="w-4 h-4 mr-2" />}
+                Ajouter au panier
+              </Button>
             )}
           </div>
         </div>

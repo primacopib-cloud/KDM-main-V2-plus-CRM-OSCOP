@@ -50,6 +50,7 @@ import { MarginsChart, ReminderSettings, AuditRegisterPanel, DisputedOrdersPanel
 import { ProfilesSpacesTab } from '../components/superadmin/ProfilesSpacesTab';
 import { AnnouncementsTab } from '../components/superadmin/AnnouncementsTab';
 import { FlashPromosTab } from '../components/superadmin/FlashPromosTab';
+import { PromoExtensionLog } from '../components/superadmin/PromoExtensionLog';
 import { CpcAdminTab } from '../components/superadmin/CpcAdminTab';
 import { ConsultationsTab } from '../components/superadmin/ConsultationsTab';
 import { PartnerConventionsTab } from '../components/superadmin/PartnerConventionsTab';
@@ -293,6 +294,7 @@ export default function SuperAdminPage() {
 
           <TabsContent value="promos">
             <FlashPromosTab />
+            <PromoExtensionLog />
           </TabsContent>
 
           <TabsContent value="cpc">

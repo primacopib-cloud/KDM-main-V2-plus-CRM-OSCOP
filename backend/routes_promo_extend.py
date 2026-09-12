@@ -4,8 +4,10 @@ import os
 import uuid
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
+
+from lolodrive_helpers import require_admin
 
 logger = logging.getLogger(__name__)
 promo_extend_router = APIRouter(prefix="/api/promo", tags=["Promotions"])
@@ -43,6 +45,14 @@ style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;tex
 </div></body></html>""")
 
 
+@promo_extend_router.get("/admin/extension-log")
+async def extension_log(admin: dict = Depends(require_admin)):
+    """Journal des prolongations de promo (superadmin)."""
+    items = await db.promo_extension_log.find({}, {"_id": 0}) \
+        .sort("extended_at", -1).limit(50).to_list(50)
+    return {"items": items}
+
+
 @promo_extend_router.get("/extend/{token}")
 async def extend_promo(token: str):
     doc = await db.promo_extend_tokens.find_one({"token": token})
@@ -59,7 +69,15 @@ async def extend_promo(token: str):
     await db.products.update_one({"id": doc["product_id"]}, {"$unset": {"promo_renewal_reminded_at": ""}})
     await db.promo_extend_tokens.update_one({"token": token},
                                             {"$set": {"used": True, "used_at": datetime.utcnow()}})
-    product = await db.products.find_one({"id": doc["product_id"]}, {"_id": 0, "name": 1})
+    product = await db.products.find_one({"id": doc["product_id"]}, {"_id": 0, "name": 1, "sku": 1, "vendor_id": 1})
+    await db.promo_extension_log.insert_one({
+        "id": uuid.uuid4().hex, "product_id": doc["product_id"],
+        "product_name": (product or {}).get("name"), "sku": (product or {}).get("sku"),
+        "vendor_id": (product or {}).get("vendor_id"),
+        "old_end": doc["promo_end"].isoformat(), "new_end": new_end.isoformat(),
+        "zones_count": r.modified_count, "source": "email_one_click",
+        "extended_at": datetime.utcnow().isoformat(),
+    })
     logger.info("Promo prolongée +7j via email : %s (%d zone(s))", doc["product_id"], r.modified_count)
     return _page("Promotion prolongée ✓",
                  f"La promotion sur « {(product or {}).get('name', 'votre produit')} » a été prolongée de 7 jours "
