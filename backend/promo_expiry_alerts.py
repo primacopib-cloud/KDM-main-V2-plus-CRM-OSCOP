@@ -41,13 +41,20 @@ async def run_vendor_promo_renewal_reminders(db) -> int:
         vendor = await db.vendors.find_one({"id": product["vendor_id"]}, {"_id": 0, "email": 1, "company_name": 1})
         if vendor and vendor.get("email"):
             try:
+                import os
                 from brevo_service import send_email
+                from routes_promo_extend import create_extend_token
+                token = await create_extend_token(product_id, promo_end)
+                extend_url = f"{os.environ.get('FRONTEND_PUBLIC_URL', '')}/api/promo/extend/{token}"
                 await send_email(
                     to_email=vendor["email"], to_name=vendor.get("company_name"),
                     subject=f"⏳ Promo en fin de course — {product.get('name')} : {days_left} jour(s) restant(s)",
                     html_content=(f"<p>Bonjour,</p><p>{body}</p>"
-                                  "<p>Pour la prolonger, contactez votre gestionnaire de catalogue ou ajustez-la "
-                                  "depuis votre espace vendeur.</p>"
+                                  f'<p style="margin:24px 0;"><a href="{extend_url}" '
+                                  'style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;'
+                                  'text-decoration:none;font-weight:bold;">Prolonger de 7 jours</a></p>'
+                                  "<p>Un clic suffit — la promo sera étendue sur toutes les zones concernées, "
+                                  "sans passer par un écran.</p>"
                                   "<p>L'équipe CommunityPlace — O'SCOP × KDMARCHÉ</p>"),
                     tags=["promo-expiry-reminder"])
             except Exception as exc:

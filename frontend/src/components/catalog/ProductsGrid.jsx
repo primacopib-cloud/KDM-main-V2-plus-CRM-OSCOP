@@ -13,6 +13,7 @@ import { ProductShareButtons } from './ProductShareButtons';
 import { useCatalogPromos, bestPromos, PromoPriceBlock } from './ProductPromoBadges';
 import { SaleModelBadge } from './SaleModelBadge';
 import { OscopBuyDialog } from './OscopBuyDialog';
+import { ProductSheetModal } from './ProductSheetModal';
 
 const ProductImageCarousel = ({ product, onZoom }) => {
   const [idx, setIdx] = useState(0);
@@ -167,6 +168,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
   const [videoProduct, setVideoProduct] = useState(null);
   const [zoom, setZoom] = useState(null);
   const [reviewsProduct, setReviewsProduct] = useState(null);
+  const [sheetProduct, setSheetProduct] = useState(null);
   const [oscopBuyProduct, setOscopBuyProduct] = useState(null);
   const promos = useCatalogPromos();
   const lang = (i18n.language || 'fr').slice(0, 2);
@@ -279,7 +281,9 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               )}
 
               {/* Product info */}
-              <h3 className="font-medium text-white/90 mb-1 line-clamp-2">{tr(product).name || product.name}</h3>
+              <h3 className="font-medium text-white/90 mb-1 line-clamp-2 cursor-pointer hover:text-[#D9B35A] transition-colors"
+                onClick={() => setSheetProduct(product)}
+                data-testid={`product-sheet-open-${product.sku}`}>{tr(product).name || product.name}</h3>
               {(tr(product).short_description || tr(product).description || product.description) && (
                 <p className="text-xs text-white/55 mb-1 line-clamp-2" data-testid={`product-desc-${product.sku}`}>
                   {tr(product).short_description || tr(product).description || product.description}
@@ -406,6 +410,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
         {videoProduct && <ProductVideoModal product={videoProduct} onClose={() => setVideoProduct(null)} />}
         {oscopBuyProduct && <OscopBuyDialog product={oscopBuyProduct} onClose={() => setOscopBuyProduct(null)} />}
         {reviewsProduct && <ProductReviewsModal product={reviewsProduct} onClose={() => setReviewsProduct(null)} />}
+        {sheetProduct && <ProductSheetModal product={sheetProduct} onClose={() => setSheetProduct(null)} />}
         {zoom && <ProductLightbox key={`${zoom.product.id}-${zoom.index}`} zoom={zoom} onClose={() => setZoom(null)} />}
   </>
   );
