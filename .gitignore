@@ -206,3 +206,8 @@ frontend/node_modules/.cache/default-development/25.pack
 .env
 .env.*
 *.env
+
+# Database dumps / backups (contiennent des clés et données sensibles)
+backups/
+*.bson
+*.metadata.json
