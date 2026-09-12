@@ -342,7 +342,17 @@ async def get_vendor_products(vendor_id: str, status: Optional[str] = None):
         query,
         {"_id": 0}
     ).sort("created_at", -1).to_list(500)
-    
+
+    # Badge rupture : produits masqués du catalogue public (toutes les zones suivies à 0)
+    ids = [p["id"] for p in products]
+    if ids:
+        tracked = await db.zone_stocks.distinct("product_id", {"product_id": {"$in": ids}})
+        in_stock = set(await db.zone_stocks.distinct(
+            "product_id", {"product_id": {"$in": ids}, "quantity_available": {"$gt": 0}}))
+        hidden = {pid for pid in tracked if pid not in in_stock}
+        for p in products:
+            p["hidden_out_of_stock"] = p["id"] in hidden
+
     return {
         "products": products,
         "count": len(products),

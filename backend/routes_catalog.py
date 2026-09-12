@@ -330,12 +330,24 @@ async def list_products(
         if out_ids:
             query.setdefault("$and", []).append({"id": {"$nin": out_ids}})
 
+    # Fin de promotion : masque les produits dont tous les prix sont des promos expirées
+    now_dt = datetime.utcnow()
+    valid_price_filter = {"is_active": True,
+                          "$or": [{"promo_end": None}, {"promo_end": {"$gte": now_dt}}]}
+    priced_ids = await db.zone_prices.distinct("product_id")
+    if priced_ids:
+        valid_ids = set(await db.zone_prices.distinct("product_id", valid_price_filter))
+        expired_ids = [pid for pid in priced_ids if pid not in valid_ids]
+        if expired_ids:
+            query.setdefault("$and", []).append({"id": {"$nin": expired_ids}})
+
     # Disponibilité par zone : uniquement les produits avec un prix actif dans la zone demandée
     if country_filter:
         query["countries"] = country_filter
     elif zone_code and not show_all:
         zone_product_ids = await db.zone_prices.distinct(
-            "product_id", {"zone_code": zone_code, "is_active": True})
+            "product_id", {"zone_code": zone_code, "is_active": True,
+                           "$or": [{"promo_end": None}, {"promo_end": {"$gte": datetime.utcnow()}}]})
         query["id"] = {"$in": zone_product_ids}
 
     def _build_cursor():

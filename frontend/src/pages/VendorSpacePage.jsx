@@ -403,6 +403,11 @@ const VendorSpacePage = () => {
                               <h3 className="font-semibold text-white truncate">{product.name}</h3>
                               <p className="text-sm text-white/45">SKU: {product.sku}</p>
                             </div>
+                            {product.hidden_out_of_stock && (
+                              <Badge className="bg-red-600 text-white animate-pulse" data-testid={`rupture-badge-${product.id}`}>
+                                Rupture — masqué du catalogue
+                              </Badge>
+                            )}
                             {getStatusBadge(product.status)}
                           </div>
                           
