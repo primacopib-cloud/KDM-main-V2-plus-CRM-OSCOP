@@ -3,6 +3,18 @@ import { Input } from '../ui/input';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
+// FastAPI renvoie parfois detail = liste d'erreurs de validation → message lisible
+const readDetail = (err) => {
+  const d = err?.detail;
+  if (Array.isArray(d)) {
+    return d.map((e) => {
+      const field = (e.loc || []).slice(1).join('.');
+      return field ? `${field} : ${e.msg}` : e.msg;
+    }).join(' ; ');
+  }
+  return typeof d === 'string' ? d : null;
+};
+
 // Signature API functions
 export const signatureAPI = {
   initiate: async (data) => {
@@ -13,7 +25,7 @@ export const signatureAPI = {
     });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.detail || 'Erreur initiation signature');
+      throw new Error(readDetail(err) || 'Erreur initiation signature');
     }
     return res.json();
   },

@@ -177,10 +177,16 @@ async def rar_gate(user: dict, amount_cents: int = 0, order_or_cart: dict = None
         coverage = {"logistics_cost_cents": logi, "credits_value_cents": cv,
                     "credits_required_cents": required, "credit_coverage_pct": RAR_CREDIT_COVERAGE_PCT}
         if cv < required:
+            missing = required - cv
+            packs = await db.cpc_packs.find(
+                {"active": True, "price_ht_cents": {"$gt": 0}},
+                {"_id": 0, "label": 1, "credits": 1, "price_ht_cents": 1}).sort("price_ht_cents", 1).to_list(20)
+            pack = next((p for p in packs if p["price_ht_cents"] >= missing), packs[-1] if packs else None)
             return {"allowed": False,
                     "reason": (f"Garantie CREDI'SCOP insuffisante : la valeur de vos crédits ({cv / 100:.2f} €) "
                                f"doit couvrir au moins {RAR_CREDIT_COVERAGE_PCT} % du coût logistique "
                                f"({logi / 100:.2f} €), soit {required / 100:.2f} €. Rechargez vos crédits."),
+                    "credits_missing_cents": missing, "suggested_pack": pack,
                     **coverage, **payload}
         payload.update(coverage)
     return {"allowed": True, "org_id": org_id, **payload}

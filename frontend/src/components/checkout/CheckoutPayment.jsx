@@ -169,6 +169,27 @@ export const PaymentStep = ({ currentStep, totals, useInstallment, setUseInstall
                         </div>
                       </div>
                     )}
+                    {rarCtx?.rar?.credits_required_cents > 0 && (rarCtx.rar.credits_value_cents || 0) < rarCtx.rar.credits_required_cents && (
+                      <div className="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs text-amber-200 space-y-1.5" data-testid="rar-guarantee-warning">
+                        <p className="font-bold flex items-center gap-1.5">
+                          <AlertCircle className="w-4 h-4 shrink-0" /> Règlement à Réception indisponible — garantie CREDI'SCOP insuffisante
+                        </p>
+                        <p>
+                          Vos crédits doivent couvrir <b>{rarCtx.rar.credit_coverage_pct || 45}&nbsp;%</b> du coût logistique
+                          ({formatCurrency(rarCtx.rar.logistics_cost_cents)}), soit <b>{formatCurrency(rarCtx.rar.credits_required_cents)}</b>.
+                          Valeur actuelle : {formatCurrency(rarCtx.rar.credits_value_cents || 0)} — il manque <b data-testid="rar-guarantee-missing">{formatCurrency(rarCtx.rar.credits_missing_cents)}</b>.
+                        </p>
+                        {rarCtx.rar.suggested_pack && (
+                          <p>
+                            Pack conseillé : <b>{rarCtx.rar.suggested_pack.label}</b> ({rarCtx.rar.suggested_pack.credits} crédits — {formatCurrency(rarCtx.rar.suggested_pack.price_ht_cents)} HT).
+                          </p>
+                        )}
+                        <a href="/mon-crediscop" data-testid="rar-guarantee-recharge-link"
+                          className="inline-block mt-0.5 px-2.5 py-1 rounded-md bg-amber-400 text-black font-bold hover:bg-amber-300">
+                          Recharger mes crédits
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
 

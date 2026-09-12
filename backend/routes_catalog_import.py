@@ -16,7 +16,7 @@ db = None
 
 REQUIRED = ["sku_fournisseur", "code_ean", "designation_produit", "categorie",
             "prix_unitaire_ht", "taux_tva", "quantite_stock", "conditionnement"]
-ALL_COLS = REQUIRED[:4] + ["description"] + REQUIRED[4:] + ["poids_kg", "url_image"]
+ALL_COLS = REQUIRED[:4] + ["description"] + REQUIRED[4:] + ["poids_kg", "volume_m3", "url_image"]
 VALID_TVA = {0.0, 2.1, 8.5}
 
 
@@ -103,6 +103,20 @@ def _validate(rows):
         url = g("url_image")
         if url and not url.startswith("https://"):
             line_err.append("url_image doit commencer par https://")
+        weight = volume = None
+        for col, unit in (("poids_kg", "kg"), ("volume_m3", "m³")):
+            raw = g(col)
+            if raw:
+                try:
+                    val = float(raw.replace(",", "."))
+                    if val < 0:
+                        line_err.append(f"{col} négatif")
+                    elif col == "poids_kg":
+                        weight = val
+                    else:
+                        volume = val
+                except ValueError:
+                    line_err.append(f"{col} invalide ({raw})")
         if line_err:
             errors.append(f"Ligne {n} : " + " ; ".join(line_err))
         else:
@@ -111,7 +125,7 @@ def _validate(rows):
                 "category": g("categorie"), "description": g("description"),
                 "price_ht": price, "tva_rate": tva, "stock_quantity": stock,
                 "conditionnement": g("conditionnement"),
-                "weight_kg": float(g("poids_kg")) if g("poids_kg") else None,
+                "weight_kg": weight, "volume_m3": volume,
                 "image_url": url or None,
             })
     return valid, errors
@@ -221,7 +235,7 @@ async def _apply_products(vendor_id: str, filename: str, valid: list) -> dict:
             "price_ht": p["price_ht"], "tva_rate": p["tva_rate"],
             "price_ttc": round(p["price_ht"] * (1 + p["tva_rate"] / 100), 2),
             "stock_quantity": p["stock_quantity"], "unit": p["conditionnement"],
-            "ean": p["ean"], "weight_kg": p["weight_kg"],
+            "ean": p["ean"], "weight_kg": p["weight_kg"], "volume_m3": p["volume_m3"],
             "updated_at": now, "import_source": "catalog_file",
         }
         if p["image_url"]:

@@ -496,7 +496,9 @@ export default function CheckoutPage() {
       <SMSSignatureModal
         isOpen={signatureModalOpen}
         onClose={() => setSignatureModalOpen(false)}
-        onSuccess={handleSignatureSuccess}
+        onSignatureComplete={handleSignatureSuccess}
+        documentType="BON_COMMANDE"
+        documentRef={`CART-${cart?.id || 'B2B'}`}
         documentTitle="Bon de Commande B2B"
         documentDescription={`Commande EXW - Zone ${selectedZone} - ${cart?.items?.length || 0} article(s) - Total: ${formatCurrency(totals.totalTTC)} TTC`}
         signerInfo={{

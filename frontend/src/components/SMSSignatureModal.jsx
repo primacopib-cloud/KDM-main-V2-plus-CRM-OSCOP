@@ -73,10 +73,20 @@ export default function SMSSignatureModal({
     setError(null);
     
     try {
+      const info = signerInfo || {};
+      const fullName = (info.name || `${info.first_name || ''} ${info.last_name || ''}`).trim();
+      const parts = fullName.split(/\s+/);
       const result = await signatureAPI.initiate({
         document_type: documentType,
         document_ref: documentRef,
-        signer: signerInfo
+        signer: {
+          first_name: info.first_name || parts[0] || 'Signataire',
+          last_name: info.last_name || parts.slice(1).join(' ') || parts[0] || 'KDMARCHE',
+          email: info.email,
+          phone: (info.phone || '').replace(/[^0-9+]/g, ''),
+          company: info.company || null,
+          title: info.title || null,
+        },
       });
       
       setSignatureId(result.signature_id);

@@ -1,0 +1,35 @@
+{
+  "summary": "Frontend testing for 3 flows (notif bell filters, checkout garantie CREDI'SCOP alert, /notifications regression). Flows 1 and 3 fully pass end-to-end. Flow 2 is validated at backend + frontend code level (GET /api/rar/checkout-context returns credits_required_cents=5702, credits_value_cents=2300, credits_missing_cents=3402, suggested_pack Pack Régulier 150cr, logistics_cost_cents=12670, credit_coverage_pct=45 for a cart of 60x Huile de tournesol 5L). Full end-to-end UI verification of the amber warning at checkout step 4 was blocked by a pre-existing signature-OTP failure (POST to signature init returns HTTP 422 and toast displays '[object Object],[object Object]...'). The CheckoutPayment.jsx render logic (lines 172-192) is code-reviewed as correct: warning rendered outside codEligible block, testids rar-guarantee-warning, rar-guarantee-missing, rar-guarantee-recharge-link with href='/mon-crediscop' all present.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SMSSignatureModal / signature init API call", "issue": "POST /api/signatures/initiate returns 422 (validation error) when triggered from checkout Signature step for acheteur-pro. Toast renders raw error array as '[object Object],[object Object],[object Object],[object Object]' instead of a human-readable French message. Blocks the buyer from reaching the Payment step (step 4). Reproduced with acheteur-pro@kdmarche.fr + cart of Huile de tournesol 5L x60.", "selector": "button:has-text('Recevoir le code SMS')", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix POST /api/signatures/initiate 422 for acheteur-pro during checkout signature step — inspect payload emitted by SMSSignatureModal (document_type/document_ref/signer) vs SignatureInitiate schema; buyer profile may be missing signer.first_name/last_name/phone required fields.",
+    "Improve error toast: currently displays serialized FastAPI validation error array (each entry becomes '[object Object]'); should map to a French sentence like 'Numéro de téléphone signataire manquant, complétez votre profil.'",
+    "Once signature works, re-run Flow 2 to visually confirm rar-guarantee-warning renders with amber styling and the Recharger link navigates to /mon-crediscop."
+  ],
+  "critical_code_review_comments": [
+    "CheckoutPayment.jsx (line 172-192): rar-guarantee-warning conditional is correct and independent of codEligible — good. Uses credit_coverage_pct default 45 fallback — good.",
+    "NotificationsBell.jsx: classifyNotif properly routes stock/promo/auction/other; empty-state message differentiates 'Aucune notification' vs 'Aucune notification dans cette catégorie.' — good.",
+    "NotificationsPage.jsx: renders separate testids (notifications-empty / notifications-filter-empty / notifications-list) depending on state — clean separation.",
+    "Signature error handling in SMSSignatureModal: toast.error(err.message) receives an object → results in '[object Object]' rendering. Should JSON.stringify or extract detail[0].msg.",
+    "Cart click billing (routes_cart_v2.py L167-168): charge_click after ALL validations pass — good design (no CPC debit if 400/404 error)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped per request)", "frontend": "Flow1=100%, Flow2=code+backend verified (E2E blocked by signature bug), Flow3=100%"},
+  "test_credentials": "acheteur-pro@kdmarche.fr / Demo2026! (used; 500 CREDI'SCOP header, 23€ credits value after test CPC charges)",
+  "seed_data_creation": "Added 60x Huile de tournesol 5L (product 1aa81840-094f-4f74-b35b-c0cc651132f5) to cart of org-demo-achats zone GUADELOUPE. Cart was cleared beforehand.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Flow 1 (bell filters: all=8, stock=0, promo=0, auction=0, other=8 for this buyer's notifications) and Flow 3 (/notifications page with 23 items — Toutes=23, Stock=5, Promotions=3, Enchères=0, Autres=15) are verified. Flow 2 backend RAR context proven correct via direct API call; frontend rendering blocked because signature OTP endpoint returns 422 preventing advance to step 4. To re-test Flow 2 end-to-end after main agent fixes signature: acheteur-pro has an existing cart with 60 units Huile de tournesol; go to /checkout, complete Récapitulatif/Livraison/Préparation/Signature (OTP), then verify amber block rar-guarantee-warning at step 4. Or, if main agent adds a signature bypass in DEV, use it. Buyer credits value = 23€ (below 45% of 126.70€ logistics = 57.02€), missing 34.02€ — suggested pack 'Pack Régulier'.",
+  "rca of the issue": "Flow 2 UI E2E blocked by unrelated SMS signature bug: POST /api/signatures/initiate returned 422 because the payload sent by SMSSignatureModal was rejected by the Pydantic model — likely missing/invalid signer fields (phone was rendered masked as +590 690 55 55 55 in the preview modal but the underlying signer object may be incomplete). Error toast fails to display the FastAPI validation detail (renders JS objects as [object Object]). No code changes made — reported for main agent to fix. Guarantee alert logic itself is correct (backend + frontend code verified)."
+}

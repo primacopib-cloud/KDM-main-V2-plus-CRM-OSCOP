@@ -200,6 +200,9 @@ async def admin_approve_product(product_id: str):
         "status": "ACTIVE",
         "zones": product.get("available_zones") or product.get("zones", []),
         "incoterms": product.get("incoterms") or {},
+        "weight_kg": product.get("weight_per_unit") or product.get("weight_kg"),
+        "volume_m3": ((product.get("volume_per_unit") / 1000) if product.get("volume_per_unit")
+                      else product.get("volume_m3")),
         "created_at": now.isoformat(),
         "updated_at": now.isoformat(),
     }

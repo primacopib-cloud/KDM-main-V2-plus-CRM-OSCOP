@@ -41,6 +41,7 @@ export const NotificationsBell = ({ className = '' }) => {
   const [open, setOpen] = useState(false);
   const [muted, setMuted] = useState(localStorage.getItem('notif_sound_muted') === '1');
   const [soundPrefs, setSoundPrefs] = useState(getSoundPrefs);
+  const [filter, setFilter] = useState('all');
   const ref = useRef(null);
   const wsRef = useRef(null);
   const navigate = useNavigate();
@@ -97,6 +98,7 @@ export const NotificationsBell = ({ className = '' }) => {
   if (!rawUser || !data) return null;
   const unread = data.unread_count || 0;
   const items = data.items || [];
+  const filtered = items.filter((n) => filter === 'all' || classifyNotif(n.type) === filter);
 
   const markAllRead = () => {
     fetch(`${BACKEND}/api/notifications/mine-read-all`, { method: 'PUT', credentials: 'include', headers: getAuthHeaders() })
@@ -143,6 +145,17 @@ export const NotificationsBell = ({ className = '' }) => {
               )}
             </div>
           </div>
+          <div className="flex items-center gap-1 px-2 pb-1.5 flex-wrap" data-testid="notif-bell-filters">
+            {[{ key: 'all', label: 'Toutes' }, ...NOTIF_CATEGORIES].map((c) => (
+              <button key={c.key} type="button" onClick={() => setFilter(c.key)}
+                data-testid={`notif-bell-filter-${c.key}`}
+                className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold border transition-colors ${filter === c.key
+                  ? 'text-[#1F0A33] bg-[#D9B35A] border-[#D9B35A]'
+                  : 'text-white/50 bg-white/[0.04] border-white/10 hover:text-white/80'}`}>
+                {c.label}
+              </button>
+            ))}
+          </div>
           {!muted && (
             <div className="flex items-center gap-1 px-2 pb-1.5 flex-wrap" data-testid="notif-sound-cats">
               <span className="text-[9px] text-white/40 mr-0.5">Son :</span>
@@ -163,9 +176,11 @@ export const NotificationsBell = ({ className = '' }) => {
               ))}
             </div>
           )}
-          {items.length === 0 ? (
-            <p className="text-xs text-white/40 px-2 py-4 text-center">Aucune notification.</p>
-          ) : items.slice(0, 8).map((n) => (
+          {filtered.length === 0 ? (
+            <p className="text-xs text-white/40 px-2 py-4 text-center" data-testid="notif-bell-empty">
+              {filter === 'all' ? 'Aucune notification.' : 'Aucune notification dans cette catégorie.'}
+            </p>
+          ) : filtered.slice(0, 8).map((n) => (
             <button key={n.id} type="button"
               onClick={() => { setOpen(false); navigate('/notifications'); }}
               className={`w-full text-left rounded-lg px-2 py-2 text-xs transition-colors ${n.is_read ? 'text-white/45 hover:bg-white/5' : 'text-white bg-[#D9B35A]/[0.08] hover:bg-[#D9B35A]/[0.14]'}`}>
