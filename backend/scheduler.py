@@ -157,6 +157,11 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler pickup reminders crashed: %s", exc)
         try:
+            from promo_expiry_alerts import run_vendor_promo_renewal_reminders
+            await run_vendor_promo_renewal_reminders(_db)
+        except Exception as exc:
+            logger.exception("Scheduler promo expiry reminders crashed: %s", exc)
+        try:
             from favorite_promo_alerts import run_favorite_promo_alerts
             await run_favorite_promo_alerts(_db)
         except Exception as exc:

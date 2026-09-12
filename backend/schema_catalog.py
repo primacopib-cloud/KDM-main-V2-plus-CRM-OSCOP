@@ -131,6 +131,9 @@ class ProductResponse(BaseModel):
     price_type: Optional[str] = None
     original_price_ht_cents: Optional[int] = None  # For promos
     savings_percent: Optional[float] = None
+    # Compte à rebours promotion (zone sélectionnée)
+    promo_ends_at: Optional[str] = None
+    promo_days_left: Optional[int] = None
     # Prix d'appel marketing (vitrine/carrousel) quand le tarif adhérent est masqué
     teaser_price_ht_cents: Optional[int] = None
     # Règlement à Réception Pro (Lot B)

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X, MessageSquarePlus, Heart, BellRing } from 'lucide-react';
+import { Loader2, Package, Plus, Play, Lock, ChevronLeft, ChevronRight, X, MessageSquarePlus, Heart, BellRing, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthHeaders, getSessionToken } from '../../services/http';
 import { tData } from '@/i18n/tData';
@@ -220,6 +220,14 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart }) =
               <Badge variant="outline" className="w-fit mb-2 text-[10px] text-white/60 border-white/20">
                 {tData(product.category_name) || tData('Produit')}
               </Badge>
+              {/* Bandeau compte à rebours promotion */}
+              {product.promo_days_left != null && (
+                <div className="w-fit mb-2 px-2 py-1 rounded-md text-[10px] font-bold flex items-center gap-1.5 text-black bg-[#D9B35A] shadow-lg animate-pulse"
+                  data-testid={`promo-countdown-${product.sku}`}>
+                  <Timer size={11} />
+                  Promo — se termine dans {product.promo_days_left} jour{product.promo_days_left > 1 ? 's' : ''}
+                </div>
+              )}
               {(product.countries || []).length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5 mb-2" data-testid={`product-countries-${product.sku}`}>
                   <span className="text-[9px] uppercase tracking-wide text-white/40">Disponible :</span>

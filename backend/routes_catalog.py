@@ -496,6 +496,12 @@ async def _build_product_response(product: dict, zone_code: str, price_visible: 
                 resp.savings_percent = round(
                     (1 - resp.price_ht_cents / resp.original_price_ht_cents) * 100, 1
                 )
+            promo_end = zone_price.get("promo_end")
+            if promo_end:
+                end_dt = promo_end if isinstance(promo_end, datetime) else None
+                if end_dt and end_dt > datetime.utcnow():
+                    resp.promo_ends_at = end_dt.isoformat()
+                    resp.promo_days_left = max(1, -(-(end_dt - datetime.utcnow()).total_seconds() // 86400).__int__())
         
         # Check stock
         stock = await db.zone_stocks.find_one({
