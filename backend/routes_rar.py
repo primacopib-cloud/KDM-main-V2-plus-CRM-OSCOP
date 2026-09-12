@@ -85,6 +85,56 @@ async def rar_status_payload(org_id: str) -> dict:
     }
 
 
+# Garantie CREDI'SCOP : la valeur en € des crédits de l'acheteur (valorisée au prix des packs)
+# doit couvrir au moins 45 % du coût logistique de la commande réglée à réception.
+RAR_CREDIT_COVERAGE_PCT = 45
+
+
+async def credits_value_cents(user_id: str) -> int:
+    """Valeur en centimes € du solde CREDI'SCOP, valorisée au prix des packs (décomposition gloutonne)."""
+    acc = await db.cpc_accounts.find_one({"user_id": user_id}, {"_id": 0, "cpc_balance": 1})
+    balance = max(0, (acc or {}).get("cpc_balance", 0))
+    if not balance:
+        return 0
+    packs = await db.cpc_packs.find(
+        {"active": True, "credits": {"$gt": 0}},
+        {"_id": 0, "credits": 1, "price_ht_cents": 1}).sort("credits", -1).to_list(20)
+    if not packs:
+        return 0
+    value, remaining = 0, balance
+    for p in packs:
+        n = remaining // p["credits"]
+        value += n * p["price_ht_cents"]
+        remaining -= n * p["credits"]
+    if remaining:
+        smallest = packs[-1]
+        value += -(-remaining * smallest["price_ht_cents"] // smallest["credits"])
+    return int(value)
+
+
+_ZONE_TO_DEPT = {"GUADELOUPE": "971", "MARTINIQUE": "972", "GUYANE": "973",
+                 "REUNION": "974", "LA_REUNION": "974", "MAYOTTE": "976"}
+
+
+async def logistics_cost_cents(order_or_cart: dict) -> int:
+    """Coût logistique estimé (transport LOGI'SCOP) de la commande — 0 si non déterminable."""
+    zone = (order_or_cart or {}).get("zone_code")
+    if not zone:
+        return 0
+    zone = _ZONE_TO_DEPT.get(str(zone).upper(), str(zone))
+    weight = volume = 0.0
+    for it in (order_or_cart or {}).get("items", []):
+        p = await db.products.find_one({"id": it.get("product_id")}, {"_id": 0, "weight_kg": 1, "volume_m3": 1})
+        qty = it.get("quantity") or 0
+        weight += ((p or {}).get("weight_kg") or 0) * qty
+        volume += ((p or {}).get("volume_m3") or 0) * qty
+    if weight <= 0 and volume <= 0:
+        return 0
+    from logiscop_v1_pricing import calculate_transport_cost
+    result = calculate_transport_cost(zone, weight, volume)
+    return int(result.get("transport_ht_cents") or 0)
+
+
 async def check_items_rar_eligible(order_or_cart: dict) -> list:
     """Retourne la liste des produits NON éligibles au RàR (nom + raison)."""
     zone = order_or_cart.get("zone_code")
@@ -120,6 +170,19 @@ async def rar_gate(user: dict, amount_cents: int = 0, order_or_cart: dict = None
     if ineligible:
         return {"allowed": False, "reason": "Certains produits ne sont pas éligibles",
                 "ineligible_items": ineligible, **payload}
+    logi = await logistics_cost_cents(order_or_cart) if order_or_cart else 0
+    if logi > 0:
+        required = -(-logi * RAR_CREDIT_COVERAGE_PCT // 100)
+        cv = await credits_value_cents(user["id"])
+        coverage = {"logistics_cost_cents": logi, "credits_value_cents": cv,
+                    "credits_required_cents": required, "credit_coverage_pct": RAR_CREDIT_COVERAGE_PCT}
+        if cv < required:
+            return {"allowed": False,
+                    "reason": (f"Garantie CREDI'SCOP insuffisante : la valeur de vos crédits ({cv / 100:.2f} €) "
+                               f"doit couvrir au moins {RAR_CREDIT_COVERAGE_PCT} % du coût logistique "
+                               f"({logi / 100:.2f} €), soit {required / 100:.2f} €. Rechargez vos crédits."),
+                    **coverage, **payload}
+        payload.update(coverage)
     return {"allowed": True, "org_id": org_id, **payload}
 
 
@@ -137,7 +200,10 @@ async def my_rar_status(user: dict = Depends(get_current_user_checkout)):
     org_id = await _org_id_for(user)
     if not org_id:
         raise HTTPException(status_code=400, detail="Aucune organisation associée")
-    return await rar_status_payload(org_id)
+    payload = await rar_status_payload(org_id)
+    payload["credit_coverage_pct"] = RAR_CREDIT_COVERAGE_PCT
+    payload["credits_value_cents"] = await credits_value_cents(user["id"])
+    return payload
 
 
 @rar_router.post("/request")

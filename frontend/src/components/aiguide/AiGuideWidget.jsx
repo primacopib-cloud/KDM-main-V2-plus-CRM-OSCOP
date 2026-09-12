@@ -38,25 +38,15 @@ const autoSpeakCreole = (text) => {
     .catch(() => {});
 };
 
-const NOTIF_SUMMARY = {
-  fr: (count, titles) => `Bonjour, ici Oracle. Vous avez ${count} notification${count > 1 ? 's' : ''} non lue${count > 1 ? 's' : ''}. ${titles}. Retrouvez le détail dans la page Mes notifications.`,
-  en: (count, titles) => `Hello, this is Oracle. You have ${count} unread notification${count > 1 ? 's' : ''}. ${titles}. You will find the details on the My notifications page.`,
-  es: (count, titles) => `Hola, aquí Oracle. Tienes ${count} ${count > 1 ? 'notificaciones' : 'notificación'} sin leer. ${titles}. Encontrarás los detalles en la página Mis notificaciones.`,
-  gcf: (count, titles) => `Bonjou, sé Oracle ka palé. Ou ni ${count} notifikasyon ou pa ko li. ${titles}. Alé gadé tout détail yo nan paj Notifikasyon mwen.`,
-};
-
 const speakUnreadNotifications = () => {
   const today = new Date().toISOString().slice(0, 10);
   if (localStorage.getItem('oracle_notif_summary') === today) return;
-  fetch(`${API}/notifications/mine?limit=5`, { credentials: 'include', headers: getAuthHeaders() })
+  fetch(`${API}/ai-guide/notif-summary?lang=${getLang()}`, { credentials: 'include', headers: getAuthHeaders() })
     .then((r) => (r.ok ? r.json() : null))
     .then((d) => {
-      if (!d || !d.unread_count) return;
+      if (!d || !d.unread_count || !d.text) return;
       localStorage.setItem('oracle_notif_summary', today);
-      const titles = (d.items || []).filter((n) => !n.is_read).slice(0, 3)
-        .map((n) => (n.title || '').replace(/[^\p{L}\p{N}\s'’\-—:,.]/gu, '').trim()).join('. ');
-      const build = NOTIF_SUMMARY[getLang()] || NOTIF_SUMMARY.fr;
-      const text = build(d.unread_count, titles);
+      const text = d.text;
       fetch(`${API}/ai-guide/tts`, {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },

@@ -441,6 +441,49 @@ async def guide_weekly_summary(lang: str = "fr", current_user: dict = Depends(ge
     return {"text": build_weekly_summary(stats, lang, apps_week)}
 
 
+_NOTIF_TPL = {
+    "fr": lambda n, t: f"Bonjour, ici Oracle. Vous avez {n} notification{'s' if n > 1 else ''} non lue{'s' if n > 1 else ''}. {t}. Retrouvez le détail dans la page Mes notifications.",
+    "en": lambda n, t: f"Hello, this is Oracle. You have {n} unread notification{'s' if n > 1 else ''}. {t}. You will find the details on the My notifications page.",
+    "es": lambda n, t: f"Hola, aquí Oracle. Tienes {n} {'notificaciones' if n > 1 else 'notificación'} sin leer. {t}. Encontrarás los detalles en la página Mis notificaciones.",
+    "gcf": lambda n, t: f"Bonjou, sé Oracle ka palé. Ou ni {n} notifikasyon ou pa ko li. {t}. Alé gadé tout détail yo nan paj Notifikasyon mwen.",
+}
+
+
+@ai_guide_router.get("/notif-summary")
+async def guide_notif_summary(lang: str = "fr", current_user: dict = Depends(get_current_user)):
+    """Résumé vocal des notifications non lues, titres traduits dans la langue du membre."""
+    from ai_guide_i18n import LANG_NAMES, norm_lang
+    lang = norm_lang(lang)
+    db = get_database()
+    unread = await db.notifications.count_documents({"target_user_id": current_user["id"], "is_read": False})
+    if not unread:
+        return {"unread_count": 0, "text": ""}
+    items = await db.notifications.find(
+        {"target_user_id": current_user["id"], "is_read": False},
+        {"_id": 0, "title": 1}).sort("created_at", -1).limit(3).to_list(3)
+    titles = [re.sub(r"[^\w\s'’\-—:,.]", "", n.get("title") or "", flags=re.UNICODE).strip()
+              for n in items]
+    titles = [t for t in titles if t]
+    if lang != "fr" and titles:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        try:
+            chat = LlmChat(
+                api_key=os.environ.get("EMERGENT_LLM_KEY"),
+                session_id=f"notif-summary-{uuid.uuid4()}",
+                system_message=(f"Tu es un traducteur. Traduis les titres de notifications donnés en "
+                                f"{LANG_NAMES[lang]}. Réponds UNIQUEMENT avec les titres traduits, "
+                                "dans le même ordre, séparés par ' | '. Aucun commentaire."),
+            ).with_model("openai", "gpt-5.4")
+            raw = await chat.send_message(UserMessage(text=" | ".join(titles))) or ""
+            translated = [s.strip() for s in raw.split("|") if s.strip()]
+            if len(translated) == len(titles):
+                titles = translated
+        except Exception as exc:
+            logger.warning("Traduction résumé notifications échouée (%s) : %s", lang, exc)
+    text = _NOTIF_TPL[lang](unread, ". ".join(titles))
+    return {"unread_count": unread, "lang": lang, "text": text}
+
+
 @ai_guide_router.post("/tts")
 async def guide_tts(body: TtsBody, current_user: dict = Depends(get_current_user)):
     """Lecture audio premium des réponses Oracle (OpenAI TTS voix naturelle)."""

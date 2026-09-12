@@ -3,24 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell, BellOff, Check, CheckCheck, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BackLink } from '../components/BackLink';
+import { NOTIF_CATEGORIES, classifyNotif } from '../utils/notifCategories';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '');
 
-const FILTERS = [
-  { key: 'all', label: 'Toutes' },
-  { key: 'stock', label: 'Stock' },
-  { key: 'promo', label: 'Promotions' },
-  { key: 'auction', label: 'Enchères' },
-  { key: 'other', label: 'Autres' },
-];
-const classify = (n) => {
-  const t = (n.type || '').toLowerCase();
-  if (t.includes('stock') || t.includes('restock')) return 'stock';
-  if (t.includes('promo')) return 'promo';
-  if (t.includes('bid') || t.includes('enchere') || t.includes('auction')) return 'auction';
-  return 'other';
-};
+const FILTERS = [{ key: 'all', label: 'Toutes' }, ...NOTIF_CATEGORIES];
+const classify = (n) => classifyNotif(n.type);
 
 export default function NotificationsPage() {
   const navigate = useNavigate();

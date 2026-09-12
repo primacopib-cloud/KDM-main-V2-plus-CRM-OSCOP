@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthHeaders, getSessionToken } from '../services/http';
+import { NOTIF_CATEGORIES, classifyNotif, getSoundPrefs, saveSoundPrefs } from '../utils/notifCategories';
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '');
 
 let lastChimeId = null;
-const playChime = (notifId) => {
+const playChime = (notifId, notifType) => {
   if (localStorage.getItem('notif_sound_muted') === '1') return;
+  if (notifType !== undefined && !getSoundPrefs()[classifyNotif(notifType)]) return;
   if (notifId) {
     if (notifId === lastChimeId) return;
     lastChimeId = notifId;
@@ -38,6 +40,7 @@ export const NotificationsBell = ({ className = '' }) => {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState(false);
   const [muted, setMuted] = useState(localStorage.getItem('notif_sound_muted') === '1');
+  const [soundPrefs, setSoundPrefs] = useState(getSoundPrefs);
   const ref = useRef(null);
   const wsRef = useRef(null);
   const navigate = useNavigate();
@@ -69,7 +72,7 @@ export const NotificationsBell = ({ className = '' }) => {
           const msg = JSON.parse(e.data);
           if (msg.type === 'notification') {
             const n = msg.data || msg.notification || {};
-            playChime(n.id);
+            playChime(n.id, n.type);
             toast(n.title || 'Nouvelle notification', {
               description: n.message, duration: 8000,
               action: { label: 'Voir', onClick: () => navigate('/notifications') },
@@ -140,6 +143,26 @@ export const NotificationsBell = ({ className = '' }) => {
               )}
             </div>
           </div>
+          {!muted && (
+            <div className="flex items-center gap-1 px-2 pb-1.5 flex-wrap" data-testid="notif-sound-cats">
+              <span className="text-[9px] text-white/40 mr-0.5">Son :</span>
+              {NOTIF_CATEGORIES.map((c) => (
+                <button key={c.key} type="button"
+                  onClick={() => {
+                    const next = { ...soundPrefs, [c.key]: !soundPrefs[c.key] };
+                    setSoundPrefs(next);
+                    saveSoundPrefs(next);
+                  }}
+                  data-testid={`notif-sound-cat-${c.key}`}
+                  title={soundPrefs[c.key] ? `Couper le son pour ${c.label}` : `Activer le son pour ${c.label}`}
+                  className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold border transition-colors ${soundPrefs[c.key]
+                    ? 'text-[#D9B35A] bg-[#D9B35A]/10 border-[#D9B35A]/40'
+                    : 'text-white/30 bg-white/[0.03] border-white/10 line-through'}`}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          )}
           {items.length === 0 ? (
             <p className="text-xs text-white/40 px-2 py-4 text-center">Aucune notification.</p>
           ) : items.slice(0, 8).map((n) => (

@@ -89,6 +89,15 @@ export const RarCeilingBlock = () => {
           <p className="text-[10px] text-white/35 mt-2">
             Le plafond est rétabli après confirmation effective du paiement (encaissement définitif), non à la signature du bon de livraison.
           </p>
+          {typeof data.credits_value_cents === 'number' && (
+            <p className="text-[10px] text-[#D9B35A]/80 mt-1.5 flex items-start gap-1" data-testid="rar-credit-coverage">
+              <ShieldCheck className="w-3 h-3 shrink-0 mt-[1px]" />
+              <span>
+                Garantie CREDI'SCOP : la valeur de vos crédits (<b className="font-mono">{fmt(data.credits_value_cents)}</b>) doit
+                couvrir au moins <b>{data.credit_coverage_pct || 45}&nbsp;%</b> du coût logistique des commandes réglées à réception.
+              </span>
+            </p>
+          )}
           <RarAlertThreshold />
           <RarCeilingHistory />
           {deliveries.length > 0 && (
