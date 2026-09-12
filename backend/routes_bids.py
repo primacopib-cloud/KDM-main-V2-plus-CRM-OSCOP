@@ -141,8 +141,18 @@ async def _notify_outbid(c: dict, new_entry: dict, new_amount: int, prev_amount:
     entries = await db.consultation_entries.find({"id": {"$in": beaten}}, {"_id": 0}).to_list(20)
     closes = str(c.get("closes_at") or "")[:16].replace("T", " à ")
     for e in entries:
-        u = await db.users.find_one({"id": e["vendor_user_id"]}, {"_id": 0, "email": 1, "full_name": 1, "name": 1})
-        if not (u and u.get("email")) or not await channel_allowed(e["vendor_user_id"], "outbid", "email"):
+        uid = e["vendor_user_id"]
+        u = await db.users.find_one({"id": uid}, {"_id": 0, "email": 1, "full_name": 1, "name": 1})
+        try:
+            if await channel_allowed(uid, "outbid", "inapp"):
+                from core_deps import create_notification
+                await create_notification("outbid", f"Offre battue — {c.get('ref')}",
+                                          f"Un concurrent a déposé une offre plus basse sur « {c.get('title')} ». Répondez avant la clôture le {closes}.",
+                                          target_roles=["direct"], target_user_id=uid,
+                                          data={"link": "/vendor?tab=consultations"})
+        except Exception as exc:
+            logger.warning("Notif in-app surenchère %s : %s", uid, exc)
+        if not (u and u.get("email")) or not await channel_allowed(uid, "outbid", "email"):
             continue
         await send_email(
             to_email=u["email"], to_name=u.get("full_name") or u.get("name"),

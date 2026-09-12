@@ -330,9 +330,7 @@ const VendorSpacePage = () => {
 
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-6">
-            <div className="flex justify-end">
-              <CatalogImportButton vendorId={vendorId} onImported={fetchProducts} />
-            </div>
+            <CatalogImportButton vendorId={vendorId} onImported={fetchProducts} />
             {/* Filters */}
             <Card>
               <CardContent className="pt-6">

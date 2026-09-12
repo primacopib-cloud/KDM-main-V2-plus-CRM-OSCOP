@@ -130,8 +130,42 @@ async def _send_error_report(vendor: dict, filename: str, errors: list):
         tags=["catalog-import-error"])
 
 
+async def _download_image(product_id: str, url: str) -> dict:
+    """Télécharge l'image publique https et la stocke dans l'object storage."""
+    import httpx
+    async with httpx.AsyncClient(timeout=10, follow_redirects=True,
+                                 headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36"}) as cl:
+        r = await cl.get(url)
+    r.raise_for_status()
+    ctype = (r.headers.get("content-type") or "").split(";")[0].strip().lower()
+    ext = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}.get(ctype)
+    if not ext:
+        raise ValueError(f"type non supporté ({ctype or 'inconnu'})")
+    if len(r.content) > 5 * 1024 * 1024:
+        raise ValueError("image trop lourde (max 5 Mo)")
+    from upload_storage import save_upload
+    dest = await save_upload(f"products/{product_id}-import-{uuid.uuid4().hex[:8]}.{ext}", r.content, ctype)
+    return {"url": dest, "is_primary": True,
+            "added_at": datetime.now(timezone.utc).isoformat(), "source": "catalog_import"}
+
+
+async def _log_import(vendor_id: str, filename: str, status: str, **extra):
+    await db.catalog_imports.insert_one({
+        "id": str(uuid.uuid4()), "vendor_id": vendor_id, "filename": filename, "status": status,
+        "created_at": datetime.now(timezone.utc).isoformat(), **extra})
+
+
+@catalog_import_router.get("/{vendor_id}/catalog-imports")
+async def import_history(vendor_id: str, request: Request):
+    from role_guards import ensure_seller_request
+    await ensure_seller_request(db, request, vendor_id)
+    items = await db.catalog_imports.find({"vendor_id": vendor_id}, {"_id": 0}) \
+        .sort("created_at", -1).limit(20).to_list(20)
+    return {"items": items}
+
+
 @catalog_import_router.post("/{vendor_id}/catalog-import")
-async def import_catalog(vendor_id: str, request: Request, file: UploadFile = File(...)):
+async def import_catalog(vendor_id: str, request: Request, file: UploadFile = File(...), confirm: bool = False):
     from role_guards import ensure_seller_request
     await ensure_seller_request(db, request, vendor_id)
     vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
@@ -147,9 +181,14 @@ async def import_catalog(vendor_id: str, request: Request, file: UploadFile = Fi
             await _send_error_report(vendor, file.filename, errors)
         except Exception as exc:
             logger.warning("Email rapport import %s : %s", vendor_id, exc)
+        await _log_import(vendor_id, file.filename, "rejected", error_count=len(errors), errors=errors[:20])
         return {"ok": False, "rejected": True, "errors": errors[:50], "error_count": len(errors),
                 "message": "Import rejeté — rapport d'anomalies envoyé par email au contact technique"}
-    created = updated = 0
+    if not confirm:
+        return {"ok": True, "preview": True, "total": len(valid),
+                "products": [{k: p[k] for k in ("sku", "name", "category", "price_ht", "tva_rate",
+                                                "stock_quantity", "conditionnement", "image_url")} for p in valid]}
+    created = updated = images_downloaded = 0
     now = datetime.now(timezone.utc).isoformat()
     for p in valid:
         base = {
@@ -162,16 +201,30 @@ async def import_catalog(vendor_id: str, request: Request, file: UploadFile = Fi
         }
         if p["image_url"]:
             base["image_url"] = p["image_url"]
-        existing = await db.vendor_products.find_one({"vendor_id": vendor_id, "sku": p["sku"]}, {"_id": 0, "id": 1})
+        existing = await db.vendor_products.find_one({"vendor_id": vendor_id, "sku": p["sku"]},
+                                                     {"_id": 0, "id": 1, "images": 1})
         if existing:
             await db.vendor_products.update_one({"vendor_id": vendor_id, "sku": p["sku"]}, {"$set": base})
             updated += 1
+            pid, has_images = existing["id"], bool(existing.get("images"))
         else:
             base["status"] = "pending_approval"
+            pid, has_images = str(uuid.uuid4()), False
             await db.vendor_products.insert_one({
-                "id": str(uuid.uuid4()), "vendor_id": vendor_id, "sku": p["sku"],
+                "id": pid, "vendor_id": vendor_id, "sku": p["sku"],
                 **base, "images": [], "documents": [], "created_at": now, "submitted_at": now,
             })
             created += 1
+        if p["image_url"] and not has_images:
+            try:
+                image = await _download_image(pid, p["image_url"])
+                await db.vendor_products.update_one({"id": pid}, {"$push": {"images": image}})
+                images_downloaded += 1
+            except Exception as exc:
+                logger.warning("Image import %s (%s) : %s", p["sku"], p["image_url"], exc)
+    await _log_import(vendor_id, file.filename, "success", created=created, updated=updated,
+                      total=len(valid), images_downloaded=images_downloaded)
     return {"ok": True, "created": created, "updated": updated, "total": len(valid),
-            "message": f"{created} produit(s) créé(s), {updated} mis à jour"}
+            "images_downloaded": images_downloaded,
+            "message": f"{created} produit(s) créé(s), {updated} mis à jour"
+                       + (f", {images_downloaded} image(s) téléchargée(s)" if images_downloaded else "")}
