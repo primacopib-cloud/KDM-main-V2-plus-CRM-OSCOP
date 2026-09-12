@@ -165,13 +165,15 @@ async def _alert_vendor_low_stock(db, product_id: str, zone_code: str, new_qty: 
     label = f"{product.get('name')} ({product.get('sku', product_id)})"
     body = (f"Le stock de « {label} » sur la zone {zone_code} est passé à {new_qty} unité(s) "
             f"(seuil de réapprovisionnement : {threshold}) suite à la commande {order_number}.")
+    import os
+    restock_url = f"{os.environ.get('FRONTEND_PUBLIC_URL', '')}/vendor?tab=products&edit={product_id}"
     user = await db.users.find_one({"vendor_id": vendor_id}, {"_id": 0, "id": 1})
     if user:
         try:
             from core_deps import create_notification
             await create_notification("low_stock", f"Stock bas — {product.get('name')}", body,
                                       target_roles=["direct"], target_user_id=user["id"],
-                                      data={"link": "/vendor?tab=products"})
+                                      data={"link": f"/vendor?tab=products&edit={product_id}"})
         except Exception as exc:
             logger.warning("Notif in-app stock bas %s : %s", product_id, exc)
     vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "email": 1, "company_name": 1})
@@ -182,8 +184,10 @@ async def _alert_vendor_low_stock(db, product_id: str, zone_code: str, new_qty: 
                 to_email=vendor["email"], to_name=vendor.get("company_name"),
                 subject=f"⚠️ Stock bas — {product.get('name')} ({zone_code}) : {new_qty} unité(s) restante(s)",
                 html_content=(f"<p>Bonjour,</p><p>{body}</p>"
-                              "<p>Pensez à réapprovisionner pour éviter une rupture : mettez à jour la quantité "
-                              "depuis votre espace vendeur, onglet Mes produits, ou via un import catalogue.</p>"
+                              "<p>Pensez à réapprovisionner pour éviter une rupture.</p>"
+                              f'<p style="margin:24px 0;"><a href="{restock_url}" '
+                              'style="background:#D4AF37;color:#1F0A33;padding:12px 24px;border-radius:10px;'
+                              'text-decoration:none;font-weight:bold;">Réapprovisionner ce produit</a></p>'
                               "<p>L'équipe CommunityPlace — O'SCOP × KDMARCHÉ</p>"),
                 tags=["vendor-low-stock"])
         except Exception as exc:
@@ -219,7 +223,8 @@ async def decrement_stock_for_order(db, org_id: str, zone_code: str, items: list
             "created_at": now_iso,
         })
         decremented += 1
-        threshold = stock.get("reorder_point") or 5
+        prod = await db.products.find_one({"id": it["product_id"]}, {"_id": 0, "low_stock_threshold": 1})
+        threshold = (prod or {}).get("low_stock_threshold") or stock.get("reorder_point") or 5
         if new_qty <= threshold < old_qty:
             await _alert_vendor_low_stock(db, it["product_id"], zone_code, new_qty, threshold, order_number)
     await release_org_zone(db, org_id, zone_code)

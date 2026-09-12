@@ -21,7 +21,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const EMPTY_FORM = {
   name: '', sku: '', description: '', category: 'alimentaire', price_ht: '', tva_rate: 8.5,
-  stock_quantity: '', min_order_quantity: 1, unit_type: 'unit', volume_per_unit: '',
+  stock_quantity: '', min_order_quantity: 1, low_stock_threshold: '', unit_type: 'unit', volume_per_unit: '',
   weight_per_unit: '', format_type: 'standard', units_per_lot: '', lots_per_palette: '',
   country_of_origin: 'FR', region_of_origin: '', dlc_days: '', ean13: '',
   storage_conditions: '', brand: '', certifications: [], available_zones: ['GUADELOUPE'],
@@ -161,6 +161,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
         price_ht: parseFloat(formData.price_ht),
         tva_rate: parseFloat(formData.tva_rate),
         stock_quantity: parseInt(formData.stock_quantity),
+        low_stock_threshold: formData.low_stock_threshold !== '' ? parseInt(formData.low_stock_threshold) : null,
         min_order_quantity: parseInt(formData.min_order_quantity) || 1,
         volume_per_unit: formData.volume_per_unit ? parseFloat(formData.volume_per_unit) : null,
         weight_per_unit: formData.weight_per_unit ? parseFloat(formData.weight_per_unit) : null,
@@ -174,6 +175,7 @@ export const VendorProductFormModal = ({ isOpen, onClose, onSuccess, vendorId, c
         const editPayload = {
           name: payload.name, description: payload.description, price_ht: payload.price_ht,
           stock_quantity: payload.stock_quantity, min_order_quantity: payload.min_order_quantity,
+          low_stock_threshold: payload.low_stock_threshold,
           available_zones: payload.available_zones, dlc_days: payload.dlc_days,
           incoterms: payload.incoterms || {},
         };

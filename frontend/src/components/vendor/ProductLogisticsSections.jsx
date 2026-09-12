@@ -28,6 +28,19 @@ export const ProductLogisticsSections = ({ formData, handleChange, countries }) 
           />
         </div>
         <div>
+          <Label htmlFor="low_stock_threshold">Seuil d'alerte stock bas</Label>
+          <Input
+            id="low_stock_threshold"
+            type="number"
+            min="0"
+            value={formData.low_stock_threshold}
+            onChange={(e) => handleChange('low_stock_threshold', e.target.value)}
+            placeholder="5"
+            data-testid="product-low-stock-threshold"
+          />
+          <p className="text-xs text-gray-500 mt-1">Email + notification quand le stock passe sous ce seuil (défaut : 5)</p>
+        </div>
+        <div>
           <Label htmlFor="min_order_quantity">{i18n.t('adm.quantite_min_commande')}</Label>
           <Input
             id="min_order_quantity"

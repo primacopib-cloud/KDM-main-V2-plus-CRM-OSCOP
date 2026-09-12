@@ -120,6 +120,7 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = None
     price_ht: Optional[float] = None
     stock_quantity: Optional[int] = None
+    low_stock_threshold: Optional[int] = None
     min_order_quantity: Optional[int] = None
     available_zones: Optional[List[str]] = None
     dlc_days: Optional[int] = None

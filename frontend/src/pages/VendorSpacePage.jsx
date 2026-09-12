@@ -104,6 +104,19 @@ const VendorSpacePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Deep-link réapprovisionnement : /vendor?tab=products&edit=<product_id> ouvre la fiche d'édition
+  useEffect(() => {
+    const target = rechargeParams.get('edit');
+    if (!target || !products.length || editProduct) return;
+    const p = products.find((pr) => pr.id === target);
+    if (p) {
+      setActiveTab('products');
+      setEditProduct(p);
+      setIsFormOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
   // Fetch dashboard data
   const fetchDashboard = useCallback(async () => {
     try {

@@ -411,6 +411,10 @@ async def update_product(vendor_id: str, product_id: str, data: ProductUpdate, r
     # Sync incoterms vers le catalogue public si le produit est déjà approuvé
     if "incoterms" in update_data and product["status"] == ProductStatus.APPROVED.value:
         await db.products.update_one({"id": product_id}, {"$set": {"incoterms": update_data["incoterms"]}})
+
+    # Sync du seuil d'alerte stock bas vers le catalogue public
+    if "low_stock_threshold" in update_data:
+        await db.products.update_one({"id": product_id}, {"$set": {"low_stock_threshold": update_data["low_stock_threshold"]}})
     
     return {"success": True, "message": "Produit mis à jour"}
 
