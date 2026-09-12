@@ -433,7 +433,7 @@ CATALOG_EMAIL = {
 </ul>
 <p>Nous vous remercions pour votre collaboration qui participe au développement d'un circuit de distribution performant et mutualisé pour nos territoires.</p>
 <p>Je vous prie d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées.</p>
-<p><b>L'équipe Direction Réseau</b><br/>O'SCOP &amp; KDMARCHE SAS</p>
+<p><b>L'équipe Direction Réseau</b><br/>O'SCOP &amp; KDMARCHÉ</p>
 <hr style="border:none;border-top:1px solid #e5d9f2;margin:24px 0"/>
 <h2 style="color:#451F6B;font-size:16px;margin:0 0 8px">🛠️ CHECKLIST : avant d'envoyer votre catalogue produits</h2>
 <p>Veuillez valider ces 6 points indispensables pour éviter tout rejet automatique de votre fichier par la plateforme.</p>
@@ -481,7 +481,7 @@ Si toutes les cases sont cochées [X] : vous pouvez téléverser votre fichier s
 <li>The <b>template file</b> (.xlsx or .csv) matching the structure expected by our system.</li></ul>
 <p><b>Procedure:</b> fill in the template keeping the exact column headers and order (<code>sku_fournisseur</code>, <code>code_ean</code>, <code>prix_unitaire_ht</code> and <code>quantite_stock</code> are mandatory), then upload it to your secure Supplier space or via your assigned SFTP server. Automatic synchronisation runs every 24 hours.</p>
 <p>Technical support: <b>tech@objectifscopoutremer.com</b> — Commercial validation: <b>data@kdmarche.com</b></p>
-<p>Kind regards,<br/><b>Network Management Team</b><br/>O'SCOP &amp; KDMARCHE SAS</p>
+<p>Kind regards,<br/><b>Network Management Team</b><br/>O'SCOP &amp; KDMARCHÉ</p>
 <hr style="border:none;border-top:1px solid #e5d9f2;margin:24px 0"/>
 <h2 style="color:#451F6B;font-size:16px;margin:0 0 8px">🛠️ CHECKLIST: before sending your product catalogue</h2>
 <p>Please validate these 6 essential points to avoid any automatic rejection of your file by the platform.</p>
@@ -529,7 +529,7 @@ If all boxes are ticked [X]: you can upload your file to your secure space with 
 <li>El <b>archivo modelo</b> (.xlsx o .csv) conforme a la estructura esperada por nuestro sistema.</li></ul>
 <p><b>Procedimiento:</b> complete el archivo modelo respetando el orden y el nombre exacto de las columnas (<code>sku_fournisseur</code>, <code>code_ean</code>, <code>prix_unitaire_ht</code> y <code>quantite_stock</code> son obligatorias), luego súbalo a su espacio Proveedor seguro o mediante el servidor SFTP asignado. La sincronización automática se ejecuta cada 24 horas.</p>
 <p>Soporte técnico: <b>tech@objectifscopoutremer.com</b> — Validación comercial: <b>data@kdmarche.com</b></p>
-<p>Atentamente,<br/><b>Equipo de Dirección de Red</b><br/>O'SCOP &amp; KDMARCHE SAS</p>
+<p>Atentamente,<br/><b>Equipo de Dirección de Red</b><br/>O'SCOP &amp; KDMARCHÉ</p>
 <hr style="border:none;border-top:1px solid #e5d9f2;margin:24px 0"/>
 <h2 style="color:#451F6B;font-size:16px;margin:0 0 8px">🛠️ LISTA DE VERIFICACIÓN: antes de enviar su catálogo de productos</h2>
 <p>Valide estos 6 puntos indispensables para evitar cualquier rechazo automático de su archivo por la plataforma.</p>

@@ -376,6 +376,29 @@ export default function ProductCatalogManager({ onProductSaved }) {
           <Button
             variant="outline"
             className="border-white/10 text-white/80"
+            data-testid="legal-review-pack-btn"
+            onClick={async () => {
+              try {
+                const r = await fetch(`${API_URL}/api/admin/legal-review-pack.zip`, { credentials: 'include' });
+                if (!r.ok) throw new Error();
+                const blob = await r.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'relecture-juridique.zip';
+                a.click();
+                URL.revokeObjectURL(a.href);
+                toast.success('Pack de relecture juridique téléchargé (1 PDF par page)');
+              } catch {
+                toast.error('Export impossible');
+              }
+            }}
+          >
+            <FileDown className="w-4 h-4 mr-2" />
+            Relecture juridique
+          </Button>
+          <Button
+            variant="outline"
+            className="border-white/10 text-white/80"
             data-testid="logistics-export-btn"
             onClick={async () => {
               try {

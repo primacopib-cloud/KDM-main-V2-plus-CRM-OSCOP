@@ -851,6 +851,10 @@ from routes_annual_summary import annual_summary_router, set_annual_summary_data
 set_annual_summary_database(db)
 app.include_router(annual_summary_router)
 
+from routes_legal_review import legal_review_router, set_legal_review_database
+set_legal_review_database(db)
+app.include_router(legal_review_router)
+
 # Background scheduler (PASS J-3 reminders every 6h)
 from scheduler import set_scheduler_database, start_scheduler, stop_scheduler
 set_scheduler_database(db)

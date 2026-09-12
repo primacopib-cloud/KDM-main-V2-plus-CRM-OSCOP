@@ -126,7 +126,7 @@ def _fiche_pages(ob: dict, signature: dict | None) -> bytes:
         ]),
         Paragraph("2. KDMARCHE", _H2),
         _table([
-            [tr["denomination"], "KDMARCHE SAS — Centrale d'achat gros / demi-gros (CommunityPlace B2B)"],
+            [tr["denomination"], "KDMARCHÉ — Félixia Vanessa PIPEROL (EI), nom commercial PRIMACOP INTERNATIONAL BUSINESS — Centrale d'achat gros / demi-gros"],
             [tr["contact"], "contact@kdmarche.com"],
         ]),
         Paragraph(tr["supplier"], _H2),

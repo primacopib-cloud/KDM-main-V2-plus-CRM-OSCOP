@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Gavel, Lock, TrendingDown, CheckCircle2, BarChart3, LineChart } from 'lucide-react';
+import { Gavel, Lock, TrendingDown, CheckCircle2, BarChart3, LineChart, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -7,6 +7,33 @@ const eur = (c) => `${((c || 0) / 100).toFixed(2).replace('.', ',')} €`;
 const panel = 'bg-white/[0.04] border border-white/[0.08] rounded-2xl';
 const gold = { background: 'linear-gradient(135deg, #D9B35A, #b8933e)', color: '#1F0A33' };
 const L_STYLE = { ROUGE: 'bg-red-500/15 text-red-400', ORANGE: 'bg-amber-500/15 text-amber-400', VERT: 'bg-emerald-500/15 text-emerald-400' };
+
+const Countdown = ({ closesAt, cid }) => {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const end = new Date(closesAt).getTime();
+  const ms = end - now;
+  if (Number.isNaN(end)) return null;
+  if (ms <= 0) {
+    return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400" data-testid={`cons-countdown-${cid}`}>CLÔTURÉE</span>;
+  }
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  const urgent = ms < 3600000;
+  const txt = d > 0 ? `J-${d} ${h}h${String(m).padStart(2, '0')}` : `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return (
+    <span data-testid={`cons-countdown-${cid}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tabular-nums ${
+        urgent ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-emerald-500/15 text-emerald-400'}`}>
+      <Timer className="w-3 h-3" /> {txt}
+    </span>
+  );
+};
 
 const ConsultationCard = ({ c, onChanged }) => {
   const [status, setStatus] = useState(null);
@@ -20,6 +47,11 @@ const ConsultationCard = ({ c, onChanged }) => {
       .then((r) => r.json()).then(setStatus).catch(() => {});
   }, [c.id, c.registered]);
   useEffect(() => { loadStatus(); }, [loadStatus]);
+  useEffect(() => {
+    if (!c.registered || c.status !== 'EN_COURS') return undefined;
+    const t = setInterval(loadStatus, 5000);
+    return () => clearInterval(t);
+  }, [c.registered, c.status, loadStatus]);
 
   const register = async () => {
     const ok = window.confirm(
@@ -74,6 +106,7 @@ const ConsultationCard = ({ c, onChanged }) => {
         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${L_STYLE[c.legal_status] || 'bg-white/10 text-white/50'}`}>{c.legal_status}</span>
         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/60">{sealed ? 'OFFRES SCELLÉES' : 'ENCHÈRE INVERSÉE'}</span>
         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#D9B35A]/20 text-[#E9CF8E]">{c.status.replace(/_/g, ' ')}</span>
+        {['INSCRIPTIONS_OUVERTES', 'EN_COURS'].includes(c.status) && <Countdown closesAt={c.closes_at} cid={c.id} />}
       </div>
       <p className="text-xs text-white/50">
         {(c.products || []).map((p) => p.label).join(', ')} · {(c.territories || []).join(', ')} · Accès {c.cpc_cost} CREDI'SCOP ·

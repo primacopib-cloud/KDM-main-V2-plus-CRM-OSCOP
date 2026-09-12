@@ -45,9 +45,10 @@ TEXTS = {
         "party_oscop": ("<b>OBJECTIF SCOP OUTREMER</b> (Enseigne : O'SCOP), SCIC SAS au capital variable, immatriculée au RCS de "
                         "Pointe-à-Pitre sous le numéro 903 459 139, dont l'établissement est situé au 13 rue Rodrigue YOUYOUTE, "
                         "97139 Les Abymes, représentée par son Président en exercice, (ci-après désignée « l'Opérateur Technique » ou « O'SCOP ») ;"),
-        "party_kdm": ("<b>KDMARCHE SAS</b>, Société par Actions Simplifiée au capital de [•], immatriculée au RCS de Pointe-à-Pitre "
-                      "sous le numéro [•], dont le siège social est situé au 387 Rue de l'Industrie, Parc d'Activité de la Jaille, "
-                      "97122 Baie-Mahault, représentée par son représentant légal en exercice, (ci-après désignée « La Centrale d'Achat » ou « KDMARCHE ») ;"),
+        "party_kdm": ("<b>KDMARCHÉ</b>, enseigne de Madame Félixia Vanessa PIPEROL, Entrepreneure Individuelle (EI), nom commercial "
+                      "PRIMACOP INTERNATIONAL BUSINESS, SIREN 433 230 703 — SIRET 433 230 703 00020, dont l'adresse professionnelle est située "
+                      "Morne Bourg, chemin Symphart Lampecinado, 97170 Petit-Bourg, "
+                      "(ci-après désignée « La Centrale d'Achat » ou « KDMARCHE ») ;"),
         "collectively": "Ci-après collectivement désignées « les Parties ».",
         "third_vendor": "Le Fournisseur",
         "third_buyer": "L'Acheteur Professionnel",
@@ -121,9 +122,10 @@ TEXTS = {
         "party_oscop": ("<b>OBJECTIF SCOP OUTREMER</b> (trade name: O'SCOP), a SCIC SAS with variable capital, registered with the Pointe-à-Pitre "
                         "Trade and Companies Register under number 903 459 139, whose establishment is located at 13 rue Rodrigue YOUYOUTE, "
                         "97139 Les Abymes, represented by its serving President, (hereinafter the \"Technical Operator\" or \"O'SCOP\");"),
-        "party_kdm": ("<b>KDMARCHE SAS</b>, a simplified joint-stock company with a share capital of [•], registered with the Pointe-à-Pitre Trade "
-                      "and Companies Register under number [•], whose registered office is located at 387 Rue de l'Industrie, Parc d'Activité de la Jaille, "
-                      "97122 Baie-Mahault, represented by its serving legal representative, (hereinafter the \"Purchasing Centre\" or \"KDMARCHE\");"),
+        "party_kdm": ("<b>KDMARCHÉ</b>, trade name of Mrs Félixia Vanessa PIPEROL, sole trader (Entreprise Individuelle), commercial name "
+                      "PRIMACOP INTERNATIONAL BUSINESS, SIREN 433 230 703 — SIRET 433 230 703 00020, whose business address is "
+                      "Morne Bourg, chemin Symphart Lampecinado, 97170 Petit-Bourg, "
+                      "(hereinafter the \"Purchasing Centre\" or \"KDMARCHE\");"),
         "collectively": "Hereinafter collectively referred to as the \"Parties\".",
         "third_vendor": "The Supplier",
         "third_buyer": "The Professional Buyer",
@@ -197,9 +199,10 @@ TEXTS = {
         "party_oscop": ("<b>OBJECTIF SCOP OUTREMER</b> (nombre comercial: O'SCOP), SCIC SAS de capital variable, inscrita en el Registro Mercantil de "
                         "Pointe-à-Pitre con el número 903 459 139, cuyo establecimiento se encuentra en 13 rue Rodrigue YOUYOUTE, "
                         "97139 Les Abymes, representada por su Presidente en ejercicio, (en adelante el «Operador Técnico» u «O'SCOP»);"),
-        "party_kdm": ("<b>KDMARCHE SAS</b>, Sociedad por Acciones Simplificada con un capital de [•], inscrita en el Registro Mercantil de Pointe-à-Pitre "
-                      "con el número [•], con domicilio social en 387 Rue de l'Industrie, Parc d'Activité de la Jaille, "
-                      "97122 Baie-Mahault, representada por su representante legal en ejercicio, (en adelante la «Central de Compras» o «KDMARCHE»);"),
+        "party_kdm": ("<b>KDMARCHÉ</b>, enseña de la Sra. Félixia Vanessa PIPEROL, empresaria individual (EI), nombre comercial "
+                      "PRIMACOP INTERNATIONAL BUSINESS, SIREN 433 230 703 — SIRET 433 230 703 00020, con dirección profesional en "
+                      "Morne Bourg, chemin Symphart Lampecinado, 97170 Petit-Bourg, "
+                      "(en adelante la «Central de Compras» o «KDMARCHE»);"),
         "collectively": "En adelante denominadas colectivamente «las Partes».",
         "third_vendor": "El Proveedor",
         "third_buyer": "El Comprador Profesional",
