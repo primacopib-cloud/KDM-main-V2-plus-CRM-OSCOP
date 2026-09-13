@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 async def run_repayment_alerts(db) -> int:
     """Email admin à J-7 avant chaque échéance non honorée. Idempotent (repayment_alerts_sent)."""
-    from brevo_service import send_email, _wrap_html, is_brevo_configured
+    from brevo_service import send_email, _wrap_html_oscop as _wrap_html, is_brevo_configured
     from routes_product_financing import build_repayment_schedule
     if not is_brevo_configured():
         return 0

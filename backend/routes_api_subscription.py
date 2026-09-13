@@ -143,7 +143,7 @@ async def _activate(sub_id: str):
     sub = await db.api_subscriptions.find_one({"id": sub_id}, {"_id": 0})
     try:
         import base64
-        from brevo_service import send_email, _wrap_html
+        from brevo_service import send_email, _wrap_html_oscop as _wrap_html
         from communityplace_invoice import build_api_subscription_invoice_pdf
         pdf = build_api_subscription_invoice_pdf(sub)
         base = os.environ.get("FRONTEND_URL") or "https://centrale.objectifscopoutremer.com"

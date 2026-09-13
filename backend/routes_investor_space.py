@@ -80,7 +80,7 @@ async def decide_application(app_id: str, payload: dict, admin: dict = Depends(_
         {"$set": {"status": "approved" if decision == "approve" else "rejected",
                   "decided_by": admin.get("email"), "decided_at": now}})
     try:
-        from brevo_service import send_email, _wrap_html
+        from brevo_service import send_email, _wrap_html_oscop as _wrap_html
         if decision == "approve":
             html = _wrap_html("Votre compte investisseur O'SCOP est ouvert", (
                 f"<p style='font-size:14px;'>Bonjour {app_doc['name']},</p>"
@@ -173,7 +173,7 @@ async def decide_financing_interest(interest_id: str, payload: dict, admin: dict
                 from investor_billing import check_low_quota_alert
                 await check_low_quota_alert(db, inv_user["id"])
     try:
-        from brevo_service import send_email, _wrap_html
+        from brevo_service import send_email, _wrap_html_oscop as _wrap_html
         if decision == "accept":
             html = _wrap_html("Votre proposition de financement est retenue", (
                 f"<p style='font-size:14px;'>Bonjour {doc['investor_name']},</p>"
@@ -234,7 +234,7 @@ async def notify_dataroom_investors(operation: dict, doc_number: str, doc_type: 
     if not accepted:
         return
     try:
-        from brevo_service import send_email, _wrap_html
+        from brevo_service import send_email, _wrap_html_oscop as _wrap_html
         for inv in accepted:
             html = _wrap_html("Nouveau document dans votre data room", (
                 f"<p style='font-size:14px;'>Bonjour {inv['investor_name']},</p>"

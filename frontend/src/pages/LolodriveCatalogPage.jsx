@@ -2,7 +2,7 @@ import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BackLink } from '../components/BackLink';
-import { ShoppingCart, Plus, Minus, Wallet, CreditCard, ArrowLeft, Star, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Wallet, CreditCard, ArrowLeft, Star, ChevronRight, Timer } from 'lucide-react';
 import LolodriveLayout, { fmtEUR } from '../components/LolodriveLayout';
 import { useCatalogPromos, bestPromos } from '../components/catalog/ProductPromoBadges';
 import { Button } from '../components/ui/button';
@@ -23,12 +23,46 @@ import { distanceFeeRate, getReferencePointCode, kmBetween } from '../utils/rela
 
 const PROMO_CAT = '__PROMOS__';
 
+// Compte à rebours vers la fin de promo la plus proche (ex : « ⏱ 9 h 12 min » ou « ⏱ 2 j 5 h »)
+const promoCountdown = (items) => {
+  const ends = items
+    .filter((p) => (p.tag === 'PROMO' || p.tag === 'SOLDE') && p.promo_ends_at)
+    .map((p) => new Date(p.promo_ends_at).getTime())
+    .filter((t) => t > Date.now());
+  if (!ends.length) return null;
+  const ms = Math.min(...ends) - Date.now();
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (d > 0) return `${d} j ${h} h`;
+  if (h > 0) return `${h} h ${String(m).padStart(2, '0')} min`;
+  return `${m} min`;
+};
+
+// Badge compte à rebours affiché sur les tuiles
+const CountdownBadge = ({ items, testid }) => {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((x) => x + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const left = promoCountdown(items);
+  if (!left) return null;
+  return (
+    <span data-testid={testid}
+      className="absolute top-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/90 text-white shadow-lg animate-pulse">
+      <Timer className="w-3 h-3" /> {left}
+    </span>
+  );
+};
+
 // Tuile de navigation (catégorie ou sous-catégorie) avec image d'ambiance
-const CatTile = ({ testid, name, count, image, accent, onClick }) => (
+const CatTile = ({ testid, name, count, image, accent, onClick, items = [] }) => (
   <button type="button" onClick={onClick} data-testid={testid}
     className={`relative rounded-2xl overflow-hidden border text-left h-28 flex flex-col justify-end p-3 transition-all hover:-translate-y-0.5 ${
       accent ? 'border-red-400/40 bg-red-500/10 hover:bg-red-500/15' : 'border-white/10 bg-white/[0.03] hover:border-[#D9B35A]/40'}`}>
     {image && <img src={image} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-25" />}
+    <CountdownBadge items={items} testid={`${testid}-countdown`} />
     <span className={`relative text-sm font-bold ${accent ? 'text-red-200' : 'text-[#D9B35A]'}`}>{name}</span>
     <span className="relative text-[11px] text-white/55">{count} produit{count > 1 ? 's' : ''}</span>
   </button>
@@ -72,15 +106,16 @@ const CatalogDrillDown = ({ pool, category, setCategory, subcategory, setSubcate
     return (
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }} data-testid="catalog-categories">
         {promos.length > 0 && (
-          <CatTile testid="catalog-cat-promos" name="Promos & Soldes" count={promos.length} accent
+          <CatTile testid="catalog-cat-promos" name="Promos & Soldes" count={promos.length} accent items={promos}
             onClick={() => setCategory(PROMO_CAT)} />
         )}
         {groups.map((g) => {
           const count = g.subs.reduce((a, s) => a + s.items.length, 0);
-          const img = g.subs.flatMap((s) => s.items).find((p) => p.photo_url || p.image_url);
+          const allItems = g.subs.flatMap((s) => s.items);
+          const img = allItems.find((p) => p.photo_url || p.image_url);
           return (
             <CatTile key={g.category} testid={`catalog-cat-${g.category}`} name={g.category} count={count}
-              image={img?.photo_url || img?.image_url}
+              image={img?.photo_url || img?.image_url} items={allItems}
               onClick={() => { setCategory(g.category); setSubcategory(''); }} />
           );
         })}
@@ -100,7 +135,7 @@ const CatalogDrillDown = ({ pool, category, setCategory, subcategory, setSubcate
             const img = s.items.find((p) => p.photo_url || p.image_url);
             return (
               <CatTile key={s.name} testid={`catalog-sub-tile-${s.name}`} name={s.name} count={s.items.length}
-                image={img?.photo_url || img?.image_url} onClick={() => setSubcategory(s.name)} />
+                image={img?.photo_url || img?.image_url} items={s.items} onClick={() => setSubcategory(s.name)} />
             );
           })}
         </div>

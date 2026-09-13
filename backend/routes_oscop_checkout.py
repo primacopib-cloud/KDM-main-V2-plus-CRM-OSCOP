@@ -196,7 +196,7 @@ async def _send_invoice_email(order: dict):
     try:
         import base64
         from operation_docs_pdf import build_operation_pdf
-        from brevo_service import send_email, _wrap_html
+        from brevo_service import send_email, _wrap_html_oscop as _wrap_html
         pdf = build_operation_pdf(_invoice_doc(order))
         html = _wrap_html("Votre facture O'SCOP", (
             f"<p style='font-size:14px;'>Bonjour {order.get('customer_name')},</p>"
@@ -270,7 +270,7 @@ async def run_oscop_payment_reminders(database):
             continue
         subject, body_line = REMINDER_TONES[count]
         try:
-            from brevo_service import send_email, _wrap_html
+            from brevo_service import send_email, _wrap_html_oscop as _wrap_html
             html = _wrap_html(subject, (
                 f"<p style='font-size:14px;'>Bonjour {order.get('customer_name')},</p>"
                 f"<p style='font-size:14px;'>Votre commande <b>{order.get('order_number')}</b> "
@@ -335,7 +335,7 @@ async def dispute_action(order_id: str, payload: dict, admin: dict = Depends(_ad
         await db.oscop_client_orders.update_one(
             {"id": order_id}, {"$set": {"status": "cancelled", "cancelled_at": now, "cancelled_by": admin.get("email")}})
         try:
-            from brevo_service import send_email, _wrap_html
+            from brevo_service import send_email, _wrap_html_oscop as _wrap_html
             html = _wrap_html("Annulation de votre commande O'SCOP", (
                 f"<p style='font-size:14px;'>Bonjour {order.get('customer_name')},</p>"
                 f"<p style='font-size:14px;'>Faute de règlement, votre commande <b>{order.get('order_number')}</b> "
@@ -355,7 +355,7 @@ async def dispute_action(order_id: str, payload: dict, admin: dict = Depends(_ad
     except stripe.error.StripeError:
         pass
     try:
-        from brevo_service import send_email, _wrap_html
+        from brevo_service import send_email, _wrap_html_oscop as _wrap_html
         subject, body_line = REMINDER_TONES[2]
         html = _wrap_html(subject, (
             f"<p style='font-size:14px;'>Bonjour {order.get('customer_name')},</p>"
