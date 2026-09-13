@@ -341,9 +341,18 @@ export default function LolodriveCatalogPage() {
                 const p = products.find((x) => x.sku === sku);
                 if (!p) return null;
                 return (
-                  <div key={sku} className="flex items-center gap-2 p-2 rounded bg-white/[0.03]">
-                    <div className="flex-1 text-sm">
-                      <div className="font-medium">{p.name}</div>
+                  <div key={sku} className="flex items-center gap-2.5 p-2 rounded bg-white/[0.03]">
+                    {/* Photo produit */}
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/[0.05] border border-white/10 shrink-0 flex items-center justify-center">
+                      {p.photo_url || p.image_url ? (
+                        <img src={p.photo_url || p.image_url} alt={p.name} loading="lazy"
+                          className="w-full h-full object-cover" data-testid={`cart-line-photo-${sku}`} />
+                      ) : (
+                        <ShoppingCart className="w-4 h-4 text-white/20" data-testid={`cart-line-photo-${sku}`} />
+                      )}
+                    </div>
+                    <div className="flex-1 text-sm min-w-0">
+                      <div className="font-medium truncate">{p.name}</div>
                       <div className="text-xs text-white/40" data-testid={`cart-line-lots-${sku}`}>{fmtEUR(discountedUnit(p) * 3)} le lot de 3 × {Math.round(qty / 3)}</div>
                     </div>
                     <Button size="icon" variant="ghost" onClick={() => sub(sku)} data-testid={`cart-sub-${sku}`}>
