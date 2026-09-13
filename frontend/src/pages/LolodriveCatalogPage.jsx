@@ -2,7 +2,7 @@ import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BackLink } from '../components/BackLink';
-import { ShoppingCart, Plus, Minus, Wallet, CreditCard, ArrowLeft, Star } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Wallet, CreditCard, ArrowLeft, Star, ChevronRight } from 'lucide-react';
 import LolodriveLayout, { fmtEUR } from '../components/LolodriveLayout';
 import { useCatalogPromos, bestPromos } from '../components/catalog/ProductPromoBadges';
 import { Button } from '../components/ui/button';
@@ -20,6 +20,104 @@ import { LolodriveProductCard } from '../components/lolodrive/LolodriveProductCa
 import { LolodriveSpotButton } from '../components/lolodrive/LolodriveSpot';
 import { PassLolodriveBadge } from '../components/catalog/ProductPromoBadges';
 import { distanceFeeRate, getReferencePointCode, kmBetween } from '../utils/relayDistance';
+
+const PROMO_CAT = '__PROMOS__';
+
+// Tuile de navigation (catégorie ou sous-catégorie) avec image d'ambiance
+const CatTile = ({ testid, name, count, image, accent, onClick }) => (
+  <button type="button" onClick={onClick} data-testid={testid}
+    className={`relative rounded-2xl overflow-hidden border text-left h-28 flex flex-col justify-end p-3 transition-all hover:-translate-y-0.5 ${
+      accent ? 'border-red-400/40 bg-red-500/10 hover:bg-red-500/15' : 'border-white/10 bg-white/[0.03] hover:border-[#D9B35A]/40'}`}>
+    {image && <img src={image} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-25" />}
+    <span className={`relative text-sm font-bold ${accent ? 'text-red-200' : 'text-[#D9B35A]'}`}>{name}</span>
+    <span className="relative text-[11px] text-white/55">{count} produit{count > 1 ? 's' : ''}</span>
+  </button>
+);
+
+// Fil d'Ariane : Catégories › Catégorie › Sous-catégorie
+const Crumb = ({ parts }) => (
+  <div className="flex flex-wrap items-center gap-1.5 text-sm mb-4" data-testid="catalog-breadcrumb">
+    {parts.map((p, i) => (
+      <span key={i} className="flex items-center gap-1.5">
+        {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-white/30" />}
+        {p.onClick ? (
+          <button type="button" onClick={p.onClick} data-testid={`crumb-${i}`}
+            className="text-white/60 hover:text-[#D9B35A] font-medium transition-colors">{p.label}</button>
+        ) : (
+          <span className="text-white font-semibold" data-testid={`crumb-${i}`}>{p.label}</span>
+        )}
+      </span>
+    ))}
+  </div>
+);
+
+// Navigation catalogue par clics : catégories → sous-catégories → produits
+const CatalogDrillDown = ({ pool, category, setCategory, subcategory, setSubcategory, renderGrid }) => {
+  const groups = groupByCategory(pool);
+  const promos = pool.filter((p) => p.tag === 'PROMO' || p.tag === 'SOLDE');
+  if (category === PROMO_CAT) {
+    return (
+      <>
+        <Crumb parts={[
+          { label: 'Catégories', onClick: () => setCategory('') },
+          { label: 'Promos & Soldes' },
+        ]} />
+        {renderGrid(promos, 'catalog-promos-grid')}
+      </>
+    );
+  }
+  const catGroup = category ? groups.find((g) => g.category === category) : null;
+  const effCategory = catGroup ? category : '';
+  if (!effCategory) {
+    return (
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }} data-testid="catalog-categories">
+        {promos.length > 0 && (
+          <CatTile testid="catalog-cat-promos" name="Promos & Soldes" count={promos.length} accent
+            onClick={() => setCategory(PROMO_CAT)} />
+        )}
+        {groups.map((g) => {
+          const count = g.subs.reduce((a, s) => a + s.items.length, 0);
+          const img = g.subs.flatMap((s) => s.items).find((p) => p.photo_url || p.image_url);
+          return (
+            <CatTile key={g.category} testid={`catalog-cat-${g.category}`} name={g.category} count={count}
+              image={img?.photo_url || img?.image_url}
+              onClick={() => { setCategory(g.category); setSubcategory(''); }} />
+          );
+        })}
+      </div>
+    );
+  }
+  const subGroup = subcategory ? catGroup.subs.find((s) => s.name === subcategory) : null;
+  if (!subGroup) {
+    return (
+      <>
+        <Crumb parts={[
+          { label: 'Catégories', onClick: () => { setCategory(''); setSubcategory(''); } },
+          { label: effCategory },
+        ]} />
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }} data-testid="catalog-subcategories">
+          {catGroup.subs.map((s) => {
+            const img = s.items.find((p) => p.photo_url || p.image_url);
+            return (
+              <CatTile key={s.name} testid={`catalog-sub-tile-${s.name}`} name={s.name} count={s.items.length}
+                image={img?.photo_url || img?.image_url} onClick={() => setSubcategory(s.name)} />
+            );
+          })}
+        </div>
+      </>
+    );
+  }
+  return (
+    <>
+      <Crumb parts={[
+        { label: 'Catégories', onClick: () => { setCategory(''); setSubcategory(''); } },
+        { label: effCategory, onClick: () => setSubcategory('') },
+        { label: subGroup.name },
+      ]} />
+      {renderGrid(subGroup.items, 'catalog-products-grid')}
+    </>
+  );
+};
 
 export default function LolodriveCatalogPage() {
   const navigate = useNavigate();
@@ -361,30 +459,40 @@ export default function LolodriveCatalogPage() {
         </div>
       )}
 
-      {!loading && isVisitor && (
-        <>
-          <div className="grid gap-2.5 mb-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }} data-testid="visitor-catalog-grid">
-            {applyCatalogFilters(products, { search, category, subcategory }).map((p) => (
-              <div key={p.sku} className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.08]" data-testid={`visitor-product-${p.sku}`}>
-                <div className="relative h-28 bg-white/[0.04]">
-                  {p.photo_url || p.image_url ? (
-                    <img src={p.photo_url || p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white/20"><ShoppingCart className="w-8 h-8" /></div>
-                  )}
-                  <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#8CC63E] text-[#1F2A12]">LOT ×3</span>
-                </div>
-                <div className="p-3">
-                  <div className="text-sm font-semibold text-white truncate">{p.name}</div>
-                  <div className="text-[10px] text-white/40">{p.category || ''}</div>
-                  <div className="mt-1.5 text-[11px] font-semibold text-[#E9CF8E]">🔒 Prix réservé aux titulaires PASS</div>
-                </div>
-              </div>
-            ))}
-            {products.length === 0 && (
-              <p className="text-white/40 text-sm col-span-full py-8 text-center">Vitrine en cours de préparation — revenez bientôt !</p>
-            )}
+      {!loading && isVisitor && (() => {
+        const visitorCard = (p) => (
+          <div key={p.sku} className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.08]" data-testid={`visitor-product-${p.sku}`}>
+            <div className="relative h-28 bg-white/[0.04]">
+              {p.photo_url || p.image_url ? (
+                <img src={p.photo_url || p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white/20"><ShoppingCart className="w-8 h-8" /></div>
+              )}
+              <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#8CC63E] text-[#1F2A12]">LOT ×3</span>
+            </div>
+            <div className="p-3">
+              <div className="text-sm font-semibold text-white truncate">{p.name}</div>
+              <div className="text-[10px] text-white/40">{p.category || ''}</div>
+              <div className="mt-1.5 text-[11px] font-semibold text-[#E9CF8E]">🔒 Prix réservé aux titulaires PASS</div>
+            </div>
           </div>
+        );
+        const visitorGrid = (items, testid) => (
+          <div className="grid gap-2.5 mb-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }} data-testid={testid}>
+            {items.map(visitorCard)}
+          </div>
+        );
+        return (
+        <>
+          {products.length === 0 && (
+            <p className="text-white/40 text-sm py-8 text-center">Vitrine en cours de préparation — revenez bientôt !</p>
+          )}
+          {products.length > 0 && (search.trim() ? (
+            visitorGrid(applyCatalogFilters(products, { search, category, subcategory }), 'visitor-catalog-grid')
+          ) : (
+            <CatalogDrillDown pool={products} category={category} setCategory={setCategory}
+              subcategory={subcategory} setSubcategory={setSubcategory} renderGrid={visitorGrid} />
+          ))}
           <div className="rounded-2xl p-5 text-center border border-[#D9B35A]/40 bg-[#D9B35A]/[0.07]" data-testid="visitor-pass-invite">
             <p className="text-white font-semibold m-0 mb-1">Envie de commander par lots de 3 aux prix mutualisés ?</p>
             <p className="text-white/60 text-sm m-0 mb-3">Achetez votre PASS LOLODRIVE et créez votre espace pour accéder à tout le catalogue et aux prix.</p>
@@ -394,9 +502,32 @@ export default function LolodriveCatalogPage() {
             </Button>
           </div>
         </>
-      )}
+        );
+      })()}
 
       {!loading && !isVisitor && (() => {
+        const searching = search.trim().length > 0;
+        const pool = products.filter((p) => filter !== 'FAVS' || favs.includes(p.sku));
+        const grid = (items, testid) => (
+          <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }} data-testid={testid}>
+            {[...items]
+              .sort((a, b) => (favs.includes(b.sku) ? 1 : 0) - (favs.includes(a.sku) ? 1 : 0))
+              .map((p) => (
+                <LolodriveProductCard key={p.sku} p={p} qty={cart[p.sku] || 0} add={add} sub={sub}
+                  isFav={favs.includes(p.sku)} toggleFav={toggleFav}
+                  promo={promoOf(p)} favPromo={favPromo(p)} discounted={discountedUnit(p)} />
+              ))}
+          </div>
+        );
+        // Navigation par clics : catégorie → sous-catégorie → produits
+        if (!searching && filter !== 'FAVS') {
+          if (pool.length === 0) {
+            return <div className="text-center text-white/40 py-12" data-testid="catalog-no-result">Aucun produit disponible pour cette sélection.</div>;
+          }
+          return <CatalogDrillDown pool={pool} category={category} setCategory={setCategory}
+            subcategory={subcategory} setSubcategory={setSubcategory} renderGrid={grid} />;
+        }
+        // Recherche ou favoris : affichage groupé direct
         const visible = applyCatalogFilters(products, { search, category, subcategory })
           .filter((p) => filter !== 'FAVS' || favs.includes(p.sku));
         if (visible.length === 0 && filter !== 'FAVS') {
@@ -411,13 +542,7 @@ export default function LolodriveCatalogPage() {
                   🔥 Promos &amp; Soldes
                   <span className="text-xs font-normal text-white/35">{promos.length} produit(s)</span>
                 </h2>
-                <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
-                  {promos.map((p) => (
-                    <LolodriveProductCard key={`promo-${p.sku}`} p={p} qty={cart[p.sku] || 0} add={add} sub={sub}
-                      isFav={favs.includes(p.sku)} toggleFav={toggleFav}
-                      promo={promoOf(p)} favPromo={favPromo(p)} discounted={discountedUnit(p)} />
-                  ))}
-                </div>
+                {grid(promos, 'catalog-promos-inner-grid')}
               </div>
             )}
             {groupByCategory(visible).map((g) => (
@@ -431,15 +556,7 @@ export default function LolodriveCatalogPage() {
             {g.subs.map((s) => (
               <div key={s.name} className="mb-5">
                 <h3 className="text-sm font-semibold text-white/60 mb-2 border-l-2 border-[#D9B35A]/50 pl-2" data-testid={`catalog-sub-${s.name}`}>{s.name}</h3>
-                <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
-                  {[...s.items]
-                    .sort((a, b) => (favs.includes(b.sku) ? 1 : 0) - (favs.includes(a.sku) ? 1 : 0))
-                    .map((p) => (
-                      <LolodriveProductCard key={p.sku} p={p} qty={cart[p.sku] || 0} add={add} sub={sub}
-                        isFav={favs.includes(p.sku)} toggleFav={toggleFav}
-                        promo={promoOf(p)} favPromo={favPromo(p)} discounted={discountedUnit(p)} />
-                    ))}
-                </div>
+                {grid(s.items, `catalog-grid-${s.name}`)}
               </div>
             ))}
           </div>
