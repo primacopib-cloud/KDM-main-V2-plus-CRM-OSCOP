@@ -6,6 +6,7 @@ import { PosRelayReviews } from '../components/pos/PosRelayReviews';
 import { ProSubscriptionBanner } from '../components/pos/ProSubscriptionBanner';
 import { PosCatalogPanel } from '../components/pos/PosCatalogPanel';
 import { PosSessionBanner } from '../components/pos/PosSessionBanner';
+import { PosDayPlanning } from '../components/pos/PosDayPlanning';
 import { PosOperatorsPanel } from '../components/pos/PosOperatorsPanel';
 import { PrepareOrderDialog } from '../components/pos/PrepareOrderDialog';
 import { PosSlotGroups } from '../components/pos/PosSlotGroups';
@@ -235,6 +236,7 @@ export default function PosLolodrivePage() {
       <WelcomeBanner space="pos" className="mb-4" />
       <PosSessionBanner />
       <ProSubscriptionBanner />
+      <PosDayPlanning />
 
       {/* À traiter highlight */}
       {toProcess > 0 && (

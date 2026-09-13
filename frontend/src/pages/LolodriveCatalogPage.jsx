@@ -202,6 +202,16 @@ export default function LolodriveCatalogPage() {
       return saved?.code || '';
     } catch (_) { return ''; }
   });
+  const [refCode, setRefCode] = useState(() => getReferencePointCode() || '');
+  const chooseRelay = (code) => {
+    setRefCode(code);
+    setSelectedPoint((prev) => prev || code);
+    const p = loloPoints.find((x) => x.code === code);
+    try {
+      localStorage.setItem('kdm_preselected_point', JSON.stringify({ code, name: p?.name, city: p?.city }));
+    } catch { /* quota */ }
+    toast.success(`Relais ${p?.name || code} sélectionné`);
+  };
   const [territories, setTerritories] = useState([]);
   const [territory, setTerritory] = useState(getInitialTerritory());
   const [loading, setLoading] = useState(true);
@@ -228,7 +238,7 @@ export default function LolodriveCatalogPage() {
     (async () => {
       try {
         const [c, lp] = await Promise.all([
-          lolodriveAPI.catalogProducts(filter && filter !== 'FAVS' ? filter : undefined, territory || undefined, getReferencePointCode() || undefined),
+          lolodriveAPI.catalogProducts(filter && filter !== 'FAVS' ? filter : undefined, territory || undefined, refCode || undefined),
           lolodriveAPI.listLoloPoints({ territory: territory || undefined }),
         ]);
         if (cancelled) return;
@@ -244,7 +254,7 @@ export default function LolodriveCatalogPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [navigate, filter, territory]);
+  }, [navigate, filter, territory, refCode]);
 
   // Promos actives (bandeau favoris + prix barrés + remise panier)
   const promos = useCatalogPromos();
@@ -294,7 +304,6 @@ export default function LolodriveCatalogPage() {
   };
 
   const cartItems = Object.entries(cart).map(([sku, qty]) => ({ sku, qty }));
-  const refCode = getReferencePointCode();
   const refPoint = loloPoints.find((p) => p.code === refCode) || null;
   const pickedPoint = loloPoints.find((p) => p.code === selectedPoint) || null;
   // Jours programmés : relais choisi (Relais LOLODRIVE) ou relais de référence (Drive / livraison) ; vide = tous les jours
@@ -388,11 +397,11 @@ export default function LolodriveCatalogPage() {
               Panier {qtyTotal > 0 && `(${Math.round(qtyTotal / 3)} lot${qtyTotal > 3 ? 's' : ''} ×3)`}
             </Button>
           </SheetTrigger>
-          <SheetContent className="bg-[#0a0a0f] border-white/10 text-white w-full sm:max-w-md">
+          <SheetContent className="bg-[#0a0a0f] border-white/10 text-white w-full sm:max-w-md overflow-y-auto pb-10">
             <SheetHeader>
               <SheetTitle className="text-white">{i18n.t('lolodrive.mon_panier')}</SheetTitle>
             </SheetHeader>
-            <div className="mt-4 space-y-2 max-h-[40vh] overflow-y-auto">
+            <div className="mt-4 space-y-2">
               {cartItems.length === 0 && (
                 <div className="text-sm text-white/40 text-center py-8">{i18n.t('lolodrive.panier_vide')}</div>
               )}
@@ -473,6 +482,31 @@ export default function LolodriveCatalogPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                {fulfillment !== 'LOLO_POINT' && (
+                  <div>
+                    <label className="text-xs text-white/60">Mon relais LOLODRIVE (retrait & calendrier)</label>
+                    <Select value={refCode} onValueChange={chooseRelay}>
+                      <SelectTrigger className="bg-white/[0.04] border-white/10 mt-1" data-testid="cart-relay-select">
+                        <SelectValue placeholder="Choisir mon relais" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortedPoints.map((p) => {
+                          const note = relayRatings[p.code];
+                          return (
+                            <SelectItem key={p.code} value={p.code} data-testid={`cart-relay-option-${p.code}`}>
+                              {p.name} — {p.city}{note ? ` · ★ ${note.avg}` : ''}{p.code === refCode ? ' · ★ Mon relais' : ''}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    {!refCode && (
+                      <p className="text-[10px] text-amber-300 mt-1" data-testid="cart-relay-hint">
+                        Choisissez votre relais pour voir son calendrier et ses créneaux disponibles.
+                      </p>
+                    )}
+                  </div>
+                )}
                 <CartSlotPicker fulfillment={fulfillment} cartItems={cartItems} products={products}
                   slotId={pickupSlot} setSlotId={setPickupSlot}
                   pickupDate={pickupDate} setPickupDate={setPickupDate}

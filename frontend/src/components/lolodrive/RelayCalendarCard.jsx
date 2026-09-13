@@ -30,6 +30,8 @@ export const RelayCalendarCard = ({ point, onSaved }) => {
   const [deliveryDays, setDeliveryDays] = useState(point.delivery_days || []);
   const [closedDates, setClosedDates] = useState(point.closed_dates || []);
   const [capacity, setCapacity] = useState(point.slot_capacity || 0);
+  const [deliveryCapacity, setDeliveryCapacity] = useState(
+    point.delivery_slot_capacity == null ? '' : point.delivery_slot_capacity);
   const [newDate, setNewDate] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -42,7 +44,8 @@ export const RelayCalendarCard = ({ point, onSaved }) => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ pickup_days: pickupDays, delivery_days: deliveryDays,
-          closed_dates: closedDates, slot_capacity: Number(capacity) || 0 }),
+          closed_dates: closedDates, slot_capacity: Number(capacity) || 0,
+          delivery_slot_capacity: deliveryCapacity === '' ? null : (Number(deliveryCapacity) || 0) }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || 'Erreur');
@@ -97,10 +100,22 @@ export const RelayCalendarCard = ({ point, onSaved }) => {
         </div>
         <div>
           <p className="text-[11px] font-bold text-white/55 uppercase mb-1.5">Capacité par créneau (commandes max / jour / créneau)</p>
-          <input type="number" min="0" value={capacity} onChange={(e) => setCapacity(e.target.value)}
-            data-testid="relay-slot-capacity"
-            className="h-9 w-28 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs" />
-          <span className="text-[11px] text-white/40 ml-2">0 = illimitée. Les créneaux complets sont grisés côté membre.</span>
+          <div className="flex flex-wrap items-center gap-4">
+            <div>
+              <span className="text-[10px] text-white/45 block mb-0.5">Retrait (Drive / relais)</span>
+              <input type="number" min="0" value={capacity} onChange={(e) => setCapacity(e.target.value)}
+                data-testid="relay-slot-capacity"
+                className="h-9 w-28 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs" />
+            </div>
+            <div>
+              <span className="text-[10px] text-white/45 block mb-0.5">Livraison (vide = même que retrait)</span>
+              <input type="number" min="0" value={deliveryCapacity} placeholder="—"
+                onChange={(e) => setDeliveryCapacity(e.target.value)}
+                data-testid="relay-delivery-slot-capacity"
+                className="h-9 w-28 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs" />
+            </div>
+          </div>
+          <span className="text-[11px] text-white/40 block mt-1">0 = illimitée. Les créneaux complets sont grisés côté membre.</span>
         </div>
       </div>
       <button type="button" onClick={save} disabled={busy} data-testid="relay-calendar-save"

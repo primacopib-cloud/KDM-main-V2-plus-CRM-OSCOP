@@ -233,11 +233,20 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
             if pickup_date in (cal_point.get("closed_dates") or []):
                 raise HTTPException(status_code=400,
                                     detail=f"Le relais {cal_point.get('name')} est exceptionnellement fermé le {chosen.strftime('%d/%m/%Y')}")
-            capacity = int(cal_point.get("slot_capacity") or 0)
+            d_raw = cal_point.get("delivery_slot_capacity")
+            if is_drive or d_raw is None:
+                capacity = int(cal_point.get("slot_capacity") or 0)
+            else:
+                capacity = int(d_raw)
             if capacity:
-                taken = await db.lolodrive_orders.count_documents({
-                    "lolo_point_id": cal_point.get("id"), "pickup_date": pickup_date,
-                    "pickup_slot_id": slot_id, "status": {"$nin": ["CANCELLED"]}})
+                pid = cal_point.get("id")
+                cap_q = {
+                    "$or": [{"lolo_point_id": pid}, {"reference_point_id": pid}],
+                    "pickup_date": pickup_date,
+                    "pickup_slot_id": slot_id, "status": {"$nin": ["CANCELLED"]}}
+                if d_raw is not None:
+                    cap_q["fulfillment_type"] = {"$ne": "DELIVERY"} if is_drive else "DELIVERY"
+                taken = await db.lolodrive_orders.count_documents(cap_q)
                 if taken >= capacity:
                     raise HTTPException(status_code=409,
                                         detail="Ce créneau est complet pour cette date : choisissez un autre créneau ou un autre jour")
@@ -249,6 +258,7 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
         "order_number": f"LD-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}",
         "user_id": user["id"],
         "lolo_point_id": point.get("id") if point else None,
+        "reference_point_id": ref_point.get("id") if ref_point else None,
         "fulfillment_type": request.fulfillment_type.value,
         "delivery_zone": request.delivery_zone,
         "delivery_slot_id": request.delivery_slot_id,

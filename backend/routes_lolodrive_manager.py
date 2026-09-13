@@ -54,7 +54,8 @@ class RelayCalendarBody(BaseModel):
     pickup_days: List[int] = []    # 0=lundi … 6=dimanche ; vide = tous les jours
     delivery_days: List[int] = []
     closed_dates: List[str] = []   # fermetures exceptionnelles YYYY-MM-DD
-    slot_capacity: int = 0         # commandes max par jour+créneau ; 0 = illimité
+    slot_capacity: int = 0         # commandes max par jour+créneau (retrait) ; 0 = illimité
+    delivery_slot_capacity: Optional[int] = None  # capacité livraison distincte ; None = même que retrait
 
 
 def _date_closed(date_str: str, weekday: int, days: List[int], closed: List[str]) -> bool:
@@ -75,6 +76,8 @@ async def manager_update_calendar(body: RelayCalendarBody, user: dict = Depends(
             raise HTTPException(status_code=400, detail=f"Date de fermeture invalide : {d} (attendu YYYY-MM-DD)")
     if body.slot_capacity < 0:
         raise HTTPException(status_code=400, detail="La capacité doit être positive (0 = illimitée)")
+    if body.delivery_slot_capacity is not None and body.delivery_slot_capacity < 0:
+        raise HTTPException(status_code=400, detail="La capacité livraison doit être positive (0 = illimitée)")
 
     before = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
     if not before:
@@ -86,11 +89,13 @@ async def manager_update_calendar(body: RelayCalendarBody, user: dict = Depends(
                   "delivery_days": sorted(set(body.delivery_days)),
                   "closed_dates": new_closed,
                   "slot_capacity": body.slot_capacity,
+                  "delivery_slot_capacity": body.delivery_slot_capacity,
                   "updated_at": datetime.utcnow()}})
     notified = await _notify_calendar_change(before, new_pickup, new_closed)
     point = await db.lolodrive_points.find_one(
         {"manager_user_id": user["id"]},
-        {"_id": 0, "pickup_days": 1, "delivery_days": 1, "closed_dates": 1, "slot_capacity": 1})
+        {"_id": 0, "pickup_days": 1, "delivery_days": 1, "closed_dates": 1,
+         "slot_capacity": 1, "delivery_slot_capacity": 1})
     return {"ok": True, "members_notified": notified, **point}
 
 
@@ -182,6 +187,10 @@ async def manager_planning(week_start: Optional[str] = None, user: dict = Depend
     from datetime import timezone
     from routes_lolodrive_taxonomy import get_fees_config_doc
     point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    if not point and user.get("role") == "OPERATEUR_POS":
+        u = await db.users.find_one({"id": user["id"]}, {"_id": 0, "pos_point_id": 1})
+        if u and u.get("pos_point_id"):
+            point = await db.lolodrive_points.find_one({"id": u["pos_point_id"]}, {"_id": 0})
     if not point:
         raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
     if week_start:
@@ -199,7 +208,7 @@ async def manager_planning(week_start: Optional[str] = None, user: dict = Depend
     slot_ids = [s["id"] for s in ref_slots]
 
     orders = await db.lolodrive_orders.find(
-        {"lolo_point_id": point["id"],
+        {"$or": [{"lolo_point_id": point["id"]}, {"reference_point_id": point["id"]}],
          "pickup_date": {"$gte": start.strftime("%Y-%m-%d"), "$lte": end.strftime("%Y-%m-%d")},
          "status": {"$in": ["PAID", "PREPARING", "READY"]}},
         {"_id": 0, "id": 1, "order_number": 1, "user_id": 1, "status": 1, "fulfillment_type": 1,
@@ -212,7 +221,10 @@ async def manager_planning(week_start: Optional[str] = None, user: dict = Depend
                                      {"_id": 0, "id": 1, "first_name": 1, "contact_name": 1, "email": 1}):
             users[u["id"]] = u.get("first_name") or u.get("contact_name") or u.get("email") or "Client"
 
-    capacity = int(point.get("slot_capacity") or 0)
+    pickup_cap = int(point.get("slot_capacity") or 0)
+    d_raw = point.get("delivery_slot_capacity")
+    delivery_cap = int(d_raw) if d_raw is not None else pickup_cap
+    distinct_caps = d_raw is not None
     pickup_days = point.get("pickup_days") or []
     delivery_days = point.get("delivery_days") or []
     closed = point.get("closed_dates") or []
@@ -236,10 +248,21 @@ async def manager_planning(week_start: Optional[str] = None, user: dict = Depend
         slots_out = {}
         for sid in slot_ids:
             cell = by_cell.get((ds, sid), [])
+            pc = sum(1 for o in cell if o["fulfillment_type"] != "DELIVERY")
+            dc = len(cell) - pc
+            if distinct_caps:
+                full = bool((pickup_cap and pc >= pickup_cap) or (delivery_cap and dc >= delivery_cap))
+            else:
+                full = bool(pickup_cap and len(cell) >= pickup_cap)
             slots_out[sid] = {
                 "count": len(cell),
-                "capacity": capacity or None,
-                "full": bool(capacity and len(cell) >= capacity),
+                "pickup_count": pc,
+                "delivery_count": dc,
+                "capacity": pickup_cap or None,
+                "pickup_capacity": pickup_cap or None,
+                "delivery_capacity": delivery_cap or None,
+                "distinct_capacities": distinct_caps,
+                "full": full,
                 "orders": cell,
             }
         days_out.append({
@@ -254,7 +277,9 @@ async def manager_planning(week_start: Optional[str] = None, user: dict = Depend
         "week_start": start.strftime("%Y-%m-%d"),
         "week_end": end.strftime("%Y-%m-%d"),
         "point": {"id": point["id"], "name": point["name"], "code": point["code"]},
-        "capacity": capacity,
+        "capacity": pickup_cap,
+        "delivery_capacity": delivery_cap,
+        "distinct_capacities": distinct_caps,
         "slots": [{"id": s["id"], "label": s.get("label", s["id"])} for s in ref_slots],
         "days": days_out,
     }

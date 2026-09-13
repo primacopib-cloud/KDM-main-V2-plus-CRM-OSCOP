@@ -76,7 +76,8 @@ async def create_lolo_point(request: LoloPointCreate, admin: dict = Depends(requ
 ALLOWED_POINT_FIELDS = {"name", "address", "city", "contact_email", "contact_phone",
                         "opening_hours", "offers_drive", "offers_delivery", "delivery_conditions",
                         "photo_url", "manager_user_id", "siret", "vat_number",
-                        "pickup_days", "delivery_days", "closed_dates", "slot_capacity"}
+                        "pickup_days", "delivery_days", "closed_dates", "slot_capacity",
+                        "delivery_slot_capacity"}
 
 
 @lolodrive_points_router.get("/lolo-points/{code}/availability")
@@ -90,17 +91,25 @@ async def point_availability(code: str, kind: str = "pickup", days: int = 21):
     slots = [s["id"] for s in cfg.get(f"{'pickup' if kind == 'pickup' else 'delivery'}_slots", [])]
     week_days = point.get("pickup_days" if kind == "pickup" else "delivery_days") or []
     closed = point.get("closed_dates") or []
-    capacity = int(point.get("slot_capacity") or 0)
+    d_raw = point.get("delivery_slot_capacity")
+    distinct = d_raw is not None
+    if kind != "pickup" and distinct:
+        capacity = int(d_raw)
+    else:
+        capacity = int(point.get("slot_capacity") or 0)
     days = max(1, min(days, 31))
     today = datetime.utcnow().date()
     out = []
     counts = {}
     if capacity:
         horizon = (today + timedelta(days=days)).strftime("%Y-%m-%d")
+        match = {"$or": [{"lolo_point_id": point.get("id")}, {"reference_point_id": point.get("id")}],
+                 "pickup_date": {"$gte": today.strftime("%Y-%m-%d"), "$lte": horizon},
+                 "status": {"$nin": ["CANCELLED"]}}
+        if distinct:
+            match["fulfillment_type"] = "DELIVERY" if kind != "pickup" else {"$ne": "DELIVERY"}
         async for row in db.lolodrive_orders.aggregate([
-            {"$match": {"lolo_point_id": point.get("id"),
-                        "pickup_date": {"$gte": today.strftime("%Y-%m-%d"), "$lte": horizon},
-                        "status": {"$nin": ["CANCELLED"]}}},
+            {"$match": match},
             {"$group": {"_id": {"d": "$pickup_date", "s": "$pickup_slot_id"}, "n": {"$sum": 1}}},
         ]):
             counts[(row["_id"]["d"], row["_id"]["s"])] = row["n"]

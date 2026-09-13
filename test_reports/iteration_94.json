@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration 94 — LOLODRIVE marketplace: fully validated all 6 requested features (cart scroll fix, choix relais dans panier, capacités distinctes retrait/livraison, planning gérant enrichi avec split par type, export CSV + impression, Marquer retirée/livrée, vue journée POS). Backend: 11/11 pytest cases pass on real preview URL. Frontend: all data-testid selectors present and working; toasts, downloads, and status transitions verified end-to-end.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter94_lolodrive_capacity.py",
+    "/app/test_reports/pytest/iter94_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "conftest.py loads /app/backend/.env.test but not /app/backend/.env; tests requiring REACT_APP_BACKEND_URL / MONGO_URL must load env explicitly. Consider centralising in conftest.py.",
+    "ManagerPlanningGrid.jsx renders planning-cell testid always, but planning-split only when capacities differ — coverage seems intentional and works correctly."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter94_lolodrive_capacity.py"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (7/7 flows)"},
+  "test_credentials": "gerant@lolopoint.fr/Demo2026!, marie@example.com/Demo2026!, lucie.operateur@lolopoint.fr/Operateur2026!",
+  "seed_data_creation": "None; used existing seed. Cleaned all LD-20260913-* test orders (3 deleted incl. one created during 409 test). Calendar of LP-CAP reset via PUT to pickup_days [0,2,4], delivery_days [1,3], closed [], slot_capacity 0, delivery_slot_capacity null (per instructions).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "LP-CAP calendar has been reset to slot_capacity=0 (illimité) and delivery_slot_capacity=null. If future tests need retrait=2/livraison=1 capacities, PUT them again via /api/lolodrive/manager/my-point/calendar. Test orders LD-20260913-* were all removed. Historical seed LD-LP-20260518-J1K2L3 preserved. Route de login: /connexion (not /login).",
+  "detailed_results": {
+    "backend": {
+      "TestRelayCapacities": {"pickup_capacity_2": "PASS", "delivery_capacity_1": "PASS", "reject_negative_delivery_capacity": "PASS (400)", "accept_delivery_capacity": "PASS (200)"},
+      "TestManagerPlanning": {"gerant_ok_200": "PASS", "pos_operator_LP_CAP": "PASS", "marie_forbidden_404": "PASS", "no_token_401": "PASS"},
+      "TestCheckoutCapacityPerType": {"delivery_full_409": "PASS", "drive_capacity2_second_ok_then_409": "PASS", "cleanup_created_orders": "PASS"}
+    },
+    "frontend": {
+      "cart_scroll_fix": "PASS — SheetContent scroll OK, checkout-card-btn visible & clickable after adding 4 products (Farines+Huiles). bbox y=864.",
+      "cart_relay_select": "PASS — cart-relay-select shows 10 options (LP-PAP…LP-STP incl LP-CAP), selection triggers toast 'Relais Lolo Point Capesterre sélectionné', calendar refreshes.",
+      "capacites_distinctes_fields": "PASS — relay-slot-capacity=2, relay-delivery-slot-capacity=1 rendered.",
+      "planning_split_counters": "PASS — planning-split-2026-09-15-AM shows '0/2 1/1' and cell marked COMPLET; planning-split-2026-09-14-AM shows '1/2 0/1'.",
+      "csv_export": "PASS — download 'planning-LP-CAP-semaine-2026-09-14.csv' triggered, no console error.",
+      "print_button": "PASS — planning-print present.",
+      "marquer_retiree": "PASS — planning-fulfill-<id> button labelled 'Marquer retirée'; click triggers success toast 'Commande LD-20260913-0B4148 marquée retirée ✅' and order disappears from grid.",
+      "pos_day_planning": "PASS — pos-day-planning card shown, both AM and PM slots with count=0, empty state 'Aucune commande sur ce créneau', 'relais fermé aujourd'hui' badge (dimanche 13/09 = fermé)."
+    }
+  }
+}
