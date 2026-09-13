@@ -81,6 +81,7 @@ class QuoteBody(BaseModel):
 class AskBody(BaseModel):
     question: str
     session_id: Optional[str] = None
+    lang: Optional[str] = None
 
 
 class SettingsBody(BaseModel):
@@ -188,13 +189,20 @@ async def ask_question(body: AskBody, user_id: str = Depends(get_current_user_id
 
     prompt = question if not history else f"Historique de la conversation :\n{history}\n\nNouvelle question : {question}"
 
+    from ai_guide_i18n import LANG_NAMES, norm_lang
+    lang = norm_lang(body.lang or "fr")
+    sys_msg = s["system_prompt"]
+    if lang != "fr":
+        sys_msg += (f"\nIMPORTANT : le membre utilise la plateforme en {LANG_NAMES[lang]}. "
+                    f"Réponds exclusivement en {LANG_NAMES[lang]}, salutations comprises.")
+
     async def event_stream():
         from emergentintegrations.llm.chat import LlmChat, UserMessage
         try:
             chat = LlmChat(
                 api_key=os.environ.get("EMERGENT_LLM_KEY"),
                 session_id=session_id,
-                system_message=s["system_prompt"],
+                system_message=sys_msg,
             ).with_model(s["provider"], s["model"])
             answer = await chat.send_message(UserMessage(text=prompt))
             answer = answer or ""

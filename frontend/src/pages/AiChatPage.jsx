@@ -4,6 +4,20 @@ import { toast } from 'sonner';
 import NavBar from '../components/NavBar';
 import { API, getAuthHeaders } from '../services/http';
 
+const CHAT_GREETINGS = {
+  fr: { hello: 'Posez votre question sur la centrale, les adhésions, la logistique…', cost: "Chaque question est débitée de votre CREDI'SCOP selon sa longueur." },
+  en: { hello: 'Ask your question about the platform, memberships, logistics…', cost: "Each question is debited from your CREDI'SCOP based on its length." },
+  es: { hello: 'Haga su pregunta sobre la central, las adhesiones, la logística…', cost: "Cada pregunta se debita de su CREDI'SCOP según su longitud." },
+  gcf: { hello: 'Bonjou ! Sé SCOOPY. Pozé kèsyon a-w asi santral-la, adézyon yo, lojistik-la…', cost: "Chak kèsyon ka débité CREDI'SCOP a-w silon longè a-y." },
+};
+const chatLang = () => {
+  const l = (localStorage.getItem('i18nextLng') || 'fr').slice(0, 3).toLowerCase();
+  if (l.startsWith('en')) return 'en';
+  if (l.startsWith('es')) return 'es';
+  if (l === 'gcf' || l.startsWith('cre') || l.startsWith('kre')) return 'gcf';
+  return 'fr';
+};
+
 const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
 
 export default function AiChatPage() {
@@ -61,7 +75,7 @@ export default function AiChatPage() {
       const r = await fetch(`${API}/ai-chat/ask`, {
         method: 'POST', ...opts,
         headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, session_id: sessionId }),
+        body: JSON.stringify({ question, session_id: sessionId, lang: localStorage.getItem('i18nextLng') || 'fr' }),
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
@@ -165,8 +179,8 @@ export default function AiChatPage() {
             {messages.length === 0 && (
               <div className="text-center py-14">
                 <Sparkles className="w-10 h-10 mx-auto text-[#D9B35A]/50 mb-3" />
-                <p className="text-white/70 text-sm">Posez votre question sur la centrale, les adhésions, la logistique…</p>
-                <p className="text-white/40 text-xs mt-1.5">Chaque question est débitée de votre CREDI'SCOP selon sa longueur.</p>
+                <p className="text-white/70 text-sm" data-testid="ai-chat-greeting">{CHAT_GREETINGS[chatLang()].hello}</p>
+                <p className="text-white/40 text-xs mt-1.5">{CHAT_GREETINGS[chatLang()].cost}</p>
               </div>
             )}
             {messages.map((m, i) => (

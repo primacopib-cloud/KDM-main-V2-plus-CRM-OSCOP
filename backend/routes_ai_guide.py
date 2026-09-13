@@ -63,6 +63,7 @@ ACTIONS = {
     "vendor_consultations": ("Mes enchères inversées", "/vendor?tab=consultations"),
     "my_notifications": ("Mes notifications", "/notifications"),
     "my_statement": ("Mon relevé CREDI'SCOP", "/mon-crediscop"),
+    "buy_pack": ("Acheter le pack conseillé", "/mon-crediscop?buy-pack=1"),
     "admin_accounting": ("Ouvrir la Comptabilité", "/superadmin?tab=accounting"),
     "admin_logicoop": ("Ouvrir LOGICOOP", "/superadmin?tab=logicoop"),
     "admin_users": ("Gérer les membres", "/superadmin?tab=users"),
@@ -75,8 +76,9 @@ ACTIONS = {
 }
 SPACE_ACTIONS = {
     "buyer": ["buyer_orders", "buyer_invoices", "buyer_transport", "buyer_consultations",
-              "buyer_catalog", "buyer_tools", "buyer_credits", "my_notifications", "my_statement"],
-    "vendor": ["vendor_products", "vendor_import", "vendor_cpc", "vendor_consultations", "my_notifications"],
+              "buyer_catalog", "buyer_tools", "buyer_credits", "my_notifications", "my_statement", "buy_pack"],
+    "vendor": ["vendor_products", "vendor_import", "vendor_cpc", "vendor_consultations",
+               "my_notifications", "buy_pack"],
     "admin": ["admin_accounting", "admin_logicoop", "admin_users", "admin_support",
               "admin_registres", "admin_stats"],
     "operator": ["operator_missions", "my_notifications"],
@@ -220,7 +222,11 @@ async def _data_pack(db, user: dict, space: str) -> str:
         if space in ("buyer", "vendor"):
             acc = await db.cpc_accounts.find_one({"user_id": user["id"]}, {"_id": 0, "cpc_balance": 1})
             if acc:
-                lines.append(f"Solde CREDI'SCOP : {acc.get('cpc_balance', 0)} crédits.")
+                from routes_rar import credits_value_cents, RAR_CREDIT_COVERAGE_PCT
+                cv = await credits_value_cents(user["id"])
+                lines.append(f"Solde CREDI'SCOP : {acc.get('cpc_balance', 0)} crédits (valeur garantie : {_eur(cv)} — "
+                             f"doit couvrir {RAR_CREDIT_COVERAGE_PCT} % du coût logistique pour payer à réception ; "
+                             "si insuffisant, propose l'action buy_pack).")
         if space == "vendor" and user.get("vendor_id"):
             miss = 0
             async for p in db.vendor_products.find(

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { BackLink } from '../components/BackLink';
 import { ArrowLeft, Coins, Download, Ticket, Wallet, Building2 } from 'lucide-react';
 import { BrandLogos } from '../components/BrandLogos';
@@ -15,10 +16,66 @@ const SRC_LABEL = { vendor: 'IA', consultations: 'Consult.', org: 'Org', user: '
 
 export default function CrediscopStatementPage() {
   const [data, setData] = useState(null);
+  const [pack, setPack] = useState(null);
+  const [buying, setBuying] = useState(false);
 
-  useEffect(() => {
+  const loadStatement = () => {
     fetch(`${API}/api/me/crediscop/statement`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => {});
+  };
+
+  const buyPack = async (packId) => {
+    setBuying(true);
+    try {
+      const r = await fetch(`${API}/api/cpc/checkout`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pack_id: packId, origin_url: window.location.origin, return_path: '/mon-crediscop' }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.checkout_url) throw new Error(d.detail || 'Erreur');
+      window.location.href = d.checkout_url;
+    } catch (e) {
+      toast.error(`Achat impossible : ${e.message}`);
+      setBuying(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStatement();
+    fetch(`${API}/api/cpc/me/suggested-pack`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.pack) setPack(d.pack);
+        if (d?.pack && new URLSearchParams(window.location.search).get('buy-pack') === '1') {
+          window.history.replaceState({}, '', '/mon-crediscop');
+          buyPack(d.pack.id);
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Retour Stripe : crédite puis rafraîchit le relevé
+  useEffect(() => {
+    const sid = new URLSearchParams(window.location.search).get('cpc_session');
+    if (!sid) return;
+    let tries = 0;
+    const poll = setInterval(async () => {
+      tries += 1;
+      try {
+        const r = await fetch(`${API}/api/cpc/purchase-status/${sid}`, { credentials: 'include' });
+        const d = await r.json();
+        if (r.ok && d.status === 'SETTLED') {
+          clearInterval(poll);
+          toast.success(`${d.credits} crédits CREDI'SCOP ajoutés — solde : ${d.balance}`, { duration: 6000 });
+          window.history.replaceState({}, '', '/mon-crediscop');
+          loadStatement();
+        } else if (!r.ok || tries > 20) clearInterval(poll);
+      } catch { clearInterval(poll); }
+    }, 3000);
+    return () => clearInterval(poll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -54,6 +111,22 @@ export default function CrediscopStatementPage() {
               })}
             </div>
             <ClickCounterWidget />
+            {pack && (
+              <div className="bg-[#D9B35A]/10 border border-[#D9B35A]/35 rounded-2xl p-4 flex flex-wrap items-center gap-3" data-testid="statement-suggested-pack">
+                <div className="flex-1 min-w-[220px]">
+                  <p className="text-sm font-bold text-[#E9CF8E]">Pack conseillé : {pack.label}</p>
+                  <p className="text-xs text-white/60 mt-0.5">
+                    {pack.credits} crédits — {(pack.price_ht_cents / 100).toFixed(2)} € HT · validité {pack.validity_months || 12} mois
+                  </p>
+                </div>
+                <button type="button" onClick={() => buyPack(pack.id)} disabled={buying}
+                  data-testid="statement-buy-pack-btn"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-60"
+                  style={{ background: '#D9B35A', color: '#1F0A33' }}>
+                  <Coins className="w-4 h-4" /> {buying ? 'Redirection…' : 'Acheter ce pack'}
+                </button>
+              </div>
+            )}
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5">
               <h2 className="text-sm font-semibold text-white mb-3">Mouvements récents (tous registres)</h2>
               {!(data.entries || []).length && <p className="text-sm text-white/40">Aucun mouvement.</p>}
