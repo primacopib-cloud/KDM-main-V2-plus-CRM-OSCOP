@@ -1,8 +1,29 @@
 import { useEffect, useState } from 'react';
-import { Coins, Euro, Gavel, Users, TrendingUp, RefreshCw } from 'lucide-react';
+import { Coins, Euro, Gavel, Users, TrendingUp, RefreshCw, FileDown } from 'lucide-react';
+import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../../services/http';
 
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+
+const STATUS_FR = { SCHEDULED: 'Programmée', LIVE: 'En cours', WON: 'Remportée', EXPIRED: 'Expirée', CANCELLED: 'Annulée' };
+
+const exportCsv = (stats) => {
+  const esc = (v) => `"${String(v ?? '').replaceAll('"', '""')}"`;
+  const rows = [
+    ['Référence', 'Enchère', 'Statut', 'Mises', 'Crédits des mises', 'Crédits du gagnant', 'Total crédits'],
+    ...stats.per_auction.map((a) => [
+      a.reference, a.title, STATUS_FR[a.status] || a.status, a.bids, a.bid_credits, a.winner_credits, a.total_credits,
+    ]),
+  ];
+  const csv = '﻿' + rows.map((r) => r.map(esc).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `encheres_mises_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast.success('Export CSV téléchargé');
+};
 
 const Kpi = ({ icon: Icon, label, value, sub, testId }) => (
   <div className="rounded-[14px] bg-white/[0.03] border border-white/[0.08] p-3" data-testid={testId}>
@@ -45,6 +66,12 @@ export const AuctionStats = ({ refreshKey }) => {
         <div className="rounded-[14px] bg-white/[0.03] border border-white/[0.08] p-3" data-testid="stat-per-auction">
           <h4 className="text-[11px] font-bold text-white/50 uppercase mb-2 flex items-center gap-1">
             <Gavel className="w-3 h-3" /> Mises par enchère
+            {stats.per_auction.length > 0 && (
+              <button type="button" onClick={() => exportCsv(stats)} data-testid="auction-stats-export-csv"
+                className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold normal-case border border-[#D9B35A]/30 text-[#E9CF8E] hover:bg-[#D9B35A]/10 transition-colors">
+                <FileDown className="w-3 h-3" /> Export CSV
+              </button>
+            )}
           </h4>
           {stats.per_auction.length === 0 ? <p className="text-xs text-white/35">—</p> : stats.per_auction.map((a) => (
             <div key={a.id} className="flex items-center gap-2 text-[11px] py-1 border-b border-white/[0.05]"
