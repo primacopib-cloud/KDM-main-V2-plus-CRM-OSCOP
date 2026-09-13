@@ -3383,3 +3383,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - PosCatalogPanel : lignes du panier de vente au comptoir enrichies de la vignette photo 36px (photo_url || image_url, icône en repli), data-testid cart-line-photo-{sku} ; saleDetail enrichi du champ image.
 - Testé E2E (pos@lolodrive.fr) : 2 articles vendus → panier comptoir avec photos Farine T45 + Huile végétale chargées et visibles.
 - Note : le panier du catalogue client (Sheet) avait déjà reçu les photos au lot 37 — les deux paniers affichent désormais les photos.
+
+## 2026-09-13 — Lot 39 : validation réelle Brevo SMS + email
+- SMS signature : envoyé via la fonction de production send_sms_otp au numéro réel +590 690 90 64 29 (normalisé depuis +5900690906429, trunk 0 retiré) → statut Brevo **delivered** (accepted 05:02:50 → sent → delivered 05:02:54). Code test 546452. Le numéro a aussi reçu avec succès les 14 et 17/08 → canal SMS Guadeloupe opérationnel.
+- Email data room : envoyé via brevo_service.send_email + gabarit brandé de production à primacopib@gmail.com → statut Brevo **delivered** ; historique : cette adresse ouvre et clique les emails de la plateforme (réception réelle active).
+- En attente : confirmation utilisateur de réception effective (SMS reçu sur le mobile, email en boîte de réception ou spam).
