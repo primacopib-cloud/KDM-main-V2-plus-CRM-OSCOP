@@ -3362,3 +3362,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Constat : les formulaires d'inscription collectaient déjà le prénom (VendorOnboardingPage vendor-firstname-input, PassRegistrationPage pass-first-name) mais le flux d'adhésion pro ne le stockait pas sur le compte user ; le flux PASS le faisait déjà (routes_pass_registration l.146).
 - Correctif : routes_vendor_onboarding sign → le compte créé reçoit first_name + last_name depuis le dossier d'adhésion ; si le compte existait déjà sans prénom, il est complété. Login + /auth/me exposent first_name (lot 33) → la bannière salue par le prénom dès le 1er login.
 - Testé E2E (curl + DB) : onboarding INFO_COMPLETED → sign 200 → user créé avec first_name « Jean » / last_name « Testeur » ; données de test et PDF nettoyés.
+
+## 2026-09-13 — Lot 35 : data room investisseur affichée (données démo)
+- Constat : la data room (InvestorDataroom + GET /api/investor/my-dataroom) existait mais ne s'affichait jamais — composant masqué si vide, et l'environnement n'avait AUCUNE opération achat-revente / intérêt / document.
+- Scénario démo créé via les vraies API (CONSERVÉ pour démonstration) : opération AR-20260913-81D178 (Distillerie Damoiseau → SARL Distribution Caraïbes, Rhum blanc AOC 1L, Guadeloupe, INTERNAL_LOGISCOP, statut DRAFT) ; intérêt de financement invest.test.i@test.fr déposé puis ACCEPTED par l'admin ; Bon d'Engagement BE-2026-0004 + pack Data room DR-2026-0007 générés.
+- Testé E2E : espace investisseur affiche « Ma data room — 2 nouveaux », opération listée, badges « Nouveau », téléchargement PDF DR-2026-0007.pdf OK (logo O'SCOP + synthèse complète vérifiée visuellement).
+- Rappel métier : la data room n'est visible que pour les investisseurs dont l'intérêt est ACCEPTED, sur les docs DATAROOM/INVESTOR_COMMITMENT ; notifications email Brevo aux investisseurs retenus à chaque nouveau document (non vérifié en réception réelle).
