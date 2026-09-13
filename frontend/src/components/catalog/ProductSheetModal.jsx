@@ -4,12 +4,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { tData } from '@/i18n/tData';
+import { useCatalogPromos, bestPromos } from './ProductPromoBadges';
 
 const eur = (cents) => `${((cents || 0) / 100).toFixed(2).replace('.', ',')} €`;
 
+// « fin dans X h Y min » / « X j Y h »
+const fmtLeft = (ms) => {
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (d > 0) return `${d} j ${h} h`;
+  if (h > 0) return `${h} h ${String(m).padStart(2, '0')} min`;
+  return `${m} min`;
+};
+
 export const ProductSheetModal = ({ product, onClose, onAddToCart, cartLoading }) => {
   const [idx, setIdx] = useState(0);
+  const promos = useCatalogPromos();
   if (!product) return null;
+  // Bandeau urgence : promo du produit se terminant dans moins de 24 h
+  const discount = bestPromos(promos, product).discount;
+  const promoLeft = discount?.ends_at ? new Date(discount.ends_at).getTime() - Date.now() : null;
+  const showUrgency = promoLeft !== null && promoLeft > 0 && promoLeft < 86400000;
   const imgs = (product.images || []).map((i) => i.url || i).filter(Boolean);
   const incoterms = [...new Set([
     ...(product.incoterms ? Object.values(product.incoterms).flat() : []),
@@ -23,6 +39,16 @@ export const ProductSheetModal = ({ product, onClose, onAddToCart, cartLoading }
             {tData(product.name) || product.name}
           </DialogTitle>
         </DialogHeader>
+        {showUrgency && (
+          <div className="flex items-center gap-2 rounded-lg bg-red-500/15 border border-red-400/40 px-3 py-2 animate-pulse"
+            data-testid="sheet-promo-urgency">
+            <Timer className="w-4 h-4 text-red-300 shrink-0" />
+            <span className="text-sm font-bold text-red-300">
+              ⚡ Promo −{discount.value_percent}% : fin dans {fmtLeft(promoLeft)}
+            </span>
+            <span className="text-xs text-red-200/70 ml-auto hidden sm:inline">{discount.name}</span>
+          </div>
+        )}
         <div className="grid sm:grid-cols-2 gap-5">
           <div className="relative rounded-xl overflow-hidden product-thumb-light aspect-square flex items-center justify-center" data-testid="product-sheet-gallery">
             {imgs.length > 0 ? (

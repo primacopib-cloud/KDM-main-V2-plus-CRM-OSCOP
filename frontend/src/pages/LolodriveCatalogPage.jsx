@@ -388,6 +388,21 @@ export default function LolodriveCatalogPage() {
               {cartItems.length === 0 && (
                 <div className="text-sm text-white/40 text-center py-8">{i18n.t('lolodrive.panier_vide')}</div>
               )}
+              {/* Bandeau urgence : promos du panier qui expirent dans moins de 24 h */}
+              {(() => {
+                const expiring = cartItems
+                  .map(({ sku }) => products.find((x) => x.sku === sku))
+                  .filter((p) => p && (p.tag === 'PROMO' || p.tag === 'SOLDE') && p.tag_until
+                    && (() => { const ms = new Date(p.tag_until).getTime() - Date.now(); return ms > 0 && ms < 86400000; })());
+                if (!expiring.length) return null;
+                return (
+                  <div className="p-2 rounded-lg bg-red-500/10 border border-red-400/30 text-xs font-semibold text-red-300 flex items-center gap-1.5"
+                    data-testid="cart-promo-countdown-banner">
+                    <Timer className="w-3.5 h-3.5 shrink-0" />
+                    Validez vite : des promos de votre panier expirent — fin la plus proche dans {promoCountdown(expiring)}
+                  </div>
+                );
+              })()}
               {cartItems.map(({ sku, qty }) => {
                 const p = products.find((x) => x.sku === sku);
                 if (!p) return null;
@@ -405,6 +420,14 @@ export default function LolodriveCatalogPage() {
                     <div className="flex-1 text-sm min-w-0">
                       <div className="font-medium truncate">{p.name}</div>
                       <div className="text-xs text-white/40" data-testid={`cart-line-lots-${sku}`}>{fmtEUR(discountedUnit(p) * 3)} le lot de 3 × {Math.round(qty / 3)}</div>
+                      {(p.tag === 'PROMO' || p.tag === 'SOLDE') && p.tag_until && (() => {
+                        const ms = new Date(p.tag_until).getTime() - Date.now();
+                        return ms > 0 && ms < 86400000 ? (
+                          <div className="text-[10px] text-red-300 font-bold" data-testid={`cart-line-countdown-${sku}`}>
+                            ⏱ fin promo dans {promoCountdown([p])}
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                     <Button size="icon" variant="ghost" onClick={() => sub(sku)} data-testid={`cart-sub-${sku}`}>
                       <Minus className="w-3 h-3" />
