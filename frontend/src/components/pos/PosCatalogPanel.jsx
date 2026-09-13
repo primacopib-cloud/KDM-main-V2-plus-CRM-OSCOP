@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Package, Plus, Minus, Loader2, Camera, CreditCard, Coins, Pencil, ClipboardList, ScanBarcode, Search, Tags } from 'lucide-react';
+import { Package, Plus, Minus, Loader2, Camera, CreditCard, Coins, Pencil, ClipboardList, ScanBarcode, Search, Tags, ShoppingCart } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -134,6 +134,7 @@ export const PosCatalogPanel = () => {
     const p = catalog?.products.find((x) => x.sku === sku);
     return {
       sku, qty, name: p?.name || sku,
+      image: p?.photo_url || p?.image_url || null,
       unit_cents: p?.price_public_cents || 0,
       uc: p?.uc_public ?? Math.round((p?.price_public_cents || 0) / 10),
       tva_rate: p?.tva_rate ?? 8.5,
@@ -376,8 +377,15 @@ export const PosCatalogPanel = () => {
           <p className="text-[11px] uppercase tracking-wider text-[#D9B35A] mb-2 font-bold">Vente au comptoir</p>
           <div className="space-y-1.5 mb-3">
             {saleDetail.map((it) => (
-              <div key={it.sku} className="flex items-center justify-between text-xs" data-testid={`cart-line-${it.sku}`}>
-                <span className="truncate">{it.name}
+              <div key={it.sku} className="flex items-center justify-between gap-2 text-xs" data-testid={`cart-line-${it.sku}`}>
+                <span className="w-9 h-9 rounded-lg overflow-hidden bg-white/[0.05] border border-white/10 shrink-0 flex items-center justify-center">
+                  {it.image ? (
+                    <img src={it.image} alt={it.name} loading="lazy" className="w-full h-full object-cover" data-testid={`cart-line-photo-${it.sku}`} />
+                  ) : (
+                    <ShoppingCart className="w-3.5 h-3.5 text-white/20" data-testid={`cart-line-photo-${it.sku}`} />
+                  )}
+                </span>
+                <span className="truncate flex-1 min-w-0">{it.name}
                   <span className="block text-[10px] text-white/40 font-mono">
                     {(it.unit_cents / 100).toFixed(2)} € · <span className="text-[#D9B35A]">{it.uc} UC</span> l'unité · TVA {it.tva_rate}%
                   </span>

@@ -3378,3 +3378,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-09-13 — Lot 37 : photos produits dans le panier LOLODRIVE
 - Lignes du panier (Sheet) enrichies d'une vignette photo 48px (photo_url || image_url, icône panier en repli si absente), nom tronqué, data-testid cart-line-photo-{sku}.
 - Testé E2E (marie) : 3 produits ajoutés → 3 photos affichées et chargées (naturalWidth > 0) dans le tiroir panier.
+
+## 2026-09-13 — Lot 38 : photos dans le panier « Vente au comptoir » POS
+- PosCatalogPanel : lignes du panier de vente au comptoir enrichies de la vignette photo 36px (photo_url || image_url, icône en repli), data-testid cart-line-photo-{sku} ; saleDetail enrichi du champ image.
+- Testé E2E (pos@lolodrive.fr) : 2 articles vendus → panier comptoir avec photos Farine T45 + Huile végétale chargées et visibles.
+- Note : le panier du catalogue client (Sheet) avait déjà reçu les photos au lot 37 — les deux paniers affichent désormais les photos.
