@@ -548,6 +548,7 @@
     "prefs_val_inapp": "Bell",
     "prefs_val_email": "Email",
     "prefs_val_none": "None",
-    "featured_badge": "Featured"
+    "featured_badge": "Featured",
+    "prefs_auction_plan_expiry": "Plan expiry reminder"
   }
 }

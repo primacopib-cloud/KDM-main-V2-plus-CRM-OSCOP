@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { API, getAuthHeaders } from '../../services/http';
 
-const EVENTS = ['auction_new_live', 'auction_ending'];
+const EVENTS = ['auction_new_live', 'auction_ending', 'auction_plan_expiry'];
 const VALUES = ['both', 'inapp', 'email', 'none'];
 
 // Choix des canaux (cloche/email) pour les alertes nouveau lot et fin imminente

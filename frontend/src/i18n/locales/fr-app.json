@@ -548,6 +548,7 @@
     "prefs_val_inapp": "Cloche",
     "prefs_val_email": "Email",
     "prefs_val_none": "Aucune",
-    "featured_badge": "Vedette"
+    "featured_badge": "Vedette",
+    "prefs_auction_plan_expiry": "Rappel expiration du plan"
   }
 }

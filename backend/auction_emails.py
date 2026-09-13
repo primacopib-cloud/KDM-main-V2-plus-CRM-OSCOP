@@ -221,12 +221,84 @@ async def run_auction_ending_alerts(database=None):
     return sent
 
 
+async def run_auction_plan_expiry_reminders(database):
+    """Rappel J-3 : invite chaque Coop'acteur à recharger avant l'expiration de son plan (idempotent par cycle)."""
+    from datetime import timedelta
+    import os
+    if ah.db is None:
+        ah.set_auction_database(database)
+    db = ah.db
+    now = ah.now_utc()
+    limit = (now + timedelta(days=3)).isoformat()
+    sent = 0
+    async for acc in db.auction_accounts.find(
+            {"valid_until": {"$gt": now.isoformat(), "$lte": limit}},
+            {"_id": 0}):
+        if acc.get("expiry_reminded_for") == acc.get("valid_until"):
+            continue
+        res = await db.auction_accounts.update_one(
+            {"user_id": acc["user_id"], "expiry_reminded_for": {"$ne": acc["valid_until"]}},
+            {"$set": {"expiry_reminded_for": acc["valid_until"]}})
+        if res.modified_count == 0:
+            continue
+        user = await db.users.find_one(
+            {"id": acc["user_id"]}, {"_id": 0, "email": 1, "first_name": 1, "contact_name": 1})
+        if not user:
+            continue
+        name = user.get("first_name") or user.get("contact_name") or ""
+        exp = (acc.get("valid_until") or "")[:10]
+        plan_label = acc.get("plan_label") or "CREDI'SCOP COOP'ACT"
+        try:
+            exp_fr = "-".join(reversed(exp.split("-")))
+        except Exception:
+            exp_fr = exp
+        from routes_prefs import channel_allowed
+        if await channel_allowed(acc["user_id"], "auction_plan_expiry", "inapp"):
+            try:
+                from core_deps import create_notification
+                await create_notification(
+                    "auction_plan_expiry", "⏳ Votre plan COOP'ACT expire bientôt",
+                    f"Votre plan {plan_label} expire le {exp_fr} — "
+                    f"il vous reste {acc.get('credits', 0)} crédits. Rechargez pour continuer à coop'acter !",
+                    target_user_id=acc["user_id"], data={"action_url": "/encheres"})
+            except Exception as exc:
+                logger.warning("Cloche expiration plan %s : %s", acc["user_id"], exc)
+        if user.get("email") and await channel_allowed(acc["user_id"], "auction_plan_expiry", "email"):
+            try:
+                from brevo_service import send_email, _wrap_html
+                base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+                subject = "⏳ Votre plan COOP'ACT expire bientôt"
+                body = (
+                    f"<p style='font-size:14px;'>Bonjour{f' {name}' if name else ''},</p>"
+                    f"<p style='font-size:14px;'>Votre plan <b>{plan_label}</b> "
+                    f"expire le <b>{exp_fr}</b> — il vous reste <b>{acc.get('credits', 0)} crédits</b>.</p>"
+                    "<p style='font-size:14px;'>Rechargez dès maintenant pour continuer à coop'acter : "
+                    "vos crédits s'ajoutent et votre validité est prolongée.</p>"
+                    f"<p style='font-size:14px;'><a href='{base}/encheres' "
+                    "style='background:#D9B35A;color:#2A1045;padding:10px 18px;border-radius:8px;"
+                    "text-decoration:none;font-weight:bold;'>Recharger mon plan</a></p>"
+                    "<p style='font-size:12px;color:#B8A98F;'><b>BOURSE COOPÉRATIVE — COOP'ACT</b>, "
+                    "agir ensemble pour la juste valeur.</p>")
+                await send_email(to_email=user["email"], to_name=name or None, subject=subject,
+                                 html_content=_wrap_html(subject, body),
+                                 text_content=f"Votre plan COOP'ACT expire le {exp_fr} — "
+                                              f"rechargez sur {base}/encheres",
+                                 tags=["auction-plan-expiry"])
+                sent += 1
+            except Exception as exc:
+                logger.warning("Email expiration plan %s : %s", user.get("email"), exc)
+    if sent:
+        logger.info("Rappels expiration plan COOP'ACT envoyés : %s", sent)
+    return sent
+
+
 async def run_auction_maintenance(database):
     """Tâche planifiée : transitions de statut + relance des enchères récurrentes + alertes fin imminente."""
     if ah.db is None:
         ah.set_auction_database(database)
     await ah.sync_auction_statuses()
     await run_auction_ending_alerts()
+    await run_auction_plan_expiry_reminders(ah.db)
 
 
 STATUS_FR = {"SCHEDULED": "Programmée", "LIVE": "En cours", "WON": "Remportée",
