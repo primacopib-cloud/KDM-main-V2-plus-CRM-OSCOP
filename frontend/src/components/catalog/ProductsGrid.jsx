@@ -261,10 +261,19 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
               )}
               {/* Fiche circuit — vendeur juridique / facture / financement */}
               <div className="grid gap-0.5 mb-2 text-[10.5px]" data-testid={`offer-legal-${product.sku}`}>
-                <div className="text-white/60">
-                  Vendeur juridique : <b className="text-white/90">
-                    {product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP — SCIC SAS OBJECTIF SCOP OUTREMER" : (product.seller_name || 'Partenaire vendeur référencé')}
-                  </b>
+                <div className="flex items-center gap-1.5 text-white/60">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white overflow-hidden shrink-0">
+                    <img
+                      src={product.sale_model === 'OSCOP_DIRECT_RESALE' ? '/logos/oscop.webp' : '/logos/kdmarche-pro-gold.webp'}
+                      alt={product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP — Objectif SCOP Outremer" : 'KDMARCHÉ Pro'}
+                      className="w-4 h-4 object-contain"
+                      data-testid={`seller-logo-${product.sku}`} />
+                  </span>
+                  <span>
+                    Vendeur juridique : <b className="text-white/90">
+                      {product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP — SCIC SAS OBJECTIF SCOP OUTREMER" : (product.seller_name || 'Partenaire vendeur référencé')}
+                    </b>
+                  </span>
                 </div>
                 <div className="text-white/60">
                   Facture émise par : <b className="text-white/90">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API } from '../../services/http';
 import { Button } from '../ui/button';
@@ -53,7 +53,10 @@ export const OscopBuyDialog = ({ product, onClose }) => {
       <DialogContent className="max-w-md bg-[#2A1045] border-white/15 text-white" data-testid="oscop-buy-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-[#D9B35A]" />
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white overflow-hidden shrink-0">
+              <img src="/logos/oscop.webp" alt="O'SCOP — Objectif SCOP Outremer"
+                className="w-7 h-7 object-contain" data-testid="oscop-buy-logo" />
+            </span>
             Achat direct O'SCOP
           </DialogTitle>
         </DialogHeader>

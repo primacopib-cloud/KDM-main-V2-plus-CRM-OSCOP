@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { ChevronDown, Scale } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 export const SALE_MODEL_INFO = {
   OSCOP_DIRECT_RESALE: {
     badge: "VENDU ET FACTURÉ PAR O'SCOP",
     cls: 'bg-amber-500/15 text-amber-300 border-amber-400/40',
+    logo: '/logos/oscop.webp',
+    logoAlt: "O'SCOP — Objectif SCOP Outremer",
     roles: [
       ['Vendeur', "O'SCOP"],
       ['Facturation', "O'SCOP"],
@@ -17,6 +19,8 @@ export const SALE_MODEL_INFO = {
   PARTNER_DIRECT_SALE: {
     badge: 'VENDU ET FACTURÉ PAR LE PARTENAIRE',
     cls: 'bg-sky-500/15 text-sky-300 border-sky-400/40',
+    logo: '/logos/kdmarche-pro-gold.webp',
+    logoAlt: 'KDMARCHÉ Pro',
     roles: [
       ['Vendeur', 'Le partenaire vendeur'],
       ['Facturation', 'Le partenaire vendeur'],
@@ -41,7 +45,10 @@ export const SaleModelBadge = ({ product }) => {
         data-testid={`sale-model-badge-${product?.sku || product?.id}`}
         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[9px] font-semibold tracking-wide ${info.cls}`}
       >
-        <Scale className="w-2.5 h-2.5" />
+        <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white overflow-hidden shrink-0">
+          <img src={info.logo} alt={info.logoAlt} className="w-3 h-3 object-contain"
+            data-testid={`sale-model-logo-${product?.sku || product?.id}`} />
+        </span>
         {sellerName ? `VENDU ET FACTURÉ PAR ${sellerName.toUpperCase()}` : info.badge}
         <ChevronDown className={`w-2.5 h-2.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>

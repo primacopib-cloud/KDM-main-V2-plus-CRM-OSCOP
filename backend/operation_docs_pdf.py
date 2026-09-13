@@ -1,4 +1,5 @@
 """Documents PDF numérotés des opérations achat-revente (BCF / BE / EM)."""
+import os
 from datetime import datetime, timezone
 from io import BytesIO
 
@@ -119,11 +120,20 @@ def build_operation_pdf(doc: dict) -> bytes:
     w, h = A4
     c.setFillColor(VIOLET)
     c.rect(0, h - 30 * mm, w, 30 * mm, fill=1, stroke=0)
+    logo = "/app/frontend/public/logos/oscop.png"
+    if os.path.exists(logo):
+        c.setFillColor(colors.white)
+        c.roundRect(10 * mm, h - 27 * mm, 20 * mm, 20 * mm, 3 * mm, fill=1, stroke=0)
+        try:
+            c.drawImage(logo, 11 * mm, h - 26 * mm, 18 * mm, 18 * mm,
+                        preserveAspectRatio=True, anchor='c', mask='auto')
+        except Exception:
+            pass
     c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 15)
-    c.drawString(20 * mm, h - 15 * mm, meta["title"])
-    c.setFont("Helvetica", 9)
-    c.drawString(20 * mm, h - 22 * mm, meta["issuer"])
+    c.drawString(36 * mm, h - 15 * mm, meta["title"])
+    c.setFont("Helvetica", 8)
+    c.drawString(36 * mm, h - 22 * mm, meta["issuer"])
     c.setFillColor(GOLD)
     c.setFont("Helvetica-Bold", 11)
     c.drawRightString(w - 20 * mm, h - 15 * mm, f"N° {doc['doc_number']}")

@@ -7,9 +7,22 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 
-LOGO_PATH = "/app/frontend/public/icon-512.png"
+LOGO_PATH = "/app/frontend/public/logos/oscop.png"
 GOLD = (0.85, 0.70, 0.35)
 PURPLE = (0.12, 0.04, 0.20)
+
+
+def _draw_logo(c, h):
+    """Logo O'SCOP sur pastille blanche (lisibilité sur bandeau violet)."""
+    if not os.path.exists(LOGO_PATH):
+        return
+    c.setFillColorRGB(1, 1, 1)
+    c.roundRect(12 * mm, h - 31 * mm, 28 * mm, 28 * mm, 4 * mm, stroke=0, fill=1)
+    try:
+        c.drawImage(LOGO_PATH, 14 * mm, h - 30 * mm, 24 * mm, 24 * mm,
+                    preserveAspectRatio=True, anchor='c', mask='auto')
+    except Exception:
+        pass
 
 
 def build_paid_invoice_pdf(need: dict) -> bytes:
@@ -21,11 +34,7 @@ def build_paid_invoice_pdf(need: dict) -> bytes:
 
     c.setFillColorRGB(*PURPLE)
     c.rect(0, h - 34 * mm, w, 34 * mm, stroke=0, fill=1)
-    if os.path.exists(LOGO_PATH):
-        try:
-            c.drawImage(LOGO_PATH, 14 * mm, h - 30 * mm, 24 * mm, 24 * mm, mask='auto')
-        except Exception:
-            pass
+    _draw_logo(c, h)
     c.setFillColorRGB(*GOLD)
     c.setFont("Helvetica-Bold", 18)
     c.drawString(44 * mm, h - 18 * mm, "O'SCOP — Centrale coopérative")
@@ -94,11 +103,7 @@ def build_financing_invoice_pdf(fp: dict) -> bytes:
 
     c.setFillColorRGB(*PURPLE)
     c.rect(0, h - 34 * mm, w, 34 * mm, stroke=0, fill=1)
-    if os.path.exists(LOGO_PATH):
-        try:
-            c.drawImage(LOGO_PATH, 14 * mm, h - 30 * mm, 24 * mm, 24 * mm, mask='auto')
-        except Exception:
-            pass
+    _draw_logo(c, h)
     c.setFillColorRGB(*GOLD)
     c.setFont("Helvetica-Bold", 18)
     c.drawString(44 * mm, h - 18 * mm, "O'SCOP — Centrale coopérative")
@@ -168,11 +173,7 @@ def build_api_subscription_invoice_pdf(sub: dict) -> bytes:
 
     c.setFillColorRGB(*PURPLE)
     c.rect(0, h - 34 * mm, w, 34 * mm, stroke=0, fill=1)
-    if os.path.exists(LOGO_PATH):
-        try:
-            c.drawImage(LOGO_PATH, 14 * mm, h - 30 * mm, 24 * mm, 24 * mm, mask='auto')
-        except Exception:
-            pass
+    _draw_logo(c, h)
     c.setFillColorRGB(*GOLD)
     c.setFont("Helvetica-Bold", 18)
     c.drawString(44 * mm, h - 18 * mm, "O'SCOP — Centrale coopérative")
@@ -247,11 +248,7 @@ def build_participation_receipt_pdf(need: dict, joiner_email: str, participation
 
     c.setFillColorRGB(*PURPLE)
     c.rect(0, h - 34 * mm, w, 34 * mm, stroke=0, fill=1)
-    if os.path.exists(LOGO_PATH):
-        try:
-            c.drawImage(LOGO_PATH, 14 * mm, h - 30 * mm, 24 * mm, 24 * mm, mask='auto')
-        except Exception:
-            pass
+    _draw_logo(c, h)
     c.setFillColorRGB(*GOLD)
     c.setFont("Helvetica-Bold", 18)
     c.drawString(44 * mm, h - 18 * mm, "O'SCOP — Centrale coopérative")
