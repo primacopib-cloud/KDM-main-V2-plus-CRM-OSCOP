@@ -86,9 +86,15 @@ const Crumb = ({ parts }) => (
 );
 
 // Navigation catalogue par clics : catégories → sous-catégories → produits
-const CatalogDrillDown = ({ pool, category, setCategory, subcategory, setSubcategory, renderGrid }) => {
+const CatalogDrillDown = ({ pool, category, setCategory, subcategory, setSubcategory, renderGrid, renderLastChance }) => {
   const groups = groupByCategory(pool);
   const promos = pool.filter((p) => p.tag === 'PROMO' || p.tag === 'SOLDE');
+  // Rayon « Dernière chance » : promos qui finissent dans moins de 24 h
+  const lastChance = pool.filter((p) => {
+    if (p.tag !== 'PROMO' && p.tag !== 'SOLDE') return false;
+    const ms = p.tag_until ? new Date(p.tag_until).getTime() - Date.now() : null;
+    return ms !== null && ms > 0 && ms < 86400000;
+  });
   if (category === PROMO_CAT) {
     return (
       <>
@@ -104,7 +110,16 @@ const CatalogDrillDown = ({ pool, category, setCategory, subcategory, setSubcate
   const effCategory = catGroup ? category : '';
   if (!effCategory) {
     return (
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }} data-testid="catalog-categories">
+      <>
+        {lastChance.length > 0 && renderLastChance && (
+          <div className="mb-5 rounded-2xl border border-red-400/30 bg-red-500/[0.06] p-3" data-testid="last-chance-row">
+            <h2 className="text-sm font-bold text-red-300 mb-2 flex items-center gap-1.5">
+              <Timer className="w-4 h-4" /> Dernière chance — {lastChance.length} promo{lastChance.length > 1 ? 's' : ''} {lastChance.length > 1 ? 'finissent' : 'finit'} dans moins de 24 h
+            </h2>
+            {renderLastChance(lastChance)}
+          </div>
+        )}
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }} data-testid="catalog-categories">
         {promos.length > 0 && (
           <CatTile testid="catalog-cat-promos" name="Promos & Soldes" count={promos.length} accent items={promos}
             onClick={() => setCategory(PROMO_CAT)} />
@@ -119,7 +134,8 @@ const CatalogDrillDown = ({ pool, category, setCategory, subcategory, setSubcate
               onClick={() => { setCategory(g.category); setSubcategory(''); }} />
           );
         })}
-      </div>
+        </div>
+      </>
     );
   }
   const subGroup = subcategory ? catGroup.subs.find((s) => s.name === subcategory) : null;
@@ -526,6 +542,26 @@ export default function LolodriveCatalogPage() {
             {items.map(visitorCard)}
           </div>
         );
+        const visitorLastChance = (items) => (
+          <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+            {items.map((p) => (
+              <div key={p.sku} className="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-red-400/20"
+                data-testid={`last-chance-item-${p.sku}`}>
+                <div className="w-10 h-10 rounded-lg overflow-hidden product-thumb-light shrink-0 flex items-center justify-center">
+                  {p.photo_url || p.image_url ? (
+                    <img src={p.photo_url || p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-contain p-0.5" />
+                  ) : (
+                    <ShoppingCart className="w-4 h-4 text-black/20" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-white truncate">{p.name}</div>
+                  <div className="text-[10px]"><span className="text-red-300 font-bold">⏱ {promoCountdown([p])}</span> <span className="text-[#E9CF8E]">· Prix réservé aux titulaires PASS</span></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
         return (
         <>
           {products.length === 0 && (
@@ -535,7 +571,7 @@ export default function LolodriveCatalogPage() {
             visitorGrid(applyCatalogFilters(products, { search, category, subcategory }), 'visitor-catalog-grid')
           ) : (
             <CatalogDrillDown pool={products} category={category} setCategory={setCategory}
-              subcategory={subcategory} setSubcategory={setSubcategory} renderGrid={visitorGrid} />
+              subcategory={subcategory} setSubcategory={setSubcategory} renderGrid={visitorGrid} renderLastChance={visitorLastChance} />
           ))}
           <div className="rounded-2xl p-5 text-center border border-[#D9B35A]/40 bg-[#D9B35A]/[0.07]" data-testid="visitor-pass-invite">
             <p className="text-white font-semibold m-0 mb-1">Envie de commander par lots de 3 aux prix mutualisés ?</p>
@@ -563,13 +599,42 @@ export default function LolodriveCatalogPage() {
               ))}
           </div>
         );
+        // Rayon « Dernière chance » : mini-cartes compactes avec compte à rebours et ajout direct
+        const renderLastChance = (items) => (
+          <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+            {items.map((p) => (
+              <div key={p.sku} className="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-red-400/20"
+                data-testid={`last-chance-item-${p.sku}`}>
+                <div className="w-10 h-10 rounded-lg overflow-hidden product-thumb-light shrink-0 flex items-center justify-center">
+                  {p.photo_url || p.image_url ? (
+                    <img src={p.photo_url || p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-contain p-0.5" />
+                  ) : (
+                    <ShoppingCart className="w-4 h-4 text-black/20" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-white truncate">{p.name}</div>
+                  <div className="text-[10px] text-red-300 font-bold">
+                    ⏱ {promoCountdown([p])} · {fmtEUR(discountedUnit(p) * 3)} le lot
+                  </div>
+                </div>
+                <button type="button" onClick={() => add(p.sku)} data-testid={`last-chance-add-${p.sku}`}
+                  title="Ajouter au panier"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-black font-bold shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        );
         // Navigation par clics : catégorie → sous-catégorie → produits
         if (!searching && filter !== 'FAVS') {
           if (pool.length === 0) {
             return <div className="text-center text-white/40 py-12" data-testid="catalog-no-result">Aucun produit disponible pour cette sélection.</div>;
           }
           return <CatalogDrillDown pool={pool} category={category} setCategory={setCategory}
-            subcategory={subcategory} setSubcategory={setSubcategory} renderGrid={grid} />;
+            subcategory={subcategory} setSubcategory={setSubcategory} renderGrid={grid} renderLastChance={renderLastChance} />;
         }
         // Recherche ou favoris : affichage groupé direct
         const visible = applyCatalogFilters(products, { search, category, subcategory })
