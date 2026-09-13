@@ -297,6 +297,10 @@ export default function LolodriveCatalogPage() {
   const refCode = getReferencePointCode();
   const refPoint = loloPoints.find((p) => p.code === refCode) || null;
   const pickedPoint = loloPoints.find((p) => p.code === selectedPoint) || null;
+  // Jours programmés : relais choisi (Relais LOLODRIVE) ou relais de référence (Drive / livraison) ; vide = tous les jours
+  const relayForDays = fulfillment === 'LOLO_POINT' ? pickedPoint : refPoint;
+  const relayDays = fulfillment === 'DELIVERY' ? (relayForDays?.delivery_days || []) : (relayForDays?.pickup_days || []);
+  const relayName = relayForDays?.name;
   const sortedPoints = [...loloPoints].sort((a, b) => {
     if (refPoint) {
       if (a.code === refPoint.code) return -1;
@@ -471,7 +475,8 @@ export default function LolodriveCatalogPage() {
                 </div>
                 <CartSlotPicker fulfillment={fulfillment} cartItems={cartItems} products={products}
                   slotId={pickupSlot} setSlotId={setPickupSlot}
-                  pickupDate={pickupDate} setPickupDate={setPickupDate} />
+                  pickupDate={pickupDate} setPickupDate={setPickupDate}
+                  relayDays={relayDays} relayName={relayName} />
                 {fulfillment === 'LOLO_POINT' && (
                   <Select value={selectedPoint} onValueChange={setSelectedPoint}>
                     <SelectTrigger className="bg-white/[0.04] border-white/10" data-testid="lolo-point-select">

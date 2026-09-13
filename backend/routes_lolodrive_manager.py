@@ -2,6 +2,7 @@
 import os
 import uuid
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 import logging
@@ -47,6 +48,29 @@ async def manager_my_point(user: dict = Depends(get_current_user)):
     if not point:
         raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
     return point
+
+
+class RelayCalendarBody(BaseModel):
+    pickup_days: List[int] = []    # 0=lundi … 6=dimanche ; vide = tous les jours
+    delivery_days: List[int] = []
+
+
+@lolodrive_manager_router.put("/manager/my-point/calendar")
+async def manager_update_calendar(body: RelayCalendarBody, user: dict = Depends(get_current_user)):
+    """Le gérant programme les jours de retrait et de livraison de son relais."""
+    for days in (body.pickup_days, body.delivery_days):
+        if any(d < 0 or d > 6 for d in days):
+            raise HTTPException(status_code=400, detail="Jours invalides (0=lundi à 6=dimanche)")
+    res = await db.lolodrive_points.update_one(
+        {"manager_user_id": user["id"]},
+        {"$set": {"pickup_days": sorted(set(body.pickup_days)),
+                  "delivery_days": sorted(set(body.delivery_days)),
+                  "updated_at": datetime.utcnow()}})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    point = await db.lolodrive_points.find_one(
+        {"manager_user_id": user["id"]}, {"_id": 0, "pickup_days": 1, "delivery_days": 1})
+    return {"ok": True, **point}
 
 
 @lolodrive_manager_router.post("/manager/my-point/photo")

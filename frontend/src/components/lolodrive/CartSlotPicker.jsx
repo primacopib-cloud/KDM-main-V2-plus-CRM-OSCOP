@@ -3,8 +3,8 @@ import { Clock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { lolodriveAPI } from '../../services/api';
 
-// Choix du jour (aujourd'hui/demain) + créneau de retrait Drive / livraison + frais UC (config super admin)
-export const CartSlotPicker = ({ fulfillment, cartItems, products, slotId, setSlotId, pickupDate, setPickupDate }) => {
+// Choix du créneau de retrait Drive / livraison avec CALENDRIER du relais (jours programmés par le gérant)
+export const CartSlotPicker = ({ fulfillment, cartItems, products, slotId, setSlotId, pickupDate, setPickupDate, relayDays, relayName }) => {
   const [cfg, setCfg] = useState(null);
   useEffect(() => {
     lolodriveAPI.feesConfig().then(setCfg).catch(() => {});
@@ -12,22 +12,26 @@ export const CartSlotPicker = ({ fulfillment, cartItems, products, slotId, setSl
 
   const kind = fulfillment === 'DELIVERY' ? 'delivery' : 'pickup';
   const slots = cfg?.[`${kind}_slots`] || [];
+  const jsDay = (d) => (d.getDay() + 6) % 7; // 0=lundi … 6=dimanche
+  const allowed = relayDays && relayDays.length ? new Set(relayDays) : null;
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
     if (slots.length && !slots.some((s) => s.id === slotId)) setSlotId(slots[0].id);
     // eslint-disable-next-line
   }, [cfg, fulfillment]);
 
+  // Corrige la date si le jour choisi n'est pas un jour ouvert du relais
   useEffect(() => {
-    if (!setPickupDate || !cfg) return;
-    const t = new Date();
-    const isoD = (d) => d.toISOString().slice(0, 10);
-    const sel = (cfg[`${kind}_slots`] || []).find((s) => s.id === slotId);
-    const over = Boolean(sel?.end && t.toISOString().slice(11, 16) >= sel.end);
-    const target = over ? isoD(new Date(t.getTime() + 86400000)) : isoD(t);
-    if (!pickupDate || (over && pickupDate === isoD(t))) setPickupDate(target);
+    if (!setPickupDate || !allowed || !pickupDate) return;
+    const d = new Date(`${pickupDate}T12:00:00`);
+    if (allowed.has(jsDay(d))) return;
+    for (let i = 0; i < 21; i += 1) {
+      const c = new Date(Date.now() + i * 86400000);
+      if (allowed.has(jsDay(c))) { setPickupDate(iso(c)); return; }
+    }
     // eslint-disable-next-line
-  }, [cfg, slotId, fulfillment]);
+  }, [relayDays, pickupDate]);
 
   const feeFor = (sid) => cartItems.reduce((acc, { sku, qty }) => {
     const p = products.find((x) => x.sku === sku);
@@ -39,33 +43,50 @@ export const CartSlotPicker = ({ fulfillment, cartItems, products, slotId, setSl
   if (!cfg || slots.length === 0) return null;
   const fee = Math.round(feeFor(slotId) * 100) / 100;
 
-  const iso = (d) => d.toISOString().slice(0, 10);
-  const today = new Date();
-  const tomorrow = new Date(today.getTime() + 86400000);
   const selSlot = slots.find((s) => s.id === slotId);
-  const todayOver = Boolean(selSlot?.end && today.toISOString().slice(11, 16) >= selSlot.end);
-  const days = [
-    { id: iso(today), label: "Aujourd'hui", disabled: todayOver },
-    { id: iso(tomorrow), label: 'Demain', disabled: false },
-  ];
+  const nowIso = new Date().toISOString();
+  const todayIso = iso(new Date());
+  const todayOver = Boolean(selSlot?.end && nowIso.slice(11, 16) >= selSlot.end);
+  const cells = Array.from({ length: 21 }, (_, i) => new Date(Date.now() + i * 86400000));
 
   return (
     <div data-testid="slot-picker">
       <label className="text-xs text-white/60 flex items-center gap-1">
         <Clock className="w-3 h-3" /> {fulfillment === 'DELIVERY' ? 'Créneau de livraison' : 'Créneau de retrait'}
+        {allowed && relayName && <span className="text-[#D9B35A]/80">· calendrier {relayName}</span>}
       </label>
       {setPickupDate && (
-        <div className="flex gap-2 mt-1.5 mb-1" data-testid="pickup-day-picker">
-          {days.map((d) => (
-            <button key={d.id} type="button" disabled={d.disabled} data-testid={`pickup-day-${d.label === 'Demain' ? 'tomorrow' : 'today'}`}
-              onClick={() => setPickupDate(d.id)}
-              className={`flex-1 py-1.5 rounded-lg border text-xs font-bold transition-colors disabled:opacity-35 disabled:cursor-not-allowed ${pickupDate === d.id ? 'text-[#D9B35A] bg-[#D9B35A]/15 border-[#D9B35A]/40' : 'text-white/50 bg-white/[0.03] border-white/10'}`}>
-              {d.label}
-              <span className="block text-[9px] font-normal text-white/35">
-                {new Date(d.id).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-              </span>
-            </button>
-          ))}
+        <div className="mt-1.5 mb-1 rounded-xl border border-white/10 bg-white/[0.02] p-2" data-testid="pickup-day-calendar">
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'].map((d) => (
+              <span key={d} className="text-center text-[9px] font-bold text-white/35">{d}</span>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {cells.map((d) => {
+              const id = iso(d);
+              const closed = allowed ? !allowed.has(jsDay(d)) : false;
+              const disabled = closed || (id === todayIso && todayOver);
+              const selected = pickupDate === id;
+              return (
+                <button key={id} type="button" disabled={disabled}
+                  data-testid={`pickup-day-${id}`} data-closed={closed || undefined}
+                  onClick={() => setPickupDate(id)}
+                  title={closed ? 'Jour non programmé par le relais' : d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  className={`h-8 rounded-lg text-[11px] font-bold border transition-colors disabled:opacity-25 disabled:cursor-not-allowed ${
+                    selected ? 'text-[#2A1045] on-gold border-[#D9B35A]' : 'text-white/60 bg-white/[0.03] border-white/10 hover:border-[#D9B35A]/40'}`}
+                  style={selected ? { background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' } : undefined}>
+                  {d.getDate()}
+                  {id === todayIso && <span className="block text-[7px] font-normal leading-none">auj.</span>}
+                </button>
+              );
+            })}
+          </div>
+          {allowed && (
+            <p className="text-[10px] text-white/40 mt-1.5" data-testid="relay-days-hint">
+              Jours grisés = fermés par ce relais
+            </p>
+          )}
         </div>
       )}
       <Select value={slotId || ''} onValueChange={setSlotId}>
