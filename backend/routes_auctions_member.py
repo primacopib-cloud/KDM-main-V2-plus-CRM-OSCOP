@@ -30,6 +30,11 @@ def _stripe_key() -> str:
 async def public_auctions(status: str = "", category: str = "", type_id: str = "",
                           source: str = "", q: str = ""):
     await ah.sync_auction_statuses()
+    try:
+        from auction_emails import run_auction_ending_alerts
+        await run_auction_ending_alerts()
+    except Exception as exc:
+        logger.warning("Alertes fin imminente : %s", exc)
     query: dict = {"status": {"$in": ["SCHEDULED", "LIVE", "WON", "EXPIRED"]}}
     if category:
         query["category_id"] = category
@@ -147,6 +152,20 @@ async def _activate_plan(user_id: str, purchase: dict):
 
 @auctions_member_router.get("/me")
 async def my_auction_account(user_id: str = Depends(get_current_user_id)):
+    # Filet de sécurité : réconcilie les achats de plan PENDING récents auprès de Stripe
+    async for pu in ah.db.auction_pass_purchases.find(
+            {"user_id": user_id, "status": "PENDING"}, {"_id": 0}).sort("created_at", -1).limit(3):
+        try:
+            stripe.api_base = "https://api.stripe.com"
+            session = stripe.checkout.Session.retrieve(pu["stripe_session_id"], api_key=_stripe_key())
+            if session.payment_status == "paid":
+                res = await ah.db.auction_pass_purchases.update_one(
+                    {"stripe_session_id": pu["stripe_session_id"], "status": "PENDING"},
+                    {"$set": {"status": "ACTIVE", "paid_at": ah.now_utc().isoformat()}})
+                if res.modified_count:
+                    await _activate_plan(user_id, pu)
+        except Exception as exc:
+            logger.warning("Réconciliation achat plan %s : %s", pu.get("stripe_session_id"), exc)
     account = await ah.get_auction_account(user_id)
     wins = [ah.serialize_member(a) async for a in ah.db.auctions.find(
         {"status": "WON", "winner.user_id": user_id}, {"_id": 0}).sort("winner.won_at", -1).limit(20)]
@@ -157,7 +176,20 @@ async def my_auction_account(user_id: str = Depends(get_current_user_id)):
             fulfillments[a["id"]] = a["fulfillment"]
     for w in wins:
         w["fulfillment"] = fulfillments.get(w["id"])
-    return {"account": account, "active": ah.account_active(account), "wins": wins}
+    bids = await ah.db.auction_bids.find(
+        {"user_id": user_id}, {"_id": 0}).sort("created_at", -1).limit(20).to_list(20)
+    if bids:
+        refs = {a["id"]: a async for a in ah.db.auctions.find(
+            {"id": {"$in": list({b["auction_id"] for b in bids})}},
+            {"_id": 0, "id": 1, "reference": 1, "title": 1})}
+        for b in bids:
+            ref = refs.get(b["auction_id"], {})
+            b["auction_reference"] = ref.get("reference")
+            b["auction_title"] = ref.get("title")
+    ledger = await ah.db.auction_credit_ledger.find(
+        {"user_id": user_id}, {"_id": 0}).sort("created_at", -1).limit(30).to_list(30)
+    return {"account": account, "active": ah.account_active(account), "wins": wins,
+            "bids": bids, "ledger": ledger}
 
 
 # ---------- Mises & victoire ----------

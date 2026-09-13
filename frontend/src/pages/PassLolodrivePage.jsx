@@ -11,6 +11,7 @@ import i18n from '@/i18n';
 import { VitrineReviews } from '../components/pass/VitrineReviews';
 import { RelayOfMonth } from '../components/pass/RelayOfMonth';
 import { authAPI } from '../services/api';
+import { FeaturedAuctionBanner } from '../components/auctions/FeaturedAuctionBanner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -83,6 +84,7 @@ export default function PassLolodrivePage() {
         <p className="text-base text-white/75 max-w-2xl mb-10" data-testid="pass-explainer">
           {i18n.t('passPage.explainer')}
         </p>
+        <FeaturedAuctionBanner className="mb-10" />
         <div className="grid sm:grid-cols-3 gap-4 mb-10">
           {CARDS.map(({ icon: Icon, key }) => (
             <div key={key} className="rounded-2xl p-5 bg-white/[0.05] border border-[#D9B35A]/20" data-testid={`pass-${key}`}>

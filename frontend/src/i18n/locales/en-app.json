@@ -525,6 +525,13 @@
     "choose_point": "Choose your relay",
     "no_auctions": "No auction matches your filters.",
     "banner_cta": "Auction room — win lots at descending prices!",
-    "day_abbr": "D"
+    "day_abbr": "D",
+    "history_title": "My auction history",
+    "history_counts": "{{bids}} bid(s) · {{wins}} lot(s) won",
+    "history_bids": "My bids",
+    "history_wins": "Lots won",
+    "history_ledger": "Credit statement",
+    "featured_kicker": "Featured auction",
+    "featured_cta": "Bid now"
   }
 }

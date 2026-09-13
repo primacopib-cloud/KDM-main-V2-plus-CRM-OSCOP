@@ -525,6 +525,13 @@
     "choose_point": "Elija su relevo",
     "no_auctions": "Ninguna subasta coincide con sus filtros.",
     "banner_cta": "Sala de subastas — ¡gane lotes a precio descendente!",
-    "day_abbr": "D"
+    "day_abbr": "D",
+    "history_title": "Mi historial de subastas",
+    "history_counts": "{{bids}} puja(s) · {{wins}} lote(s) ganado(s)",
+    "history_bids": "Mis pujas",
+    "history_wins": "Lotes ganados",
+    "history_ledger": "Extracto de créditos",
+    "featured_kicker": "Subasta destacada",
+    "featured_cta": "Pujar"
   }
 }

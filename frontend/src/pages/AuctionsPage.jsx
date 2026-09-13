@@ -9,6 +9,7 @@ import { AuctionCard } from '../components/auctions/AuctionCard';
 import { AuctionFilters } from '../components/auctions/AuctionFilters';
 import { AuctionPlanGate } from '../components/auctions/AuctionPlanGate';
 import { WinnerDialog } from '../components/auctions/WinnerDialog';
+import { AuctionHistoryPanel } from '../components/auctions/AuctionHistoryPanel';
 
 export default function AuctionsPage() {
   const [params, setParams] = useSearchParams();
@@ -115,6 +116,8 @@ export default function AuctionsPage() {
             ))}
           </div>
         )}
+
+        <AuctionHistoryPanel me={me} />
 
         {winnerAuction && (
           <WinnerDialog auction={winnerAuction} onClose={() => setWinnerAuction(null)}

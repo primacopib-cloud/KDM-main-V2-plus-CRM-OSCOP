@@ -240,6 +240,13 @@
     "choose_point": "Chwazi relè a-w",
     "no_auctions": "Pon lavant pa ka koresponn a filt a-w.",
     "banner_cta": "Sal lavant-privé — genyen lo a pri ka désann !",
-    "day_abbr": "J"
+    "day_abbr": "J",
+    "history_title": "Istorik lavant an mwen",
+    "history_counts": "{{bids}} miz · {{wins}} lo genyen",
+    "history_bids": "Miz an mwen",
+    "history_wins": "Lo genyen",
+    "history_ledger": "Rilivé kredi",
+    "featured_kicker": "Lavant a la iné",
+    "featured_cta": "Mizé"
   }
 }

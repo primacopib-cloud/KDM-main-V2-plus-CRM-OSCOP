@@ -525,6 +525,13 @@
     "choose_point": "Choisissez votre relais",
     "no_auctions": "Aucune enchère ne correspond à vos filtres.",
     "banner_cta": "Salle des enchères — remportez des lots à prix descendant !",
-    "day_abbr": "J"
+    "day_abbr": "J",
+    "history_title": "Mon historique d'enchères",
+    "history_counts": "{{bids}} mise(s) · {{wins}} lot(s) remporté(s)",
+    "history_bids": "Mes mises",
+    "history_wins": "Lots remportés",
+    "history_ledger": "Relevé de crédits",
+    "featured_kicker": "Enchère à la une",
+    "featured_cta": "Enchérir"
   }
 }

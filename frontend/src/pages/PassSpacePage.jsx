@@ -7,6 +7,7 @@ import {
   CheckCircle2, ArrowRight, Zap,
 } from 'lucide-react';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
+import { FeaturedAuctionBanner } from '../components/auctions/FeaturedAuctionBanner';
 import StripeCheckoutButton from '../components/StripeCheckoutButton';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
@@ -144,6 +145,7 @@ export default function PassSpacePage() {
           <PassRelayHeader />
           <RelayReviewPrompt />
           <SavedCartReminder />
+          <FeaturedAuctionBanner className="mb-6" />
           {/* Hero PASS state */}
           <SectionCard className="mb-6 relative overflow-hidden">
             <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full blur-3xl opacity-30"
