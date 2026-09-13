@@ -3357,3 +3357,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Frontend : WelcomeBanner — crayon (welcome-name-edit) à côté de la salutation → champ inline (welcome-name-input, Entrée/Échap) + bouton OK (welcome-name-save) ; sauvegarde → localStorage user mis à jour + toast traduit ; la salutation utilise first_name en priorité sur company_name. Clés i18n welcome.name_placeholder/name_save/name_edit/name_saved dans les 4 langues.
 - Données démo : marie@example.com (compte personnel) dotée de first_name « Marie » — salutation « Bonsoir Marie » / « Bonjou Marie » en créole.
 - Testé E2E : login marie → « Bonsoir Marie » ; édition → « Bonsoir Marie-Lise » ; persistance après reload ; donnée restaurée à « Marie ».
+
+## 2026-09-13 — Lot 34 : prénom capté dès la création du compte
+- Constat : les formulaires d'inscription collectaient déjà le prénom (VendorOnboardingPage vendor-firstname-input, PassRegistrationPage pass-first-name) mais le flux d'adhésion pro ne le stockait pas sur le compte user ; le flux PASS le faisait déjà (routes_pass_registration l.146).
+- Correctif : routes_vendor_onboarding sign → le compte créé reçoit first_name + last_name depuis le dossier d'adhésion ; si le compte existait déjà sans prénom, il est complété. Login + /auth/me exposent first_name (lot 33) → la bannière salue par le prénom dès le 1er login.
+- Testé E2E (curl + DB) : onboarding INFO_COMPLETED → sign 200 → user créé avec first_name « Jean » / last_name « Testeur » ; données de test et PDF nettoyés.

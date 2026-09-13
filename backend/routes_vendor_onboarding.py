@@ -270,6 +270,7 @@ async def sign_convention(oid: str, body: SignBody):
         await db.users.insert_one({
             "id": user_id, "email": ob["email"], "full_name": ob["contact_name"],
             "contact_name": ob["contact_name"], "company_name": ob["company"],
+            "first_name": (ob.get("first_name") or "").strip(), "last_name": (ob.get("last_name") or "").strip(),
             "siret": ob.get("siret") or "", "phone": ob.get("phone") or "",
             "role": member_type, "account_type": member_type, "is_admin": False,
             "subscription": ob.get("plan_slug") or "ess-acces-pro", "credits": 0,
@@ -278,6 +279,10 @@ async def sign_convention(oid: str, body: SignBody):
         })
     else:
         user_id = user["id"]
+        # Capte le prénom si le compte existant n'en a pas encore
+        if not user.get("first_name") and ob.get("first_name"):
+            await db.users.update_one({"id": user_id}, {"$set": {
+                "first_name": ob["first_name"].strip(), "last_name": (ob.get("last_name") or "").strip()}})
 
     await db.vendor_onboarding.update_one({"id": oid}, {"$set": {
         "status": "SIGNED", "signature": signature, "signed_pdf_path": pdf_path,
