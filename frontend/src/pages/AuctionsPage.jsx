@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Gavel } from 'lucide-react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Gavel, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { API, getAuthHeaders, getSessionToken } from '../services/http';
@@ -90,6 +90,16 @@ export default function AuctionsPage() {
   return (
     <LolodriveLayout title={i18n.t('auction.title')} subtitle={i18n.t('auction.subtitle')}>
       <div data-testid="auctions-page">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <Link to="/coopact" data-testid="coopact-brand-link"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border border-[#D9B35A]/50 text-[#F2D07A] hover:bg-[#D9B35A]/15 transition-colors">
+            <Sparkles className="w-3.5 h-3.5" /> {i18n.t('auction.brand_link')}
+          </Link>
+          <p className="text-[11px] text-amber-200/90 font-semibold" data-testid="auction-rule-note">
+            ⚠️ {i18n.t('auction.rule_note')}
+          </p>
+        </div>
+
         <AuctionPlanGate me={me} onRefresh={loadMe} isLogged={isLogged} />
 
         {pendingWin && (

@@ -45,7 +45,7 @@ export const FeaturedAuctionBanner = ({ className = '' }) => {
             </span>
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-[#2A1045] shrink-0"
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-[#2A1045] on-gold shrink-0"
           style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
           {i18n.t('auction.featured_cta')} <ArrowRight className="w-3.5 h-3.5" />
         </span>

@@ -3,8 +3,8 @@ import { Search } from 'lucide-react';
 
 const Pill = ({ active, onClick, children, testId }) => (
   <button type="button" onClick={onClick} data-testid={testId}
-    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors ${
-      active ? 'bg-[#D9B35A] text-[#2A1045] border-[#D9B35A]' : 'bg-white/[0.04] text-white/60 border-white/15 hover:bg-white/10'}`}>
+    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+      active ? 'bg-[#D9B35A] text-[#2A1045] on-gold border-[#D9B35A]' : 'bg-white/[0.06] text-white/80 border-white/20 hover:bg-white/15'}`}>
     {children}
   </button>
 );
@@ -28,7 +28,7 @@ export const AuctionFilters = ({ filters, setFilters, categories, types, sources
       </div>
       {categories.length > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-category-filter-row">
-          <span className="text-[10px] text-white/40 uppercase tracking-wide">{i18n.t('auction.filter_category')}</span>
+          <span className="text-[11px] font-bold text-white/60 uppercase tracking-wide">{i18n.t('auction.filter_category')}</span>
           {categories.map((c) => (
             <Pill key={c.id} active={filters.category === c.id} onClick={() => set('category', c.id)}
               testId={`auction-cat-filter-${c.id}`}>{c.label}</Pill>
@@ -37,7 +37,7 @@ export const AuctionFilters = ({ filters, setFilters, categories, types, sources
       )}
       {types.length > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-type-filter-row">
-          <span className="text-[10px] text-white/40 uppercase tracking-wide">{i18n.t('auction.filter_type')}</span>
+          <span className="text-[11px] font-bold text-white/60 uppercase tracking-wide">{i18n.t('auction.filter_type')}</span>
           {types.map((t) => (
             <Pill key={t.id} active={filters.type_id === t.id} onClick={() => set('type_id', t.id)}
               testId={`auction-type-filter-${t.id}`}>{t.label}</Pill>
@@ -45,7 +45,7 @@ export const AuctionFilters = ({ filters, setFilters, categories, types, sources
         </div>
       )}
       <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-source-filter-row">
-        <span className="text-[10px] text-white/40 uppercase tracking-wide">{i18n.t('auction.filter_source')}</span>
+        <span className="text-[11px] font-bold text-white/60 uppercase tracking-wide">{i18n.t('auction.filter_source')}</span>
         {sources.map((s) => (
           <Pill key={s.code} active={filters.source === s.code} onClick={() => set('source', s.code)}
             testId={`auction-source-filter-${s.code}`}>{s.label}</Pill>

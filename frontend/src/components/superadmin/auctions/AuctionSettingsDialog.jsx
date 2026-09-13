@@ -93,7 +93,7 @@ export const AuctionSettingsDialog = ({ onClose, onChanged }) => {
               className={inputCls} data-testid="new-category-input" />
             <Button size="sm" disabled={!catLabel.trim()} data-testid="add-category-btn"
               onClick={async () => { if (await post(`${API}/admin/auctions/taxonomy/categories`, { label: catLabel.trim() }, 'Catégorie créée')) setCatLabel(''); }}
-              className="bg-[#D9B35A] text-[#2A1045] h-8">+</Button>
+              className="bg-[#D9B35A] text-[#2A1045] on-gold h-8">+</Button>
           </div>
         </section>
 
@@ -117,7 +117,7 @@ export const AuctionSettingsDialog = ({ onClose, onChanged }) => {
                 price_drop_eur: parseFloat(typeForm.price_drop_eur) }, 'Type créé');
               if (ok) setTypeForm({ label: '', bid_cost_credits: 10, price_drop_eur: 1 });
             }}
-            className="bg-[#D9B35A] text-[#2A1045] h-8 mt-2">Ajouter le type</Button>
+            className="bg-[#D9B35A] text-[#2A1045] on-gold h-8 mt-2">Ajouter le type</Button>
         </section>
 
         <section data-testid="auction-plans-section">
@@ -144,7 +144,7 @@ export const AuctionSettingsDialog = ({ onClose, onChanged }) => {
                 credits: parseInt(planForm.credits, 10), validity_days: parseInt(planForm.validity_days, 10) }, 'Plan créé');
               if (ok) setPlanForm({ label: '', price_ht_cents: '', credits: '', validity_days: 30 });
             }}
-            className="bg-[#D9B35A] text-[#2A1045] h-8 mt-2">Ajouter le plan</Button>
+            className="bg-[#D9B35A] text-[#2A1045] on-gold h-8 mt-2">Ajouter le plan</Button>
         </section>
       </DialogContent>
     </Dialog>

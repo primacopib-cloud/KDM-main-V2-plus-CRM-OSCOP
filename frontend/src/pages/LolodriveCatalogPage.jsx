@@ -530,7 +530,7 @@ export default function LolodriveCatalogPage() {
       </Tabs>
 
       <Link to="/encheres" data-testid="auctions-banner-link"
-        className="block mb-4 rounded-2xl border border-[#D9B35A]/40 p-3 text-sm font-bold text-[#2A1045] transition-transform hover:scale-[1.01]"
+        className="block mb-4 rounded-2xl border border-[#D9B35A]/40 p-3 text-sm font-bold text-[#2A1045] on-gold transition-transform hover:scale-[1.01]"
         style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
         🔨 {i18n.t('auction.banner_cta')}
       </Link>

@@ -249,6 +249,8 @@
     "featured_kicker": "COOP'ACT a la iné",
     "featured_cta": "Coop'acté",
     "share": "Pataje asi WhatsApp",
-    "share_text": "🔨 COOP'ACT ka fèt : {{title}} — pri a-y jòdi {{price}} € ({{credits}} kredi). Vin adan sal COOP'ACT LOLODRIVE :"
+    "share_text": "🔨 COOP'ACT ka fèt : {{title}} — pri a-y jòdi {{price}} € ({{credits}} kredi). Vin adan sal COOP'ACT LOLODRIVE :",
+    "brand_link": "Dékouvè filozofi COOP'ACT",
+    "rule_note": "Kredi ou coop'acté yo angajé nèt : yo pa ka ranbousé si ou pa genyen lo-la."
   }
 }

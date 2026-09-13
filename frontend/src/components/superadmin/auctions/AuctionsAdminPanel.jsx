@@ -58,7 +58,7 @@ export const AuctionsAdminPanel = () => {
           </Button>
           <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}
             data-testid="new-auction-btn"
-            className="bg-[#D9B35A] text-[#2A1045] hover:bg-[#F2D07A] font-semibold">
+            className="bg-[#D9B35A] text-[#2A1045] on-gold hover:bg-[#F2D07A] font-semibold">
             <Plus className="w-4 h-4 mr-1" /> Nouveau COOP'ACT
           </Button>
         </div>

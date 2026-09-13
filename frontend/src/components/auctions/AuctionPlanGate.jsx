@@ -68,7 +68,7 @@ export const AuctionPlanGate = ({ me, onRefresh, isLogged }) => {
             <span className="text-lg font-bold text-[#E9CF8E]">{(p.price_ht_cents / 100).toFixed(2)} € <span className="text-[10px] text-white/40">HT</span></span>
             <span className="text-[11px] text-white/55">{p.credits} {i18n.t('auction.credits')} · {p.validity_days} j</span>
             <button type="button" onClick={() => buy(p.id)} data-testid={`auction-buy-plan-${p.id}`}
-              className="mt-1 h-8 rounded-lg text-[11px] font-bold text-[#2A1045] transition-transform hover:scale-[1.02]"
+              className="mt-1 h-8 rounded-lg text-[11px] font-bold text-[#2A1045] on-gold transition-transform hover:scale-[1.02]"
               style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
               {i18n.t('auction.buy_plan')}
             </button>

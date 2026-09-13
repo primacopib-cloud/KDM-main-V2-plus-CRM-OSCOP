@@ -534,6 +534,8 @@
     "featured_kicker": "COOP'ACT destacado",
     "featured_cta": "Coop'actuar",
     "share": "Compartir en WhatsApp",
-    "share_text": "🔨 COOP'ACT en curso: {{title}} — precio actual {{price}} € ({{credits}} créditos). Únase a la sala COOP'ACT LOLODRIVE:"
+    "share_text": "🔨 COOP'ACT en curso: {{title}} — precio actual {{price}} € ({{credits}} créditos). Únase a la sala COOP'ACT LOLODRIVE:",
+    "brand_link": "Descubrir la filosofía COOP'ACT",
+    "rule_note": "Los créditos coop'actuados quedan comprometidos definitivamente: no se reembolsan si no gana el lote."
   }
 }

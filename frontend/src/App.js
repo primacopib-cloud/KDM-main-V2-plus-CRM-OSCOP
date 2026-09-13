@@ -94,6 +94,7 @@ import EssReportingPage from "./pages/EssReportingPage";
 import LoloPointManagerPage from "./pages/LoloPointManagerPage";
 import LolodriveCatalogPage from "./pages/LolodriveCatalogPage";
 import AuctionsPage from "./pages/AuctionsPage";
+import CoopactBrandPage from "./pages/CoopactBrandPage";
 import PaymentReturnPage from "./pages/PaymentReturnPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import GoogleAuthReturnPage from "./pages/GoogleAuthReturnPage";
@@ -289,6 +290,7 @@ function App() {
           <Route path="/reporting-ess" element={<EssReportingPage />} />
           <Route path="/catalogue-lolodrive" element={<LolodriveCatalogPage />} />
           <Route path="/encheres" element={<AuctionsPage />} />
+          <Route path="/coopact" element={<CoopactBrandPage />} />
           <Route path="/paiement/retour" element={<PaymentReturnPage />} />
           <Route path="/paiement/annule" element={<PaymentReturnPage />} />
         </Routes>

@@ -49,7 +49,7 @@ export const WinnerDialog = ({ auction, onClose, onDone }) => {
           {[['PICKUP', 'pickup'], ['DELIVERY', 'delivery']].map(([v, k]) => (
             <button key={v} type="button" onClick={() => setMode(v)} data-testid={`winner-mode-${v}`}
               className={`flex-1 h-9 rounded-lg text-xs font-bold border transition-colors ${
-                mode === v ? 'bg-[#D9B35A] text-[#2A1045] border-[#D9B35A]' : 'bg-white/[0.05] text-white/60 border-white/15'}`}>
+                mode === v ? 'bg-[#D9B35A] text-[#2A1045] on-gold border-[#D9B35A]' : 'bg-white/[0.05] text-white/60 border-white/15'}`}>
               {i18n.t(`auction.${k}`)}
             </button>
           ))}
@@ -72,7 +72,7 @@ export const WinnerDialog = ({ auction, onClose, onDone }) => {
         )}
         <button type="button" disabled={busy || (mode === 'PICKUP' ? !pointId : !address.trim())}
           onClick={confirm} data-testid="winner-confirm-btn"
-          className="h-9 rounded-lg text-sm font-bold text-[#2A1045] disabled:opacity-40"
+          className="h-9 rounded-lg text-sm font-bold text-[#2A1045] on-gold disabled:opacity-40"
           style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
           {i18n.t('auction.confirm')}
         </button>

@@ -23,10 +23,10 @@ export const Countdown = ({ target, prefix }) => {
 };
 
 const STATUS_STYLE = {
-  LIVE: 'bg-emerald-500/20 text-emerald-300',
-  SCHEDULED: 'bg-sky-500/20 text-sky-300',
-  WON: 'bg-[#D9B35A]/20 text-[#E9CF8E]',
-  EXPIRED: 'bg-white/10 text-white/50',
+  LIVE: 'bg-emerald-600 text-white',
+  SCHEDULED: 'bg-sky-600 text-white',
+  WON: 'bg-[#D9B35A] text-[#2A1045] on-gold',
+  EXPIRED: 'bg-white/20 text-white/80',
 };
 
 export const AuctionCard = ({ auction, canBid, onChanged }) => {
@@ -72,11 +72,11 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
           className="absolute bottom-1.5 right-1.5 w-7 h-7 rounded-full flex items-center justify-center bg-[#25D366] text-white shadow-md transition-transform hover:scale-110">
           <Share2 className="w-3.5 h-3.5" />
         </button>
-        <span className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold ${STATUS_STYLE[a.status] || 'bg-white/10 text-white/60'}`}>
+        <span className={`absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide shadow-md ${STATUS_STYLE[a.status] || 'bg-white/10 text-white/60'}`}>
           {i18n.t(`auction.filter_${a.status === 'LIVE' ? 'live' : a.status === 'SCHEDULED' ? 'scheduled' : 'finished'}`)}
         </span>
         {a.source_label && (
-          <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#2A1045]/85 text-[#E9CF8E] border border-[#D9B35A]/40"
+          <span className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#2A1045] text-[#F2D07A] border border-[#D9B35A]/60 shadow-md"
             data-testid={`auction-source-${a.reference}`}>
             {a.source_label}
           </span>
@@ -84,7 +84,7 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
       </div>
       <div className="p-3 flex flex-col gap-1.5 flex-1">
         <div className="text-sm font-semibold text-white truncate" title={a.title}>{a.title}</div>
-        <div className="flex items-center gap-2 text-[10px] text-white/45">
+        <div className="flex items-center gap-2 text-[11px] text-white/60">
           {a.category_label && <span>{a.category_label}</span>}
           {a.type_label && <span>· {a.type_label}</span>}
         </div>
@@ -96,7 +96,7 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
             <Coins className="w-3 h-3" /> {a.price_credits} {i18n.t('auction.credits')}
           </span>
         </div>
-        <div className="text-[10px] text-white/40">
+        <div className="text-[11px] text-white/55">
           {i18n.t('auction.value')} : {Number(a.value_eur).toFixed(2)} € · {i18n.t('auction.bids_count', { count: a.bids_count })}
         </div>
         <div className="text-[11px] font-semibold text-red-300 inline-flex items-center gap-1" data-testid={`auction-countdown-${a.reference}`}>
@@ -117,7 +117,7 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
             </button>
             <button type="button" disabled={!canBid || busy} onClick={() => act('accept')}
               data-testid={`auction-accept-btn-${a.reference}`}
-              className="flex-1 h-8 rounded-lg text-[11px] font-bold text-[#2A1045] disabled:opacity-40 transition-colors"
+              className="flex-1 h-8 rounded-lg text-[11px] font-bold text-[#2A1045] on-gold disabled:opacity-40 transition-colors"
               style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
               {i18n.t('auction.accept')}
             </button>

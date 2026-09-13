@@ -106,7 +106,7 @@ export const AuctionFormDialog = ({ auction, onClose, onSaved }) => {
                 <button key={v} type="button" onClick={() => setPickerSource(v)}
                   data-testid={`picker-source-${v}`}
                   className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                    pickerSource === v ? 'bg-[#D9B35A] text-[#2A1045] border-[#D9B35A]' : 'bg-white/[0.05] text-white/60 border-white/15'}`}>
+                    pickerSource === v ? 'bg-[#D9B35A] text-[#2A1045] on-gold border-[#D9B35A]' : 'bg-white/[0.05] text-white/60 border-white/15'}`}>
                   {l}
                 </button>
               ))}
@@ -183,7 +183,7 @@ export const AuctionFormDialog = ({ auction, onClose, onSaved }) => {
 
         <Button onClick={save} disabled={busy || !form.title || !form.value_eur || !form.starts_at || !form.ends_at}
           data-testid="auction-save-btn"
-          className="bg-[#D9B35A] text-[#2A1045] hover:bg-[#F2D07A] font-semibold">
+          className="bg-[#D9B35A] text-[#2A1045] on-gold hover:bg-[#F2D07A] font-semibold">
           {auction ? 'Enregistrer' : 'Programmer le COOP\'ACT'}
         </Button>
       </DialogContent>
