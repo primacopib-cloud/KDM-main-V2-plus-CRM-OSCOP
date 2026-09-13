@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { authAPI } from '../services/api';
+import { getMySpace } from '../components/navbar/navItems';
 import { API, getAuthHeaders } from '../services/http';
 import i18n from '@/i18n';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -52,10 +53,9 @@ const LoginPage = () => {
       toast.success(t('auth.login_success'));
       const next = new URLSearchParams(window.location.search).get('next');
       const u = data?.user;
-      const isSuperAdmin = u?.is_admin || ['SUPER_ADMIN', 'ADMIN', 'admin'].includes(u?.role);
-      const isVendor = (u?.role || '').toLowerCase() === 'vendor';
-      const isInvestor = !!u?.is_investor;
-      navigate(next && next.startsWith('/') ? next : (isSuperAdmin ? '/superadmin' : isVendor ? '/vendor' : isInvestor ? '/espace-investisseur' : '/dashboard'));
+      // Chaque rôle atterrit dans SON espace (mapping canonique navbar/navItems)
+      const home = u?.is_investor ? '/espace-investisseur' : getMySpace(u);
+      navigate(next && next.startsWith('/') ? next : home);
     } catch (error) {
       toast.error(error.message || t('auth.invalid_credentials'));
     } finally {

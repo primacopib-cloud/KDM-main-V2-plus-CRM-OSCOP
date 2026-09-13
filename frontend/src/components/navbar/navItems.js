@@ -8,6 +8,7 @@ import {
 export const SPACE_BY_ROLE = {
   vendor: '/espace-vendeur',
   COOPER: '/espace-cooper',
+  EXPERT: '/espace-expert',
   GERANT_LOLO_POINT: '/gerant',
   OPERATEUR_POS: '/pos',
   TITULAIRE_PASS: '/pass',

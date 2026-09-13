@@ -3,6 +3,8 @@ import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
 import { recordVisit } from "./utils/backStack";
+import { authAPI } from "./services/api";
+import { getMySpace } from "./components/navbar/navItems";
 
 // Pages
 import LandingPage from "./pages/LandingPage";
@@ -136,6 +138,13 @@ const ScrollToHash = () => {
   return null;
 };
 
+// /dashboard redirige vers l'espace correspondant au rôle de l'utilisateur connecté
+const DashboardRedirect = () => {
+  const user = authAPI.getCurrentUser();
+  const target = user?.is_investor ? '/espace-investisseur' : getMySpace(user);
+  return <Navigate to={target} replace />;
+};
+
 function App() {
   return (
     <FavoritesProvider>
@@ -164,7 +173,7 @@ function App() {
           <Route path="/logiscop" element={<LogiscopPage />} />
           <Route path="/logicoop" element={<LogicoopSpacePage />} />
           <Route path="/oscop" element={<OscopPage />} />
-          <Route path="/dashboard" element={<Navigate to="/espace-pass" replace />} />
+          <Route path="/dashboard" element={<DashboardRedirect />} />
           <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
           <Route path="/reinitialiser-mot-de-passe" element={<ResetPasswordPage />} />
           <Route path="/statistiques" element={<StatsPage />} />
