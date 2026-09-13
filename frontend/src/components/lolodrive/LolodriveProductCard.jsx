@@ -7,13 +7,13 @@ import { TagBadge, LotBadge, TagCountdown } from './ProductTagBadge';
 export const LolodriveProductCard = ({ p, qty, add, sub, isFav, toggleFav, promo, favPromo, discounted }) => (
   <div data-testid={`product-${p.sku}`}
     className={`flex flex-col rounded-xl bg-white/[0.025] border overflow-hidden hover:border-[#D9B35A]/35 transition-colors ${isFav ? 'border-[#D9B35A]/40' : 'border-white/[0.07]'}`}>
-    <div className="relative h-24 bg-white/[0.03] shrink-0">
+    <div className="relative h-24 product-thumb-light shrink-0">
       {p.image_url && (
-        <img src={p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover"
+        <img src={p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-contain p-1"
           onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'flex'; }} />
       )}
       <div className="absolute inset-0 items-center justify-center" style={{ display: p.image_url ? 'none' : 'flex' }}>
-        <Package className="w-8 h-8 text-white/15" />
+        <Package className="w-8 h-8 text-black/15" />
       </div>
       <button type="button" onClick={() => toggleFav(p.sku)} data-testid={`fav-toggle-${p.sku}`}
         title={isFav ? 'Retirer des favoris' : 'Épingler en haut du catalogue'}

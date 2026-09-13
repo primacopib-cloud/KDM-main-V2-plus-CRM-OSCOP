@@ -378,11 +378,11 @@ export const PosCatalogPanel = () => {
           <div className="space-y-1.5 mb-3">
             {saleDetail.map((it) => (
               <div key={it.sku} className="flex items-center justify-between gap-2 text-xs" data-testid={`cart-line-${it.sku}`}>
-                <span className="w-9 h-9 rounded-lg overflow-hidden bg-white/[0.05] border border-white/10 shrink-0 flex items-center justify-center">
+                <span className="w-9 h-9 rounded-lg overflow-hidden product-thumb-light border border-white/10 shrink-0 flex items-center justify-center">
                   {it.image ? (
                     <img src={it.image} alt={it.name} loading="lazy" className="w-full h-full object-cover" data-testid={`cart-line-photo-${it.sku}`} />
                   ) : (
-                    <ShoppingCart className="w-3.5 h-3.5 text-white/20" data-testid={`cart-line-photo-${it.sku}`} />
+                    <ShoppingCart className="w-3.5 h-3.5 text-black/20" data-testid={`cart-line-photo-${it.sku}`} />
                   )}
                 </span>
                 <span className="truncate flex-1 min-w-0">{it.name}

@@ -26,8 +26,8 @@ const PROMO_CAT = '__PROMOS__';
 // Compte à rebours vers la fin de promo la plus proche (ex : « ⏱ 9 h 12 min » ou « ⏱ 2 j 5 h »)
 const promoCountdown = (items) => {
   const ends = items
-    .filter((p) => (p.tag === 'PROMO' || p.tag === 'SOLDE') && p.promo_ends_at)
-    .map((p) => new Date(p.promo_ends_at).getTime())
+    .filter((p) => (p.tag === 'PROMO' || p.tag === 'SOLDE') && p.tag_until)
+    .map((p) => new Date(p.tag_until).getTime())
     .filter((t) => t > Date.now());
   if (!ends.length) return null;
   const ms = Math.min(...ends) - Date.now();
@@ -378,12 +378,12 @@ export default function LolodriveCatalogPage() {
                 return (
                   <div key={sku} className="flex items-center gap-2.5 p-2 rounded bg-white/[0.03]">
                     {/* Photo produit */}
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/[0.05] border border-white/10 shrink-0 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden product-thumb-light border border-white/10 shrink-0 flex items-center justify-center">
                       {p.photo_url || p.image_url ? (
                         <img src={p.photo_url || p.image_url} alt={p.name} loading="lazy"
                           className="w-full h-full object-cover" data-testid={`cart-line-photo-${sku}`} />
                       ) : (
-                        <ShoppingCart className="w-4 h-4 text-white/20" data-testid={`cart-line-photo-${sku}`} />
+                        <ShoppingCart className="w-4 h-4 text-black/20" data-testid={`cart-line-photo-${sku}`} />
                       )}
                     </div>
                     <div className="flex-1 text-sm min-w-0">
@@ -506,11 +506,11 @@ export default function LolodriveCatalogPage() {
       {!loading && isVisitor && (() => {
         const visitorCard = (p) => (
           <div key={p.sku} className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.08]" data-testid={`visitor-product-${p.sku}`}>
-            <div className="relative h-28 bg-white/[0.04]">
+            <div className="relative h-28 product-thumb-light">
               {p.photo_url || p.image_url ? (
-                <img src={p.photo_url || p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" />
+                <img src={p.photo_url || p.image_url} alt={p.name} loading="lazy" className="w-full h-full object-contain p-1" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-white/20"><ShoppingCart className="w-8 h-8" /></div>
+                <div className="w-full h-full flex items-center justify-center text-black/15"><ShoppingCart className="w-8 h-8" /></div>
               )}
               <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#8CC63E] text-[#1F2A12]">LOT ×3</span>
             </div>
