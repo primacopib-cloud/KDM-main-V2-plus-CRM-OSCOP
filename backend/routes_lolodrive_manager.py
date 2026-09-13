@@ -176,6 +176,90 @@ async def manager_my_orders(order_status: Optional[str] = None, user: dict = Dep
     return {"point": point, "orders": orders}
 
 
+@lolodrive_manager_router.get("/manager/planning")
+async def manager_planning(week_start: Optional[str] = None, user: dict = Depends(get_current_user)):
+    """Planning hebdomadaire du relais : commandes actives agrégées par jour et créneau."""
+    from datetime import timezone
+    from routes_lolodrive_taxonomy import get_fees_config_doc
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    if not point:
+        raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    if week_start:
+        try:
+            start = datetime.strptime(week_start, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="week_start invalide (attendu YYYY-MM-DD)")
+    else:
+        start = datetime.now(timezone.utc).date()
+    start = start - timedelta(days=start.weekday())  # normalisé au lundi
+    end = start + timedelta(days=6)
+
+    cfg = await get_fees_config_doc()
+    ref_slots = cfg.get("pickup_slots") or cfg.get("delivery_slots") or []
+    slot_ids = [s["id"] for s in ref_slots]
+
+    orders = await db.lolodrive_orders.find(
+        {"lolo_point_id": point["id"],
+         "pickup_date": {"$gte": start.strftime("%Y-%m-%d"), "$lte": end.strftime("%Y-%m-%d")},
+         "status": {"$in": ["PAID", "PREPARING", "READY"]}},
+        {"_id": 0, "id": 1, "order_number": 1, "user_id": 1, "status": 1, "fulfillment_type": 1,
+         "pickup_date": 1, "pickup_slot_id": 1, "total_cents": 1, "items": 1}).to_list(1000)
+
+    user_ids = list({o["user_id"] for o in orders if o.get("user_id")})
+    users = {}
+    if user_ids:
+        async for u in db.users.find({"id": {"$in": user_ids}},
+                                     {"_id": 0, "id": 1, "first_name": 1, "contact_name": 1, "email": 1}):
+            users[u["id"]] = u.get("first_name") or u.get("contact_name") or u.get("email") or "Client"
+
+    capacity = int(point.get("slot_capacity") or 0)
+    pickup_days = point.get("pickup_days") or []
+    delivery_days = point.get("delivery_days") or []
+    closed = point.get("closed_dates") or []
+
+    by_cell: Dict[Any, list] = {}
+    for o in orders:
+        key = (o.get("pickup_date"), o.get("pickup_slot_id") or "?")
+        by_cell.setdefault(key, []).append({
+            "id": o["id"], "order_number": o.get("order_number"), "status": o.get("status"),
+            "fulfillment_type": o.get("fulfillment_type") or "DRIVE",
+            "customer": users.get(o.get("user_id"), "Client"),
+            "items_count": sum(int(i.get("qty", 1)) for i in (o.get("items") or [])),
+            "total_cents": o.get("total_cents", 0),
+        })
+
+    days_out = []
+    for i in range(7):
+        d = start + timedelta(days=i)
+        ds = d.strftime("%Y-%m-%d")
+        wd = d.weekday()
+        slots_out = {}
+        for sid in slot_ids:
+            cell = by_cell.get((ds, sid), [])
+            slots_out[sid] = {
+                "count": len(cell),
+                "capacity": capacity or None,
+                "full": bool(capacity and len(cell) >= capacity),
+                "orders": cell,
+            }
+        days_out.append({
+            "date": ds, "weekday": wd,
+            "pickup_open": not _date_closed(ds, wd, pickup_days, closed),
+            "delivery_open": not _date_closed(ds, wd, delivery_days, closed),
+            "closed": ds in closed,
+            "slots": slots_out,
+        })
+
+    return {
+        "week_start": start.strftime("%Y-%m-%d"),
+        "week_end": end.strftime("%Y-%m-%d"),
+        "point": {"id": point["id"], "name": point["name"], "code": point["code"]},
+        "capacity": capacity,
+        "slots": [{"id": s["id"], "label": s.get("label", s["id"])} for s in ref_slots],
+        "days": days_out,
+    }
+
+
 @lolodrive_manager_router.get("/manager/my-payout-preview")
 async def manager_my_payout_preview(user: dict = Depends(get_current_user)):
     point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
