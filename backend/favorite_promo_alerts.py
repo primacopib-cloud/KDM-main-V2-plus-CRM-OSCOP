@@ -101,6 +101,82 @@ async def run_favorite_promo_alerts(db) -> int:
 ALERT_TAGS = {"PROMO": "Promo", "SOLDE": "Solde", "DESTOCKAGE": "Déstockage"}
 
 
+async def run_favorite_promo_ending_alerts(db) -> int:
+    """Dernière chance : alerte quand la promo d'un favori se termine dans moins de 24 h (cron 10 min)."""
+    from datetime import timedelta
+    now = datetime.utcnow()
+    ending = await db.lolodrive_products.find(
+        {"tag": {"$in": list(ALERT_TAGS)}, "is_active": {"$ne": False},
+         "tag_until": {"$gt": now, "$lte": now + timedelta(hours=24)}}, {"_id": 0}).to_list(300)
+    if not ending:
+        return 0
+    by_sku = {p["sku"]: p for p in ending}
+    from brevo_service import send_email, _wrap_html
+    sent = 0
+    async for fav in db.lolodrive_favorites.find({}, {"_id": 0}):
+        skus = [s for s in (fav.get("skus") or []) if s in by_sku]
+        if not skus:
+            continue
+        user = await db.users.find_one({"id": fav["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
+        if not user or not user.get("email"):
+            continue
+        hits = []
+        for sku in skus:
+            p = by_sku[sku]
+            key = f"ENDING:{p['tag']}:{sku}:{p['tag_until'].strftime('%Y-%m-%d')}"
+            if await db.favorite_promo_notified.find_one({"user_id": fav["user_id"], "key": key}):
+                continue
+            hits.append((p, key))
+        if not hits:
+            continue
+        first = ((user.get("contact_name") or "").split() or [""])[0]
+        rows = "".join(
+            f"<tr><td style='padding:6px 10px;border-bottom:1px solid #eee'>{p['name']}</td>"
+            f"<td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:center;color:#b91c1c'><b>{ALERT_TAGS[p['tag']]}</b></td>"
+            f"<td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right'>{p.get('price_public_cents', 0) / 100:.2f} €</td>"
+            f"<td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;color:#b91c1c'><b>fin {p['tag_until'].strftime('%d/%m à %Hh%M')}</b></td></tr>"
+            for p, _ in hits)
+        subject = f"⏳ Dernière chance : {len(hits)} de vos favoris quittent la promo dans moins de 24 h !"
+        body = f"""
+          <p>Bonjour{f' {first}' if first else ''},</p>
+          <p><b>Plus que quelques heures</b> pour profiter de la promo sur ces produits que vous avez épinglés en favoris :</p>
+          <table style='width:100%;border-collapse:collapse;font-size:13px'>
+            <tr style='color:#888;font-size:11px;text-transform:uppercase'>
+              <th style='text-align:left;padding:6px 10px'>Produit</th>
+              <th style='text-align:center;padding:6px 10px'>Étiquette</th>
+              <th style='text-align:right;padding:6px 10px'>Prix</th>
+              <th style='text-align:right;padding:6px 10px'>Fin de promo</th>
+            </tr>
+            {rows}
+          </table>
+          <p style='margin-top:14px'>Commandez-les vite dans le rayon 🔥 Promos &amp; Soldes de votre catalogue LOLODRIVE.</p>
+        """
+        try:
+            await send_email(
+                to_email=user["email"], to_name=user.get("contact_name"), subject=subject,
+                html_content=_wrap_html(subject, body),
+                text_content=f"Dernière chance : {len(hits)} de vos favoris LOLODRIVE quittent la promo dans moins de 24 h.",
+                tags=["favorite_promo_ending_alert"])
+            for _, key in hits:
+                await db.favorite_promo_notified.insert_one(
+                    {"user_id": fav["user_id"], "key": key, "notified_at": datetime.utcnow()})
+            sent += 1
+            if user.get("phone"):
+                from brevo_service import send_sms
+                names = ", ".join(p["name"] for p, _ in hits[:2]) + (" +…" if len(hits) > 2 else "")
+                try:
+                    await send_sms(user["phone"],
+                                   f"KDMARCHE Derniere chance : la promo de vos favoris se termine dans moins de 24h ({names}). Catalogue LOLODRIVE !",
+                                   tag="favorite_promo_ending_sms")
+                except Exception as exc:
+                    logger.warning("SMS fin promo favoris %s échoué : %s", user["phone"], exc)
+        except Exception as exc:
+            logger.warning("Alerte fin promo favoris %s échouée : %s", user["email"], exc)
+    if sent:
+        logger.info("Alertes fin de promo favoris envoyées : %s", sent)
+    return sent
+
+
 async def run_favorite_tag_alerts(db) -> int:
     """Alerte email quand un produit favori reçoit une étiquette Promo/Solde/Déstockage (cron 10 min)."""
     tagged = await db.lolodrive_products.find(

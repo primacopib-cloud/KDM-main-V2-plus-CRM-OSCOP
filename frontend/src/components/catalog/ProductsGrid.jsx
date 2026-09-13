@@ -31,7 +31,7 @@ const ProductImageCarousel = ({ product, onZoom }) => {
       <img src={imgs[current]} alt={product.name}
         onClick={() => onZoom && onZoom(product, current)}
         data-testid={`product-image-${product.sku}`}
-        className="w-full h-full object-cover rounded-xl cursor-zoom-in" loading="lazy" />
+        className="w-full h-full object-contain p-1.5 rounded-xl cursor-zoom-in" loading="lazy" />
       {imgs.length > 1 && (
         <>
           <button type="button" onClick={(e) => go(e, -1)}
@@ -97,8 +97,8 @@ const ProductLightbox = ({ zoom, onClose }) => {
             <div className="flex gap-2">
               {imgs.map((im, i) => (
                 <button key={i} type="button" onClick={() => setIdx(i)}
-                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 ${i === current ? 'border-[#D9B35A]' : 'border-transparent opacity-60'}`}>
-                  <img src={im} alt="" className="w-full h-full object-cover" />
+                  className={`w-12 h-12 rounded-lg overflow-hidden product-thumb-light border-2 ${i === current ? 'border-[#D9B35A]' : 'border-transparent opacity-60'}`}>
+                  <img src={im} alt="" className="w-full h-full object-contain" />
                 </button>
               ))}
             </div>
@@ -189,7 +189,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
               data-testid={`product-card-${product.sku}`}
             >
               {/* Product Image gallery (carousel jusqu'à 3 photos) */}
-              <div className="aspect-square rounded-xl bg-white/[0.04] mb-4 flex items-center justify-center relative overflow-hidden">
+              <div className="aspect-square rounded-xl product-thumb-light mb-4 flex items-center justify-center relative overflow-hidden">
                 <ProductImageCarousel product={product} onZoom={(p, index) => setZoom({ product: p, index })} />
                 {/* Badge coup de cœur (note >= 4.5) */}
                 {product.rating_avg >= 4.5 && (

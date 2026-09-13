@@ -24,10 +24,10 @@ export const ProductSheetModal = ({ product, onClose, onAddToCart, cartLoading }
           </DialogTitle>
         </DialogHeader>
         <div className="grid sm:grid-cols-2 gap-5">
-          <div className="relative rounded-xl overflow-hidden bg-white/5 aspect-square flex items-center justify-center" data-testid="product-sheet-gallery">
+          <div className="relative rounded-xl overflow-hidden product-thumb-light aspect-square flex items-center justify-center" data-testid="product-sheet-gallery">
             {imgs.length > 0 ? (
               <>
-                <img src={imgs[idx % imgs.length]} alt={product.name} className="w-full h-full object-cover" />
+                <img src={imgs[idx % imgs.length]} alt={product.name} className="w-full h-full object-contain p-2" />
                 {imgs.length > 1 && (
                   <>
                     <button type="button" aria-label="Photo précédente"
