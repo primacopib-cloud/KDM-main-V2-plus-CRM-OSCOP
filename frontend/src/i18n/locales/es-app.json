@@ -540,6 +540,14 @@
     "nav_space": "Mi espacio",
     "nav_catalog": "Catálogo",
     "nav_room": "Sala COOP'ACT",
-    "nav_brand": "Filosofía"
+    "nav_brand": "Filosofía",
+    "prefs_title": "Mis alertas COOP'ACT",
+    "prefs_auction_new_live": "Nuevo lote en sala",
+    "prefs_auction_ending": "Termina pronto (<1 h)",
+    "prefs_val_both": "Campana + Email",
+    "prefs_val_inapp": "Campana",
+    "prefs_val_email": "Email",
+    "prefs_val_none": "Ninguna",
+    "featured_badge": "Destacado"
   }
 }

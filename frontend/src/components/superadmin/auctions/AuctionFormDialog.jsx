@@ -20,6 +20,7 @@ export const AuctionFormDialog = ({ auction, onClose, onSaved }) => {
     title: '', image_url: '', description: '', source: 'LOLODRIVE', source_visible: true,
     product_id: '', category_id: '', type_id: '', value_eur: '', floor_eur: 0,
     bid_cost_credits: 10, price_drop_eur: 1, starts_at: '', ends_at: '', recurrence: 'NONE',
+    featured: false,
   });
   const [pickerSource, setPickerSource] = useState('lolodrive');
   const [pickerQ, setPickerQ] = useState('');
@@ -138,6 +139,11 @@ export const AuctionFormDialog = ({ auction, onClose, onSaved }) => {
             <Switch checked={form.source_visible} onCheckedChange={(v) => set('source_visible', v)}
               data-testid="auction-source-visible-switch" />
             Afficher la provenance aux membres
+          </label>
+          <label className="text-xs text-white/60 flex items-center gap-2 pt-5">
+            <Switch checked={Boolean(form.featured)} onCheckedChange={(v) => set('featured', v)}
+              data-testid="auction-featured-switch" />
+            ⭐ Lot vedette — SMS aux Coop'acteurs à l'entrée en salle
           </label>
           <label className="text-xs text-white/60">Catégorie
             <Select value={form.category_id || 'none'} onValueChange={(v) => set('category_id', v === 'none' ? '' : v)}>

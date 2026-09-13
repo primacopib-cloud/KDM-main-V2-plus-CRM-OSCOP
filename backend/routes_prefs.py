@@ -13,7 +13,8 @@ prefs_router = APIRouter(prefix="/api/prefs", tags=["prefs"])
 
 db = None
 
-EVENT_TYPES = ["referral_bonus", "referral_welcome", "closure_reminder", "report_available"]
+EVENT_TYPES = ["referral_bonus", "referral_welcome", "closure_reminder", "report_available",
+               "auction_new_live", "auction_ending"]
 CHANNEL_VALUES = ["both", "email", "inapp", "none"]
 FREQUENCIES = ["weekly", "biweekly", "monthly"]
 

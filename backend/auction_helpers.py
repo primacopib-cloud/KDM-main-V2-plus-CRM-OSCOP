@@ -129,7 +129,7 @@ def serialize_member(a: dict, labels: dict | None = None) -> dict:
         "price_eur": round(price, 2), "price_credits": eur_to_credits(price),
         "bid_cost_credits": a.get("bid_cost_credits"), "price_drop_eur": a.get("price_drop_eur"),
         "starts_at": a.get("starts_at"), "ends_at": a.get("ends_at"),
-        "recurrence": a.get("recurrence", "NONE"),
+        "recurrence": a.get("recurrence", "NONE"), "featured": bool(a.get("featured")),
         "status": effective_status(a), "bids_count": a.get("bids_count", 0),
     }
     if out["status"] == "WON" and a.get("winner"):

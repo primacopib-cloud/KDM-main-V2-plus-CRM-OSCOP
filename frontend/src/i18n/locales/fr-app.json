@@ -540,6 +540,14 @@
     "nav_space": "Mon espace",
     "nav_catalog": "Catalogue",
     "nav_room": "Salle COOP'ACT",
-    "nav_brand": "Philosophie"
+    "nav_brand": "Philosophie",
+    "prefs_title": "Mes alertes COOP'ACT",
+    "prefs_auction_new_live": "Nouveau lot en salle",
+    "prefs_auction_ending": "Fin imminente (<1 h)",
+    "prefs_val_both": "Cloche + Email",
+    "prefs_val_inapp": "Cloche",
+    "prefs_val_email": "Email",
+    "prefs_val_none": "Aucune",
+    "featured_badge": "Vedette"
   }
 }

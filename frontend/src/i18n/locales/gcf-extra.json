@@ -255,6 +255,14 @@
     "nav_space": "Espas an mwen",
     "nav_catalog": "Katalòg",
     "nav_room": "Sal COOP'ACT",
-    "nav_brand": "Filozofi"
+    "nav_brand": "Filozofi",
+    "prefs_title": "Alèt COOP'ACT an mwen",
+    "prefs_auction_new_live": "Nouvo lo an sal",
+    "prefs_auction_ending": "Ka fini talè (<1 è)",
+    "prefs_val_both": "Klòch + Imèl",
+    "prefs_val_inapp": "Klòch",
+    "prefs_val_email": "Imèl",
+    "prefs_val_none": "Ayen",
+    "featured_badge": "Vedèt"
   }
 }

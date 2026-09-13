@@ -540,6 +540,14 @@
     "nav_space": "My space",
     "nav_catalog": "Catalog",
     "nav_room": "COOP'ACT Room",
-    "nav_brand": "Philosophy"
+    "nav_brand": "Philosophy",
+    "prefs_title": "My COOP'ACT alerts",
+    "prefs_auction_new_live": "New lot in the room",
+    "prefs_auction_ending": "Ending soon (<1 h)",
+    "prefs_val_both": "Bell + Email",
+    "prefs_val_inapp": "Bell",
+    "prefs_val_email": "Email",
+    "prefs_val_none": "None",
+    "featured_badge": "Featured"
   }
 }

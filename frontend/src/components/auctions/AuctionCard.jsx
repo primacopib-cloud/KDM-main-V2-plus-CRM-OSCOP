@@ -64,6 +64,12 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
         ) : (
           <div className="w-full h-full flex items-center justify-center text-black/15"><Gavel className="w-9 h-9" /></div>
         )}
+        {a.featured && (
+          <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#D9B35A] text-[#2A1045] on-gold shadow-md"
+            data-testid={`auction-featured-badge-${a.reference}`}>
+            ⭐ {i18n.t('auction.featured_badge')}
+          </span>
+        )}
         <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer"
           title={i18n.t('auction.share')} data-testid={`auction-share-btn-${a.reference}`}
           className="absolute bottom-1.5 right-1.5 w-7 h-7 rounded-full flex items-center justify-center bg-[#25D366] text-white shadow-md transition-transform hover:scale-110">

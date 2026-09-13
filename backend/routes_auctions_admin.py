@@ -133,6 +133,7 @@ class AuctionBody(BaseModel):
     starts_at: str
     ends_at: str
     recurrence: str = "NONE"
+    featured: bool = False
 
 
 def _validate(body: AuctionBody):

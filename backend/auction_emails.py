@@ -99,20 +99,31 @@ async def notify_new_live_auction(a: dict) -> int:
     room = f"{base}/encheres" if base else "/encheres"
     for h in holders:
         user = await ah.db.users.find_one(
-            {"id": h["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1, "first_name": 1})
+            {"id": h["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1, "first_name": 1, "phone": 1})
         if not user:
             continue
-        try:
-            from core_deps import create_notification
-            await create_notification(
-                "auction_new_live", f"🆕 Nouveau lot en salle — {a.get('title')}",
-                f"Le COOP'ACT {a.get('reference')} vient de démarrer à {price:.2f} € "
-                f"({ah.eur_to_credits(price)} crédits) — chaque Coop'Act fait baisser le prix !",
-                target_user_id=h["user_id"],
-                data={"auction_id": a["id"], "action_url": "/encheres"})
-        except Exception as exc:
-            logger.warning("Cloche nouveau lot %s : %s", h["user_id"], exc)
-        if user.get("email"):
+        from routes_prefs import channel_allowed
+        if await channel_allowed(h["user_id"], "auction_new_live", "inapp"):
+            try:
+                from core_deps import create_notification
+                await create_notification(
+                    "auction_new_live", f"🆕 Nouveau lot en salle — {a.get('title')}",
+                    f"Le COOP'ACT {a.get('reference')} vient de démarrer à {price:.2f} € "
+                    f"({ah.eur_to_credits(price)} crédits) — chaque Coop'Act fait baisser le prix !",
+                    target_user_id=h["user_id"],
+                    data={"auction_id": a["id"], "action_url": "/encheres"})
+            except Exception as exc:
+                logger.warning("Cloche nouveau lot %s : %s", h["user_id"], exc)
+        if a.get("featured") and user.get("phone"):
+            try:
+                from brevo_service import send_sms
+                await send_sms(user["phone"],
+                               f"COOP'ACT ⭐ Lot vedette en salle : {a.get('title')} — départ {price:.2f}€ "
+                               f"({ah.eur_to_credits(price)} cr). Premier a accepter = gagnant ! {room}",
+                               tag="auction-featured-live")
+            except Exception as exc:
+                logger.warning("SMS lot vedette %s : %s", h["user_id"], exc)
+        if user.get("email") and await channel_allowed(h["user_id"], "auction_new_live", "email"):
             try:
                 from brevo_service import send_email, _wrap_html
                 name = user.get("first_name") or user.get("contact_name") or ""
@@ -168,17 +179,19 @@ async def run_auction_ending_alerts(database=None):
                 {"id": h["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1, "first_name": 1})
             if not user:
                 continue
-            try:
-                from core_deps import create_notification
-                await create_notification(
-                    "auction_ending", f"⏳ Fin imminente — {a.get('title')}",
-                    f"Le COOP'ACT {a.get('reference')} se termine dans {mins} min — prix actuel {price:.2f} € "
-                    f"({ah.eur_to_credits(price)} crédits). Premier à accepter = gagnant !",
-                    target_user_id=h["user_id"],
-                    data={"auction_id": a["id"], "action_url": "/encheres"})
-            except Exception as exc:
-                logger.warning("Cloche fin imminente %s : %s", h["user_id"], exc)
-            if user.get("email"):
+            from routes_prefs import channel_allowed
+            if await channel_allowed(h["user_id"], "auction_ending", "inapp"):
+                try:
+                    from core_deps import create_notification
+                    await create_notification(
+                        "auction_ending", f"⏳ Fin imminente — {a.get('title')}",
+                        f"Le COOP'ACT {a.get('reference')} se termine dans {mins} min — prix actuel {price:.2f} € "
+                        f"({ah.eur_to_credits(price)} crédits). Premier à accepter = gagnant !",
+                        target_user_id=h["user_id"],
+                        data={"auction_id": a["id"], "action_url": "/encheres"})
+                except Exception as exc:
+                    logger.warning("Cloche fin imminente %s : %s", h["user_id"], exc)
+            if user.get("email") and await channel_allowed(h["user_id"], "auction_ending", "email"):
                 try:
                     from brevo_service import send_email, _wrap_html
                     name = user.get("first_name") or user.get("contact_name") or ""

@@ -10,6 +10,7 @@ import { AuctionFilters } from '../components/auctions/AuctionFilters';
 import { AuctionPlanGate } from '../components/auctions/AuctionPlanGate';
 import { WinnerDialog } from '../components/auctions/WinnerDialog';
 import { AuctionHistoryPanel } from '../components/auctions/AuctionHistoryPanel';
+import { AuctionAlertPrefs } from '../components/auctions/AuctionAlertPrefs';
 
 export default function AuctionsPage() {
   const [params, setParams] = useSearchParams();
@@ -128,6 +129,7 @@ export default function AuctionsPage() {
         )}
 
         <AuctionHistoryPanel me={me} />
+        {me?.active && <AuctionAlertPrefs />}
 
         {winnerAuction && (
           <WinnerDialog auction={winnerAuction} onClose={() => setWinnerAuction(null)}
