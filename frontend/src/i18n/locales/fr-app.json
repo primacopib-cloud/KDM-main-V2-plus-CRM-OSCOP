@@ -536,6 +536,10 @@
     "share": "Partager sur WhatsApp",
     "share_text": "🔨 COOP'ACT en cours : {{title}} — prix actuel {{price}} € ({{credits}} crédits). Rejoignez la salle COOP'ACT LOLODRIVE :",
     "brand_link": "Découvrir la philosophie COOP'ACT",
-    "rule_note": "Les crédits coop'actés sont définitivement engagés : ils ne sont pas remboursés si vous ne remportez pas le lot."
+    "rule_note": "Les crédits coop'actés sont définitivement engagés : ils ne sont pas remboursés si vous ne remportez pas le lot.",
+    "nav_space": "Mon espace",
+    "nav_catalog": "Catalogue",
+    "nav_room": "Salle COOP'ACT",
+    "nav_brand": "Philosophie"
   }
 }

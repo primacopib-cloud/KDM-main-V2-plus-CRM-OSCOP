@@ -536,6 +536,10 @@
     "share": "Share on WhatsApp",
     "share_text": "🔨 Live COOP'ACT: {{title}} — current price €{{price}} ({{credits}} credits). Join the LOLODRIVE COOP'ACT room:",
     "brand_link": "Discover the COOP'ACT philosophy",
-    "rule_note": "Coop'acted credits are permanently committed: they are not refunded if you do not win the lot."
+    "rule_note": "Coop'acted credits are permanently committed: they are not refunded if you do not win the lot.",
+    "nav_space": "My space",
+    "nav_catalog": "Catalog",
+    "nav_room": "COOP'ACT Room",
+    "nav_brand": "Philosophy"
   }
 }

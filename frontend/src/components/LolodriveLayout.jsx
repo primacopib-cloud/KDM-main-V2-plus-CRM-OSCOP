@@ -40,6 +40,19 @@ export default function LolodriveLayout({ title, subtitle, children, actions }) 
               </div>
             </div>
           </Link>
+          <nav className="hidden md:flex items-center gap-1 text-xs" data-testid="lolo-member-nav">
+            {[
+              ['/espace-pass', i18n.t('auction.nav_space'), 'lolo-nav-space'],
+              ['/catalogue-lolodrive', i18n.t('auction.nav_catalog'), 'lolo-nav-catalog'],
+              ['/encheres', i18n.t('auction.nav_room'), 'lolo-nav-room'],
+              ['/coopact', i18n.t('auction.nav_brand'), 'lolo-nav-coopact'],
+            ].map(([to, label, tid]) => (
+              <Link key={to} to={to} data-testid={tid}
+                className="px-3 py-1.5 rounded-full font-semibold text-white/70 hover:text-[#F2D07A] hover:bg-white/10 transition-colors">
+                {label}
+              </Link>
+            ))}
+          </nav>
           <div className="flex items-center gap-3">
             {user && (
               <div className="text-xs text-right hidden sm:block">

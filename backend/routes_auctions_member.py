@@ -26,6 +26,16 @@ def _stripe_key() -> str:
 
 # ---------- Salle des enchères (publique, filtres enrichis) ----------
 
+@auctions_member_router.get("/community-stats")
+async def community_stats():
+    """Compteurs publics de la page marque : Coop'acteurs actifs et lots remportés."""
+    now_iso = ah.now_utc().isoformat()
+    coopacteurs = await ah.db.auction_accounts.count_documents({"valid_until": {"$gt": now_iso}})
+    lots_won = await ah.db.auctions.count_documents({"status": "WON"})
+    total_bids = await ah.db.auction_bids.count_documents({})
+    return {"coopacteurs": coopacteurs, "lots_won": lots_won, "total_bids": total_bids}
+
+
 @auctions_member_router.get("/public")
 async def public_auctions(status: str = "", category: str = "", type_id: str = "",
                           source: str = "", q: str = ""):

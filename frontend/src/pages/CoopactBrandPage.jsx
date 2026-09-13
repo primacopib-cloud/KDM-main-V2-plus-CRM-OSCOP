@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { Gavel, Handshake, Scale, Coins, ShieldCheck, ArrowRight, Sparkles, Users } from 'lucide-react';
+import { API } from '../services/http';
 
 const LEXIQUE = [
   { term: "Coop'acter", def: "L'action : déposer ou améliorer une offre responsable au sein de la Bourse Coopérative." },
@@ -22,6 +24,10 @@ const VALEURS = [
 ];
 
 export default function CoopactBrandPage() {
+  const [stats, setStats] = useState(null);
+  useEffect(() => {
+    fetch(`${API}/auctions/community-stats`).then((r) => r.json()).then(setStats).catch(() => {});
+  }, []);
   return (
     <div className="min-h-screen text-white" data-testid="coopact-brand-page"
       style={{ background: 'linear-gradient(180deg, #1E0C34 0%, #3D1B61 55%, #22103C 100%)' }}>
@@ -52,6 +58,20 @@ export default function CoopactBrandPage() {
             Découvrir LOLODRIVE
           </Link>
         </div>
+        {stats && (
+          <div className="flex flex-wrap gap-6 mt-8" data-testid="coopact-community-stats">
+            {[
+              [stats.coopacteurs, "Coop'acteur(s) actif(s)", 'stat-coopacteurs'],
+              [stats.lots_won, 'lot(s) remporté(s)', 'stat-lots-won'],
+              [stats.total_bids, "Coop'Act(s) déposés", 'stat-total-coopacts'],
+            ].map(([v, label, tid]) => (
+              <div key={tid} data-testid={tid}>
+                <div className="text-3xl font-bold text-[#F2D07A]">{v}</div>
+                <div className="text-[11px] uppercase tracking-wide text-white/55">{label}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </header>
 
       <section className="max-w-5xl mx-auto px-5 py-8" data-testid="coopact-steps">

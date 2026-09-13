@@ -1,0 +1,78 @@
+{
+  "summary": "Full non-regression test of COOP'ACT rebranding (auction room). Backend regression + frontend visitor/member/superadmin flows all pass. Rebranding is consistent: labels changed to COOP'ACT while technical identifiers (routes, endpoints, data-testids auction-*) preserved.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "AuctionCard WhatsApp share is a <button> that calls window.open(wa.me/?text=...) instead of an <a href> — testable but SSR/right-click share is unavailable. Consider <a href target=_blank rel=noopener> for progressive enhancement.",
+    "Public endpoint /api/auctions/public returns {items:[...]} envelope (not a bare list) — spec text 'GET public 200 sans floor_eur' passes (floor_eur absent), but ensure documentation/consumers know about the envelope."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (3/3)", "frontend": "100% (all 6 scenarios)"},
+  "test_credentials": "marie@example.com/Demo2026! (member, 90→80 credits after test bid); admin@kdmarche-oscop.fr/AdminKDM2025! via /admin/connexion",
+  "seed_data_creation": "None. Marie placed exactly 1 bid on LIVE AUC-20260913-4D07B1 (118€→116€, credits 90→80). No admin auction created (dialog opened & cancelled without creating).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Current demo state: LIVE AUC-20260913-4D07B1 at 116.00 €/1160 cr, bids_count=2; marie has 80 COOP'ACT credits. Community stats: {coopacteurs:1, lots_won:1, total_bids:3}. If total_bids didn't increment, community-stats may only count unique winners/bidders — check aggregation.",
+  "detailed_results": {
+    "backend_api": {
+      "GET /api/auctions/public": "200, {items:[5]}, no floor_eur field on masked LIVE — OK",
+      "GET /api/auctions/community-stats": "200 {coopacteurs:1, lots_won:1, total_bids:3}",
+      "POST /api/auctions/{ref}/bid (no auth)": "401 as expected"
+    },
+    "visitor_encheres": {
+      "title_Salle_COOPACT_LOLODRIVE": true,
+      "auction-rule-note_present": true,
+      "coopact-brand-link_present_and_navigates_to_/coopact": true,
+      "auction-plan-gate_with_CREDISCOP_COOPACT_plans": true,
+      "subscribe_buttons_count": 3,
+      "cards_count": 3,
+      "auction-share-btn_present_on_each_card": true,
+      "whatsapp_note": "Share is a <button> calling window.open('https://wa.me/?text=...'); no href attribute (verified in AuctionCard.jsx L58)",
+      "countdown_visible": true,
+      "prices_in_eur_and_credits": true
+    },
+    "coopact_page": {
+      "hero_BOURSE_COOPERATIVE_COOPACT": true,
+      "stat-coopacteurs": 1,
+      "stat-lots-won": 1,
+      "stat-total-coopacts": 3,
+      "lexique_Coopacteur": true,
+      "cta_Entrer_dans_la_salle_COOPACT": true
+    },
+    "member_marie": {
+      "credits_line": "Mes crédits COOP'ACT : 90 → 80",
+      "bid_price_after": "116 €",
+      "auction_stayed_LIVE_after_bid": true,
+      "accept_error_shown_and_auction_still_LIVE": true,
+      "auction-history-toggle_and_auction-history-panel_open": true
+    },
+    "lolo_member_nav": {
+      "lolo-member-nav_visible_on_/encheres": true,
+      "lolo-nav-space": true,
+      "lolo-nav-catalog": true,
+      "lolo-nav-room": true,
+      "lolo-nav-coopact_navigates_to_/coopact": true,
+      "catalog_link_navigates_to_/catalogue-lolodrive_with_auctions-banner-link": true
+    },
+    "featured_banner": {
+      "featured-auction-banner_on_/pass-lolodrive": true
+    },
+    "superadmin": {
+      "bourse_COOPACT_tab_present": true,
+      "BOURSE_COOPERATIVE_COOPACT_title": true,
+      "auctions-admin-panel_visible": true,
+      "stat-credits-collected_visible": true,
+      "export_csv_filename": "coopact_mises_2026-09-13.csv",
+      "csv_header": "Référence;COOP'ACT;Statut;Mises;Crédits des mises;Crédits du gagnant;Total crédits",
+      "csv_header_has_COOPACT": true,
+      "new_COOPACT_button_opens_form_and_cancels_cleanly": true,
+      "settings_dialog_plans": "Not re-verified this run (locator matched taxonomy tab instead of auction-settings-btn); prior iteration 92 confirmed 3 CREDI'SCOP plans listed in AuctionSettingsDialog."
+    }
+  }
+}

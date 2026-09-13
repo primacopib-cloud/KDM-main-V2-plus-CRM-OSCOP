@@ -251,6 +251,10 @@
     "share": "Pataje asi WhatsApp",
     "share_text": "🔨 COOP'ACT ka fèt : {{title}} — pri a-y jòdi {{price}} € ({{credits}} kredi). Vin adan sal COOP'ACT LOLODRIVE :",
     "brand_link": "Dékouvè filozofi COOP'ACT",
-    "rule_note": "Kredi ou coop'acté yo angajé nèt : yo pa ka ranbousé si ou pa genyen lo-la."
+    "rule_note": "Kredi ou coop'acté yo angajé nèt : yo pa ka ranbousé si ou pa genyen lo-la.",
+    "nav_space": "Espas an mwen",
+    "nav_catalog": "Katalòg",
+    "nav_room": "Sal COOP'ACT",
+    "nav_brand": "Filozofi"
   }
 }
