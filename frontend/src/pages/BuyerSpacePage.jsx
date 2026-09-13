@@ -1,4 +1,5 @@
 import { getSessionToken } from '../services/http';
+import { WelcomeBanner } from '../components/WelcomeBanner';
 import i18n from '@/i18n';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
@@ -387,6 +388,8 @@ export default function BuyerSpacePage() {
         <div className="mb-4">
           <BreadcrumbPill />
         </div>
+
+        <WelcomeBanner space="buyer" className="mb-6" />
 
         {/* Alerts Banner */}
         {alerts.length > 0 && (

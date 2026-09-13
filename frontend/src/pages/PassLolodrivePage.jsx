@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { WelcomeBanner } from '../components/WelcomeBanner';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { ShoppingBasket, Users, MapPin, ArrowRight, BadgeCheck, Ticket, BatteryCharging, Sparkles, CreditCard } from 'lucide-react';
 import NavBar from '../components/NavBar';
@@ -67,6 +68,7 @@ export default function PassLolodrivePage() {
       <PromoPassBanner />
       <div className="pt-20 -mb-16"><FlashPromoBanner placement="pass" /></div>
       <main className="max-w-3xl mx-auto px-4 pt-28 pb-20" data-testid="pass-lolodrive-page">
+        <WelcomeBanner space="pass" className="mb-6" />
         {firstName && (
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5 text-sm bg-[#7BC94E]/15 border border-[#7BC94E]/40 text-[#B9E89A]" data-testid="pass-confirmation">
             <BadgeCheck className="w-4 h-4" /> {i18n.t('passPage.confirmation', { name: firstName })}

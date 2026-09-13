@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { WelcomeBanner } from '../components/WelcomeBanner';
 import { TrendingUp, Ticket, Euro, Truck, ShieldAlert } from 'lucide-react';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
@@ -69,6 +70,7 @@ export default function InvestorSpacePage() {
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #2A1045 0%, #451F6B 55%, #2A1045 100%)' }}>
       <NavBar />
       <main className="max-w-[1000px] mx-auto px-5 pt-24 pb-14" data-testid="investor-space-page">
+        <WelcomeBanner space="investor" className="mb-6" />
         <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
           <BreadcrumbPill />
           <SpaceHeaderActions showFavorites={false} />

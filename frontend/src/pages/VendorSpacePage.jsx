@@ -1,5 +1,6 @@
 import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
+import { WelcomeBanner } from '../components/WelcomeBanner';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   Package, Plus, CheckCircle2, Building2, TrendingUp, ShoppingCart,
@@ -310,6 +311,7 @@ const VendorSpacePage = () => {
         <div className="mb-6">
           <BreadcrumbPill className="bg-white/10 border border-white/15" />
         </div>
+        <WelcomeBanner space="vendor" className="mb-6" />
         <VendorNeedsPanel />
         <VendorMyOffersPanel />
         <VendorPaymentSettings vendorId={vendorId} />

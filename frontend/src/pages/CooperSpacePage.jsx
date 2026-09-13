@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { WelcomeBanner } from '../components/WelcomeBanner';
 import { LayoutDashboard, FileCheck, PackageCheck, ShoppingCart, Megaphone } from 'lucide-react';
 import { RoleSpaceLayout, KpiCard, QuickLink } from '../components/RoleSpaceLayout';
 import { CooperAdhesionsTab } from '../components/cooper/CooperAdhesionsTab';
@@ -65,6 +66,7 @@ export default function CooperSpacePage() {
     >
       {(overview) => (
         <div className="space-y-5">
+          <WelcomeBanner space="cooper" />
           <div className="flex flex-wrap gap-2" data-testid="cooper-tabs">
             {TABS.map((t) => (
               <button key={t.value} onClick={() => setTab(t.value)}

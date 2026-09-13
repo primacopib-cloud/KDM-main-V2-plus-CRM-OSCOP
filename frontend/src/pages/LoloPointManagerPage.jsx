@@ -1,5 +1,6 @@
 import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
+import { WelcomeBanner } from '../components/WelcomeBanner';
 import { useNavigate } from 'react-router-dom';
 import {
   Store, MapPin, Package, CheckCircle2, RefreshCw, Calculator, TrendingUp,
@@ -88,6 +89,7 @@ export default function LoloPointManagerPage() {
         </div>
       }
     >
+      <WelcomeBanner space="gerant" className="mb-4" />
       {loading && <div className="text-center text-white/50 py-12">Chargement…</div>}
 
       {!loading && !point && (

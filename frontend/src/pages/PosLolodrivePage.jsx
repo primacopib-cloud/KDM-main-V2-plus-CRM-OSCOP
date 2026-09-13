@@ -1,5 +1,6 @@
 import i18n from '@/i18n';
 import React, { useEffect, useRef, useState } from 'react';
+import { WelcomeBanner } from '../components/WelcomeBanner';
 import { RelayPhotoUpload } from '../components/pos/RelayPhotoUpload';
 import { PosRelayReviews } from '../components/pos/PosRelayReviews';
 import { ProSubscriptionBanner } from '../components/pos/ProSubscriptionBanner';
@@ -231,6 +232,7 @@ export default function PosLolodrivePage() {
         </>
       }
     >
+      <WelcomeBanner space="pos" className="mb-4" />
       <PosSessionBanner />
       <ProSubscriptionBanner />
 
