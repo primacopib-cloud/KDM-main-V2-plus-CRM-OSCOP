@@ -8,6 +8,7 @@ import { OperationFormDialog } from './purchase-resale/OperationFormDialog';
 import { OperationDetail } from './purchase-resale/OperationDetail';
 import { PrintSectionButton } from '../PrintSectionButton';
 import { Operation360 } from './purchase-resale/Operation360';
+import { DataroomAdminPanel } from './DataroomAdminPanel';
 
 const eur = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 
@@ -100,14 +101,16 @@ export const PurchaseResaleTab = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-xs text-white/60">
-                    <button
-                      type="button"
+                    <span
+                      role="button"
+                      tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); setView360(op.id); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setView360(op.id); } }}
                       data-testid={`view360-btn-${op.reference}`}
-                      className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white/80 text-[10px] font-semibold"
+                      className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white/80 text-[10px] font-semibold cursor-pointer"
                     >
                       Vue 360°
-                    </button>
+                    </span>
                     <span>{op.client_name}</span>
                     <span>Achat {eur(op.purchase_amount_ex_vat)}</span>
                     <span>Revente {eur(op.resale_total_ex_vat)}</span>
@@ -124,6 +127,8 @@ export const PurchaseResaleTab = () => {
           ))}
         </div>
       )}
+
+      <DataroomAdminPanel />
 
       <OperationFormDialog open={formOpen} onClose={() => setFormOpen(false)} onCreated={load} />
       {view360 && <Operation360 operationId={view360} onClose={() => setView360(null)} />}

@@ -16,6 +16,7 @@ import NavigationHistoryDropdown from '../components/NavigationHistoryDropdown';
 import { CrediscopBadge } from '../components/CrediscopBadge';
 
 import { authAPI, ordersAPIV2, walletAPIV2, invoicesAPI } from '../services/api';
+import { CrossSpaceLink } from '../components/CrossSpaceLink';
 import { BuyerDashboardTab } from '../components/buyer/BuyerDashboardTab';
 import { ProReferralShareCard } from '../components/ProReferralShareCard';
 import { BuyerOrdersTab } from '../components/buyer/BuyerOrdersTab';
@@ -341,9 +342,9 @@ export default function BuyerSpacePage() {
             <Link to="/documents" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
               {i18n.t('onboarding.documents')}
             </Link>
-            <Link to="/espace-vendeur" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+            <CrossSpaceLink to="/espace-vendeur" requireFlag="has_vendor_pro" testId="buyer-nav-vendor-link" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
               {i18n.t('buyer.vendeur')}
-            </Link>
+            </CrossSpaceLink>
             {(user?.role === 'admin' || user?.email?.includes('admin')) && (
               <Link to="/superadmin" className="px-3 py-1.5 text-xs text-[#D9B35A] hover:bg-[#D9B35A]/10 rounded-lg transition-colors">
                 {i18n.t('buyer.admin')}

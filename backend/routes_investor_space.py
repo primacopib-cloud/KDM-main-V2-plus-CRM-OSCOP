@@ -278,6 +278,32 @@ async def my_dataroom(current_user: dict = Depends(get_current_user_v2)):
     return {"operations": [{**op, "documents": by_op.get(op["id"], [])} for op in ops]}
 
 
+@investor_router.get("/admin/dataroom")
+async def admin_dataroom(admin: dict = Depends(_admin)):
+    """Data room complète pour le superadmin : tous les packs et Bons d'Engagement, par opération."""
+    docs = await db.operation_documents.find(
+        {"doc_type": {"$in": ["DATAROOM", "INVESTOR_COMMITMENT"]}},
+        {"_id": 0, "id": 1, "operation_id": 1, "doc_number": 1, "doc_type": 1, "created_at": 1, "created_by": 1},
+    ).sort("created_at", -1).to_list(500)
+    op_ids = list({d["operation_id"] for d in docs})
+    ops = await db.purchase_resale_operations.find(
+        {"id": {"$in": op_ids}},
+        {"_id": 0, "id": 1, "reference": 1, "status": 1, "territory_id": 1, "linked_product_name": 1}).to_list(200)
+    interests = await db.financing_interests.find(
+        {"operation_id": {"$in": op_ids}, "status": "ACCEPTED"},
+        {"_id": 0, "operation_id": 1, "investor_name": 1, "investor_email": 1}).to_list(500)
+    docs_by_op = {}
+    for d in docs:
+        docs_by_op.setdefault(d["operation_id"], []).append(d)
+    inv_by_op = {}
+    for it in interests:
+        inv_by_op.setdefault(it["operation_id"], []).append(it)
+    return {"operations": [
+        {**op, "documents": docs_by_op.get(op["id"], []),
+         "accepted_investors": inv_by_op.get(op["id"], [])}
+        for op in ops]}
+
+
 @investor_router.get("/documents/{doc_id}/pdf")
 async def investor_document_pdf(doc_id: str, current_user: dict = Depends(get_current_user_v2)):
     """Téléchargement lecture seule, réservé à l'investisseur retenu sur l'opération."""

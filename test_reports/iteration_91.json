@@ -1,0 +1,28 @@
+{
+  "summary": "Frontend validation of 3 features: (1) vendor space hides Espace Acheteur link when no buyer-pro subscription — PASS, (2) buyer space hides Espace Vendeur link when no vendor-pro subscription — PASS, (3) superadmin Achat-Revente tab shows dataroom panel with operation AR-20260913-81D178, both documents, retained investors, and DR-2026-0007 PDF download works — PASS. No regressions observed in either member space header.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/superadmin (PurchaseResaleTab)", "issues": ["React hydration console warning: nested <button> inside operation-row button (data-testid=view360-btn-AR-... rendered inside data-testid=operation-row-AR-...). Non-blocking but should be refactored (change outer to div with role=button or move view360 button outside)."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: fix nested <button> hydration warning in PurchaseResaleTab.jsx (view360-btn nested inside operation-row button)."
+  ],
+  "critical_code_review_comments": [
+    "CrossSpaceLink correctly hides links when API returns false — verified in DOM for both vendor-pro and acheteur-pro accounts.",
+    "Superadmin DataroomAdminPanel renders all expected testids and PDF download endpoint works (200, file DR-2026-0007.pdf).",
+    "Nested interactive buttons in PurchaseResaleTab produce React warnings (a11y + hydration concern)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "100%"},
+  "test_credentials": "Used vendor-pro@kdmarche.fr, acheteur-pro@kdmarche.fr (Demo2026!), admin@kdmarche-oscop.fr (AdminKDM2025!) via /admin/connexion.",
+  "seed_data_creation": "None — used existing demo data.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The 3 requested features all validated OK. Only cosmetic React warning about nested buttons in PurchaseResaleTab remains. Note: /superadmin page never reaches networkidle (heavy websockets/polling); use wait_until='domcontentloaded' + explicit timeout when navigating there.",
+  "rca of the issue": "n/a — no functional issues."
+}

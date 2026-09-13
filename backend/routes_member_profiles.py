@@ -159,3 +159,60 @@ async def admin_delete_profile(slug: str, admin: dict = Depends(require_admin)):
         raise HTTPException(status_code=400, detail=f"{used} adhésion(s) utilisent ce profil : désactivez-le plutôt")
     await db.member_profiles.delete_one({"slug": slug})
     return {"deleted": True}
+
+
+# ===== Accès inter-espaces Pro (navigation des headers) =====
+from auth import get_current_user_id
+
+
+def _subscription_active(sub: dict) -> bool:
+    """Abonnement d'organisation ACTIVE et non parvenu à échéance."""
+    if not sub:
+        return False
+    end = sub.get("current_period_end")
+    if isinstance(end, str):
+        try:
+            end = datetime.fromisoformat(end.replace("Z", "+00:00"))
+        except ValueError:
+            end = None
+    if isinstance(end, datetime):
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=timezone.utc)
+        return end > datetime.now(timezone.utc)
+    return True
+
+
+async def _onboarding_active(user_id: str, email: str, member_type: str) -> bool:
+    """Adhésion Pro (Stripe) active et non suspendue pour ce membre."""
+    return bool(await db.vendor_onboarding.find_one(
+        {"$or": [{"user_id": user_id}, {"email": email}],
+         "member_type": member_type,
+         "subscription_status": "active",
+         "access_suspended": {"$ne": True}},
+        {"_id": 0, "id": 1}))
+
+
+@member_profiles_router.get("/member/space-access")
+async def member_space_access(user_id: str = Depends(get_current_user_id)):
+    """Espaces Pro visibles dans le header : acheteur si Acheteur Pro actif, vendeur si Vendeur Pro actif."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "vendor_id": 1})
+    if not user:
+        raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+    email = (user.get("email") or "").lower()
+
+    vendor_ids = [v for v in {user_id, user.get("vendor_id")} if v]
+    vendor_doc = await db.vendors.find_one({"id": {"$in": vendor_ids}}, {"_id": 0, "status": 1})
+    has_vendor_pro = bool(vendor_doc and (vendor_doc.get("status") or "").upper() == "APPROVED") \
+        or await _onboarding_active(user_id, email, "vendor")
+
+    has_buyer_pro = False
+    membership = await db.org_memberships.find_one({"user_id": user_id}, {"_id": 0, "org_id": 1})
+    if membership:
+        org = await db.orgs.find_one({"id": membership["org_id"]}, {"_id": 0, "status": 1})
+        sub = await db.subscriptions.find_one(
+            {"org_id": membership["org_id"], "status": "ACTIVE"}, {"_id": 0, "current_period_end": 1})
+        has_buyer_pro = bool(org and org.get("status") == "APPROVED" and _subscription_active(sub))
+    if not has_buyer_pro:
+        has_buyer_pro = await _onboarding_active(user_id, email, "buyer")
+
+    return {"has_buyer_pro": has_buyer_pro, "has_vendor_pro": has_vendor_pro}

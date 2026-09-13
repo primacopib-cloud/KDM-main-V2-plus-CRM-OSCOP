@@ -46,6 +46,7 @@ import { MemberSpaceBanners } from '../components/MemberSpaceBanners';
 import { MessagesNavLink } from '../components/MessagesNavLink';
 import { useCreditSessionPoll } from '../components/vendor/useCreditSessionPoll';
 import { BrandLogos } from '../components/BrandLogos';
+import { CrossSpaceLink } from '../components/CrossSpaceLink';
 import { NotificationsBell } from '../components/NotificationsBell';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -239,9 +240,9 @@ const VendorSpacePage = () => {
               <Link to="/" className="px-3 py-1.5 text-xs text-white/55 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                 {i18n.t('nav.home')}
               </Link>
-              <Link to="/espace-acheteur" className="px-3 py-1.5 text-xs text-white/55 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+              <CrossSpaceLink to="/espace-acheteur" requireFlag="has_buyer_pro" testId="vendor-nav-buyer-link" className="px-3 py-1.5 text-xs text-white/55 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                 {i18n.t('breadcrumb.espace_acheteur')}
-              </Link>
+              </CrossSpaceLink>
               <Link to="/catalogue" className="px-3 py-1.5 text-xs text-white/55 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                 {i18n.t('nav.catalog')}
               </Link>
