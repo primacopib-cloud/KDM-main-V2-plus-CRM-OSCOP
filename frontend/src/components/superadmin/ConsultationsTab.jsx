@@ -165,9 +165,14 @@ export const ConsultationsTab = () => {
   return (
     <div className="space-y-4" data-testid="consultations-tab">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-white flex items-center gap-2">
-          <Gavel className="w-4 h-4 text-[#D9B35A]" /> Ventes aux enchères inversées &amp; consultations compétitives
-        </h2>
+        <div>
+          <h2 className="text-base font-semibold text-white flex items-center gap-2" data-testid="bourse-mutualisee-title">
+            <Gavel className="w-4 h-4 text-[#D9B35A]" /> BOURSE MUTUALISÉE O'SCOP
+          </h2>
+          <p className="text-[11px] text-white/55 mt-0.5 ml-6" data-testid="bourse-mutualisee-subtitle">
+            Plateforme coopérative de consultation, de cotation et de négociation des offres
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <button type="button" data-testid="annual-summary-btn"
             onClick={async () => {

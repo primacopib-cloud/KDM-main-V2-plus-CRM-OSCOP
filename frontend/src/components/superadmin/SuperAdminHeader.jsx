@@ -81,7 +81,7 @@ const TABS = [
   { value: 'promos', label: 'Promos flash', icon: Zap },
   { value: 'cpc', label: "CREDI'SCOP", icon: Ticket },
   { value: 'achat-revente', label: 'Achat-Revente', icon: Repeat },
-  { value: 'consultations', label: 'Enchères inversées', icon: Scale },
+  { value: 'consultations', label: "Bourse mutualisée O'SCOP", icon: Scale },
   { value: 'logicoop', label: 'LOGICOOP', icon: Truck },
   { value: 'accounting', label: 'Comptabilité', icon: Calculator },
   { value: 'profiles', label: 'Profils & Espaces', icon: UsersRound },
