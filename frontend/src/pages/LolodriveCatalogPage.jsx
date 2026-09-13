@@ -61,7 +61,11 @@ const CatTile = ({ testid, name, count, image, accent, onClick, items = [] }) =>
   <button type="button" onClick={onClick} data-testid={testid}
     className={`relative rounded-2xl overflow-hidden border text-left h-28 flex flex-col justify-end p-3 transition-all hover:-translate-y-0.5 ${
       accent ? 'border-red-400/40 bg-red-500/10 hover:bg-red-500/15' : 'border-white/10 bg-white/[0.03] hover:border-[#D9B35A]/40'}`}>
-    {image && <img src={image} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-25" />}
+    {image && (
+      <div className="absolute inset-x-0 top-0 bottom-[46px] product-thumb-light flex items-center justify-center">
+        <img src={image} alt="" loading="lazy" className="w-full h-full object-contain p-1.5" />
+      </div>
+    )}
     <CountdownBadge items={items} testid={`${testid}-countdown`} />
     <span className={`relative text-sm font-bold ${accent ? 'text-red-200' : 'text-[#D9B35A]'}`}>{name}</span>
     <span className="relative text-[11px] text-white/55">{count} produit{count > 1 ? 's' : ''}</span>
