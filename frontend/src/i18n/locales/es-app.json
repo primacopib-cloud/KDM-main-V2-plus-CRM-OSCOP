@@ -439,5 +439,51 @@
     "legalForm": "Estatuto jurídico *",
     "firstName": "Nombre del contacto *",
     "lastName": "Apellido del contacto *"
+  },
+  "welcome": {
+    "morning": "Hola",
+    "evening": "Buenas tardes",
+    "buyer": {
+      "subtitle": "Sus 3 acciones prioritarias para comprar a tarifa de socio.",
+      "a0": "Explorar el catálogo",
+      "a1": "Seguir mis pedidos",
+      "a2": "Recargar mis créditos"
+    },
+    "vendor": {
+      "subtitle": "Sus 3 acciones prioritarias para vender con tranquilidad.",
+      "a0": "Gestionar mis productos",
+      "a1": "Pedidos recibidos",
+      "a2": "Mis facturas"
+    },
+    "pass": {
+      "subtitle": "Sus 3 acciones prioritarias con su PASS LOLODRIVE.",
+      "a0": "Pedir en el punto",
+      "a1": "Seguir mis pedidos",
+      "a2": "Mi espacio PASS"
+    },
+    "pos": {
+      "subtitle": "Sus 3 acciones prioritarias en caja hoy.",
+      "a0": "Caja y retiros",
+      "a1": "Pedidos del punto",
+      "a2": "Catálogo LOLODRIVE"
+    },
+    "gerant": {
+      "subtitle": "Sus 3 acciones prioritarias para gestionar su punto.",
+      "a0": "Panel del punto",
+      "a1": "Caja POS",
+      "a2": "Reposición B2B"
+    },
+    "cooper": {
+      "subtitle": "Sus 3 acciones prioritarias al servicio de la cooperativa.",
+      "a0": "Adhesiones y validaciones",
+      "a1": "Catálogo B2B",
+      "a2": "Pedidos y transporte"
+    },
+    "investor": {
+      "subtitle": "Sus 3 acciones prioritarias para seguir sus operaciones.",
+      "a0": "Mis operaciones",
+      "a1": "Ofertas O'SCOP",
+      "a2": "Mis documentos"
+    }
   }
 }

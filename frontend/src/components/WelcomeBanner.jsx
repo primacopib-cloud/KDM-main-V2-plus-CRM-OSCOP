@@ -1,77 +1,58 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Sparkles, ArrowRight, ShoppingCart, Package, Wallet, FileText,
   CreditCard, LayoutDashboard, Store, ClipboardList, Users,
 } from 'lucide-react';
 import { authAPI } from '../services/api';
 
-// Message de bienvenue + 3 actions prioritaires par espace de rôle
+// Message de bienvenue + 3 actions prioritaires par espace de rôle (textes : i18n clés welcome.*)
 const SPACE_CONFIG = {
-  buyer: {
-    subtitle: 'Vos 3 actions prioritaires pour vos achats au tarif adhérent.',
-    actions: [
-      { href: '/catalogue', label: 'Parcourir le catalogue', icon: ShoppingCart },
-      { href: '/commandes', label: 'Suivre mes commandes', icon: Package },
-      { href: '/wallet', label: 'Recharger mes crédits', icon: Wallet },
-    ],
-  },
-  vendor: {
-    subtitle: 'Vos 3 actions prioritaires pour vendre sereinement.',
-    actions: [
-      { href: '/espace-vendeur?tab=products', label: 'Gérer mes produits', icon: Package },
-      { href: '/espace-vendeur?tab=orders', label: 'Commandes reçues', icon: ShoppingCart },
-      { href: '/espace-vendeur?tab=invoices', label: 'Mes factures', icon: FileText },
-    ],
-  },
-  pass: {
-    subtitle: 'Vos 3 actions prioritaires avec votre PASS LOLODRIVE.',
-    actions: [
-      { href: '/catalogue-lolodrive', label: 'Commander au relais', icon: ShoppingCart },
-      { href: '/commandes', label: 'Suivre mes commandes', icon: Package },
-      { href: '/espace-pass', label: 'Mon espace PASS', icon: CreditCard },
-    ],
-  },
-  pos: {
-    subtitle: 'Vos 3 actions prioritaires en caisse aujourd’hui.',
-    actions: [
-      { href: '/pos', label: 'Caisse & retraits', icon: CreditCard },
-      { href: '/commandes', label: 'Commandes du point', icon: ClipboardList },
-      { href: '/catalogue-lolodrive', label: 'Catalogue LOLODRIVE', icon: ShoppingCart },
-    ],
-  },
-  gerant: {
-    subtitle: 'Vos 3 actions prioritaires pour piloter votre relais.',
-    actions: [
-      { href: '/lolo-point/dashboard', label: 'Tableau de bord relais', icon: LayoutDashboard },
-      { href: '/pos', label: 'Caisse POS', icon: CreditCard },
-      { href: '/commandes', label: 'Réassort B2B', icon: Package },
-    ],
-  },
-  cooper: {
-    subtitle: 'Vos 3 actions prioritaires au service de la coopérative.',
-    actions: [
-      { href: '/espace-cooper', label: 'Adhésions & validations', icon: Users },
-      { href: '/catalogue', label: 'Catalogue B2B', icon: ShoppingCart },
-      { href: '/commandes', label: 'Commandes & transport', icon: Package },
-    ],
-  },
-  investor: {
-    subtitle: 'Vos 3 actions prioritaires pour suivre vos opérations.',
-    actions: [
-      { href: '/espace-investisseur', label: 'Mes opérations', icon: LayoutDashboard },
-      { href: '/catalogue', label: 'Offres O’SCOP', icon: Store },
-      { href: '/documents', label: 'Mes documents', icon: FileText },
-    ],
-  },
+  buyer: [
+    { href: '/catalogue', icon: ShoppingCart },
+    { href: '/commandes', icon: Package },
+    { href: '/wallet', icon: Wallet },
+  ],
+  vendor: [
+    { href: '/espace-vendeur?tab=products', icon: Package },
+    { href: '/espace-vendeur?tab=orders', icon: ShoppingCart },
+    { href: '/espace-vendeur?tab=invoices', icon: FileText },
+  ],
+  pass: [
+    { href: '/catalogue-lolodrive', icon: ShoppingCart },
+    { href: '/commandes', icon: Package },
+    { href: '/espace-pass', icon: CreditCard },
+  ],
+  pos: [
+    { href: '/pos', icon: CreditCard },
+    { href: '/commandes', icon: ClipboardList },
+    { href: '/catalogue-lolodrive', icon: ShoppingCart },
+  ],
+  gerant: [
+    { href: '/lolo-point/dashboard', icon: LayoutDashboard },
+    { href: '/pos', icon: CreditCard },
+    { href: '/commandes', icon: Package },
+  ],
+  cooper: [
+    { href: '/espace-cooper', icon: Users },
+    { href: '/catalogue', icon: ShoppingCart },
+    { href: '/commandes', icon: Package },
+  ],
+  investor: [
+    { href: '/espace-investisseur', icon: LayoutDashboard },
+    { href: '/catalogue', icon: Store },
+    { href: '/documents', icon: FileText },
+  ],
 };
 
 export const WelcomeBanner = ({ space, className = '' }) => {
+  const { t } = useTranslation();
   const cfg = SPACE_CONFIG[space];
   if (!cfg) return null;
   const user = authAPI.getCurrentUser();
   const name = user?.first_name || user?.company_name || (user?.email || '').split('@')[0] || 'membre';
   const hour = new Date().getHours();
-  const greet = hour >= 18 || hour < 5 ? 'Bonsoir' : 'Bonjour';
+  const greet = t(hour >= 18 || hour < 5 ? 'welcome.evening' : 'welcome.morning', 'Bonjour');
   return (
     <div
       className={`rounded-[16px] border border-[#D9B35A]/30 p-4 sm:p-5 ${className}`}
@@ -87,11 +68,11 @@ export const WelcomeBanner = ({ space, className = '' }) => {
             <p className="text-base sm:text-lg font-bold text-white truncate" data-testid="welcome-greeting">
               {greet} {name}
             </p>
-            <p className="text-xs text-white/60">{cfg.subtitle}</p>
+            <p className="text-xs text-white/60">{t(`welcome.${space}.subtitle`)}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {cfg.actions.map((a, i) => (
+          {cfg.map((a, i) => (
             <Link
               key={a.href}
               to={a.href}
@@ -99,7 +80,7 @@ export const WelcomeBanner = ({ space, className = '' }) => {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/[0.06] border border-white/15 text-white/85 hover:bg-[#D9B35A]/20 hover:border-[#D9B35A]/40 hover:text-white transition-colors"
             >
               <a.icon className="w-3.5 h-3.5 text-[#D9B35A]" />
-              {a.label}
+              {t(`welcome.${space}.a${i}`)}
               <ArrowRight className="w-3 h-3 opacity-50" />
             </Link>
           ))}

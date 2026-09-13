@@ -154,5 +154,51 @@
     "ajoute_le": "Ajouté lè",
     "count_one": "{{count}} pwodui adan sé favori a-w",
     "count_other": "{{count}} pwodui adan sé favori a-w"
+  },
+  "welcome": {
+    "morning": "Bonjou",
+    "evening": "Bonswè",
+    "buyer": {
+      "subtitle": "3 aksyon priyorité'w pou achté a pri adhéran.",
+      "a0": "Gadé katalog la",
+      "a1": "Swiv kòmand mwen",
+      "a2": "Rechajé krédi mwen"
+    },
+    "vendor": {
+      "subtitle": "3 aksyon priyorité'w pou vann san pwoblèm.",
+      "a0": "Jéré pwodui mwen",
+      "a1": "Kòmand rèsivwa",
+      "a2": "Fakti mwen"
+    },
+    "pass": {
+      "subtitle": "3 aksyon priyorité'w èvè PASS LOLODRIVE aw.",
+      "a0": "Kòmandé o roulè",
+      "a1": "Swiv kòmand mwen",
+      "a2": "Espas PASS mwen"
+    },
+    "pos": {
+      "subtitle": "3 aksyon priyorité'w an kès jòdi-a.",
+      "a0": "Kès & rétiraj",
+      "a1": "Kòmand pwen-an",
+      "a2": "Katalog LOLODRIVE"
+    },
+    "gerant": {
+      "subtitle": "3 aksyon priyorité'w pou jéré roulè aw.",
+      "a0": "Tablòdbo roulè",
+      "a1": "Kès POS",
+      "a2": "Réaso B2B"
+    },
+    "cooper": {
+      "subtitle": "3 aksyon priyorité'w pou sèrvis kowopérativ la.",
+      "a0": "Adhésyon & validasyon",
+      "a1": "Katalog B2B",
+      "a2": "Kòmand & transpò"
+    },
+    "investor": {
+      "subtitle": "3 aksyon priyorité'w pou swiv opérasyon'w.",
+      "a0": "Opérasyon mwen",
+      "a1": "Òf O'SCOP",
+      "a2": "Dokiman mwen"
+    }
   }
 }

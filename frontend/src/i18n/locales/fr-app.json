@@ -439,5 +439,51 @@
     "legalForm": "Statut juridique *",
     "firstName": "Prénom du contact *",
     "lastName": "Nom du contact *"
+  },
+  "welcome": {
+    "morning": "Bonjour",
+    "evening": "Bonsoir",
+    "buyer": {
+      "subtitle": "Vos 3 actions prioritaires pour vos achats au tarif adhérent.",
+      "a0": "Parcourir le catalogue",
+      "a1": "Suivre mes commandes",
+      "a2": "Recharger mes crédits"
+    },
+    "vendor": {
+      "subtitle": "Vos 3 actions prioritaires pour vendre sereinement.",
+      "a0": "Gérer mes produits",
+      "a1": "Commandes reçues",
+      "a2": "Mes factures"
+    },
+    "pass": {
+      "subtitle": "Vos 3 actions prioritaires avec votre PASS LOLODRIVE.",
+      "a0": "Commander au relais",
+      "a1": "Suivre mes commandes",
+      "a2": "Mon espace PASS"
+    },
+    "pos": {
+      "subtitle": "Vos 3 actions prioritaires en caisse aujourd'hui.",
+      "a0": "Caisse & retraits",
+      "a1": "Commandes du point",
+      "a2": "Catalogue LOLODRIVE"
+    },
+    "gerant": {
+      "subtitle": "Vos 3 actions prioritaires pour piloter votre relais.",
+      "a0": "Tableau de bord relais",
+      "a1": "Caisse POS",
+      "a2": "Réassort B2B"
+    },
+    "cooper": {
+      "subtitle": "Vos 3 actions prioritaires au service de la coopérative.",
+      "a0": "Adhésions & validations",
+      "a1": "Catalogue B2B",
+      "a2": "Commandes & transport"
+    },
+    "investor": {
+      "subtitle": "Vos 3 actions prioritaires pour suivre vos opérations.",
+      "a0": "Mes opérations",
+      "a1": "Offres O'SCOP",
+      "a2": "Mes documents"
+    }
   }
 }

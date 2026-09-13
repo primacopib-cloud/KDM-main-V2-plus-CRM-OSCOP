@@ -439,5 +439,51 @@
     "legalForm": "Legal status *",
     "firstName": "Contact first name *",
     "lastName": "Contact last name *"
+  },
+  "welcome": {
+    "morning": "Hello",
+    "evening": "Good evening",
+    "buyer": {
+      "subtitle": "Your 3 priority actions for member-rate purchases.",
+      "a0": "Browse the catalogue",
+      "a1": "Track my orders",
+      "a2": "Top up my credits"
+    },
+    "vendor": {
+      "subtitle": "Your 3 priority actions to sell with peace of mind.",
+      "a0": "Manage my products",
+      "a1": "Orders received",
+      "a2": "My invoices"
+    },
+    "pass": {
+      "subtitle": "Your 3 priority actions with your LOLODRIVE PASS.",
+      "a0": "Order at the relay",
+      "a1": "Track my orders",
+      "a2": "My PASS space"
+    },
+    "pos": {
+      "subtitle": "Your 3 priority actions at the till today.",
+      "a0": "Till & pickups",
+      "a1": "Point orders",
+      "a2": "LOLODRIVE catalogue"
+    },
+    "gerant": {
+      "subtitle": "Your 3 priority actions to run your relay point.",
+      "a0": "Relay dashboard",
+      "a1": "POS till",
+      "a2": "B2B restocking"
+    },
+    "cooper": {
+      "subtitle": "Your 3 priority actions serving the cooperative.",
+      "a0": "Memberships & approvals",
+      "a1": "B2B catalogue",
+      "a2": "Orders & transport"
+    },
+    "investor": {
+      "subtitle": "Your 3 priority actions to track your operations.",
+      "a0": "My operations",
+      "a1": "O'SCOP offers",
+      "a2": "My documents"
+    }
   }
 }
