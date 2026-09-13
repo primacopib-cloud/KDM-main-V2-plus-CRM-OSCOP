@@ -80,6 +80,68 @@ async def notify_admin_fulfillment(auction: dict, fulfillment: dict):
         logger.warning("Email équipe remise lot %s : %s", auction.get("id"), exc)
 
 
+async def notify_new_live_auction(a: dict) -> int:
+    """Cloche + email aux Coop'acteurs actifs quand un lot entre en salle (idempotent via flag)."""
+    if ah.db is None:
+        return 0
+    res = await ah.db.auctions.update_one(
+        {"id": a["id"], "live_alert_sent": {"$ne": True}},
+        {"$set": {"live_alert_sent": True}})
+    if res.modified_count == 0:
+        return 0
+    now_iso = ah.now_utc().isoformat()
+    price = round(float(a.get("current_price_eur") or a.get("value_eur") or 0), 2)
+    holders = await ah.db.auction_accounts.find(
+        {"valid_until": {"$gt": now_iso}}, {"_id": 0, "user_id": 1}).to_list(500)
+    sent = 0
+    import os
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    room = f"{base}/encheres" if base else "/encheres"
+    for h in holders:
+        user = await ah.db.users.find_one(
+            {"id": h["user_id"]}, {"_id": 0, "email": 1, "contact_name": 1, "first_name": 1})
+        if not user:
+            continue
+        try:
+            from core_deps import create_notification
+            await create_notification(
+                "auction_new_live", f"🆕 Nouveau lot en salle — {a.get('title')}",
+                f"Le COOP'ACT {a.get('reference')} vient de démarrer à {price:.2f} € "
+                f"({ah.eur_to_credits(price)} crédits) — chaque Coop'Act fait baisser le prix !",
+                target_user_id=h["user_id"],
+                data={"auction_id": a["id"], "action_url": "/encheres"})
+        except Exception as exc:
+            logger.warning("Cloche nouveau lot %s : %s", h["user_id"], exc)
+        if user.get("email"):
+            try:
+                from brevo_service import send_email, _wrap_html
+                name = user.get("first_name") or user.get("contact_name") or ""
+                subject = f"🆕 Nouveau COOP'ACT en salle — {a.get('title')}"
+                body = (
+                    f"<p style='font-size:14px;'>Bonjour{f' {name}' if name else ''},</p>"
+                    f"<p style='font-size:14px;'>Un nouveau lot vient d'entrer en salle : "
+                    f"<b>{a.get('reference')}</b> — <b>{a.get('title')}</b>, prix de départ "
+                    f"<b>{price:.2f} €</b> ({ah.eur_to_credits(price)} crédits).</p>"
+                    f"<p style='font-size:14px;'>Chaque Coop'Act fait baisser le prix — le premier "
+                    "qui accepte remporte le lot !</p>"
+                    f"<p style='font-size:14px;'><a href='{room}' "
+                    "style='background:#D9B35A;color:#2A1045;padding:10px 18px;border-radius:8px;"
+                    "text-decoration:none;font-weight:bold;'>Coop'acter maintenant</a></p>"
+                    "<p style='font-size:12px;color:#B8A98F;'><b>BOURSE COOPÉRATIVE — COOP'ACT</b>, "
+                    "agir ensemble pour la juste valeur.</p>")
+                await send_email(to_email=user["email"], to_name=name or None, subject=subject,
+                                 html_content=_wrap_html(subject, body),
+                                 text_content=f"Nouveau COOP'ACT en salle : {a.get('title')} — "
+                                              f"prix de départ {price:.2f} €. {room}",
+                                 tags=["auction-new-live"])
+                sent += 1
+            except Exception as exc:
+                logger.warning("Email nouveau lot %s : %s", user.get("email"), exc)
+    if sent:
+        logger.info("Alertes nouveau lot %s envoyées : %s", a.get("reference"), sent)
+    return sent
+
+
 async def run_auction_ending_alerts(database=None):
     """Alerte « fin imminente » : email + cloche aux détenteurs de plan actif quand une enchère LIVE finit dans <1h."""
     if database is not None and ah.db is None:

@@ -69,6 +69,12 @@ async def sync_auction_statuses():
         if eff != a["status"]:
             await db.auctions.update_one({"id": a["id"], "status": a["status"]},
                                          {"$set": {"status": eff, "updated_at": at.isoformat()}})
+            if eff == "LIVE":
+                try:
+                    from auction_emails import notify_new_live_auction
+                    await notify_new_live_auction(a)
+                except Exception as exc:
+                    logger.warning("Alerte nouveau COOP'ACT %s : %s", a.get("reference"), exc)
             a["status"] = eff
     async for a in db.auctions.find(
             {"status": {"$in": ["WON", "EXPIRED"]},
@@ -82,7 +88,8 @@ async def sync_auction_statuses():
             new_starts, new_ends = _shift(new_starts, a["recurrence"]), _shift(new_ends, a["recurrence"])
         clone = {k: v for k, v in a.items() if k not in (
             "id", "reference", "status", "winner", "fulfillment", "bids_count",
-            "current_price_eur", "recurrence_spawned", "created_at", "updated_at")}
+            "current_price_eur", "recurrence_spawned", "created_at", "updated_at",
+            "live_alert_sent", "ending_alert_sent", "ending_alert_at")}
         clone.update({
             "id": str(uuid.uuid4()),
             "reference": f"AUC-{at.strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}",
