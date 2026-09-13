@@ -149,6 +149,7 @@ async def login(credentials: UserLogin, response: Response):
             is_admin=user.get("is_admin", False),
             is_investor=user.get("is_investor", False),
             role=user.get("role"),
+            first_name=user.get("first_name"),
             must_change_password=user.get("must_change_password", False),
             created_at=user["created_at"]
         )
@@ -177,6 +178,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         is_admin=current_user.get("is_admin", False),
         is_investor=current_user.get("is_investor", False),
         role=current_user.get("role"),
+        first_name=current_user.get("first_name"),
         must_change_password=current_user.get("must_change_password", False),
         created_at=current_user["created_at"]
     )

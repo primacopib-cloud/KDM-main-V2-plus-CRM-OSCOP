@@ -14,6 +14,21 @@ class LanguageBody(BaseModel):
     language: str
 
 
+class FirstNameBody(BaseModel):
+    first_name: str
+
+
+@profile_prefs_router.post("/first-name")
+async def set_first_name(body: FirstNameBody, current_user: dict = Depends(get_current_user)):
+    """Prénom d'affichage du membre (salutation personnalisée)."""
+    name = " ".join(body.first_name.split())
+    if not name or len(name) > 40:
+        raise HTTPException(status_code=422, detail="Prénom requis (40 caractères max)")
+    await get_database().users.update_one(
+        {"id": current_user["id"]}, {"$set": {"first_name": name}})
+    return {"ok": True, "first_name": name}
+
+
 @profile_prefs_router.get("/language")
 async def get_language(current_user: dict = Depends(get_current_user)):
     return {"language": current_user.get("preferred_language")}

@@ -45,6 +45,7 @@ class UserResponse(UserBase):
     is_admin: bool = False
     is_investor: bool = False
     role: Optional[str] = None
+    first_name: Optional[str] = None
     must_change_password: bool = False
     from_quote_id: Optional[str] = None
     from_quote_date: Optional[str] = None

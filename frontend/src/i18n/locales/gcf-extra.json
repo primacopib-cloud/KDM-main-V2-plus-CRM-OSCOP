@@ -199,6 +199,10 @@
       "a0": "Opérasyon mwen",
       "a1": "Òf O'SCOP",
       "a2": "Dokiman mwen"
-    }
+    },
+    "name_placeholder": "Ti non'w",
+    "name_save": "OK",
+    "name_edit": "Mété ti non mwen",
+    "name_saved": "Ti non'w anrèjistré"
   }
 }

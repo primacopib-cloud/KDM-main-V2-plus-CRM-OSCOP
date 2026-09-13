@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import {
   Sparkles, ArrowRight, ShoppingCart, Package, Wallet, FileText,
-  CreditCard, LayoutDashboard, Store, ClipboardList, Users,
+  CreditCard, LayoutDashboard, Store, ClipboardList, Users, Pencil, Loader2,
 } from 'lucide-react';
 import { authAPI } from '../services/api';
+import { API, getAuthHeaders } from '../services/http';
 
 // Message de bienvenue + 3 actions prioritaires par espace de rôle (textes : i18n clés welcome.*)
 const SPACE_CONFIG = {
@@ -48,11 +51,38 @@ const SPACE_CONFIG = {
 export const WelcomeBanner = ({ space, className = '' }) => {
   const { t } = useTranslation();
   const cfg = SPACE_CONFIG[space];
+  const [savedName, setSavedName] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [busy, setBusy] = useState(false);
   if (!cfg) return null;
   const user = authAPI.getCurrentUser();
-  const name = user?.first_name || user?.company_name || (user?.email || '').split('@')[0] || 'membre';
+  const name = savedName || user?.first_name || user?.company_name || (user?.email || '').split('@')[0] || 'membre';
   const hour = new Date().getHours();
   const greet = t(hour >= 18 || hour < 5 ? 'welcome.evening' : 'welcome.morning', 'Bonjour');
+
+  const saveName = async () => {
+    const firstName = draft.trim().split(/\s+/).join(' ');
+    if (!firstName) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`${API}/profile/first-name`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ first_name: firstName }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Erreur');
+      localStorage.setItem('user', JSON.stringify({ ...(user || {}), first_name: d.first_name }));
+      setSavedName(d.first_name);
+      setEditing(false);
+      toast.success(t('welcome.name_saved'));
+    } catch (e) {
+      toast.error(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <div
       className={`rounded-[16px] border border-[#D9B35A]/30 p-4 sm:p-5 ${className}`}
@@ -65,9 +95,33 @@ export const WelcomeBanner = ({ space, className = '' }) => {
             <Sparkles className="w-5 h-5 text-[#D9B35A]" />
           </span>
           <div className="min-w-0">
-            <p className="text-base sm:text-lg font-bold text-white truncate" data-testid="welcome-greeting">
-              {greet} {name}
-            </p>
+            {editing ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  autoFocus
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditing(false); }}
+                  placeholder={t('welcome.name_placeholder')}
+                  maxLength={40}
+                  data-testid="welcome-name-input"
+                  className="h-8 px-2.5 rounded-lg bg-white/[0.08] border border-[#D9B35A]/40 text-sm text-white placeholder:text-white/35 w-44"
+                />
+                <button type="button" onClick={saveName} disabled={busy} data-testid="welcome-name-save"
+                  className="h-8 px-3 rounded-lg text-xs font-bold text-[#2A1045] bg-[#D9B35A] hover:bg-[#F2D07A] transition-colors disabled:opacity-50">
+                  {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t('welcome.name_save')}
+                </button>
+              </div>
+            ) : (
+              <p className="text-base sm:text-lg font-bold text-white truncate" data-testid="welcome-greeting">
+                {greet} {name}
+                <button type="button" onClick={() => { setDraft(user?.first_name || ''); setEditing(true); }}
+                  title={t('welcome.name_edit')} data-testid="welcome-name-edit"
+                  className="inline-flex ml-2 p-1 rounded-md text-white/35 hover:text-[#D9B35A] hover:bg-white/[0.06] align-middle transition-colors">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </p>
+            )}
             <p className="text-xs text-white/60">{t(`welcome.${space}.subtitle`)}</p>
           </div>
         </div>

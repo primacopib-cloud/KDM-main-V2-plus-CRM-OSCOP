@@ -484,6 +484,10 @@
       "a0": "Mis operaciones",
       "a1": "Ofertas O'SCOP",
       "a2": "Mis documentos"
-    }
+    },
+    "name_placeholder": "Su nombre",
+    "name_save": "OK",
+    "name_edit": "Definir mi nombre",
+    "name_saved": "Nombre guardado"
   }
 }

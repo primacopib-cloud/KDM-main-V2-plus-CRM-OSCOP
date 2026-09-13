@@ -3351,3 +3351,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-09-13 — Lot 32 : bannière de bienvenue multilingue (fr/en/es/gcf)
 - WelcomeBanner internationalisée : clés welcome.{morning,evening} + welcome.{buyer,vendor,pass,pos,gerant,cooper,investor}.{subtitle,a0,a1,a2} ajoutées dans fr-app.json, en-app.json, es-app.json, gcf-extra.json ; composant passé à useTranslation (re-render au changement de langue) ; SPACE_CONFIG ne garde que href+icône.
 - Testé E2E (acheteur-pro, ?lang=) : fr « Bonsoir Restaurant La Caravelle — Parcourir le catalogue… », en « Good evening… Browse the catalogue / Top up my credits », es « Buenas tardes… Explorar el catálogo / Recargar mis créditos », gcf « Bonswè… Gadé katalog la / Swiv kòmand mwen / Rechajé krédi mwen » — page entière créole cohérente (screenshot).
+
+## 2026-09-13 — Lot 33 : champ prénom membre (salutation « Bonjou Marie »)
+- Backend : UserResponse.first_name (optionnel) exposé au login et /auth/me ; POST /api/profile/first-name {first_name} (trim, 40 car. max) met à jour users.first_name (routes_profile_prefs.py).
+- Frontend : WelcomeBanner — crayon (welcome-name-edit) à côté de la salutation → champ inline (welcome-name-input, Entrée/Échap) + bouton OK (welcome-name-save) ; sauvegarde → localStorage user mis à jour + toast traduit ; la salutation utilise first_name en priorité sur company_name. Clés i18n welcome.name_placeholder/name_save/name_edit/name_saved dans les 4 langues.
+- Données démo : marie@example.com (compte personnel) dotée de first_name « Marie » — salutation « Bonsoir Marie » / « Bonjou Marie » en créole.
+- Testé E2E : login marie → « Bonsoir Marie » ; édition → « Bonsoir Marie-Lise » ; persistance après reload ; donnée restaurée à « Marie ».

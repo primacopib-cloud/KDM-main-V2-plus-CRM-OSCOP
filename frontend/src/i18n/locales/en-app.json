@@ -484,6 +484,10 @@
       "a0": "My operations",
       "a1": "O'SCOP offers",
       "a2": "My documents"
-    }
+    },
+    "name_placeholder": "Your first name",
+    "name_save": "OK",
+    "name_edit": "Set my first name",
+    "name_saved": "First name saved"
   }
 }
