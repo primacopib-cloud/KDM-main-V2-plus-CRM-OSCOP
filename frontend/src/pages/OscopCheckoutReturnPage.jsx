@@ -37,7 +37,7 @@ export default function OscopCheckoutReturnPage() {
           <div className="glass-panel-soft rounded-[22px] p-8">
             <span className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white overflow-hidden mx-auto mb-3">
               <img src="/logos/oscop.webp" alt="O'SCOP — Objectif SCOP Outremer"
-                className="w-12 h-12 object-contain" data-testid="oscop-return-logo" />
+                className="no-logo-chip w-12 h-12 object-contain" data-testid="oscop-return-logo" />
             </span>
             <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
             <h1 className="text-2xl font-bold mb-2">Paiement confirmé</h1>

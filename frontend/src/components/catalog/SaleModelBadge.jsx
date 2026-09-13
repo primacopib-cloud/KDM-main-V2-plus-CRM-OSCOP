@@ -46,7 +46,7 @@ export const SaleModelBadge = ({ product }) => {
         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[9px] font-semibold tracking-wide ${info.cls}`}
       >
         <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white overflow-hidden shrink-0">
-          <img src={info.logo} alt={info.logoAlt} className="w-3 h-3 object-contain"
+          <img src={info.logo} alt={info.logoAlt} className="no-logo-chip w-3 h-3 object-contain"
             data-testid={`sale-model-logo-${product?.sku || product?.id}`} />
         </span>
         {sellerName ? `VENDU ET FACTURÉ PAR ${sellerName.toUpperCase()}` : info.badge}

@@ -445,7 +445,7 @@ input:focus, select:focus, textarea:focus {
 .hover\:bg-gray-50:hover, .hover\:bg-slate-50:hover, .hover\:bg-gray-100:hover { background-color: rgba(255,255,255,0.10) !important; }
 
 /* Pastille ivoire derrière les logos pour lisibilité sur violet */
-img[src*="kdmarche-pro"], img[src*="oscop"] {
+img[src*="kdmarche-pro"]:not(.no-logo-chip), img[src*="oscop"]:not(.no-logo-chip):not([src*="stamp"]) {
   background: #FBF6EE;
   border-radius: 12px;
   padding: 4px 8px;

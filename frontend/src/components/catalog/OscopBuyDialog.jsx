@@ -55,7 +55,7 @@ export const OscopBuyDialog = ({ product, onClose }) => {
           <DialogTitle className="flex items-center gap-2">
             <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white overflow-hidden shrink-0">
               <img src="/logos/oscop.webp" alt="O'SCOP — Objectif SCOP Outremer"
-                className="w-7 h-7 object-contain" data-testid="oscop-buy-logo" />
+                className="no-logo-chip w-7 h-7 object-contain" data-testid="oscop-buy-logo" />
             </span>
             Achat direct O'SCOP
           </DialogTitle>

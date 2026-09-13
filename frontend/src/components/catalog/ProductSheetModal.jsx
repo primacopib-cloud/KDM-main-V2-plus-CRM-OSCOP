@@ -87,7 +87,7 @@ export const ProductSheetModal = ({ product, onClose, onAddToCart, cartLoading }
                 <img
                   src={product.sale_model === 'OSCOP_DIRECT_RESALE' ? '/logos/oscop.webp' : '/logos/kdmarche-pro-gold.webp'}
                   alt={product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP — Objectif SCOP Outremer" : 'KDMARCHÉ Pro'}
-                  className="w-5 h-5 object-contain"
+                  className="no-logo-chip w-5 h-5 object-contain"
                   data-testid="product-sheet-seller-logo" />
               </span>
               <span>

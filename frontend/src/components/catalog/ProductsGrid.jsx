@@ -266,7 +266,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
                     <img
                       src={product.sale_model === 'OSCOP_DIRECT_RESALE' ? '/logos/oscop.webp' : '/logos/kdmarche-pro-gold.webp'}
                       alt={product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP — Objectif SCOP Outremer" : 'KDMARCHÉ Pro'}
-                      className="w-4 h-4 object-contain"
+                      className="no-logo-chip w-4 h-4 object-contain"
                       data-testid={`seller-logo-${product.sku}`} />
                   </span>
                   <span>
