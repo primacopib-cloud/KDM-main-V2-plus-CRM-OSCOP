@@ -89,7 +89,7 @@ export const PreviewStep = ({ step, documentPreview, documentTitle, documentType
   </>
 );
 
-export const ConfirmStep = ({ step, signerInfo, loading, handleDecline, handleConfirmSignature }) => (
+export const ConfirmStep = ({ step, signerInfo, loading, handleDecline, handleConfirmSignature, stampSrc = '/kdmarche-stamp.svg' }) => (
   <>
           {step === 'confirm' && (
             <div className="space-y-6">
@@ -118,7 +118,7 @@ export const ConfirmStep = ({ step, signerInfo, loading, handleDecline, handleCo
                 <p className="text-xs text-gray-500 mb-2">Aperçu de la signature</p>
                 <div className="inline-flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
                   <img 
-                    src="/kdmarche-stamp.svg" 
+                    src={stampSrc} 
                     alt="Tampon" 
                     className="w-12 h-12 opacity-80"
                   />

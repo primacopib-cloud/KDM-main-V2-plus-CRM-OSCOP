@@ -461,6 +461,7 @@ const DynamicOrderForm = ({
           signatureData={signatureData}
           showStamp={showStamp}
           vars={vars}
+          saleModel={orderData.SALE_MODEL || orderData.sale_model}
         />
       </main>
 

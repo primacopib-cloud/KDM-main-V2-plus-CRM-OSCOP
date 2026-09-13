@@ -8,10 +8,35 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 GOLD = colors.HexColor("#B8860B")
 DARK = colors.HexColor("#1F2A3A")
+
+OSCOP_LOGO = "/app/frontend/public/logos/oscop.png"
+KDM_LOGO = "/app/frontend/public/logos/kdmarche-pro-gold.png"
+
+
+def _seller_block(product: dict, styles) -> list:
+    """Bloc marque vendeuse : logo + mention selon le circuit de vente."""
+    is_oscop = product.get("sale_model") == "OSCOP_DIRECT_RESALE"
+    logo_path = OSCOP_LOGO if is_oscop else KDM_LOGO
+    seller = ("O'SCOP — SCIC SAS OBJECTIF SCOP OUTREMER" if is_oscop
+              else (product.get("seller_name") or product.get("vendor_name") or "Partenaire vendeur référencé"))
+    if not os.path.exists(logo_path):
+        return [Paragraph(f"<b>Vendu et facturé par :</b> {seller}", styles["Normal"])]
+    text = Paragraph(f"<b>Vendu et facturé par :</b><br/>{seller}", styles["Normal"])
+    table = Table([[Image(logo_path, 16 * mm, 16 * mm, kind="proportional"), text]],
+                  colWidths=[22 * mm, 143 * mm])
+    table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("BOX", (0, 0), (-1, -1), 0.4, colors.HexColor("#E5DCC8")),
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FBF6EE")),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    return [table, Spacer(1, 4 * mm)]
 
 
 def _video_section(video_url: str, styles) -> list:
@@ -81,6 +106,7 @@ def generate_product_sheet_pdf(product: dict) -> bytes:
         Paragraph("FICHE PRODUIT", title),
         Paragraph("KDMARCHÉ × O'SCOP — Communityplace B2B ESS", sub),
         Spacer(1, 6 * mm),
+        *_seller_block(product, styles),
         Paragraph(f"<b>{product.get('name', 'Produit')}</b>", ParagraphStyle("n", parent=styles["Heading2"], textColor=DARK)),
         Paragraph(product.get("description", ""), normal),
         Spacer(1, 5 * mm),

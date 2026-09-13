@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
+import { recordVisit } from "./utils/backStack";
 
 // Pages
 import LandingPage from "./pages/LandingPage";
@@ -111,6 +112,7 @@ const ScrollToHash = () => {
   const location = useLocation();
   const prevPath = useRef(location.pathname);
   useEffect(() => {
+    recordVisit(location.pathname + location.search);
     if (!location.hash) {
       if (prevPath.current !== location.pathname) window.scrollTo(0, 0);
       prevPath.current = location.pathname;

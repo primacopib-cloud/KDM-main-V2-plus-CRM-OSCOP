@@ -9,8 +9,10 @@ import { replaceVariables } from '../../data/legalDocuments';
 
 export const TotalsAndSignatures = ({
   calculatedTotals, formatCurrency, productsSubtotalHT, productsTVA, zoneTvaRate,
-  isVatExonerated, signatureData, showStamp, vars,
-}) => (
+  isVatExonerated, signatureData, showStamp, vars, saleModel,
+}) => {
+  const isOscop = saleModel === 'OSCOP_DIRECT_RESALE';
+  return (
   <>
         {/* ===== TOTALS SECTION ===== */}
         <div className="grid md:grid-cols-2 gap-4">
@@ -84,7 +86,7 @@ export const TotalsAndSignatures = ({
             <div className="relative">
               <div className="p-4 rounded-xl bg-white border border-gray-200 min-h-[200px]">
                 <p className="text-xs font-semibold uppercase tracking-wider text-[#b07a1a] mb-3">
-                  Pour le Vendeur — KDMARCHE
+                  {isOscop ? "Pour le Vendeur — O'SCOP" : 'Pour le Vendeur — KDMARCHE'}
                 </p>
                 <p className="text-sm text-gray-700 mb-1">{replaceVariables(vars.KDM_REP_NAME, vars)}</p>
                 <p className="text-xs text-gray-500 mb-4">{replaceVariables(vars.KDM_REP_TITLE, vars)}</p>
@@ -105,11 +107,14 @@ export const TotalsAndSignatures = ({
                 {showStamp && (
                   <div className="absolute bottom-4 right-4 opacity-90">
                     <img 
-                      src="/kdmarche-stamp.svg" 
-                      alt="Tampon KDMARCHE PRO" 
+                      src={isOscop ? '/oscop-stamp.svg' : '/kdmarche-stamp.svg'} 
+                      alt={isOscop ? "Tampon O'SCOP" : 'Tampon KDMARCHE PRO'} 
+                      data-testid="totals-signature-stamp"
                       className="w-24 h-24 transform rotate-[-8deg]"
                       style={{
-                        filter: 'drop-shadow(2px 2px 4px rgba(198, 1, 1, 0.3))'
+                        filter: isOscop
+                          ? 'drop-shadow(2px 2px 4px rgba(69, 31, 107, 0.3))'
+                          : 'drop-shadow(2px 2px 4px rgba(198, 1, 1, 0.3))'
                       }}
                     />
                   </div>
@@ -153,4 +158,5 @@ export const TotalsAndSignatures = ({
         </div>
 
   </>
-);
+  );
+};

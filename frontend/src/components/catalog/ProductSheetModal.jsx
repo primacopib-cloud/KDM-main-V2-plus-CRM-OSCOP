@@ -82,6 +82,20 @@ export const ProductSheetModal = ({ product, onClose, onAddToCart, cartLoading }
               <p className="text-sm text-[#D9B35A]/90">Tarif réservé aux adhérents</p>
             )}
             <p className="text-xs text-white/50">Réf. {product.sku}{product.unit ? ` · ${product.unit}` : ''}</p>
+            <div className="flex items-center gap-1.5 text-[11px] text-white/60" data-testid="product-sheet-seller">
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white overflow-hidden shrink-0">
+                <img
+                  src={product.sale_model === 'OSCOP_DIRECT_RESALE' ? '/logos/oscop.webp' : '/logos/kdmarche-pro-gold.webp'}
+                  alt={product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP — Objectif SCOP Outremer" : 'KDMARCHÉ Pro'}
+                  className="w-5 h-5 object-contain"
+                  data-testid="product-sheet-seller-logo" />
+              </span>
+              <span>
+                Vendu et facturé par <b className="text-white/85">
+                  {product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP — SCIC SAS OBJECTIF SCOP OUTREMER" : (product.seller_name || 'le partenaire vendeur référencé')}
+                </b>
+              </span>
+            </div>
             {product.description && (
               <p className="text-sm text-white/75 leading-relaxed" data-testid="product-sheet-description">
                 {tData(product.description) || product.description}

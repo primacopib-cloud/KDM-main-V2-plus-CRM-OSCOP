@@ -22,6 +22,11 @@ const OrderFormPreview = ({
 }) => {
   // Merge order data with default variables
   const vars = { ...legalVariables, ...orderData };
+  // Tampon selon le circuit de vente : O'SCOP (achat-revente) ou KDMARCHE (partenaire directe)
+  const isOscop = (orderData.SALE_MODEL || orderData.sale_model) === 'OSCOP_DIRECT_RESALE';
+  const stampSrc = isOscop ? '/oscop-stamp.svg' : '/kdmarche-stamp.svg';
+  const stampAlt = isOscop ? "Tampon O'SCOP" : 'Tampon KDMARCHE PRO';
+  const vendorLabel = isOscop ? "Pour le Vendeur — O'SCOP" : 'Pour le Vendeur — KDMARCHE';
   
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat(i18n.language, { 
@@ -275,7 +280,7 @@ const OrderFormPreview = ({
             <div className="relative">
               <div className="p-4 rounded-xl bg-white border border-gray-200 min-h-[200px]">
                 <p className="text-xs font-semibold uppercase tracking-wider text-[#b07a1a] mb-3">
-                  Pour le Vendeur — KDMARCHE
+                  {vendorLabel}
                 </p>
                 <p className="text-sm text-gray-700 mb-1">{replaceVariables(vars.KDM_REP_NAME, vars)}</p>
                 <p className="text-xs text-gray-500 mb-4">{replaceVariables(vars.KDM_REP_TITLE, vars)}</p>
@@ -294,15 +299,18 @@ const OrderFormPreview = ({
                   <p className="text-xs text-gray-400">Signature et cachet :</p>
                 </div>
                 
-                {/* KDMARCHE STAMP - Positioned in signature area */}
+                {/* STAMP - Positioned in signature area */}
                 {showStamp && (
                   <div className="absolute bottom-4 right-4 opacity-90">
                     <img 
-                      src="/kdmarche-stamp.svg" 
-                      alt="Tampon KDMARCHE PRO" 
+                      src={stampSrc} 
+                      alt={stampAlt} 
+                      data-testid="order-form-stamp"
                       className="w-24 h-24 transform rotate-[-8deg]"
                       style={{
-                        filter: 'drop-shadow(2px 2px 4px rgba(198, 1, 1, 0.3))'
+                        filter: isOscop
+                          ? 'drop-shadow(2px 2px 4px rgba(69, 31, 107, 0.3))'
+                          : 'drop-shadow(2px 2px 4px rgba(198, 1, 1, 0.3))'
                       }}
                     />
                   </div>

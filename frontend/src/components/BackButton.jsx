@@ -7,9 +7,10 @@ import i18n from '@/i18n';
  * - Hidden when the user has no history to go back to (fresh tab).
  * - Sits below the top NavBar so it never overlaps content.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { popPrevious } from "../utils/backStack";
 
 const BACK_OFFICE_PATTERNS = [
   /^\/admin(\/|$)/,
@@ -35,26 +36,15 @@ function isBackOfficeRoute(pathname) {
 
 export default function BackButton() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const visible = useMemo(() => isBackOfficeRoute(pathname), [pathname]);
-
-  // Track whether the user has any "back" history we can use.
-  // window.history.length starts at 1 on a fresh tab; > 1 means there is history.
-  const [hasHistory, setHasHistory] = useState(false);
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setHasHistory(window.history.length > 1);
-    }
-  }, [pathname]);
 
   if (!visible) return null;
 
   const handleClick = () => {
-    if (hasHistory) {
-      navigate(-1);
-    } else {
-      navigate("/admin");
-    }
+    // Pile interne : évite de retomber sur une page externe (ex : Stripe)
+    const prev = popPrevious(pathname + search);
+    navigate(prev || "/admin");
   };
 
   return (

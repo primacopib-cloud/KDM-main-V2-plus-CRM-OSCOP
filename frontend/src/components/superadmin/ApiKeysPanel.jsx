@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { KeyRound, Plus, Trash2, Power, Copy, BookOpen, Webhook, Save, FlaskConical } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Power, Copy, BookOpen, Webhook, Save, FlaskConical, RefreshCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -105,6 +105,16 @@ export const ApiKeysPanel = () => {
     load();
   };
 
+  const regenerate = async (k) => {
+    if (!window.confirm(`Régénérer la clé « ${k.name} » ? L'ancienne clé cessera immédiatement de fonctionner — le partenaire devra mettre à jour son ERP.`)) return;
+    const r = await fetch(`${API}/admin/api-keys/${k.id}/regenerate`, { method: 'POST', credentials: 'include' });
+    const d = await r.json();
+    if (!r.ok) return toast.error(d.detail || 'Régénération impossible');
+    setNewKey(d.api_key);
+    toast.success(`Clé « ${k.name} » régénérée — copiez la nouvelle clé maintenant`);
+    load();
+  };
+
   const revoke = async (k) => {
     if (!window.confirm(`Révoquer définitivement la clé « ${k.name} » ? Le connecteur ERP associé cessera de fonctionner.`)) return;
     const r = await fetch(`${API}/admin/api-keys/${k.id}`, { method: 'DELETE', credentials: 'include' });
@@ -177,6 +187,10 @@ export const ApiKeysPanel = () => {
                 {k.partner_email && ` · ${k.partner_email}`}
               </p>
             </div>
+            <button onClick={() => regenerate(k)} title="Régénérer (rotation du secret)" data-testid={`api-key-regenerate-${k.id}`}
+              className="p-2 rounded-lg hover:bg-amber-500/15 text-[#D9B35A]">
+              <RefreshCcw size={14} />
+            </button>
             <button onClick={() => toggle(k)} title={k.is_active ? 'Désactiver' : 'Réactiver'} data-testid={`api-key-toggle-${k.id}`}
               className="p-2 rounded-lg hover:bg-white/10">
               <Power size={14} className={k.is_active ? 'text-emerald-400' : 'text-white/40'} />

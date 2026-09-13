@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="25mm" height="25mm" viewBox="0 0 250 250" version="1.1" id="oscop-stamp">
+  <defs>
+    <path id="oscopArcTop" d="M 39,125 A 86,86 0 0 1 211,125" fill="none" />
+    <path id="oscopArcBottom" d="M 47,125 A 78,78 0 0 0 203,125" fill="none" />
+  </defs>
+  <g transform="rotate(-12,125,125)" fill="#451F6B">
+    <circle cx="125" cy="125" r="108.5" fill="none" stroke="#451F6B" stroke-width="3" stroke-dasharray="2.5 1.25" />
+    <circle cx="125" cy="125" r="100" fill="none" stroke="#451F6B" stroke-width="2.5" />
+    <circle cx="125" cy="125" r="70" fill="none" stroke="#451F6B" stroke-width="1.5" />
+    <text font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" letter-spacing="1" fill="#451F6B">
+      <textPath xlink:href="#oscopArcTop" href="#oscopArcTop" startOffset="50%" text-anchor="middle">OBJECTIF SCOP OUTREMER</textPath>
+    </text>
+    <text font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" letter-spacing="2" fill="#451F6B">
+      <textPath xlink:href="#oscopArcBottom" href="#oscopArcBottom" startOffset="50%" text-anchor="middle">FRANCE — OUTRE-MER</textPath>
+    </text>
+    <text x="125" y="113" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="bold" fill="#451F6B">O'SCOP</text>
+    <text x="125" y="134" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#451F6B">SCIC SAS</text>
+    <text x="125" y="151" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#451F6B">SIREN 903 459 139</text>
+    <line x1="75" y1="120" x2="175" y2="120" stroke="#451F6B" stroke-width="1" />
+    <line x1="80" y1="139" x2="170" y2="139" stroke="#451F6B" stroke-width="1" />
+  </g>
+</svg>

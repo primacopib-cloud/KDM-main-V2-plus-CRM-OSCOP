@@ -1,14 +1,16 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import i18n from '@/i18n';
+import { popPrevious } from '../utils/backStack';
 
 export const HeaderBackButton = ({ fallback = '/', withLabel = true, className = '' }) => {
   const navigate = useNavigate();
   const location = useLocation();
   if (location.pathname === '/') return null;
   const goBack = () => {
-    if (window.history.length > 2) navigate(-1);
-    else navigate(fallback);
+    // Pile interne : évite de retomber sur une page externe (ex : Stripe) via history.back()
+    const prev = popPrevious(location.pathname + location.search);
+    navigate(prev || fallback);
   };
   return (
     <button

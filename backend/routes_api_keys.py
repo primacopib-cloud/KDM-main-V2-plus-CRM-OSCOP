@@ -108,6 +108,29 @@ async def test_webhook(key_id: str, admin: dict = Depends(require_admin)):
     return result
 
 
+@api_keys_router.post("/{key_id}/regenerate")
+async def regenerate_key(key_id: str, admin: dict = Depends(require_admin)):
+    """Rotation de clé : nouveau secret kdm_live_ + nouveau secret webhook, mêmes scopes/quota."""
+    key = await db.api_keys.find_one({"id": key_id})
+    if not key:
+        raise HTTPException(status_code=404, detail="Clé introuvable")
+    raw_key = f"kdm_live_{secrets.token_hex(24)}"
+    upd = {
+        "prefix": raw_key[:16] + "…",
+        "key_hash": hashlib.sha256(raw_key.encode()).hexdigest(),
+        "webhook_secret": f"whsec_{secrets.token_hex(16)}",
+        "regenerated_at": datetime.now(timezone.utc).isoformat(),
+        "regenerated_by": admin.get("email"),
+    }
+    await db.api_keys.update_one({"id": key_id}, {"$set": upd})
+    from consultation_audit import audit
+    await audit("API_KEY_REGENERATED", admin.get("email"), None,
+                {"name": key.get("name"), "old_prefix": key.get("prefix"), "new_prefix": upd["prefix"]})
+    logger.info("Clé API régénérée : %s par %s", key.get("name"), admin.get("email"))
+    return {"ok": True, "api_key": raw_key, "prefix": upd["prefix"],
+            "webhook_secret": upd["webhook_secret"], "name": key.get("name")}
+
+
 @api_keys_router.patch("/{key_id}")
 async def toggle_key(key_id: str, admin: dict = Depends(require_admin)):
     key = await db.api_keys.find_one({"id": key_id})
