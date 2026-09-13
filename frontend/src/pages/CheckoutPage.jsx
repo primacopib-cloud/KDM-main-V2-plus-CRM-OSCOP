@@ -14,6 +14,7 @@ import {
   Download, Loader2, Lock, AlertCircle
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { useCatalogPromos, bestPromos } from '../components/catalog/ProductPromoBadges';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
@@ -89,6 +90,33 @@ export default function CheckoutPage() {
   const [rarCtx, setRarCtx] = useState(null);
   const [cbOnly, setCbOnly] = useState(false);
   const [cbVendors, setCbVendors] = useState([]);
+  const promos = useCatalogPromos();
+  const [promoUrgency, setPromoUrgency] = useState(null);
+
+  // Urgence paiement : promo flash expirant dans <24 h applicable au panier
+  useEffect(() => {
+    if (!cart?.items?.length || !promos.length) { setPromoUrgency(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await catalogAPI.getProducts({ limit: 200 });
+        const bySku = {};
+        (Array.isArray(list) ? list : list?.products || []).forEach((p) => { bySku[p.sku] = p; });
+        let soonest = null;
+        cart.items.forEach((item) => {
+          const prod = bySku[item.product_sku] || { sku: item.product_sku };
+          const d = bestPromos(promos, prod).discount;
+          if (!d?.ends_at) return;
+          const ms = new Date(d.ends_at).getTime() - Date.now();
+          if (ms > 0 && ms < 86400000 && (!soonest || ms < soonest.leftMs)) {
+            soonest = { name: d.name, value_percent: d.value_percent, leftMs: ms };
+          }
+        });
+        if (!cancelled) setPromoUrgency(soonest);
+      } catch { /* silencieux */ }
+    })();
+    return () => { cancelled = true; };
+  }, [cart, promos]);
 
   useEffect(() => {
     if (!cart?.items?.length) return;
@@ -521,7 +549,7 @@ export default function CheckoutPage() {
             <DeliveryStep currentStep={currentStep} cart={cart} zones={zones} selectedZone={selectedZone} setSelectedZone={setSelectedZone} deliveryOption={deliveryOption} setDeliveryOption={setDeliveryOption} transportContractAccepted={transportContractAccepted} setTransportContractAccepted={setTransportContractAccepted} />
             <PreparationStep currentStep={currentStep} user={user} products={products} selectedZone={selectedZone} handleTotalsChange={handleTotalsChange} handlePreparationChange={handlePreparationChange} />
             <SignatureStep currentStep={currentStep} signatureComplete={signatureComplete} signatureData={signatureData} setSignatureModalOpen={setSignatureModalOpen} />
-            <PaymentStep currentStep={currentStep} totals={totals} useInstallment={useInstallment} setUseInstallment={setUseInstallment} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} orderNotes={orderNotes} setOrderNotes={setOrderNotes} signatureComplete={signatureComplete} processingPayment={processingPayment} handlePayment={handlePayment} codEligible={codEligible && !cbOnly} rarCtx={rarCtx} cbOnly={cbOnly} cbVendors={cbVendors} />
+            <PaymentStep currentStep={currentStep} totals={totals} useInstallment={useInstallment} setUseInstallment={setUseInstallment} paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} orderNotes={orderNotes} setOrderNotes={setOrderNotes} signatureComplete={signatureComplete} processingPayment={processingPayment} handlePayment={handlePayment} codEligible={codEligible && !cbOnly} rarCtx={rarCtx} cbOnly={cbOnly} cbVendors={cbVendors} promoUrgency={promoUrgency} />
           </div>
 
           <OrderSummarySidebar currentStep={currentStep} totals={totals} signatureComplete={signatureComplete} submitting={submitting} setCurrentStep={setCurrentStep} handleSubmitOrder={handleSubmitOrder} nextStep={nextStep} cart={cart} />
