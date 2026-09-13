@@ -1,37 +1,31 @@
 import { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { lolodriveAPI } from '../../services/api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { PickupCalendar } from './PickupCalendar';
 
-// Choix du créneau de retrait Drive / livraison avec CALENDRIER du relais (jours programmés par le gérant)
-export const CartSlotPicker = ({ fulfillment, cartItems, products, slotId, setSlotId, pickupDate, setPickupDate, relayDays, relayName }) => {
+// Créneau de retrait Drive / livraison : calendrier du relais + créneaux complets grisés + frais UC
+export const CartSlotPicker = ({ fulfillment, cartItems, products, slotId, setSlotId, pickupDate, setPickupDate, relayDays, relayName, relayCode }) => {
   const [cfg, setCfg] = useState(null);
+  const [avail, setAvail] = useState(null);
   useEffect(() => {
     lolodriveAPI.feesConfig().then(setCfg).catch(() => {});
   }, []);
 
   const kind = fulfillment === 'DELIVERY' ? 'delivery' : 'pickup';
   const slots = cfg?.[`${kind}_slots`] || [];
-  const jsDay = (d) => (d.getDay() + 6) % 7; // 0=lundi … 6=dimanche
-  const allowed = relayDays && relayDays.length ? new Set(relayDays) : null;
-  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const dayInfo = (avail?.days || []).find((d) => d.date === pickupDate);
+  const slotFull = (sid) => Boolean(dayInfo?.slots?.[sid]?.full);
 
   useEffect(() => {
-    if (slots.length && !slots.some((s) => s.id === slotId)) setSlotId(slots[0].id);
-    // eslint-disable-next-line
-  }, [cfg, fulfillment]);
-
-  // Corrige la date si le jour choisi n'est pas un jour ouvert du relais
-  useEffect(() => {
-    if (!setPickupDate || !allowed || !pickupDate) return;
-    const d = new Date(`${pickupDate}T12:00:00`);
-    if (allowed.has(jsDay(d))) return;
-    for (let i = 0; i < 21; i += 1) {
-      const c = new Date(Date.now() + i * 86400000);
-      if (allowed.has(jsDay(c))) { setPickupDate(iso(c)); return; }
+    if (!slots.length) return;
+    const cur = slots.find((s) => s.id === slotId);
+    if (!cur || slotFull(slotId)) {
+      const free = slots.find((s) => !slotFull(s.id));
+      if (free) setSlotId(free.id);
     }
     // eslint-disable-next-line
-  }, [relayDays, pickupDate]);
+  }, [cfg, fulfillment, avail, pickupDate]);
 
   const feeFor = (sid) => cartItems.reduce((acc, { sku, qty }) => {
     const p = products.find((x) => x.sku === sku);
@@ -43,62 +37,28 @@ export const CartSlotPicker = ({ fulfillment, cartItems, products, slotId, setSl
   if (!cfg || slots.length === 0) return null;
   const fee = Math.round(feeFor(slotId) * 100) / 100;
 
-  const selSlot = slots.find((s) => s.id === slotId);
-  const nowIso = new Date().toISOString();
-  const todayIso = iso(new Date());
-  const todayOver = Boolean(selSlot?.end && nowIso.slice(11, 16) >= selSlot.end);
-  const cells = Array.from({ length: 21 }, (_, i) => new Date(Date.now() + i * 86400000));
-
   return (
     <div data-testid="slot-picker">
       <label className="text-xs text-white/60 flex items-center gap-1">
         <Clock className="w-3 h-3" /> {fulfillment === 'DELIVERY' ? 'Créneau de livraison' : 'Créneau de retrait'}
-        {allowed && relayName && <span className="text-[#D9B35A]/80">· calendrier {relayName}</span>}
+        {relayName && <span className="text-[#D9B35A]/80">· calendrier {relayName}</span>}
       </label>
       {setPickupDate && (
-        <div className="mt-1.5 mb-1 rounded-xl border border-white/10 bg-white/[0.02] p-2" data-testid="pickup-day-calendar">
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'].map((d) => (
-              <span key={d} className="text-center text-[9px] font-bold text-white/35">{d}</span>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {cells.map((d) => {
-              const id = iso(d);
-              const closed = allowed ? !allowed.has(jsDay(d)) : false;
-              const disabled = closed || (id === todayIso && todayOver);
-              const selected = pickupDate === id;
-              return (
-                <button key={id} type="button" disabled={disabled}
-                  data-testid={`pickup-day-${id}`} data-closed={closed || undefined}
-                  onClick={() => setPickupDate(id)}
-                  title={closed ? 'Jour non programmé par le relais' : d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                  className={`h-8 rounded-lg text-[11px] font-bold border transition-colors disabled:opacity-25 disabled:cursor-not-allowed ${
-                    selected ? 'text-[#2A1045] on-gold border-[#D9B35A]' : 'text-white/60 bg-white/[0.03] border-white/10 hover:border-[#D9B35A]/40'}`}
-                  style={selected ? { background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' } : undefined}>
-                  {d.getDate()}
-                  {id === todayIso && <span className="block text-[7px] font-normal leading-none">auj.</span>}
-                </button>
-              );
-            })}
-          </div>
-          {allowed && (
-            <p className="text-[10px] text-white/40 mt-1.5" data-testid="relay-days-hint">
-              Jours grisés = fermés par ce relais
-            </p>
-          )}
-        </div>
+        <PickupCalendar relayCode={relayCode} relayDays={relayDays} kind={kind}
+          pickupDate={pickupDate} setPickupDate={setPickupDate} slotId={slotId}
+          onAvailability={setAvail} />
       )}
-      <Select value={slotId || ''} onValueChange={setSlotId}>
-        <SelectTrigger className="bg-white/[0.04] border-white/10 mt-1" data-testid="slot-select">
+      <Select value={slotId} onValueChange={setSlotId}>
+        <SelectTrigger className="mt-1 h-9 bg-white/[0.04] border-white/15 text-white text-xs" data-testid="slot-select">
           <SelectValue placeholder="Choisir un créneau" />
         </SelectTrigger>
         <SelectContent>
           {slots.map((s) => {
             const f = Math.round(feeFor(s.id) * 100) / 100;
+            const full = slotFull(s.id);
             return (
-              <SelectItem key={s.id} value={s.id} data-testid={`slot-option-${s.id}`}>
-                {s.label}{f > 0 ? ` · +${f} UC` : ''}
+              <SelectItem key={s.id} value={s.id} disabled={full} data-testid={`slot-option-${s.id}`}>
+                {s.label}{f > 0 ? ` · +${f} UC` : ''}{full ? ' — COMPLET' : ''}
               </SelectItem>
             );
           })}

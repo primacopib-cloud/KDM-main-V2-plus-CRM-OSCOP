@@ -213,17 +213,34 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
     fees_cents += slot_fee_cents
     fees_uc = round(fees_uc + slot_fee_uc, 2)
 
-    # Jour de retrait choisi (aujourd'hui / demain)
+    # Jour de retrait choisi : fenêtre 21 jours, calendrier du relais, fermetures et capacité
     pickup_date = None
+    cal_point = point or ref_point
     if slot_id and request.pickup_date:
         try:
             chosen = datetime.strptime(request.pickup_date, "%Y-%m-%d").date()
         except ValueError:
             raise HTTPException(status_code=400, detail="Date de retrait invalide (attendu : YYYY-MM-DD)")
         today = datetime.utcnow().date()
-        if not (today <= chosen <= today + timedelta(days=1)):
-            raise HTTPException(status_code=400, detail="Le retrait doit être aujourd'hui ou demain")
+        if not (today <= chosen <= today + timedelta(days=20)):
+            raise HTTPException(status_code=400, detail="Le retrait doit être programmé dans les 21 prochains jours")
         pickup_date = chosen.strftime("%Y-%m-%d")
+        if cal_point:
+            week_days = cal_point.get("pickup_days" if is_drive else "delivery_days") or []
+            if week_days and chosen.weekday() not in week_days:
+                raise HTTPException(status_code=400,
+                                    detail=f"Le relais {cal_point.get('name')} n'ouvre pas ce jour-là : choisissez un jour du calendrier")
+            if pickup_date in (cal_point.get("closed_dates") or []):
+                raise HTTPException(status_code=400,
+                                    detail=f"Le relais {cal_point.get('name')} est exceptionnellement fermé le {chosen.strftime('%d/%m/%Y')}")
+            capacity = int(cal_point.get("slot_capacity") or 0)
+            if capacity:
+                taken = await db.lolodrive_orders.count_documents({
+                    "lolo_point_id": cal_point.get("id"), "pickup_date": pickup_date,
+                    "pickup_slot_id": slot_id, "status": {"$nin": ["CANCELLED"]}})
+                if taken >= capacity:
+                    raise HTTPException(status_code=409,
+                                        detail="Ce créneau est complet pour cette date : choisissez un autre créneau ou un autre jour")
     elif slot_id:
         pickup_date = datetime.utcnow().strftime("%Y-%m-%d")
 

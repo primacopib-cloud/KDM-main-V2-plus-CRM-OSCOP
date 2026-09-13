@@ -1,35 +1,39 @@
 import { useState } from 'react';
-import { CalendarDays } from 'lucide-react';
+import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { SectionCard } from '../LolodriveLayout';
 
-const DAY_LABELS = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'];
+const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
-const DayChips = ({ values, onToggle, testPrefix }) => (
-  <div className="flex flex-wrap gap-1.5">
-    {DAY_LABELS.map((label, i) => {
-      const on = values.includes(i);
-      return (
-        <button key={i} type="button" onClick={() => onToggle(i)} data-testid={`${testPrefix}-day-${i}`}
-          className={`w-10 h-9 rounded-lg text-xs font-bold border transition-colors ${
-            on ? 'bg-[#D9B35A] text-[#2A1045] on-gold border-[#D9B35A]'
-               : 'bg-white/[0.04] text-white/55 border-white/15 hover:bg-white/10'}`}>
-          {label}
+const DayRow = ({ label, days, toggle, testPrefix }) => (
+  <div>
+    <p className="text-[11px] font-bold text-white/55 uppercase mb-1.5">{label}</p>
+    <div className="flex flex-wrap gap-1.5">
+      {DAYS.map((d, i) => (
+        <button key={d} type="button" onClick={() => toggle(i)} data-testid={`${testPrefix}-${i}`}
+          className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+            days.includes(i)
+              ? 'text-[#2A1045] on-gold border-[#D9B35A]'
+              : 'text-white/50 bg-white/[0.04] border-white/15 hover:border-[#D9B35A]/40'}`}
+          style={days.includes(i) ? { background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' } : undefined}>
+          {d.slice(0, 3)}
         </button>
-      );
-    })}
+      ))}
+    </div>
   </div>
 );
 
-// Programmation des jours de retrait et de livraison du relais (visible dans le calendrier du panier)
+// Le gérant programme jours de retrait/livraison, fermetures exceptionnelles et capacité par créneau
 export const RelayCalendarCard = ({ point, onSaved }) => {
-  const [pickup, setPickup] = useState(point?.pickup_days || []);
-  const [delivery, setDelivery] = useState(point?.delivery_days || []);
+  const [pickupDays, setPickupDays] = useState(point.pickup_days || []);
+  const [deliveryDays, setDeliveryDays] = useState(point.delivery_days || []);
+  const [closedDates, setClosedDates] = useState(point.closed_dates || []);
+  const [capacity, setCapacity] = useState(point.slot_capacity || 0);
+  const [newDate, setNewDate] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const toggle = (list, setList) => (d) =>
-    setList((v) => (v.includes(d) ? v.filter((x) => x !== d) : [...v, d].sort()));
+  const toggle = (list, set) => (i) => set(list.includes(i) ? list.filter((x) => x !== i) : [...list, i]);
 
   const save = async () => {
     setBusy(true);
@@ -37,38 +41,70 @@ export const RelayCalendarCard = ({ point, onSaved }) => {
       const res = await fetch(`${API}/lolodrive/manager/my-point/calendar`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        credentials: 'include',
-        body: JSON.stringify({ pickup_days: pickup, delivery_days: delivery }),
+        body: JSON.stringify({ pickup_days: pickupDays, delivery_days: deliveryDays,
+          closed_dates: closedDates, slot_capacity: Number(capacity) || 0 }),
       });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || `Erreur ${res.status}`);
-      toast.success('Calendrier du relais enregistré');
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Erreur');
+      toast.success(d.members_notified > 0
+        ? `Calendrier enregistré — ${d.members_notified} membre(s) prévenu(s) par email`
+        : 'Calendrier du relais enregistré');
       onSaved?.();
     } catch (e) {
-      toast.error(String(e.message || e));
+      toast.error(e.message);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <SectionCard title={<span className="flex items-center gap-2"><CalendarDays className="w-4 h-4 text-[#D9B35A]" /> Calendrier du relais</span>}
-      className="mb-6">
-      <p className="text-xs text-white/50 mb-4">
-        Programmez vos jours de retrait et de livraison : ils s'affichent dans le calendrier de créneau
-        que les membres voient au panier. <b>Aucun jour coché = tous les jours ouverts.</b>
+    <SectionCard title="Calendrier du relais" data-testid="relay-calendar-config">
+      <p className="text-[11px] text-white/45 mb-3" data-testid="relay-calendar-hint">
+        Programmez vos jours de retrait Drive et de livraison, vos fermetures exceptionnelles et la
+        capacité par créneau. Aucun jour coché = ouvert tous les jours. Les membres ne peuvent choisir
+        que vos jours ouverts.
       </p>
-      <div className="grid gap-4 sm:grid-cols-2" data-testid="relay-calendar-config">
+      <div className="space-y-4">
+        <DayRow label="Jours de retrait (Drive / relais)" days={pickupDays}
+          toggle={toggle(pickupDays, setPickupDays)} testPrefix="relay-pickup-day" />
+        <DayRow label="Jours de livraison" days={deliveryDays}
+          toggle={toggle(deliveryDays, setDeliveryDays)} testPrefix="relay-delivery-day" />
         <div>
-          <p className="text-xs font-bold text-[#E9CF8E] mb-2">Jours de retrait (Drive)</p>
-          <DayChips values={pickup} onToggle={toggle(pickup, setPickup)} testPrefix="relay-pickup" />
+          <p className="text-[11px] font-bold text-white/55 uppercase mb-1.5">Fermetures exceptionnelles (fériés, congés)</p>
+          <div className="flex items-center gap-2 mb-2">
+            <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)}
+              data-testid="relay-closed-date-input"
+              className="h-9 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs" />
+            <button type="button" data-testid="relay-closed-date-add"
+              onClick={() => { if (newDate && !closedDates.includes(newDate)) { setClosedDates([...closedDates, newDate].sort()); setNewDate(''); } }}
+              className="px-3 h-9 rounded-lg text-xs font-bold border border-[#D9B35A]/40 text-[#E9CF8E] hover:bg-[#D9B35A]/10">
+              Ajouter
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {closedDates.map((d) => (
+              <span key={d} data-testid={`relay-closed-date-${d}`}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold bg-red-500/15 text-red-200 border border-red-400/30">
+                {d.split('-').reverse().join('/')}
+                <button type="button" onClick={() => setClosedDates(closedDates.filter((x) => x !== d))}
+                  data-testid={`relay-closed-date-remove-${d}`}>
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            {closedDates.length === 0 && <span className="text-[11px] text-white/35">Aucune fermeture programmée</span>}
+          </div>
         </div>
         <div>
-          <p className="text-xs font-bold text-[#E9CF8E] mb-2">Jours de livraison</p>
-          <DayChips values={delivery} onToggle={toggle(delivery, setDelivery)} testPrefix="relay-delivery" />
+          <p className="text-[11px] font-bold text-white/55 uppercase mb-1.5">Capacité par créneau (commandes max / jour / créneau)</p>
+          <input type="number" min="0" value={capacity} onChange={(e) => setCapacity(e.target.value)}
+            data-testid="relay-slot-capacity"
+            className="h-9 w-28 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs" />
+          <span className="text-[11px] text-white/40 ml-2">0 = illimitée. Les créneaux complets sont grisés côté membre.</span>
         </div>
       </div>
       <button type="button" onClick={save} disabled={busy} data-testid="relay-calendar-save"
-        className="mt-4 px-4 py-2 rounded-lg text-xs font-bold text-[#2A1045] on-gold disabled:opacity-50 transition-transform hover:scale-[1.02]"
+        className="mt-4 px-4 h-9 rounded-lg text-xs font-bold text-[#2A1045] on-gold disabled:opacity-50"
         style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
         {busy ? 'Enregistrement…' : 'Enregistrer le calendrier'}
       </button>

@@ -53,24 +53,96 @@ async def manager_my_point(user: dict = Depends(get_current_user)):
 class RelayCalendarBody(BaseModel):
     pickup_days: List[int] = []    # 0=lundi … 6=dimanche ; vide = tous les jours
     delivery_days: List[int] = []
+    closed_dates: List[str] = []   # fermetures exceptionnelles YYYY-MM-DD
+    slot_capacity: int = 0         # commandes max par jour+créneau ; 0 = illimité
+
+
+def _date_closed(date_str: str, weekday: int, days: List[int], closed: List[str]) -> bool:
+    return (bool(days) and weekday not in days) or date_str in closed
 
 
 @lolodrive_manager_router.put("/manager/my-point/calendar")
 async def manager_update_calendar(body: RelayCalendarBody, user: dict = Depends(get_current_user)):
-    """Le gérant programme les jours de retrait et de livraison de son relais."""
+    """Le gérant programme jours de retrait/livraison, fermetures exceptionnelles et capacité par créneau."""
     for days in (body.pickup_days, body.delivery_days):
         if any(d < 0 or d > 6 for d in days):
             raise HTTPException(status_code=400, detail="Jours invalides (0=lundi à 6=dimanche)")
-    res = await db.lolodrive_points.update_one(
-        {"manager_user_id": user["id"]},
-        {"$set": {"pickup_days": sorted(set(body.pickup_days)),
-                  "delivery_days": sorted(set(body.delivery_days)),
-                  "updated_at": datetime.utcnow()}})
-    if not res.matched_count:
+    closed_dates = []
+    for d in body.closed_dates:
+        try:
+            closed_dates.append(datetime.strptime(d, "%Y-%m-%d").strftime("%Y-%m-%d"))
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Date de fermeture invalide : {d} (attendu YYYY-MM-DD)")
+    if body.slot_capacity < 0:
+        raise HTTPException(status_code=400, detail="La capacité doit être positive (0 = illimitée)")
+
+    before = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    if not before:
         raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    new_pickup, new_closed = sorted(set(body.pickup_days)), sorted(set(closed_dates))
+    await db.lolodrive_points.update_one(
+        {"manager_user_id": user["id"]},
+        {"$set": {"pickup_days": new_pickup,
+                  "delivery_days": sorted(set(body.delivery_days)),
+                  "closed_dates": new_closed,
+                  "slot_capacity": body.slot_capacity,
+                  "updated_at": datetime.utcnow()}})
+    notified = await _notify_calendar_change(before, new_pickup, new_closed)
     point = await db.lolodrive_points.find_one(
-        {"manager_user_id": user["id"]}, {"_id": 0, "pickup_days": 1, "delivery_days": 1})
-    return {"ok": True, **point}
+        {"manager_user_id": user["id"]},
+        {"_id": 0, "pickup_days": 1, "delivery_days": 1, "closed_dates": 1, "slot_capacity": 1})
+    return {"ok": True, "members_notified": notified, **point}
+
+
+async def _notify_calendar_change(point: dict, new_pickup_days: List[int], new_closed: List[str]) -> int:
+    """Email aux membres dont une commande en cours tombe sur un jour désormais fermé."""
+    old_days = point.get("pickup_days") or []
+    old_closed = point.get("closed_dates") or []
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    orders = await db.lolodrive_orders.find(
+        {"lolo_point_id": point.get("id"), "pickup_date": {"$gte": today},
+         "status": {"$nin": ["CANCELLED", "FULFILLED"]}},
+        {"_id": 0, "id": 1, "order_number": 1, "user_id": 1, "pickup_date": 1,
+         "pickup_slot_label": 1}).to_list(500)
+    sent = 0
+    for o in orders:
+        d = o.get("pickup_date")
+        try:
+            wd = datetime.strptime(d, "%Y-%m-%d").weekday()
+        except (ValueError, TypeError):
+            continue
+        was_closed = _date_closed(d, wd, old_days, old_closed)
+        now_closed = _date_closed(d, wd, new_pickup_days, new_closed)
+        if now_closed and not was_closed:
+            u = await db.users.find_one({"id": o["user_id"]},
+                                        {"_id": 0, "email": 1, "first_name": 1, "contact_name": 1})
+            if not u or not u.get("email"):
+                continue
+            try:
+                from brevo_service import send_email, _wrap_html
+                name = u.get("first_name") or u.get("contact_name") or ""
+                date_fr = "-".join(reversed(d.split("-")))
+                subject = f"⚠️ Votre relais {point.get('name')} ferme le {date_fr}"
+                body_html = (
+                    f"<p style='font-size:14px;'>Bonjour{f' {name}' if name else ''},</p>"
+                    f"<p style='font-size:14px;'>Le relais <b>{point.get('name')}</b> vient de modifier son calendrier : "
+                    f"il sera <b>fermé le {date_fr}</b>, jour prévu pour le retrait de votre commande "
+                    f"<b>{o.get('order_number')}</b>"
+                    + (f" ({o.get('pickup_slot_label')})" if o.get("pickup_slot_label") else "") + ".</p>"
+                    "<p style='font-size:14px;'>Merci de choisir une nouvelle date de retrait depuis votre espace, "
+                    "ou de contacter directement votre relais.</p>"
+                    "<p style='font-size:12px;color:#B8A98F;'>KDMARCHÉ × O'SCOP — LOLODRIVE</p>")
+                await send_email(to_email=u["email"], to_name=name or None, subject=subject,
+                                 html_content=_wrap_html(subject, body_html),
+                                 text_content=f"Le relais {point.get('name')} sera fermé le {date_fr}, jour de retrait "
+                                              f"de votre commande {o.get('order_number')}. Choisissez une nouvelle date.",
+                                 tags=["relay-calendar-change"])
+                sent += 1
+            except Exception as exc:
+                logger.warning("Email changement calendrier %s : %s", o.get("order_number"), exc)
+    if sent:
+        logger.info("Changement calendrier %s : %s membre(s) prévenu(s)", point.get("code"), sent)
+    return sent
 
 
 @lolodrive_manager_router.post("/manager/my-point/photo")

@@ -76,7 +76,47 @@ async def create_lolo_point(request: LoloPointCreate, admin: dict = Depends(requ
 ALLOWED_POINT_FIELDS = {"name", "address", "city", "contact_email", "contact_phone",
                         "opening_hours", "offers_drive", "offers_delivery", "delivery_conditions",
                         "photo_url", "manager_user_id", "siret", "vat_number",
-                        "pickup_days", "delivery_days"}
+                        "pickup_days", "delivery_days", "closed_dates", "slot_capacity"}
+
+
+@lolodrive_points_router.get("/lolo-points/{code}/availability")
+async def point_availability(code: str, kind: str = "pickup", days: int = 21):
+    """Disponibilité du relais sur N jours : jours ouverts + capacité restante par créneau."""
+    point = await db.lolodrive_points.find_one({"code": code}, {"_id": 0})
+    if not point:
+        raise HTTPException(status_code=404, detail="Relais introuvable")
+    from routes_lolodrive_taxonomy import get_fees_config_doc
+    cfg = await get_fees_config_doc()
+    slots = [s["id"] for s in cfg.get(f"{'pickup' if kind == 'pickup' else 'delivery'}_slots", [])]
+    week_days = point.get("pickup_days" if kind == "pickup" else "delivery_days") or []
+    closed = point.get("closed_dates") or []
+    capacity = int(point.get("slot_capacity") or 0)
+    days = max(1, min(days, 31))
+    today = datetime.utcnow().date()
+    out = []
+    counts = {}
+    if capacity:
+        horizon = (today + timedelta(days=days)).strftime("%Y-%m-%d")
+        async for row in db.lolodrive_orders.aggregate([
+            {"$match": {"lolo_point_id": point.get("id"),
+                        "pickup_date": {"$gte": today.strftime("%Y-%m-%d"), "$lte": horizon},
+                        "status": {"$nin": ["CANCELLED"]}}},
+            {"$group": {"_id": {"d": "$pickup_date", "s": "$pickup_slot_id"}, "n": {"$sum": 1}}},
+        ]):
+            counts[(row["_id"]["d"], row["_id"]["s"])] = row["n"]
+    for i in range(days):
+        d = today + timedelta(days=i)
+        ds = d.strftime("%Y-%m-%d")
+        is_open = not ((week_days and d.weekday() not in week_days) or ds in closed)
+        slot_info = {}
+        if capacity:
+            for sid in slots:
+                taken = counts.get((ds, sid), 0)
+                slot_info[sid] = {"taken": taken, "remaining": max(0, capacity - taken),
+                                  "full": taken >= capacity}
+        out.append({"date": ds, "open": is_open, "slots": slot_info,
+                    "full": bool(capacity and slot_info and all(v["full"] for v in slot_info.values()))})
+    return {"code": code, "kind": kind, "capacity": capacity, "days": out}
 
 
 @lolodrive_points_router.patch("/admin/lolo-points/{point_id}")

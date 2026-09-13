@@ -476,7 +476,7 @@ export default function LolodriveCatalogPage() {
                 <CartSlotPicker fulfillment={fulfillment} cartItems={cartItems} products={products}
                   slotId={pickupSlot} setSlotId={setPickupSlot}
                   pickupDate={pickupDate} setPickupDate={setPickupDate}
-                  relayDays={relayDays} relayName={relayName} />
+                  relayDays={relayDays} relayName={relayName} relayCode={relayForDays?.code} />
                 {fulfillment === 'LOLO_POINT' && (
                   <Select value={selectedPoint} onValueChange={setSelectedPoint}>
                     <SelectTrigger className="bg-white/[0.04] border-white/10" data-testid="lolo-point-select">
