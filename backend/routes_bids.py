@@ -159,10 +159,11 @@ async def _notify_outbid(c: dict, new_entry: dict, new_amount: int, prev_amount:
             subject=f"⚡ Votre offre a été battue — {c.get('ref')} {c.get('title', '')}",
             html_content=(f"<p>Bonjour,</p><p>Un concurrent vient de déposer une offre <b>plus basse que la vôtre</b> "
                           f"sur la consultation <b>{c.get('ref')}</b> (« {c.get('title')} »).</p>"
-                          f"<p>Vous pouvez répondre en déposant une nouvelle offre inférieure depuis votre espace vendeur, "
-                          f"onglet Enchères, <b>avant la clôture le {closes}</b> (dans la limite de {c.get('max_rounds', 3)} tours).</p>"
+                          f"<p>Vous pouvez répondre en améliorant votre Coop'Act (nouvelle offre inférieure) depuis votre espace vendeur, "
+                          f"onglet Bourse COOP'ACT, <b>avant la clôture le {closes}</b> (dans la limite de {c.get('max_rounds', 3)} tours).</p>"
                           f"<p><i>Les montants des concurrents restent anonymes : seul votre rang est communiqué.</i></p>"
-                          "<p>L'équipe CommunityPlace — O'SCOP × KDMARCHÉ</p>"),
+                          "<p><b>BOURSE COOPÉRATIVE — COOP'ACT</b>, agir ensemble pour la juste valeur.<br/>"
+                          "L'équipe CommunityPlace — O'SCOP × KDMARCHÉ</p>"),
             tags=["auction-outbid"])
 
 
@@ -283,7 +284,7 @@ async def submit_bid(cid: str, body: BidBody, user_id: str = Depends(get_current
         if rnd > c.get("max_rounds", 3):
             raise HTTPException(status_code=409, detail=f"Nombre maximal de tours atteint ({c.get('max_rounds', 3)})")
         if my_bids and body.amount_ht_cents >= my_bids[-1]["amount_ht_cents"]:
-            raise HTTPException(status_code=400, detail="Enchère inversée : votre nouvelle offre doit être inférieure à la précédente")
+            raise HTTPException(status_code=400, detail="COOP'ACT : votre nouvelle offre doit être inférieure à la précédente (améliorer mon Coop'Act)")
         from click_billing import charge_click
         await charge_click(db, user_id, f"Dépôt d'offre — consultation {c.get('ref', cid)} tour {rnd}")
         doc = {"id": str(uuid.uuid4()), "consultation_id": cid, "entry_id": entry["id"], "round": rnd,

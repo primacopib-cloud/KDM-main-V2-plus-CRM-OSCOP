@@ -35,11 +35,11 @@ export const CoopiaProcedureHint = ({ category, onApply }) => {
       {sug && (
         <div data-testid="coopia-hint-result">
           <p className="text-[11px] text-white/80">
-            <b className="text-[#E9CF8E]">{sug.procedure === 'ENCHERE_INVERSEE' ? 'Enchère inversée' : 'Offres scellées'}</b>
+            <b className="text-[#E9CF8E]">{sug.procedure === 'ENCHERE_INVERSEE' ? "COOP'ACT" : 'Offres scellées'}</b>
             <span className="text-white/45"> · risque {sug.risk_score}/100 ({sug.risk_level}) · {sug.eligible_vendors} fournisseur(s)</span>
           </p>
           <p className="text-[10.5px] text-white/55 mt-0.5">{sug.rationale}</p>
-          <button type="button" onClick={() => { onApply(sug.procedure); toast.success(`Procédure ${sug.procedure === 'ENCHERE_INVERSEE' ? 'Enchère inversée' : 'Offres scellées'} appliquée`); }}
+          <button type="button" onClick={() => { onApply(sug.procedure); toast.success(`Procédure ${sug.procedure === 'ENCHERE_INVERSEE' ? "COOP'ACT" : 'Offres scellées'} appliquée`); }}
             data-testid="coopia-hint-apply"
             className="mt-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>
             Appliquer cette procédure

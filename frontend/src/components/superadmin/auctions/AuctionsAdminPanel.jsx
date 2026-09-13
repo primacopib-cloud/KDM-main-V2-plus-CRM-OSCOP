@@ -34,7 +34,7 @@ export const AuctionsAdminPanel = () => {
       method: 'POST', headers: getAuthHeaders(), credentials: 'include' });
     const d = await res.json();
     if (!res.ok) { toast.error(d.detail || 'Erreur'); return; }
-    toast.success(`Enchère ${a.reference} annulée`);
+    toast.success(`COOP'ACT ${a.reference} annulé`);
     load();
   };
 
@@ -43,11 +43,12 @@ export const AuctionsAdminPanel = () => {
       <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
         <div>
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Gavel className="w-5 h-5 text-[#D9B35A]" /> Enchères produits à prix descendant
+            <Gavel className="w-5 h-5 text-[#D9B35A]" /> COOP'ACT produits — prix descendant
           </h3>
           <p className="text-white/60 text-xs mt-1">
-            Publiez des produits LOLODRIVE ou vendeurs, programmez dates et récurrence,
-            gérez plans CREDI'SCOP-Enchères, catégories et types. Salle membre : /encheres
+            BOURSE COOPÉRATIVE — COOP'ACT, agir ensemble pour la juste valeur. Publiez des produits LOLODRIVE
+            ou vendeurs, programmez dates et récurrence, gérez plans CREDI'SCOP-COOP'ACT, catégories et types.
+            Salle membre : /encheres
           </p>
         </div>
         <div className="flex gap-2">
@@ -58,7 +59,7 @@ export const AuctionsAdminPanel = () => {
           <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}
             data-testid="new-auction-btn"
             className="bg-[#D9B35A] text-[#2A1045] hover:bg-[#F2D07A] font-semibold">
-            <Plus className="w-4 h-4 mr-1" /> Nouvelle enchère
+            <Plus className="w-4 h-4 mr-1" /> Nouveau COOP'ACT
           </Button>
         </div>
       </div>
@@ -67,7 +68,7 @@ export const AuctionsAdminPanel = () => {
 
       {data.items.length === 0 ? (
         <p className="text-white/45 text-sm py-6" data-testid="auctions-admin-empty">
-          Aucune enchère programmée pour le moment.
+          Aucun COOP'ACT programmé pour le moment.
         </p>
       ) : (
         <div className="space-y-2 mt-3">

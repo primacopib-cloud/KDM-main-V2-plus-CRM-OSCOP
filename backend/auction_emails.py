@@ -16,13 +16,13 @@ async def send_winner_email(auction: dict):
         import os
         base = os.environ.get("FRONTEND_URL", "").rstrip("/")
         link = f"{base}/encheres?win={auction['id']}" if base else "/encheres"
-        subject = f"🎉 Vous avez remporté l'enchère — {auction.get('title')}"
+        subject = f"🎉 Vous avez remporté le COOP'ACT — {auction.get('title')}"
         body = (
             f"<p style='font-size:14px;'>Bonjour {w.get('name')},</p>"
-            f"<p style='font-size:14px;'>Félicitations ! Vous venez de remporter l'enchère "
+            f"<p style='font-size:14px;'>Félicitations ! Vous venez de remporter le COOP'ACT "
             f"<b>{auction.get('reference')}</b> — <b>{auction.get('title')}</b> "
             f"au prix de <b>{w.get('price_eur'):.2f} €</b> "
-            f"({w.get('price_credits')} crédits CREDI'SCOP-Enchères).</p>"
+            f"({w.get('price_credits')} crédits CREDI'SCOP-COOP'ACT).</p>"
             "<p style='font-size:14px;'>Il ne reste qu'une étape : choisissez comment récupérer votre produit :</p>"
             "<ul style='font-size:14px;'>"
             "<li><b>Retrait</b> dans le relais LOLODRIVE de votre choix ;</li>"
@@ -30,11 +30,12 @@ async def send_winner_email(auction: dict):
             f"<p style='font-size:14px;'><a href='{link}' "
             "style='background:#D9B35A;color:#2A1045;padding:10px 18px;border-radius:8px;"
             "text-decoration:none;font-weight:bold;'>Choisir retrait ou livraison</a></p>"
-            "<p style='font-size:12px;color:#B8A98F;'>Les crédits CREDI'SCOP-Enchères sont des unités "
-            "internes de services : ils ne constituent ni un solde financier, ni un moyen de paiement.</p>")
+            "<p style='font-size:12px;color:#B8A98F;'>Les crédits CREDI'SCOP-COOP'ACT sont des unités "
+            "internes de services : ils ne constituent ni un solde financier, ni un moyen de paiement.</p>"
+            "<p style='font-size:12px;color:#B8A98F;'><b>BOURSE COOPÉRATIVE — COOP'ACT</b>, agir ensemble pour la juste valeur.</p>")
         await send_email(to_email=w["email"], to_name=w.get("name"), subject=subject,
                          html_content=_wrap_html(subject, body),
-                         text_content=f"Vous avez remporté l'enchère {auction.get('reference')} — "
+                         text_content=f"Vous avez remporté le COOP'ACT {auction.get('reference')} — "
                                       f"{auction.get('title')} à {w.get('price_eur'):.2f} €. "
                                       f"Choisissez retrait LOLODRIVE ou livraison : {link}",
                          tags=["auction-winner"])
@@ -47,7 +48,7 @@ async def notify_admin_win(auction: dict):
     try:
         from core_deps import create_notification
         await create_notification(
-            "auction_won", f"Enchère remportée — {auction.get('reference')}",
+            "auction_won", f"COOP'ACT remporté — {auction.get('reference')}",
             f"{w.get('name')} ({w.get('email')}) a remporté « {auction.get('title')} » "
             f"à {w.get('price_eur'):.2f} € ({w.get('price_credits')} crédits).",
             {"auction_id": auction.get("id")})
@@ -69,7 +70,7 @@ async def notify_admin_fulfillment(auction: dict, fulfillment: dict):
         logger.warning("Notification remise lot %s : %s", auction.get("id"), exc)
     try:
         from brevo_service import send_email, _wrap_html
-        subject = f"Remise du lot enchère {auction.get('reference')}"
+        subject = f"Remise du lot COOP'ACT {auction.get('reference')}"
         body = (f"<p style='font-size:14px;'>Le gagnant <b>{w.get('name')}</b> ({w.get('email')}) a choisi : "
                 f"<b>{detail}</b> pour le lot « {auction.get('title')} ».</p>")
         await send_email(to_email="contact@objectifscopoutremer.com", to_name="Équipe O'SCOP",
@@ -109,7 +110,7 @@ async def run_auction_ending_alerts(database=None):
                 from core_deps import create_notification
                 await create_notification(
                     "auction_ending", f"⏳ Fin imminente — {a.get('title')}",
-                    f"L'enchère {a.get('reference')} se termine dans {mins} min — prix actuel {price:.2f} € "
+                    f"Le COOP'ACT {a.get('reference')} se termine dans {mins} min — prix actuel {price:.2f} € "
                     f"({ah.eur_to_credits(price)} crédits). Premier à accepter = gagnant !",
                     target_user_id=h["user_id"],
                     data={"auction_id": a["id"], "action_url": "/encheres"})
@@ -124,16 +125,17 @@ async def run_auction_ending_alerts(database=None):
                     base = os.environ.get("FRONTEND_URL", "").rstrip("/")
                     body = (
                         f"<p style='font-size:14px;'>Bonjour{f' {name}' if name else ''},</p>"
-                        f"<p style='font-size:14px;'>L'enchère <b>{a.get('reference')}</b> — "
+                        f"<p style='font-size:14px;'>Le COOP'ACT <b>{a.get('reference')}</b> — "
                         f"<b>{a.get('title')}</b> se termine dans <b>{mins} minute(s)</b>.</p>"
                         f"<p style='font-size:14px;'>Prix actuel : <b>{price:.2f} €</b> "
                         f"({ah.eur_to_credits(price)} crédits). Le premier membre qui accepte remporte le lot !</p>"
                         f"<p style='font-size:14px;'><a href='{base}/encheres' "
                         "style='background:#D9B35A;color:#2A1045;padding:10px 18px;border-radius:8px;"
-                        "text-decoration:none;font-weight:bold;'>Ouvrir la salle des enchères</a></p>")
+                        "text-decoration:none;font-weight:bold;'>Ouvrir la salle COOP'ACT</a></p>"
+                        "<p style='font-size:12px;color:#B8A98F;'><b>BOURSE COOPÉRATIVE — COOP'ACT</b>, agir ensemble pour la juste valeur.</p>")
                     await send_email(to_email=user["email"], to_name=name or None, subject=subject,
                                      html_content=_wrap_html(subject, body),
-                                     text_content=f"L'enchère {a.get('title')} finit dans {mins} min — "
+                                     text_content=f"Le COOP'ACT {a.get('title')} finit dans {mins} min — "
                                                   f"prix actuel {price:.2f} €. {base}/encheres",
                                      tags=["auction-ending"])
                     sent += 1
@@ -192,7 +194,7 @@ async def run_auction_monthly_report(database, force: bool = False):
         {"id": {"$in": auc_ids}}, {"_id": 0})} if auc_ids else {}
 
     esc = lambda v: '"' + str(v if v is not None else "").replace('"', '""') + '"'
-    csv_rows = [';'.join(esc(h) for h in ["Référence", "Enchère", "Statut", "Mises",
+    csv_rows = [';'.join(esc(h) for h in ["Référence", "COOP'ACT", "Statut", "Mises",
                                           "Crédits des mises", "Crédits du gagnant", "Total crédits"])]
     for aid in auc_ids:
         a = auctions.get(aid)
@@ -211,29 +213,29 @@ async def run_auction_monthly_report(database, force: bool = False):
     conversion = round(100 * len(paid) / len(purchases), 1) if purchases else 0.0
 
     from brevo_service import send_email, _wrap_html
-    subject = f"Rapport mensuel Enchères — {prev}"
+    subject = f"Rapport mensuel COOP'ACT — {prev}"
     body = (
-        f"<p style='font-size:14px;'>Récapitulatif des enchères produits pour le mois <b>{prev}</b> :</p>"
+        f"<p style='font-size:14px;'>Récapitulatif des COOP'ACT produits pour le mois <b>{prev}</b> :</p>"
         "<table style='font-size:13px;border-collapse:collapse'>"
         f"<tr><td style='padding:4px 10px;border-bottom:1px solid #eee'>Crédits collectés</td>"
         f"<td style='padding:4px 10px;border-bottom:1px solid #eee;text-align:right'><b>{credits_collected:,.0f} cr</b></td></tr>"
         f"<tr><td style='padding:4px 10px;border-bottom:1px solid #eee'>Mises</td>"
         f"<td style='padding:4px 10px;border-bottom:1px solid #eee;text-align:right'><b>{len(bids)}</b></td></tr>"
-        f"<tr><td style='padding:4px 10px;border-bottom:1px solid #eee'>Enchères remportées</td>"
+        f"<tr><td style='padding:4px 10px;border-bottom:1px solid #eee'>COOP'ACT remportés</td>"
         f"<td style='padding:4px 10px;border-bottom:1px solid #eee;text-align:right'><b>{len(won)}</b></td></tr>"
         f"<tr><td style='padding:4px 10px;border-bottom:1px solid #eee'>Plans vendus (payés/sessions)</td>"
         f"<td style='padding:4px 10px;border-bottom:1px solid #eee;text-align:right'><b>{len(paid)}/{len(purchases)}</b> — {revenue:,.2f} € TTC</td></tr>"
         f"<tr><td style='padding:4px 10px'>Conversion des plans</td>"
         f"<td style='padding:4px 10px;text-align:right'><b>{conversion} %</b></td></tr></table>"
-        + ("<p style='font-size:13px;'>Le détail des mises par enchère est joint en CSV.</p>" if len(csv_rows) > 1
-           else "<p style='font-size:13px;'>Aucune activité d'enchère sur le mois écoulé.</p>"))
+        + ("<p style='font-size:13px;'>Le détail des mises par COOP'ACT est joint en CSV.</p>" if len(csv_rows) > 1
+           else "<p style='font-size:13px;'>Aucune activité COOP'ACT sur le mois écoulé.</p>"))
     attachments = [{"content": base64.b64encode(("\ufeff" + "\r\n".join(csv_rows)).encode("utf-8")).decode(),
-                    "name": f"encheres_mises_{prev}.csv"}] if len(csv_rows) > 1 else []
+                    "name": f"coopact_mises_{prev}.csv"}] if len(csv_rows) > 1 else []
     team = os.environ.get("QUOTE_NOTIFY_EMAIL", "contact@objectifscopoutremer.com")
     result = await send_email(
         to_email=team, to_name="Super Admin", subject=subject,
         html_content=_wrap_html(subject, body),
-        text_content=f"Rapport enchères {prev} : {credits_collected} crédits collectés, "
+        text_content=f"Rapport COOP'ACT {prev} : {credits_collected} crédits collectés, "
                      f"{len(bids)} mises, {len(won)} remportées, plans {len(paid)}/{len(purchases)} "
                      f"({conversion} %), {revenue} € TTC.",
         tags=["auction-monthly-report"], attachments=attachments)

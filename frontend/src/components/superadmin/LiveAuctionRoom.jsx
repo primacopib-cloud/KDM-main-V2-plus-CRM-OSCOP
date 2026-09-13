@@ -41,7 +41,7 @@ export const LiveAuctionRoom = ({ cid, onClose }) => {
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <Gavel className="w-4 h-4 text-[#D9B35A]" />
-            Salle d'enchère live — {data?.consultation?.ref || '…'}
+            Salle COOP'ACT live — {data?.consultation?.ref || '…'}
             {live && (
               <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-red-300 bg-red-500/15 border border-red-400/40 rounded-full px-2 py-0.5" data-testid="live-badge">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" /> EN DIRECT
@@ -73,7 +73,7 @@ export const LiveAuctionRoom = ({ cid, onClose }) => {
             <p className="text-[11px] text-white/45 mb-2">
               {data.amounts_hidden
                 ? 'Offres scellées : les montants restent masqués jusqu\'à la clôture (ouverture automatique des plis).'
-                : 'Enchère inversée : la meilleure offre est la moins-disante. Actualisation automatique toutes les 3 secondes.'}
+                : "COOP'ACT : la meilleure offre est la moins-disante. Actualisation automatique toutes les 3 secondes."}
             </p>
             <div className="space-y-1.5" data-testid="live-bids-list">
               {data.bids.length === 0 && <p className="text-xs text-white/40 italic">Aucune offre pour le moment — en attente des fournisseurs…</p>}

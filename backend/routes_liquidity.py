@@ -40,11 +40,12 @@ async def _alert_threshold(category: str, previous: int, current: int):
         await send_email(
             to_email=admin_email, to_name="Super Admin",
             subject=f"Seuil de liquidité atteint — catégorie « {category} » ({current} fournisseurs)",
-            html_content=f"""<h2 style="color:#451F6B;">Catégorie « {category} » prête pour une enchère</h2>
+            html_content=f"""<h2 style="color:#451F6B;">Catégorie « {category} » prête pour un COOP'ACT</h2>
             <p>Le nombre de fournisseurs éligibles vient d'atteindre <strong>{current}</strong>
-            (précédemment {previous}). Une <strong>enchère inversée multicritère</strong> est désormais
+            (précédemment {previous}). Un <strong>COOP'ACT multicritère (offres améliorables)</strong> est désormais
             envisageable sur cette catégorie.</p>
-            <p style="color:#777;font-size:12px;">Historique de liquidité : Super Admin → Consultations.</p>""",
+            <p style="color:#777;font-size:12px;">BOURSE COOPÉRATIVE — COOP'ACT, agir ensemble pour la juste valeur.<br/>
+            Historique de liquidité : Super Admin → Bourse COOP'ACT.</p>""",
             tags=["liquidity-threshold"])
         logger.info("Alerte seuil liquidité envoyée : %s (%d → %d)", category, previous, current)
     except Exception as exc:

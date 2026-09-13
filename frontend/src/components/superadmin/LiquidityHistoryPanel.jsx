@@ -35,7 +35,7 @@ export const LiquidityHistoryPanel = () => {
                 ))}
               </span>
               <span className="text-white/40">
-                {it.current <= 1 ? 'Négociation directe' : it.current === 2 ? 'Offre scellée' : 'Enchère possible'}
+                {it.current <= 1 ? 'Négociation directe' : it.current === 2 ? 'Offre scellée' : "COOP'ACT possible"}
               </span>
             </div>
           );

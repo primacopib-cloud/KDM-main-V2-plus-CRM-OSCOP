@@ -81,7 +81,7 @@ export const SupplyRisk = () => {
                 {ai[c.category] ? (
                   <div className="p-2 rounded-lg bg-[#C9A8F0]/10 border border-[#C9A8F0]/25" data-testid={`coopia-result-${c.category}`}>
                     <p className="text-[10px] font-bold text-[#C9A8F0] flex items-center gap-1 mb-0.5">
-                      <Sparkles className="w-3 h-3" /> SCOOPY recommande : {ai[c.category].procedure === 'ENCHERE_INVERSEE' ? 'Enchère inversée' : 'Offres scellées'}
+                      <Sparkles className="w-3 h-3" /> SCOOPY recommande : {ai[c.category].procedure === 'ENCHERE_INVERSEE' ? "COOP'ACT" : 'Offres scellées'}
                     </p>
                     <p className="text-[10.5px] text-white/65">{ai[c.category].rationale}</p>
                   </div>

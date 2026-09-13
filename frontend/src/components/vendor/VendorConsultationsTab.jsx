@@ -55,7 +55,7 @@ const ConsultationCard = ({ c, onChanged }) => {
 
   const register = async () => {
     const ok = window.confirm(
-      `Inscription à ${c.ref} — ${c.title}\n\nCoût d'accès : ${c.cpc_cost} CREDI'SCOP (débité une seule fois, ${c.max_rounds} tours d'offres inclus, aucune consommation par offre).\nProcédure : ${sealed ? 'offres scellées' : 'enchère inversée à rang anonyme'}.\nClôture ferme : ${String(c.closes_at).slice(0, 16).replace('T', ' ')} (heure serveur).\nAnnulation par l'organisateur = recrédit intégral.\n\nAccepter le règlement et confirmer ?`);
+      `Inscription à ${c.ref} — ${c.title}\n\nCoût d'accès : ${c.cpc_cost} CREDI'SCOP (débité une seule fois, ${c.max_rounds} tours d'offres inclus, aucune consommation par offre).\nProcédure : ${sealed ? 'offres scellées' : "COOP'ACT à rang anonyme (offres améliorables)"}.\nClôture ferme : ${String(c.closes_at).slice(0, 16).replace('T', ' ')} (heure serveur).\nAnnulation par l'organisateur = recrédit intégral.\n\nAccepter le règlement et confirmer ?`);
     if (!ok) return;
     const r = await fetch(`${API}/api/consultations/${c.id}/register`, {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
@@ -84,7 +84,7 @@ const ConsultationCard = ({ c, onChanged }) => {
       }
       return toast.error(d.detail || 'Erreur');
     }
-    toast.success(sealed ? 'Offre scellée déposée (chiffrée jusqu\'à la clôture)' : `Offre enregistrée — tour ${d.round}`);
+    toast.success(sealed ? 'Offre scellée déposée (chiffrée jusqu\'à la clôture)' : `Coop'Act enregistré — tour ${d.round}`);
     setAmount('');
     loadStatus();
   };
@@ -112,7 +112,7 @@ const ConsultationCard = ({ c, onChanged }) => {
         <span className="text-xs font-bold text-[#E9CF8E]">{c.ref}</span>
         <span className="font-semibold text-white flex-1 min-w-[150px]">{c.title}</span>
         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${L_STYLE[c.legal_status] || 'bg-white/10 text-white/50'}`}>{c.legal_status}</span>
-        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/60">{sealed ? 'OFFRES SCELLÉES' : 'ENCHÈRE INVERSÉE'}</span>
+        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/60">{sealed ? 'OFFRES SCELLÉES' : "COOP'ACT"}</span>
         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#D9B35A]/20 text-[#E9CF8E]">{c.status.replace(/_/g, ' ')}</span>
         {['INSCRIPTIONS_OUVERTES', 'EN_COURS'].includes(c.status) && <Countdown closesAt={c.closes_at} cid={c.id} />}
       </div>
@@ -130,7 +130,7 @@ const ConsultationCard = ({ c, onChanged }) => {
           <input className="h-9 w-36 rounded-lg px-2.5 text-sm text-white bg-white/[0.05] border border-white/15" placeholder="Prix € HT"
             value={amount} onChange={(e) => setAmount(e.target.value)} data-testid={`cons-bid-input-${c.id}`} />
           <button type="button" onClick={bid} className={btn} style={gold} data-testid={`cons-bid-btn-${c.id}`}>
-            {sealed ? <><Lock className="w-3.5 h-3.5" /> Déposer sous pli scellé</> : <><TrendingDown className="w-3.5 h-3.5" /> Enchérir (tour {Math.min(roundsUsed + 1, c.max_rounds)}/{c.max_rounds})</>}
+            {sealed ? <><Lock className="w-3.5 h-3.5" /> Déposer sous pli scellé</> : <><TrendingDown className="w-3.5 h-3.5" /> Coop'acter (tour {Math.min(roundsUsed + 1, c.max_rounds)}/{c.max_rounds})</>}
           </button>
           {!sealed && status?.rank && (
             <span className="text-xs font-semibold text-white/60" data-testid={`cons-rank-${c.id}`}>

@@ -80,7 +80,7 @@ export const AuctionFormDialog = ({ auction, onClose, onSaved }) => {
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || 'Erreur');
-      toast.success(auction ? 'Enchère mise à jour' : `Enchère ${d.reference} programmée`);
+      toast.success(auction ? "COOP'ACT mis à jour" : `COOP'ACT ${d.reference} programmé`);
       onSaved();
     } catch (e) {
       toast.error(String(e.message || e));
@@ -95,7 +95,7 @@ export const AuctionFormDialog = ({ auction, onClose, onSaved }) => {
       <DialogContent className="bg-[#2A1045] border-[#D9B35A]/30 text-white max-w-2xl max-h-[85vh] overflow-y-auto"
         data-testid="auction-form-dialog">
         <DialogHeader>
-          <DialogTitle className="text-[#E9CF8E]">{auction ? `Modifier ${auction.reference}` : 'Nouvelle enchère produit'}</DialogTitle>
+          <DialogTitle className="text-[#E9CF8E]">{auction ? `Modifier ${auction.reference}` : 'Nouveau COOP\'ACT produit'}</DialogTitle>
         </DialogHeader>
 
         {!auction && (
@@ -145,7 +145,7 @@ export const AuctionFormDialog = ({ auction, onClose, onSaved }) => {
               <SelectContent><SelectItem value="none">—</SelectItem>
                 {cats.map((c) => <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>)}</SelectContent>
             </Select></label>
-          <label className="text-xs text-white/60">Type d'enchère (conditions de mise)
+          <label className="text-xs text-white/60">Type de COOP'ACT (conditions de mise)
             <Select value={form.type_id || 'none'} onValueChange={(v) => v !== 'none' && applyType(v)}>
               <SelectTrigger className={inputCls} data-testid="auction-type-select"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="none">—</SelectItem>
@@ -184,7 +184,7 @@ export const AuctionFormDialog = ({ auction, onClose, onSaved }) => {
         <Button onClick={save} disabled={busy || !form.title || !form.value_eur || !form.starts_at || !form.ends_at}
           data-testid="auction-save-btn"
           className="bg-[#D9B35A] text-[#2A1045] hover:bg-[#F2D07A] font-semibold">
-          {auction ? 'Enregistrer' : "Programmer l'enchère"}
+          {auction ? 'Enregistrer' : 'Programmer le COOP\'ACT'}
         </Button>
       </DialogContent>
     </Dialog>

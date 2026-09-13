@@ -59,7 +59,7 @@ const CreateModal = ({ onClose, onSaved }) => {
             </select>
             <select className={inp} value={f.procedure} onChange={(e) => setF({ ...f, procedure: e.target.value })} data-testid="cons-procedure-select">
               <option value="SCELLEE">Offres scellées</option>
-              <option value="ENCHERE_INVERSEE">Enchère inversée</option>
+              <option value="ENCHERE_INVERSEE">COOP'ACT (offres améliorables)</option>
             </select>
           </div>
           <input className={inp} placeholder="Catégorie (doit être classée dans la matrice)" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} data-testid="cons-category-input" />
@@ -106,7 +106,7 @@ export const ConsultationsTab = () => {
   const validateOrange = (c) => {
     const reason = window.prompt('Motivation juridique de la validation ORANGE (obligatoire, nominative et tracée) :');
     if (!reason) return;
-    const allowAuction = window.confirm('Autoriser l\'enchère inversée pour ce lot ? (Annuler = offres scellées)');
+    const allowAuction = window.confirm('Autoriser le COOP\'ACT (offres améliorables) pour ce lot ? (Annuler = offres scellées)');
     act(`/admin/consultations/${c.id}/validate-orange`, { reason, allow_auction: allowAuction }, 'Lot ORANGE validé juridiquement');
   };
   const cancel = (c) => {
@@ -167,10 +167,10 @@ export const ConsultationsTab = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-semibold text-white flex items-center gap-2" data-testid="bourse-mutualisee-title">
-            <Gavel className="w-4 h-4 text-[#D9B35A]" /> BOURSE MUTUALISÉE O'SCOP
+            <Gavel className="w-4 h-4 text-[#D9B35A]" /> BOURSE COOPÉRATIVE — COOP'ACT
           </h2>
           <p className="text-[11px] text-white/55 mt-0.5 ml-6" data-testid="bourse-mutualisee-subtitle">
-            Plateforme coopérative de consultation, de cotation et de négociation des offres
+            Agir ensemble pour la juste valeur.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -214,7 +214,7 @@ export const ConsultationsTab = () => {
               <span className="text-xs font-bold text-[#E9CF8E]">{c.ref}</span>
               <span className="text-sm font-bold text-white flex-1 min-w-[160px]">{c.title}</span>
               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${L_STYLE[c.legal_status]}`} data-testid={`cons-legal-${c.id}`}>{c.legal_status}</span>
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/60">{c.procedure === 'SCELLEE' ? 'OFFRES SCELLÉES' : 'ENCHÈRE INVERSÉE'}</span>
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/60">{c.procedure === 'SCELLEE' ? 'OFFRES SCELLÉES' : "COOP'ACT"}</span>
               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${S_STYLE[c.status]}`} data-testid={`cons-status-${c.id}`}>{c.status.replace(/_/g, ' ')}</span>
             </div>
             <p className="text-[10px] text-white/40 mt-1">

@@ -62,7 +62,7 @@ export const AIAgentsPanel = () => {
               onCheckedChange={(v) => toggle('encheria_enabled', v)} data-testid="encheria-switch" />
           </div>
           <p className="text-xs text-white/50">
-            Agent des enchères inversées : relance automatiquement les vendeurs sans offre à J-2 de la clôture,
+            Agent COOP'ACT : relance automatiquement les vendeurs sans offre à J-2 de la clôture,
             puis produit un rapport d'adjudication IA (analyse des offres, risques, recommandation) à la clôture.
           </p>
         </div>

@@ -38,7 +38,7 @@ export const BuyerConsultationsTab = () => {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-[#E9CF8E]">{c.ref}</span>
             <span className="text-sm font-bold text-white flex-1 min-w-[150px]">{c.title}</span>
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/60">{c.procedure === 'SCELLEE' ? 'OFFRES SCELLÉES' : 'ENCHÈRE INVERSÉE'}</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/60">{c.procedure === 'SCELLEE' ? 'OFFRES SCELLÉES' : "COOP'ACT"}</span>
             <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${S_STYLE[c.status] || 'bg-white/10 text-white/50'}`}>{c.status.replace(/_/g, ' ')}</span>
           </div>
           <div className="flex flex-wrap gap-4 mt-2 text-[11px] text-white/55">

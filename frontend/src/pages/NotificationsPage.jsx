@@ -61,7 +61,7 @@ export default function NotificationsPage() {
             </span>
           )}
         </h1>
-        <p className="text-sm text-white/50 mb-4">Surenchères, stock bas, promos, retours en stock…</p>
+        <p className="text-sm text-white/50 mb-4">Coop'Acts battus, stock bas, promos, retours en stock…</p>
         <div className="flex flex-wrap gap-2 mb-6" data-testid="notifications-filters">
           {FILTERS.map((f) => {
             const count = f.key === 'all'

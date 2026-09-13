@@ -82,7 +82,7 @@ export const AuctionSettingsDialog = ({ onClose, onChanged }) => {
       <DialogContent className="bg-[#2A1045] border-[#D9B35A]/30 text-white max-w-xl max-h-[85vh] overflow-y-auto"
         data-testid="auction-settings-dialog">
         <DialogHeader>
-          <DialogTitle className="text-[#E9CF8E]">Catégories · Types d'enchères · Plans</DialogTitle>
+          <DialogTitle className="text-[#E9CF8E]">Catégories · Types de COOP'ACT · Plans</DialogTitle>
         </DialogHeader>
 
         <section data-testid="auction-categories-section">
@@ -98,7 +98,7 @@ export const AuctionSettingsDialog = ({ onClose, onChanged }) => {
         </section>
 
         <section data-testid="auction-types-section">
-          <h4 className="text-xs font-bold text-white/70 uppercase mb-1 mt-3">Types d'enchères (conditions de mise)</h4>
+          <h4 className="text-xs font-bold text-white/70 uppercase mb-1 mt-3">Types de COOP'ACT (conditions de mise)</h4>
           {types.map((t) => <Row key={t.id} item={t} onToggle={() => toggle('types', t)} onDelete={() => remove('types', t)} />)}
           <div className="grid grid-cols-4 gap-2 mt-2">
             <Input value={typeForm.label} onChange={(e) => setTypeForm((f) => ({ ...f, label: e.target.value }))}
@@ -121,7 +121,7 @@ export const AuctionSettingsDialog = ({ onClose, onChanged }) => {
         </section>
 
         <section data-testid="auction-plans-section">
-          <h4 className="text-xs font-bold text-white/70 uppercase mb-1 mt-3">Plans CREDI'SCOP-Enchères (obligatoires pour enchérir)</h4>
+          <h4 className="text-xs font-bold text-white/70 uppercase mb-1 mt-3">Plans CREDI'SCOP-COOP'ACT (obligatoires pour coop'acter)</h4>
           {plans.map((p) => <Row key={p.id} item={p} onToggle={() => toggle('plans', p)} />)}
           <div className="grid grid-cols-4 gap-2 mt-2">
             <Input value={planForm.label} onChange={(e) => setPlanForm((f) => ({ ...f, label: e.target.value }))}

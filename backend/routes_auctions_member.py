@@ -96,7 +96,7 @@ async def plan_checkout(body: PlanCheckoutBody, user_id: str = Depends(get_curre
         line_items=[{
             "price_data": {
                 "currency": "eur", "unit_amount": vat["ttc_cents"],
-                "product_data": {"name": f"{plan['label']} — {plan['credits']} crédits enchères "
+                "product_data": {"name": f"{plan['label']} — {plan['credits']} crédits COOP'ACT "
                                          f"({plan['validity_days']} j, service numérique O'SCOP)"},
             }, "quantity": 1}],
         customer_email=user.get("email"),
@@ -198,16 +198,16 @@ async def _require_active_account(user_id: str) -> dict:
     account = await ah.get_auction_account(user_id)
     if not ah.account_active(account):
         raise HTTPException(status_code=403,
-                            detail="Un plan CREDI'SCOP-Enchères actif est obligatoire pour enchérir")
+                            detail="Un plan CREDI'SCOP-COOP'ACT actif est obligatoire pour coop'acter")
     return account
 
 
 async def _live_auction(auction_id: str) -> dict:
     a = await ah.db.auctions.find_one({"id": auction_id}, {"_id": 0})
     if not a:
-        raise HTTPException(status_code=404, detail="Enchère introuvable")
+        raise HTTPException(status_code=404, detail="COOP'ACT introuvable")
     if ah.effective_status(a) != "LIVE":
-        raise HTTPException(status_code=409, detail="Cette enchère n'est pas en cours")
+        raise HTTPException(status_code=409, detail="Ce COOP'ACT n'est pas en cours")
     return a
 
 
@@ -234,8 +234,8 @@ async def place_bid(auction_id: str, user_id: str = Depends(get_current_user_id)
     await _require_active_account(user_id)
     a = await _live_auction(auction_id)
     cost = int(a.get("bid_cost_credits") or 10)
-    if not await _deduct_credits(user_id, cost, f"Mise enchère {a['reference']}"):
-        raise HTTPException(status_code=402, detail="Crédits enchères insuffisants — rechargez votre plan")
+    if not await _deduct_credits(user_id, cost, f"Coop'Act {a['reference']}"):
+        raise HTTPException(status_code=402, detail="Crédits COOP'ACT insuffisants — rechargez votre plan")
     for _ in range(2):
         cur = float(a.get("current_price_eur") or a["value_eur"])
         new_price = max(float(a.get("floor_eur") or 0), round(cur - float(a["price_drop_eur"]), 2))
@@ -251,7 +251,7 @@ async def place_bid(auction_id: str, user_id: str = Depends(get_current_user_id)
                     "bids_count": a.get("bids_count", 0) + 1}
         a = await _live_auction(auction_id)
     await _refund_credits(user_id, cost, f"Mise non aboutie {a['reference']}")
-    raise HTTPException(status_code=409, detail="Trop d'activité sur cette enchère — réessayez")
+    raise HTTPException(status_code=409, detail="Trop d'activité sur ce COOP'ACT — réessayez")
 
 
 @auctions_member_router.post("/{auction_id}/accept")
@@ -273,7 +273,7 @@ async def accept_price(auction_id: str, user_id: str = Depends(get_current_user_
         {"$set": {"status": "WON", "winner": winner}})
     if res.modified_count == 0:
         await _refund_credits(user_id, price_credits, f"Enchère déjà remportée {a['reference']}")
-        raise HTTPException(status_code=409, detail="Trop tard — un autre membre vient de remporter cette enchère")
+        raise HTTPException(status_code=409, detail="Trop tard — un autre membre vient de remporter ce COOP'ACT")
     from auction_emails import send_winner_email, notify_admin_win
     await send_winner_email({**a, "winner": winner})
     await notify_admin_win({**a, "winner": winner})
@@ -293,7 +293,7 @@ async def choose_fulfillment(auction_id: str, body: FulfillmentBody,
                              user_id: str = Depends(get_current_user_id)):
     a = await ah.db.auctions.find_one({"id": auction_id, "status": "WON"}, {"_id": 0})
     if not a or (a.get("winner") or {}).get("user_id") != user_id:
-        raise HTTPException(status_code=403, detail="Réservé au gagnant de cette enchère")
+        raise HTTPException(status_code=403, detail="Réservé au gagnant de ce COOP'ACT")
     if body.mode not in ("PICKUP", "DELIVERY"):
         raise HTTPException(status_code=400, detail="mode: PICKUP ou DELIVERY")
     fulfillment = {"mode": body.mode, "chosen_at": ah.now_utc().isoformat()}

@@ -7,7 +7,7 @@ export const TOUR_STEPS = {
     { selector: '[data-testid="buyer-tab-invoices"]', title: 'Factures',
       text: 'Retrouvez et réglez vos factures marchandises et vos reçus de paiement.' },
     { selector: '[data-testid="buyer-tab-consultations"]', title: 'Consultations',
-      text: 'Lancez des consultations compétitives (enchères inversées) auprès des vendeurs.' },
+      text: 'Lancez des consultations compétitives (COOP\'ACT) auprès des vendeurs.' },
     { selector: '[data-testid="buyer-tab-transport"]', title: "Transport LOGI'SCOP",
       text: 'Émettez vos Ordres de Transport, suivez les livraisons et payez vos factures transport.' },
     { selector: '[data-testid="ai-guide-fab"]', title: "Oracle",

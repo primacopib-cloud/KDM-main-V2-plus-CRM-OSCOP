@@ -10,7 +10,7 @@ const STATUS_FR = { SCHEDULED: 'Programmée', LIVE: 'En cours', WON: 'Remportée
 const exportCsv = (stats) => {
   const esc = (v) => `"${String(v ?? '').replaceAll('"', '""')}"`;
   const rows = [
-    ['Référence', 'Enchère', 'Statut', 'Mises', 'Crédits des mises', 'Crédits du gagnant', 'Total crédits'],
+    ['Référence', "COOP'ACT", 'Statut', 'Mises', 'Crédits des mises', 'Crédits du gagnant', 'Total crédits'],
     ...stats.per_auction.map((a) => [
       a.reference, a.title, STATUS_FR[a.status] || a.status, a.bids, a.bid_credits, a.winner_credits, a.total_credits,
     ]),
@@ -19,7 +19,7 @@ const exportCsv = (stats) => {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `encheres_mises_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `coopact_mises_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
   toast.success('Export CSV téléchargé');
@@ -57,15 +57,15 @@ export const AuctionStats = ({ refreshKey }) => {
         <Kpi icon={Euro} label="Plans vendus" value={eur(stats.revenue_eur)}
           sub={`${stats.active_plan_accounts} compte(s) plan actif`} testId="stat-plans-revenue" />
         <Kpi icon={Gavel} label="Mises" value={stats.total_bids}
-          sub={`${stats.total_auctions} enchère(s) · ${stats.live_auctions} en cours`} testId="stat-total-bids" />
+          sub={`${stats.total_auctions} COOP'ACT · ${stats.live_auctions} en cours`} testId="stat-total-bids" />
         <Kpi icon={TrendingUp} label="Conversion plans" value={`${globalConversion} %`}
-          sub={`${stats.won_auctions} enchère(s) remportée(s)`} testId="stat-plan-conversion" />
+          sub={`${stats.won_auctions} COOP'ACT remporté(s)`} testId="stat-plan-conversion" />
       </div>
 
       <div className="grid md:grid-cols-2 gap-3 mt-3">
         <div className="rounded-[14px] bg-white/[0.03] border border-white/[0.08] p-3" data-testid="stat-per-auction">
           <h4 className="text-[11px] font-bold text-white/50 uppercase mb-2 flex items-center gap-1">
-            <Gavel className="w-3 h-3" /> Mises par enchère
+            <Gavel className="w-3 h-3" /> Mises par COOP'ACT
             {stats.per_auction.length > 0 && (
               <button type="button" onClick={() => exportCsv(stats)} data-testid="auction-stats-export-csv"
                 className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold normal-case border border-[#D9B35A]/30 text-[#E9CF8E] hover:bg-[#D9B35A]/10 transition-colors">

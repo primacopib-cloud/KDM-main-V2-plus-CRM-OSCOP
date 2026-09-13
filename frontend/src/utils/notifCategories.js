@@ -1,7 +1,7 @@
 export const NOTIF_CATEGORIES = [
   { key: 'stock', label: 'Stock' },
   { key: 'promo', label: 'Promotions' },
-  { key: 'auction', label: 'Enchères' },
+  { key: 'auction', label: "COOP'ACT" },
   { key: 'other', label: 'Autres' },
 ];
 

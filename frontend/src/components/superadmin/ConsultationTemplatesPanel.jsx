@@ -40,7 +40,7 @@ const TemplateModal = ({ onClose, onSaved }) => {
             </select>
             <select className={inp} value={f.procedure} onChange={(e) => setF({ ...f, procedure: e.target.value })}>
               <option value="SCELLEE">Offres scellées</option>
-              <option value="ENCHERE_INVERSEE">Enchère inversée</option>
+              <option value="ENCHERE_INVERSEE">COOP'ACT (offres améliorables)</option>
             </select>
           </div>
           <input className={inp} placeholder="Catégorie (matrice juridique)" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} data-testid="tpl-category-input" />
@@ -108,7 +108,7 @@ export const ConsultationTemplatesPanel = ({ onCreated }) => {
         {items.map((t) => (
           <div key={t.id} className="flex flex-wrap items-center gap-2 text-xs py-1.5 border-b border-white/5 last:border-0" data-testid={`tpl-row-${t.id}`}>
             <span className="flex-1 min-w-[180px] text-white/85 font-semibold">{t.name}</span>
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/50">{t.procedure === 'SCELLEE' ? 'SCELLÉE' : 'ENCHÈRE'}</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/50">{t.procedure === 'SCELLEE' ? 'SCELLÉE' : "COOP'ACT"}</span>
             <span className="text-white/40">{t.category} · {t.duration_days} j · {t.type}</span>
             <button type="button" onClick={() => instantiate(t)} data-testid={`tpl-instantiate-${t.id}`}
               className="px-2.5 py-1 rounded-lg text-[10px] font-bold" style={{ background: '#D9B35A', color: '#1F0A33' }}>

@@ -19,11 +19,11 @@ DEFAULT_TYPES = [
      "bid_cost_credits": 10, "price_drop_eur": 1.0, "active": True},
 ]
 DEFAULT_PLANS = [
-    {"id": "auc-plan-decouverte", "label": "CREDI'SCOP Enchères Découverte",
+    {"id": "auc-plan-decouverte", "label": "CREDI'SCOP COOP'ACT Découverte",
      "price_ht_cents": 990, "credits": 100, "validity_days": 30, "active": True},
-    {"id": "auc-plan-passion", "label": "CREDI'SCOP Enchères Passion",
+    {"id": "auc-plan-passion", "label": "CREDI'SCOP COOP'ACT Passion",
      "price_ht_cents": 2900, "credits": 400, "validity_days": 30, "active": True},
-    {"id": "auc-plan-premium", "label": "CREDI'SCOP Enchères Premium",
+    {"id": "auc-plan-premium", "label": "CREDI'SCOP COOP'ACT Premium",
      "price_ht_cents": 5900, "credits": 1000, "validity_days": 30, "active": True},
 ]
 
@@ -184,9 +184,9 @@ async def update_auction(auction_id: str, body: AuctionBody, admin: dict = Depen
     starts, ends = _validate(body)
     a = await ah.db.auctions.find_one({"id": auction_id}, {"_id": 0})
     if not a:
-        raise HTTPException(status_code=404, detail="Enchère introuvable")
+        raise HTTPException(status_code=404, detail="COOP'ACT introuvable")
     if a.get("status") in ("WON", "CANCELLED"):
-        raise HTTPException(status_code=409, detail="Enchère terminée : créez-en une nouvelle")
+        raise HTTPException(status_code=409, detail="COOP'ACT terminé : créez-en un nouveau")
     updates = {**body.dict(), "starts_at": starts.isoformat(), "ends_at": ends.isoformat(),
                "updated_at": ah.now_utc().isoformat()}
     if a.get("bids_count", 0) == 0:
@@ -202,7 +202,7 @@ async def cancel_auction(auction_id: str, admin: dict = Depends(require_admin)):
         {"$set": {"status": "CANCELLED", "cancelled_at": ah.now_utc().isoformat(),
                   "cancelled_by": admin.get("email")}})
     if res.modified_count == 0:
-        raise HTTPException(status_code=409, detail="Enchère déjà terminée ou annulée")
+        raise HTTPException(status_code=409, detail="COOP'ACT déjà terminé ou annulé")
     return {"ok": True}
 
 
@@ -270,7 +270,7 @@ async def delete_taxonomy(kind: str, item_id: str, admin: dict = Depends(require
     field = "category_id" if kind == "categories" else "type_id"
     used = await ah.db.auctions.count_documents({field: item_id})
     if used:
-        raise HTTPException(status_code=400, detail=f"{used} enchère(s) utilisent cet élément : désactivez-le plutôt")
+        raise HTTPException(status_code=400, detail=f"{used} COOP'ACT utilisent cet élément : désactivez-le plutôt")
     await _taxo(kind).delete_one({"id": item_id})
     return {"deleted": True}
 

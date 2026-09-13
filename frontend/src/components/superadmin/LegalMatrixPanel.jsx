@@ -13,9 +13,9 @@ const STATUS_STYLE = {
   VERT: 'bg-[#7BC94E]/15 text-[#7BC94E]',
 };
 const STATUS_HELP = {
-  ROUGE: 'Enchère inversée interdite — offres scellées uniquement',
+  ROUGE: "COOP'ACT interdit — offres scellées uniquement",
   ORANGE: 'Validation juridique nominative requise avant publication',
-  VERT: 'Enchère inversée ou offres scellées autorisées',
+  VERT: "COOP'ACT ou offres scellées autorisés",
 };
 
 export const LegalMatrixPanel = ({ onChanged }) => {

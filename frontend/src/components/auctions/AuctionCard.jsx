@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Gavel, Coins, Timer } from 'lucide-react';
+import { Gavel, Coins, Timer, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { API, getAuthHeaders } from '../../services/http';
@@ -51,6 +51,13 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
     }
   };
 
+  const shareWhatsApp = () => {
+    const text = i18n.t('auction.share_text', {
+      title: a.title, price: Number(a.price_eur).toFixed(2), credits: a.price_credits,
+    }) + ` ${window.location.origin}/encheres`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+  };
+
   return (
     <div className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.08] flex flex-col"
       data-testid={`auction-card-${a.reference}`}>
@@ -60,6 +67,11 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
         ) : (
           <div className="w-full h-full flex items-center justify-center text-black/15"><Gavel className="w-9 h-9" /></div>
         )}
+        <button type="button" onClick={shareWhatsApp} title={i18n.t('auction.share')}
+          data-testid={`auction-share-btn-${a.reference}`}
+          className="absolute bottom-1.5 right-1.5 w-7 h-7 rounded-full flex items-center justify-center bg-[#25D366] text-white shadow-md transition-transform hover:scale-110">
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
         <span className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold ${STATUS_STYLE[a.status] || 'bg-white/10 text-white/60'}`}>
           {i18n.t(`auction.filter_${a.status === 'LIVE' ? 'live' : a.status === 'SCHEDULED' ? 'scheduled' : 'finished'}`)}
         </span>

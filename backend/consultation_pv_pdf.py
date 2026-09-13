@@ -25,7 +25,7 @@ def build_pv_pdf(c: dict, entries: list, award: dict, events: list) -> bytes:
         Paragraph(f"{c['title']} · Statut final : {c['status']} · Généré le {datetime.now(timezone.utc).isoformat()[:16].replace('T', ' ')} UTC", small),
         Paragraph("1. Cadre juridique et règlement", h2),
         Paragraph(f"Catégorie juridique : <b>{c['legal_status']}</b> (matrice v{c.get('legal_matrix_version')}) · "
-                  f"Procédure : <b>{'Offres scellées' if c['procedure'] == 'SCELLEE' else 'Enchère inversée'}</b> · "
+                  f"Procédure : <b>{'Offres scellées' if c['procedure'] == 'SCELLEE' else 'COOP’ACT (« soumettre ou améliorer une offre », dénommé commercialement “Coop’acter”)'}</b> · "
                   f"Type : {c['type']} · Coût d'accès : {c['cpc_cost']} CPC · Tours max : {c.get('max_rounds', 3)}", st),
         Paragraph(f"Empreinte du règlement publié (SHA-256) : {c.get('published_snapshot_hash') or '—'}", small),
     ]
@@ -87,7 +87,7 @@ def build_attestation_pdf(att: dict, c: dict, winner_contact: dict) -> bytes:
         Paragraph(f"<b>{att['supplier']}</b>" + (f" · {winner_contact.get('email')}" if winner_contact.get("email") else ""), st),
         Paragraph("2. Objet", h2),
         Paragraph(f"{c['title']} — catégorie <b>{c['category']}</b> · procédure "
-                  f"{'offres scellées' if c['procedure'] == 'SCELLEE' else 'enchère inversée'} · statut juridique {c['legal_status']}", st),
+                  f"{'offres scellées' if c['procedure'] == 'SCELLEE' else 'COOP’ACT (soumettre ou améliorer une offre)'} · statut juridique {c['legal_status']}", st),
         Paragraph("3. Produits et territoires", h2),
     ]
     rows = [["Produit", "Territoire(s)"]]

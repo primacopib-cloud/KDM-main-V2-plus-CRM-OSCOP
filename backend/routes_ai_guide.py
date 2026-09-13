@@ -17,7 +17,7 @@ ai_guide_router = APIRouter(prefix="/api/ai-guide", tags=["ai-guide"])
 
 SPACE_LABELS = {
     "buyer": "Espace Acheteur Pro (catalogue B2B avec fiches produits détaillées partageables, commandes, factures, consultations, transport LOGI'SCOP, alertes retour en stock, compteur d'actions CREDI'SCOP)",
-    "vendor": "Espace Vendeur Pro (produits, import catalogue CSV/XLSX avec aperçu et synchronisation quotidienne, alertes stock bas et seuils, promotions avec prolongation un clic, enchères inversées avec alerte surenchère, commandes reçues, attestations RCR, crédits CREDI'SCOP)",
+    "vendor": "Espace Vendeur Pro (produits, import catalogue CSV/XLSX avec aperçu et synchronisation quotidienne, alertes stock bas et seuils, promotions avec prolongation un clic, COOP'ACT (bourse coopérative) avec alerte surenchère, commandes reçues, attestations RCR, crédits CREDI'SCOP)",
     "admin": "Espace Super Admin (pilotage complet : membres, comptabilité, trésorerie, LOGICOOP, litiges, GEDESS, journal des prolongations promo, revenus de facturation aux clics, rapport promos hebdo)",
     "operator": "Espace Opérateur LOGICOOP (missions de transport, ePOD, médias cargaison, rémunération)",
     "pos": "Espace Opérateur POS (encaissement et retraits LOLODRIVE)",
@@ -60,7 +60,7 @@ ACTIONS = {
     "vendor_products": ("Gérer mes produits", "/espace-vendeur"),
     "vendor_import": ("Importer mon catalogue (CSV/XLSX)", "/vendor?tab=products"),
     "vendor_cpc": ("Mon CREDI'SCOP et packs", "/vendor?tab=cpc"),
-    "vendor_consultations": ("Mes enchères inversées", "/vendor?tab=consultations"),
+    "vendor_consultations": ("Mes COOP'ACT", "/vendor?tab=consultations"),
     "my_notifications": ("Mes notifications", "/notifications"),
     "my_statement": ("Mon relevé CREDI'SCOP", "/mon-crediscop"),
     "buy_pack": ("Acheter le pack conseillé", "/mon-crediscop?buy-pack=1"),
@@ -91,7 +91,7 @@ SYSTEM_PROMPT = (
     "plateforme coopérative B2B2C de l'Économie Sociale et Solidaire des Outre-mer (Guadeloupe, Martinique, "
     "Guyane, La Réunion, Mayotte). Tu guides l'utilisateur pas à pas dans son espace, de façon proactive, "
     "chaleureuse et ultra professionnelle.\n"
-    "Contexte plateforme : achats mutualisés B2B, catalogue vendeurs, consultations compétitives / enchères "
+    "Contexte plateforme : achats mutualisés B2B, catalogue vendeurs, consultations compétitives / COOP'ACT "
     "inversées, transport routier LOGI'SCOP Mode D (conventions cadres, Ordres de Transport, ePOD, factures à "
     "30 j, avoirs de service article 22, litiges température article 12), garanties RCR (retenue de "
     "cautionnement réciproque, FOGEDOM-SCIC), PASS Vie Chère et LOLODRIVE (wallet UC, Lolo Points), "
@@ -104,7 +104,7 @@ SYSTEM_PROMPT = (
     "produits masqués automatiquement du catalogue en cas de rupture totale ou de promos expirées ; alerte de "
     "retour en stock pour les acheteurs abonnés ; fiche produit détaillée partageable (/catalogue?produit=id) "
     "avec galerie photos et ajout panier ; facturation CREDI'SCOP des actions métier : 4 crédits par action "
-    "(ajout panier, commande, offre d'enchère, import catalogue), 8 crédits au-delà de 100 actions dans le "
+    "(ajout panier, commande, offre COOP'ACT, import catalogue), 8 crédits au-delà de 100 actions dans le "
     "mois, compteur visible dans l'espace CREDI'SCOP, action bloquée avec invitation à recharger si le solde "
     "est insuffisant.\n"
     "Notifications : page « Mes notifications » avec filtres par catégorie (Toutes, Stock, Promotions, "
