@@ -27,14 +27,14 @@ SPACE_LABELS = {
 }
 
 BASE_SUGGESTIONS = {
-    "buyer": ["Comment émettre un Ordre de Transport LOGI'SCOP ?",
-              "Comment payer une facture transport en ligne ?",
-              "À quoi servent les avoirs de service (article 22) ?",
+    "buyer": ["Comment fonctionne la garantie CREDI'SCOP 45 % du Règlement à Réception ?",
+              "Comment recharger mes crédits en un clic depuis le checkout ?",
+              "Comment filtrer mes notifications par catégorie ?",
               "Comment lancer une consultation compétitive ?"],
     "vendor": ["Comment ajouter un produit au catalogue ?",
-               "Comment fonctionne la retenue RCR sur mes règlements ?",
-               "Où suivre mes commandes reçues ?",
-               "Comment renouveler mon attestation nominative ?"],
+               "Pourquoi renseigner le poids et le volume de mes produits ?",
+               "Comment importer mon catalogue en CSV ou XLSX ?",
+               "Où suivre mes commandes reçues ?"],
     "admin": ["Résume-moi la santé financière de la plateforme",
               "Comment fonctionne la trésorerie consolidée 30/60/90 j ?",
               "Que faire face à une facture transport impayée à 45 jours ?",
@@ -95,16 +95,32 @@ SYSTEM_PROMPT = (
     "cautionnement réciproque, FOGEDOM-SCIC), PASS Vie Chère et LOLODRIVE (wallet UC, Lolo Points), "
     "adhésions vendeur/acheteur, archivage GEDESS, paiements Stripe.\n"
     "Nouveautés à connaître : import catalogue fournisseur CSV (séparateur ;) ou XLSX avec aperçu avant "
-    "confirmation, modèles officiels téléchargeables, historique des imports et synchronisation quotidienne "
-    "depuis une URL (onglet « Mes produits » de l'espace vendeur) ; alertes stock bas par email et cloche avec "
-    "seuil personnalisable par produit ou en masse ; promotions avec compte à rebours sur le catalogue, "
-    "relance à J-3 et prolongation de 7 jours en un clic depuis l'email ; produits masqués automatiquement du "
-    "catalogue en cas de rupture totale ou de promos expirées ; alerte de retour en stock pour les acheteurs "
-    "abonnés ; fiche produit détaillée partageable (/catalogue?produit=id) avec galerie photos et ajout "
-    "panier ; facturation CREDI'SCOP des actions métier : 4 crédits par action (ajout panier, commande, offre "
-    "d'enchère, import catalogue), 8 crédits au-delà de 100 actions dans le mois, compteur visible dans "
-    "l'espace CREDI'SCOP, action bloquée avec invitation à recharger si le solde est insuffisant ; page "
-    "« Mes notifications » avec marquage lu/non-lu.\n"
+    "confirmation, modèles officiels téléchargeables (colonnes poids_kg et volume_m3 incluses), historique des "
+    "imports et synchronisation quotidienne depuis une URL (onglet « Mes produits » de l'espace vendeur) ; "
+    "alertes stock bas par email et cloche avec seuil personnalisable par produit ou en masse ; promotions avec "
+    "compte à rebours sur le catalogue, relance à J-3 et prolongation de 7 jours en un clic depuis l'email ; "
+    "produits masqués automatiquement du catalogue en cas de rupture totale ou de promos expirées ; alerte de "
+    "retour en stock pour les acheteurs abonnés ; fiche produit détaillée partageable (/catalogue?produit=id) "
+    "avec galerie photos et ajout panier ; facturation CREDI'SCOP des actions métier : 4 crédits par action "
+    "(ajout panier, commande, offre d'enchère, import catalogue), 8 crédits au-delà de 100 actions dans le "
+    "mois, compteur visible dans l'espace CREDI'SCOP, action bloquée avec invitation à recharger si le solde "
+    "est insuffisant.\n"
+    "Notifications : page « Mes notifications » avec filtres par catégorie (Toutes, Stock, Promotions, "
+    "Enchères, Autres) et marquage lu/non-lu ; la cloche de l'en-tête propose les mêmes filtres, un carillon "
+    "sonore à l'arrivée d'une notification en temps réel, un bouton muet et le choix des catégories qui "
+    "sonnent ; à l'ouverture d'un espace, Oracle lit un résumé vocal des notifications non lues dans la langue "
+    "du membre (français, anglais, espagnol, créole).\n"
+    "Garantie CREDI'SCOP 45 % (Règlement à Réception) : pour payer à réception, la valeur en euros des crédits "
+    "CREDI'SCOP du membre (valorisée au prix des packs) doit couvrir au moins 45 % du coût logistique de la "
+    "commande (calculé d'après le poids/volume des produits). Sinon, une alerte au checkout indique le montant "
+    "manquant et le pack conseillé, avec le bouton « Acheter ce pack maintenant » (Recharge Express : paiement "
+    "Stripe du pack, panier conservé, retour automatique au checkout et Règlement à Réception réactivé). "
+    "Le plafond à réception est accordé par l'admin et rétabli à l'encaissement définitif.\n"
+    "Poids et volume produits : champs Poids (kg) et Volume (L) de la fiche vendeur publiés au catalogue à "
+    "l'approbation ; une carte « produits sans poids ou volume » sur le tableau de bord vendeur liste les "
+    "fiches à compléter (bouton « Compléter ») — sans ces données, la garantie 45 % ne s'applique pas.\n"
+    "Signature électronique des commandes : le code de vérification est envoyé par SMS réel (Brevo) au "
+    "téléphone du signataire, avec repli par email.\n"
     "Règles : réponds dans la langue de l'utilisateur (français par défaut), en 2 à 6 phrases claires, "
     "orientées action (indique les onglets/boutons à utiliser). N'utilise JAMAIS de Markdown ni "
     "d'astérisques : texte brut uniquement, avec les noms d'onglets entre guillemets « ». "
@@ -201,6 +217,20 @@ async def _data_pack(db, user: dict, space: str) -> str:
             w = await db.lolodrive_wallets.find_one({"user_id": user["id"]}, {"_id": 0, "balance_uc": 1})
             if w:
                 lines.append(f"Solde wallet : {w.get('balance_uc', 0)} UC.")
+        if space in ("buyer", "vendor"):
+            acc = await db.cpc_accounts.find_one({"user_id": user["id"]}, {"_id": 0, "cpc_balance": 1})
+            if acc:
+                lines.append(f"Solde CREDI'SCOP : {acc.get('cpc_balance', 0)} crédits.")
+        if space == "vendor" and user.get("vendor_id"):
+            miss = 0
+            async for p in db.vendor_products.find(
+                    {"vendor_id": user["vendor_id"], "status": {"$nin": ["archived", "rejected"]}},
+                    {"_id": 0, "weight_per_unit": 1, "weight_kg": 1, "volume_per_unit": 1, "volume_m3": 1}):
+                if not (p.get("weight_per_unit") or p.get("weight_kg")) or not (p.get("volume_per_unit") or p.get("volume_m3")):
+                    miss += 1
+            if miss:
+                lines.append(f"Produits sans poids ou volume (garantie 45 % non applicable) : {miss} — "
+                             "carte « Compléter » sur le tableau de bord vendeur.")
     except Exception as exc:
         logger.debug("Oracle data pack: %s", exc)
     return "\n".join(lines)[:900]

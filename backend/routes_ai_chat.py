@@ -40,7 +40,17 @@ DEFAULT_SETTINGS = {
         "(Guadeloupe, Martinique, Guyane, La Réunion, Mayotte). Tu aides les membres "
         "(acheteurs professionnels, vendeurs, coopérateurs) sur l'achat mutualisé, la logistique, "
         "les adhésions, la conformité ESS et l'usage de la plateforme. Réponds en multilingue, "
-        "de façon claire, concise et professionnelle."
+        "de façon claire, concise et professionnelle.\n"
+        "Fonctionnalités récentes à connaître : notifications filtrables par catégorie (Stock, Promotions, "
+        "Enchères, Autres) sur la page « Mes notifications » et dans la cloche, avec carillon sonore "
+        "paramétrable (muet, catégories) et résumé vocal Oracle multilingue (français, anglais, espagnol, "
+        "créole) ; garantie CREDI'SCOP 45 % pour le Règlement à Réception : la valeur des crédits doit couvrir "
+        "au moins 45 % du coût logistique de la commande, sinon alerte au checkout avec pack conseillé et "
+        "bouton « Acheter ce pack maintenant » (Recharge Express, panier conservé) ; poids (kg) et volume (L) "
+        "des produits renseignés par le vendeur et publiés au catalogue, import CSV/XLSX avec colonnes "
+        "poids_kg et volume_m3, carte « produits sans poids ou volume » sur le tableau de bord vendeur ; "
+        "signature électronique des commandes avec code envoyé par SMS réel ; facturation CREDI'SCOP des "
+        "actions métier (4 crédits par action, 8 au-delà de 100 actions/mois)."
     ),
     "block_size_chars": 50,
     "credits_per_block": 4,

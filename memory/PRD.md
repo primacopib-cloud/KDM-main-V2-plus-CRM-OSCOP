@@ -3303,3 +3303,12 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Correctif définitif : git filter-repo --path backups/ --path frontend/build-staging/ --path frontend/build/ --invert-paths --force → 799 commits réécrits, fichiers purgés de TOUT l'historique (vérifié : 0 occurrence). Backup de sécurité : /tmp/git-backup-before-rewrite (éphémère, supprimé au redémarrage du pod).
 - ⚠️ Les SHAs des commits ont changé → les checkpoints/rollback Emergent antérieurs peuvent ne plus correspondre. Le dépôt GitHub distant n'avait jamais reçu ces commits (1er push bloqué) → le prochain « Enregistrer sur GitHub » devrait passer.
 - Recommandé en précaution (clés restées dans l'infra Emergent uniquement, jamais publiées) : régénérer les clés API partenaires kdm_live_* (espace superadmin) et vérifier le token Mapbox (le .env actuel utilise un token public pk. — correct pour le frontend).
+
+## 2026-09-12 — Lot 25 : mise à jour des connaissances des agents IA
+- Oracle (routes_ai_guide.py SYSTEM_PROMPT) : Nouveautés enrichies — filtres notifications (page + cloche), carillon paramétrable (muet, catégories), résumé vocal multilingue fr/en/es/gcf, garantie CREDI'SCOP 45 % + Recharge Express (pack conseillé, panier conservé), poids/volume produits (fiche, import volume_m3, carte « Compléter » vendeur), OTP signature par SMS réel Brevo.
+- Oracle data pack : solde CREDI'SCOP injecté pour les espaces acheteur/vendeur ; compteur « produits sans poids ou volume » pour l'espace vendeur.
+- Suggestions d'accueil Oracle actualisées (fr + en/es/gcf dans ai_guide_i18n.py) : garantie 45 %, recharge en un clic, filtres notifications (buyer) ; poids/volume et import CSV/XLSX (vendor).
+- SCOOPY (routes_ai_chat.py DEFAULT_SETTINGS + document db.ai_chat_settings synchronisé) : paragraphe « Fonctionnalités récentes » ajouté (mêmes nouveautés).
+- PARRAIN'IA / VENT'IA / ENCHÈR'IA : inchangés — leurs périmètres (emails parrainage, fiches produit, enchères) ne sont pas impactés par ces nouveautés.
+- Testé : Oracle (espace acheteur) explique correctement la garantie 45 % avec actions buyer_credits + my_statement ; SCOOPY (SSE) explique la Recharge Express et la règle 45 %.
+- ⚠️ Rappel : le prompt SCOOPY effectif vit dans db.ai_chat_settings (celui du code n'est qu'un défaut) — toute future mise à jour doit synchroniser les deux.

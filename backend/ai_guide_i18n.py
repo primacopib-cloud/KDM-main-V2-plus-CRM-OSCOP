@@ -36,9 +36,10 @@ FACT_TEMPLATES = {
 
 SUGGESTIONS_I18N = {
     "en": {
-        "buyer": ["How do I issue a LOGI'SCOP transport order?", "How do I pay a transport invoice online?",
-                  "What are service credits (article 22)?", "How do I launch a competitive consultation?"],
-        "vendor": ["How do I add a product to the catalog?", "How does the RCR retention work?",
+        "buyer": ["How does the 45% CREDI'SCOP guarantee for pay-on-delivery work?",
+                  "How do I top up my credits in one click from checkout?",
+                  "How do I filter my notifications by category?", "How do I launch a competitive consultation?"],
+        "vendor": ["How do I add a product to the catalog?", "Why should I fill in product weight and volume?",
                    "Where can I track my received orders?"],
         "admin": ["Summarize the platform's financial health", "How does the 30/60/90-day treasury work?",
                   "What to do about a 45-day unpaid transport invoice?"],
@@ -47,9 +48,10 @@ SUGGESTIONS_I18N = {
         "general": ["What can I do on Communityplace?", "How do I join the cooperative?"],
     },
     "es": {
-        "buyer": ["¿Cómo emito una orden de transporte LOGI'SCOP?", "¿Cómo pago una factura de transporte en línea?",
-                  "¿Qué son los abonos de servicio (artículo 22)?", "¿Cómo lanzo una consulta competitiva?"],
-        "vendor": ["¿Cómo añado un producto al catálogo?", "¿Cómo funciona la retención RCR?",
+        "buyer": ["¿Cómo funciona la garantía CREDI'SCOP del 45 % para el pago a la recepción?",
+                  "¿Cómo recargo mis créditos en un clic desde el checkout?",
+                  "¿Cómo filtro mis notificaciones por categoría?", "¿Cómo lanzo una consulta competitiva?"],
+        "vendor": ["¿Cómo añado un producto al catálogo?", "¿Por qué indicar el peso y el volumen de mis productos?",
                    "¿Dónde sigo mis pedidos recibidos?"],
         "admin": ["Resume la salud financiera de la plataforma", "¿Cómo funciona la tesorería 30/60/90 días?",
                   "¿Qué hacer con una factura de transporte impagada a 45 días?"],
@@ -58,9 +60,10 @@ SUGGESTIONS_I18N = {
         "general": ["¿Qué puedo hacer en Communityplace?", "¿Cómo me adhiero a la cooperativa?"],
     },
     "gcf": {
-        "buyer": ["Ki jan pou voyé on Òd Transpò LOGI'SCOP ?", "Ki jan pou péyé on fakti transpò an liy ?",
-                  "Ka sa yé, avwa a sèvis-la (awtik 22) ?", "Ki jan pou lansé on konsiltasyon ?"],
-        "vendor": ["Ki jan pou mèt on pwodui adan katalòg-la ?", "Ki jan RCR-la ka maché ?",
+        "buyer": ["Ki jan garanti CREDI'SCOP 45 % la ka maché pou péyé a résèpsyon ?",
+                  "Ki jan pou richajé krédi an mwen an on sèl klik dépi checkout-la ?",
+                  "Ki jan pou filtré notifikasyon an mwen pa katégori ?", "Ki jan pou lansé on konsiltasyon ?"],
+        "vendor": ["Ki jan pou mèt on pwodui adan katalòg-la ?", "Poukisa pou mèt pwa é volim a pwodui an mwen ?",
                    "Ki koté pou suiv komann an mwen ?"],
         "admin": ["Ba mwen on rezimé asi lajan a platfòm-la", "Ki jan trézorèri 30/60/90 jou ka maché ?",
                   "Ka pou fè èvè on fakti transpò poko péyé a 45 jou ?"],
