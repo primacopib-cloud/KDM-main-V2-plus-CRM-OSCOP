@@ -7,6 +7,7 @@ import { Badge } from '../../ui/badge';
 import { Countdown } from '../../auctions/AuctionCard';
 import { AuctionFormDialog } from './AuctionFormDialog';
 import { AuctionSettingsDialog } from './AuctionSettingsDialog';
+import { AuctionStats } from './AuctionStats';
 
 const STATUS_STYLE = {
   SCHEDULED: 'bg-sky-500/20 text-sky-300', LIVE: 'bg-emerald-500/20 text-emerald-300',
@@ -61,6 +62,8 @@ export const AuctionsAdminPanel = () => {
           </Button>
         </div>
       </div>
+
+      <AuctionStats refreshKey={data.items.length} />
 
       {data.items.length === 0 ? (
         <p className="text-white/45 text-sm py-6" data-testid="auctions-admin-empty">

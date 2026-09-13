@@ -38,6 +38,57 @@ async def ensure_auction_defaults():
             {"id": p["id"]}, {"$setOnInsert": {**p, "created_at": now}}, upsert=True)
 
 
+# ---------- Statistiques (crédits collectés, mises par enchère, conversion des plans) ----------
+
+@auctions_admin_router.get("/stats")
+async def auction_stats(admin: dict = Depends(require_admin)):
+    now = ah.now_utc()
+    spend = await ah.db.auction_credit_ledger.aggregate([
+        {"$match": {"type": "SPEND"}},
+        {"$group": {"_id": None, "credits": {"$sum": {"$abs": "$amount"}}}},
+    ]).to_list(1)
+    credits_collected = spend[0]["credits"] if spend else 0
+    by_plan = await ah.db.auction_pass_purchases.aggregate([
+        {"$group": {
+            "_id": "$plan_id", "label": {"$first": "$plan_label"},
+            "active": {"$sum": {"$cond": [{"$eq": ["$status", "ACTIVE"]}, 1, 0]}},
+            "pending": {"$sum": {"$cond": [{"$eq": ["$status", "PENDING"]}, 1, 0]}},
+            "revenue_cents": {"$sum": {"$cond": [{"$eq": ["$status", "ACTIVE"]}, "$ttc_cents", 0]}},
+        }},
+    ]).to_list(20)
+    revenue_eur = round(sum(p["revenue_cents"] for p in by_plan) / 100, 2)
+    for p in by_plan:
+        total = p["active"] + p["pending"]
+        p["conversion_pct"] = round(100 * p["active"] / total, 1) if total else 0.0
+    by_bid = {b["_id"]: b for b in await ah.db.auction_bids.aggregate([
+        {"$group": {"_id": "$auction_id", "bids": {"$sum": 1}, "credits": {"$sum": "$credits_spent"}}},
+    ]).to_list(500)}
+    auctions = await ah.db.auctions.find(
+        {}, {"_id": 0, "id": 1, "reference": 1, "title": 1, "status": 1, "winner": 1,
+             "starts_at": 1, "ends_at": 1}).sort("created_at", -1).to_list(50)
+    per_auction = []
+    for a in auctions:
+        b = by_bid.get(a["id"], {"bids": 0, "credits": 0})
+        winner_credits = (a.get("winner") or {}).get("price_credits") or 0
+        per_auction.append({
+            "id": a["id"], "reference": a["reference"], "title": a["title"],
+            "status": ah.effective_status(a), "bids": b["bids"], "bid_credits": b["credits"],
+            "winner_credits": winner_credits, "total_credits": b["credits"] + winner_credits,
+        })
+    return {
+        "credits_collected": credits_collected,
+        "revenue_eur": revenue_eur,
+        "total_bids": sum(p["bids"] for p in per_auction),
+        "total_auctions": len(per_auction),
+        "live_auctions": sum(1 for p in per_auction if p["status"] == "LIVE"),
+        "won_auctions": sum(1 for p in per_auction if p["status"] == "WON"),
+        "active_plan_accounts": await ah.db.auction_accounts.count_documents(
+            {"valid_until": {"$gt": now.isoformat()}}),
+        "plans": by_plan,
+        "per_auction": per_auction,
+    }
+
+
 # ---------- Sélecteur de produits (catalogue LOLODRIVE + catalogue vendeurs) ----------
 
 @auctions_admin_router.get("/products")
