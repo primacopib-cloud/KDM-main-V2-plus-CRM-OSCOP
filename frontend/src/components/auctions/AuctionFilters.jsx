@@ -1,0 +1,56 @@
+import i18n from '@/i18n';
+import { Search } from 'lucide-react';
+
+const Pill = ({ active, onClick, children, testId }) => (
+  <button type="button" onClick={onClick} data-testid={testId}
+    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors ${
+      active ? 'bg-[#D9B35A] text-[#2A1045] border-[#D9B35A]' : 'bg-white/[0.04] text-white/60 border-white/15 hover:bg-white/10'}`}>
+    {children}
+  </button>
+);
+
+// Filtre enrichi : statut, catégorie, type, provenance, recherche
+export const AuctionFilters = ({ filters, setFilters, categories, types, sources }) => {
+  const set = (k, v) => setFilters((f) => ({ ...f, [k]: f[k] === v ? '' : v }));
+  return (
+    <div className="space-y-2 mb-5" data-testid="auction-filters">
+      <div className="relative max-w-sm">
+        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-white/35" />
+        <input value={filters.q} onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
+          placeholder={i18n.t('auction.search')} data-testid="auction-search-input"
+          className="w-full h-8 pl-8 pr-3 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white placeholder-white/30 outline-none focus:border-[#D9B35A]/60" />
+      </div>
+      <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-status-filter-row">
+        {[['', 'filter_all'], ['LIVE', 'filter_live'], ['SCHEDULED', 'filter_scheduled'], ['FINISHED', 'filter_finished']].map(([v, k]) => (
+          <Pill key={k} active={filters.status === v} onClick={() => setFilters((f) => ({ ...f, status: v }))}
+            testId={`auction-status-filter-${v || 'all'}`}>{i18n.t(`auction.${k}`)}</Pill>
+        ))}
+      </div>
+      {categories.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-category-filter-row">
+          <span className="text-[10px] text-white/40 uppercase tracking-wide">{i18n.t('auction.filter_category')}</span>
+          {categories.map((c) => (
+            <Pill key={c.id} active={filters.category === c.id} onClick={() => set('category', c.id)}
+              testId={`auction-cat-filter-${c.id}`}>{c.label}</Pill>
+          ))}
+        </div>
+      )}
+      {types.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-type-filter-row">
+          <span className="text-[10px] text-white/40 uppercase tracking-wide">{i18n.t('auction.filter_type')}</span>
+          {types.map((t) => (
+            <Pill key={t.id} active={filters.type_id === t.id} onClick={() => set('type_id', t.id)}
+              testId={`auction-type-filter-${t.id}`}>{t.label}</Pill>
+          ))}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-source-filter-row">
+        <span className="text-[10px] text-white/40 uppercase tracking-wide">{i18n.t('auction.filter_source')}</span>
+        {sources.map((s) => (
+          <Pill key={s.code} active={filters.source === s.code} onClick={() => set('source', s.code)}
+            testId={`auction-source-filter-${s.code}`}>{s.label}</Pill>
+        ))}
+      </div>
+    </div>
+  );
+};

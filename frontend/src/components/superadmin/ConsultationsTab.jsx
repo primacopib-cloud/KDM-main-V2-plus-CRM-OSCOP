@@ -10,6 +10,7 @@ import { EvaluationModal } from './EvaluationModal';
 import { FreightEstimateInline } from './FreightEstimateInline';
 import { CoopiaProcedureHint } from './CoopiaProcedureHint';
 import { LiveAuctionRoom } from './LiveAuctionRoom';
+import { AuctionsAdminPanel } from './auctions/AuctionsAdminPanel';
 
 const opts = () => ({ headers: getAuthHeaders(), credentials: 'include' });
 const jsonOpts = (method, body) => ({ method, headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, credentials: 'include', body: JSON.stringify(body) });
@@ -224,6 +225,7 @@ export const ConsultationsTab = () => {
       {modal && <CreateModal onClose={() => setModal(false)} onSaved={() => { setModal(false); load(); }} />}
       {evalC && <EvaluationModal consultation={evalC} onClose={() => setEvalC(null)} onChanged={load} />}
       {liveId && <LiveAuctionRoom cid={liveId} onClose={() => setLiveId(null)} />}
+      <AuctionsAdminPanel />
     </div>
   );
 };

@@ -1,0 +1,84 @@
+{
+  "summary": "Frontend-only e2e testing of the new descending-price auction feature (KDMARCHÉ × O'SCOP). All 7 requested scenarios validated on preview URL. Visitor /encheres, connected member (marie), catalog banner, superadmin panel, settings dialog, form dialog and EN i18n all work as specified.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/encheres?lang=en", "issues": ["Countdown label still shows French shorthand 'J-1 23h56' / 'Ends in J-1 23h56' — the 'J-1' token is not translated in EN (should be 'D-1' or full 'Ends in 1d 23h56m'). Minor i18n leak."]},
+      {"screen": "Superadmin › Enchères inversées › Settings dialog", "issues": ["Category/type/plan rows expose a 'Désactiver' toggle only (soft-deactivate) — there is no hard-delete affordance. After toggling, the row remains visible marked inactive. Acceptable but the task/UI copy 'la supprimer' misleads: consider hiding inactive items or renaming button to 'Archiver'."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(low) Translate the 'J-1'/'J+' countdown shorthand in AuctionCard for non-FR locales.",
+    "(low) In AuctionSettingsDialog, clarify that delete is a soft-toggle (rename to Archiver/Activer) OR expose a permanent delete on inactive rows."
+  ],
+  "critical_code_review_comments": [
+    "AuctionSettingsDialog: taxonomy toggle is destructive-looking ('Désactiver') but reversible — verify backend endpoint semantics match UI copy.",
+    "AuctionsPage.jsx correctly gates bid/accept UI and displays floor-masked LIVE auction without provenance badge — good.",
+    "AuctionCard countdown formatter is FR-locked (J-1, h, m). Consider passing locale."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100% (7/7 scenarios pass)"},
+  "seed_data_creation": "Created transient auction category 'TEST_iter92_cat' via UI, then toggled off (Désactiver). Row remains as inactive (soft-delete) — safe (TEST_ prefixed, easy to clean). Marie placed exactly 1 bid on AUC-20260913-4D07B1 (120→118€, credits 100→90) as instructed; auction still LIVE.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Demo state after this run: LIVE auction AUC-20260913-4D07B1 now at 118.00 €/1180 cr with 1 bid; marie has 90 auction credits remaining. Category 'TEST_iter92_cat' left in Inactive state in auction taxonomy (soft-deactivated).",
+  "detailed_results": {
+    "visitor_encheres": {
+      "auctions-grid": true,
+      "auction-plan-gate_with_3_plans": true,
+      "auction-filters_present": true,
+      "LIVE_card_price_eur_and_credits": "120.00 € · 1200 crédits",
+      "LIVE_card_countdown_visible": true,
+      "LIVE_card_provenance_masked_no_badge": true,
+      "WON_card_shows_Remporté_par": true,
+      "visitor_Souscrire_click_redirects_to": "/connexion?next=/encheres"
+    },
+    "filters": {
+      "En cours": ["AUC-20260913-4D07B1"],
+      "À venir": ["AUC-20260913-296D02"],
+      "Terminées": ["AUC-20260913-65C88D"],
+      "search_rhum": ["AUC-20260913-4D07B1"],
+      "provenance_LOLODRIVE": ["AUC-20260913-65C88D", "AUC-20260913-296D02"],
+      "masked_LIVE_hidden_from_LOLODRIVE_filter": true
+    },
+    "member_marie": {
+      "account_bar_credits_before": 100,
+      "bid_result_price": "118.00 €",
+      "credits_after_bid": 90,
+      "accept_result": "Toast erreur clair: 'Il faut 1180 crédits pour accepter ce prix — rechargez votre plan'. HTTP 402. Auction reste LIVE.",
+      "auction_state_after_accept": "LIVE"
+    },
+    "catalog_banner": {
+      "auctions-banner-link_present": true,
+      "navigates_to": "/encheres"
+    },
+    "superadmin_panel": {
+      "auctions-admin-panel_visible": true,
+      "admin_rows": 3,
+      "LIVE_row_shows_provenance_masquée_VENDOR": true,
+      "SCHEDULED_row_shows_recurrence_Quotidienne": true,
+      "WON_row_shows_winner_and_pickup": "🏆 Marie Dupont — Retrait : Lolo Point Pointe-à-Pitre",
+      "new-auction-btn_opens_form": true,
+      "auction-settings-btn_opens_settings": true
+    },
+    "auction_form_dialog": {
+      "picker-source-lolodrive_click_lists_items": 23,
+      "picker-source-vendor_visible": true
+    },
+    "auction_settings_dialog": {
+      "3_plans_listed_with_price_credits_validity": true,
+      "plans": ["Découverte 9.90€/100cr/30j", "Passion 29.00€/400cr/30j", "Premium 59.00€/1000cr/30j"],
+      "test_category_created": "TEST_iter92_cat",
+      "delete_is_toggle_(Désactiver)": true
+    },
+    "i18n_en": {
+      "title_translated": "LOLODRIVE Auction Room",
+      "filters_translated": ["All","Live","Upcoming","Finished"],
+      "plan_gate_translated": "An active CREDI'SCOP-Auctions plan is required to bid.",
+      "countdown_J-1_still_french_in_en": true
+    }
+  }
+}

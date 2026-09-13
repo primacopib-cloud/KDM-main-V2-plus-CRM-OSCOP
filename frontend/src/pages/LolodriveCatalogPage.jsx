@@ -1,6 +1,6 @@
 import i18n from '@/i18n';
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { BackLink } from '../components/BackLink';
 import { ShoppingCart, Plus, Minus, Wallet, CreditCard, ArrowLeft, Star, ChevronRight, Timer } from 'lucide-react';
 import LolodriveLayout, { fmtEUR } from '../components/LolodriveLayout';
@@ -528,6 +528,12 @@ export default function LolodriveCatalogPage() {
           </TabsTrigger>
         </TabsList>
       </Tabs>
+
+      <Link to="/encheres" data-testid="auctions-banner-link"
+        className="block mb-4 rounded-2xl border border-[#D9B35A]/40 p-3 text-sm font-bold text-[#2A1045] transition-transform hover:scale-[1.01]"
+        style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
+        🔨 {i18n.t('auction.banner_cta')}
+      </Link>
 
       <CatalogFiltersBar search={search} setSearch={setSearch}
         category={category} setCategory={setCategory}
