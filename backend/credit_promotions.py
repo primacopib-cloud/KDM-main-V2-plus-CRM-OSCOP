@@ -4,7 +4,7 @@ from __future__ import annotations
 import math
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -173,6 +173,30 @@ async def update_promotion(promo_id: str, payload: PromotionPayload, admin: dict
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Promotion introuvable")
     return {"status": "SUCCESS"}
+
+
+@promotions_router.post("/{promo_id}/extend-24h")
+async def extend_promotion_24h(promo_id: str, admin: dict = Depends(_admin)):
+    """Prolonge la promo de 24 h en un clic (base : ends_at existant ou maintenant)."""
+    promo = await db.credit_promotions.find_one({"id": promo_id}, {"_id": 0})
+    if not promo:
+        raise HTTPException(status_code=404, detail="Promotion introuvable")
+    now = datetime.now(timezone.utc)
+    base = now
+    if promo.get("ends_at"):
+        try:
+            cur = datetime.fromisoformat(str(promo["ends_at"]).replace("Z", "+00:00"))
+            if cur.tzinfo is None:
+                cur = cur.replace(tzinfo=timezone.utc)
+            base = max(cur, now)
+        except ValueError:
+            pass
+    new_end = (base + timedelta(hours=24)).isoformat()
+    await db.credit_promotions.update_one(
+        {"id": promo_id},
+        {"$set": {"ends_at": new_end, "active": True, "archived": False,
+                  "extended_at": now.isoformat(), "extended_by": admin.get("email")}})
+    return {"status": "SUCCESS", "ends_at": new_end}
 
 
 @promotions_router.post("/{promo_id}/archive")

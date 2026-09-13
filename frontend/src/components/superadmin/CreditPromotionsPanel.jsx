@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Percent, Plus, Archive, Trash2, BarChart3, Send } from 'lucide-react';
+import { Percent, Plus, Archive, Trash2, BarChart3, Send, TimerReset } from 'lucide-react';
 import { CountdownImagesEditor } from './CountdownImagesEditor';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -207,6 +207,17 @@ export const CreditPromotionsPanel = () => {
                 <button type="button" onClick={() => sendCampaign(p.id)} data-testid={`promo-send-${p.id}`}
                   title="Envoyer la campagne email" className="p-1.5 rounded-lg opacity-40 hover:opacity-100 hover:bg-blue-500/10 text-blue-400">
                   <Send size={13} />
+                </button>
+              )}
+              {!p.archived && (
+                <button type="button" onClick={async () => {
+                  const r = await fetch(`${API}/admin/credit-promotions/${p.id}/extend-24h`, { method: 'POST', credentials: 'include' });
+                  const d = await r.json();
+                  if (r.ok) { toast.success(`Promo prolongée jusqu'au ${new Date(d.ends_at).toLocaleString('fr-FR')}`); refresh(); }
+                  else toast.error(d.detail || 'Prolongation impossible');
+                }} data-testid={`promo-extend-${p.id}`}
+                  title="Prolonger de 24 h" className="p-1.5 rounded-lg opacity-40 hover:opacity-100 hover:bg-sky-500/10 text-sky-400">
+                  <TimerReset size={13} />
                 </button>
               )}
               {!p.archived && (

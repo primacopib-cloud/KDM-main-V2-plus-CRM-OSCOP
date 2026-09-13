@@ -161,6 +161,20 @@ async def run_favorite_promo_ending_alerts(db) -> int:
                 await db.favorite_promo_notified.insert_one(
                     {"user_id": fav["user_id"], "key": key, "notified_at": datetime.utcnow()})
             sent += 1
+            # Notification in-app (cloche) — catégorie « promo » + carillon WebSocket
+            try:
+                from core_deps import create_notification
+                names = ", ".join(p["name"] for p, _ in hits[:3]) + (" +…" if len(hits) > 3 else "")
+                soonest = min(p["tag_until"] for p, _ in hits)
+                await create_notification(
+                    notification_type="favorite_promo_ending",
+                    title=f"⏳ Dernière chance : {len(hits)} favori{'s' if len(hits) > 1 else ''} quitte{'nt' if len(hits) > 1 else ''} la promo dans moins de 24 h",
+                    message=f"{names} — fin le {soonest.strftime('%d/%m à %Hh%M')}. Commandez vite dans votre catalogue LOLODRIVE !",
+                    target_roles=[],
+                    target_user_id=fav["user_id"],
+                    data={"link": "/catalogue-lolodrive", "skus": [p["sku"] for p, _ in hits]})
+            except Exception as exc:
+                logger.warning("Notification in-app fin promo favoris échouée : %s", exc)
             if user.get("phone"):
                 from brevo_service import send_sms
                 names = ", ".join(p["name"] for p, _ in hits[:2]) + (" +…" if len(hits) > 2 else "")
