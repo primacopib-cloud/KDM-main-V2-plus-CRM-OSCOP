@@ -3504,3 +3504,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-09-14 — Lot 58 : badge canaux d'alerte dans le widget d'accueil
 - NextPickupWidget : quand la commande est READY, un badge « SMS + email + cloche envoyés » (icône MessageSquare, data-testid next-pickup-sms-badge) rappelle au membre les canaux de notification déclenchés au passage prête. Pur frontend.
 - Testé (self-test UI) : commande READY seedée → widget avec badge, QR unique et conseil rendus ; donnée supprimée.
+
+## 2026-09-14 — Lot 59 : accusé d'envoi des canaux au retrait prêt
+- Au passage READY, le résultat réel des envois Brevo (notify_order_ready → {email, sms}) est enregistré sur la commande : `ready_channels = {sms: bool, email: bool, at}`. Le nom du relais dans l'email/SMS utilise désormais aussi reference_point_id (fallback) — avant, les commandes de relais de référence disaient « Point de retrait LOLODRIVE » générique.
+- Widget d'accueil : le badge devient dynamique — SMS ✓/—, Email ✓/—, Cloche ✓ (data-testid channel-sms/channel-email/channel-bell), vert si confirmé par l'opérateur, grisé sinon ; texte statique conservé en fallback pour commandes READY historiques sans ready_channels. NB : ✓ = envoi accepté par Brevo (accusé opérateur à l'émission, pas webhook de délivrance finale).
+- Testé (self-test) : PREPARING → READY réel → ready_channels {sms:true, email:true} + token ; UI : « SMS ✓ Email ✓ Cloche ✓ » rendu. Commande et notifs de test nettoyées.

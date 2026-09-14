@@ -83,9 +83,20 @@ export const NextPickupWidget = () => {
           <p className="text-[11px] font-semibold text-emerald-300" data-testid="next-pickup-ready">
             Présentez-vous au relais avec votre numéro de commande ou faites scanner le QR.
           </p>
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-white/50 border border-white/15 rounded-full px-2 py-0.5"
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-white/50 border border-white/15 rounded-full px-2 py-0.5"
             data-testid="next-pickup-sms-badge">
-            <MessageSquare className="w-3 h-3" /> SMS + email + cloche envoyés
+            <MessageSquare className="w-3 h-3" />
+            {order.ready_channels ? (
+              <>
+                <span className={order.ready_channels.sms ? 'text-emerald-300' : 'text-white/30'} data-testid="channel-sms">
+                  SMS {order.ready_channels.sms ? '✓' : '—'}
+                </span>
+                <span className={order.ready_channels.email ? 'text-emerald-300' : 'text-white/30'} data-testid="channel-email">
+                  Email {order.ready_channels.email ? '✓' : '—'}
+                </span>
+                <span className="text-emerald-300" data-testid="channel-bell">Cloche ✓</span>
+              </>
+            ) : 'SMS + email + cloche envoyés'}
           </span>
         </div>
       )}
