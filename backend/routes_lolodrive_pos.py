@@ -214,6 +214,19 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
         try:
             order = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
             if order:
+                from core_deps import create_notification
+                await create_notification(
+                    notification_type="lolodrive_order_ready",
+                    title=f"Commande prête : {order.get('order_number')}",
+                    message="Votre commande vous attend au relais. Votre QR de retrait unique est affiché en haut de votre catalogue et dans votre espace PASS.",
+                    target_roles=[],
+                    target_user_id=order.get("user_id"),
+                    data={"order_id": order_id, "link": "/catalogue-lolodrive"})
+        except Exception as exc:
+            logger.warning(f"Cloche commande prête {order_id}: {exc}")
+        try:
+            order = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
+            if order:
                 user_doc = await db.users.find_one({"id": order.get("user_id")}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
                 pickup = "Point de retrait LOLODRIVE"
                 if order.get("lolo_point_id"):

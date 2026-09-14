@@ -3496,3 +3496,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-09-14 — Lot 56 : QR retrait renouvelé au déplacement
 - reschedule_order (routes_lolodrive_oscoop.py) régénère systématiquement `pickup_token` : tout QR partagé avant le déplacement devient invalide (404 « QR ou commande inconnu » au scan), le nouveau QR du widget pointe sur le nouveau token. Le token est aussi régénéré pour les commandes pas encore READY (le QR ne s'affiche qu'au statut READY de toute façon).
 - Testé (self-test) : commande READY avec token « ancien-token-1234 » → reschedule → token régénéré ; scan ancien → 404 ; scan nouveau → 200 FULFILLED. Donnée de test supprimée.
+
+## 2026-09-14 — Lot 57 : cloche membre au passage « prête »
+- Dans la branche READY de pos_update_order_status (routes_lolodrive_pos.py) : create_notification type lolodrive_order_ready vers le membre (« Votre commande vous attend au relais. Votre QR de retrait unique est affiché en haut de votre catalogue et dans votre espace PASS. », data link /catalogue-lolodrive), best-effort. L'email+SMS Brevo existants (notify_order_ready) sont préservés.
+- Testé (self-test) : PREPARING → READY 200 → cloche créée pour le bon user_id, token pickup généré sur la commande ; nettoyage fait.
