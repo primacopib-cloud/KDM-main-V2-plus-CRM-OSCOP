@@ -149,6 +149,31 @@ async def _refund_no_pickup_penalty(order_id: str):
         logger.warning("Email remboursement pénalité %s : %s", num, exc)
 
 
+async def _credit_quiet_slot_bonus(order_id: str):
+    """Crédite le bonus créneau calme au retrait effectif (idempotent)."""
+    order = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
+    bonus = int(order.get("quiet_slot_bonus_uc") or 0) if order else 0
+    if not order or bonus <= 0 or order.get("quiet_bonus_credited"):
+        return
+    wallet = await get_or_create_wallet(order["user_id"])
+    await db.lolodrive_wallets.update_one(
+        {"id": wallet["id"]},
+        {"$inc": {"balance_uc": bonus}, "$set": {"updated_at": datetime.utcnow()}})
+    await db.lolodrive_wallet_ledger.insert_one({
+        "id": str(uuid.uuid4()), "wallet_id": wallet["id"], "type": "CREDIT",
+        "amount_uc": bonus, "reason": "QUIET_SLOT_BONUS", "order_id": order_id,
+        "created_at": datetime.utcnow()})
+    await db.lolodrive_orders.update_one({"id": order_id}, {"$set": {"quiet_bonus_credited": True}})
+    from core_deps import create_notification
+    await create_notification(
+        notification_type="lolodrive_quiet_bonus",
+        title=f"Bonus créneau calme : +{bonus} UC",
+        message=f"Merci d'avoir choisi un créneau calme pour la commande {order.get('order_number')} : {bonus} UC viennent d'être crédités sur votre wallet.",
+        target_roles=[],
+        target_user_id=order["user_id"],
+        data={"order_id": order_id, "link": "/espace-pass"})
+
+
 @lolodrive_pos_router.post("/pos/orders/{order_id}/status")
 async def pos_update_order_status(order_id: str, request: StatusUpdate, user: dict = Depends(get_current_user)):
     now = datetime.utcnow()
@@ -165,6 +190,10 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
             await _refund_no_pickup_penalty(order_id)
         except Exception as exc:
             logger.warning(f"Remboursement pénalité {order_id}: {exc}")
+        try:
+            await _credit_quiet_slot_bonus(order_id)
+        except Exception as exc:
+            logger.warning(f"Bonus créneau calme {order_id}: {exc}")
     await _broadcast_pos_event("order.status_changed", {"order_id": order_id, "status": request.status.value})
     try:
         from erp_webhooks import dispatch_lolodrive_order_event

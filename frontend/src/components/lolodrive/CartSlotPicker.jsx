@@ -67,7 +67,7 @@ export const CartSlotPicker = ({ fulfillment, cartItems, products, slotId, setSl
       </Select>
       {dayInfo && slotQuiet(slotId) && !slotFull(slotId) && (
         <p className="text-[10px] text-emerald-300/80 mt-1 px-0.5" data-testid="quiet-slot-hint">
-          Créneau calme ce jour-là : retrait plus rapide, moins d'attente.
+          Créneau calme ce jour-là : +2 UC offerts au retrait, moins d'attente.
         </p>
       )}
       {fee > 0 && (

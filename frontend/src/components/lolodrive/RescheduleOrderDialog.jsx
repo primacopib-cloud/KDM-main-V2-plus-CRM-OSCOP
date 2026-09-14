@@ -71,7 +71,7 @@ export const RescheduleOrderDialog = ({ order, open, onOpenChange, onDone }) => 
           <SelectContent>
             {slots.map((s) => (
               <SelectItem key={s.id} value={s.id} disabled={slotFull(s.id)} data-testid={`reschedule-slot-${s.id}`}>
-                {s.label}{slotFull(s.id) ? ' — COMPLET' : slotQuiet(s.id) ? ' — créneau calme' : ''}
+                {s.label}{slotFull(s.id) ? ' — COMPLET' : slotQuiet(s.id) ? ' — créneau calme (+2 UC)' : ''}
               </SelectItem>
             ))}
           </SelectContent>

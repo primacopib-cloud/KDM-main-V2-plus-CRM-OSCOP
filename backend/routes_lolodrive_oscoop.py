@@ -254,12 +254,23 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
     elif slot_id:
         pickup_date = datetime.utcnow().strftime("%Y-%m-%d")
 
+    # Bonus créneau calme : premier arrivé sur un créneau vide = UC offerts au retrait
+    quiet_bonus_uc = 0
+    if pickup_date and slot_id and cal_point:
+        n_slot = await db.lolodrive_orders.count_documents({
+            "$or": [{"lolo_point_id": cal_point.get("id")}, {"reference_point_id": cal_point.get("id")}],
+            "pickup_date": pickup_date, "pickup_slot_id": slot_id,
+            "status": {"$nin": ["CANCELLED"]}})
+        if n_slot == 0:
+            quiet_bonus_uc = QUIET_SLOT_BONUS_UC
+
     order = {
         "id": str(uuid.uuid4()),
         "order_number": f"LD-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}",
         "user_id": user["id"],
         "lolo_point_id": point.get("id") if point else None,
         "reference_point_id": ref_point.get("id") if ref_point else None,
+        "quiet_slot_bonus_uc": quiet_bonus_uc,
         "fulfillment_type": request.fulfillment_type.value,
         "delivery_zone": request.delivery_zone,
         "delivery_slot_id": request.delivery_slot_id,
@@ -297,6 +308,9 @@ async def my_orders(user: dict = Depends(get_current_user)):
 class RescheduleBody(BaseModel):
     pickup_date: str
     pickup_slot_id: str
+
+
+QUIET_SLOT_BONUS_UC = 2
 
 
 @lolodrive_router.put("/orders/{order_id}/reschedule")
@@ -348,12 +362,33 @@ async def reschedule_order(order_id: str, body: RescheduleBody, user: dict = Dep
     if body.pickup_slot_id != order.get("pickup_slot_id") and round(new_fee, 2) != old_fee:
         raise HTTPException(status_code=400,
                             detail="Ce créneau a des frais différents : gardez le même créneau ou contactez votre relais")
+    updates = {"pickup_date": body.pickup_date, "pickup_slot_id": body.pickup_slot_id,
+               "pickup_slot_label": new_label,
+               "rescheduled_at": datetime.utcnow().isoformat()}
+    if cal_point and not order.get("quiet_bonus_credited"):
+        n_slot = await db.lolodrive_orders.count_documents({
+            "$or": [{"lolo_point_id": cal_point.get("id")}, {"reference_point_id": cal_point.get("id")}],
+            "pickup_date": body.pickup_date, "pickup_slot_id": body.pickup_slot_id,
+            "status": {"$nin": ["CANCELLED"]}, "id": {"$ne": order_id}})
+        updates["quiet_slot_bonus_uc"] = QUIET_SLOT_BONUS_UC if n_slot == 0 else 0
     await db.lolodrive_orders.update_one(
         {"id": order_id},
-        {"$set": {"pickup_date": body.pickup_date, "pickup_slot_id": body.pickup_slot_id,
-                  "pickup_slot_label": new_label,
-                  "rescheduled_at": datetime.utcnow().isoformat()},
-         "$inc": {"reschedule_count": 1}})
+        {"$set": updates, "$inc": {"reschedule_count": 1}})
+    # Cloche gérant : le client a déplacé sa commande
+    if cal_point and cal_point.get("manager_user_id"):
+        try:
+            from core_deps import create_notification
+            old_when = f"{order.get('pickup_date')} ({order.get('pickup_slot_id')})"
+            new_when = f"{body.pickup_date} ({body.pickup_slot_id})"
+            await create_notification(
+                notification_type="lolodrive_order_rescheduled",
+                title=f"Commande déplacée — {order.get('order_number')}",
+                message=f"Le client a déplacé sa commande du {old_when} au {new_when}.",
+                target_roles=[],
+                target_user_id=cal_point["manager_user_id"],
+                data={"order_id": order_id, "link": "/lolo-point/dashboard"})
+        except Exception as exc:
+            logger.warning("Notification déplacement commande %s échouée : %s", order_id, exc)
     updated = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
     return updated
 

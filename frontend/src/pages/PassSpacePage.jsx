@@ -20,6 +20,7 @@ import { SavedCartReminder } from '../components/pass/SavedCartReminder';
 import QuickRechargeCards from '../components/pass/QuickRechargeCards';
 import { PassQrCard } from '../components/lolodrive/PassQrCard';
 import { RescheduleOrderDialog } from '../components/lolodrive/RescheduleOrderDialog';
+import { OrderTimeline } from '../components/lolodrive/OrderTimeline';
 import { LoyaltyCard } from '../components/pass/LoyaltyCard';
 import { toast } from 'sonner';
 
@@ -396,6 +397,7 @@ export default function PassSpacePage() {
                           )}
                         </div>
                       )}
+                      <OrderTimeline order={o} />
                     </div>
                   </div>
                   <div className="text-right shrink-0">
@@ -406,6 +408,9 @@ export default function PassSpacePage() {
                       </div>
                     )}
                     <div className="flex gap-1 justify-end mt-0.5">
+                      {(o.quiet_slot_bonus_uc || 0) > 0 && (
+                        <Badge color="#10b981">+{o.quiet_slot_bonus_uc} UC calme{o.quiet_bonus_credited ? ' ✓' : ''}</Badge>
+                      )}
                       {o.pay_with_uc && <Badge color="#D9B35A">UC</Badge>}
                       <Badge color={statusColor(o.status)}>{o.status}</Badge>
                     </div>
