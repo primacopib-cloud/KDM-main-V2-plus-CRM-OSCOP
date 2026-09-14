@@ -341,6 +341,46 @@ class RemindResult(BaseModel):
     channel: str
 
 
+@lolodrive_manager_router.post("/manager/orders/{order_id}/retry-ready-sms")
+async def manager_retry_ready_sms(order_id: str, user: dict = Depends(get_current_user)):
+    """Ré-envoie le SMS « commande prête » quand le client a enfin un numéro valide."""
+    from datetime import timezone
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    if not point:
+        raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    order = await db.lolodrive_orders.find_one(
+        {"id": order_id, "$or": [{"lolo_point_id": point["id"]}, {"reference_point_id": point["id"]}]},
+        {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande introuvable sur votre relais")
+    if order.get("status") != "READY":
+        raise HTTPException(status_code=409, detail="Seules les commandes prêtes peuvent être relancées")
+    client = await db.users.find_one({"id": order.get("user_id")},
+                                     {"_id": 0, "phone": 1, "first_name": 1, "contact_name": 1})
+    if not client or not client.get("phone"):
+        raise HTTPException(status_code=422, detail="Le client n'a toujours pas de numéro de téléphone valide")
+    from brevo_service import send_sms
+    slot = order.get("pickup_slot_label") or ""
+    res = await send_sms(
+        client["phone"],
+        f"KDMARCHE x O'SCOP : votre commande #{order.get('order_number')} est prete au retrait "
+        f"({point['name']}{f', creneau {slot}' if slot else ''}). Munissez-vous de votre QR-code.",
+        tag="order_ready_retry")
+    if not res:
+        raise HTTPException(status_code=422, detail="Le numéro du client reste invalide pour l'envoi SMS")
+    now = datetime.now(timezone.utc).isoformat()
+    channels = dict(order.get("ready_channels") or {})
+    channels["sms"] = True
+    channels["at"] = now
+    await db.lolodrive_orders.update_one(
+        {"id": order_id},
+        {"$set": {"ready_channels": channels, "ready_sms_retried_at": now}})
+    await db.notifications.update_many(
+        {"type": "lolodrive_ready_sms_failed", "data.order_id": order_id, "target_user_id": user["id"]},
+        {"$set": {"is_read": True}})
+    return {"ok": True, "channel": "sms"}
+
+
 @lolodrive_manager_router.post("/manager/orders/{order_id}/sms-followup-done")
 async def manager_sms_followup_done(order_id: str, user: dict = Depends(get_current_user)):
     """Le gérant clôt le suivi manuel d'un SMS « prête » non parti (client appelé)."""

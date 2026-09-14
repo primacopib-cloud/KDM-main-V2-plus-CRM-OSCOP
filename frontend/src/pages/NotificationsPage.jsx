@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell, BellOff, Check, CheckCheck, Loader2, PhoneCall } from 'lucide-react';
+import { ArrowLeft, Bell, BellOff, Check, CheckCheck, Loader2, PhoneCall, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { lolodriveAPI } from '../services/api';
 import { BackLink } from '../components/BackLink';
@@ -109,20 +109,37 @@ export default function NotificationsPage() {
                     </p>
                     <p className="text-xs mt-1 leading-relaxed">{n.message}</p>
                     {n.type === 'lolodrive_ready_sms_failed' && !n.is_read && n.data?.order_id && (
-                      <span
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            await lolodriveAPI.managerSmsFollowupDone(n.data.order_id);
-                            toast.success('Suivi clôturé : client appelé ✓');
-                            markRead(n.id);
-                          } catch (err) {
-                            toast.error(err.message);
-                          }
-                        }}
-                        data-testid={`sms-followup-done-${n.data.order_id}`}
-                        className="mt-2 inline-flex items-center gap-1 px-2.5 h-6 rounded-full text-[10px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10 hover:bg-emerald-500/20 cursor-pointer">
-                        <PhoneCall className="w-3 h-3" /> Client appelé — clore le suivi
+                      <span className="mt-2 flex items-center gap-2 flex-wrap">
+                        <span
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await lolodriveAPI.managerRetryReadySms(n.data.order_id);
+                              toast.success('SMS de retrait renvoyé au client ✓');
+                              markRead(n.id);
+                            } catch (err) {
+                              toast.error(err.message);
+                            }
+                          }}
+                          data-testid={`sms-retry-${n.data.order_id}`}
+                          className="inline-flex items-center gap-1 px-2.5 h-6 rounded-full text-[10px] font-bold text-[#E9CF8E] border border-[#D9B35A]/40 bg-[#D9B35A]/10 hover:bg-[#D9B35A]/20 cursor-pointer">
+                          <MessageSquare className="w-3 h-3" /> Ré-envoyer le SMS
+                        </span>
+                        <span
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await lolodriveAPI.managerSmsFollowupDone(n.data.order_id);
+                              toast.success('Suivi clôturé : client appelé ✓');
+                              markRead(n.id);
+                            } catch (err) {
+                              toast.error(err.message);
+                            }
+                          }}
+                          data-testid={`sms-followup-done-${n.data.order_id}`}
+                          className="inline-flex items-center gap-1 px-2.5 h-6 rounded-full text-[10px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10 hover:bg-emerald-500/20 cursor-pointer">
+                          <PhoneCall className="w-3 h-3" /> Client appelé — clore le suivi
+                        </span>
                       </span>
                     )}
                     <p className="text-[10px] text-white/35 mt-2">{fmt(n.created_at)}</p>

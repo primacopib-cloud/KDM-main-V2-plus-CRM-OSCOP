@@ -247,6 +247,7 @@ export const lolodriveAPI = {
   managerAffluence: (days = 90) => apiCall(`/lolodrive/manager/affluence?days=${days}`),
   managerRemindOrder: (orderId) => apiCall(`/lolodrive/manager/orders/${orderId}/remind`, { method: 'POST' }),
   managerSmsFollowupDone: (orderId) => apiCall(`/lolodrive/manager/orders/${orderId}/sms-followup-done`, { method: 'POST' }),
+  managerRetryReadySms: (orderId) => apiCall(`/lolodrive/manager/orders/${orderId}/retry-ready-sms`, { method: 'POST' }),
 
   // Brevo metrics (délivrabilité)
   brevoMetricsSummary: (days = 30) => apiCall(`/brevo/metrics/summary?days=${days}`),
