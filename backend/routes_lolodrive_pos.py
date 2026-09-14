@@ -179,10 +179,17 @@ async def _credit_quiet_slot_bonus(order_id: str):
 async def pos_update_order_status(order_id: str, request: StatusUpdate, user: dict = Depends(get_current_user)):
     now = datetime.utcnow()
     extra = {"updated_at": now}
+    existing = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0, "status": 1, "pickup_token": 1})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Commande introuvable")
+    if request.status == OrderStatus.FULFILLED and existing.get("status") == OrderStatus.FULFILLED.value:
+        raise HTTPException(status_code=409, detail="Cette commande a déjà été retirée")
     if request.status == OrderStatus.PREPARING:
         extra["prepared_at"] = now
     if request.status == OrderStatus.READY:
         extra["ready_at"] = now
+        if not existing.get("pickup_token"):
+            extra["pickup_token"] = uuid.uuid4().hex  # QR passe-relais à usage unique
     if request.status == OrderStatus.FULFILLED:
         extra["fulfilled_at"] = now
     await db.lolodrive_orders.update_one({"id": order_id}, {"$set": {"status": request.status.value, **extra}})
@@ -263,22 +270,33 @@ async def pos_remind_pickup(order_id: str, user: dict = Depends(get_current_user
 
 @lolodrive_pos_router.post("/pos/orders/{order_id}/scan")
 async def pos_scan(order_id: str, user: dict = Depends(get_current_user)):
-    order = await db.lolodrive_orders.find_one({"id": order_id})
+    # QR passe-relais : la valeur scannée peut être un token à usage unique « pickup:<hex> »
+    if order_id.startswith("pickup:"):
+        order = await db.lolodrive_orders.find_one({"pickup_token": order_id[7:]})
+    else:
+        order = await db.lolodrive_orders.find_one({"id": order_id})
     if not order:
-        raise HTTPException(status_code=404, detail="Commande introuvable")
+        raise HTTPException(status_code=404, detail="QR ou commande inconnu")
+    if order["status"] == OrderStatus.FULFILLED.value:
+        raise HTTPException(status_code=409, detail="Ce QR a déjà été utilisé : commande déjà retirée")
     if order["status"] not in [OrderStatus.READY.value, OrderStatus.PAID.value]:
         raise HTTPException(status_code=400, detail="Commande non prête")
-    await db.lolodrive_orders.update_one({"id": order_id}, {"$set": {"status": OrderStatus.FULFILLED.value, "fulfilled_at": datetime.utcnow(), "updated_at": datetime.utcnow()}})
+    oid = order["id"]
+    await db.lolodrive_orders.update_one({"id": oid}, {"$set": {"status": OrderStatus.FULFILLED.value, "fulfilled_at": datetime.utcnow(), "updated_at": datetime.utcnow(), "pickup_token_used": True}})
     try:
-        await _apply_drive_stock(order_id)
+        await _apply_drive_stock(oid)
     except Exception as exc:
-        logger.warning(f"Stock drive {order_id}: {exc}")
+        logger.warning(f"Stock drive {oid}: {exc}")
     try:
-        await _refund_no_pickup_penalty(order_id)
+        await _refund_no_pickup_penalty(oid)
     except Exception as exc:
-        logger.warning(f"Remboursement pénalité {order_id}: {exc}")
-    await _broadcast_pos_event("order.fulfilled", {"order_id": order_id})
-    return {"ok": True, "order_id": order_id, "status": OrderStatus.FULFILLED.value}
+        logger.warning(f"Remboursement pénalité {oid}: {exc}")
+    try:
+        await _credit_quiet_slot_bonus(oid)
+    except Exception as exc:
+        logger.warning(f"Bonus créneau calme {oid}: {exc}")
+    await _broadcast_pos_event("order.fulfilled", {"order_id": oid})
+    return {"ok": True, "order_id": oid, "order_number": order.get("order_number"), "status": OrderStatus.FULFILLED.value}
 
 
 @lolodrive_pos_router.post("/pos/orders/{order_id}/cancel")

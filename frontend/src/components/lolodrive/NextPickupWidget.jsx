@@ -67,8 +67,9 @@ export const NextPickupWidget = () => {
         <div className="flex flex-col items-center gap-1.5 shrink-0">
           {ready && (
             <div className="p-2 rounded-xl bg-white" data-testid="next-pickup-qr">
-              <QRCodeSVG value={order.order_number} size={72} level="M" fgColor="#111111" bgColor="#ffffff" />
-              <p className="text-[8px] font-bold text-black/60 text-center mt-1 uppercase">QR retrait</p>
+              <QRCodeSVG value={order.pickup_token ? `pickup:${order.pickup_token}` : order.order_number}
+                size={72} level="M" fgColor="#111111" bgColor="#ffffff" />
+              <p className="text-[8px] font-bold text-black/60 text-center mt-1 uppercase">QR retrait{order.pickup_token ? ' unique' : ''}</p>
             </div>
           )}
           <Link to="/espace-pass" data-testid="next-pickup-link"

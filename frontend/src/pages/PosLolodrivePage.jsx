@@ -165,8 +165,8 @@ export default function PosLolodrivePage() {
     try {
       const order = orders.find((o) => o.order_number === scanInput || o.id === scanInput);
       const id = order?.id || scanInput;
-      await lolodriveAPI.posScan(id);
-      toast.success(`Commande ${scanInput} retirée ✅`);
+      const r = await lolodriveAPI.posScan(id);
+      toast.success(`Commande ${r?.order_number || scanInput} retirée ✅`);
       setScanInput('');
       load();
     } catch (e) {
