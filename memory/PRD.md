@@ -3513,3 +3513,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-09-14 — Lot 60 : alerte gérant quand le SMS « prête » n'a pas pu partir
 - Dans la branche READY de pos_update_order_status : si ready_channels.sms est faux (téléphone absent/invalide ou échec Brevo), une cloche lolodrive_ready_sms_failed est créée pour le manager_user_id du relais (« Le client n'a pas pu être alerté par SMS… Pensez à l'appeler manuellement », lien /lolo-point/dashboard), best-effort. pt initialisé à None avant le lookup relais (évite UnboundLocalError si commande sans point).
 - Testé (self-test) : membre temporaire sans téléphone + commande PREPARING → READY 200 → ready_channels {sms:false, email:true} + cloche gérant au bon destinataire ; membre avec téléphone (lot 59) : sms:true, pas de cloche d'alerte. Compte, commande et notifications de test supprimés.
+
+## 2026-09-14 — Lot 61 : fiche contact rapide dans la cloche « SMS non envoyé »
+- La notification lolodrive_ready_sms_failed inclut désormais les coordonnées du client : nom (first_name, sinon contact_name), téléphone (« pas de téléphone renseigné » si absent) et email dans le message, plus data.customer_name/customer_phone/customer_email structurés. Projection users étendue avec first_name.
+- Testé (self-test) : membre sans téléphone → READY → cloche « Contact direct : Noemie — pas de téléphone renseigné — sans-tel2@example.com » avec data complète ; compte/commande/notifs de test supprimés.

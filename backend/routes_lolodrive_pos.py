@@ -227,7 +227,7 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
         try:
             order = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
             if order:
-                user_doc = await db.users.find_one({"id": order.get("user_id")}, {"_id": 0, "email": 1, "contact_name": 1, "phone": 1})
+                user_doc = await db.users.find_one({"id": order.get("user_id")}, {"_id": 0, "email": 1, "contact_name": 1, "first_name": 1, "phone": 1})
                 pickup = "Point de retrait LOLODRIVE"
                 pt = None
                 if order.get("lolo_point_id") or order.get("reference_point_id"):
@@ -261,13 +261,19 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
                     if not res.get("sms") and pt and pt.get("manager_user_id"):
                         try:
                             from core_deps import create_notification
+                            c_name = user_doc.get("first_name") or user_doc.get("contact_name") or "Client"
+                            c_phone = user_doc.get("phone") or "pas de téléphone renseigné"
+                            c_email = user_doc.get("email") or ""
                             await create_notification(
                                 notification_type="lolodrive_ready_sms_failed",
                                 title=f"SMS non envoyé — {order.get('order_number')}",
-                                message="Le client n'a pas pu être alerté par SMS (téléphone absent ou invalide). Pensez à l'appeler manuellement pour organiser son retrait.",
+                                message=(f"Le client n'a pas pu être alerté par SMS. Contact direct : {c_name}"
+                                         f" — {c_phone} — {c_email}. Pensez à l'appeler manuellement pour organiser son retrait."),
                                 target_roles=[],
                                 target_user_id=pt["manager_user_id"],
-                                data={"order_id": order_id, "link": "/lolo-point/dashboard"})
+                                data={"order_id": order_id, "link": "/lolo-point/dashboard",
+                                      "customer_name": c_name, "customer_phone": user_doc.get("phone"),
+                                      "customer_email": user_doc.get("email")})
                         except Exception as exc:
                             logger.warning(f"Cloche SMS non parti {order_id}: {exc}")
         except Exception as exc:
