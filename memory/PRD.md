@@ -3500,3 +3500,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-09-14 — Lot 57 : cloche membre au passage « prête »
 - Dans la branche READY de pos_update_order_status (routes_lolodrive_pos.py) : create_notification type lolodrive_order_ready vers le membre (« Votre commande vous attend au relais. Votre QR de retrait unique est affiché en haut de votre catalogue et dans votre espace PASS. », data link /catalogue-lolodrive), best-effort. L'email+SMS Brevo existants (notify_order_ready) sont préservés.
 - Testé (self-test) : PREPARING → READY 200 → cloche créée pour le bon user_id, token pickup généré sur la commande ; nettoyage fait.
+
+## 2026-09-14 — Lot 58 : badge canaux d'alerte dans le widget d'accueil
+- NextPickupWidget : quand la commande est READY, un badge « SMS + email + cloche envoyés » (icône MessageSquare, data-testid next-pickup-sms-badge) rappelle au membre les canaux de notification déclenchés au passage prête. Pur frontend.
+- Testé (self-test UI) : commande READY seedée → widget avec badge, QR unique et conseil rendus ; donnée supprimée.

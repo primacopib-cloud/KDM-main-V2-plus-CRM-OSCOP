@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PackageCheck, ArrowRight } from 'lucide-react';
+import { PackageCheck, ArrowRight, MessageSquare } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { lolodriveAPI } from '../../services/api';
 import { OrderTimeline } from './OrderTimeline';
@@ -79,9 +79,15 @@ export const NextPickupWidget = () => {
         </div>
       </div>
       {ready && (
-        <p className="text-[11px] font-semibold text-emerald-300 mt-2" data-testid="next-pickup-ready">
-          Présentez-vous au relais avec votre numéro de commande ou faites scanner le QR.
-        </p>
+        <div className="mt-2 flex items-center gap-3 flex-wrap">
+          <p className="text-[11px] font-semibold text-emerald-300" data-testid="next-pickup-ready">
+            Présentez-vous au relais avec votre numéro de commande ou faites scanner le QR.
+          </p>
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-white/50 border border-white/15 rounded-full px-2 py-0.5"
+            data-testid="next-pickup-sms-badge">
+            <MessageSquare className="w-3 h-3" /> SMS + email + cloche envoyés
+          </span>
+        </div>
       )}
     </div>
   );
