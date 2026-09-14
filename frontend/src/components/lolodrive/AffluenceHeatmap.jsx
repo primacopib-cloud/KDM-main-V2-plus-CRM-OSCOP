@@ -60,7 +60,14 @@ export const AffluenceHeatmap = () => {
           <tbody>
             {data.slots.map((slot) => (
               <tr key={slot.id}>
-                <td className="text-left text-[11px] text-white/60 font-semibold px-2 whitespace-nowrap">{slot.label}</td>
+                <td className="text-left text-[11px] text-white/60 font-semibold px-2 whitespace-nowrap">
+                  {slot.label}
+                  {data.slot_ratings?.[slot.id] && (
+                    <span className="block text-[9px] text-emerald-300/80 font-normal" data-testid={`affluence-rating-${slot.id}`}>
+                      fluidité {data.slot_ratings[slot.id].avg}/5 ({data.slot_ratings[slot.id].count} note{data.slot_ratings[slot.id].count > 1 ? 's' : ''})
+                    </span>
+                  )}
+                </td>
                 {DAYS.map((_, wd) => {
                   const n = get(wd, slot.id);
                   return (

@@ -96,7 +96,13 @@ async def my_pass(user: dict = Depends(get_current_user)):
 async def my_wallet(user: dict = Depends(get_current_user)):
     w = await get_or_create_wallet(user["id"])
     ledger = await db.lolodrive_wallet_ledger.find({"wallet_id": w["id"]}, {"_id": 0}).sort("created_at", -1).limit(50).to_list(50)
-    return {"wallet": {"balance_uc": w.get("balance_uc", 0)}, "ledger": ledger}
+    quiet_total = 0
+    async for row in db.lolodrive_wallet_ledger.aggregate([
+        {"$match": {"wallet_id": w["id"], "reason": "QUIET_SLOT_BONUS", "type": "CREDIT"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount_uc"}}},
+    ]):
+        quiet_total = row["total"]
+    return {"wallet": {"balance_uc": w.get("balance_uc", 0), "quiet_bonus_total_uc": quiet_total}, "ledger": ledger}
 
 @lolodrive_router.get("/catalog/teaser")
 async def catalog_teaser():
@@ -311,6 +317,48 @@ class RescheduleBody(BaseModel):
 
 
 QUIET_SLOT_BONUS_UC = 2
+
+
+class SlotRatingBody(BaseModel):
+    rating: int
+
+
+@lolodrive_router.get("/orders/slot-rating/pending")
+async def slot_rating_pending(user: dict = Depends(get_current_user)):
+    """Dernières commandes retirées (< 7 j) sans note de fluidité du créneau."""
+    since = datetime.utcnow() - timedelta(days=7)
+    orders = await db.lolodrive_orders.find(
+        {"user_id": user["id"], "status": "FULFILLED",
+         "slot_rating": {"$exists": False}, "pickup_slot_label": {"$ne": None},
+         "fulfilled_at": {"$gte": since}},
+        {"_id": 0, "id": 1, "order_number": 1, "pickup_slot_label": 1, "pickup_date": 1,
+         "lolo_point_id": 1, "reference_point_id": 1}).sort("fulfilled_at", -1).limit(3).to_list(3)
+    out = []
+    for o in orders:
+        pid = o.get("lolo_point_id") or o.get("reference_point_id")
+        pt = await db.lolodrive_points.find_one({"id": pid}, {"_id": 0, "name": 1}) if pid else None
+        out.append({"order_id": o["id"], "order_number": o.get("order_number"),
+                    "pickup_slot_label": o.get("pickup_slot_label"),
+                    "point_name": (pt or {}).get("name")})
+    return {"pending": out}
+
+
+@lolodrive_router.post("/orders/{order_id}/slot-rating")
+async def submit_slot_rating(order_id: str, body: SlotRatingBody, user: dict = Depends(get_current_user)):
+    """Note express de fluidité du créneau (1-5) juste après le retrait."""
+    if not 1 <= body.rating <= 5:
+        raise HTTPException(status_code=400, detail="La note doit être entre 1 et 5")
+    order = await db.lolodrive_orders.find_one({"id": order_id, "user_id": user["id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande introuvable")
+    if order.get("status") != "FULFILLED":
+        raise HTTPException(status_code=409, detail="La note se donne après le retrait de la commande")
+    if order.get("slot_rating"):
+        raise HTTPException(status_code=409, detail="Cette commande a déjà été notée")
+    await db.lolodrive_orders.update_one(
+        {"id": order_id},
+        {"$set": {"slot_rating": body.rating, "slot_rated_at": datetime.utcnow().isoformat()}})
+    return {"ok": True, "rating": body.rating}
 
 
 @lolodrive_router.put("/orders/{order_id}/reschedule")

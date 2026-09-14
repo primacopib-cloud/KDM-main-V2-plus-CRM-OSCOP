@@ -316,12 +316,21 @@ async def manager_affluence(days: int = 90, user: dict = Depends(get_current_use
 
     cells = [{"weekday": wd, "slot_id": sid, "count": grid[(wd, sid)]} for wd in range(7) for sid in slot_ids]
     counts = [c["count"] for c in cells]
+    ratings = {}
+    async for row in db.lolodrive_orders.aggregate([
+        {"$match": {"$or": [{"lolo_point_id": point["id"]}, {"reference_point_id": point["id"]}],
+                    "pickup_date": {"$gte": start}, "slot_rating": {"$gte": 1}}},
+        {"$group": {"_id": "$pickup_slot_id", "avg": {"$avg": "$slot_rating"}, "n": {"$sum": 1}}},
+    ]):
+        if row["_id"] in slot_ids:
+            ratings[row["_id"]] = {"avg": round(row["avg"], 1), "count": row["n"]}
     return {
         "days": days,
         "since": start,
         "point": {"id": point["id"], "name": point["name"], "code": point["code"]},
         "slots": [{"id": s["id"], "label": s.get("label", s["id"])} for s in ref_slots],
         "cells": cells,
+        "slot_ratings": ratings,
         "max": max(counts) if counts else 0,
         "total": sum(counts),
     }

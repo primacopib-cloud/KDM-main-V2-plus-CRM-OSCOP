@@ -24,6 +24,9 @@ export const lolodriveAPI = {
   myOrders: () => apiCall('/lolodrive/orders/me'),
   rescheduleOrder: (orderId, payload) =>
     apiCall(`/lolodrive/orders/${orderId}/reschedule`, { method: 'PUT', body: JSON.stringify(payload) }),
+  slotRatingPending: () => apiCall('/lolodrive/orders/slot-rating/pending'),
+  submitSlotRating: (orderId, rating) =>
+    apiCall(`/lolodrive/orders/${orderId}/slot-rating`, { method: 'POST', body: JSON.stringify({ rating }) }),
   payOrderUC: (orderId) =>
     apiCall(`/lolodrive/orders/${orderId}/pay-uc`, { method: 'POST' }),
 
