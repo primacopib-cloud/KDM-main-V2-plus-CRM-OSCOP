@@ -412,7 +412,8 @@ async def reschedule_order(order_id: str, body: RescheduleBody, user: dict = Dep
                             detail="Ce créneau a des frais différents : gardez le même créneau ou contactez votre relais")
     updates = {"pickup_date": body.pickup_date, "pickup_slot_id": body.pickup_slot_id,
                "pickup_slot_label": new_label,
-               "rescheduled_at": datetime.utcnow().isoformat()}
+               "rescheduled_at": datetime.utcnow().isoformat(),
+               "pickup_token": uuid.uuid4().hex}  # régénère le QR retrait : l'ancien code partagé est invalidé
     if cal_point and not order.get("quiet_bonus_credited"):
         n_slot = await db.lolodrive_orders.count_documents({
             "$or": [{"lolo_point_id": cal_point.get("id")}, {"reference_point_id": cal_point.get("id")}],

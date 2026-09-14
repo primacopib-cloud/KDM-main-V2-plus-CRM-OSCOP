@@ -3492,3 +3492,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Scan POS : POST /pos/orders/{ref}/scan accepte `pickup:<token>` ; un QR déjà utilisé → 409 « Ce QR a déjà été utilisé : commande déjà retirée » ; token inconnu → 404. Le scan pose pickup_token_used=True, applique stock drive, remboursement pénalité, bonus créneau calme, broadcast, et renvoie order_number (toast POS utilise r.order_number).
 - Garde globale anti-double-retrait : FULFILLED sur une commande déjà FULFILLED → 409 « Cette commande a déjà été retirée » (pos_update_order_status ET pos_scan). NOTE : le double-FULFILLED renvoyait 200 avant ce lot — comportement volontairement durci.
 - Testé (self-test) : READY → token généré ; scan pickup:<token> → 200 FULFILLED + order_number ; re-scan → 409 ; double FULFILLED → 409 ; token bidon → 404 ; UI : widget affiche « QR RETRAIT UNIQUE ». Donnée de test supprimée.
+
+## 2026-09-14 — Lot 56 : QR retrait renouvelé au déplacement
+- reschedule_order (routes_lolodrive_oscoop.py) régénère systématiquement `pickup_token` : tout QR partagé avant le déplacement devient invalide (404 « QR ou commande inconnu » au scan), le nouveau QR du widget pointe sur le nouveau token. Le token est aussi régénéré pour les commandes pas encore READY (le QR ne s'affiche qu'au statut READY de toute façon).
+- Testé (self-test) : commande READY avec token « ancien-token-1234 » → reschedule → token régénéré ; scan ancien → 404 ; scan nouveau → 200 FULFILLED. Donnée de test supprimée.
