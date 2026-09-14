@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { RelayCalendarCard } from '../components/lolodrive/RelayCalendarCard';
 import { ManagerPlanningGrid } from '../components/lolodrive/ManagerPlanningGrid';
+import { AffluenceHeatmap } from '../components/lolodrive/AffluenceHeatmap';
 import LolodriveLayout, { KpiCard, SectionCard, Badge, fmtEUR } from '../components/LolodriveLayout';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -112,6 +113,7 @@ export default function LoloPointManagerPage() {
           <RelayCalendarCard key={`cal-${point.id}-${(point.pickup_days || []).join()}-${(point.delivery_days || []).join()}`}
             point={point} onSaved={load} />
           <ManagerPlanningGrid />
+          <AffluenceHeatmap />
           {/* Point info */}
           <SectionCard className="mb-6">
             <div className="flex flex-wrap items-start justify-between gap-4">

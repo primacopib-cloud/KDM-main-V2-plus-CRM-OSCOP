@@ -239,6 +239,8 @@ export const lolodriveAPI = {
   managerTimeseries: (days = 30) => apiCall(`/lolodrive/manager/my-timeseries?days=${days}`),
   managerNetworkRanking: (days = 30) => apiCall(`/lolodrive/manager/network-ranking?days=${days}`),
   managerPlanning: (weekStart) => apiCall(`/lolodrive/manager/planning${weekStart ? `?week_start=${weekStart}` : ''}`),
+  managerAffluence: (days = 90) => apiCall(`/lolodrive/manager/affluence?days=${days}`),
+  managerRemindOrder: (orderId) => apiCall(`/lolodrive/manager/orders/${orderId}/remind`, { method: 'POST' }),
 
   // Brevo metrics (délivrabilité)
   brevoMetricsSummary: (days = 30) => apiCall(`/brevo/metrics/summary?days=${days}`),

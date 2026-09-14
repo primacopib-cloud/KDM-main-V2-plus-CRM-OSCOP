@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Truck, ShoppingBag, Download, Printer, CheckCircle2 } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Truck, ShoppingBag, Download, Printer, CheckCircle2, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
 import { lolodriveAPI } from '../../services/api';
 import { SectionCard, Badge, fmtEUR } from '../LolodriveLayout';
@@ -23,6 +23,7 @@ export const ManagerPlanningGrid = () => {
   const [data, setData] = useState(null);
   const [selected, setSelected] = useState(null); // { date, slotId }
   const [fulfilling, setFulfilling] = useState('');
+  const [reminding, setReminding] = useState('');
 
   const weekStart = useMemo(() => mondayOf(weekOffset), [weekOffset]);
 
@@ -46,6 +47,19 @@ export const ManagerPlanningGrid = () => {
       toast.error(e.message);
     } finally {
       setFulfilling('');
+    }
+  };
+
+  const remindClient = async (order) => {
+    setReminding(order.id);
+    try {
+      const res = await lolodriveAPI.managerRemindOrder(order.id);
+      toast.success(`Client relancé par ${res.channel === 'sms' ? 'SMS' : 'email'} 📣`);
+      await load();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setReminding('');
     }
   };
 
@@ -199,6 +213,14 @@ export const ManagerPlanningGrid = () => {
                     {o.fulfillment_type === 'DELIVERY' ? 'Livraison' : 'Retrait'}
                   </Badge>
                   <Badge color="#3b82f6">{STATUS_LABEL[o.status] || o.status}</Badge>
+                  {o.status === 'READY' && selected.date <= toISO(new Date()) && (
+                    <button type="button" onClick={() => remindClient(o)} disabled={reminding === o.id}
+                      data-testid={`planning-remind-${o.id}`}
+                      className="inline-flex items-center gap-1 px-2 h-6 rounded-full text-[10px] font-bold text-amber-300 border border-amber-400/40 bg-amber-500/10 hover:bg-amber-500/20 disabled:opacity-50">
+                      <BellRing className="w-3 h-3" />
+                      {reminding === o.id ? '…' : 'Relancer client'}
+                    </button>
+                  )}
                   <button type="button" onClick={() => markFulfilled(o)} disabled={fulfilling === o.id}
                     data-testid={`planning-fulfill-${o.id}`}
                     className="inline-flex items-center gap-1 px-2 h-6 rounded-full text-[10px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-50">

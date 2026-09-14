@@ -285,6 +285,108 @@ async def manager_planning(week_start: Optional[str] = None, user: dict = Depend
     }
 
 
+@lolodrive_manager_router.get("/manager/affluence")
+async def manager_affluence(days: int = 90, user: dict = Depends(get_current_user)):
+    """Heatmap d'affluence : commandes servies par jour de semaine × créneau sur N jours."""
+    from datetime import timezone
+    from routes_lolodrive_taxonomy import get_fees_config_doc
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    if not point:
+        raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    days = max(7, min(days, 365))
+    today = datetime.now(timezone.utc).date()
+    start = (today - timedelta(days=days)).strftime("%Y-%m-%d")
+    cfg = await get_fees_config_doc()
+    ref_slots = cfg.get("pickup_slots") or cfg.get("delivery_slots") or []
+    slot_ids = [s["id"] for s in ref_slots]
+
+    grid = {(wd, sid): 0 for wd in range(7) for sid in slot_ids}
+    async for o in db.lolodrive_orders.find(
+            {"$or": [{"lolo_point_id": point["id"]}, {"reference_point_id": point["id"]}],
+             "pickup_date": {"$gte": start, "$lte": today.strftime("%Y-%m-%d")},
+             "status": {"$in": ["PAID", "PREPARING", "READY", "FULFILLED"]}},
+            {"_id": 0, "pickup_date": 1, "pickup_slot_id": 1}):
+        try:
+            wd = datetime.strptime(o.get("pickup_date") or "", "%Y-%m-%d").weekday()
+        except ValueError:
+            continue
+        sid = o.get("pickup_slot_id")
+        if sid in slot_ids:
+            grid[(wd, sid)] += 1
+
+    cells = [{"weekday": wd, "slot_id": sid, "count": grid[(wd, sid)]} for wd in range(7) for sid in slot_ids]
+    counts = [c["count"] for c in cells]
+    return {
+        "days": days,
+        "since": start,
+        "point": {"id": point["id"], "name": point["name"], "code": point["code"]},
+        "slots": [{"id": s["id"], "label": s.get("label", s["id"])} for s in ref_slots],
+        "cells": cells,
+        "max": max(counts) if counts else 0,
+        "total": sum(counts),
+    }
+
+
+class RemindResult(BaseModel):
+    ok: bool
+    channel: str
+
+
+@lolodrive_manager_router.post("/manager/orders/{order_id}/remind")
+async def manager_remind_order(order_id: str, user: dict = Depends(get_current_user)):
+    """Relance le client d'une commande prête non retirée (SMS Brevo, fallback email)."""
+    from datetime import timezone
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})
+    if not point:
+        raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    order = await db.lolodrive_orders.find_one(
+        {"id": order_id,
+         "$or": [{"lolo_point_id": point["id"]}, {"reference_point_id": point["id"]}]},
+        {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande introuvable sur votre relais")
+    if order.get("status") != "READY":
+        raise HTTPException(status_code=409, detail="Seules les commandes prêtes peuvent être relancées")
+    now = datetime.now(timezone.utc)
+    last = order.get("last_pickup_reminder_at")
+    if last:
+        try:
+            last_dt = datetime.fromisoformat(str(last))
+            if last_dt.tzinfo is None:
+                last_dt = last_dt.replace(tzinfo=timezone.utc)
+            if (now - last_dt).total_seconds() < 4 * 3600:
+                raise HTTPException(status_code=429, detail="Client déjà relancé il y a moins de 4 h")
+        except ValueError:
+            pass
+    client = await db.users.find_one({"id": order.get("user_id")},
+                                     {"_id": 0, "email": 1, "phone": 1, "first_name": 1, "contact_name": 1})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client introuvable")
+    first = client.get("first_name") or client.get("contact_name") or ""
+    from brevo_service import send_sms, send_email, _wrap_html
+    is_delivery = order.get("fulfillment_type") == "DELIVERY"
+    channel = "none"
+    if client.get("phone"):
+        msg = (f"LOLODRIVE : bonjour {first}, votre commande {order.get('order_number')} "
+               f"{'sera livree' if is_delivery else 'vous attend'} au relais {point['name']}. "
+               f"{'Merci de vous rendre disponible.' if is_delivery else 'Pensez a la retirer !'}")
+        res = await send_sms(client["phone"], msg, tag="lolodrive-pickup-reminder")
+        if res:
+            channel = "sms"
+    if channel == "none" and client.get("email"):
+        body = (f"<p>Bonjour {first},</p>"
+                f"<p>Votre commande <strong>{order.get('order_number')}</strong> est prête au relais "
+                f"<strong>{point['name']}</strong>. Pensez à la {'réceptionner' if is_delivery else 'retirer'} !</p>")
+        await send_email(client["email"], first or None, "Votre commande LOLODRIVE vous attend",
+                         _wrap_html("Commande à retirer", body), tags=["lolodrive-pickup-reminder"])
+        channel = "email"
+    if channel == "none":
+        raise HTTPException(status_code=422, detail="Client sans téléphone ni email")
+    await db.lolodrive_orders.update_one(
+        {"id": order_id}, {"$set": {"last_pickup_reminder_at": now.isoformat()}})
+    return RemindResult(ok=True, channel=channel)
+
+
 @lolodrive_manager_router.get("/manager/my-payout-preview")
 async def manager_my_payout_preview(user: dict = Depends(get_current_user)):
     point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0})

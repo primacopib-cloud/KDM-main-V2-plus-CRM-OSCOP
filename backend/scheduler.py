@@ -456,6 +456,7 @@ async def _slot_reminder_loop():
             from restock_reminders import run_restock_reminders
             from routes_product_lots import run_tag_expiry
             from favorite_promo_alerts import run_favorite_tag_alerts, run_favorite_promo_ending_alerts
+            from manager_morning_recap import run_manager_morning_recaps
             await run_slot_reminders(_db)
             await run_no_pickup_reminders(_db)
             await run_auto_cancellations(_db)
@@ -465,6 +466,7 @@ async def _slot_reminder_loop():
             await run_tag_expiry(_db)
             await run_favorite_tag_alerts(_db)
             await run_favorite_promo_ending_alerts(_db)
+            await run_manager_morning_recaps(_db)
         except Exception as exc:
             logger.exception("Slot reminder loop crashed: %s", exc)
         await asyncio.sleep(600)
