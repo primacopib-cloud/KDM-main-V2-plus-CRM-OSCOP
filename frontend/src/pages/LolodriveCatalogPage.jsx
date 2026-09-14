@@ -16,6 +16,7 @@ import { PromoCountdownStrip } from '../components/lolodrive/PromoCountdownStrip
 import { CatalogFiltersBar, applyCatalogFilters } from '../components/lolodrive/CatalogFiltersBar';
 import { groupByCategory } from '../components/lolodrive/groupByCategory';
 import { CartSlotPicker } from '../components/lolodrive/CartSlotPicker';
+import { NextPickupWidget } from '../components/lolodrive/NextPickupWidget';
 import { LolodriveProductCard } from '../components/lolodrive/LolodriveProductCard';
 import { LolodriveSpotButton } from '../components/lolodrive/LolodriveSpot';
 import { PassLolodriveBadge } from '../components/catalog/ProductPromoBadges';
@@ -561,6 +562,7 @@ export default function LolodriveCatalogPage() {
       </div>
 
       <PromoCountdownStrip promos={promos} />
+      <NextPickupWidget />
       <Tabs value={filter} onValueChange={setFilter} className="mb-6">
         <TabsList className="bg-white/[0.04] border border-white/10">
           <TabsTrigger value="" data-testid="tab-all">{i18n.t('lolodrive.tous')}</TabsTrigger>
