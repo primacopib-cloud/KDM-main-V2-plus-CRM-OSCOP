@@ -341,6 +341,25 @@ class RemindResult(BaseModel):
     channel: str
 
 
+@lolodrive_manager_router.post("/manager/orders/{order_id}/sms-followup-done")
+async def manager_sms_followup_done(order_id: str, user: dict = Depends(get_current_user)):
+    """Le gérant clôt le suivi manuel d'un SMS « prête » non parti (client appelé)."""
+    from datetime import timezone
+    point = await db.lolodrive_points.find_one({"manager_user_id": user["id"]}, {"_id": 0, "id": 1})
+    if not point:
+        raise HTTPException(status_code=404, detail="Aucun Lolo Point assigné")
+    res = await db.lolodrive_orders.update_one(
+        {"id": order_id, "$or": [{"lolo_point_id": point["id"]}, {"reference_point_id": point["id"]}]},
+        {"$set": {"sms_followup_done_at": datetime.now(timezone.utc).isoformat(),
+                  "sms_followup_done_by": user["id"]}})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Commande introuvable sur votre relais")
+    await db.notifications.update_many(
+        {"type": "lolodrive_ready_sms_failed", "data.order_id": order_id, "target_user_id": user["id"]},
+        {"$set": {"is_read": True}})
+    return {"ok": True}
+
+
 @lolodrive_manager_router.post("/manager/orders/{order_id}/remind")
 async def manager_remind_order(order_id: str, user: dict = Depends(get_current_user)):
     """Relance le client d'une commande prête non retirée (SMS Brevo, fallback email)."""

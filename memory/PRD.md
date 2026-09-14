@@ -3517,3 +3517,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-09-14 — Lot 61 : fiche contact rapide dans la cloche « SMS non envoyé »
 - La notification lolodrive_ready_sms_failed inclut désormais les coordonnées du client : nom (first_name, sinon contact_name), téléphone (« pas de téléphone renseigné » si absent) et email dans le message, plus data.customer_name/customer_phone/customer_email structurés. Projection users étendue avec first_name.
 - Testé (self-test) : membre sans téléphone → READY → cloche « Contact direct : Noemie — pas de téléphone renseigné — sans-tel2@example.com » avec data complète ; compte/commande/notifs de test supprimés.
+
+## 2026-09-14 — Lot 62 : clôture du suivi manuel « Client appelé »
+- POST /api/lolodrive/manager/orders/{id}/sms-followup-done (routes_lolodrive_manager.py) : vérifie l'appartenance au relais du gérant ($or lolo/reference_point_id, 404 sinon), pose sms_followup_done_at/by sur la commande et marque lues les cloches lolodrive_ready_sms_failed de cette commande pour ce gérant.
+- Bouton « Client appelé — clore le suivi » (data-testid sms-followup-done-{orderId}) sur les alertes non lues de la page /notifications (NotificationsPage.jsx) + dropdown admin (NotificationsDropdown). Toast de confirmation, bouton masqué après clôture. API : lolodriveAPI.managerSmsFollowupDone.
+- PIÈGE : les cloches membres/gérants passent par NotificationsBell (NavBar) et la page /notifications — PAS par NotificationsDropdown (admin). Vérifier le composant réellement monté sur la page cible avant d'y ajouter une action.
+- Testé (self-test) : READY sans téléphone → alerte créée ; clôture gérant 200 (commande tracée + notif lue) ; marie → 404 ; UI E2E : alerte avec fiche contact, bouton, toast « Suivi clôturé : client appelé ✓ », disparition après clic. Nettoyage complet (dont une vieille notif de test « Commande déplacée » restée du lot 56).

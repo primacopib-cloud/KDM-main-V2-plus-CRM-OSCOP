@@ -1,8 +1,9 @@
 import i18n from '@/i18n';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, X, Check, CheckCheck, FileText, User, Building2, Wallet, AlertTriangle } from 'lucide-react';
-import { notificationsAPI } from '../services/api';
+import { Bell, X, Check, CheckCheck, FileText, User, Building2, Wallet, AlertTriangle, PhoneCall } from 'lucide-react';
+import { notificationsAPI, lolodriveAPI } from '../services/api';
+import { toast } from 'sonner';
 
 const POLL_INTERVAL = 30000; // 30 seconds
 
@@ -116,6 +117,18 @@ const NotificationsDropdown = ({ isAdmin = false }) => {
       setUnreadCount(0);
     } catch (error) {
       console.error('Failed to mark all as read:', error);
+    }
+  };
+
+  const handleFollowupDone = async (e, notification) => {
+    e.stopPropagation();
+    try {
+      await lolodriveAPI.managerSmsFollowupDone(notification.data.order_id);
+      setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      toast.success('Suivi clôturé : client appelé ✓');
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
@@ -242,6 +255,15 @@ const NotificationsDropdown = ({ isAdmin = false }) => {
                         <p className="text-xs text-white/50 mt-0.5 truncate">
                           {notification.message}
                         </p>
+                        {notification.type === 'lolodrive_ready_sms_failed' && !notification.is_read && notification.data?.order_id && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleFollowupDone(e, notification)}
+                            data-testid={`sms-followup-done-${notification.data.order_id}`}
+                            className="mt-1.5 inline-flex items-center gap-1 px-2 h-6 rounded-full text-[10px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10 hover:bg-emerald-500/20">
+                            <PhoneCall className="w-3 h-3" /> Client appelé — clore le suivi
+                          </button>
+                        )}
                         <p className="text-xs text-white/30 mt-1">
                           {formatTime(notification.created_at)}
                         </p>
