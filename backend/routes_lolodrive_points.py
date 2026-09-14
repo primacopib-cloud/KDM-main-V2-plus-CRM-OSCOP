@@ -101,30 +101,31 @@ async def point_availability(code: str, kind: str = "pickup", days: int = 21):
     today = datetime.utcnow().date()
     out = []
     counts = {}
-    if capacity:
-        horizon = (today + timedelta(days=days)).strftime("%Y-%m-%d")
-        match = {"$or": [{"lolo_point_id": point.get("id")}, {"reference_point_id": point.get("id")}],
-                 "pickup_date": {"$gte": today.strftime("%Y-%m-%d"), "$lte": horizon},
-                 "status": {"$nin": ["CANCELLED"]}}
-        if distinct:
-            match["fulfillment_type"] = "DELIVERY" if kind != "pickup" else {"$ne": "DELIVERY"}
-        async for row in db.lolodrive_orders.aggregate([
-            {"$match": match},
-            {"$group": {"_id": {"d": "$pickup_date", "s": "$pickup_slot_id"}, "n": {"$sum": 1}}},
-        ]):
-            counts[(row["_id"]["d"], row["_id"]["s"])] = row["n"]
+    horizon = (today + timedelta(days=days)).strftime("%Y-%m-%d")
+    match = {"$or": [{"lolo_point_id": point.get("id")}, {"reference_point_id": point.get("id")}],
+             "pickup_date": {"$gte": today.strftime("%Y-%m-%d"), "$lte": horizon},
+             "status": {"$nin": ["CANCELLED"]}}
+    if distinct:
+        match["fulfillment_type"] = "DELIVERY" if kind != "pickup" else {"$ne": "DELIVERY"}
+    async for row in db.lolodrive_orders.aggregate([
+        {"$match": match},
+        {"$group": {"_id": {"d": "$pickup_date", "s": "$pickup_slot_id"}, "n": {"$sum": 1}}},
+    ]):
+        counts[(row["_id"]["d"], row["_id"]["s"])] = row["n"]
     for i in range(days):
         d = today + timedelta(days=i)
         ds = d.strftime("%Y-%m-%d")
         is_open = not ((week_days and d.weekday() not in week_days) or ds in closed)
         slot_info = {}
-        if capacity:
-            for sid in slots:
-                taken = counts.get((ds, sid), 0)
-                slot_info[sid] = {"taken": taken, "remaining": max(0, capacity - taken),
-                                  "full": taken >= capacity}
+        for sid in slots:
+            taken = counts.get((ds, sid), 0)
+            info = {"taken": taken, "quiet": taken == 0}
+            if capacity:
+                info["remaining"] = max(0, capacity - taken)
+                info["full"] = taken >= capacity
+            slot_info[sid] = info
         out.append({"date": ds, "open": is_open, "slots": slot_info,
-                    "full": bool(capacity and slot_info and all(v["full"] for v in slot_info.values()))})
+                    "full": bool(capacity and slot_info and all(v.get("full") for v in slot_info.values()))})
     return {"code": code, "kind": kind, "capacity": capacity, "days": out}
 
 

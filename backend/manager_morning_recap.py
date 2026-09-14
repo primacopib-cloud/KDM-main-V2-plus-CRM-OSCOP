@@ -35,7 +35,7 @@ async def run_manager_morning_recaps(db) -> int:
     sent = 0
     async for point in db.lolodrive_points.find({"manager_user_id": {"$ne": None}}, {"_id": 0}):
         manager = await db.users.find_one({"id": point["manager_user_id"]},
-                                          {"_id": 0, "email": 1, "first_name": 1})
+                                          {"_id": 0, "email": 1, "first_name": 1, "phone": 1})
         if not manager or not manager.get("email"):
             continue
         orders = await db.lolodrive_orders.find(
@@ -65,11 +65,16 @@ async def run_manager_morning_recaps(db) -> int:
                 f"<p>Voici les <strong>{len(orders)} commande(s)</strong> attendues aujourd'hui "
                 f"au relais <strong>{point['name']}</strong> :</p>{sections}"
                 f"<p style='margin-top:16px;'>Bonne journée !<br/>LOLODRIVE</p>")
-        from brevo_service import send_email, _wrap_html
+        from brevo_service import send_email, send_sms, _wrap_html
         await send_email(manager["email"], manager.get("first_name"),
                          f"Récap du jour — {len(orders)} commande(s) au relais {point['name']}",
                          _wrap_html("Récap matinal LOLODRIVE", body),
                          tags=["lolodrive-morning-recap"])
+        if manager.get("phone"):
+            slot_counts = " / ".join(f"{sid}: {len(by_slot[sid])}" for sid in sorted(by_slot))
+            await send_sms(manager["phone"],
+                           f"LOLODRIVE {point['name']}: {len(orders)} commande(s) aujourd'hui ({slot_counts}). Details par email.",
+                           tag="lolodrive-morning-recap")
         sent += 1
     logger.info("Récap matinal envoyé — %d gérant(s) notifié(s) (%s)", sent, today)
     return sent

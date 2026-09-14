@@ -22,6 +22,8 @@ export const lolodriveAPI = {
   createOrder: (payload) =>
     apiCall('/lolodrive/orders', { method: 'POST', body: JSON.stringify(payload) }),
   myOrders: () => apiCall('/lolodrive/orders/me'),
+  rescheduleOrder: (orderId, payload) =>
+    apiCall(`/lolodrive/orders/${orderId}/reschedule`, { method: 'PUT', body: JSON.stringify(payload) }),
   payOrderUC: (orderId) =>
     apiCall(`/lolodrive/orders/${orderId}/pay-uc`, { method: 'POST' }),
 

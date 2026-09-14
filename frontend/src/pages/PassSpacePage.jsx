@@ -19,6 +19,7 @@ import { RelayReviewPrompt } from '../components/pass/RelayReviewPrompt';
 import { SavedCartReminder } from '../components/pass/SavedCartReminder';
 import QuickRechargeCards from '../components/pass/QuickRechargeCards';
 import { PassQrCard } from '../components/lolodrive/PassQrCard';
+import { RescheduleOrderDialog } from '../components/lolodrive/RescheduleOrderDialog';
 import { LoyaltyCard } from '../components/pass/LoyaltyCard';
 import { toast } from 'sonner';
 
@@ -26,6 +27,7 @@ export default function PassSpacePage() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [rescheduleOrder, setRescheduleOrder] = useState(null);
   const [savings, setSavings] = useState(null);
   const [ledger, setLedger] = useState([]);
   const [referral, setReferral] = useState(null);
@@ -385,6 +387,13 @@ export default function PassSpacePage() {
                       {o.pickup_slot_label && (
                         <div className="text-[10px] text-[#D9B35A]" data-testid={`order-slot-${o.id}`}>
                           🕐 {o.pickup_date ? `${new Date(o.pickup_date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })} · ` : ''}{o.pickup_slot_label}{(o.slot_fee_uc || 0) > 0 ? ` · frais ${o.slot_fee_uc} UC` : ''}
+                          {['PAID', 'PREPARING', 'READY', 'DRAFT', 'PENDING_PAYMENT'].includes(o.status) && (
+                            <button type="button" onClick={() => setRescheduleOrder(o)}
+                              data-testid={`reschedule-btn-${o.id}`}
+                              className="ml-2 underline decoration-dotted text-[#E9CF8E] hover:text-white">
+                              Déplacer
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -411,6 +420,9 @@ export default function PassSpacePage() {
               ))}
             </div>
           </SectionCard>
+
+          <RescheduleOrderDialog order={rescheduleOrder} open={Boolean(rescheduleOrder)}
+            onOpenChange={(v) => { if (!v) setRescheduleOrder(null); }} onDone={load} />
 
           {/* Parrainage coopérateur */}
           {referral && (

@@ -16,6 +16,7 @@ routes_lolodrive_points, routes_lolodrive_manager, routes_lolodrive_admin.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Query, status
+from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 import os
@@ -291,6 +292,70 @@ async def create_order(request: OrderCreate, user: dict = Depends(get_current_us
 async def my_orders(user: dict = Depends(get_current_user)):
     orders = await db.lolodrive_orders.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).limit(100).to_list(100)
     return {"orders": orders}
+
+
+class RescheduleBody(BaseModel):
+    pickup_date: str
+    pickup_slot_id: str
+
+
+@lolodrive_router.put("/orders/{order_id}/reschedule")
+async def reschedule_order(order_id: str, body: RescheduleBody, user: dict = Depends(get_current_user)):
+    """Le membre déplace la date/créneau de retrait de sa commande vers un créneau libre."""
+    order = await db.lolodrive_orders.find_one({"id": order_id, "user_id": user["id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Commande introuvable")
+    if order.get("status") in ("FULFILLED", "CANCELLED"):
+        raise HTTPException(status_code=409, detail="Cette commande ne peut plus être déplacée")
+    if int(order.get("reschedule_count") or 0) >= 2:
+        raise HTTPException(status_code=409, detail="Maximum 2 déplacements par commande : contactez votre relais")
+    try:
+        chosen = datetime.strptime(body.pickup_date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Date invalide (attendu : YYYY-MM-DD)")
+    today = datetime.utcnow().date()
+    if not (today <= chosen <= today + timedelta(days=20)):
+        raise HTTPException(status_code=400, detail="Le retrait doit être programmé dans les 21 prochains jours")
+    is_drive = order.get("fulfillment_type") != "DELIVERY"
+    pid = order.get("lolo_point_id") or order.get("reference_point_id")
+    cal_point = await db.lolodrive_points.find_one({"id": pid}, {"_id": 0}) if pid else None
+    if cal_point:
+        week_days = cal_point.get("pickup_days" if is_drive else "delivery_days") or []
+        if week_days and chosen.weekday() not in week_days:
+            raise HTTPException(status_code=400,
+                                detail=f"Le relais {cal_point.get('name')} n'ouvre pas ce jour-là : choisissez un jour du calendrier")
+        if body.pickup_date in (cal_point.get("closed_dates") or []):
+            raise HTTPException(status_code=400,
+                                detail=f"Le relais {cal_point.get('name')} est exceptionnellement fermé le {chosen.strftime('%d/%m/%Y')}")
+        d_raw = cal_point.get("delivery_slot_capacity")
+        capacity = int(cal_point.get("slot_capacity") or 0) if (is_drive or d_raw is None) else int(d_raw)
+        if capacity:
+            cpid = cal_point.get("id")
+            cap_q = {"$or": [{"lolo_point_id": cpid}, {"reference_point_id": cpid}],
+                     "pickup_date": body.pickup_date, "pickup_slot_id": body.pickup_slot_id,
+                     "status": {"$nin": ["CANCELLED"]}, "id": {"$ne": order_id}}
+            if d_raw is not None:
+                cap_q["fulfillment_type"] = {"$ne": "DELIVERY"} if is_drive else "DELIVERY"
+            if await db.lolodrive_orders.count_documents(cap_q) >= capacity:
+                raise HTTPException(status_code=409,
+                                    detail="Ce créneau est complet pour cette date : choisissez un autre créneau ou un autre jour")
+    from routes_lolodrive_taxonomy import slot_fee_for_order
+    kind = "pickup" if is_drive else "delivery"
+    new_fee, new_label = await slot_fee_for_order(kind, body.pickup_slot_id, order.get("items") or [])
+    if not new_label:
+        raise HTTPException(status_code=400, detail="Créneau inconnu")
+    old_fee = round(float(order.get("slot_fee_uc") or 0), 2)
+    if body.pickup_slot_id != order.get("pickup_slot_id") and round(new_fee, 2) != old_fee:
+        raise HTTPException(status_code=400,
+                            detail="Ce créneau a des frais différents : gardez le même créneau ou contactez votre relais")
+    await db.lolodrive_orders.update_one(
+        {"id": order_id},
+        {"$set": {"pickup_date": body.pickup_date, "pickup_slot_id": body.pickup_slot_id,
+                  "pickup_slot_label": new_label,
+                  "rescheduled_at": datetime.utcnow().isoformat()},
+         "$inc": {"reschedule_count": 1}})
+    updated = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
+    return updated
 
 @lolodrive_router.post("/orders/{order_id}/pay-uc")
 async def pay_uc(order_id: str, user: dict = Depends(get_current_user)):

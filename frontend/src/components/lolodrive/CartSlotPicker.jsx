@@ -16,6 +16,7 @@ export const CartSlotPicker = ({ fulfillment, cartItems, products, slotId, setSl
   const slots = cfg?.[`${kind}_slots`] || [];
   const dayInfo = (avail?.days || []).find((d) => d.date === pickupDate);
   const slotFull = (sid) => Boolean(dayInfo?.slots?.[sid]?.full);
+  const slotQuiet = (sid) => Boolean(dayInfo?.slots?.[sid]?.quiet);
 
   useEffect(() => {
     if (!slots.length) return;
@@ -58,12 +59,17 @@ export const CartSlotPicker = ({ fulfillment, cartItems, products, slotId, setSl
             const full = slotFull(s.id);
             return (
               <SelectItem key={s.id} value={s.id} disabled={full} data-testid={`slot-option-${s.id}`}>
-                {s.label}{f > 0 ? ` · +${f} UC` : ''}{full ? ' — COMPLET' : ''}
+                {s.label}{f > 0 ? ` · +${f} UC` : ''}{full ? ' — COMPLET' : slotQuiet(s.id) ? ' — créneau calme' : ''}
               </SelectItem>
             );
           })}
         </SelectContent>
       </Select>
+      {dayInfo && slotQuiet(slotId) && !slotFull(slotId) && (
+        <p className="text-[10px] text-emerald-300/80 mt-1 px-0.5" data-testid="quiet-slot-hint">
+          Créneau calme ce jour-là : retrait plus rapide, moins d'attente.
+        </p>
+      )}
       {fee > 0 && (
         <div className="flex justify-between text-xs text-[#D9B35A] mt-1.5 px-0.5" data-testid="slot-fee-line">
           <span>Frais de {fulfillment === 'DELIVERY' ? 'livraison' : 'retrait'} (créneau, par article & catégorie)</span>
