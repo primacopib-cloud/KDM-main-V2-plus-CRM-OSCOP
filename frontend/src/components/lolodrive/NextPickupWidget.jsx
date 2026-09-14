@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PackageCheck, ArrowRight } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { lolodriveAPI } from '../../services/api';
 import { OrderTimeline } from './OrderTimeline';
 
@@ -63,14 +64,22 @@ export const NextPickupWidget = () => {
             <OrderTimeline order={order} />
           </div>
         </div>
-        <Link to="/espace-pass" data-testid="next-pickup-link"
-          className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-[#E9CF8E] hover:text-white border border-[#D9B35A]/40 rounded-full px-3 h-8">
-          Gérer <ArrowRight className="w-3 h-3" />
-        </Link>
+        <div className="flex flex-col items-center gap-1.5 shrink-0">
+          {ready && (
+            <div className="p-2 rounded-xl bg-white" data-testid="next-pickup-qr">
+              <QRCodeSVG value={order.order_number} size={72} level="M" fgColor="#111111" bgColor="#ffffff" />
+              <p className="text-[8px] font-bold text-black/60 text-center mt-1 uppercase">QR retrait</p>
+            </div>
+          )}
+          <Link to="/espace-pass" data-testid="next-pickup-link"
+            className="inline-flex items-center gap-1 text-xs font-bold text-[#E9CF8E] hover:text-white border border-[#D9B35A]/40 rounded-full px-3 h-8">
+            Gérer <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
       </div>
       {ready && (
         <p className="text-[11px] font-semibold text-emerald-300 mt-2" data-testid="next-pickup-ready">
-          Présentez-vous au relais avec votre numéro de commande.
+          Présentez-vous au relais avec votre numéro de commande ou faites scanner le QR.
         </p>
       )}
     </div>

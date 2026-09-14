@@ -51,12 +51,13 @@ async def pos_orders(status_filter: Optional[OrderStatus] = Query(None, alias="s
         if u and u.get("pos_point_id"):
             affiliated = {"id": u["pos_point_id"]}
     if affiliated:
-        query["lolo_point_id"] = affiliated["id"]
+        query["$or"] = [{"lolo_point_id": affiliated["id"]}, {"reference_point_id": affiliated["id"]}]
     if status_filter:
         query["status"] = status_filter.value
     if lolo_point_code:
         point = await db.lolodrive_points.find_one({"code": lolo_point_code})
-        query["lolo_point_id"] = point.get("id") if point else "__missing__"
+        pid = point.get("id") if point else "__missing__"
+        query["$or"] = [{"lolo_point_id": pid}, {"reference_point_id": pid}]
     if territory:
         terr_points = await db.lolodrive_points.find({"territory": territory.upper()}, {"_id": 0, "id": 1}).to_list(200)
         ids = [p["id"] for p in terr_points]
