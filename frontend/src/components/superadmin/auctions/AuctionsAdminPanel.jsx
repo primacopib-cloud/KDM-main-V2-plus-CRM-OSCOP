@@ -9,6 +9,7 @@ import { AuctionFormDialog } from './AuctionFormDialog';
 import { AuctionSettingsDialog } from './AuctionSettingsDialog';
 import { AuctionStats } from './AuctionStats';
 import { DetaillantOffersPanel } from './DetaillantOffersPanel';
+import { PickupScanCard } from './PickupScanCard';
 
 const STATUS_STYLE = {
   SCHEDULED: 'bg-sky-500/20 text-sky-300', LIVE: 'bg-emerald-500/20 text-emerald-300',
@@ -41,6 +42,7 @@ export const AuctionsAdminPanel = () => {
 
   return (
     <div className="glass-panel-soft rounded-[22px] p-5 mt-6" data-testid="auctions-admin-panel">
+      <PickupScanCard />
       <DetaillantOffersPanel />
       <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
         <div>

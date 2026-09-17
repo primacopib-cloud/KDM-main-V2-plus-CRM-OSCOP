@@ -175,6 +175,16 @@ export default function DetaillantSpacePage() {
                 <div className="min-w-0">
                   <p className="text-xs font-bold truncate">{o.product_name} · {o.qty_lots} lot(s) ×3 {o.lot_type === 'COMPOSED' ? '(composé)' : ''}</p>
                   <p className="text-[10px] text-white/50 truncate">{o.description}</p>
+                  {o.final_price != null && (
+                    <p className="text-[10px] text-[#E9CF8E]" data-testid={`dt-offer-price-${o.id}`}>
+                      {Number(o.lot_price).toFixed(2)} {o.currency} → <strong>{Number(o.final_price).toFixed(2)} {o.currency}</strong> (−{Number(o.discount_pct).toFixed(0)} %)
+                    </p>
+                  )}
+                  {o.scheduled_start && new Date(o.scheduled_start) > new Date() && (
+                    <p className="text-[10px] text-amber-300" data-testid={`dt-offer-countdown-${o.id}`}>
+                      ⏳ Programmée — démarre dans {Math.max(0, Math.floor((new Date(o.scheduled_start) - Date.now()) / 3600000))} h ({new Date(o.scheduled_start).toLocaleString('fr-FR')})
+                    </p>
+                  )}
                   {o.review_note && <p className="text-[10px] text-red-300">Motif : {o.review_note}</p>}
                 </div>
                 <div className="text-right shrink-0">

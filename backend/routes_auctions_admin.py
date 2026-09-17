@@ -40,6 +40,38 @@ async def ensure_auction_defaults():
 
 # ---------- Statistiques (crédits collectés, mises par enchère, conversion des plans) ----------
 
+class PickupScanBody(BaseModel):
+    code: str
+    confirm: bool = False
+
+
+@auctions_admin_router.post("/pickup-scan")
+async def pickup_scan(body: PickupScanBody, admin: dict = Depends(require_admin)):
+    """Vérifie le QR d'enlèvement d'un lot remporté ; confirm=true marque le lot récupéré."""
+    token = body.code.replace("coopact:", "").strip()
+    a = await ah.db.auctions.find_one({"winner.pickup_token": token}, {"_id": 0})
+    if not a:
+        raise HTTPException(status_code=404, detail="QR d'enlèvement inconnu")
+    if a.get("pickup_confirmed_at") and body.confirm:
+        raise HTTPException(status_code=409, detail="Ce lot a déjà été récupéré")
+    w = a.get("winner") or {}
+    member = await ah.db.users.find_one({"id": w.get("user_id")}, {"_id": 0, "phone": 1, "first_name": 1})
+    out = {"reference": a.get("reference"), "title": a.get("title"),
+           "winner_name": w.get("name"), "winner_email": w.get("email"),
+           "winner_phone": (member or {}).get("phone"),
+           "price_eur": w.get("price_eur"), "won_at": w.get("won_at"),
+           "already_picked_up": bool(a.get("pickup_confirmed_at")),
+           "pickup_confirmed_at": a.get("pickup_confirmed_at")}
+    if body.confirm and not a.get("pickup_confirmed_at"):
+        now = ah.now_utc().isoformat()
+        await ah.db.auctions.update_one(
+            {"id": a["id"]},
+            {"$set": {"pickup_confirmed_at": now, "pickup_confirmed_by": admin.get("email")}})
+        out["pickup_confirmed_at"] = now
+        out["confirmed"] = True
+    return out
+
+
 @auctions_admin_router.get("/stats")
 async def auction_stats(admin: dict = Depends(require_admin)):
     now = ah.now_utc()

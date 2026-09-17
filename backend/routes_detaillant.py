@@ -234,6 +234,11 @@ class OfferBody(BaseModel):
     description: str
     category: Optional[str] = None
     composed_detail: Optional[str] = None
+    lot_price: float = 0            # prix de référence du lot (devise ci-dessous)
+    currency: str = "EUR"           # code ISO 4217 (monde entier)
+    discount_mode: str = "PERCENT"  # PERCENT | AMOUNT
+    discount_value: float = 15
+    scheduled_start: Optional[str] = None  # ISO — programmation avec countdown
 
 
 @detaillant_router.get("/catalog")
@@ -259,6 +264,36 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         raise HTTPException(status_code=400, detail="Type de lot invalide")
     if len(body.description.strip()) < 10:
         raise HTTPException(status_code=400, detail="Descriptif trop court (10 caractères minimum)")
+    # Prix du lot et réduction obligatoire d'au moins -15 %
+    if body.lot_price <= 0:
+        raise HTTPException(status_code=400, detail="Indiquez le prix de référence du lot")
+    if not (body.currency or "").strip() or len(body.currency.strip()) != 3:
+        raise HTTPException(status_code=400, detail="Devise invalide (code ISO à 3 lettres)")
+    if body.discount_mode not in ("PERCENT", "AMOUNT"):
+        raise HTTPException(status_code=400, detail="Mode de réduction invalide")
+    if body.discount_mode == "PERCENT":
+        discount_amount = round(body.lot_price * body.discount_value / 100, 2)
+        discount_pct = body.discount_value
+    else:
+        discount_amount = round(body.discount_value, 2)
+        discount_pct = round(discount_amount / body.lot_price * 100, 2)
+    if discount_pct < 15:
+        raise HTTPException(status_code=400,
+                            detail=f"La réduction doit être d'au moins 15 % du prix du lot (actuellement {discount_pct:.1f} %)")
+    if discount_amount >= body.lot_price:
+        raise HTTPException(status_code=400, detail="La réduction ne peut pas dépasser le prix du lot")
+    final_price = round(body.lot_price - discount_amount, 2)
+    scheduled_start = None
+    if body.scheduled_start:
+        try:
+            dt = datetime.fromisoformat(body.scheduled_start.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            if dt <= _now():
+                raise ValueError
+            scheduled_start = dt.isoformat()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Date de programmation invalide (elle doit être future)")
     product = await db.lolodrive_products.find_one({"sku": body.product_sku}, {"_id": 0, "sku": 1, "name": 1, "category": 1})
     if not product:
         raise HTTPException(status_code=404, detail="Produit introuvable dans le catalogue LOLODRIVE en vigueur")
@@ -286,6 +321,10 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         "description": body.description.strip(),
         "composed_detail": (body.composed_detail or "").strip() or None,
         "cost_credits": cost, "extra_offer": extra,
+        "lot_price": round(body.lot_price, 2), "currency": body.currency.strip().upper(),
+        "discount_mode": body.discount_mode, "discount_value": body.discount_value,
+        "discount_amount": discount_amount, "discount_pct": discount_pct,
+        "final_price": final_price, "scheduled_start": scheduled_start,
         "status": "PENDING", "month_key": month_key,
         "created_at": _now().isoformat()}
     await db.detaillant_offers.insert_one({**offer})
@@ -325,15 +364,28 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
         # Programmation automatique en salle COOP'ACT : 1 opération SCHEDULED par lot
         import auction_helpers as ah
         product = await db.lolodrive_products.find_one({"sku": offer["product_sku"]}, {"_id": 0})
-        unit_cents = (product or {}).get("price_public_cents") or (product or {}).get("price_pass_cents") or 1000
-        value_eur = round(unit_cents * 3 / 100, 2)  # lot ×3
+        if offer.get("final_price"):
+            value_eur = round(float(offer["final_price"]), 2)
+        else:
+            unit_cents = (product or {}).get("price_public_cents") or (product or {}).get("price_pass_cents") or 1000
+            value_eur = round(unit_cents * 3 / 100, 2)  # lot ×3
         prof = await db.detaillant_profiles.find_one({"user_id": offer["user_id"]}, {"_id": 0})
         retailer = {"company_name": offer.get("company_name"), "country_code": offer.get("country_code"),
                     "locality": offer.get("locality"),
                     "pickup_slots": (prof or {}).get("pickup_slots", [])}
         starts = _now() + timedelta(days=1)
+        if offer.get("scheduled_start"):
+            try:
+                sched = datetime.fromisoformat(offer["scheduled_start"])
+                if sched > _now():
+                    starts = sched
+            except ValueError:
+                pass
         ends = starts + timedelta(days=7)
         desc = offer["description"]
+        if offer.get("lot_price"):
+            desc += (f" — Prix boutique : {offer['lot_price']} {offer.get('currency', 'EUR')}, "
+                     f"réduction -{offer.get('discount_pct', 0):.0f} % → {offer['final_price']} {offer.get('currency', 'EUR')}")
         if offer.get("composed_detail"):
             desc += f" — Composition : {offer['composed_detail']}"
         for i in range(int(offer.get("qty_lots") or 1)):

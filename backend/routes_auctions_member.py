@@ -177,8 +177,22 @@ async def my_auction_account(user_id: str = Depends(get_current_user_id)):
         except Exception as exc:
             logger.warning("Réconciliation achat plan %s : %s", pu.get("stripe_session_id"), exc)
     account = await ah.get_auction_account(user_id)
+    # QR d'enlèvement : token lazy pour les lots gagnés qui n'en ont pas encore
+    async for w in ah.db.auctions.find(
+            {"status": "WON", "winner.user_id": user_id, "winner.pickup_token": {"$exists": False}},
+            {"_id": 0, "id": 1}):
+        await ah.db.auctions.update_one({"id": w["id"]}, {"$set": {"winner.pickup_token": uuid.uuid4().hex}})
     wins = [ah.serialize_member(a) async for a in ah.db.auctions.find(
         {"status": "WON", "winner.user_id": user_id}, {"_id": 0}).sort("winner.won_at", -1).limit(20)]
+    extra_by_id = {}
+    async for a in ah.db.auctions.find(
+            {"status": "WON", "winner.user_id": user_id},
+            {"_id": 0, "id": 1, "winner.pickup_token": 1, "pickup_confirmed_at": 1}):
+        extra_by_id[a["id"]] = a
+    for w in wins:
+        ex = extra_by_id.get(w["id"], {})
+        w["pickup_token"] = (ex.get("winner") or {}).get("pickup_token")
+        w["pickup_confirmed_at"] = ex.get("pickup_confirmed_at")
     fulfillments = {}
     async for a in ah.db.auctions.find(
             {"status": "WON", "winner.user_id": user_id}, {"_id": 0, "id": 1, "fulfillment": 1}):
@@ -277,7 +291,8 @@ async def accept_price(auction_id: str, user_id: str = Depends(get_current_user_
     winner = {"user_id": user_id, "email": user.get("email"),
               "name": user.get("contact_name") or user.get("first_name") or user.get("email"),
               "price_eur": price_eur, "price_credits": price_credits,
-              "won_at": ah.now_utc().isoformat()}
+              "won_at": ah.now_utc().isoformat(),
+              "pickup_token": uuid.uuid4().hex}
     res = await ah.db.auctions.update_one(
         {"id": auction_id, "status": "LIVE"},
         {"$set": {"status": "WON", "winner": winner}})

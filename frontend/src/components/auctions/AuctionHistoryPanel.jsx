@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, History, Trophy, Coins, Gavel } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import i18n from '@/i18n';
 
 const fmtDate = (iso) => new Date(iso).toLocaleString(i18n.language, { dateStyle: 'short', timeStyle: 'short' });
@@ -49,6 +50,21 @@ export const AuctionHistoryPanel = ({ me }) => {
                     ? (w.fulfillment.mode === 'PICKUP' ? `📍 ${w.fulfillment.point_name}` : `🚚 ${i18n.t('auction.delivery')}`)
                     : i18n.t('auction.choose_fulfillment')}
                 </span>
+                {w.pickup_confirmed_at ? (
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10"
+                    data-testid={`win-picked-up-${w.id}`}>
+                    Lot récupéré ✓ {fmtDate(w.pickup_confirmed_at)}
+                  </span>
+                ) : w.pickup_token && (
+                  <span className="flex items-center gap-2 mt-1.5" data-testid={`win-qr-${w.id}`}>
+                    <span className="p-1.5 rounded-lg bg-white inline-block">
+                      <QRCodeSVG value={`coopact:${w.pickup_token}`} size={56} level="M" fgColor="#111" bgColor="#fff" />
+                    </span>
+                    <span className="text-[9px] text-white/45 leading-tight">
+                      QR d'enlèvement<br />à présenter au retrait du lot
+                    </span>
+                  </span>
+                )}
               </div>
             ))}
           </section>
