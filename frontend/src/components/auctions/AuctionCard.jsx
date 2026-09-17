@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Gavel, Coins, Timer, Share2 } from 'lucide-react';
+import { Gavel, Coins, Timer, Share2, Images, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { API, getAuthHeaders } from '../../services/http';
+import { AuctionPhotoGallery } from './AuctionPhotoGallery';
+
+const cardImg = (u) => (u?.startsWith('/api/') ? `${API}${u.slice(4)}` : u);
 
 const countryFlag = (code) =>
   code && /^[A-Z]{2}$/i.test(code)
@@ -36,7 +39,9 @@ const STATUS_STYLE = {
 
 export const AuctionCard = ({ auction, canBid, onChanged }) => {
   const [busy, setBusy] = useState(false);
+  const [gallery, setGallery] = useState(false);
   const a = auction;
+  const photos = a.photos && a.photos.length > 0 ? a.photos : (a.image_url ? [a.image_url] : []);
 
   const act = async (action) => {
     setBusy(true);
@@ -65,9 +70,18 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
       data-testid={`auction-card-${a.reference}`}>
       <div className="relative h-36 product-thumb-light">
         {a.image_url ? (
-          <img src={a.image_url} alt={a.title} loading="lazy" className="w-full h-full object-contain p-1" />
+          <img src={cardImg(a.image_url)} alt={a.title} loading="lazy"
+            onClick={() => photos.length > 0 && setGallery(true)}
+            className={`w-full h-full object-contain p-1 ${photos.length > 0 ? 'cursor-zoom-in' : ''}`}
+            data-testid={`auction-image-${a.reference}`} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-black/15"><Gavel className="w-9 h-9" /></div>
+        )}
+        {photos.length > 1 && (
+          <button onClick={() => setGallery(true)} data-testid={`auction-gallery-btn-${a.reference}`}
+            className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-10 px-2 h-5 rounded-full text-[9px] font-bold bg-black/60 text-white inline-flex items-center gap-1 hover:bg-black/80">
+            <Images className="w-2.5 h-2.5" /> {photos.length}
+          </button>
         )}
         {a.featured && (
           <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#D9B35A] text-[#2A1045] on-gold shadow-md"
@@ -93,9 +107,17 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
       <div className="p-3 flex flex-col gap-1.5 flex-1">
         <div className="text-sm font-semibold text-white truncate" title={a.title}>{a.title}</div>
         {a.retailer && (
-          <div className="text-[11px] text-[#E9CF8E] truncate" data-testid={`auction-retailer-${a.reference}`}>
-            {countryFlag(a.retailer.country_code)} {a.retailer.company_name}
-            {a.retailer.locality ? ` · ${a.retailer.locality}` : ''}
+          <div className="text-[11px] text-[#E9CF8E] truncate flex items-center gap-1" data-testid={`auction-retailer-${a.reference}`}>
+            <span className="truncate">
+              {countryFlag(a.retailer.country_code)} {a.retailer.company_name}
+              {a.retailer.locality ? ` · ${a.retailer.locality}` : ''}
+            </span>
+            {a.retailer.verified && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-400/40 shrink-0"
+                data-testid={`auction-verified-badge-${a.reference}`} title="Boutique abonnée depuis plus de 3 mois">
+                <BadgeCheck className="w-2.5 h-2.5" /> Boutique vérifiée
+              </span>
+            )}
           </div>
         )}
         <div className="flex items-center gap-2 text-[11px] text-white/60">
@@ -138,6 +160,9 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
           </div>
         )}
       </div>
+      {gallery && photos.length > 0 && (
+        <AuctionPhotoGallery photos={photos} title={a.title} onClose={() => setGallery(false)} />
+      )}
     </div>
   );
 };

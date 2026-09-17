@@ -870,6 +870,7 @@ routes_promo_extend.set_database(db)
 import routes_detaillant
 routes_detaillant.set_detaillant_database(db)
 app.include_router(routes_detaillant.detaillant_router)
+app.include_router(routes_detaillant.detaillant_public_router)
 app.include_router(routes_detaillant.detaillant_admin_router)
 app.include_router(routes_promo_extend.promo_extend_router)
 

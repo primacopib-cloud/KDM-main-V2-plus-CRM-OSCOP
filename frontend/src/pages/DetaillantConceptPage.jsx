@@ -1,14 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Store, Gavel, Coins, Globe2, QrCode, CalendarClock, BadgePercent, ArrowRight, Share2, Linkedin, MessageCircle } from 'lucide-react';
+import { Store, Gavel, Coins, Globe2, QrCode, CalendarClock, BadgePercent, ArrowRight, Share2, Facebook, Instagram, MessageCircle, Package } from 'lucide-react';
+import { toast } from 'sonner';
 import { CONCEPT_I18N } from './conceptI18n';
+import { detaillantAPI } from '../services/api.detaillant';
+import { API } from '../services/http';
+
+const imgSrc = (u) => (u?.startsWith('/api/') ? `${API}${u.slice(4)}` : u);
 
 const ICONS = [Gavel, Coins, BadgePercent, Globe2, CalendarClock, QrCode];
 const LANGS = [['fr', '🇫🇷 FR'], ['en', '🇬🇧 EN'], ['es', '🇪🇸 ES'], ['gcf', '🌺 KR']];
 
 export default function DetaillantConceptPage() {
   const [lang, setLang] = useState('fr');
+  const [catalog, setCatalog] = useState([]);
+  useEffect(() => { detaillantAPI.catalogPublic().then((r) => setCatalog(r.products || [])).catch(() => {}); }, []);
   const t = CONCEPT_I18N[lang];
+  const shareUrl = `${window.location.origin}/detaillant`;
+  const copyForInstagram = async () => {
+    try {
+      await navigator.clipboard.writeText(`${t.shareMsg} ${shareUrl}`);
+      toast.success('✓ Message copié — collez-le dans votre story ou bio Instagram');
+    } catch { toast.error('Copie impossible'); }
+    window.open('https://www.instagram.com/', '_blank');
+  };
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white" data-testid="detaillant-concept-page">
       <div className="max-w-5xl mx-auto px-6 py-14">
@@ -53,6 +68,31 @@ export default function DetaillantConceptPage() {
             );
           })}
         </div>
+        {catalog.length > 0 && (
+          <div className="mt-14" data-testid="concept-catalog">
+            <h2 className="text-base md:text-lg font-bold text-[#E9CF8E] flex items-center gap-2">
+              <Package className="w-4 h-4" /> {t.catalogTitle}
+            </h2>
+            <p className="text-xs text-white/50 mt-1">{t.catalogSub}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-4">
+              {catalog.slice(0, 12).map((p) => (
+                <div key={p.sku} className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden"
+                  data-testid={`concept-catalog-${p.sku}`}>
+                  <div className="h-20 bg-white/[0.04] flex items-center justify-center">
+                    {p.image_url
+                      ? <img src={imgSrc(p.image_url)} alt={p.name} loading="lazy" className="w-full h-full object-contain p-1.5" />
+                      : <Package className="w-6 h-6 text-white/15" />}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-[11px] font-bold truncate">{p.name}</p>
+                    <p className="text-[9px] text-white/45 truncate">{p.category || '—'}</p>
+                    {p.perishable && <p className="text-[8px] text-amber-300 mt-0.5">{t.perishable}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="rounded-2xl border border-[#D9B35A]/30 bg-[#D9B35A]/5 p-6 mt-12">
           <p className="text-sm font-bold text-[#E9CF8E]">{t.how}</p>
           <ol className="text-xs text-white/60 mt-2 space-y-1.5 list-decimal list-inside">
@@ -64,15 +104,19 @@ export default function DetaillantConceptPage() {
             <Share2 className="w-3.5 h-3.5" /> {t.share}
           </span>
           <a data-testid="concept-share-whatsapp" target="_blank" rel="noreferrer"
-            href={`https://wa.me/?text=${encodeURIComponent(`${t.shareMsg} ${window.location.origin}/detaillant`)}`}
+            href={`https://wa.me/?text=${encodeURIComponent(`${t.shareMsg} ${shareUrl}`)}`}
             className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#25D366]/15 border border-[#25D366]/40 text-[#4ade80] text-xs font-bold hover:bg-[#25D366]/25 transition-colors">
             <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
           </a>
-          <a data-testid="concept-share-linkedin" target="_blank" rel="noreferrer"
-            href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/detaillant`)}`}
-            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#0A66C2]/15 border border-[#0A66C2]/40 text-[#7db8ea] text-xs font-bold hover:bg-[#0A66C2]/25 transition-colors">
-            <Linkedin className="w-3.5 h-3.5" /> LinkedIn
+          <a data-testid="concept-share-facebook" target="_blank" rel="noreferrer"
+            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(t.shareMsg)}`}
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#1877F2]/15 border border-[#1877F2]/40 text-[#7db8ea] text-xs font-bold hover:bg-[#1877F2]/25 transition-colors">
+            <Facebook className="w-3.5 h-3.5" /> Facebook
           </a>
+          <button onClick={copyForInstagram} data-testid="concept-share-instagram"
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#E1306C]/15 border border-[#E1306C]/40 text-[#f08bb1] text-xs font-bold hover:bg-[#E1306C]/25 transition-colors">
+            <Instagram className="w-3.5 h-3.5" /> Instagram
+          </button>
         </div>
       </div>
     </div>

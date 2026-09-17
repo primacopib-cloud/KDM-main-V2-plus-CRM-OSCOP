@@ -20,6 +20,7 @@ export const detaillantAPI = {
     if (!res.ok) throw new Error(data.detail || 'Échec du téléversement');
     return data;
   },
+  catalogPublic: () => apiCall('/detaillant/catalog/public'),
   catalog: () => apiCall('/detaillant/catalog'),
   myOffers: () => apiCall('/detaillant/offers'),
   createOffer: (payload) => apiCall('/detaillant/offers', { method: 'POST', body: JSON.stringify(payload) }),

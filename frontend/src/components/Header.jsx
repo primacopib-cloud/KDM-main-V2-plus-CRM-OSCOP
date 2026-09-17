@@ -24,6 +24,7 @@ const Header = () => {
     { href: '/', label: i18n.t('nav.home') },
     { href: '/#pros', label: 'Professionnels' },
     { href: '/#particuliers', label: 'Particuliers' },
+    { href: '/detaillant', label: 'Détaillant' },
     { href: '/offres', label: i18n.t('footer.our_offers') },
     { href: '/#territoires', label: 'Territoires' },
     { href: '/#contact', label: i18n.t('footer.contact') },

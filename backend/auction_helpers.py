@@ -131,6 +131,8 @@ def serialize_member(a: dict, labels: dict | None = None) -> dict:
         "starts_at": a.get("starts_at"), "ends_at": a.get("ends_at"),
         "recurrence": a.get("recurrence", "NONE"), "featured": bool(a.get("featured")),
         "status": effective_status(a), "bids_count": a.get("bids_count", 0),
+        "photos": a.get("photos") or [],
+        "condition": a.get("condition"), "warranty": a.get("warranty"), "dlc": a.get("dlc"),
     }
     if a.get("retailer") and a.get("source_visible"):
         out["retailer"] = a["retailer"]

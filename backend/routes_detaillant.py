@@ -12,6 +12,7 @@ from lolodrive_helpers import get_current_user, require_admin
 
 logger = logging.getLogger(__name__)
 detaillant_router = APIRouter(prefix="/api/detaillant", tags=["detaillant"])
+detaillant_public_router = APIRouter(prefix="/api/detaillant", tags=["detaillant-public"])
 detaillant_admin_router = APIRouter(prefix="/api/admin/detaillant", tags=["detaillant-admin"])
 
 db = None
@@ -262,6 +263,15 @@ async def detaillant_upload_photo(file: UploadFile = File(...), user: dict = Dep
 
 @detaillant_router.get("/catalog")
 async def detaillant_catalog(user: dict = Depends(get_current_user)):
+    products = await db.lolodrive_products.find(
+        {"detaillant_active": {"$ne": False}},
+        {"_id": 0, "sku": 1, "name": 1, "category": 1, "image_url": 1, "perishable": 1}).sort("name", 1).to_list(300)
+    return {"products": products}
+
+
+@detaillant_public_router.get("/catalog/public")
+async def detaillant_catalog_public():
+    """Catalogue spécial Détaillant LOLODRIVE en vigueur — visible sans connexion sur la vitrine."""
     products = await db.lolodrive_products.find(
         {"detaillant_active": {"$ne": False}},
         {"_id": 0, "sku": 1, "name": 1, "category": 1, "image_url": 1, "perishable": 1}).sort("name", 1).to_list(300)
@@ -539,8 +549,16 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
             unit_cents = (product or {}).get("price_public_cents") or (product or {}).get("price_pass_cents") or 1000
             value_eur = round(unit_cents * 3 / 100, 2)  # lot ×3
         prof = await db.detaillant_profiles.find_one({"user_id": offer["user_id"]}, {"_id": 0})
+        first_sub = await db.detaillant_subscriptions.find_one(
+            {"user_id": offer["user_id"], "status": "ACTIVE"}, {"_id": 0, "created_at": 1}, sort=[("created_at", 1)])
+        verified = False
+        if first_sub and first_sub.get("created_at"):
+            try:
+                verified = datetime.fromisoformat(first_sub["created_at"]) <= _now() - timedelta(days=90)
+            except ValueError:
+                pass
         retailer = {"company_name": offer.get("company_name"), "country_code": offer.get("country_code"),
-                    "locality": offer.get("locality"),
+                    "locality": offer.get("locality"), "verified": verified,
                     "pickup_slots": (prof or {}).get("pickup_slots", [])}
         starts = _now() + timedelta(days=1)
         if offer.get("scheduled_start"):
@@ -570,6 +588,7 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                 "title": f"Lot ×3 — {offer['product_name']}" + (f" ({i + 1}/{offer['qty_lots']})" if offer["qty_lots"] > 1 else ""),
                 "image_url": offer.get("photo_main") or (product or {}).get("image_url"),
                 "photos": [p for p in ([offer.get("photo_main")] + (offer.get("photos") or [])) if p],
+                "condition": offer.get("condition"), "warranty": offer.get("warranty"), "dlc": offer.get("dlc"),
                 "description": desc,
                 "source": "DETAILLANT", "source_visible": True,
                 "retailer": retailer,
