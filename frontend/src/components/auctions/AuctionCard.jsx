@@ -184,7 +184,7 @@ export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onTogg
         )}
       </div>
       {gallery && photos.length > 0 && (
-        <AuctionPhotoGallery photos={photos} title={a.title} onClose={() => setGallery(false)} />
+        <AuctionPhotoGallery photos={photos} title={a.title} labels={a.photo_labels} onClose={() => setGallery(false)} />
       )}
     </div>
   );

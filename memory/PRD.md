@@ -3627,3 +3627,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - OfferPhotoPicker : mode `labels` — en lot composé, 1 slot photo étiqueté par produit sélectionné (produit 1 = principale obligatoire) ; slots vides filtrés à l'envoi. Validé par screenshot (3 slots étiquetés + résumé).
 - Badge Or : recalc_gold_pops détecte le changement de n°1 → cloches pops_gold_won / pops_gold_lost + emails Brevo (félicitations au gagnant, encouragement au perdant). Testé en simulant un 2e POP'S mieux noté : 2 cloches + 2 emails 201, puis restauration (Épicerie Ti Kaz gold, 2 lots).
 - Nettoyage : profils fantômes pops-test-2 supprimés (4), notifs test purgées.
+
+## 2026-06 — Lot 76 : Légendes photo lots composés + Palmarès complet POP'S (testé)
+- Galerie salle : photo_labels stockés à la création (offre composée) et repris sur l'opération ; chaque photo affiche le nom du produit en légende (gallery-caption). serialize_member expose photo_labels. Validé par seed/screenshot puis nettoyé.
+- Page palmarès complet /pops (PopsLeaderboardPage) : tous les POP'S classés, filtres pays (drapeaux img) et catégories (dérivées des offres via shops/public : category/categories ajoutés), badge or sur le n°1, liens vers /pops/{id}. Lien « Voir le palmarès complet » depuis la vitrine /detaillant.

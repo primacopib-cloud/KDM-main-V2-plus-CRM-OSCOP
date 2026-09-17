@@ -15,6 +15,10 @@ export const PopsLeaderboard = ({ t }) => {
         <Trophy className="w-4 h-4" /> {t.topShops}
       </h2>
       <p className="text-xs text-white/50 mt-1">{t.topShopsSub}</p>
+      <Link to="/pops" data-testid="pops-leaderboard-full"
+        className="inline-block text-[11px] font-bold text-emerald-300 hover:text-emerald-200 mt-2 underline underline-offset-2">
+        Voir le palmarès complet →
+      </Link>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
         {shops.slice(0, 6).map((s, i) => (
           <Link key={s.user_id} to={`/pops/${s.user_id}`} className="block rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-emerald-400/40 transition-colors"

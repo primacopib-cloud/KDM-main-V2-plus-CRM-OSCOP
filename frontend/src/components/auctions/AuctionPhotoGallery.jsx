@@ -5,7 +5,7 @@ import { API } from '../../services/http';
 const imgSrc = (u) => (u?.startsWith('/api/') ? `${API}${u.slice(4)}` : u);
 
 // Galerie plein écran des photos d'un lot COOP'ACT
-export const AuctionPhotoGallery = ({ photos, title, onClose }) => {
+export const AuctionPhotoGallery = ({ photos, title, labels = null, onClose }) => {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     const onKey = (e) => {
@@ -27,6 +27,10 @@ export const AuctionPhotoGallery = ({ photos, title, onClose }) => {
         <div className="relative rounded-2xl overflow-hidden bg-white flex items-center justify-center" style={{ minHeight: 320 }}>
           <img src={imgSrc(photos[idx])} alt={`${title} — photo ${idx + 1}`}
             className="max-h-[70vh] w-full object-contain" data-testid="gallery-image" />
+          {labels?.[idx] && (
+            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-bold bg-black/75 text-[#E9CF8E]"
+              data-testid="gallery-caption">{labels[idx]}</span>
+          )}
           {photos.length > 1 && (
             <>
               <button onClick={() => setIdx((i) => (i - 1 + photos.length) % photos.length)} data-testid="gallery-prev"

@@ -130,7 +130,12 @@ async def detaillant_shops_public():
             {"detaillant_user_id": p["user_id"]},
             {"_id": 0, "rating": 1, "comment": 1, "reply": 1, "created_at": 1}
         ).sort("created_at", -1).limit(3).to_list(3)
-        shops.append({**p, "reviews": reviews})
+        last = await db.detaillant_offers.find_one(
+            {"user_id": p["user_id"], "status": {"$ne": "REJECTED"}},
+            {"_id": 0, "category": 1}, sort=[("created_at", -1)])
+        cats = await db.detaillant_offers.distinct(
+            "category", {"user_id": p["user_id"], "status": {"$ne": "REJECTED"}, "category": {"$nin": [None, ""]}})
+        shops.append({**p, "reviews": reviews, "category": (last or {}).get("category"), "categories": cats})
     shops.sort(key=lambda s: (-(s.get("rating_avg") or 0), -(s.get("rating_count") or 0)))
     return {"shops": shops}
 
@@ -553,6 +558,7 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         "discount_amount": discount_amount, "discount_pct": discount_pct,
         "final_price": final_price, "scheduled_start": scheduled_start,
         "photo_main": body.photo_main.strip(), "photos": [p for p in body.photos if p][:2],
+        "photo_labels": [p["name"] for p in composed_products] if len(composed_products) > 1 else None,
         "condition": body.condition, "warranty": (body.warranty or "").strip() or None, "dlc": dlc_iso,
         "status": "PENDING", "month_key": month_key,
         "created_at": _now().isoformat()}
@@ -782,6 +788,7 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                 "title": f"Lot ×3 — {offer['product_name']}" + (f" ({i + 1}/{offer['qty_lots']})" if offer["qty_lots"] > 1 else ""),
                 "image_url": offer.get("photo_main") or (product or {}).get("image_url"),
                 "photos": [p for p in ([offer.get("photo_main")] + (offer.get("photos") or [])) if p],
+                "photo_labels": offer.get("photo_labels"),
                 "condition": offer.get("condition"), "warranty": offer.get("warranty"), "dlc": offer.get("dlc"),
                 "description": desc,
                 "source": "DETAILLANT", "source_visible": True,
