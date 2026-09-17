@@ -7,8 +7,10 @@ import { COUNTRIES } from '../../detaillant/detaillantI18n';
 export const DetaillantOffersPanel = () => {
   const [offers, setOffers] = useState([]);
   const [filter, setFilter] = useState('PENDING');
+  const [stats, setStats] = useState(null);
   const load = useCallback(() => {
     detaillantAPI.adminOffers(filter === 'ALL' ? '' : filter).then((r) => setOffers(r.offers || [])).catch(() => {});
+    detaillantAPI.adminStats().then(setStats).catch(() => {});
   }, [filter]);
   useEffect(() => { load(); }, [load]);
 
@@ -28,6 +30,28 @@ export const DetaillantOffersPanel = () => {
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" data-testid="detaillant-offers-panel">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-[#E9CF8E]">Offres de lots Détaillants</h3>
+      </div>
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-3" data-testid="detaillant-stats">
+          {[['Détaillants', stats.detaillants], ['Abonnés actifs', stats.active_subscriptions],
+            ['CA abonnements/mois', `${stats.monthly_sub_revenue_eur} €`],
+            ['Crédits dépensés', stats.credits_spent],
+            ['En attente', stats.offers_by_status?.PENDING?.count || 0],
+            ['Lots en salle', stats.lots_in_salle], ['Lots remportés', stats.lots_won],
+          ].map(([l, v]) => (
+            <div key={l} className="rounded-lg border border-white/10 bg-white/[0.02] px-2 py-1.5">
+              <p className="text-sm font-bold text-white">{v}</p>
+              <p className="text-[9px] text-white/45">{l}</p>
+            </div>
+          ))}
+          {(stats.top_retailers || []).length > 0 && (
+            <div className="col-span-full text-[10px] text-white/50">
+              Top boutiques : {stats.top_retailers.map((r) => `${r.company_name} (${r.offers} offres · ${r.credits} cr)`).join(' · ')}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="mb-3">
         <select value={filter} onChange={(e) => setFilter(e.target.value)} data-testid="dt-admin-filter"
           className="h-8 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs">
           <option value="PENDING">En attente</option>

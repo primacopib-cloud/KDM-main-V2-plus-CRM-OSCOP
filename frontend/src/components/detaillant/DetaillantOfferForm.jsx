@@ -17,8 +17,9 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
   useEffect(() => { detaillantAPI.catalog().then((r) => setProducts(r.products || [])).catch(() => {}); }, []);
   const product = products.find((p) => p.sku === f.product_sku);
   const extra = info.offers_used_this_month >= info.included_offers;
-  const cost = f.qty_lots * info.credits_per_lot + (extra ? f.qty_lots * info.extra_offer_credits_per_lot : 0);
   const price = Number(f.lot_price) || 0;
+  const perLot = Math.max(1, Math.ceil(price * (info.deposit_rate_pct || 2.5) / 100 * 10));
+  const cost = f.qty_lots * perLot + (extra ? f.qty_lots * info.extra_offer_credits_per_lot : 0);
   const discAmount = f.discount_mode === 'PERCENT' ? price * Number(f.discount_value || 0) / 100 : Number(f.discount_value || 0);
   const discPct = price > 0 ? (discAmount / price) * 100 : 0;
   const finalPrice = Math.max(0, price - discAmount);

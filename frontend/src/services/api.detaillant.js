@@ -13,4 +13,5 @@ export const detaillantAPI = {
   createOffer: (payload) => apiCall('/detaillant/offers', { method: 'POST', body: JSON.stringify(payload) }),
   adminOffers: (status) => apiCall(`/admin/detaillant/offers${status ? `?status=${status}` : ''}`),
   adminReview: (offerId, action, note) => apiCall(`/admin/detaillant/offers/${offerId}/review`, { method: 'POST', body: JSON.stringify({ action, note }) }),
+  adminStats: () => apiCall('/admin/detaillant/stats'),
 };

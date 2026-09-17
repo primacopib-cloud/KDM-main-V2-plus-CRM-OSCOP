@@ -18,7 +18,7 @@ db = None
 
 SUB_PRICE_CENTS = 39000       # 390 €/mois TTC
 INCLUDED_OFFERS_PER_MONTH = 3
-CREDITS_PER_LOT = 23          # coût de dépôt par lot
+DEPOSIT_RATE_PCT = 2.5        # coût de dépôt : 2,5 % de la valeur du lot (en crédits, 10 cr = 1 €)
 EXTRA_OFFER_CREDITS_PER_LOT = 100  # au-delà des 3 offres incluses
 
 
@@ -88,7 +88,7 @@ async def detaillant_profile(user: dict = Depends(get_current_user)):
             "credits": (account or {}).get("credits", 0),
             "offers_used_this_month": used,
             "included_offers": INCLUDED_OFFERS_PER_MONTH,
-            "credits_per_lot": CREDITS_PER_LOT,
+            "deposit_rate_pct": DEPOSIT_RATE_PCT,
             "extra_offer_credits_per_lot": EXTRA_OFFER_CREDITS_PER_LOT,
             "sub_price_cents": SUB_PRICE_CENTS}
 
@@ -300,7 +300,9 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
     month_key = _now().strftime("%Y-%m")
     used = await db.detaillant_offers.count_documents(
         {"user_id": user["id"], "month_key": month_key, "status": {"$ne": "REJECTED"}})
-    cost = body.qty_lots * CREDITS_PER_LOT
+    import math
+    per_lot_credits = max(1, math.ceil(body.lot_price * DEPOSIT_RATE_PCT / 100 * 10))  # 10 cr = 1 €
+    cost = body.qty_lots * per_lot_credits
     extra = used >= INCLUDED_OFFERS_PER_MONTH
     if extra:
         cost += body.qty_lots * EXTRA_OFFER_CREDITS_PER_LOT
@@ -334,6 +336,34 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
 class ReviewBody(BaseModel):
     action: str  # APPROVE | REJECT
     note: Optional[str] = None
+
+
+@detaillant_admin_router.get("/stats")
+async def admin_detaillant_stats(admin: dict = Depends(require_admin)):
+    """Statistiques détaillants pour le superadmin."""
+    total = await db.users.count_documents({"role": "DETAILLANT"})
+    now_iso = _now().isoformat()
+    active_subs = await db.detaillant_subscriptions.count_documents(
+        {"status": "ACTIVE", "valid_until": {"$gt": now_iso}})
+    by_status = {}
+    async for r in db.detaillant_offers.aggregate([
+        {"$group": {"_id": "$status", "n": {"$sum": 1}, "credits": {"$sum": "$cost_credits"}}}]):
+        by_status[r["_id"]] = {"count": r["n"], "credits": r["credits"]}
+    lots_scheduled = await db.auctions.count_documents({"source": "DETAILLANT"})
+    lots_won = await db.auctions.count_documents({"source": "DETAILLANT", "status": "WON"})
+    top = []
+    async for r in db.detaillant_offers.aggregate([
+        {"$match": {"status": {"$ne": "REJECTED"}}},
+        {"$group": {"_id": "$company_name", "offers": {"$sum": 1}, "lots": {"$sum": "$qty_lots"},
+                    "credits": {"$sum": "$cost_credits"}}},
+        {"$sort": {"offers": -1}}, {"$limit": 5}]):
+        top.append({"company_name": r["_id"], "offers": r["offers"], "lots": r["lots"], "credits": r["credits"]})
+    credits_spent = sum(v["credits"] for k, v in by_status.items() if k != "REJECTED")
+    revenue_subs_eur = active_subs * SUB_PRICE_CENTS / 100
+    return {"detaillants": total, "active_subscriptions": active_subs,
+            "monthly_sub_revenue_eur": revenue_subs_eur,
+            "offers_by_status": by_status, "credits_spent": credits_spent,
+            "lots_in_salle": lots_scheduled, "lots_won": lots_won, "top_retailers": top}
 
 
 @detaillant_admin_router.get("/offers")
