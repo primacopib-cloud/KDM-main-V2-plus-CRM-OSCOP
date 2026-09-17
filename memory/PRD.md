@@ -3597,3 +3597,14 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Avis démo conservé : Épicerie Ti Kaz ★ 4.0 (1).
 - Note testing agent : la cloche notifs n'est pas rendue sur /superadmin (seulement /admin et /admin-v2) — comportement historique, suggestion en backlog.
 - Test reports : iteration_99.json (4/4) + validation E2E manuelle du formulaire d'avis (5★ soumis puis nettoyé).
+
+## 2026-06 — Lot 72 : POP'S (branding, carte monde, cloche superadmin, réponses avis, palmarès, follow, drapeaux img) — testé 100 %
+- Branding POP'S = « Partenaire d'Offres de Produits Solidaires — vendeur éphémère en salle COOP'ACT » : badge+définition sur /detaillant (4 langues), titre « Espace POP'S — Détaillant », badge source salle « POP'S — Vendeur éphémère » (SOURCE_LABELS).
+- Drapeaux en IMAGE (composant Flag existant, flagcdn — fiable Windows) : profil détaillant, pilules filtres salle, cartes lots, palmarès.
+- Carte monde accueil : marqueurs verts POP'S (LoloPointsMap prop pops, popup dédiée) + badge compteur ; géocodage Nominatim best-effort au PUT /api/detaillant/profile (lat/lng stockés). Endpoint public GET /api/detaillant/shops/public (boutiques + rating + 3 derniers avis/réponses).
+- Cloche notifications ajoutée au header superadmin (SuperAdminHeader → NotificationsDropdown), alertes DLC visibles sur /superadmin.
+- Réponse boutique : GET /api/detaillant/reviews + POST /api/detaillant/reviews/{id}/reply — carte « Avis reçus » dans l'espace, réponse publique visible sur le palmarès vitrine.
+- Palmarès POP'S les mieux notés sur /detaillant (PopsLeaderboard, top 6, dernier avis + réponse).
+- Suivi boutique : GET /api/auctions/shops/follows + POST /api/auctions/shops/{id}/follow (toggle) — bouton « Suivre/Suivi ✓ » sur AuctionCard ; à l'approbation d'une offre, cloche pops_new_lot à chaque follower. retailer.detaillant_user_id ajouté (+ backfill).
+- costInfo corrigé (2,5 % de la valeur + 100 cr/lot au-delà de 3 offres) en 4 langues.
+- Test report : iteration_100.json — 5/5 frontend, backend validé par curl (géocodage, follow, reply, notif follower).
