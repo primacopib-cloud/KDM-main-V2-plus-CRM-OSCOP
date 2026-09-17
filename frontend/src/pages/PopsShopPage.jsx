@@ -30,7 +30,7 @@ export default function PopsShopPage() {
 
   if (error) return <div className="min-h-screen bg-[#1F0A33] text-white flex items-center justify-center text-sm text-white/60" data-testid="pops-shop-notfound">Boutique POP'S introuvable</div>;
   if (!data) return <div className="min-h-screen bg-[#1F0A33]" />;
-  const { shop, lots, reviews, followers } = data;
+  const { shop, lots, reviews, sold, followers } = data;
   const following = follows?.includes(userId);
 
   return (
@@ -42,6 +42,10 @@ export default function PopsShopPage() {
         <div className="mt-4 rounded-2xl border border-emerald-400/25 bg-emerald-500/[0.05] p-5">
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black bg-gradient-to-r from-emerald-500 to-emerald-700 text-white tracking-wide">POP'S</span>
+            {shop.gold && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black bg-gradient-to-r from-[#FFD700] to-[#D9B35A] text-[#1F0A33]"
+                data-testid="pops-shop-gold-badge">🏆 POP'S d'Or — n°1 du palmarès</span>
+            )}
             <h1 className="text-2xl sm:text-3xl font-black flex items-center gap-2" data-testid="pops-shop-name">
               <Flag code={shop.country_code} className="w-6 h-auto rounded-[3px] inline-block" /> {shop.company_name}
             </h1>
@@ -84,6 +88,29 @@ export default function PopsShopPage() {
           <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }} data-testid="pops-shop-lots">
             {lots.map((a) => <AuctionCard key={a.id} auction={a} canBid={false} />)}
           </div>
+        )}
+
+        {(sold || []).length > 0 && (
+          <>
+            <h2 className="text-base md:text-lg font-bold text-[#E9CF8E] mt-10 flex items-center gap-2">
+              🏆 Derniers lots vendus ({sold.length})
+            </h2>
+            <div className="space-y-2 mt-4" data-testid="pops-shop-sold">
+              {sold.map((s) => (
+                <div key={s.reference} className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                  data-testid={`pops-sold-${s.reference}`}>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold truncate">{s.title}</p>
+                    <p className="text-[10px] text-white/40">{s.won_at ? new Date(s.won_at).toLocaleDateString('fr-FR') : ''} · {s.reference}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-bold text-[#E9CF8E]">{s.price_eur != null ? `${Number(s.price_eur).toFixed(2)} €` : '—'}</p>
+                    {s.picked_up && <p className="text-[9px] text-emerald-300">✓ retiré</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         <h2 className="text-base md:text-lg font-bold text-[#E9CF8E] mt-10 flex items-center gap-2">

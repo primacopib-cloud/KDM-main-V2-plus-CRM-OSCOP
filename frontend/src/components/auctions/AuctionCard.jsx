@@ -109,6 +109,12 @@ export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onTogg
         <div className="text-sm font-semibold text-white truncate" title={a.title}>{a.title}</div>
         {a.retailer && (
           <div className="text-[11px] text-[#E9CF8E] truncate flex items-center gap-1" data-testid={`auction-retailer-${a.reference}`}>
+            {a.retailer.gold && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-black bg-gradient-to-r from-[#FFD700] to-[#D9B35A] text-[#1F0A33] shrink-0"
+                data-testid={`auction-gold-badge-${a.reference}`} title="POP'S n°1 du palmarès des boutiques les mieux notées">
+                🏆 POP'S d'Or
+              </span>
+            )}
             <span className="truncate inline-flex items-center gap-1">
               {a.retailer.country_code && <Flag code={a.retailer.country_code} />} {a.retailer.company_name}
               {a.retailer.locality ? ` · ${a.retailer.locality}` : ''}

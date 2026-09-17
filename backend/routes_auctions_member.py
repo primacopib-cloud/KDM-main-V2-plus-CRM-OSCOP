@@ -284,6 +284,8 @@ async def shop_review(auction_id: str, body: ShopReviewBody, user_id: str = Depe
     await ah.db.auctions.update_many(
         {"detaillant_offer_id": {"$in": offer_ids}},
         {"$set": {"retailer.rating_avg": avg, "retailer.rating_count": count}})
+    from routes_detaillant import recalc_gold_pops
+    await recalc_gold_pops()
     return {"ok": True, "rating_avg": avg, "rating_count": count}
 
 

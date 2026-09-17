@@ -16,6 +16,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
     lot_price: '', currency: 'EUR', discount_mode: 'PERCENT', discount_value: 15, scheduled_start: '',
     condition: 'NEW', warranty: '', dlc: '' });
   const [photos, setPhotos] = useState([]);
+  const [extraSkus, setExtraSkus] = useState(['', '']);
   const [busy, setBusy] = useState(false);
   useEffect(() => { detaillantAPI.catalog().then((r) => setProducts(r.products || [])).catch(() => {}); }, []);
   const product = products.find((p) => p.sku === f.product_sku);
@@ -27,7 +28,11 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
   const discPct = price > 0 ? (discAmount / price) * 100 : 0;
   const finalPrice = Math.max(0, price - discAmount);
   const discountKo = price > 0 && discPct < 15;
-  const dlcKo = !!product?.perishable && (!f.dlc || new Date(f.dlc) < new Date(Date.now() + 90 * 86400000));
+  const composedProducts = f.lot_type === 'COMPOSED'
+    ? [f.product_sku, ...extraSkus].filter(Boolean).map((sku) => products.find((p) => p.sku === sku)).filter(Boolean)
+    : (product ? [product] : []);
+  const anyPerishable = composedProducts.some((p) => p.perishable);
+  const dlcKo = anyPerishable && (!f.dlc || new Date(f.dlc) < new Date(Date.now() + 90 * 86400000));
   const submit = async () => {
     setBusy(true);
     try {
@@ -36,6 +41,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
         lot_price: price, discount_value: Number(f.discount_value),
         scheduled_start: f.scheduled_start ? new Date(f.scheduled_start).toISOString() : null,
         photo_main: photos[0] || null, photos: photos.slice(1),
+        product_skus: f.lot_type === 'COMPOSED' ? extraSkus.filter(Boolean) : [],
         warranty: f.warranty.trim() || null, dlc: f.dlc || null,
       });
       toast.success(`✓ Offre déposée — ${cost} crédits`);
@@ -43,6 +49,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
         lot_price: '', currency: 'EUR', discount_mode: 'PERCENT', discount_value: 15, scheduled_start: '',
         condition: 'NEW', warranty: '', dlc: '' });
       setPhotos([]);
+      setExtraSkus(['', '']);
       onCreated?.();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -130,7 +137,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
           <input value={f.warranty} onChange={(e) => setF((p) => ({ ...p, warranty: e.target.value }))}
             placeholder="ex. 6 mois constructeur" className={inputCls} data-testid="offer-warranty" />
         </div>
-        {product?.perishable && (
+        {anyPerishable && (
           <div>
             <label className="text-[10px] text-amber-300 block mb-1">DLC (périssable — min. 3 mois)</label>
             <input type="date" value={f.dlc} onChange={(e) => setF((p) => ({ ...p, dlc: e.target.value }))}
@@ -146,6 +153,27 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
           onChange={(e) => setF((p) => ({ ...p, scheduled_start: e.target.value }))}
           className={inputCls + ' sm:w-64'} data-testid="offer-scheduled-start" />
       </div>
+      {f.lot_type === 'COMPOSED' && (
+        <div className="grid sm:grid-cols-2 gap-3" data-testid="offer-composed-products">
+          {[0, 1].map((i) => (
+            <div key={i}>
+              <label className="text-[10px] text-white/50 block mb-1">Produit {i + 2} du lot composé {i === 0 ? '' : '(optionnel)'}</label>
+              <select value={extraSkus[i]} data-testid={`offer-product-${i + 2}`}
+                onChange={(e) => setExtraSkus((s) => s.map((v, j) => (j === i ? e.target.value : v)))}
+                className={inputCls}>
+                <option value="">—</option>
+                {products.filter((p) => p.sku !== f.product_sku && p.sku !== extraSkus[1 - i])
+                  .map((p) => <option key={p.sku} value={p.sku}>{p.name} · {p.category}</option>)}
+              </select>
+            </div>
+          ))}
+          {composedProducts.length > 1 && (
+            <p className="col-span-full text-[10px] text-emerald-300/80" data-testid="offer-composed-summary">
+              Lot composé : {composedProducts.map((p) => p.name).join(' + ')}
+            </p>
+          )}
+        </div>
+      )}
       {f.lot_type === 'COMPOSED' && (
         <div>
           <label className="text-[10px] text-white/50 block mb-1">{t.composedDetail}</label>

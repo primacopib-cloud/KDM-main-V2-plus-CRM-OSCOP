@@ -125,7 +125,7 @@ async def detaillant_shops_public():
     async for p in db.detaillant_profiles.find(
             {"company_name": {"$nin": [None, ""]}},
             {"_id": 0, "user_id": 1, "company_name": 1, "locality": 1, "country_code": 1,
-             "rating_avg": 1, "rating_count": 1, "lat": 1, "lng": 1}):
+             "rating_avg": 1, "rating_count": 1, "lat": 1, "lng": 1, "gold": 1}):
         reviews = await db.detaillant_shop_reviews.find(
             {"detaillant_user_id": p["user_id"]},
             {"_id": 0, "rating": 1, "comment": 1, "reply": 1, "created_at": 1}
@@ -135,13 +135,31 @@ async def detaillant_shops_public():
     return {"shops": shops}
 
 
+async def recalc_gold_pops():
+    """Badge Or : le POP'S n°1 du palmarès voit ses lots marqués retailer.gold en salle."""
+    top = await db.detaillant_profiles.find(
+        {"rating_count": {"$gt": 0}}, {"_id": 0, "user_id": 1}
+    ).sort([("rating_avg", -1), ("rating_count", -1)]).limit(1).to_list(1)
+    gold_uid = top[0]["user_id"] if top else None
+    await db.auctions.update_many(
+        {"source": "DETAILLANT", "retailer.gold": True, "retailer.detaillant_user_id": {"$ne": gold_uid}},
+        {"$set": {"retailer.gold": False}})
+    if gold_uid:
+        await db.auctions.update_many(
+            {"source": "DETAILLANT", "retailer.detaillant_user_id": gold_uid},
+            {"$set": {"retailer.gold": True}})
+        await db.detaillant_profiles.update_many({"gold": True, "user_id": {"$ne": gold_uid}}, {"$set": {"gold": False}})
+        await db.detaillant_profiles.update_one({"user_id": gold_uid}, {"$set": {"gold": True}})
+    return gold_uid
+
+
 @detaillant_public_router.get("/shops/public/{detaillant_user_id}")
 async def pops_shop_page(detaillant_user_id: str):
     """Mini page publique d'un POP'S : profil, lots en cours, avis."""
     prof = await db.detaillant_profiles.find_one(
         {"user_id": detaillant_user_id},
         {"_id": 0, "user_id": 1, "company_name": 1, "locality": 1, "country_code": 1,
-         "rating_avg": 1, "rating_count": 1, "pickup_slots": 1, "created_at": 1})
+         "rating_avg": 1, "rating_count": 1, "pickup_slots": 1, "created_at": 1, "gold": 1})
     if not prof or not prof.get("company_name"):
         raise HTTPException(status_code=404, detail="Boutique POP'S introuvable")
     import auction_helpers as ah
@@ -156,8 +174,16 @@ async def pops_shop_page(detaillant_user_id: str):
         {"detaillant_user_id": detaillant_user_id},
         {"_id": 0, "rating": 1, "comment": 1, "reply": 1, "created_at": 1}
     ).sort("created_at", -1).limit(10).to_list(10)
+    sold = []
+    async for a in db.auctions.find(
+            {"detaillant_offer_id": {"$in": offer_ids}, "status": "WON"},
+            {"_id": 0, "reference": 1, "title": 1, "winner.price_eur": 1, "winner.won_at": 1,
+             "pickup_confirmed_at": 1}).sort("winner.won_at", -1).limit(8):
+        w = a.get("winner") or {}
+        sold.append({"reference": a["reference"], "title": a["title"], "price_eur": w.get("price_eur"),
+                     "won_at": w.get("won_at"), "picked_up": bool(a.get("pickup_confirmed_at"))})
     followers = await db.detaillant_followers.count_documents({"detaillant_user_id": detaillant_user_id})
-    return {"shop": prof, "lots": lots, "reviews": reviews, "followers": followers}
+    return {"shop": prof, "lots": lots, "reviews": reviews, "sold": sold, "followers": followers}
 
 
 @detaillant_router.get("/followers/stats")
@@ -324,6 +350,7 @@ async def _require_active_sub(user_id: str):
 class OfferBody(BaseModel):
     product_sku: str
     lot_type: str = "SAME"      # SAME = lot x3 même produit, COMPOSED = lot composé
+    product_skus: List[str] = []  # lot composé : jusqu'à 3 produits différents du catalogue
     qty_lots: int = 1
     description: str
     category: Optional[str] = None
@@ -421,12 +448,23 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         {"sku": body.product_sku}, {"_id": 0, "sku": 1, "name": 1, "category": 1, "perishable": 1})
     if not product:
         raise HTTPException(status_code=404, detail="Produit introuvable dans le catalogue LOLODRIVE en vigueur")
+    composed_products = [product]
+    if body.lot_type == "COMPOSED" and body.product_skus:
+        skus = list(dict.fromkeys([body.product_sku] + [s for s in body.product_skus if s]))[:3]
+        composed_products = []
+        for sku in skus:
+            p = await db.lolodrive_products.find_one(
+                {"sku": sku, "detaillant_active": {"$ne": False}},
+                {"_id": 0, "sku": 1, "name": 1, "category": 1, "perishable": 1})
+            if not p:
+                raise HTTPException(status_code=404, detail=f"Produit {sku} introuvable dans le catalogue en vigueur")
+            composed_products.append(p)
     if not (body.photo_main or "").strip():
         raise HTTPException(status_code=400, detail="Une photo principale du lot est obligatoire")
     if body.condition not in ("NEW", "USED"):
         raise HTTPException(status_code=400, detail="État du produit invalide (neuf ou occasion)")
     dlc_iso = None
-    if product.get("perishable"):
+    if any(p.get("perishable") for p in composed_products):
         if not body.dlc:
             raise HTTPException(status_code=400, detail="DLC obligatoire pour ce produit périssable")
         try:
@@ -458,7 +496,9 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         "company_name": (prof or {}).get("company_name", ""),
         "country_code": (prof or {}).get("country_code", ""),
         "locality": (prof or {}).get("locality", ""),
-        "product_sku": product["sku"], "product_name": product["name"],
+        "product_sku": product["sku"],
+        "product_name": " + ".join(p["name"] for p in composed_products) if len(composed_products) > 1 else product["name"],
+        "product_skus": [p["sku"] for p in composed_products],
         "category": body.category or product.get("category"),
         "lot_type": body.lot_type, "lot_size": 3, "qty_lots": body.qty_lots,
         "description": body.description.strip(),
@@ -712,6 +752,8 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
             created_refs.append(ref)
         updates["auction_refs"] = created_refs
     await db.detaillant_offers.update_one({"id": offer_id}, {"$set": updates})
+    if body.action == "APPROVE" and created_refs:
+        await recalc_gold_pops()
     msg = (f"Votre offre a été validée : {len(created_refs)} opération(s) programmée(s) en salle COOP'ACT ({', '.join(created_refs)})."
            if body.action == "APPROVE"
            else f"Votre offre a été refusée. {offer.get('cost_credits', 0)} crédits vous ont été remboursés.")
