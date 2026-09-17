@@ -333,6 +333,26 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
     return offer
 
 
+@detaillant_router.get("/sales")
+async def detaillant_sales(user: dict = Depends(get_current_user)):
+    """Résultats des lots du détaillant en salle : mises, gagnants, montants."""
+    offer_ids = [o["id"] async for o in db.detaillant_offers.find({"user_id": user["id"]}, {"_id": 0, "id": 1})]
+    sales = []
+    async for a in db.auctions.find({"detaillant_offer_id": {"$in": offer_ids}}, {"_id": 0}).sort("starts_at", -1).limit(100):
+        w = a.get("winner") or {}
+        sales.append({
+            "reference": a.get("reference"), "title": a.get("title"),
+            "status": a.get("status"), "starts_at": a.get("starts_at"), "ends_at": a.get("ends_at"),
+            "value_eur": a.get("value_eur"), "current_price_eur": a.get("current_price_eur"),
+            "bids_count": a.get("bids_count", 0),
+            "winner_name": w.get("name"), "won_price_eur": w.get("price_eur"), "won_at": w.get("won_at"),
+            "picked_up": bool(a.get("pickup_confirmed_at"))})
+    totals = {"lots": len(sales), "bids": sum(s["bids_count"] for s in sales),
+              "won": sum(1 for s in sales if s["status"] == "WON"),
+              "revenue_eur": round(sum(s["won_price_eur"] or 0 for s in sales if s["status"] == "WON"), 2)}
+    return {"sales": sales, "totals": totals}
+
+
 class ReviewBody(BaseModel):
     action: str  # APPROVE | REJECT
     note: Optional[str] = None

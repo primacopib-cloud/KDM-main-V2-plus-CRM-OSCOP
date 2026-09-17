@@ -6,6 +6,7 @@ import { detaillantAPI } from '../services/api.detaillant';
 import { authAPI } from '../services/api';
 import { DetaillantProfileCard } from '../components/detaillant/DetaillantProfileCard';
 import { DetaillantOfferForm } from '../components/detaillant/DetaillantOfferForm';
+import { DetaillantSalesTable } from '../components/detaillant/DetaillantSalesTable';
 import { DT } from '../components/detaillant/detaillantI18n';
 
 const STATUS_COLOR = { PENDING: '#f59e0b', APPROVED: '#10b981', REJECTED: '#ef4444' };
@@ -164,6 +165,8 @@ export default function DetaillantSpacePage() {
         <DetaillantProfileCard t={t} profile={info.profile} onSaved={load} />
 
         {info.subscription_active && <DetaillantOfferForm t={t} info={info} onCreated={load} />}
+
+        {info.subscription_active && <DetaillantSalesTable />}
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" data-testid="dt-offers-list">
           <h3 className="text-sm font-bold text-[#E9CF8E] mb-3">{t.myOffers} ({offers.length})</h3>

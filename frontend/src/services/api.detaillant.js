@@ -8,6 +8,7 @@ export const detaillantAPI = {
   activate: (sessionId) => apiCall('/detaillant/subscription/activate', { method: 'POST', body: JSON.stringify({ session_id: sessionId }) }),
   creditsCheckout: (pack, originUrl) => apiCall('/detaillant/credits/checkout', { method: 'POST', body: JSON.stringify({ pack, origin_url: originUrl }) }),
   creditsActivate: (sessionId) => apiCall('/detaillant/credits/activate', { method: 'POST', body: JSON.stringify({ session_id: sessionId }) }),
+  sales: () => apiCall('/detaillant/sales'),
   catalog: () => apiCall('/detaillant/catalog'),
   myOffers: () => apiCall('/detaillant/offers'),
   createOffer: (payload) => apiCall('/detaillant/offers', { method: 'POST', body: JSON.stringify(payload) }),

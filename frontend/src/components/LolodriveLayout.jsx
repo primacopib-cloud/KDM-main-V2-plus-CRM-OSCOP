@@ -46,6 +46,7 @@ export default function LolodriveLayout({ title, subtitle, children, actions }) 
               ['/catalogue-lolodrive', i18n.t('auction.nav_catalog'), 'lolo-nav-catalog'],
               ['/encheres', i18n.t('auction.nav_room'), 'lolo-nav-room'],
               ['/coopact', i18n.t('auction.nav_brand'), 'lolo-nav-coopact'],
+              ['/detaillant', 'Détaillants', 'lolo-nav-detaillant'],
             ].map(([to, label, tid]) => (
               <Link key={to} to={to} data-testid={tid}
                 className="px-3 py-1.5 rounded-full font-semibold text-white/70 hover:text-[#F2D07A] hover:bg-white/10 transition-colors">
