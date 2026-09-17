@@ -6,6 +6,7 @@ from typing import Optional, List
 
 import stripe
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from lolodrive_helpers import get_current_user, require_admin
@@ -233,6 +234,59 @@ async def pops_shop_page(detaillant_user_id: str):
                      "won_at": w.get("won_at"), "picked_up": bool(a.get("pickup_confirmed_at"))})
     followers = await db.detaillant_followers.count_documents({"detaillant_user_id": detaillant_user_id})
     return {"shop": prof, "lots": lots, "reviews": reviews, "sold": sold, "followers": followers}
+
+
+@detaillant_public_router.get("/shops/share/{detaillant_user_id}", response_class=HTMLResponse)
+async def pops_shop_share(detaillant_user_id: str):
+    """Aperçu riche (Open Graph) de la vitrine POP'S pour WhatsApp/Facebook + redirection."""
+    prof = await db.detaillant_profiles.find_one(
+        {"user_id": detaillant_user_id},
+        {"_id": 0, "company_name": 1, "locality": 1, "rating_avg": 1, "rating_count": 1, "gold": 1})
+    if not prof or not prof.get("company_name"):
+        raise HTTPException(status_code=404, detail="Boutique POP'S introuvable")
+    import os
+    import html as h
+    import auction_helpers as ah
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    target = f"{base}/pops/{detaillant_user_id}"
+    followers = await db.detaillant_followers.count_documents({"detaillant_user_id": detaillant_user_id})
+    offer_ids = [o["id"] async for o in db.detaillant_offers.find(
+        {"user_id": detaillant_user_id}, {"_id": 0, "id": 1})]
+    img = ""
+    live_count = 0
+    async for a in db.auctions.find(
+            {"detaillant_offer_id": {"$in": offer_ids}}, {"_id": 0}).sort("starts_at", -1).limit(20):
+        if ah.effective_status(a) in ("SCHEDULED", "LIVE"):
+            live_count += 1
+            if not img and a.get("image_url"):
+                img = a["image_url"]
+    if img.startswith("/"):
+        img = f"{base}{img}"
+    gold = "🏆 POP'S d'Or · " if prof.get("gold") else ""
+    rating = (f"★ {float(prof['rating_avg']):.1f} ({prof.get('rating_count', 0)} avis) · "
+              if prof.get("rating_avg") else "")
+    title = h.escape(f"{prof['company_name']} — boutique POP'S en salle COOP'ACT")
+    desc = h.escape(f"{gold}{rating}{followers} follower(s) · {live_count} lot(s) en salle — "
+                    "des lots à prix descendant, le premier qui accepte remporte !")
+    return (
+        "<!doctype html><html lang='fr'><head><meta charset='utf-8'>"
+        f"<title>{title}</title>"
+        "<meta property='og:type' content='website'>"
+        f"<meta property='og:title' content='{title}'>"
+        f"<meta property='og:description' content='{desc}'>"
+        + (f"<meta property='og:image' content='{h.escape(img)}'>" if img else "")
+        + f"<meta property='og:url' content='{target}'>"
+        "<meta name='twitter:card' content='summary_large_image'>"
+        f"<meta http-equiv='refresh' content='0;url={target}'>"
+        f"</head><body><script>location.replace('{target}')</script></body></html>")
+
+
+@detaillant_router.get("/weekly-recaps")
+async def detaillant_my_weekly_recaps(user: dict = Depends(get_current_user)):
+    """Historique des récaps hebdo du POP'S, semaine par semaine."""
+    recaps = await db.detaillant_weekly_recaps.find(
+        {"user_id": user["id"]}, {"_id": 0}).sort("week_key", -1).limit(26).to_list(26)
+    return {"recaps": recaps}
 
 
 @detaillant_router.get("/followers/stats")

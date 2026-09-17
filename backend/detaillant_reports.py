@@ -1,6 +1,7 @@
 """Tâches planifiées Détaillant : alerte DLC proche + bilan mensuel des ventes avec CSV."""
 import base64
 import logging
+import uuid
 from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,12 @@ async def run_detaillant_weekly_recaps(db, force: bool = False):
             continue
         revenue = round(sum((a.get("winner") or {}).get("price_eur") or 0 for a in won), 2)
         avg = round(sum(r["rating"] for r in reviews) / len(reviews), 1) if reviews else None
+        await db.detaillant_weekly_recaps.update_one(
+            {"user_id": uid, "week_key": week_key},
+            {"$set": {"sales_count": len(won), "revenue_eur": revenue,
+                      "new_followers": new_followers, "reviews_count": len(reviews),
+                      "rating_avg": avg, "created_at": now.isoformat()},
+             "$setOnInsert": {"id": str(uuid.uuid4())}}, upsert=True)
         name = user.get("company_name") or ""
         sales_html = ""
         if won:

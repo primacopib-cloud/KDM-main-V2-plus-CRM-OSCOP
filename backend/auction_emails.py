@@ -313,6 +313,54 @@ async def run_auction_ending_alerts(database=None):
                     sent += 1
                 except Exception as exc:
                     logger.warning("Email fin imminente %s : %s", user.get("email"), exc)
+    # Rappel prix cible : membres dont l'alerte n'a pas été déclenchée avant la fin du lot (<1h)
+    try:
+        import os
+        base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+        async for a in ah.db.auctions.find({"status": "LIVE"}, {"_id": 0}):
+            ends = ah.parse_dt(a.get("ends_at"))
+            if not ends or not (now < ends <= now + timedelta(hours=1)):
+                continue
+            mins = max(1, int((ends - now).total_seconds() // 60))
+            price = round(float(a.get("current_price_eur") or a.get("value_eur") or 0), 2)
+            alerts = await ah.db.auction_price_alerts.find(
+                {"auction_id": a["id"], "triggered": {"$ne": True},
+                 "ending_reminder_sent": {"$ne": True}}).to_list(200)
+            for al in alerts:
+                res2 = await ah.db.auction_price_alerts.update_one(
+                    {"_id": al["_id"], "ending_reminder_sent": {"$ne": True}},
+                    {"$set": {"ending_reminder_sent": True,
+                              "ending_reminder_at": now.isoformat()}})
+                if res2.modified_count == 0:
+                    continue
+                user = await ah.db.users.find_one(
+                    {"id": al["user_id"]}, {"_id": 0, "email": 1, "first_name": 1, "contact_name": 1})
+                from routes_prefs import channel_allowed
+                if not (user and user.get("email")
+                        and await channel_allowed(al["user_id"], "auction_price_target", "email")):
+                    continue
+                from brevo_service import send_email, _wrap_html
+                name = user.get("first_name") or user.get("contact_name") or ""
+                subject = f"⏰ Dernière chance — {a.get('title')} finit dans {mins} min"
+                body = (
+                    f"<p style='font-size:14px;'>Bonjour{f' {name}' if name else ''},</p>"
+                    f"<p style='font-size:14px;'>Le lot <b>{a.get('reference')}</b> — <b>{a.get('title')}</b> "
+                    f"se termine dans <b>{mins} minute(s)</b> et votre prix cible de "
+                    f"<b>{al['target_eur']:.2f} €</b> n'a pas encore été atteint.</p>"
+                    f"<p style='font-size:14px;'>Prix actuel : <b>{price:.2f} €</b> "
+                    f"({ah.eur_to_credits(price)} crédits). Acceptez maintenant ou coop'actez "
+                    "pour faire baisser le prix avant la fin !</p>"
+                    f"<p style='font-size:14px;'><a href='{base}/encheres/lot/{a.get('reference')}' "
+                    "style='background:#D9B35A;color:#2A1045;padding:10px 18px;border-radius:8px;"
+                    "text-decoration:none;font-weight:bold;'>Voir le lot</a></p>")
+                await send_email(user["email"], name or None, subject,
+                                 _wrap_html(subject, body),
+                                 text_content=f"Le lot {a.get('title')} finit dans {mins} min — cible "
+                                              f"{al['target_eur']:.2f} € non atteinte, prix actuel {price:.2f} €.",
+                                 tags=["auction-price-target-reminder"])
+                sent += 1
+    except Exception as exc:
+        logger.warning("Rappel prix cible : %s", exc)
     if sent:
         logger.info("Alertes fin d'enchère envoyées : %s", sent)
     return sent

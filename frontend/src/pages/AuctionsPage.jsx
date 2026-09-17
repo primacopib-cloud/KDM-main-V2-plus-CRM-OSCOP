@@ -275,6 +275,7 @@ export default function AuctionsPage() {
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}>
               {suggestions.map((a) => (
                 <AuctionCard key={`sg-${a.id}`} auction={a} canBid={Boolean(me?.active)} suggested
+                  weeklyTop={a.id === data.weekly_top?.id}
                   follows={follows} onToggleFollow={toggleFollow}
                   priceAlerts={priceAlerts} onSetPriceAlert={setPriceAlert}
                   onChanged={() => { load(); loadMe(); }} />
@@ -296,6 +297,7 @@ export default function AuctionsPage() {
                 follows={follows} onToggleFollow={toggleFollow}
                 priceAlerts={priceAlerts} onSetPriceAlert={setPriceAlert}
                 suggested={suggestedIds.has(a.id)}
+                weeklyTop={a.id === data.weekly_top?.id}
                 onChanged={() => { load(); loadMe(); }} />
             ))}
           </div>

@@ -9,6 +9,7 @@ import { DetaillantOfferForm } from '../components/detaillant/DetaillantOfferFor
 import { DetaillantSalesTable } from '../components/detaillant/DetaillantSalesTable';
 import { DetaillantReviewsCard } from '../components/detaillant/DetaillantReviewsCard';
 import { DetaillantFollowersCard } from '../components/detaillant/DetaillantFollowersCard';
+import { DetaillantWeeklyRecapsCard } from '../components/detaillant/DetaillantWeeklyRecapsCard';
 import { DT } from '../components/detaillant/detaillantI18n';
 
 const STATUS_COLOR = { PENDING: '#f59e0b', APPROVED: '#10b981', REJECTED: '#ef4444' };
@@ -173,6 +174,8 @@ export default function DetaillantSpacePage() {
         {info.subscription_active && <DetaillantReviewsCard />}
 
         {info.subscription_active && <DetaillantFollowersCard />}
+
+        {info.subscription_active && <DetaillantWeeklyRecapsCard />}
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" data-testid="dt-offers-list">
           <h3 className="text-sm font-bold text-[#E9CF8E] mb-3">{t.myOffers} ({offers.length})</h3>

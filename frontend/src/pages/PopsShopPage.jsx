@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, BellRing, Clock, Star, Store, Users } from 'lucide-react';
+import { ArrowLeft, BellRing, Clock, Share2, Star, Store, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Flag } from '../components/Flag';
 import { AuctionCard } from '../components/auctions/AuctionCard';
@@ -71,6 +71,12 @@ export default function PopsShopPage() {
                 <BellRing className="w-3.5 h-3.5" /> Se connecter pour suivre
               </Link>
             )}
+            <a href={`https://wa.me/?text=${encodeURIComponent(`Découvrez la boutique POP'S ${shop.company_name} en salle COOP'ACT — des lots à prix descendant ! ${window.location.origin}/api/detaillant/shops/share/${userId}`)}`}
+              target="_blank" rel="noopener noreferrer" data-testid="pops-shop-share-btn"
+              title="Partager cette boutique sur WhatsApp"
+              className="inline-flex items-center gap-1.5 px-4 h-8 rounded-full text-xs font-bold text-white bg-[#25D366] hover:brightness-110 transition-all">
+              <Share2 className="w-3.5 h-3.5" /> Partager
+            </a>
           </div>
           {(shop.pickup_slots || []).length > 0 && (
             <p className="text-[11px] text-white/45 mt-2 inline-flex items-center gap-1.5">
