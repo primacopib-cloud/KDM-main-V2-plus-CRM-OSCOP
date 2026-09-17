@@ -549,6 +549,8 @@
     "prefs_val_email": "Email",
     "prefs_val_none": "Aucune",
     "featured_badge": "Vedette",
-    "prefs_auction_plan_expiry": "Rappel expiration du plan"
+    "prefs_auction_plan_expiry": "Rappel expiration du plan",
+    "prefs_brand_new_lot": "Marque suivie en salle",
+    "prefs_auction_price_target": "Prix cible atteint"
   }
 }

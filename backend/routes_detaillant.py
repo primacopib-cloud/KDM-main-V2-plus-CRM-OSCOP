@@ -885,14 +885,17 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                                      tags=["pops-new-lot"])
         except Exception as exc:
             logger.warning("Notif followers POP'S: %s", exc)
-        # Alerte aux Coop'acteurs qui suivent la marque du produit (cloche + email)
+        # Alerte aux Coop'acteurs qui suivent la marque du produit (cloche + email, canaux réglables)
         try:
             brand = offer.get("product_brand")
             if brand:
                 from core_deps import create_notification
+                from routes_prefs import channel_allowed
                 member_ids = list(dict.fromkeys([bf["member_id"] async for bf in db.brand_followers.find(
                     {"brand": brand}, {"_id": 0, "member_id": 1})]))
                 for member_id in member_ids:
+                    if not await channel_allowed(member_id, "brand_new_lot", "inapp"):
+                        continue
                     await create_notification(
                         notification_type="brand_new_lot",
                         title=f"⭐ {brand} arrive en salle !",
@@ -933,8 +936,10 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                           "<p style='font-size:12px;color:#B8A98F;'>Vous recevez cet email car vous suivez la marque "
                           f"{brand}. Chaque Coop'Act fait baisser le prix !</p>")
                     async for m in db.users.find(
-                            {"id": {"$in": member_ids}}, {"_id": 0, "email": 1, "first_name": 1, "company_name": 1}):
+                            {"id": {"$in": member_ids}}, {"_id": 0, "id": 1, "email": 1, "first_name": 1, "company_name": 1}):
                         if not m.get("email"):
+                            continue
+                        if not await channel_allowed(m["id"], "brand_new_lot", "email"):
                             continue
                         name = m.get("first_name") or m.get("company_name") or ""
                         greeting = f"<p style='font-size:14px;'>Bonjour {name},</p>" if name else ""

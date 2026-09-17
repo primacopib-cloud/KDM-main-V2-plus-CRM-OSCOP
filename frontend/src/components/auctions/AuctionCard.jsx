@@ -97,7 +97,7 @@ export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onTogg
     }
   };
 
-  const lotUrl = `${window.location.origin}/encheres/lot/${a.reference}`;
+  const lotUrl = `${window.location.origin}/api/auctions/share/${a.reference}`;
   const shareText = i18n.t('auction.share_text', {
     title: a.title, price: Number(a.price_eur).toFixed(2), credits: a.price_credits,
   }) + ` ${lotUrl}`;

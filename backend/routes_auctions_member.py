@@ -6,6 +6,7 @@ from typing import Optional
 
 import stripe
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from auth import get_current_user_id
@@ -58,13 +59,61 @@ async def public_auctions(status: str = "", category: str = "", type_id: str = "
     labels = await ah.taxonomy_labels()
     items = [ah.serialize_member(a, labels)
              async for a in ah.db.auctions.find(query, {"_id": 0}).sort("starts_at", 1).limit(100)]
+    # Lot vedette de la semaine : le lot LIVE le plus coop'acté sur 7 jours
+    weekly_top = None
+    try:
+        week_ago = (ah.now_utc() - timedelta(days=7)).isoformat()
+        top = await ah.db.auction_bids.aggregate([
+            {"$match": {"created_at": {"$gte": week_ago}}},
+            {"$group": {"_id": "$auction_id", "n": {"$sum": 1}}},
+            {"$sort": {"n": -1}}, {"$limit": 5}]).to_list(5)
+        live = {a["id"]: a for a in items if a["status"] == "LIVE"}
+        for t in top:
+            a = live.get(t["_id"])
+            if a:
+                weekly_top = {"id": a["id"], "reference": a["reference"], "title": a["title"],
+                              "price_eur": a["price_eur"], "image_url": a.get("image_url"),
+                              "week_bids": t["n"]}
+                break
+    except Exception as exc:
+        logger.warning("Lot vedette semaine : %s", exc)
     if status:
         items = [a for a in items if a["status"] == status.upper()]
     cats = await ah.db.auction_categories.find({"active": True}, {"_id": 0}).sort("sort_order", 1).to_list(50)
     types = await ah.db.auction_types.find({"active": True}, {"_id": 0}).sort("sort_order", 1).to_list(50)
-    return {"items": items, "categories": cats, "types": types,
+    return {"items": items, "categories": cats, "types": types, "weekly_top": weekly_top,
             "sources": [{"code": s, "label": ah.SOURCE_LABELS[s]} for s in ah.SOURCES],
             "credits_per_eur": ah.CREDITS_PER_EUR}
+
+
+@auctions_member_router.get("/share/{reference}", response_class=HTMLResponse)
+async def share_auction_preview(reference: str):
+    """Aperçu riche (Open Graph) pour WhatsApp/Facebook + redirection vers la page du lot."""
+    a = await ah.db.auctions.find_one({"reference": reference}, {"_id": 0})
+    if not a:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+    import os
+    import html as h
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    target = f"{base}/encheres/lot/{reference}"
+    price = round(float(a.get("current_price_eur") or a.get("value_eur") or 0), 2)
+    img = a.get("image_url") or ""
+    if img.startswith("/"):
+        img = f"{base}{img}"
+    title = h.escape(f"{a.get('title')} — {price:.2f} € en salle COOP'ACT")
+    desc = h.escape(f"Valeur {float(a.get('value_eur') or 0):.2f} € — chaque Coop'Act fait baisser "
+                    "le prix, le premier qui accepte remporte le lot !")
+    return (
+        "<!doctype html><html lang='fr'><head><meta charset='utf-8'>"
+        f"<title>{title}</title>"
+        "<meta property='og:type' content='website'>"
+        f"<meta property='og:title' content='{title}'>"
+        f"<meta property='og:description' content='{desc}'>"
+        + (f"<meta property='og:image' content='{h.escape(img)}'>" if img else "")
+        + f"<meta property='og:url' content='{target}'>"
+        "<meta name='twitter:card' content='summary_large_image'>"
+        f"<meta http-equiv='refresh' content='0;url={target}'>"
+        f"</head><body><script>location.replace('{target}')</script></body></html>")
 
 
 @auctions_member_router.get("/public/lot/{reference}")

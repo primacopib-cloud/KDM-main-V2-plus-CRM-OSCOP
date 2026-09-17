@@ -264,6 +264,8 @@
     "prefs_val_email": "Imèl",
     "prefs_val_none": "Ayen",
     "featured_badge": "Vedèt",
-    "prefs_auction_plan_expiry": "Rapèl finisman plan"
+    "prefs_auction_plan_expiry": "Rapèl finisman plan",
+    "prefs_brand_new_lot": "Mak ou ka swiv an sal",
+    "prefs_auction_price_target": "Pri sib rivé"
   }
 }

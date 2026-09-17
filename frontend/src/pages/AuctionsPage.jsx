@@ -252,6 +252,21 @@ export default function AuctionsPage() {
 
         <MyPriceAlerts alerts={priceAlertList} onRemove={(id) => setPriceAlert(id, 0)} />
 
+        {data.weekly_top && (
+          <Link to={`/encheres/lot/${data.weekly_top.reference}`} data-testid="weekly-top-banner"
+            className="block mb-5 rounded-2xl border border-[#D9B35A]/50 p-3.5 hover:border-[#D9B35A] transition-colors"
+            style={{ background: 'linear-gradient(90deg, rgba(217,179,90,0.16), rgba(217,179,90,0.04))' }}>
+            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#F2D07A]">
+              🏆 Lot vedette de la semaine — le plus coop'acté
+            </span>
+            <div className="flex flex-wrap items-baseline gap-2 mt-1">
+              <span className="text-sm font-bold text-white" data-testid="weekly-top-title">{data.weekly_top.title}</span>
+              <span className="text-sm font-bold text-[#E9CF8E]">{Number(data.weekly_top.price_eur).toFixed(2)} €</span>
+              <span className="text-[11px] text-white/55">· {data.weekly_top.week_bids} Coop'Act cette semaine</span>
+            </div>
+          </Link>
+        )}
+
         {suggestions.length > 0 && (
           <div className="mb-5" data-testid="auction-suggestions">
             <div className="text-[11px] font-bold uppercase tracking-wide text-[#F2D07A] mb-2 inline-flex items-center gap-1.5">

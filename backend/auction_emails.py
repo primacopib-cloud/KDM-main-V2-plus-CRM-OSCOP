@@ -213,19 +213,21 @@ async def check_price_alerts(auction_id: str) -> int:
                       "triggered_price_eur": price}})
         if res.modified_count == 0:
             continue
-        try:
-            from core_deps import create_notification
-            await create_notification(
-                "auction_price_target", f"🎯 Prix cible atteint — {a.get('title')}",
-                f"Le lot {a.get('reference')} est à {price:.2f} € ({ah.eur_to_credits(price)} crédits), "
-                f"sous votre cible de {al['target_eur']:.2f} €. Acceptez vite avant les autres !",
-                target_roles=[], target_user_id=al["user_id"],
-                data={"auction_id": auction_id, "action_url": "/encheres"})
-        except Exception as exc:
-            logger.warning("Cloche prix cible %s : %s", al["user_id"], exc)
+        from routes_prefs import channel_allowed
+        if await channel_allowed(al["user_id"], "auction_price_target", "inapp"):
+            try:
+                from core_deps import create_notification
+                await create_notification(
+                    "auction_price_target", f"🎯 Prix cible atteint — {a.get('title')}",
+                    f"Le lot {a.get('reference')} est à {price:.2f} € ({ah.eur_to_credits(price)} crédits), "
+                    f"sous votre cible de {al['target_eur']:.2f} €. Acceptez vite avant les autres !",
+                    target_roles=[], target_user_id=al["user_id"],
+                    data={"auction_id": auction_id, "action_url": "/encheres"})
+            except Exception as exc:
+                logger.warning("Cloche prix cible %s : %s", al["user_id"], exc)
         user = await ah.db.users.find_one(
             {"id": al["user_id"]}, {"_id": 0, "email": 1, "first_name": 1, "contact_name": 1})
-        if user and user.get("email"):
+        if user and user.get("email") and await channel_allowed(al["user_id"], "auction_price_target", "email"):
             try:
                 from brevo_service import send_email, _wrap_html
                 name = user.get("first_name") or user.get("contact_name") or ""

@@ -1,6 +1,6 @@
       import { Link, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { Building2, ShoppingBasket, Home, Ticket, ShoppingCart, MapPin } from 'lucide-react';
+import { Building2, ShoppingBasket, Home, Ticket, ShoppingCart, MapPin, Store } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const LOLO_PATHS = ['/particuliers', '/pass-lolodrive', '/catalogue-lolodrive', '/points-relais'];
@@ -9,6 +9,7 @@ const LOLO_NAV = [
   { to: '/pass-lolodrive', label: 'PASS LOLODRIVE', icon: Ticket, testid: 'lolo-subnav-pass' },
   { to: '/catalogue-lolodrive', label: 'Catalogue LOLODRIVE', icon: ShoppingCart, testid: 'lolo-subnav-catalogue' },
   { to: '/points-relais', label: 'Réseau LOLODRIVE', icon: MapPin, testid: 'lolo-subnav-reseau' },
+  { to: '/detaillant', label: "POP'S", icon: Store, testid: 'lolo-subnav-pops' },
 ];
 
 export const AudienceSwitcher = () => {

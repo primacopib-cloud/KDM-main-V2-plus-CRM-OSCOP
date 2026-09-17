@@ -549,6 +549,8 @@
     "prefs_val_email": "Email",
     "prefs_val_none": "None",
     "featured_badge": "Featured",
-    "prefs_auction_plan_expiry": "Plan expiry reminder"
+    "prefs_auction_plan_expiry": "Plan expiry reminder",
+    "prefs_brand_new_lot": "Followed brand in the room",
+    "prefs_auction_price_target": "Target price reached"
   }
 }

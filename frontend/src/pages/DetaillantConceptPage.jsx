@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Store, Gavel, Coins, Globe2, QrCode, CalendarClock, BadgePercent, ArrowRight, Share2, Facebook, Instagram, MessageCircle, Package } from 'lucide-react';
+import { Store, Gavel, Coins, Globe2, QrCode, CalendarClock, BadgePercent, ArrowRight, ArrowLeft, Share2, Facebook, Instagram, MessageCircle, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { CONCEPT_I18N } from './conceptI18n';
 import { detaillantAPI } from '../services/api.detaillant';
@@ -28,6 +28,10 @@ export default function DetaillantConceptPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white" data-testid="detaillant-concept-page">
       <div className="max-w-5xl mx-auto px-6 py-14">
+        <Link to="/" data-testid="concept-back-home"
+          className="inline-flex items-center gap-1.5 mb-6 px-3 h-8 rounded-full border border-white/20 text-xs font-semibold text-white/70 hover:text-white hover:bg-white/5 transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5" /> Retour à l'accueil
+        </Link>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2 text-[#D9B35A] text-xs font-bold uppercase tracking-[0.2em]">
             <Store className="w-4 h-4" /> {t.tag}
