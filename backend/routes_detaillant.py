@@ -96,11 +96,66 @@ async def detaillant_profile(user: dict = Depends(get_current_user)):
 
 @detaillant_router.put("/profile")
 async def detaillant_update_profile(body: ProfileBody, user: dict = Depends(get_current_user)):
+    updates = {**body.dict(), "updated_at": _now().isoformat()}
+    # Géocodage best-effort (Nominatim) pour situer le POP'S sur la carte monde
+    if body.locality:
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=6) as cli:
+                r = await cli.get("https://nominatim.openstreetmap.org/search",
+                                  params={"q": f"{body.locality}, {body.country_code}", "format": "json", "limit": 1},
+                                  headers={"User-Agent": "kdmarche-oscop/1.0"})
+                hits = r.json()
+                if hits:
+                    updates["lat"] = float(hits[0]["lat"])
+                    updates["lng"] = float(hits[0]["lon"])
+        except Exception as exc:
+            logger.warning("Géocodage POP'S %s : %s", body.locality, exc)
     res = await db.detaillant_profiles.update_one(
-        {"user_id": user["id"]},
-        {"$set": {**body.dict(), "updated_at": _now().isoformat()}})
+        {"user_id": user["id"]}, {"$set": updates})
     if not res.matched_count:
         raise HTTPException(status_code=404, detail="Profil détaillant introuvable")
+    return {"ok": True, "lat": updates.get("lat"), "lng": updates.get("lng")}
+
+
+@detaillant_public_router.get("/shops/public")
+async def detaillant_shops_public():
+    """POP'S publics : carte monde + palmarès des boutiques les mieux notées."""
+    shops = []
+    async for p in db.detaillant_profiles.find(
+            {"company_name": {"$nin": [None, ""]}},
+            {"_id": 0, "user_id": 1, "company_name": 1, "locality": 1, "country_code": 1,
+             "rating_avg": 1, "rating_count": 1, "lat": 1, "lng": 1}):
+        reviews = await db.detaillant_shop_reviews.find(
+            {"detaillant_user_id": p["user_id"]},
+            {"_id": 0, "rating": 1, "comment": 1, "reply": 1, "created_at": 1}
+        ).sort("created_at", -1).limit(3).to_list(3)
+        shops.append({**p, "reviews": reviews})
+    shops.sort(key=lambda s: (-(s.get("rating_avg") or 0), -(s.get("rating_count") or 0)))
+    return {"shops": shops}
+
+
+@detaillant_router.get("/reviews")
+async def detaillant_my_reviews(user: dict = Depends(get_current_user)):
+    reviews = await db.detaillant_shop_reviews.find(
+        {"detaillant_user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return {"reviews": reviews}
+
+
+class ReplyBody(BaseModel):
+    reply: str
+
+
+@detaillant_router.post("/reviews/{review_id}/reply")
+async def detaillant_reply_review(review_id: str, body: ReplyBody, user: dict = Depends(get_current_user)):
+    """Réponse publique du POP'S à un avis reçu."""
+    if len(body.reply.strip()) < 2:
+        raise HTTPException(status_code=400, detail="Réponse trop courte")
+    res = await db.detaillant_shop_reviews.update_one(
+        {"id": review_id, "detaillant_user_id": user["id"]},
+        {"$set": {"reply": body.reply.strip()[:500], "replied_at": _now().isoformat()}})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Avis introuvable")
     return {"ok": True}
 
 
@@ -559,6 +614,7 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                 pass
         retailer = {"company_name": offer.get("company_name"), "country_code": offer.get("country_code"),
                     "locality": offer.get("locality"), "verified": verified,
+                    "detaillant_user_id": offer["user_id"],
                     "rating_avg": (prof or {}).get("rating_avg"), "rating_count": (prof or {}).get("rating_count", 0),
                     "pickup_slots": (prof or {}).get("pickup_slots", [])}
         starts = _now() + timedelta(days=1)
@@ -631,5 +687,20 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
             data={"offer_id": offer_id})
     except Exception as exc:
         logger.warning("Notif offre détaillant: %s", exc)
+    # Alerte aux membres qui suivent ce POP'S : nouveau(x) lot(s) en salle
+    if body.action == "APPROVE" and created_refs:
+        try:
+            from core_deps import create_notification
+            async for f in db.detaillant_followers.find(
+                    {"detaillant_user_id": offer["user_id"]}, {"_id": 0, "member_id": 1}):
+                await create_notification(
+                    notification_type="pops_new_lot",
+                    title=f"🛍️ Nouveau lot — {offer.get('company_name')}",
+                    message=(f"Le POP'S {offer.get('company_name')} vient de déposer "
+                             f"{len(created_refs)} lot(s) en salle COOP'ACT : {offer['product_name']}."),
+                    target_roles=[], target_user_id=f["member_id"],
+                    data={"action_url": "/encheres"})
+        except Exception as exc:
+            logger.warning("Notif followers POP'S: %s", exc)
     out = await db.detaillant_offers.find_one({"id": offer_id}, {"_id": 0})
     return out

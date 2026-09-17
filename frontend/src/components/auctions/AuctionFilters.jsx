@@ -1,9 +1,6 @@
 import i18n from '@/i18n';
 import { Search } from 'lucide-react';
-
-const flag = (cc) => (cc && cc.length === 2
-  ? String.fromCodePoint(...[...cc.toUpperCase()].map((c) => 127397 + c.charCodeAt(0)))
-  : '');
+import { Flag } from '../Flag';
 
 const Pill = ({ active, onClick, children, testId }) => (
   <button type="button" onClick={onClick} data-testid={testId}
@@ -60,11 +57,11 @@ export const AuctionFilters = ({ filters, setFilters, categories, types, sources
           <span className="text-[11px] font-bold text-white/60 uppercase tracking-wide">Boutiques</span>
           {shops.map(([name, cc]) => (
             <Pill key={name} active={filters.shop === name} onClick={() => set('shop', name)}
-              testId={`auction-shop-filter-${name}`}>{flag(cc)} {name}</Pill>
+              testId={`auction-shop-filter-${name}`}><Flag code={cc} /> {name}</Pill>
           ))}
           {countries.length > 1 && countries.map((cc) => (
             <Pill key={cc} active={filters.country === cc} onClick={() => set('country', cc)}
-              testId={`auction-country-filter-${cc}`}>{flag(cc)} {cc}</Pill>
+              testId={`auction-country-filter-${cc}`}><Flag code={cc} /> {cc}</Pill>
           ))}
         </div>
       )}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { detaillantAPI } from '../../services/api.detaillant';
 import { COUNTRIES } from './detaillantI18n';
+import { Flag } from '../Flag';
 
 const inputCls = 'w-full h-9 px-2.5 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs';
 
@@ -39,7 +40,7 @@ export const DetaillantProfileCard = ({ t, profile, onSaved }) => {
           <input value={f.locality} onChange={set('locality')} className={inputCls} data-testid="dt-locality" />
         </div>
         <div>
-          <label className="text-[10px] text-white/50 block mb-1">{t.country} {country?.flag}</label>
+          <label className="text-[10px] text-white/50 block mb-1 inline-flex items-center gap-1.5">{t.country} <Flag code={f.country_code} /></label>
           <select value={f.country_code} onChange={set('country_code')} className={inputCls} data-testid="dt-country">
             {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.flag} {c.name}</option>)}
           </select>

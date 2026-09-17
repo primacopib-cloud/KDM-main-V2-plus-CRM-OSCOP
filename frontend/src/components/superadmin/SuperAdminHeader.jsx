@@ -8,6 +8,7 @@ import { Button } from '../ui/button';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { partners } from '../../data/mock';
 import { ConnectionStatus } from '../NotificationToast';
+import NotificationsDropdown from '../NotificationsDropdown';
 import NavigationHistoryDropdown from '../NavigationHistoryDropdown';
 import { apiCall } from '../../services/http';
 import { BrandLogos } from '../BrandLogos';
@@ -137,6 +138,7 @@ export const SuperAdminHeader = ({
       <div className="flex items-center gap-3">
         <LanguageSwitcher className="hidden xl:flex" />
         <NavigationHistoryDropdown variant="dark" />
+        <NotificationsDropdown />
         <ConnectionStatus isConnected={isConnected} />
 
         {/* Period Selector */}

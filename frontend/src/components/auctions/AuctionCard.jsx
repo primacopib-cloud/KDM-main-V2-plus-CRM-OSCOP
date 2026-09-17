@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Gavel, Coins, Timer, Share2, Images, BadgeCheck } from 'lucide-react';
+import { Gavel, Coins, Timer, Share2, Images, BadgeCheck, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { API, getAuthHeaders } from '../../services/http';
 import { AuctionPhotoGallery } from './AuctionPhotoGallery';
+import { Flag } from '../Flag';
 
 const cardImg = (u) => (u?.startsWith('/api/') ? `${API}${u.slice(4)}` : u);
 
@@ -37,7 +38,7 @@ const STATUS_STYLE = {
   EXPIRED: 'bg-white/20 text-white/80',
 };
 
-export const AuctionCard = ({ auction, canBid, onChanged }) => {
+export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onToggleFollow = () => {} }) => {
   const [busy, setBusy] = useState(false);
   const [gallery, setGallery] = useState(false);
   const a = auction;
@@ -108,14 +109,25 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
         <div className="text-sm font-semibold text-white truncate" title={a.title}>{a.title}</div>
         {a.retailer && (
           <div className="text-[11px] text-[#E9CF8E] truncate flex items-center gap-1" data-testid={`auction-retailer-${a.reference}`}>
-            <span className="truncate">
-              {countryFlag(a.retailer.country_code)} {a.retailer.company_name}
+            <span className="truncate inline-flex items-center gap-1">
+              {a.retailer.country_code && <Flag code={a.retailer.country_code} />} {a.retailer.company_name}
               {a.retailer.locality ? ` · ${a.retailer.locality}` : ''}
             </span>
             {a.retailer.rating_avg && (
               <span className="text-[9px] font-bold text-amber-300 shrink-0" data-testid={`auction-shop-rating-${a.reference}`}>
                 ★ {Number(a.retailer.rating_avg).toFixed(1)} ({a.retailer.rating_count})
               </span>
+            )}
+            {a.retailer.detaillant_user_id && follows && (
+              <button onClick={() => onToggleFollow(a.retailer.detaillant_user_id)}
+                data-testid={`auction-follow-shop-${a.reference}`}
+                title={follows.includes(a.retailer.detaillant_user_id) ? 'Ne plus suivre ce POP\'S' : 'Suivre ce POP\'S — alerte à chaque nouveau lot'}
+                className={`shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold border transition-colors ${
+                  follows.includes(a.retailer.detaillant_user_id)
+                    ? 'text-emerald-300 border-emerald-400/50 bg-emerald-500/15'
+                    : 'text-white/55 border-white/25 hover:border-emerald-400/50 hover:text-emerald-300'}`}>
+                <BellRing className="w-2.5 h-2.5" /> {follows.includes(a.retailer.detaillant_user_id) ? 'Suivi ✓' : 'Suivre'}
+              </button>
             )}
             {a.retailer.verified && (
               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-400/40 shrink-0"

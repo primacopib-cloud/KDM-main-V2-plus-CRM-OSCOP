@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Gavel, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
-import { API, getAuthHeaders, getSessionToken } from '../services/http';
+import { API, getAuthHeaders, getSessionToken, apiCall } from '../services/http';
 import LolodriveLayout from '../components/LolodriveLayout';
 import { AuctionCard } from '../components/auctions/AuctionCard';
 import { AuctionFilters } from '../components/auctions/AuctionFilters';
@@ -16,6 +16,7 @@ export default function AuctionsPage() {
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState({ items: [], categories: [], types: [], sources: [] });
   const [me, setMe] = useState(null);
+  const [follows, setFollows] = useState(null);
   const [filters, setFilters] = useState({ status: '', category: '', type_id: '', source: '', q: '', shop: '', country: '' });
   const [winnerAuction, setWinnerAuction] = useState(null);
   const isLogged = Boolean(getSessionToken());
@@ -100,6 +101,19 @@ export default function AuctionsPage() {
 
   const pendingWin = (me?.wins || []).find((w) => !w.fulfillment);
 
+  useEffect(() => {
+    if (!isLogged) return;
+    apiCall('/auctions/shops/follows').then((d) => setFollows(d.follows || [])).catch(() => {});
+  }, [isLogged]);
+
+  const toggleFollow = async (detaillantId) => {
+    try {
+      const r = await apiCall(`/auctions/shops/${detaillantId}/follow`, { method: 'POST' });
+      setFollows((f) => (r.following ? [...(f || []), detaillantId] : (f || []).filter((x) => x !== detaillantId)));
+      toast.success(r.following ? '✓ POP\'S suivi — vous serez alerté de ses nouveaux lots' : 'Suivi retiré');
+    } catch (e) { toast.error(e.message); }
+  };
+
   return (
     <LolodriveLayout title={i18n.t('auction.title')} subtitle={i18n.t('auction.subtitle')}>
       <div data-testid="auctions-page">
@@ -136,6 +150,7 @@ export default function AuctionsPage() {
             data-testid="auctions-grid">
             {visible.map((a) => (
               <AuctionCard key={a.id} auction={a} canBid={Boolean(me?.active)}
+                follows={follows} onToggleFollow={toggleFollow}
                 onChanged={() => { load(); loadMe(); }} />
             ))}
           </div>

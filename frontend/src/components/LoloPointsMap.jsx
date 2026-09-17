@@ -23,7 +23,7 @@ const TERRITORY_DEFAULTS = {
  *   - ratings: { [code]: { avg, count } } → note ⭐ dans les popups
  *   - height: '420px' (par défaut)
  */
-export default function LoloPointsMap({ points = [], territory = null, onSelect, focusCode = null, ratings = null, height = '460px' }) {
+export default function LoloPointsMap({ points = [], pops = [], territory = null, onSelect, focusCode = null, ratings = null, height = '460px' }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -96,7 +96,7 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
     markersRef.current = [];
 
     const filtered = points.filter((p) => typeof p.lat === 'number' && typeof p.lng === 'number');
-    if (filtered.length === 0) return;
+    if (filtered.length === 0 && pops.length === 0) return;
 
     filtered.forEach((p) => {
       const rating = ratings?.[p.code];
@@ -131,6 +131,33 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
       markersRef.current.push({ code: p.code, marker });
     });
 
+    // Marqueurs POP'S — boutiques détaillantes (vendeurs éphémères COOP'ACT)
+    const popsFiltered = pops.filter((s) => typeof s.lat === 'number' && typeof s.lng === 'number');
+    popsFiltered.forEach((s) => {
+      const el = document.createElement('div');
+      el.className = 'kdm-pops-marker';
+      el.setAttribute('data-testid', `map-pops-marker-${s.user_id}`);
+      el.style.cssText = `
+        min-width: 30px; height: 24px; padding: 0 6px; border-radius: 8px;
+        background: linear-gradient(135deg, #10b981, #047857);
+        border: 2px solid rgba(255,255,255,0.9); box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        color: #fff; font-weight: 800; font-size: 9px; letter-spacing: 0.5px;
+      `;
+      el.textContent = "POP'S";
+      const popup = new mapboxgl.Popup({ offset: 18, closeButton: false }).setHTML(`
+        <div style="font-family: system-ui; min-width: 200px; padding: 4px 0;">
+          <div style="display:inline-block;background:linear-gradient(135deg,#10b981,#047857);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:0.5px;">POP'S — VENDEUR ÉPHÉMÈRE</div>
+          <div style="font-weight: 700; font-size: 14px; color: #0f172a; margin-top: 4px;">${escapeHtml(s.company_name || '')}</div>
+          ${s.rating_avg ? `<div style="font-size: 12px; color: #b45309; font-weight: 700;">★ ${escapeHtml(String(s.rating_avg))} <span style="color:#94a3b8;font-weight:400;">(${escapeHtml(String(s.rating_count || 0))} avis)</span></div>` : ''}
+          <div style="font-size: 12px; color: #1e293b; margin-top: 2px;">${escapeHtml(s.locality || '')} ${s.country_code ? `· ${escapeHtml(s.country_code)}` : ''}</div>
+          <div style="font-size: 10px; color: #64748b; margin-top: 4px;">Partenaire d'Offres de Produits Solidaires — lots en salle COOP'ACT</div>
+        </div>
+      `);
+      const marker = new mapboxgl.Marker({ element: el }).setLngLat([s.lng, s.lat]).setPopup(popup).addTo(mapRef.current);
+      markersRef.current.push({ code: `pops-${s.user_id}`, marker });
+    });
+
     // Focus direct sur un relais ciblé (icône localisation de l'espace PASS)
     const focused = focusCode ? filtered.find((p) => p.code === focusCode) : null;
     if (focused) {
@@ -147,7 +174,7 @@ export default function LoloPointsMap({ points = [], territory = null, onSelect,
       filtered.forEach((p) => bounds.extend([p.lng, p.lat]));
       mapRef.current.fitBounds(bounds, { padding: 60, maxZoom: 8, duration: 800 });
     }
-  }, [points, territory, onSelect, focusCode, ratings]);
+  }, [points, pops, territory, onSelect, focusCode, ratings]);
 
   if (!TOKEN || mapError) {
     const visiblePoints = points.filter((point) => point?.name).slice(0, 8);

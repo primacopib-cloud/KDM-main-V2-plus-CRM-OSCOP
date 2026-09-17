@@ -13,7 +13,7 @@ CREDITS_PER_EUR = 10
 SOURCES = ["LOLODRIVE", "VENDOR", "PARTNER", "KDMARCHE", "OSCOP", "DETAILLANT"]
 RECURRENCES = ["NONE", "DAILY", "MONTHLY", "YEARLY"]
 SOURCE_LABELS = {"LOLODRIVE": "LOLODRIVE", "VENDOR": "Vendeur", "PARTNER": "Partenaire",
-                 "KDMARCHE": "KDMARCHÉ", "OSCOP": "O'SCOP", "DETAILLANT": "Boutique détaillante"}
+                 "KDMARCHE": "KDMARCHÉ", "OSCOP": "O'SCOP", "DETAILLANT": "POP'S — Vendeur éphémère"}
 
 
 def set_auction_database(database):

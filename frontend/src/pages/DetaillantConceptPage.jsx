@@ -4,6 +4,7 @@ import { Store, Gavel, Coins, Globe2, QrCode, CalendarClock, BadgePercent, Arrow
 import { toast } from 'sonner';
 import { CONCEPT_I18N } from './conceptI18n';
 import { detaillantAPI } from '../services/api.detaillant';
+import { PopsLeaderboard } from '../components/detaillant/PopsLeaderboard';
 import { API } from '../services/http';
 
 const imgSrc = (u) => (u?.startsWith('/api/') ? `${API}${u.slice(4)}` : u);
@@ -45,6 +46,11 @@ export default function DetaillantConceptPage() {
           {t.h1a}<br />
           <span className="text-[#E9CF8E]">{t.h1b}</span>
         </h1>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/10 text-emerald-300 text-[11px] font-bold mt-4"
+          data-testid="concept-pops-badge">
+          {t.popsBadge}
+        </div>
+        <p className="text-[11px] text-white/45 mt-2 max-w-xl" data-testid="concept-pops-def">{t.popsDef}</p>
         <p className="text-base text-white/60 mt-5 max-w-2xl">{t.sub}</p>
         <div className="flex flex-wrap gap-3 mt-8">
           <Link to="/espace-detaillant" data-testid="concept-cta-join"
@@ -109,6 +115,7 @@ export default function DetaillantConceptPage() {
             {t.steps.map((s) => <li key={s}>{s}</li>)}
           </ol>
         </div>
+        <PopsLeaderboard t={t} />
         <div className="flex flex-wrap items-center gap-3 mt-10" data-testid="concept-share">
           <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
             <Share2 className="w-3.5 h-3.5" /> {t.share}

@@ -1,6 +1,11 @@
 // Traductions page publique Détaillant — FR / EN / ES / Créole (ton marketing)
 export const CONCEPT_I18N = {
   fr: {
+    popsBadge: "Devenez un POP'S — Partenaire d'Offres de Produits Solidaires",
+    popsDef: "Les boutiques détaillantes de la salle sont appelées POP'S : Partenaire d'Offres de Produits Solidaires, vendeur éphémère en salle COOP'ACT.",
+    topShops: "Palmarès des POP'S les mieux notés",
+    topShopsSub: 'Les boutiques préférées des Coop\'acteurs — notées après chaque enlèvement.',
+    replyLabel: 'Réponse de la boutique :',
     videoTitle: 'Vos produits méritent la salle — regardez comment vos lots prennent vie',
     tag: "KDMARCHÉ × O'SCOP — Espace Détaillant",
     h1a: 'Vos invendus ont de la valeur.',
@@ -31,6 +36,11 @@ export const CONCEPT_I18N = {
     ],
   },
   en: {
+    popsBadge: "Become a POP'S — Solidarity Products Offer Partner",
+    popsDef: "The room's retail shops are called POP'S: Solidarity Products Offer Partner, pop-up sellers in the COOP'ACT room.",
+    topShops: 'Top-rated POP\'S leaderboard',
+    topShopsSub: "The Coop'actors' favourite shops — rated after every pickup.",
+    replyLabel: 'Shop reply:',
     videoTitle: 'Your products deserve the room — see how your lots come to life',
     tag: "KDMARCHÉ × O'SCOP — Retailer Space",
     h1a: 'Your unsold stock is worth money.',
@@ -61,6 +71,11 @@ export const CONCEPT_I18N = {
     ],
   },
   es: {
+    popsBadge: "Conviértase en POP'S — Socio de Ofertas de Productos Solidarios",
+    popsDef: "Las tiendas minoristas de la sala se llaman POP'S: Socio de Ofertas de Productos Solidarios, vendedores efímeros en la sala COOP'ACT.",
+    topShops: 'Ranking de los POP\'S mejor valorados',
+    topShopsSub: "Las tiendas favoritas de los Coop'actores — valoradas tras cada retiro.",
+    replyLabel: 'Respuesta de la tienda:',
     videoTitle: 'Sus productos merecen la sala — vea cómo sus lotes cobran vida',
     tag: "KDMARCHÉ × O'SCOP — Espacio Minorista",
     h1a: 'Sus excedentes valen dinero.',
@@ -91,6 +106,11 @@ export const CONCEPT_I18N = {
     ],
   },
   gcf: {
+    popsBadge: "Vin on POP'S — Patnè Òf Pwodui Solidè",
+    popsDef: "Boutik détayan a sal la ka rélé POP'S : Patnè Òf Pwodui Solidè, vandè éfémè an sal COOP'ACT.",
+    topShops: 'Palmarès a POP\'S ki pi byen noté',
+    topShopsSub: "Boutik Coop'actè yo pi enmé — noté apré chak ranmasé.",
+    replyLabel: 'Répons a boutik la :',
     videoTitle: 'Pwodui a-w mérité sal la — gadé kijan lo a-w ka pran vi',
     tag: "KDMARCHÉ × O'SCOP — Espas Détayan",
     h1a: 'Sa ou pa vann ni valè.',

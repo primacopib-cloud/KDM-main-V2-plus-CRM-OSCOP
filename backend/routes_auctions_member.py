@@ -220,6 +220,29 @@ async def my_auction_account(user_id: str = Depends(get_current_user_id)):
             "bids": bids, "ledger": ledger}
 
 
+# ---------- Suivi de boutiques POP'S ----------
+
+@auctions_member_router.get("/shops/follows")
+async def my_shop_follows(user_id: str = Depends(get_current_user_id)):
+    follows = [f["detaillant_user_id"] async for f in ah.db.detaillant_followers.find(
+        {"member_id": user_id}, {"_id": 0, "detaillant_user_id": 1})]
+    return {"follows": follows}
+
+
+@auctions_member_router.post("/shops/{detaillant_user_id}/follow")
+async def toggle_shop_follow(detaillant_user_id: str, user_id: str = Depends(get_current_user_id)):
+    """Suivre / ne plus suivre un POP'S pour être alerté de ses nouveaux lots."""
+    existing = await ah.db.detaillant_followers.find_one(
+        {"member_id": user_id, "detaillant_user_id": detaillant_user_id})
+    if existing:
+        await ah.db.detaillant_followers.delete_one({"_id": existing["_id"]})
+        return {"following": False}
+    await ah.db.detaillant_followers.insert_one({
+        "id": str(uuid.uuid4()), "member_id": user_id, "detaillant_user_id": detaillant_user_id,
+        "created_at": ah.now_utc().isoformat()})
+    return {"following": True}
+
+
 # ---------- Avis boutique (après enlèvement) ----------
 
 class ShopReviewBody(BaseModel):
