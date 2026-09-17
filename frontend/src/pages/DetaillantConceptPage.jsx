@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Store, Gavel, Coins, Globe2, QrCode, CalendarClock, BadgePercent, ArrowRight } from 'lucide-react';
+import { Store, Gavel, Coins, Globe2, QrCode, CalendarClock, BadgePercent, ArrowRight, Share2, Linkedin, MessageCircle } from 'lucide-react';
 import { CONCEPT_I18N } from './conceptI18n';
 
 const ICONS = [Gavel, Coins, BadgePercent, Globe2, CalendarClock, QrCode];
@@ -58,6 +58,21 @@ export default function DetaillantConceptPage() {
           <ol className="text-xs text-white/60 mt-2 space-y-1.5 list-decimal list-inside">
             {t.steps.map((s) => <li key={s}>{s}</li>)}
           </ol>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 mt-10" data-testid="concept-share">
+          <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
+            <Share2 className="w-3.5 h-3.5" /> {t.share}
+          </span>
+          <a data-testid="concept-share-whatsapp" target="_blank" rel="noreferrer"
+            href={`https://wa.me/?text=${encodeURIComponent(`${t.shareMsg} ${window.location.origin}/detaillant`)}`}
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#25D366]/15 border border-[#25D366]/40 text-[#4ade80] text-xs font-bold hover:bg-[#25D366]/25 transition-colors">
+            <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+          </a>
+          <a data-testid="concept-share-linkedin" target="_blank" rel="noreferrer"
+            href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/detaillant`)}`}
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#0A66C2]/15 border border-[#0A66C2]/40 text-[#7db8ea] text-xs font-bold hover:bg-[#0A66C2]/25 transition-colors">
+            <Linkedin className="w-3.5 h-3.5" /> LinkedIn
+          </a>
         </div>
       </div>
     </div>

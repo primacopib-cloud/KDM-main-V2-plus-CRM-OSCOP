@@ -1,6 +1,8 @@
 // Traductions page publique Détaillant — FR / EN / ES / Créole
 export const CONCEPT_I18N = {
   fr: {
+    share: 'Partagez la vitrine à une boutique :',
+    shareMsg: "Découvre l'espace Détaillant KDMARCHÉ × O'SCOP : écoule tes lots en boutique sur la Bourse COOP'ACT !",
     tag: "KDMARCHÉ × O'SCOP — Espace Détaillant",
     h1a: 'Écoulez vos lots en boutique',
     h1b: "sur la Bourse COOP'ACT",
@@ -25,6 +27,8 @@ export const CONCEPT_I18N = {
     ],
   },
   en: {
+    share: 'Share this page with a store:',
+    shareMsg: "Discover the KDMARCHÉ × O'SCOP Retailer space: sell your store lots on the COOP'ACT Exchange!",
     tag: "KDMARCHÉ × O'SCOP — Retailer Space",
     h1a: 'Sell your store lots',
     h1b: "on the COOP'ACT Exchange",
@@ -49,6 +53,8 @@ export const CONCEPT_I18N = {
     ],
   },
   es: {
+    share: 'Comparta esta página con una tienda:',
+    shareMsg: '¡Descubra el espacio Minorista KDMARCHÉ × O\'SCOP: venda sus lotes en la Bolsa COOP\'ACT!',
     tag: "KDMARCHÉ × O'SCOP — Espacio Minorista",
     h1a: 'Venda los lotes de su tienda',
     h1b: "en la Bolsa COOP'ACT",
@@ -73,6 +79,8 @@ export const CONCEPT_I18N = {
     ],
   },
   gcf: {
+    share: 'Patajé paj-lasa èvè on boutik :',
+    shareMsg: "Découvè espas Détayan KDMARCHÉ × O'SCOP : vann lo boutik a-w asi Bous COOP'ACT la !",
     tag: "KDMARCHÉ × O'SCOP — Espas Détayan",
     h1a: 'Vann lo boutik a-w',
     h1b: "asi Bous COOP'ACT la",

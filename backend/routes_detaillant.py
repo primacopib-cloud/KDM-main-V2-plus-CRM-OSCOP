@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from lolodrive_helpers import get_current_user, require_admin
@@ -239,12 +239,32 @@ class OfferBody(BaseModel):
     discount_mode: str = "PERCENT"  # PERCENT | AMOUNT
     discount_value: float = 15
     scheduled_start: Optional[str] = None  # ISO — programmation avec countdown
+    photo_main: Optional[str] = None       # photo principale (obligatoire)
+    photos: List[str] = []                 # jusqu'à 2 photos facultatives
+    condition: str = "NEW"                 # NEW | USED
+    warranty: Optional[str] = None         # garantie produit
+    dlc: Optional[str] = None              # DLC ISO — obligatoire si produit périssable (min. +3 mois)
+
+
+@detaillant_router.post("/photos")
+async def detaillant_upload_photo(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Téléverse une photo de lot (PNG/JPEG/WebP, 5 Mo max) et renvoie son URL."""
+    if file.content_type not in ("image/png", "image/jpeg", "image/webp"):
+        raise HTTPException(status_code=400, detail="Format accepté : PNG, JPEG ou WebP")
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Photo trop lourde (max 5 Mo)")
+    ext = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}[file.content_type]
+    from upload_storage import save_upload
+    url = await save_upload(f"detaillant/{user['id'][:8]}-{uuid.uuid4().hex[:10]}.{ext}", content, file.content_type)
+    return {"url": url}
 
 
 @detaillant_router.get("/catalog")
 async def detaillant_catalog(user: dict = Depends(get_current_user)):
     products = await db.lolodrive_products.find(
-        {}, {"_id": 0, "sku": 1, "name": 1, "category": 1, "image_url": 1}).sort("name", 1).to_list(300)
+        {"detaillant_active": {"$ne": False}},
+        {"_id": 0, "sku": 1, "name": 1, "category": 1, "image_url": 1, "perishable": 1}).sort("name", 1).to_list(300)
     return {"products": products}
 
 
@@ -294,9 +314,27 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
             scheduled_start = dt.isoformat()
         except ValueError:
             raise HTTPException(status_code=400, detail="Date de programmation invalide (elle doit être future)")
-    product = await db.lolodrive_products.find_one({"sku": body.product_sku}, {"_id": 0, "sku": 1, "name": 1, "category": 1})
+    product = await db.lolodrive_products.find_one(
+        {"sku": body.product_sku}, {"_id": 0, "sku": 1, "name": 1, "category": 1, "perishable": 1})
     if not product:
         raise HTTPException(status_code=404, detail="Produit introuvable dans le catalogue LOLODRIVE en vigueur")
+    if not (body.photo_main or "").strip():
+        raise HTTPException(status_code=400, detail="Une photo principale du lot est obligatoire")
+    if body.condition not in ("NEW", "USED"):
+        raise HTTPException(status_code=400, detail="État du produit invalide (neuf ou occasion)")
+    dlc_iso = None
+    if product.get("perishable"):
+        if not body.dlc:
+            raise HTTPException(status_code=400, detail="DLC obligatoire pour ce produit périssable")
+        try:
+            dlc_dt = datetime.fromisoformat(body.dlc.replace("Z", "+00:00"))
+            if dlc_dt.tzinfo is None:
+                dlc_dt = dlc_dt.replace(tzinfo=timezone.utc)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="DLC invalide")
+        if dlc_dt < _now() + timedelta(days=90):
+            raise HTTPException(status_code=400, detail="DLC insuffisante : minimum 3 mois pour un produit périssable")
+        dlc_iso = dlc_dt.date().isoformat()
     month_key = _now().strftime("%Y-%m")
     used = await db.detaillant_offers.count_documents(
         {"user_id": user["id"], "month_key": month_key, "status": {"$ne": "REJECTED"}})
@@ -327,6 +365,8 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         "discount_mode": body.discount_mode, "discount_value": body.discount_value,
         "discount_amount": discount_amount, "discount_pct": discount_pct,
         "final_price": final_price, "scheduled_start": scheduled_start,
+        "photo_main": body.photo_main.strip(), "photos": [p for p in body.photos if p][:2],
+        "condition": body.condition, "warranty": (body.warranty or "").strip() or None, "dlc": dlc_iso,
         "status": "PENDING", "month_key": month_key,
         "created_at": _now().isoformat()}
     await db.detaillant_offers.insert_one({**offer})
@@ -346,16 +386,95 @@ async def detaillant_sales(user: dict = Depends(get_current_user)):
             "value_eur": a.get("value_eur"), "current_price_eur": a.get("current_price_eur"),
             "bids_count": a.get("bids_count", 0),
             "winner_name": w.get("name"), "won_price_eur": w.get("price_eur"), "won_at": w.get("won_at"),
-            "picked_up": bool(a.get("pickup_confirmed_at"))})
+            "picked_up": bool(a.get("pickup_confirmed_at")), "relisted": bool(a.get("relisted"))})
     totals = {"lots": len(sales), "bids": sum(s["bids_count"] for s in sales),
               "won": sum(1 for s in sales if s["status"] == "WON"),
               "revenue_eur": round(sum(s["won_price_eur"] or 0 for s in sales if s["status"] == "WON"), 2)}
     return {"sales": sales, "totals": totals}
 
 
+@detaillant_router.post("/sales/{reference}/relist")
+async def detaillant_relist(reference: str, user: dict = Depends(get_current_user)):
+    """Reprogramme en un clic un lot expiré, sans nouveau dépôt de crédits."""
+    a = await db.auctions.find_one({"reference": reference, "source": "DETAILLANT"}, {"_id": 0})
+    if not a:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+    offer = await db.detaillant_offers.find_one(
+        {"id": a.get("detaillant_offer_id"), "user_id": user["id"]}, {"_id": 0, "id": 1})
+    if not offer:
+        raise HTTPException(status_code=403, detail="Ce lot ne vous appartient pas")
+    if a.get("status") != "EXPIRED":
+        raise HTTPException(status_code=409, detail="Seul un lot expiré peut être relancé")
+    if a.get("relisted"):
+        raise HTTPException(status_code=409, detail="Ce lot a déjà été relancé")
+    starts = _now() + timedelta(hours=1)
+    new_ref = f"AUC-{_now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+    doc = {k: v for k, v in a.items() if k not in (
+        "id", "reference", "status", "winner", "bids_count", "current_price_eur",
+        "starts_at", "ends_at", "live_alert_sent", "ending_alert_sent", "ending_alert_at",
+        "pickup_confirmed_at", "relisted", "created_at")}
+    doc.update({"id": str(uuid.uuid4()), "reference": new_ref, "status": "SCHEDULED",
+                "current_price_eur": a.get("value_eur"), "bids_count": 0,
+                "starts_at": starts.isoformat(), "ends_at": (starts + timedelta(days=7)).isoformat(),
+                "relisted_from": reference, "created_at": _now().isoformat()})
+    await db.auctions.insert_one(doc)
+    await db.auctions.update_one({"reference": reference}, {"$set": {"relisted": True}})
+    return {"ok": True, "reference": new_ref, "starts_at": doc["starts_at"]}
+
+
 class ReviewBody(BaseModel):
     action: str  # APPROVE | REJECT
     note: Optional[str] = None
+
+
+class CatalogProductBody(BaseModel):
+    sku: Optional[str] = None
+    name: str
+    category: str = ""
+    perishable: bool = False
+    detaillant_active: bool = True
+    image_url: Optional[str] = None
+
+
+@detaillant_admin_router.get("/catalog")
+async def admin_detaillant_catalog(admin: dict = Depends(require_admin)):
+    """Catalogue produit en vigueur (géré par le superadmin)."""
+    products = await db.lolodrive_products.find(
+        {}, {"_id": 0, "sku": 1, "name": 1, "category": 1, "image_url": 1,
+             "perishable": 1, "detaillant_active": 1}).sort("name", 1).to_list(500)
+    return {"products": products}
+
+
+@detaillant_admin_router.post("/catalog")
+async def admin_upsert_catalog_product(body: CatalogProductBody, admin: dict = Depends(require_admin)):
+    if len(body.name.strip()) < 2:
+        raise HTTPException(status_code=400, detail="Nom de produit trop court")
+    sku = (body.sku or "").strip() or f"DET-{uuid.uuid4().hex[:8].upper()}"
+    doc = {"sku": sku, "name": body.name.strip(), "category": body.category.strip(),
+           "perishable": body.perishable, "detaillant_active": body.detaillant_active,
+           "updated_at": _now().isoformat(), "updated_by": admin.get("email")}
+    if body.image_url:
+        doc["image_url"] = body.image_url
+    await db.lolodrive_products.update_one(
+        {"sku": sku}, {"$set": doc, "$setOnInsert": {"created_at": _now().isoformat()}}, upsert=True)
+    return {"ok": True, "sku": sku}
+
+
+@detaillant_admin_router.patch("/catalog/{sku}")
+async def admin_toggle_catalog_product(sku: str, perishable: Optional[bool] = None,
+                                       detaillant_active: Optional[bool] = None,
+                                       admin: dict = Depends(require_admin)):
+    updates = {}
+    if perishable is not None:
+        updates["perishable"] = perishable
+    if detaillant_active is not None:
+        updates["detaillant_active"] = detaillant_active
+    if not updates:
+        raise HTTPException(status_code=400, detail="Aucun champ à modifier")
+    r = await db.lolodrive_products.update_one({"sku": sku}, {"$set": updates})
+    if not r.matched_count:
+        raise HTTPException(status_code=404, detail="Produit introuvable")
+    return {"ok": True}
 
 
 @detaillant_admin_router.get("/stats")
@@ -433,6 +552,12 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                 pass
         ends = starts + timedelta(days=7)
         desc = offer["description"]
+        if offer.get("condition"):
+            desc += f" — État : {'neuf' if offer['condition'] == 'NEW' else 'occasion'}"
+        if offer.get("warranty"):
+            desc += f" — Garantie : {offer['warranty']}"
+        if offer.get("dlc"):
+            desc += f" — DLC : {'-'.join(reversed(offer['dlc'].split('-')))}"
         if offer.get("lot_price"):
             desc += (f" — Prix boutique : {offer['lot_price']} {offer.get('currency', 'EUR')}, "
                      f"réduction -{offer.get('discount_pct', 0):.0f} % → {offer['final_price']} {offer.get('currency', 'EUR')}")
@@ -443,7 +568,8 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
             await db.auctions.insert_one({
                 "id": str(uuid.uuid4()), "reference": ref,
                 "title": f"Lot ×3 — {offer['product_name']}" + (f" ({i + 1}/{offer['qty_lots']})" if offer["qty_lots"] > 1 else ""),
-                "image_url": (product or {}).get("image_url"),
+                "image_url": offer.get("photo_main") or (product or {}).get("image_url"),
+                "photos": [p for p in ([offer.get("photo_main")] + (offer.get("photos") or [])) if p],
                 "description": desc,
                 "source": "DETAILLANT", "source_visible": True,
                 "retailer": retailer,

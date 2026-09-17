@@ -62,6 +62,39 @@ async def notify_admin_win(auction: dict):
         logger.warning("Notification admin victoire %s : %s", auction.get("id"), exc)
 
 
+async def notify_detaillant_win(auction: dict):
+    """Cloche + email au détaillant quand un de ses lots est remporté en salle."""
+    if auction.get("source") != "DETAILLANT" or not auction.get("detaillant_offer_id"):
+        return
+    w = auction.get("winner") or {}
+    try:
+        offer = await ah.db.detaillant_offers.find_one(
+            {"id": auction["detaillant_offer_id"]}, {"_id": 0, "user_id": 1, "company_name": 1})
+        if not offer:
+            return
+        seller = await ah.db.users.find_one(
+            {"id": offer["user_id"]}, {"_id": 0, "email": 1, "company_name": 1})
+        msg = (f"Votre lot « {auction.get('title')} » ({auction.get('reference')}) vient d'être remporté "
+               f"par {w.get('name')} à {w.get('price_eur'):.2f} €. Le gagnant présentera son QR à l'enlèvement.")
+        from core_deps import create_notification
+        await create_notification(
+            "detaillant_lot_won", f"🎉 Lot vendu — {auction.get('reference')}", msg,
+            target_user_id=offer["user_id"], data={"auction_id": auction.get("id"), "action_url": "/espace-detaillant"})
+        if seller and seller.get("email"):
+            from brevo_service import send_email, _wrap_html
+            name = seller.get("company_name") or offer.get("company_name") or ""
+            subject = f"🎉 Votre lot a été remporté — {auction.get('title')}"
+            body = (f"<p style='font-size:14px;'>Bonjour {name},</p>"
+                    f"<p style='font-size:14px;'>{msg}</p>"
+                    "<p style='font-size:14px;'>Retrouvez le détail dans « Mes ventes en salle » de votre espace détaillant.</p>"
+                    "<p style='font-size:12px;color:#B8A98F;'><b>BOURSE COOPÉRATIVE — COOP'ACT</b>, agir ensemble pour la juste valeur.</p>")
+            await send_email(to_email=seller["email"], to_name=name or None, subject=subject,
+                             html_content=_wrap_html(subject, body), text_content=msg,
+                             tags=["detaillant-lot-won"])
+    except Exception as exc:
+        logger.warning("Alerte vente détaillant %s : %s", auction.get("id"), exc)
+
+
 async def notify_admin_fulfillment(auction: dict, fulfillment: dict):
     w = auction.get("winner") or {}
     detail = (f"retrait au relais {fulfillment.get('point_name')}" if fulfillment.get("mode") == "PICKUP"

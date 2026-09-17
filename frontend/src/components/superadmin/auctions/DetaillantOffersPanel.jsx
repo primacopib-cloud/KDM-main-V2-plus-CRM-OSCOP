@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { detaillantAPI } from '../../../services/api.detaillant';
 import { COUNTRIES } from '../../detaillant/detaillantI18n';
+import { CatalogManagerCard } from './CatalogManagerCard';
+import { API } from '../../../services/http';
+
+const imgSrc = (u) => (u?.startsWith('/api/') ? `${API}${u.slice(4)}` : u);
 
 // Panneau superadmin : validation des offres de lots détaillants avant programmation COOP'ACT
 export const DetaillantOffersPanel = () => {
@@ -27,6 +31,8 @@ export const DetaillantOffersPanel = () => {
   const flag = (code) => COUNTRIES.find((c) => c.code === code)?.flag || '';
 
   return (
+    <>
+    <CatalogManagerCard />
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" data-testid="detaillant-offers-panel">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-[#E9CF8E]">Offres de lots Détaillants</h3>
@@ -74,6 +80,19 @@ export const DetaillantOffersPanel = () => {
                 </p>
                 <p className="text-[10px] text-white/45 mt-1">{o.description}</p>
                 {o.composed_detail && <p className="text-[10px] text-white/45">Composition : {o.composed_detail}</p>}
+                <p className="text-[10px] text-white/50 mt-0.5">
+                  {o.condition && <span>État : <b>{o.condition === 'NEW' ? 'neuf' : 'occasion'}</b></span>}
+                  {o.warranty && <span> · Garantie : {o.warranty}</span>}
+                  {o.dlc && <span className="text-amber-300"> · DLC : {o.dlc.split('-').reverse().join('/')}</span>}
+                </p>
+                {(o.photo_main || (o.photos || []).length > 0) && (
+                  <div className="flex gap-1.5 mt-1.5" data-testid={`dt-admin-photos-${o.id}`}>
+                    {[o.photo_main, ...(o.photos || [])].filter(Boolean).map((u, i) => (
+                      <img key={u} src={imgSrc(u)} alt={`Photo ${i + 1}`}
+                        className="w-12 h-12 rounded-lg object-cover border border-white/15" />
+                    ))}
+                  </div>
+                )}
               </div>
               {o.status === 'PENDING' ? (
                 <div className="flex gap-2 shrink-0">
@@ -96,5 +115,6 @@ export const DetaillantOffersPanel = () => {
         ))}
       </div>
     </div>
+    </>
   );
 };

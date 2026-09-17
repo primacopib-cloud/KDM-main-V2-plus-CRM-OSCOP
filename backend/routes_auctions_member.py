@@ -299,9 +299,10 @@ async def accept_price(auction_id: str, user_id: str = Depends(get_current_user_
     if res.modified_count == 0:
         await _refund_credits(user_id, price_credits, f"Enchère déjà remportée {a['reference']}")
         raise HTTPException(status_code=409, detail="Trop tard — un autre membre vient de remporter ce COOP'ACT")
-    from auction_emails import send_winner_email, notify_admin_win
+    from auction_emails import send_winner_email, notify_admin_win, notify_detaillant_win
     await send_winner_email({**a, "winner": winner})
     await notify_admin_win({**a, "winner": winner})
+    await notify_detaillant_win({**a, "winner": winner})
     return {"ok": True, "won": True, "price_eur": price_eur, "price_credits": price_credits}
 
 

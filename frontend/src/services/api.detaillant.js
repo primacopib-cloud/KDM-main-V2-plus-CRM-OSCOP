@@ -1,4 +1,4 @@
-import { apiCall } from './http';
+import { apiCall, API, getAuthHeaders } from './http';
 
 export const detaillantAPI = {
   register: (payload) => apiCall('/detaillant/register', { method: 'POST', body: JSON.stringify(payload) }),
@@ -9,10 +9,24 @@ export const detaillantAPI = {
   creditsCheckout: (pack, originUrl) => apiCall('/detaillant/credits/checkout', { method: 'POST', body: JSON.stringify({ pack, origin_url: originUrl }) }),
   creditsActivate: (sessionId) => apiCall('/detaillant/credits/activate', { method: 'POST', body: JSON.stringify({ session_id: sessionId }) }),
   sales: () => apiCall('/detaillant/sales'),
+  relist: (reference) => apiCall(`/detaillant/sales/${reference}/relist`, { method: 'POST' }),
+  uploadPhoto: async (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(`${API}/detaillant/photos`, {
+      method: 'POST', credentials: 'include', headers: getAuthHeaders(), body: fd,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Échec du téléversement');
+    return data;
+  },
   catalog: () => apiCall('/detaillant/catalog'),
   myOffers: () => apiCall('/detaillant/offers'),
   createOffer: (payload) => apiCall('/detaillant/offers', { method: 'POST', body: JSON.stringify(payload) }),
   adminOffers: (status) => apiCall(`/admin/detaillant/offers${status ? `?status=${status}` : ''}`),
   adminReview: (offerId, action, note) => apiCall(`/admin/detaillant/offers/${offerId}/review`, { method: 'POST', body: JSON.stringify({ action, note }) }),
   adminStats: () => apiCall('/admin/detaillant/stats'),
+  adminCatalog: () => apiCall('/admin/detaillant/catalog'),
+  adminUpsertProduct: (payload) => apiCall('/admin/detaillant/catalog', { method: 'POST', body: JSON.stringify(payload) }),
+  adminToggleProduct: (sku, params) => apiCall(`/admin/detaillant/catalog/${sku}?${new URLSearchParams(params)}`, { method: 'PATCH' }),
 };
