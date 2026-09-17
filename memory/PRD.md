@@ -3616,3 +3616,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Email Brevo aux followers (en plus de la cloche) à l'approbation d'un lot — testé 201×2.
 - Carte « Ma communauté » (DetaillantFollowersCard, GET /api/detaillant/followers/stats : total + barres mensuelles).
 - Test report : iteration_101.json — 6/6 frontend, backend validé par curl.
+
+## 2026-06 — Lot 74 : Lot composé multi-produits, Badge Or POP'S, historique ventes boutique (testé 100 %)
+- Lot composé : OfferBody.product_skus[] — jusqu'à 3 produits différents du catalogue quand lot_type=COMPOSED ; product_name concatène « A + B + C » ; DLC exigée si N'IMPORTE LEQUEL des produits est périssable. UI : 2 selects supplémentaires (offer-product-2/3, doublons exclus) + résumé (offer-composed-summary).
+- Badge Or : recalc_gold_pops() (top palmarès rating_avg/count) → retailer.gold sur ses lots + profil.gold ; appelé après shop_review et à l'approbation d'offres. Badge « 🏆 POP'S d'Or » sur AuctionCard + page /pops (pops-shop-gold-badge). Épicerie Ti Kaz actuellement gold.
+- Historique ventes : shops/public/{id} renvoie sold[] (8 derniers WON : titre, prix, date, retiré) — section « Derniers lots vendus » sur /pops (masquée si vide).
+- Test report : iteration_102.json — 100 % frontend, backend validé par curl (offre composée créée/nettoyée/remboursée).
