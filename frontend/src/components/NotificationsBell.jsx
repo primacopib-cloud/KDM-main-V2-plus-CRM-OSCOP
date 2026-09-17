@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Volume2, VolumeX } from 'lucide-react';
+import { Bell, CheckCheck, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthHeaders, getSessionToken } from '../services/http';
 import { NOTIF_CATEGORIES, classifyNotif, getSoundPrefs, saveSoundPrefs } from '../utils/notifCategories';
@@ -52,10 +52,22 @@ export const NotificationsBell = ({ className = '' }) => {
     { credentials: 'include', headers: getAuthHeaders() })
     .then((r) => (r.ok ? r.json() : null)).then((d) => d && setData(d)).catch(() => {});
 
+  // Nouveaux lots « Pour vous » (marques/boutiques suivies) depuis la dernière visite de la salle
+  const [suggCount, setSuggCount] = useState(0);
+  const loadSuggestions = () => {
+    const since = localStorage.getItem('coopact_suggestions_seen_v1') || '';
+    fetch(`${BACKEND}/api/auctions/suggestions/new-count?since=${encodeURIComponent(since)}`,
+      { credentials: 'include', headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : { count: 0 }))
+      .then((d) => setSuggCount(d.count || 0))
+      .catch(() => {});
+  };
+
   useEffect(() => {
     if (!rawUser) return undefined;
     load();
-    const interval = setInterval(load, 60000);
+    loadSuggestions();
+    const interval = setInterval(() => { load(); loadSuggestions(); }, 60000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawUser]);
@@ -113,9 +125,9 @@ export const NotificationsBell = ({ className = '' }) => {
         className="relative p-2 rounded-lg hover:bg-white/[0.06] transition-colors"
         title="Notifications">
         <Bell className="w-4 h-4 text-white/70" />
-        {unread > 0 && (
+        {(unread + suggCount) > 0 && (
           <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center" data-testid="notifications-bell-count">
-            {unread > 9 ? '9+' : unread}
+            {(unread + suggCount) > 9 ? '9+' : unread + suggCount}
           </span>
         )}
       </button>
@@ -175,6 +187,14 @@ export const NotificationsBell = ({ className = '' }) => {
                 </button>
               ))}
             </div>
+          )}
+          {suggCount > 0 && (
+            <button type="button" data-testid="notif-suggestions-entry"
+              onClick={() => { setOpen(false); setSuggCount(0); navigate('/encheres'); }}
+              className="w-full text-left rounded-lg px-2 py-2 mb-1 text-xs font-semibold text-[#F2D07A] bg-[#D9B35A]/10 border border-[#D9B35A]/30 hover:bg-[#D9B35A]/20 transition-colors flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              {suggCount} nouveau{suggCount > 1 ? 'x' : ''} lot{suggCount > 1 ? 's' : ''} « Pour vous » en salle COOP'ACT
+            </button>
           )}
           {filtered.length === 0 ? (
             <p className="text-xs text-white/40 px-2 py-4 text-center" data-testid="notif-bell-empty">

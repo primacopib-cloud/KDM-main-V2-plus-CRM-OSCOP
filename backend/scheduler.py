@@ -305,9 +305,10 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler auctions maintenance crashed: %s", exc)
         try:
-            from detaillant_reports import run_detaillant_dlc_alerts, run_detaillant_monthly_reports
+            from detaillant_reports import run_detaillant_dlc_alerts, run_detaillant_monthly_reports, run_detaillant_weekly_recaps
             await run_detaillant_dlc_alerts(_db)
             await run_detaillant_monthly_reports(_db)
+            await run_detaillant_weekly_recaps(_db)
         except Exception as exc:
             logger.exception("Scheduler detaillant reports crashed: %s", exc)
         try:

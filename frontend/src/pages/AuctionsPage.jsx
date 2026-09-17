@@ -73,6 +73,11 @@ export default function AuctionsPage() {
   useEffect(() => { load(); }, [load]);
   useEffect(() => { loadMe(); }, [loadMe]);
 
+  // Marque les suggestions « Pour vous » comme vues (compteur cloche)
+  useEffect(() => {
+    try { localStorage.setItem('coopact_suggestions_seen_v1', new Date().toISOString()); } catch {}
+  }, []);
+
   // Rafraîchissement léger des enchères en cours (prix + statuts)
   useEffect(() => {
     const id = setInterval(load, 10000);

@@ -97,9 +97,10 @@ export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onTogg
     }
   };
 
+  const lotUrl = `${window.location.origin}/encheres/lot/${a.reference}`;
   const shareText = i18n.t('auction.share_text', {
     title: a.title, price: Number(a.price_eur).toFixed(2), credits: a.price_credits,
-  }) + ` ${window.location.origin}/encheres`;
+  }) + ` ${lotUrl}`;
 
   return (
     <div className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.08] flex flex-col"
@@ -125,7 +126,7 @@ export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onTogg
             ⭐ {i18n.t('auction.featured_badge')}
           </span>
         )}
-        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/encheres`)}&quote=${encodeURIComponent(shareText)}`}
+        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(lotUrl)}&quote=${encodeURIComponent(shareText)}`}
           target="_blank" rel="noopener noreferrer"
           title="Partager sur Facebook" data-testid={`auction-share-fb-btn-${a.reference}`}
           className="absolute bottom-1.5 right-10 w-7 h-7 rounded-full flex items-center justify-center bg-[#1877F2] text-white shadow-md transition-transform hover:scale-110">

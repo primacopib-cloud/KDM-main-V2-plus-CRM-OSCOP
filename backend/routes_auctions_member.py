@@ -67,6 +67,36 @@ async def public_auctions(status: str = "", category: str = "", type_id: str = "
             "credits_per_eur": ah.CREDITS_PER_EUR}
 
 
+@auctions_member_router.get("/public/lot/{reference}")
+async def public_auction_by_reference(reference: str):
+    """Page publique partageable d'un lot — accessible sans connexion."""
+    a = await ah.db.auctions.find_one({"reference": reference}, {"_id": 0})
+    if not a:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+    labels = await ah.taxonomy_labels()
+    return ah.serialize_member(a, labels)
+
+
+@auctions_member_router.get("/suggestions/new-count")
+async def suggestions_new_count(since: str = "", user_id: str = Depends(get_current_user_id)):
+    """Nombre de nouveaux lots « Pour vous » (marques/boutiques suivies) depuis la dernière visite."""
+    brands = [f["brand"] async for f in ah.db.brand_followers.find(
+        {"member_id": user_id}, {"_id": 0, "brand": 1})]
+    shops = [f["detaillant_user_id"] async for f in ah.db.detaillant_followers.find(
+        {"member_id": user_id}, {"_id": 0, "detaillant_user_id": 1})]
+    if not brands and not shops:
+        return {"count": 0}
+    ors = []
+    if brands:
+        ors.append({"brand": {"$in": brands}})
+    if shops:
+        ors.append({"retailer.detaillant_user_id": {"$in": shops}})
+    q = {"status": {"$in": ["SCHEDULED", "LIVE"]}, "$or": ors}
+    if since:
+        q["created_at"] = {"$gt": since}
+    return {"count": await ah.db.auctions.count_documents(q)}
+
+
 @auctions_member_router.get("/points")
 async def pickup_points():
     pts = await ah.db.lolodrive_points.find(

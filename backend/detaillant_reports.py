@@ -43,6 +43,82 @@ async def run_detaillant_dlc_alerts(db):
     return sent
 
 
+async def run_detaillant_weekly_recaps(db, force: bool = False):
+    """Chaque lundi : email récap hebdo à chaque POP'S — ventes, followers et avis de la semaine."""
+    now = _now()
+    if not force and now.weekday() != 0:
+        return 0
+    week_key = (now - timedelta(days=7)).strftime("%G-W%V")
+    flag = f"detaillant_weekly_recap_{week_key}"
+    if not force and await db.system_flags.find_one({"key": flag}):
+        return 0
+    since = (now - timedelta(days=7)).isoformat()
+    sent = 0
+    user_ids = await db.detaillant_offers.distinct("user_id")
+    for uid in user_ids:
+        offer_ids = [o["id"] async for o in db.detaillant_offers.find({"user_id": uid}, {"_id": 0, "id": 1})]
+        won = await db.auctions.find(
+            {"detaillant_offer_id": {"$in": offer_ids}, "status": "WON",
+             "winner.won_at": {"$gte": since}},
+            {"_id": 0, "title": 1, "reference": 1, "winner": 1}).to_list(200)
+        new_followers = await db.detaillant_followers.count_documents(
+            {"detaillant_user_id": uid, "created_at": {"$gte": since}})
+        reviews = await db.detaillant_shop_reviews.find(
+            {"detaillant_user_id": uid, "created_at": {"$gte": since}},
+            {"_id": 0, "rating": 1, "comment": 1}).to_list(100)
+        if not won and not new_followers and not reviews:
+            continue
+        user = await db.users.find_one({"id": uid}, {"_id": 0, "email": 1, "company_name": 1})
+        if not user or not user.get("email"):
+            continue
+        revenue = round(sum((a.get("winner") or {}).get("price_eur") or 0 for a in won), 2)
+        avg = round(sum(r["rating"] for r in reviews) / len(reviews), 1) if reviews else None
+        name = user.get("company_name") or ""
+        sales_html = ""
+        if won:
+            items = "".join(
+                f"<li style='font-size:13px;'>{a.get('title')} — <b>"
+                f"{((a.get('winner') or {}).get('price_eur') or 0):.2f} €</b>"
+                f" · {(a.get('winner') or {}).get('name') or ''}</li>" for a in won)
+            sales_html = f"<p style='font-size:13px;margin-bottom:4px;'><b>Lots vendus :</b></p><ul>{items}</ul>"
+        reviews_html = ""
+        if reviews:
+            items = "".join(
+                f"<li style='font-size:13px;'>{'★' * int(r['rating'])} — {r.get('comment') or ''}</li>"
+                for r in reviews[:5])
+            reviews_html = f"<p style='font-size:13px;margin-bottom:4px;'><b>Nouveaux avis :</b></p><ul>{items}</ul>"
+        try:
+            from brevo_service import send_email, _wrap_html
+            subject = "🗓️ Votre récap hebdo POP'S — ventes, followers et avis"
+            body = (
+                f"<p style='font-size:14px;'>Bonjour {name},</p>"
+                "<p style='font-size:14px;'>Voici votre activité COOP'ACT des 7 derniers jours :</p>"
+                "<table style='font-size:13px;border-collapse:collapse'>"
+                f"<tr><td style='padding:4px 10px;border-bottom:1px solid #eee'>Lots vendus</td>"
+                f"<td style='padding:4px 10px;border-bottom:1px solid #eee;text-align:right'><b>{len(won)}</b></td></tr>"
+                f"<tr><td style='padding:4px 10px;border-bottom:1px solid #eee'>Chiffre de la semaine</td>"
+                f"<td style='padding:4px 10px;border-bottom:1px solid #eee;text-align:right'><b>{revenue:,.2f} €</b></td></tr>"
+                f"<tr><td style='padding:4px 10px;border-bottom:1px solid #eee'>Nouveaux followers</td>"
+                f"<td style='padding:4px 10px;border-bottom:1px solid #eee;text-align:right'><b>{new_followers}</b></td></tr>"
+                f"<tr><td style='padding:4px 10px'>Nouveaux avis</td>"
+                f"<td style='padding:4px 10px;text-align:right'><b>{len(reviews)}"
+                f"{f' (moyenne {avg}/5)' if avg else ''}</b></td></tr></table>"
+                + sales_html + reviews_html +
+                "<p style='font-size:12px;color:#B8A98F;'><b>POP'S — Vendeur éphémère en salle COOP'ACT</b>, "
+                "agir ensemble pour la juste valeur.</p>")
+            await send_email(to_email=user["email"], to_name=name or None, subject=subject,
+                             html_content=_wrap_html(subject, body),
+                             text_content=f"Récap hebdo POP'S : {len(won)} vente(s) ({revenue} €), "
+                                          f"{new_followers} nouveau(x) follower(s), {len(reviews)} avis.",
+                             tags=["detaillant-weekly-recap"])
+            sent += 1
+        except Exception as exc:
+            logger.warning("Récap hebdo POP'S %s : %s", user.get("email"), exc)
+    if not force:
+        await db.system_flags.insert_one({"key": flag, "at": now.isoformat()})
+    return sent
+
+
 async def run_detaillant_monthly_reports(db, force: bool = False):
     """Chaque 1er du mois : email à chaque détaillant — récap de ses ventes du mois écoulé + CSV joint."""
     now = _now()
