@@ -1,0 +1,19 @@
+{
+  "summary": "Iteration 95 — Espace Détaillant KDMARCHÉ × O'SCOP: all 7 requested checks passed on the preview URL. Logged in as detaillant-test, verified detaillant-space + 3 KPIs (408 crédits, 3/3 offres, Abonnement actif 390 €/mois), profile card pre-filled (Épicerie Ti Kaz, Pointe-à-Pitre, 🇬🇵 Guadeloupe, +590 690 22 33 44, contact@tikaz.gp, créneaux Lun-Ven 9h-17h / Sam 8h-12h), offers list (Mes offres 4 initially incl. 1 Refusée / 1 Validée / 2 En attente). i18n FR/EN/ES/GCF: title switches to Espace Détaillant / Retailer Space / Espacio Minorista / Espas Détayan. Offer deposit: product ACHARDS-LEGUMES-200G, type SAME, qty=2 → offer-cost=246 crédits (offre supplémentaire), submit → toast succès, offre 'Achards de légumes 200g · 2 lot(s) ×3' apparaît EN ATTENTE, crédits 408 → 162 ✓. Profil: modification locality persistée après reload puis restaurée. Inscription publique test-detaillant2 : compte créé, connexion auto, dt-subscribe-card + dt-subscribe-btn visibles, detaillant-offer-form absent (0). Panneau admin /superadmin → onglet Bourse COOP'ACT → detaillant-offers-panel avec filtre PENDING par défaut, offre créée figure (🇬🇵 Épicerie Ti Kaz, 246 cr), Valider → offre passe en VALIDÉE ; filtre REJECTED montre bien l'offre refusée (123 cr, 'Offre supplémentaire au-delà du forfait'). Sécurité backend : GET /api/admin/detaillant/offers avec token détaillant → 403 ✓ ; POST /api/detaillant/offers avec test-detaillant2 sans abonnement → 403 'Abonnement Détaillant (390 €/mois) requis' ✓.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Oracle chatbot floating widget occasionally overlaps the bottom-right of the detaillant page; tested with force=True clicks and no interaction was blocked, but real users may find it visually intrusive on smaller viewports.",
+    "Register POST body field is 'product_sku' (not 'product_id'); consistent with backend Pydantic model but worth noting for API consumers if any docs mention 'product_id'."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (2/2 security checks)", "frontend": "100% (6/6 flows: login+KPIs, i18n, offer submit, profile update, public register, admin approve)"},
+  "test_credentials": "detaillant-test@kdmarche.fr / Detaillant2026! (used, kept intact — credits now 162, 4/3 offers used, one new PENDING offer approved during test); admin@kdmarche-oscop.fr / AdminKDM2025! (used via /admin/connexion)",
+  "seed_data_creation": "Created 1 new offer 'Achards de légumes 200g · 2 lot(s) ×3' (approved during test) — kept as demo data per instructions. Test account test-detaillant2@kdmarche.fr + its detaillant_profile deleted (1 user + 1 profile removed from MongoDB).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Detaillant-test now has 162 crédits (was 408), 5/3 offres used (approved one from this test is 'Achards de légumes 200g'). If further offer tests are needed, credits are low (162 = ~1 additional offer at 123 cr). Profile localité was restored to 'Pointe-à-Pitre'. Admin panel path: /superadmin → cliquer onglet 'Bourse COOP'ACT' (dans la barre secondaire) pour révéler detaillant-offers-panel (data-testid). Filter values: PENDING (default) / APPROVED / REJECTED / ALL. No cleanup pending — test-detaillant2 removed.",
+  "rca of the issue": "N/A — all tests green."
+}
