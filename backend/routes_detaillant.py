@@ -140,6 +140,64 @@ class ActivateBody(BaseModel):
     session_id: str
 
 
+CREDIT_PACKS = {"P100": 100, "P300": 300, "P500": 500}  # taux : 10 crédits = 1 €
+
+
+class CreditsCheckoutBody(BaseModel):
+    pack: str
+    origin_url: str
+
+
+@detaillant_router.post("/credits/checkout")
+async def detaillant_credits_checkout(body: CreditsCheckoutBody, user: dict = Depends(get_current_user)):
+    from routes_cpc import _stripe_key
+    credits = CREDIT_PACKS.get(body.pack)
+    if not credits:
+        raise HTTPException(status_code=400, detail="Pack de crédits invalide")
+    price_cents = credits * 10  # 10 crédits/€
+    origin = body.origin_url.rstrip("/")
+    stripe.api_base = "https://api.stripe.com"
+    session = stripe.checkout.Session.create(
+        api_key=_stripe_key(), mode="payment", payment_method_types=["card"],
+        line_items=[{
+            "price_data": {"currency": "eur", "unit_amount": price_cents,
+                           "product_data": {"name": f"Recharge {credits} crédits COOP'ACT — Espace Détaillant"}},
+            "quantity": 1}],
+        customer_email=user.get("email"),
+        success_url=f"{origin}/espace-detaillant?credits_session={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{origin}/espace-detaillant?credits_cancelled=1",
+        metadata={"kind": "DETAILLANT_CREDITS", "user_id": user["id"], "credits": str(credits)})
+    await db.detaillant_credit_topups.insert_one({
+        "id": str(uuid.uuid4()), "user_id": user["id"], "credits": credits,
+        "price_cents": price_cents, "stripe_session_id": session.id,
+        "status": "PENDING", "created_at": _now().isoformat()})
+    return {"checkout_url": session.url, "session_id": session.id}
+
+
+@detaillant_router.post("/credits/activate")
+async def detaillant_credits_activate(body: ActivateBody, user: dict = Depends(get_current_user)):
+    from routes_cpc import _stripe_key
+    topup = await db.detaillant_credit_topups.find_one(
+        {"stripe_session_id": body.session_id, "user_id": user["id"]}, {"_id": 0})
+    if not topup:
+        raise HTTPException(status_code=404, detail="Recharge introuvable")
+    if topup["status"] == "PAID":
+        return {"ok": True, "already": True, "credits": topup["credits"]}
+    stripe.api_base = "https://api.stripe.com"
+    session = stripe.checkout.Session.retrieve(body.session_id, api_key=_stripe_key())
+    if session.get("payment_status") != "paid":
+        raise HTTPException(status_code=402, detail="Paiement non confirmé")
+    res = await db.detaillant_credit_topups.update_one(
+        {"id": topup["id"], "status": "PENDING"}, {"$set": {"status": "PAID", "paid_at": _now().isoformat()}})
+    if res.modified_count:
+        await db.auction_accounts.update_one(
+            {"user_id": user["id"]},
+            {"$inc": {"credits": topup["credits"]},
+             "$setOnInsert": {"user_id": user["id"], "valid_until": (_now() + timedelta(days=31)).isoformat()}},
+            upsert=True)
+    return {"ok": True, "credits": topup["credits"]}
+
+
 @detaillant_router.post("/subscription/activate")
 async def detaillant_activate(body: ActivateBody, user: dict = Depends(get_current_user)):
     from routes_cpc import _stripe_key
@@ -258,16 +316,62 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
     new_status = "APPROVED" if body.action == "APPROVE" else "REJECTED"
     updates = {"status": new_status, "reviewed_at": _now().isoformat(),
                "reviewed_by": admin.get("id"), "review_note": (body.note or "").strip() or None}
+    created_refs = []
     if body.action == "REJECT":
         await db.auction_accounts.update_one(
             {"user_id": offer["user_id"]}, {"$inc": {"credits": offer.get("cost_credits", 0)}})
         updates["credits_refunded"] = offer.get("cost_credits", 0)
+    else:
+        # Programmation automatique en salle COOP'ACT : 1 opération SCHEDULED par lot
+        import auction_helpers as ah
+        product = await db.lolodrive_products.find_one({"sku": offer["product_sku"]}, {"_id": 0})
+        unit_cents = (product or {}).get("price_public_cents") or (product or {}).get("price_pass_cents") or 1000
+        value_eur = round(unit_cents * 3 / 100, 2)  # lot ×3
+        prof = await db.detaillant_profiles.find_one({"user_id": offer["user_id"]}, {"_id": 0})
+        retailer = {"company_name": offer.get("company_name"), "country_code": offer.get("country_code"),
+                    "locality": offer.get("locality"),
+                    "pickup_slots": (prof or {}).get("pickup_slots", [])}
+        starts = _now() + timedelta(days=1)
+        ends = starts + timedelta(days=7)
+        desc = offer["description"]
+        if offer.get("composed_detail"):
+            desc += f" — Composition : {offer['composed_detail']}"
+        for i in range(int(offer.get("qty_lots") or 1)):
+            ref = f"AUC-{_now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+            await db.auctions.insert_one({
+                "id": str(uuid.uuid4()), "reference": ref,
+                "title": f"Lot ×3 — {offer['product_name']}" + (f" ({i + 1}/{offer['qty_lots']})" if offer["qty_lots"] > 1 else ""),
+                "image_url": (product or {}).get("image_url"),
+                "description": desc,
+                "source": "DETAILLANT", "source_visible": True,
+                "retailer": retailer,
+                "product_id": offer["product_sku"], "category_id": None, "type_id": None,
+                "value_eur": value_eur, "floor_eur": 0, "bid_cost_credits": 10, "price_drop_eur": 1.0,
+                "starts_at": starts.isoformat(), "ends_at": ends.isoformat(),
+                "recurrence": "NONE", "featured": False,
+                "status": "SCHEDULED", "current_price_eur": value_eur, "bids_count": 0,
+                "detaillant_offer_id": offer_id,
+                "created_by": admin.get("email"), "created_at": _now().isoformat()})
+            created_refs.append(ref)
+        updates["auction_refs"] = created_refs
     await db.detaillant_offers.update_one({"id": offer_id}, {"$set": updates})
-    msg = ("Votre offre a été validée : elle sera programmée en salle COOP'ACT prochainement."
+    msg = (f"Votre offre a été validée : {len(created_refs)} opération(s) programmée(s) en salle COOP'ACT ({', '.join(created_refs)})."
            if body.action == "APPROVE"
            else f"Votre offre a été refusée. {offer.get('cost_credits', 0)} crédits vous ont été remboursés.")
     if body.action == "REJECT" and body.note:
         msg += f" Motif : {body.note}"
+    # Email Brevo au détaillant
+    try:
+        client = await db.users.find_one({"id": offer["user_id"]}, {"_id": 0, "email": 1, "company_name": 1})
+        if client and client.get("email"):
+            from brevo_service import send_email, _wrap_html
+            subj = f"Offre {offer['product_name']} — {'validée ✓' if body.action == 'APPROVE' else 'refusée'}"
+            html = _wrap_html("Décision sur votre offre de lots",
+                              f"<p>Bonjour {client.get('company_name') or ''},</p><p>{msg}</p>")
+            await send_email(client["email"], client.get("company_name"), subj, html,
+                             tags=["detaillant-offer-decision"])
+    except Exception as exc:
+        logger.warning("Email décision détaillant: %s", exc)
     try:
         from core_deps import create_notification
         await create_notification(

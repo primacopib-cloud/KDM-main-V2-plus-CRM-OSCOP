@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 db = None
 
 CREDITS_PER_EUR = 10
-SOURCES = ["LOLODRIVE", "VENDOR", "PARTNER", "KDMARCHE", "OSCOP"]
+SOURCES = ["LOLODRIVE", "VENDOR", "PARTNER", "KDMARCHE", "OSCOP", "DETAILLANT"]
 RECURRENCES = ["NONE", "DAILY", "MONTHLY", "YEARLY"]
 SOURCE_LABELS = {"LOLODRIVE": "LOLODRIVE", "VENDOR": "Vendeur", "PARTNER": "Partenaire",
-                 "KDMARCHE": "KDMARCHÉ", "OSCOP": "O'SCOP"}
+                 "KDMARCHE": "KDMARCHÉ", "OSCOP": "O'SCOP", "DETAILLANT": "Boutique détaillante"}
 
 
 def set_auction_database(database):
@@ -132,6 +132,8 @@ def serialize_member(a: dict, labels: dict | None = None) -> dict:
         "recurrence": a.get("recurrence", "NONE"), "featured": bool(a.get("featured")),
         "status": effective_status(a), "bids_count": a.get("bids_count", 0),
     }
+    if a.get("retailer") and a.get("source_visible"):
+        out["retailer"] = a["retailer"]
     if out["status"] == "WON" and a.get("winner"):
         out["winner_name"] = a["winner"].get("name")
         out["winner_price_eur"] = a["winner"].get("price_eur")

@@ -4,6 +4,11 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { API, getAuthHeaders } from '../../services/http';
 
+const countryFlag = (code) =>
+  code && /^[A-Z]{2}$/i.test(code)
+    ? String.fromCodePoint(...[...code.toUpperCase()].map((c) => 127397 + c.charCodeAt(0)))
+    : '';
+
 // Compte à rebours réutilisable
 export const Countdown = ({ target, prefix }) => {
   const [now, setNow] = useState(Date.now());
@@ -87,6 +92,12 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
       </div>
       <div className="p-3 flex flex-col gap-1.5 flex-1">
         <div className="text-sm font-semibold text-white truncate" title={a.title}>{a.title}</div>
+        {a.retailer && (
+          <div className="text-[11px] text-[#E9CF8E] truncate" data-testid={`auction-retailer-${a.reference}`}>
+            {countryFlag(a.retailer.country_code)} {a.retailer.company_name}
+            {a.retailer.locality ? ` · ${a.retailer.locality}` : ''}
+          </div>
+        )}
         <div className="flex items-center gap-2 text-[11px] text-white/60">
           {a.category_label && <span>{a.category_label}</span>}
           {a.type_label && <span>· {a.type_label}</span>}

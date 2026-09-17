@@ -38,7 +38,20 @@ export default function DetaillantSpacePage() {
         .then(() => { toast.success('Abonnement Détaillant activé ✓'); load(); })
         .catch((e) => toast.error(e.message));
     }
+    const cid = params.get('credits_session');
+    if (cid) {
+      detaillantAPI.creditsActivate(cid)
+        .then((r) => { toast.success(`+${r.credits} crédits COOP'ACT crédités ✓`); load(); })
+        .catch((e) => toast.error(e.message));
+    }
   }, [params, load]);
+
+  const buyCredits = async (pack) => {
+    try {
+      const r = await detaillantAPI.creditsCheckout(pack, window.location.origin);
+      window.location.href = r.checkout_url;
+    } catch (e) { toast.error(e.message); }
+  };
 
   const register = async () => {
     try {
@@ -117,6 +130,14 @@ export default function DetaillantSpacePage() {
             <Coins className="w-4 h-4 text-[#D9B35A]" />
             <p className="text-lg font-bold mt-1">{info.credits}</p>
             <p className="text-[10px] text-white/50">{t.credits}</p>
+            <div className="flex gap-1 mt-1.5 flex-wrap">
+              {[['P100', '100'], ['P300', '300'], ['P500', '500']].map(([pack, n]) => (
+                <button key={pack} onClick={() => buyCredits(pack)} data-testid={`dt-buy-${pack}`}
+                  className="px-1.5 h-5 rounded-full text-[9px] font-bold text-[#E9CF8E] border border-[#D9B35A]/40 hover:bg-[#D9B35A]/15">
+                  +{n} ({n / 10} €)
+                </button>
+              ))}
+            </div>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3" data-testid="dt-kpi-offers">
             <Package className="w-4 h-4 text-[#D9B35A]" />
