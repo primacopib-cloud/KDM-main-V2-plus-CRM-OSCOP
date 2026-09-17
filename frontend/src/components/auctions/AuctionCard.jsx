@@ -73,7 +73,7 @@ const PriceAlertControl = ({ a, target, onSet }) => {
   );
 };
 
-export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onToggleFollow = () => {}, priceAlerts = null, onSetPriceAlert = () => {} }) => {
+export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onToggleFollow = () => {}, priceAlerts = null, onSetPriceAlert = () => {}, suggested = false }) => {
   const [busy, setBusy] = useState(false);
   const [gallery, setGallery] = useState(false);
   const a = auction;
@@ -148,6 +148,13 @@ export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onTogg
       </div>
       <div className="p-3 flex flex-col gap-1.5 flex-1">
         <div className="text-sm font-semibold text-white truncate" title={a.title}>{a.title}</div>
+        {suggested && (
+          <span data-testid={`auction-suggested-badge-${a.reference}`}
+            className="self-start inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-black bg-[#D9B35A]/15 text-[#F2D07A] border border-[#D9B35A]/50"
+            title="Correspond à vos marques ou boutiques suivies">
+            ★ Pour vous
+          </span>
+        )}
         {a.brand && (
           <div className="text-[10px] text-white/50 truncate flex items-center gap-1.5" data-testid={`auction-brand-${a.reference}`}>
             {a.brand_logo && (

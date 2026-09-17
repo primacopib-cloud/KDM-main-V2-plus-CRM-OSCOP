@@ -257,7 +257,18 @@ class PriceAlertBody(BaseModel):
 async def my_price_alerts(user_id: str = Depends(get_current_user_id)):
     alerts = await ah.db.auction_price_alerts.find(
         {"user_id": user_id, "triggered": {"$ne": True}},
-        {"_id": 0, "auction_id": 1, "target_eur": 1}).to_list(200)
+        {"_id": 0, "auction_id": 1, "target_eur": 1, "created_at": 1}).to_list(200)
+    ids = [a["auction_id"] for a in alerts]
+    lots = {a["id"]: a async for a in ah.db.auctions.find(
+        {"id": {"$in": ids}}, {"_id": 0, "id": 1, "title": 1, "reference": 1,
+                               "current_price_eur": 1, "value_eur": 1, "status": 1})}
+    for a in alerts:
+        lot = lots.get(a["auction_id"]) or {}
+        a["title"] = lot.get("title")
+        a["reference"] = lot.get("reference")
+        a["status"] = lot.get("status")
+        a["current_price_eur"] = (round(float(lot.get("current_price_eur") or lot.get("value_eur") or 0), 2)
+                                  if lot else None)
     return {"alerts": alerts}
 
 

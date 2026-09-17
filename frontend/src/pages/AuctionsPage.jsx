@@ -11,6 +11,7 @@ import { AuctionPlanGate } from '../components/auctions/AuctionPlanGate';
 import { WinnerDialog } from '../components/auctions/WinnerDialog';
 import { AuctionHistoryPanel } from '../components/auctions/AuctionHistoryPanel';
 import { AuctionAlertPrefs } from '../components/auctions/AuctionAlertPrefs';
+import { MyPriceAlerts } from '../components/auctions/MyPriceAlerts';
 
 const FILTERS_KEY = 'coopact_filters_v1';
 const SAVED_FILTERS_KEY = 'coopact_saved_filters_v1';
@@ -149,16 +150,24 @@ export default function AuctionsPage() {
 
   const pendingWin = (me?.wins || []).find((w) => !w.fulfillment);
 
+  const [priceAlertList, setPriceAlertList] = useState([]);
+  const loadAlerts = useCallback(async () => {
+    if (!isLogged) return;
+    try {
+      const d = await apiCall('/auctions/price-alerts');
+      const m = {};
+      (d.alerts || []).forEach((x) => { m[x.auction_id] = x.target_eur; });
+      setPriceAlerts(m);
+      setPriceAlertList(d.alerts || []);
+    } catch { /* liste non critique */ }
+  }, [isLogged]);
+
   useEffect(() => {
     if (!isLogged) return;
     apiCall('/auctions/shops/follows').then((d) => setFollows(d.follows || [])).catch(() => {});
     apiCall('/auctions/brands/follows').then((d) => setBrandFollows(d.follows || [])).catch(() => {});
-    apiCall('/auctions/price-alerts').then((d) => {
-      const m = {};
-      (d.alerts || []).forEach((x) => { m[x.auction_id] = x.target_eur; });
-      setPriceAlerts(m);
-    }).catch(() => {});
-  }, [isLogged]);
+    loadAlerts();
+  }, [isLogged, loadAlerts]);
 
   const setPriceAlert = async (auctionId, target) => {
     try {
@@ -169,11 +178,26 @@ export default function AuctionsPage() {
         if (r.active) n[auctionId] = r.target_eur; else delete n[auctionId];
         return n;
       });
+      loadAlerts();
       toast.success(r.active
         ? `🎯 Alerte activée — cloche + email dès que le prix atteint ${r.target_eur.toFixed(2)} €`
         : 'Alerte prix retirée');
     } catch (e) { toast.error(e.message); }
   };
+
+  // Suggestions : lots en salle / à venir correspondant aux marques et boutiques suivies
+  const suggestions = useMemo(() => {
+    if (!isLogged) return [];
+    const f = follows || [];
+    const b = brandFollows || [];
+    if (!f.length && !b.length) return [];
+    return data.items.filter((a) =>
+      (a.status === 'LIVE' || a.status === 'SCHEDULED') &&
+      ((a.brand && b.includes(a.brand)) ||
+       (a.retailer?.detaillant_user_id && f.includes(a.retailer.detaillant_user_id)))
+    ).slice(0, 6);
+  }, [data.items, follows, brandFollows, isLogged]);
+  const suggestedIds = useMemo(() => new Set(suggestions.map((a) => a.id)), [suggestions]);
 
   const toggleBrandFollow = async (brand) => {
     try {
@@ -221,6 +245,24 @@ export default function AuctionsPage() {
           brands={shopFacets.brands} products={shopFacets.products}
           brandFollows={brandFollows} onToggleBrandFollow={toggleBrandFollow} />
 
+        <MyPriceAlerts alerts={priceAlertList} onRemove={(id) => setPriceAlert(id, 0)} />
+
+        {suggestions.length > 0 && (
+          <div className="mb-5" data-testid="auction-suggestions">
+            <div className="text-[11px] font-bold uppercase tracking-wide text-[#F2D07A] mb-2 inline-flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" /> Pour vous — vos marques et boutiques suivies ({suggestions.length})
+            </div>
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}>
+              {suggestions.map((a) => (
+                <AuctionCard key={`sg-${a.id}`} auction={a} canBid={Boolean(me?.active)} suggested
+                  follows={follows} onToggleFollow={toggleFollow}
+                  priceAlerts={priceAlerts} onSetPriceAlert={setPriceAlert}
+                  onChanged={() => { load(); loadMe(); }} />
+              ))}
+            </div>
+          </div>
+        )}
+
         {visible.length === 0 ? (
           <div className="text-center text-white/40 py-14" data-testid="auctions-empty">
             <Gavel className="w-8 h-8 mx-auto mb-2 opacity-40" />
@@ -233,6 +275,7 @@ export default function AuctionsPage() {
               <AuctionCard key={a.id} auction={a} canBid={Boolean(me?.active)}
                 follows={follows} onToggleFollow={toggleFollow}
                 priceAlerts={priceAlerts} onSetPriceAlert={setPriceAlert}
+                suggested={suggestedIds.has(a.id)}
                 onChanged={() => { load(); loadMe(); }} />
             ))}
           </div>
