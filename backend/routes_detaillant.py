@@ -895,7 +895,13 @@ async def admin_cessions_registry(q: str = "", status: str = "", shop: str = "",
     async for s in db.detaillant_cessions.aggregate([{"$group": {"_id": "$status", "n": {"$sum": 1}}}]):
         if s["_id"] in stats:
             stats[s["_id"]] = s["n"]
-    return {"cessions": items, "total": len(items), "stats": stats}
+    monthly = []
+    async for s in db.detaillant_cessions.aggregate([
+            {"$match": {"signed_at": {"$exists": True}}},
+            {"$group": {"_id": {"$substr": ["$signed_at", 0, 7]}, "n": {"$sum": 1}}},
+            {"$sort": {"_id": 1}}, {"$limit": 12}]):
+        monthly.append({"month": s["_id"], "n": s["n"]})
+    return {"cessions": items, "total": len(items), "stats": stats, "monthly": monthly}
 
 
 @detaillant_router.get("/sales")

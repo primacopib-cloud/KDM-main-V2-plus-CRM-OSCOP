@@ -3706,3 +3706,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Registre : params shop (regex boutique), date_from/date_to (created_at, date_to +23:59:59) sur GET /api/admin/detaillant/cessions. UI : input boutique (Enter/blur) + 2 date pickers (cessions-shop-input, cessions-date-from/to). Testé curl (période inclusive/exclusive, boutique) + UI.
 - Stats : réponse inclut stats globales {DRAFT, SIGNED, EFFECTIVE} (aggregate). KPI pills (cessions-stat-draft/signed/effective) en tête du registre. Testé.
 - Relance version : run_convention_version_reminders (scheduler) — cloche convention_resign si version signée ≠ CONVENTION_VERSION, max 1/7 j (last_version_reminder_at). GET /convention expose needs_resign ; DetaillantConventionCard : badge orange « nouvelle version à re-signer » + formulaire de re-signature. Testé (run1=1, run2=0, notif OK), version restaurée, nettoyé.
+
+## 2026-09 — Lot 90 : Email relance convention + export CSV conventions + graphique cessions (testé E2E)
+- Email relance : run_convention_version_reminders envoie en plus de la cloche un email Brevo (tag convention-resign) « Nouvelle convention cadre à signer » avec bouton direct → /espace-detaillant. Testé (envoi réel + contenu), restauré/nettoyé.
+- Export CSV conventions : bouton « Export CSV » (conventions-export-csv) sur AdminConventionsCard — colonnes boutique/localité/pays/signataire/date/version, BOM UTF-8, client-side.
+- Graphique mensuel : GET /api/admin/detaillant/cessions inclut monthly [{month, n}] (aggregate signed_at par mois, 12 max). Mini bar chart CSS (cessions-monthly-chart) sous les KPI du registre. Testé curl + UI (barre 08/26), fiche QA nettoyée.

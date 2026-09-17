@@ -13,6 +13,7 @@ export const CessionsRegistryCard = () => {
   const [items, setItems] = useState([]);
   const [detail, setDetail] = useState(null);
   const [stats, setStats] = useState(null);
+  const [monthly, setMonthly] = useState([]);
   const [shop, setShop] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -25,7 +26,7 @@ export const CessionsRegistryCard = () => {
     if (dateTo) qs.set('date_to', dateTo);
     fetch(`${API}/admin/detaillant/cessions?${qs}`, { headers: getAuthHeaders(), credentials: 'include' })
       .then((r) => (r.ok ? r.json() : { cessions: [] }))
-      .then((d) => { setItems(d.cessions || []); setStats(d.stats || null); }).catch(() => {});
+      .then((d) => { setItems(d.cessions || []); setStats(d.stats || null); setMonthly(d.monthly || []); }).catch(() => {});
   };
   useEffect(() => { load(); }, [status, dateFrom, dateTo]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -59,6 +60,25 @@ export const CessionsRegistryCard = () => {
             data-testid="cessions-stat-signed">Signées : {stats.SIGNED}</span>
           <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/12 text-emerald-300 border border-emerald-400/30"
             data-testid="cessions-stat-effective">En vigueur : {stats.EFFECTIVE}</span>
+        </div>
+      )}
+      {monthly.length > 0 && (
+        <div className="mb-3" data-testid="cessions-monthly-chart">
+          <p className="text-[10px] font-bold text-white/50 uppercase tracking-wide mb-1.5">Fiches signées par mois</p>
+          <div className="flex items-end gap-1.5 h-20">
+            {monthly.map((m) => {
+              const max = Math.max(...monthly.map((x) => x.n));
+              return (
+                <div key={m.month} className="flex flex-col items-center gap-1 flex-1 min-w-0"
+                  data-testid={`cessions-month-${m.month}`} title={`${m.month} : ${m.n} signée(s)`}>
+                  <span className="text-[9px] font-bold text-[#F2D07A]">{m.n}</span>
+                  <div className="w-full max-w-8 rounded-t bg-gradient-to-t from-[#D9B35A]/50 to-[#D9B35A]"
+                    style={{ height: `${Math.max(6, Math.round((m.n / max) * 56))}px` }} />
+                  <span className="text-[8px] text-white/45">{m.month.slice(5)}/{m.month.slice(2, 4)}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2 mb-3">

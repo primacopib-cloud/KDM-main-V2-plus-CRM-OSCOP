@@ -70,6 +70,29 @@ async def run_convention_version_reminders(db):
             sent += 1
         except Exception as exc:
             logger.warning("Relance convention %s : %s", cv["user_id"], exc)
+        try:
+            user = await db.users.find_one(
+                {"id": cv["user_id"]}, {"_id": 0, "email": 1, "company_name": 1})
+            if user and user.get("email"):
+                import os
+                base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+                from brevo_service import send_email, _wrap_html
+                name = user.get("company_name") or ""
+                subject = f"📜 Nouvelle convention cadre POP'S COOP'ACT à signer (v{CONVENTION_VERSION})"
+                body = (
+                    f"<p style='font-size:14px;'>Bonjour {name},</p>"
+                    "<p style='font-size:14px;'>La convention cadre de partenariat POP'S COOP'ACT a été "
+                    f"mise à jour (version <b>{CONVENTION_VERSION}</b> — vous avez signé la "
+                    f"<b>{cv['version']}</b>). Merci de la relire et de la re-signer.</p>"
+                    f"<p style='font-size:14px;'><a href='{base}/espace-detaillant' "
+                    "style='background:#D9B35A;color:#2A1045;padding:10px 18px;border-radius:8px;"
+                    "text-decoration:none;font-weight:bold;'>Signer la nouvelle version</a></p>")
+                await send_email(user["email"], name or None, subject, _wrap_html(subject, body),
+                                 text_content=f"Nouvelle convention cadre POP'S v{CONVENTION_VERSION} à "
+                                              f"re-signer : {base}/espace-detaillant",
+                                 tags=["convention-resign"])
+        except Exception as exc:
+            logger.warning("Email relance convention %s : %s", cv["user_id"], exc)
     return sent
 
 
