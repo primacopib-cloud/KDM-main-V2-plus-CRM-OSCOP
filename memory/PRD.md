@@ -3631,3 +3631,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-06 — Lot 76 : Légendes photo lots composés + Palmarès complet POP'S (testé)
 - Galerie salle : photo_labels stockés à la création (offre composée) et repris sur l'opération ; chaque photo affiche le nom du produit en légende (gallery-caption). serialize_member expose photo_labels. Validé par seed/screenshot puis nettoyé.
 - Page palmarès complet /pops (PopsLeaderboardPage) : tous les POP'S classés, filtres pays (drapeaux img) et catégories (dérivées des offres via shops/public : category/categories ajoutés), badge or sur le n°1, liens vers /pops/{id}. Lien « Voir le palmarès complet » depuis la vitrine /detaillant.
+
+## 2026-06 — Lot 77 : Marque produit catalogue POP'S (testé E2E)
+- Champ marque : superadmin renseigne la marque dans le catalogue POP'S (CatalogManagerCard catalog-new-brand, CatalogProductBody.brand, upsert/update).
+- Propagation : projections catalogue (public + détaillant) → offre (product_brand) → opération COOP'ACT (brand) → serialize_member.
+- Affichage : « Marque : … » sous le titre de la carte en salle (auction-brand-<ref>) ; marque affichée dans la liste admin catalogue (« nom · marque »).
+- Test E2E : marque « Ti Caraïbes » sur RIZ-LONG-5KG (conservée pour la démo), offre → approbation → « Marque : Ti Caraïbes » vérifié en salle ; lot test nettoyé + remboursé.

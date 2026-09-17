@@ -107,6 +107,9 @@ export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onTogg
       </div>
       <div className="p-3 flex flex-col gap-1.5 flex-1">
         <div className="text-sm font-semibold text-white truncate" title={a.title}>{a.title}</div>
+        {a.brand && (
+          <div className="text-[10px] text-white/50 truncate" data-testid={`auction-brand-${a.reference}`}>Marque : {a.brand}</div>
+        )}
         {a.retailer && (
           <div className="text-[11px] text-[#E9CF8E] truncate flex items-center gap-1" data-testid={`auction-retailer-${a.reference}`}>
             {a.retailer.gold && (

@@ -7,7 +7,7 @@ const inputCls = 'h-8 px-2 rounded-lg bg-white/[0.05] border border-white/15 tex
 
 export const CatalogManagerCard = () => {
   const [products, setProducts] = useState([]);
-  const [f, setF] = useState({ name: '', category: '', perishable: false });
+  const [f, setF] = useState({ name: '', category: '', brand: '', perishable: false });
   const [busy, setBusy] = useState(false);
   const load = () => detaillantAPI.adminCatalog().then((r) => setProducts(r.products || [])).catch(() => {});
   useEffect(() => { load(); }, []);
@@ -16,7 +16,7 @@ export const CatalogManagerCard = () => {
     try {
       await detaillantAPI.adminUpsertProduct(f);
       toast.success('✓ Produit ajouté au catalogue en vigueur');
-      setF({ name: '', category: '', perishable: false });
+      setF({ name: '', category: '', brand: '', perishable: false });
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -34,6 +34,8 @@ export const CatalogManagerCard = () => {
       <div className="flex gap-2 flex-wrap items-center mb-3">
         <input value={f.name} onChange={(e) => setF((p) => ({ ...p, name: e.target.value }))}
           placeholder="Nom du produit" className={inputCls + ' w-48'} data-testid="catalog-new-name" />
+          <input value={f.brand} onChange={(e) => setF((p) => ({ ...p, brand: e.target.value }))}
+            placeholder="Marque (optionnel)" className={inputCls + ' w-36'} data-testid="catalog-new-brand" />
         <input value={f.category} onChange={(e) => setF((p) => ({ ...p, category: e.target.value }))}
           placeholder="Catégorie" className={inputCls + ' w-36'} data-testid="catalog-new-category" />
         <label className="flex items-center gap-1.5 text-[10px] text-white/60">
@@ -51,7 +53,9 @@ export const CatalogManagerCard = () => {
           <div key={p.sku} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/10"
             data-testid={`catalog-row-${p.sku}`}>
             <p className="text-[11px] truncate">
-              <span className={p.detaillant_active === false ? 'line-through text-white/35' : ''}>{p.name}</span>
+              <span className={p.detaillant_active === false ? 'line-through text-white/35' : ''}>
+                {p.name}{p.brand ? ` · ${p.brand}` : ''}
+              </span>
               <span className="text-white/40"> · {p.category || '—'}</span>
             </p>
             <div className="flex items-center gap-2 shrink-0">
