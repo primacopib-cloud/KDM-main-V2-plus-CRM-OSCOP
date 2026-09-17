@@ -159,6 +159,26 @@ export default function DetaillantSpacePage() {
           </div>
         </div>
 
+        {info.subscription_active && (() => {
+          const until = info.subscription?.valid_until;
+          if (!until) return null;
+          const daysLeft = Math.ceil((new Date(until) - Date.now()) / 86400000);
+          if (daysLeft > 7 || daysLeft < 0) return null;
+          return (
+            <div className="rounded-2xl border border-orange-400/40 bg-orange-500/[0.08] p-3 flex flex-wrap items-center justify-between gap-2"
+              data-testid="dt-expiry-banner">
+              <p className="text-xs font-bold text-orange-200">
+                ⏳ Votre abonnement POP'S expire {daysLeft === 0 ? "aujourd'hui" : daysLeft === 1 ? 'demain' : `dans ${daysLeft} jours`}
+                {' '}({new Date(until).toLocaleDateString('fr-FR')}).
+              </p>
+              <button type="button" onClick={subscribe} data-testid="dt-expiry-renew-btn"
+                className="h-8 px-4 rounded-full bg-[#D9B35A] text-black text-xs font-bold hover:bg-[#E9CF8E]">
+                Renouveler mon abonnement
+              </button>
+            </div>
+          );
+        })()}
+
         {!info.subscription_active && (
           <div className="rounded-2xl border border-amber-400/30 bg-amber-500/[0.06] p-4" data-testid="dt-subscribe-card">
             <p className="text-sm text-amber-200 mb-3">{t.subNeeded}</p>

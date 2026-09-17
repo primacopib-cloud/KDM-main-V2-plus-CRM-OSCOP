@@ -3714,3 +3714,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-09 — Lot 91 : Rappel expiration abonnement POP'S (testé E2E)
 - run_detaillant_subscription_reminders (detaillant_reports.py, scheduler) : abonnements ACTIVE expirant sous 7 jours sans rappel → cloche pops_subscription_expiry + email Brevo (tag pops-subscription-expiry, date d'expiration, jours restants, bouton « Renouveler mon abonnement » → /espace-detaillant). Flag expiry_reminder_at par abonnement (1 envoi par échéance) ; reset ($unset) à chaque activation/renouvellement (detaillant_activate). Testé (échéance forcée J-5 : cloche + email OK, 2e run = 0), valid_until restauré à 18/10/2026, données nettoyées.
+
+## 2026-09 — Lot 92 : Bannière expiration espace POP'S (testé E2E)
+- Bannière orange (dt-expiry-banner) en haut de l'espace POP'S dès J-7 avant expiration : décompte (« expire dans X jours » / demain / aujourd'hui) + date + bouton « Renouveler mon abonnement » (dt-expiry-renew-btn → checkout Stripe existant). Testé UI avec échéance forcée J-5 (bannière visible, texte correct), puis valid_until restauré au 18/10/2026.
