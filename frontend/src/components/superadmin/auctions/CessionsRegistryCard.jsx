@@ -12,15 +12,22 @@ export const CessionsRegistryCard = () => {
   const [status, setStatus] = useState('');
   const [items, setItems] = useState([]);
   const [detail, setDetail] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [shop, setShop] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const load = () => {
     const qs = new URLSearchParams();
     if (q) qs.set('q', q);
     if (status) qs.set('status', status);
+    if (shop) qs.set('shop', shop);
+    if (dateFrom) qs.set('date_from', dateFrom);
+    if (dateTo) qs.set('date_to', dateTo);
     fetch(`${API}/admin/detaillant/cessions?${qs}`, { headers: getAuthHeaders(), credentials: 'include' })
       .then((r) => (r.ok ? r.json() : { cessions: [] }))
-      .then((d) => setItems(d.cessions || [])).catch(() => {});
+      .then((d) => { setItems(d.cessions || []); setStats(d.stats || null); }).catch(() => {});
   };
-  useEffect(() => { load(); }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [status, dateFrom, dateTo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const exportCsv = () => {
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
@@ -44,6 +51,16 @@ export const CessionsRegistryCard = () => {
           <FileSpreadsheet className="w-3.5 h-3.5" /> Export CSV
         </button>
       </div>
+      {stats && (
+        <div className="flex flex-wrap gap-2 mb-3" data-testid="cessions-stats">
+          <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/12 text-amber-300 border border-amber-400/30"
+            data-testid="cessions-stat-draft">À signer : {stats.DRAFT}</span>
+          <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-sky-500/12 text-sky-300 border border-sky-400/30"
+            data-testid="cessions-stat-signed">Signées : {stats.SIGNED}</span>
+          <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/12 text-emerald-300 border border-emerald-400/30"
+            data-testid="cessions-stat-effective">En vigueur : {stats.EFFECTIVE}</span>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <form className="relative flex-1 min-w-[180px]" onSubmit={(e) => { e.preventDefault(); load(); }}>
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-white/35" />
@@ -58,6 +75,16 @@ export const CessionsRegistryCard = () => {
             {l}
           </button>
         ))}
+        <input value={shop} onChange={(e) => setShop(e.target.value)} onBlur={load}
+          onKeyDown={(e) => e.key === 'Enter' && load()}
+          placeholder="Boutique…" data-testid="cessions-shop-input"
+          className="h-8 w-32 px-2.5 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white placeholder-white/30 outline-none" />
+        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+          data-testid="cessions-date-from" title="Du"
+          className="h-8 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white/70 outline-none" />
+        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+          data-testid="cessions-date-to" title="Au"
+          className="h-8 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white/70 outline-none" />
       </div>
       {items.length === 0 ? (
         <p className="text-xs text-white/40" data-testid="cessions-empty">Aucune fiche de cession.</p>

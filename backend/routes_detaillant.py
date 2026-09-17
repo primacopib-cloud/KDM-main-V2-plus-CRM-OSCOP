@@ -554,7 +554,8 @@ async def get_convention(user: dict = Depends(get_current_user)):
         {"user_id": user["id"]}, {"_id": 0, "signer_name": 1, "signed_at": 1, "version": 1})
     return {"version": CONVENTION_VERSION, "parties": CONVENTION_PARTIES,
             "articles": [{"title": t, "text": x} for t, x in CONVENTION_ARTICLES],
-            "signed": bool(sig), "signature": sig}
+            "signed": bool(sig), "signature": sig,
+            "needs_resign": bool(sig and sig.get("version") != CONVENTION_VERSION)}
 
 
 class ConventionSignBody(BaseModel):
@@ -872,17 +873,29 @@ async def admin_conventions_registry(admin: dict = Depends(require_admin)):
 
 
 @detaillant_admin_router.get("/cessions")
-async def admin_cessions_registry(q: str = "", status: str = "", admin: dict = Depends(require_admin)):
-    """Registre central des fiches de cession (recherche + filtre statut)."""
+async def admin_cessions_registry(q: str = "", status: str = "", shop: str = "",
+                                  date_from: str = "", date_to: str = "",
+                                  admin: dict = Depends(require_admin)):
+    """Registre central des fiches de cession (recherche + statut + boutique + période)."""
     query: dict = {}
     if status:
         query["status"] = status.upper()
+    if shop.strip():
+        query["cedant.company_name"] = {"$regex": shop.strip(), "$options": "i"}
+    if date_from:
+        query.setdefault("created_at", {})["$gte"] = date_from
+    if date_to:
+        query.setdefault("created_at", {})["$lte"] = date_to + "T23:59:59"
     if q.strip():
         rx = {"$regex": q.strip(), "$options": "i"}
         query["$or"] = [{"reference": rx}, {"lot_designation": rx},
                         {"cedant.company_name": rx}, {"signer_name": rx}]
     items = await db.detaillant_cessions.find(query, {"_id": 0}).sort("created_at", -1).limit(200).to_list(200)
-    return {"cessions": items, "total": len(items)}
+    stats = {"DRAFT": 0, "SIGNED": 0, "EFFECTIVE": 0}
+    async for s in db.detaillant_cessions.aggregate([{"$group": {"_id": "$status", "n": {"$sum": 1}}}]):
+        if s["_id"] in stats:
+            stats[s["_id"]] = s["n"]
+    return {"cessions": items, "total": len(items), "stats": stats}
 
 
 @detaillant_router.get("/sales")

@@ -44,6 +44,35 @@ async def run_detaillant_dlc_alerts(db):
     return sent
 
 
+async def run_convention_version_reminders(db):
+    """Cloche au POP'S dont la convention signée n'est plus à la version en vigueur (max 1/7 jours)."""
+    from convention_cession import CONVENTION_VERSION
+    now = _now()
+    limit = (now - timedelta(days=7)).isoformat()
+    sent = 0
+    convs = await db.detaillant_conventions.find(
+        {"version": {"$ne": CONVENTION_VERSION},
+         "$or": [{"last_version_reminder_at": {"$exists": False}},
+                 {"last_version_reminder_at": {"$lt": limit}}]},
+        {"_id": 0, "user_id": 1, "version": 1}).to_list(200)
+    for cv in convs:
+        await db.detaillant_conventions.update_one(
+            {"user_id": cv["user_id"]}, {"$set": {"last_version_reminder_at": now.isoformat()}})
+        try:
+            from core_deps import create_notification
+            await create_notification(
+                "convention_resign",
+                "📜 Nouvelle convention cadre à signer",
+                (f"La convention cadre POP'S COOP'ACT a été mise à jour (version {CONVENTION_VERSION} — "
+                 f"vous avez signé la {cv['version']}). Merci de la re-signer depuis votre espace POP'S."),
+                target_roles=[], target_user_id=cv["user_id"],
+                data={"action_url": "/espace-detaillant"})
+            sent += 1
+        except Exception as exc:
+            logger.warning("Relance convention %s : %s", cv["user_id"], exc)
+    return sent
+
+
 async def run_cession_sign_reminders(db):
     """Cloche au POP'S dont une offre PENDING attend la signature de sa fiche de cession (max 1/24 h)."""
     now = _now()

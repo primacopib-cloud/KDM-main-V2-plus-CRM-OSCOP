@@ -37,7 +37,7 @@ export const DetaillantConventionCard = ({ onSignedChange = () => {} }) => {
         <h3 className="text-sm font-bold text-[#E9CF8E] flex items-center gap-2">
           <ScrollText className="w-4 h-4" /> Convention cadre de partenariat POP'S COOP'ACT (v{data.version})
         </h3>
-        {data.signed ? (
+        {data.signed && !data.needs_resign ? (
           <span className="flex items-center gap-2">
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-400/40"
               data-testid="dt-convention-signed-badge">
@@ -49,6 +49,11 @@ export const DetaillantConventionCard = ({ onSignedChange = () => {} }) => {
               className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[10px] font-bold border border-[#D9B35A]/50 text-[#F2D07A] hover:bg-[#D9B35A]/15">
               <Download className="w-3 h-3" /> PDF
             </button>
+          </span>
+        ) : data.needs_resign ? (
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-500/15 text-orange-300 border border-orange-400/40"
+            data-testid="dt-convention-resign-badge">
+            ⚠️ Nouvelle version v{data.version} à re-signer (signée : v{data.signature?.version})
           </span>
         ) : (
           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-400/40"
@@ -71,7 +76,7 @@ export const DetaillantConventionCard = ({ onSignedChange = () => {} }) => {
               </div>
             ))}
           </div>
-          {!data.signed && (
+          {(!data.signed || data.needs_resign) && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <input value={name} onChange={(e) => setName(e.target.value)}
                 placeholder="Nom complet du signataire" data-testid="dt-convention-signer-input"
