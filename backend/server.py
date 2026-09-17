@@ -867,6 +867,10 @@ app.include_router(catalog_import_router)
 
 import routes_promo_extend
 routes_promo_extend.set_database(db)
+import routes_detaillant
+routes_detaillant.set_detaillant_database(db)
+app.include_router(routes_detaillant.detaillant_router)
+app.include_router(routes_detaillant.detaillant_admin_router)
 app.include_router(routes_promo_extend.promo_extend_router)
 
 from routes_my_notifications import my_notifications_router, set_my_notifications_database

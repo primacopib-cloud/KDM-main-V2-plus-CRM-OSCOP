@@ -10,6 +10,7 @@ export const SPACE_BY_ROLE = {
   COOPER: '/espace-cooper',
   EXPERT: '/espace-expert',
   GERANT_LOLO_POINT: '/gerant',
+  DETAILLANT: '/espace-detaillant',
   OPERATEUR_POS: '/pos',
   TITULAIRE_PASS: '/pass',
 };

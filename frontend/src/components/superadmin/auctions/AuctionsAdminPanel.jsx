@@ -8,6 +8,7 @@ import { Countdown } from '../../auctions/AuctionCard';
 import { AuctionFormDialog } from './AuctionFormDialog';
 import { AuctionSettingsDialog } from './AuctionSettingsDialog';
 import { AuctionStats } from './AuctionStats';
+import { DetaillantOffersPanel } from './DetaillantOffersPanel';
 
 const STATUS_STYLE = {
   SCHEDULED: 'bg-sky-500/20 text-sky-300', LIVE: 'bg-emerald-500/20 text-emerald-300',
@@ -40,6 +41,7 @@ export const AuctionsAdminPanel = () => {
 
   return (
     <div className="glass-panel-soft rounded-[22px] p-5 mt-6" data-testid="auctions-admin-panel">
+      <DetaillantOffersPanel />
       <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
         <div>
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
