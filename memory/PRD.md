@@ -3560,3 +3560,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Stats superadmin : GET /api/admin/detaillant/stats (nb détaillants, abonnés actifs, CA mensuel abonnements, offres par statut + crédits, crédits dépensés hors refus, lots en salle/remportés, top 5 boutiques) — affichées en tête du panneau Offres de lots Détaillants (data-testid detaillant-stats).
 - Tarif dépôt modifié : CREDITS_PER_LOT (23 fixe) → 2,5 % de la valeur du lot : per_lot = max(1, ceil(lot_price × 0.025 × 10 cr/€)) ; +100 cr/lot au-delà des 3 offres incluses inchangé. Le profil renvoie deposit_rate_pct (plus credits_per_lot) et le formulaire calcule le coût dynamiquement sur le prix saisi.
 - Testé (self-test) : lot 100 € × 2 lots extra → 250 cr (2×25 + 2×100) exact ; stats admin JSON complet ; UI : page publique rendue (6 features, CTA), panneau superadmin avec 7 KPIs + top boutiques + carte scan QR visibles. Offre de test supprimée et crédits remboursés.
+
+## 2026-06 — Lot 68 : Vitrine, ventes détaillant, email QR, traductions (testé 100 %)
+- Lien public « Détaillants — Bourse COOP'ACT » ajouté au footer (footer-link-detaillant) et au menu LOLODRIVE (lolo-nav-detaillant → /detaillant).
+- Tableau « Mes ventes en salle » dans /espace-detaillant : 4 KPIs + lignes par lot (mises, statut, gagnant, montant, retiré) — endpoint GET /api/detaillant/sales.
+- Email Brevo au gagnant à la victoire : inclut désormais l'image QR d'enlèvement (api.qrserver.com, code coopact:<pickup_token>) — testé Brevo 201.
+- Page publique /detaillant traduite FR/EN/ES/Créole via sélecteur (conceptI18n.js).
+- Test report : iteration_96.json — frontend 4/4, aucun bug bloquant.

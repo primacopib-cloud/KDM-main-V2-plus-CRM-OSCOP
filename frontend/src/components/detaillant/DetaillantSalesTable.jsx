@@ -16,9 +16,9 @@ export const DetaillantSalesTable = () => {
         <TrendingUp className="w-4 h-4" /> Mes ventes en salle
       </h3>
       <div className="grid grid-cols-4 gap-2 mb-3 text-center">
-        {[['Lots en salle', totals.lots], ['Mises', totals.bids], ['Remportés', totals.won],
-          ['Montant gagné', `${(totals.revenue_eur || 0).toFixed(2)} €`]].map(([l, v]) => (
-          <div key={l} className="rounded-xl bg-white/[0.04] border border-white/10 py-2">
+        {[['Lots en salle', totals.lots, 'lots'], ['Mises', totals.bids, 'bids'], ['Remportés', totals.won, 'won'],
+          ['Montant gagné', `${(totals.revenue_eur || 0).toFixed(2)} €`, 'revenue']].map(([l, v, k]) => (
+          <div key={l} className="rounded-xl bg-white/[0.04] border border-white/10 py-2" data-testid={`dt-sales-kpi-${k}`}>
             <p className="text-sm font-bold text-[#E9CF8E]">{v ?? 0}</p>
             <p className="text-[9px] text-white/50">{l}</p>
           </div>

@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend-only regression covering 4 features on marketplace B2B (KDMARCHE x O'SCOP). Verified footer link, LOLODRIVE nav item, /detaillant concept page + language switch to ES, detaillant sales table with real data, and non-regression of espace-detaillant KPIs & offers.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/espace-detaillant - Mes ventes en salle", "issues": ["Individual KPI cells (Lots en salle, Mises, Remportes, Montant gagne) are rendered correctly but do NOT expose per-KPI data-testid (e.g. dt-sales-kpi-lots). Only the container dt-sales-table has a testid. Non-blocking, but the review request explicitly mentions '4 KPIs' so adding testids would help future automated verification."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Optional) The review request lists /lolodrive, /catalogue-lolodrive OR /coopact for the 'Detaillants' nav item. Item is present on /catalogue-lolodrive and /encheres (LolodriveLayout header) but NOT on /lolodrive (landing page has its own header) nor on /coopact (public brand page). Confirm this is expected; if /coopact should also carry the member nav, it needs the LolodriveLayout wrapper."
+  ],
+  "critical_code_review_comments": [
+    "DetaillantSalesTable.jsx exposes only the wrapper and per-row testids; adding testids to the 4 KPI cells would improve regression coverage.",
+    "LolodriveLayout.lolo-member-nav is only rendered inside pages that wrap with LolodriveLayout; /lolodrive landing and /coopact do not use it - documented for main agent awareness."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not tested)", "frontend": "100% (4/4 features validated)"},
+  "test_credentials": "detaillant-test@kdmarche.fr / Detaillant2026! - login OK, /espace-detaillant loaded with abonnement actif, 277 credits, 6/3 offres.",
+  "seed_data_creation": "None. Used existing SCHEDULED lots: AUC-20260917-0D4DA7 and AUC-20260917-8585DC (both 'Riz long grain 5kg', Programme, 0 mises).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 4 requested features validated visually and via selectors: (1) footer-link-detaillant present on '/' -> /detaillant. (2) lolo-nav-detaillant present on /catalogue-lolodrive and /encheres (LolodriveLayout header). Absent on /lolodrive (landing) and /coopact - review acceptance used 'or'. (3) /detaillant renders detaillant-concept-page + concept-lang-switch; clicking concept-lang-es changes H1 to 'Venda los lotes de su tienda en la Bolsa COOP\u0027ACT'. (4) /espace-detaillant shows dt-sales-table with heading 'Mes ventes en salle', 4 KPI cells (2 Lots en salle / 0 Mises / 0 Remportes / 0.00 EUR) and 2 rows dt-sale-AUC-20260917-0D4DA7 & dt-sale-AUC-20260917-8585DC. Regression: credit KPIs (277), offres KPI (6/3), abonnement actif, 'Mes offres (7)' list all render without console errors.",
+  "rca of the issue": "No blocking issue. Minor gap: per-KPI data-testids are not exposed on the sales KPI cards."
+}
