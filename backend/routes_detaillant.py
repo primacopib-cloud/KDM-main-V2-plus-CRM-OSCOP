@@ -472,7 +472,8 @@ async def detaillant_activate(body: ActivateBody, user: dict = Depends(get_curre
         {"id": sub["id"]},
         {"$set": {"status": "ACTIVE", "valid_until": valid_until,
                   "stripe_subscription_id": session.get("subscription"),
-                  "activated_at": _now().isoformat()}})
+                  "activated_at": _now().isoformat()},
+         "$unset": {"expiry_reminder_at": ""}})
     try:
         await _send_pops_welcome_email(user["id"])
     except Exception as exc:

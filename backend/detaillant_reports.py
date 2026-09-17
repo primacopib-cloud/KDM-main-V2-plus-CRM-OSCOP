@@ -44,6 +44,62 @@ async def run_detaillant_dlc_alerts(db):
     return sent
 
 
+async def run_detaillant_subscription_reminders(db):
+    """Cloche + email au POP'S 7 jours avant l'expiration de son abonnement (1 fois par échéance)."""
+    now = _now()
+    limit = (now + timedelta(days=7)).isoformat()
+    sent = 0
+    subs = await db.detaillant_subscriptions.find(
+        {"status": "ACTIVE", "valid_until": {"$gt": now.isoformat(), "$lte": limit},
+         "expiry_reminder_at": {"$exists": False}},
+        {"_id": 0, "id": 1, "user_id": 1, "valid_until": 1}).to_list(100)
+    import os
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    for sub in subs:
+        days = max(1, (datetime.fromisoformat(sub["valid_until"]) - now).days + 1)
+        res = await db.detaillant_subscriptions.update_one(
+            {"id": sub["id"], "expiry_reminder_at": {"$exists": False}},
+            {"$set": {"expiry_reminder_at": now.isoformat()}})
+        if res.modified_count == 0:
+            continue
+        end_fr = datetime.fromisoformat(sub["valid_until"]).strftime("%d/%m/%Y")
+        try:
+            from core_deps import create_notification
+            await create_notification(
+                "pops_subscription_expiry",
+                "⏳ Votre abonnement POP'S expire bientôt",
+                (f"Votre abonnement POP'S — Vendeur éphémère expire le {end_fr} (dans {days} jour(s)). "
+                 "Renouvelez-le depuis votre espace pour continuer à déposer des offres."),
+                target_roles=[], target_user_id=sub["user_id"],
+                data={"action_url": "/espace-detaillant"})
+        except Exception as exc:
+            logger.warning("Cloche expiration abonnement %s : %s", sub["user_id"], exc)
+        try:
+            user = await db.users.find_one(
+                {"id": sub["user_id"]}, {"_id": 0, "email": 1, "company_name": 1})
+            if user and user.get("email"):
+                from brevo_service import send_email, _wrap_html
+                name = user.get("company_name") or ""
+                subject = f"⏳ Votre abonnement POP'S expire le {end_fr}"
+                body = (
+                    f"<p style='font-size:14px;'>Bonjour {name},</p>"
+                    f"<p style='font-size:14px;'>Votre abonnement <b>POP'S — Vendeur éphémère en salle "
+                    f"COOP'ACT</b> (390 €/mois, 3 dépôts inclus) expire le <b>{end_fr}</b> "
+                    f"(dans {days} jour(s)).</p>"
+                    "<p style='font-size:14px;'>Renouvelez-le pour continuer à déposer vos offres en salle.</p>"
+                    f"<p style='font-size:14px;'><a href='{base}/espace-detaillant' "
+                    "style='background:#D9B35A;color:#2A1045;padding:10px 18px;border-radius:8px;"
+                    "text-decoration:none;font-weight:bold;'>Renouveler mon abonnement</a></p>")
+                await send_email(user["email"], name or None, subject, _wrap_html(subject, body),
+                                 text_content=f"Votre abonnement POP'S expire le {end_fr} — "
+                                              f"renouvelez : {base}/espace-detaillant",
+                                 tags=["pops-subscription-expiry"])
+                sent += 1
+        except Exception as exc:
+            logger.warning("Email expiration abonnement %s : %s", sub["user_id"], exc)
+    return sent
+
+
 async def run_convention_version_reminders(db):
     """Cloche au POP'S dont la convention signée n'est plus à la version en vigueur (max 1/7 jours)."""
     from convention_cession import CONVENTION_VERSION
