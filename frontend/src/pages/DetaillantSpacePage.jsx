@@ -10,6 +10,8 @@ import { DetaillantSalesTable } from '../components/detaillant/DetaillantSalesTa
 import { DetaillantReviewsCard } from '../components/detaillant/DetaillantReviewsCard';
 import { DetaillantFollowersCard } from '../components/detaillant/DetaillantFollowersCard';
 import { DetaillantWeeklyRecapsCard } from '../components/detaillant/DetaillantWeeklyRecapsCard';
+import { DetaillantConventionCard } from '../components/detaillant/DetaillantConventionCard';
+import { CessionFicheModal } from '../components/detaillant/CessionFicheModal';
 import { DT } from '../components/detaillant/detaillantI18n';
 
 const STATUS_COLOR = { PENDING: '#f59e0b', APPROVED: '#10b981', REJECTED: '#ef4444' };
@@ -23,6 +25,8 @@ export default function DetaillantSpacePage() {
   const [offers, setOffers] = useState([]);
   const [reg, setReg] = useState({ email: '', password: '', company_name: '' });
   const [guest, setGuest] = useState(false);
+  const [conventionSigned, setConventionSigned] = useState(true);
+  const [cessionOffer, setCessionOffer] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -158,12 +162,20 @@ export default function DetaillantSpacePage() {
         {!info.subscription_active && (
           <div className="rounded-2xl border border-amber-400/30 bg-amber-500/[0.06] p-4" data-testid="dt-subscribe-card">
             <p className="text-sm text-amber-200 mb-3">{t.subNeeded}</p>
-            <button onClick={subscribe} data-testid="dt-subscribe-btn"
-              className="h-10 px-6 rounded-full bg-[#D9B35A] text-black text-sm font-bold hover:bg-[#E9CF8E]">
+            <button onClick={subscribe} disabled={!conventionSigned} data-testid="dt-subscribe-btn"
+              title={conventionSigned ? '' : 'Signez d\'abord la convention cadre ci-dessous'}
+              className="h-10 px-6 rounded-full bg-[#D9B35A] text-black text-sm font-bold hover:bg-[#E9CF8E] disabled:opacity-40">
               {t.subscribe}
             </button>
+            {!conventionSigned && (
+              <p className="text-[11px] text-amber-300 mt-2" data-testid="dt-subscribe-convention-note">
+                ⚠️ La signature de la convention cadre de partenariat est requise avant l'abonnement.
+              </p>
+            )}
           </div>
         )}
+
+        <DetaillantConventionCard onSignedChange={setConventionSigned} />
 
         <DetaillantProfileCard t={t} profile={info.profile} onSaved={load} />
 
@@ -205,11 +217,19 @@ export default function DetaillantSpacePage() {
                     {t[o.status.toLowerCase()] || o.status}
                   </span>
                   <p className="text-[10px] text-white/40 mt-1">{o.cost_credits} cr.</p>
+                  <button type="button" onClick={() => setCessionOffer(o.id)}
+                    data-testid={`dt-offer-cession-btn-${o.id}`}
+                    className="mt-1 text-[10px] font-semibold text-[#F2D07A] hover:underline">
+                    Fiche de cession
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
+        {cessionOffer && (
+          <CessionFicheModal offerId={cessionOffer} onClose={() => setCessionOffer(null)} onSigned={load} />
+        )}
       </div>
     </div>
   );

@@ -74,6 +74,13 @@ async def public_auctions(status: str = "", category: str = "", type_id: str = "
                 weekly_top = {"id": a["id"], "reference": a["reference"], "title": a["title"],
                               "price_eur": a["price_eur"], "image_url": a.get("image_url"),
                               "week_bids": t["n"]}
+                wk = ah.now_utc().strftime("%G-W%V")
+                await ah.db.auction_weekly_stars.update_one(
+                    {"week_key": wk},
+                    {"$set": {"auction_id": a["id"], "reference": a["reference"], "title": a["title"],
+                              "image_url": a.get("image_url"), "week_bids": t["n"],
+                              "price_eur": a["price_eur"], "updated_at": ah.now_utc().isoformat()},
+                     "$setOnInsert": {"id": str(uuid.uuid4())}}, upsert=True)
                 break
     except Exception as exc:
         logger.warning("Lot vedette semaine : %s", exc)
@@ -144,6 +151,14 @@ async def suggestions_new_count(since: str = "", user_id: str = Depends(get_curr
     if since:
         q["created_at"] = {"$gt": since}
     return {"count": await ah.db.auctions.count_documents(q)}
+
+
+@auctions_member_router.get("/weekly-stars")
+async def weekly_stars():
+    """Historique public des lots vedettes de chaque semaine."""
+    stars = await ah.db.auction_weekly_stars.find(
+        {}, {"_id": 0}).sort("week_key", -1).limit(24).to_list(24)
+    return {"stars": stars}
 
 
 @auctions_member_router.get("/points")

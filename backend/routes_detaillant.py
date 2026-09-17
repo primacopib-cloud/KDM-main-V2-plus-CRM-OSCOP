@@ -337,6 +337,9 @@ async def detaillant_checkout(body: CheckoutBody, user: dict = Depends(get_curre
         {"user_id": user["id"], "status": "ACTIVE"}, {"_id": 0, "valid_until": 1})
     if existing and datetime.fromisoformat(existing["valid_until"]) > _now():
         raise HTTPException(status_code=409, detail="Votre abonnement Détaillant est déjà actif")
+    if not await db.detaillant_conventions.find_one({"user_id": user["id"]}):
+        raise HTTPException(status_code=403,
+                            detail="Signez d'abord la convention cadre de partenariat POP'S COOP'ACT")
     origin = body.origin_url.rstrip("/")
     meta = {"kind": "DETAILLANT_SUBSCRIPTION", "user_id": user["id"]}
     stripe.api_base = "https://api.stripe.com"
@@ -508,6 +511,36 @@ async def detaillant_my_offers(user: dict = Depends(get_current_user)):
     return {"offers": offers}
 
 
+# ---------- Convention cadre POP'S ----------
+
+@detaillant_router.get("/convention")
+async def get_convention(user: dict = Depends(get_current_user)):
+    from convention_cession import CONVENTION_VERSION, CONVENTION_PARTIES, CONVENTION_ARTICLES
+    sig = await db.detaillant_conventions.find_one(
+        {"user_id": user["id"]}, {"_id": 0, "signer_name": 1, "signed_at": 1, "version": 1})
+    return {"version": CONVENTION_VERSION, "parties": CONVENTION_PARTIES,
+            "articles": [{"title": t, "text": x} for t, x in CONVENTION_ARTICLES],
+            "signed": bool(sig), "signature": sig}
+
+
+class ConventionSignBody(BaseModel):
+    signer_name: str
+
+
+@detaillant_router.post("/convention/sign")
+async def sign_convention(body: ConventionSignBody, user: dict = Depends(get_current_user)):
+    from convention_cession import CONVENTION_VERSION
+    name = body.signer_name.strip()
+    if len(name) < 3:
+        raise HTTPException(status_code=400, detail="Indiquez le nom complet du signataire")
+    await db.detaillant_conventions.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"signer_name": name, "version": CONVENTION_VERSION,
+                  "signed_at": _now().isoformat()},
+         "$setOnInsert": {"id": str(uuid.uuid4())}}, upsert=True)
+    return {"ok": True, "signed": True}
+
+
 @detaillant_router.post("/offers")
 async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_current_user)):
     await _require_active_sub(user["id"])
@@ -618,7 +651,68 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         "status": "PENDING", "month_key": month_key,
         "created_at": _now().isoformat()}
     await db.detaillant_offers.insert_one({**offer})
+    # Fiche de cession universelle pré-remplie (à signer par le POP'S avant validation)
+    from convention_cession import cession_declarations
+    perishable = bool(product.get("perishable")) or any(p.get("perishable") for p in composed_products)
+    cession = {
+        "id": str(uuid.uuid4()), "reference": f"CES-{_now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}",
+        "offer_id": offer["id"], "user_id": user["id"],
+        "cedant": {"company_name": offer["company_name"], "locality": offer["locality"],
+                   "country_code": offer["country_code"],
+                   "siret": (prof or {}).get("siret", ""), "phone": (prof or {}).get("phone", "")},
+        "cessionnaire": "OBJECTIF SCOP OUTREMER — SCIC SAS au capital de 10 500 €, "
+                        "13 rue Rodrigue Youyoute, 97139 Les Abymes, représentée par Mme Félixia PIPEROL",
+        "category": offer["category"], "condition": offer["condition"],
+        "lot_designation": offer["product_name"], "lot_type": offer["lot_type"],
+        "qty_lots": offer["qty_lots"],
+        "products": [{"sku": p["sku"], "name": p["name"], "qty": 3 if len(composed_products) == 1 else 1,
+                      "dlc": offer.get("dlc"), "condition": offer["condition"]} for p in composed_products],
+        "valuation": {"lot_price": offer["lot_price"], "discount_pct": offer["discount_pct"],
+                      "final_price": offer["final_price"], "currency": offer["currency"],
+                      "warranty": offer.get("warranty")},
+        "declarations": cession_declarations(offer["category"], perishable, offer["condition"]),
+        "declarations_checked": [], "status": "DRAFT",
+        "effective_from": None, "effective_until": None,
+        "created_at": _now().isoformat()}
+    await db.detaillant_cessions.insert_one({**cession})
+    cession.pop("_id", None)
+    offer["cession_reference"] = cession["reference"]
     return offer
+
+
+@detaillant_router.get("/offers/{offer_id}/cession")
+async def get_cession(offer_id: str, user: dict = Depends(get_current_user)):
+    c = await db.detaillant_cessions.find_one(
+        {"offer_id": offer_id, "user_id": user["id"]}, {"_id": 0})
+    if not c:
+        raise HTTPException(status_code=404, detail="Fiche de cession introuvable")
+    return c
+
+
+class CessionSignBody(BaseModel):
+    signer_name: str
+    declarations_checked: List[str] = []
+
+
+@detaillant_router.post("/offers/{offer_id}/cession/sign")
+async def sign_cession(offer_id: str, body: CessionSignBody, user: dict = Depends(get_current_user)):
+    c = await db.detaillant_cessions.find_one(
+        {"offer_id": offer_id, "user_id": user["id"]}, {"_id": 0, "declarations": 1})
+    if not c:
+        raise HTTPException(status_code=404, detail="Fiche de cession introuvable")
+    name = body.signer_name.strip()
+    if len(name) < 3:
+        raise HTTPException(status_code=400, detail="Indiquez le nom complet du signataire")
+    missing = [d for d in c["declarations"] if d not in body.declarations_checked]
+    if missing:
+        raise HTTPException(status_code=400,
+                            detail=f"Cochez toutes les déclarations applicables ({len(missing)} manquante(s))")
+    await db.detaillant_cessions.update_one(
+        {"offer_id": offer_id, "user_id": user["id"]},
+        {"$set": {"status": "SIGNED", "signer_name": name,
+                  "declarations_checked": body.declarations_checked,
+                  "signed_at": _now().isoformat()}})
+    return {"ok": True, "status": "SIGNED"}
 
 
 @detaillant_router.get("/sales")
@@ -801,6 +895,12 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
         raise HTTPException(status_code=404, detail="Offre introuvable")
     if offer["status"] != "PENDING":
         raise HTTPException(status_code=409, detail="Offre déjà traitée")
+    if body.action == "APPROVE":
+        ces = await db.detaillant_cessions.find_one(
+            {"offer_id": offer_id}, {"_id": 0, "status": 1})
+        if ces and ces.get("status") == "DRAFT":
+            raise HTTPException(status_code=409,
+                                detail="Fiche de cession non signée par le POP'S — validation impossible")
     new_status = "APPROVED" if body.action == "APPROVE" else "REJECTED"
     updates = {"status": new_status, "reviewed_at": _now().isoformat(),
                "reviewed_by": admin.get("id"), "review_note": (body.note or "").strip() or None}
@@ -876,6 +976,15 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                 "created_by": admin.get("email"), "created_at": _now().isoformat()})
             created_refs.append(ref)
         updates["auction_refs"] = created_refs
+        # Horodatage de la fiche de cession : effet = ouverture en salle, expiration = fin de l'offre
+        if created_refs:
+            lot0 = await db.auctions.find_one(
+                {"reference": created_refs[0]}, {"_id": 0, "starts_at": 1, "ends_at": 1})
+            await db.detaillant_cessions.update_one(
+                {"offer_id": offer_id},
+                {"$set": {"status": "EFFECTIVE", "auction_refs": created_refs,
+                          "effective_from": (lot0 or {}).get("starts_at"),
+                          "effective_until": (lot0 or {}).get("ends_at")}})
     await db.detaillant_offers.update_one({"id": offer_id}, {"$set": updates})
     if body.action == "APPROVE" and created_refs:
         await recalc_gold_pops()

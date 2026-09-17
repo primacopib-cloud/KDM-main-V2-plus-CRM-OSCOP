@@ -366,6 +366,63 @@ async def run_auction_ending_alerts(database=None):
     return sent
 
 
+async def run_member_monthly_recaps(database, force: bool = False):
+    """Chaque 1er du mois : bilan mensuel aux Coop'acteurs — lots remportés et économies réalisées."""
+    if ah.db is None:
+        ah.set_auction_database(database)
+    now = ah.now_utc()
+    if not force and now.day != 1:
+        return 0
+    from datetime import timedelta as td
+    prev = (now.replace(day=1) - td(days=1)).strftime("%Y-%m")
+    flag = f"member_monthly_recap_{prev}"
+    if not force and await ah.db.system_flags.find_one({"key": flag}):
+        return 0
+    import os
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    sent = 0
+    wins_by_user = {}
+    async for a in ah.db.auctions.find(
+            {"status": "WON", "winner.won_at": {"$regex": f"^{prev}"}},
+            {"_id": 0, "title": 1, "value_eur": 1, "winner": 1}):
+        wins_by_user.setdefault(a["winner"]["user_id"], []).append(a)
+    for uid, wins in wins_by_user.items():
+        user = await ah.db.users.find_one(
+            {"id": uid}, {"_id": 0, "email": 1, "first_name": 1, "contact_name": 1})
+        if not user or not user.get("email"):
+            continue
+        paid = round(sum((a["winner"].get("price_eur") or 0) for a in wins), 2)
+        value = round(sum(float(a.get("value_eur") or 0) for a in wins), 2)
+        savings = round(max(0, value - paid), 2)
+        name = user.get("first_name") or user.get("contact_name") or ""
+        items = "".join(
+            f"<li style='font-size:13px;'>{a['title']} — payé <b>{(a['winner'].get('price_eur') or 0):.2f} €</b> "
+            f"(valeur {float(a.get('value_eur') or 0):.2f} €)</li>" for a in wins)
+        try:
+            from brevo_service import send_email, _wrap_html
+            subject = f"🏆 Votre bilan COOP'ACT — {len(wins)} lot(s) remporté(s) en {prev}"
+            body = (
+                f"<p style='font-size:14px;'>Bonjour{f' {name}' if name else ''},</p>"
+                f"<p style='font-size:14px;'>Voici votre bilan Coop'acteur du mois <b>{prev}</b> :</p>"
+                f"<ul>{items}</ul>"
+                f"<p style='font-size:14px;'>Total payé : <b>{paid:.2f} €</b> · Valeur totale : "
+                f"<b>{value:.2f} €</b> · <span style='color:#1a7f4b;font-weight:bold;'>"
+                f"Économies réalisées : {savings:.2f} €</span></p>"
+                f"<p style='font-size:14px;'><a href='{base}/encheres' "
+                "style='background:#D9B35A;color:#2A1045;padding:10px 18px;border-radius:8px;"
+                "text-decoration:none;font-weight:bold;'>Retourner en salle COOP'ACT</a></p>")
+            await send_email(user["email"], name or None, subject, _wrap_html(subject, body),
+                             text_content=f"Bilan COOP'ACT {prev} : {len(wins)} lot(s), payé {paid} €, "
+                                          f"économies {savings} €.",
+                             tags=["member-monthly-recap"])
+            sent += 1
+        except Exception as exc:
+            logger.warning("Bilan mensuel membre %s : %s", user.get("email"), exc)
+    if not force:
+        await ah.db.system_flags.insert_one({"key": flag, "at": now.isoformat()})
+    return sent
+
+
 async def run_auction_plan_expiry_reminders(database):
     """Rappel J-3 : invite chaque Coop'acteur à recharger avant l'expiration de son plan (idempotent par cycle)."""
     from datetime import timedelta

@@ -3,6 +3,39 @@ import { useEffect, useState } from 'react';
 import { Gavel, Handshake, Scale, Coins, ShieldCheck, ArrowRight, Sparkles, Users } from 'lucide-react';
 import { API } from '../services/http';
 
+// Historique public des lots vedettes de chaque semaine (les plus coop'actés)
+const WeeklyStarsSection = () => {
+  const [stars, setStars] = useState([]);
+  useEffect(() => {
+    fetch(`${API}/auctions/weekly-stars`).then((r) => (r.ok ? r.json() : { stars: [] }))
+      .then((d) => setStars(d.stars || [])).catch(() => {});
+  }, []);
+  if (stars.length === 0) return null;
+  return (
+    <div className="mb-10 text-left" data-testid="weekly-stars-section">
+      <h2 className="text-base md:text-lg font-black text-[#F2D07A] mb-3 flex items-center gap-2">
+        🏆 Lots vedettes des semaines passées
+      </h2>
+      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
+        {stars.map((s) => (
+          <div key={s.week_key} data-testid={`weekly-star-${s.week_key}`}
+            className="rounded-xl border border-[#D9B35A]/30 bg-[#D9B35A]/[0.06] p-3 flex items-center gap-2.5">
+            {s.image_url && (
+              <img src={s.image_url.startsWith('/api/') ? `${API}${s.image_url.slice(4)}` : s.image_url}
+                alt={s.title} className="w-11 h-11 rounded-lg object-cover bg-white/90 shrink-0" />
+            )}
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-wide text-[#D9B35A]">Semaine {s.week_key}</p>
+              <p className="text-[11px] font-bold text-white/85 truncate" title={s.title}>{s.title}</p>
+              <p className="text-[10px] text-white/50">{s.week_bids} Coop'Act · {Number(s.price_eur).toFixed(2)} €</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const LEXIQUE = [
   { term: "Coop'acter", def: "L'action : déposer ou améliorer une offre responsable au sein de la Bourse Coopérative." },
   { term: "Coop'Act", def: 'La proposition déposée par un participant.' },
@@ -148,6 +181,7 @@ export default function CoopactBrandPage() {
       </section>
 
       <footer className="max-w-5xl mx-auto px-5 py-10 text-center text-[11px] text-white/45">
+        <WeeklyStarsSection />
         <p className="font-bold text-[#D9B35A]">BOURSE COOPÉRATIVE — COOP'ACT</p>
         <p>Agir ensemble pour la juste valeur.</p>
         <p className="mt-2">O'SCOP × KDMARCHÉ — CommunityPlace</p>

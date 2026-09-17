@@ -299,9 +299,10 @@ async def _scheduler_loop():
         except Exception as exc:
             logger.exception("Scheduler weekly recap crashed: %s", exc)
         try:
-            from auction_emails import run_auction_maintenance, run_auction_monthly_report
+            from auction_emails import run_auction_maintenance, run_auction_monthly_report, run_member_monthly_recaps
             await run_auction_maintenance(_db)
             await run_auction_monthly_report(_db)
+            await run_member_monthly_recaps(_db)
         except Exception as exc:
             logger.exception("Scheduler auctions maintenance crashed: %s", exc)
         try:
