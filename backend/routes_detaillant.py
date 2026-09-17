@@ -885,5 +885,20 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                                      tags=["pops-new-lot"])
         except Exception as exc:
             logger.warning("Notif followers POP'S: %s", exc)
+        # Alerte aux Coop'acteurs qui suivent la marque du produit
+        try:
+            brand = offer.get("product_brand")
+            if brand:
+                from core_deps import create_notification
+                async for bf in db.brand_followers.find({"brand": brand}, {"_id": 0, "member_id": 1}):
+                    await create_notification(
+                        notification_type="brand_new_lot",
+                        title=f"⭐ {brand} arrive en salle !",
+                        message=(f"Un lot {brand} ({offer['product_name']}) vient d'être programmé "
+                                 "en salle COOP'ACT. À vous de coop'acter !"),
+                        target_roles=[], target_user_id=bf["member_id"],
+                        data={"action_url": "/encheres"})
+        except Exception as exc:
+            logger.warning("Notif followers marque: %s", exc)
     out = await db.detaillant_offers.find_one({"id": offer_id}, {"_id": 0})
     return out

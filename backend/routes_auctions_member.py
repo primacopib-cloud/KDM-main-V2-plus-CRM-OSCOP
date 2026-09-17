@@ -220,6 +220,33 @@ async def my_auction_account(user_id: str = Depends(get_current_user_id)):
             "bids": bids, "ledger": ledger}
 
 
+@auctions_member_router.get("/brands/follows")
+async def my_brand_follows(user_id: str = Depends(get_current_user_id)):
+    follows = [f["brand"] async for f in ah.db.brand_followers.find(
+        {"member_id": user_id}, {"_id": 0, "brand": 1})]
+    return {"follows": follows}
+
+
+class BrandFollowBody(BaseModel):
+    brand: str
+
+
+@auctions_member_router.post("/brands/follow")
+async def toggle_brand_follow(body: BrandFollowBody, user_id: str = Depends(get_current_user_id)):
+    """Suivre / ne plus suivre une marque pour être alerté quand un lot arrive en salle."""
+    brand = body.brand.strip()
+    if not brand:
+        raise HTTPException(status_code=400, detail="Marque invalide")
+    existing = await ah.db.brand_followers.find_one({"member_id": user_id, "brand": brand})
+    if existing:
+        await ah.db.brand_followers.delete_one({"_id": existing["_id"]})
+        return {"following": False}
+    await ah.db.brand_followers.insert_one({
+        "id": str(uuid.uuid4()), "member_id": user_id, "brand": brand,
+        "created_at": ah.now_utc().isoformat()})
+    return {"following": True}
+
+
 # ---------- Suivi de boutiques POP'S ----------
 
 @auctions_member_router.get("/shops/follows")

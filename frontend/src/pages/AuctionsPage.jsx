@@ -12,12 +12,23 @@ import { WinnerDialog } from '../components/auctions/WinnerDialog';
 import { AuctionHistoryPanel } from '../components/auctions/AuctionHistoryPanel';
 import { AuctionAlertPrefs } from '../components/auctions/AuctionAlertPrefs';
 
+const FILTERS_KEY = 'coopact_filters_v1';
+const DEFAULT_FILTERS = { status: '', category: '', type_id: '', source: '', q: '', shop: '', country: '', brand: '', product: '', date: '' };
+const loadFilters = () => {
+  try { return { ...DEFAULT_FILTERS, ...JSON.parse(localStorage.getItem(FILTERS_KEY) || '{}') }; }
+  catch { return DEFAULT_FILTERS; }
+};
+
 export default function AuctionsPage() {
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState({ items: [], categories: [], types: [], sources: [] });
   const [me, setMe] = useState(null);
   const [follows, setFollows] = useState(null);
-  const [filters, setFilters] = useState({ status: '', category: '', type_id: '', source: '', q: '', shop: '', country: '', brand: '', product: '', date: '' });
+  const [filters, setFilters] = useState(loadFilters);
+  useEffect(() => {
+    try { localStorage.setItem(FILTERS_KEY, JSON.stringify(filters)); } catch {}
+  }, [filters]);
+  const [brandFollows, setBrandFollows] = useState(null);
   const [winnerAuction, setWinnerAuction] = useState(null);
   const isLogged = Boolean(getSessionToken());
 
@@ -120,7 +131,16 @@ export default function AuctionsPage() {
   useEffect(() => {
     if (!isLogged) return;
     apiCall('/auctions/shops/follows').then((d) => setFollows(d.follows || [])).catch(() => {});
+    apiCall('/auctions/brands/follows').then((d) => setBrandFollows(d.follows || [])).catch(() => {});
   }, [isLogged]);
+
+  const toggleBrandFollow = async (brand) => {
+    try {
+      const r = await apiCall('/auctions/brands/follow', { method: 'POST', body: JSON.stringify({ brand }) });
+      setBrandFollows((f) => (r.following ? [...(f || []), brand] : (f || []).filter((b) => b !== brand)));
+      toast.success(r.following ? `✓ Marque ${brand} suivie — alerte à chaque nouveau lot` : 'Suivi retiré');
+    } catch (e) { toast.error(e.message); }
+  };
 
   const toggleFollow = async (detaillantId) => {
     try {
@@ -155,7 +175,8 @@ export default function AuctionsPage() {
         <AuctionFilters filters={filters} setFilters={setFilters}
           categories={data.categories} types={data.types} sources={data.sources}
           shops={shopFacets.shops} countries={shopFacets.countries}
-          brands={shopFacets.brands} products={shopFacets.products} />
+          brands={shopFacets.brands} products={shopFacets.products}
+          brandFollows={brandFollows} onToggleBrandFollow={toggleBrandFollow} />
 
         {visible.length === 0 ? (
           <div className="text-center text-white/40 py-14" data-testid="auctions-empty">

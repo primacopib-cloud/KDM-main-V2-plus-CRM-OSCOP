@@ -1,5 +1,5 @@
 import i18n from '@/i18n';
-import { Search } from 'lucide-react';
+import { BellRing, Search } from 'lucide-react';
 import { Flag } from '../Flag';
 import { API } from '../../services/http';
 
@@ -12,7 +12,7 @@ const Pill = ({ active, onClick, children, testId }) => (
 );
 
 // Filtre enrichi : statut, catégorie, type, provenance, boutique/pays, marque, produit, date, recherche
-export const AuctionFilters = ({ filters, setFilters, categories, types, sources, shops = [], countries = [], brands = [], products = [] }) => {
+export const AuctionFilters = ({ filters, setFilters, categories, types, sources, shops = [], countries = [], brands = [], products = [], brandFollows = null, onToggleBrandFollow = () => {} }) => {
   const set = (k, v) => setFilters((f) => ({ ...f, [k]: f[k] === v ? '' : v }));
   return (
     <div className="space-y-2 mb-5" data-testid="auction-filters">
@@ -70,11 +70,24 @@ export const AuctionFilters = ({ filters, setFilters, categories, types, sources
         <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-brand-filter-row">
           <span className="text-[11px] font-bold text-white/60 uppercase tracking-wide">Marques</span>
           {brands.map(([b, logo]) => (
-            <Pill key={b} active={filters.brand === b} onClick={() => set('brand', b)}
-              testId={`auction-brand-filter-${b}`}>
-              {logo && <img src={logo.startsWith('/api/') ? `${API}${logo.slice(4)}` : logo} alt="" className="inline h-3.5 w-auto max-w-[36px] object-contain rounded-[2px] bg-white/90 px-0.5 mr-1 align-[-2px]" />}
-              {b}
-            </Pill>
+            <span key={b} className="inline-flex items-center gap-1">
+              <Pill active={filters.brand === b} onClick={() => set('brand', b)}
+                testId={`auction-brand-filter-${b}`}>
+                {logo && <img src={logo.startsWith('/api/') ? `${API}${logo.slice(4)}` : logo} alt="" className="inline h-3.5 w-auto max-w-[36px] object-contain rounded-[2px] bg-white/90 px-0.5 mr-1 align-[-2px]" />}
+                {b}
+              </Pill>
+              {brandFollows && (
+                <button type="button" onClick={() => onToggleBrandFollow(b)}
+                  data-testid={`auction-brand-follow-${b}`}
+                  title={brandFollows.includes(b) ? 'Ne plus suivre cette marque' : 'Suivre cette marque — alerte à chaque nouveau lot'}
+                  className={`w-6 h-6 rounded-full border flex items-center justify-center transition-colors ${
+                    brandFollows.includes(b)
+                      ? 'text-emerald-300 border-emerald-400/50 bg-emerald-500/15'
+                      : 'text-white/45 border-white/20 hover:border-emerald-400/50 hover:text-emerald-300'}`}>
+                  <BellRing className="w-3 h-3" />
+                </button>
+              )}
+            </span>
           ))}
         </div>
       )}
