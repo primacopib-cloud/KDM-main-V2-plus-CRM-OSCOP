@@ -247,6 +247,45 @@ async def toggle_brand_follow(body: BrandFollowBody, user_id: str = Depends(get_
     return {"following": True}
 
 
+# ---------- Alerte prix cible ----------
+
+class PriceAlertBody(BaseModel):
+    target_eur: float = 0
+
+
+@auctions_member_router.get("/price-alerts")
+async def my_price_alerts(user_id: str = Depends(get_current_user_id)):
+    alerts = await ah.db.auction_price_alerts.find(
+        {"user_id": user_id, "triggered": {"$ne": True}},
+        {"_id": 0, "auction_id": 1, "target_eur": 1}).to_list(200)
+    return {"alerts": alerts}
+
+
+@auctions_member_router.post("/{auction_id}/price-alert")
+async def set_price_alert(auction_id: str, body: PriceAlertBody,
+                          user_id: str = Depends(get_current_user_id)):
+    """Définit (ou retire si cible <= 0) un prix cible : cloche + email quand le prix l'atteint."""
+    a = await ah.db.auctions.find_one(
+        {"id": auction_id}, {"_id": 0, "current_price_eur": 1, "value_eur": 1})
+    if not a:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+    if body.target_eur <= 0:
+        await ah.db.auction_price_alerts.delete_many({"auction_id": auction_id, "user_id": user_id})
+        return {"active": False}
+    cur = round(float(a.get("current_price_eur") or a.get("value_eur") or 0), 2)
+    target = round(float(body.target_eur), 2)
+    if target >= cur:
+        raise HTTPException(status_code=400,
+                            detail=f"La cible doit être inférieure au prix actuel ({cur:.2f} €)")
+    await ah.db.auction_price_alerts.update_one(
+        {"auction_id": auction_id, "user_id": user_id},
+        {"$set": {"target_eur": target, "triggered": False,
+                  "created_at": ah.now_utc().isoformat()},
+         "$setOnInsert": {"id": str(uuid.uuid4())}},
+        upsert=True)
+    return {"active": True, "target_eur": target}
+
+
 # ---------- Suivi de boutiques POP'S ----------
 
 @auctions_member_router.get("/shops/follows")
@@ -371,6 +410,11 @@ async def place_bid(auction_id: str, user_id: str = Depends(get_current_user_id)
                 "id": str(uuid.uuid4()), "auction_id": auction_id, "user_id": user_id,
                 "credits_spent": cost, "price_after_eur": new_price,
                 "created_at": ah.now_utc().isoformat()})
+            try:
+                from auction_emails import check_price_alerts
+                await check_price_alerts(auction_id)
+            except Exception:
+                pass
             return {"ok": True, "price_eur": new_price, "price_credits": ah.eur_to_credits(new_price),
                     "bids_count": a.get("bids_count", 0) + 1}
         a = await _live_auction(auction_id)

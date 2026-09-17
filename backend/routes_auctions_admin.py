@@ -244,6 +244,11 @@ async def price_drop(auction_id: str, pct: float = 10, admin: dict = Depends(req
     await ah.db.auctions.update_one({"id": auction_id}, {"$set": {
         "value_eur": new_value, "current_price_eur": new_current,
         "price_dropped_at": ah.now_utc().isoformat(), "price_dropped_by": admin.get("email")}})
+    try:
+        from auction_emails import check_price_alerts
+        await check_price_alerts(auction_id)
+    except Exception:
+        pass
     return {"ok": True, "value_eur": new_value, "current_price_eur": new_current}
 
 

@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import i18n from '@/i18n';
-import { BellRing, RotateCcw, Search } from 'lucide-react';
+import { BellRing, RotateCcw, Search, Star } from 'lucide-react';
 import { Flag } from '../Flag';
 import { API } from '../../services/http';
 
@@ -12,13 +13,15 @@ const Pill = ({ active, onClick, children, testId }) => (
 );
 
 // Filtre enrichi : statut, catégorie, type, provenance, boutique/pays, marque, produit, date, recherche
-export const AuctionFilters = ({ filters, setFilters, onReset, categories, types, sources, shops = [], countries = [], brands = [], products = [], brandFollows = null, onToggleBrandFollow = () => {} }) => {
+export const AuctionFilters = ({ filters, setFilters, onReset, savedFilters = [], onSaveFilters = () => {}, onApplySaved = () => {}, onDeleteSaved = () => {}, categories, types, sources, shops = [], countries = [], brands = [], products = [], brandFollows = null, onToggleBrandFollow = () => {} }) => {
   const set = (k, v) => setFilters((f) => ({ ...f, [k]: f[k] === v ? '' : v }));
   const hasActive = Object.values(filters).some((v) => v);
+  const [saving, setSaving] = useState(false);
+  const [saveName, setSaveName] = useState('');
   return (
     <div className="space-y-2 mb-5" data-testid="auction-filters">
-      <div className="flex items-center gap-2 max-w-sm">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-[240px]">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-white/35" />
           <input value={filters.q} onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
             placeholder={i18n.t('auction.search')} data-testid="auction-search-input"
@@ -30,7 +33,40 @@ export const AuctionFilters = ({ filters, setFilters, onReset, categories, types
             <RotateCcw className="w-3 h-3" /> Réinitialiser les filtres
           </button>
         )}
+        {hasActive && (saving ? (
+          <form className="flex items-center gap-1"
+            onSubmit={(e) => { e.preventDefault(); const n = saveName.trim(); if (n) { onSaveFilters(n, filters); setSaving(false); setSaveName(''); } }}>
+            <input value={saveName} onChange={(e) => setSaveName(e.target.value)} autoFocus
+              placeholder="Nom du filtre" data-testid="auction-filters-save-name-input"
+              className="h-8 w-32 px-2 rounded-lg bg-white/[0.05] border border-[#D9B35A]/40 text-[11px] text-white placeholder-white/30 outline-none" />
+            <button type="submit" data-testid="auction-filters-save-confirm"
+              className="h-8 px-2.5 rounded-lg text-[11px] font-bold bg-[#D9B35A] text-[#2A1045] on-gold">OK</button>
+            <button type="button" onClick={() => { setSaving(false); setSaveName(''); }}
+              className="text-[11px] text-white/45 hover:text-white">✕</button>
+          </form>
+        ) : (
+          <button type="button" onClick={() => setSaving(true)} data-testid="auction-filters-save-button"
+            title="Sauvegarder cette combinaison de filtres"
+            className="inline-flex items-center gap-1 h-8 px-3 rounded-lg border border-[#D9B35A]/40 bg-[#D9B35A]/10 text-[11px] font-semibold text-[#F2D07A] hover:bg-[#D9B35A]/20 transition-colors whitespace-nowrap">
+            <Star className="w-3 h-3" /> Sauvegarder
+          </button>
+        ))}
       </div>
+      {savedFilters.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-saved-filters-row">
+          <span className="text-[11px] font-bold text-white/60 uppercase tracking-wide">Mes filtres</span>
+          {savedFilters.map((s) => (
+            <span key={s.name} className="inline-flex items-center gap-0.5">
+              <Pill active={false} onClick={() => onApplySaved(s)} testId={`auction-saved-filter-${s.name}`}>
+                ★ {s.name}
+              </Pill>
+              <button type="button" onClick={() => onDeleteSaved(s.name)} title="Supprimer ce filtre sauvegardé"
+                data-testid={`auction-saved-filter-delete-${s.name}`}
+                className="w-4 h-4 text-[10px] text-white/40 hover:text-red-300">✕</button>
+            </span>
+          ))}
+        </div>
+      )}
       <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-status-filter-row">
         {[['', 'filter_all'], ['LIVE', 'filter_live'], ['SCHEDULED', 'filter_scheduled'], ['FINISHED', 'filter_finished']].map(([v, k]) => (
           <Pill key={k} active={filters.status === v} onClick={() => setFilters((f) => ({ ...f, status: v }))}

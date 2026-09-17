@@ -13,10 +13,15 @@ import { AuctionHistoryPanel } from '../components/auctions/AuctionHistoryPanel'
 import { AuctionAlertPrefs } from '../components/auctions/AuctionAlertPrefs';
 
 const FILTERS_KEY = 'coopact_filters_v1';
+const SAVED_FILTERS_KEY = 'coopact_saved_filters_v1';
 const DEFAULT_FILTERS = { status: '', category: '', type_id: '', source: '', q: '', shop: '', country: '', brand: '', product: '', date: '' };
 const loadFilters = () => {
   try { return { ...DEFAULT_FILTERS, ...JSON.parse(localStorage.getItem(FILTERS_KEY) || '{}') }; }
   catch { return DEFAULT_FILTERS; }
+};
+const loadSavedFilters = () => {
+  try { return JSON.parse(localStorage.getItem(SAVED_FILTERS_KEY) || '[]'); }
+  catch { return []; }
 };
 
 export default function AuctionsPage() {
@@ -32,6 +37,18 @@ export default function AuctionsPage() {
     try { localStorage.removeItem(FILTERS_KEY); } catch {}
     setFilters(DEFAULT_FILTERS);
   }, []);
+  const [savedFilters, setSavedFilters] = useState(loadSavedFilters);
+  const persistSaved = (next) => {
+    setSavedFilters(next);
+    try { localStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(next)); } catch {}
+  };
+  const saveFilterSet = (name, current) => {
+    persistSaved([...savedFilters.filter((s) => s.name !== name), { name, filters: current }]);
+    toast.success(`★ Filtres « ${name} » sauvegardés`);
+  };
+  const applyFilterSet = (s) => setFilters({ ...DEFAULT_FILTERS, ...s.filters });
+  const deleteFilterSet = (name) => persistSaved(savedFilters.filter((s) => s.name !== name));
+  const [priceAlerts, setPriceAlerts] = useState(null);
   const [brandFollows, setBrandFollows] = useState(null);
   const [winnerAuction, setWinnerAuction] = useState(null);
   const isLogged = Boolean(getSessionToken());
@@ -136,7 +153,27 @@ export default function AuctionsPage() {
     if (!isLogged) return;
     apiCall('/auctions/shops/follows').then((d) => setFollows(d.follows || [])).catch(() => {});
     apiCall('/auctions/brands/follows').then((d) => setBrandFollows(d.follows || [])).catch(() => {});
+    apiCall('/auctions/price-alerts').then((d) => {
+      const m = {};
+      (d.alerts || []).forEach((x) => { m[x.auction_id] = x.target_eur; });
+      setPriceAlerts(m);
+    }).catch(() => {});
   }, [isLogged]);
+
+  const setPriceAlert = async (auctionId, target) => {
+    try {
+      const r = await apiCall(`/auctions/${auctionId}/price-alert`, {
+        method: 'POST', body: JSON.stringify({ target_eur: target }) });
+      setPriceAlerts((m) => {
+        const n = { ...m };
+        if (r.active) n[auctionId] = r.target_eur; else delete n[auctionId];
+        return n;
+      });
+      toast.success(r.active
+        ? `🎯 Alerte activée — cloche + email dès que le prix atteint ${r.target_eur.toFixed(2)} €`
+        : 'Alerte prix retirée');
+    } catch (e) { toast.error(e.message); }
+  };
 
   const toggleBrandFollow = async (brand) => {
     try {
@@ -177,6 +214,8 @@ export default function AuctionsPage() {
         )}
 
         <AuctionFilters filters={filters} setFilters={setFilters} onReset={resetFilters}
+          savedFilters={savedFilters} onSaveFilters={saveFilterSet}
+          onApplySaved={applyFilterSet} onDeleteSaved={deleteFilterSet}
           categories={data.categories} types={data.types} sources={data.sources}
           shops={shopFacets.shops} countries={shopFacets.countries}
           brands={shopFacets.brands} products={shopFacets.products}
@@ -193,6 +232,7 @@ export default function AuctionsPage() {
             {visible.map((a) => (
               <AuctionCard key={a.id} auction={a} canBid={Boolean(me?.active)}
                 follows={follows} onToggleFollow={toggleFollow}
+                priceAlerts={priceAlerts} onSetPriceAlert={setPriceAlert}
                 onChanged={() => { load(); loadMe(); }} />
             ))}
           </div>
