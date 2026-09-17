@@ -1,0 +1,22 @@
+{
+  "summary": "Frontend-only validation of 4 KDMARCHÉ x O'SCOP features. (1) /detaillant concept-video section renders with concept-video-player having Pexels poster (HEAD 200), FR title 'Vos produits méritent la salle — regardez comment vos lots prennent vie'; EN switch via concept-lang-en changes title to 'Your products deserve the room — see how your lots come to life'. PASS. (2) /encheres auction-shop-filter-row shows pill '🇬🇵 Épicerie Ti Kaz'; cards before=8, after filter=2 (Épicerie Ti Kaz lots), after re-click=8 (deactivate). auction-shop-rating-* elements show '★ 4.0 (1)' on 2 detaillant lot cards. PASS. (3) Superadmin admin@kdmarche-oscop.fr login OK; NotificationsDropdown is on /admin (not /superadmin) — bell testid 'notifications-bell' opens dropdown showing 20 items, no page errors, no unread detaillant_dlc_alert (0 dlc-price-drop-* buttons — acceptable per review guidance). PASS. (4) Member test-vendeur-e2e@example.com login OK; /api/lolodrive/me returns 404 for this member (no lolodrive account) → AuctionHistoryPanel intentionally returns null (guarded by me?.account), auction-history-toggle absent, no shop-review-form-*, no page errors. Behavior is graceful; acceptable per review note allowing absence of form.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Data mismatch vs review note: review states test-vendeur-e2e already has a rated lolodrive win, but /api/lolodrive/me returns 404 (no lolodrive account). AuctionHistoryPanel correctly guards with `if (!me?.account) return null`, but this prevents E2E validation of shop-review-form UI flow. If E1 wants full UI validation, seed a lolodrive account for test-vendeur-e2e with an unreviewed retailer win (source=DETAILLANT, source_visible=true, pickup_confirmed_at set, no shop_reviewed).",
+    "NotificationsDropdown is only integrated on /admin (AdminPage) and /admin-v2 (AdminV2Page). /superadmin (SuperAdminPage) does NOT include NotificationsDropdown even though superadmin credentials land there by default post-login. If the bell should be reachable from the superadmin's default landing space, add <NotificationsDropdown isAdmin=true /> to SuperAdminPage header."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% (4/4 scenarios validated within review acceptance criteria)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! (via /admin/connexion, then navigate to /admin for bell); test-vendeur-e2e@example.com / TestVendeur2026! (via /connexion, no lolodrive account).",
+  "seed_data_creation": "None. No mongo writes performed. price-drop button not clicked (no active detaillant_dlc_alert existed).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Selectors verified: concept-video, concept-video-player (poster=Pexels jpg, no src attr yet — video not loaded, only poster), concept-lang-en/fr/es (i18n toggles video title). auction-shop-filter-row + auction-shop-filter-<company> pill (single 'Épicerie Ti Kaz' currently). auction-shop-rating-<AUC_ID> shows '★ X.X (N)'. notifications-bell only in /admin & /admin-v2 pages (NOT /superadmin). dlc-price-drop-<auction_id> button only appears for unread notifications with type=detaillant_dlc_alert. AuctionHistoryPanel requires me.account (lolodrive account) — non-lolodrive users see nothing."
+}

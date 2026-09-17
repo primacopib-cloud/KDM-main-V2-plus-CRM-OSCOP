@@ -3588,3 +3588,12 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Les auctions issues d'offres portent désormais condition/warranty/dlc + photos[]; relist les recopie.
 - NOTE: abonnement du compte test backdaté au 2026-05-01 (rend verified=true pour futurs lots).
 - Test report : iteration_98.json — 5/5, warning clé dupliquée corrigé (key url-index + dedup en base).
+
+## 2026-06 — Lot 71 : Prix dégressif DLC, avis boutique, filtre boutiques, vidéo vitrine (testé 100 %)
+- Prix dégressif : POST /api/admin/auctions/{id}/price-drop?pct (1-50, plancher floor_eur), bouton « Baisser le prix −10 % » sur les notifs detaillant_dlc_alert (NotificationsDropdown, visible sur /admin).
+- Avis boutique : POST /api/auctions/{id}/shop-review (gagnant, lot DETAILLANT, après pickup, 1 avis/lot). Agrégat rating_avg/count → detaillant_profiles + propagation retailer.* sur tous les lots. Formulaire étoiles dans l'historique des victoires (ShopReviewForm.jsx), note ★ affichée sur AuctionCard.
+- Filtre boutiques/pays dans la salle (AuctionFilters rangée Boutiques, facettes côté client AuctionsPage).
+- Vidéo vitrine Pexels (mp4 + poster, hotlink 200) sur /detaillant, titre traduit 4 langues (videoTitle).
+- Avis démo conservé : Épicerie Ti Kaz ★ 4.0 (1).
+- Note testing agent : la cloche notifs n'est pas rendue sur /superadmin (seulement /admin et /admin-v2) — comportement historique, suggestion en backlog.
+- Test reports : iteration_99.json (4/4) + validation E2E manuelle du formulaire d'avis (5★ soumis puis nettoyé).
