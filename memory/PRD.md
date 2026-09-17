@@ -3567,3 +3567,12 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Email Brevo au gagnant à la victoire : inclut désormais l'image QR d'enlèvement (api.qrserver.com, code coopact:<pickup_token>) — testé Brevo 201.
 - Page publique /detaillant traduite FR/EN/ES/Créole via sélecteur (conceptI18n.js).
 - Test report : iteration_96.json — frontend 4/4, aucun bug bloquant.
+
+## 2026-06 — Lot 69 : Export CSV, partage, relance, alerte vente, photos/DLC/garantie, catalogue admin (testé 100 %)
+- Export CSV du tableau « Mes ventes en salle » (dt-sales-export-csv, fichier ventes-coopact-*.csv).
+- Boutons partage WhatsApp + LinkedIn sur /detaillant (concept-share-*, message traduit 4 langues).
+- Relance en 1 clic d'un lot EXPIRED sans nouveau dépôt : POST /api/detaillant/sales/{ref}/relist (idempotent, nouvelle opération SCHEDULED +1h/7j, relisted flag).
+- Alerte vente détaillant : cloche detaillant_lot_won + email Brevo au détaillant à la victoire (notify_detaillant_win dans auction_emails, appelé après accept).
+- Offre détaillant enrichie : photo principale OBLIGATOIRE + 2 facultatives (POST /api/detaillant/photos → object storage), état NEW/USED, garantie, DLC min. 3 mois si produit périssable. Photos + état/garantie/DLC repris dans l'opération COOP'ACT (image_url, photos[], description).
+- Catalogue produit en vigueur géré par superadmin : CRUD /api/admin/detaillant/catalog (+ flags perishable, detaillant_active), carte admin CatalogManagerCard dans le panneau Bourse COOP'ACT. Le catalogue détaillant filtre detaillant_active.
+- Test report : iteration_97.json — frontend 4/4, backend validé par curl (validations 400, relist 409, Brevo 201).

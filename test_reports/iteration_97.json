@@ -1,0 +1,24 @@
+{
+  "summary": "Frontend-only regression on 4 KDMARCHE x O'SCOP features: (1) Export CSV du tableau ventes detaillant; (2) Formulaire nouvelle offre enrichi (photos + condition + warranty + DLC conditionnel); (3) Superadmin catalogue produit (ajout + toggle actif/inactif + toggle perishable); (4) Bouton relist (aucune ligne EXPIRED en base, non testable data-cote mais code + testid presents). Tous les scenarios demandes passent avec succes. Aucune offre reelle soumise (pas de credits consommes). Produit de test 'Yaourt Test QA' laisse en 'inactif' apres nettoyage.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "DetaillantSalesTable relist button: currently condition is `status === 'EXPIRED' && !s.relisted`. No EXPIRED sale present in test data so button not visually shown; code path OK per review note (backend already validated).",
+    "OfferPhotoPicker enforces max 3 (1 principale + 2 facultatives) correctly; badge 'principale' rendered on offer-photo-0.",
+    "DLC field is correctly gated by `product?.perishable`; min attribute computed as today+90d (verified min='2026-12-16' on 2026-09-17)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not tested)", "frontend": "100% (4/4 scenarios validated)"},
+  "test_credentials": "detaillant-test@kdmarche.fr / Detaillant2026! ; admin@kdmarche-oscop.fr / AdminKDM2025! (portal admin via /admin/connexion). Both working.",
+  "seed_data_creation": "Created superadmin catalog product: name='Yaourt Test QA', category='Frais', perishable=true, SKU='DET-1A2607D3'. Left in 'inactif' state as per review instructions (no offer submitted).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Detaillant login on /connexion; superadmin login on /admin/connexion redirects to /superadmin; CatalogManagerCard is under the 'Bourse COOP\u0027ACT' tab (superadmin secondary tab bar). Selectors verified: dt-sales-table, dt-sales-export-csv (download event triggered, filename 'ventes-coopact-YYYY-MM-DD.csv'), detaillant-offer-form, offer-photos, offer-photo-add, offer-photo-input, offer-photo-0 (with 'principale' badge), offer-condition (NEW/USED), offer-warranty, offer-dlc (only when product.perishable, with min=today+90d), offer-submit (disabled without photo, enabled after), admin-catalog-manager, catalog-new-name/category/perishable/submit, catalog-row-<SKU>, catalog-active-<SKU> toggle actif<->inactif. Perishable checkbox rendered per-row is 'catalog-perishable-<SKU>' (not tested toggle but present). Test artifact left: DET-1A2607D3 'Yaourt Test QA' inactif.",
+  "rca of the issue": "No issue found."
+}
