@@ -183,6 +183,10 @@ export const adminAPI = {
 };
 
 export const notificationsAPI = {
+  auctionPriceDrop: async (auctionId, pct = 10) => {
+    return apiCall(`/admin/auctions/${auctionId}/price-drop?pct=${pct}`, { method: 'POST' });
+  },
+
   getAll: async (limit = 20, unreadOnly = false) => {
     const params = new URLSearchParams({ limit });
     if (unreadOnly) params.append('unread_only', 'true');

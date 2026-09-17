@@ -1,6 +1,7 @@
 // Traductions page publique Détaillant — FR / EN / ES / Créole (ton marketing)
 export const CONCEPT_I18N = {
   fr: {
+    videoTitle: 'Vos produits méritent la salle — regardez comment vos lots prennent vie',
     tag: "KDMARCHÉ × O'SCOP — Espace Détaillant",
     h1a: 'Vos invendus ont de la valeur.',
     h1b: "Transformez-les en ventes sur COOP'ACT",
@@ -30,6 +31,7 @@ export const CONCEPT_I18N = {
     ],
   },
   en: {
+    videoTitle: 'Your products deserve the room — see how your lots come to life',
     tag: "KDMARCHÉ × O'SCOP — Retailer Space",
     h1a: 'Your unsold stock is worth money.',
     h1b: "Turn it into sales on COOP'ACT",
@@ -59,6 +61,7 @@ export const CONCEPT_I18N = {
     ],
   },
   es: {
+    videoTitle: 'Sus productos merecen la sala — vea cómo sus lotes cobran vida',
     tag: "KDMARCHÉ × O'SCOP — Espacio Minorista",
     h1a: 'Sus excedentes valen dinero.',
     h1b: "Conviértalos en ventas en COOP'ACT",
@@ -88,6 +91,7 @@ export const CONCEPT_I18N = {
     ],
   },
   gcf: {
+    videoTitle: 'Pwodui a-w mérité sal la — gadé kijan lo a-w ka pran vi',
     tag: "KDMARCHÉ × O'SCOP — Espas Détayan",
     h1a: 'Sa ou pa vann ni valè.',
     h1b: "Fè'y vin lajan asi COOP'ACT",

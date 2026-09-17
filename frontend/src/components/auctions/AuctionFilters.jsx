@@ -1,6 +1,10 @@
 import i18n from '@/i18n';
 import { Search } from 'lucide-react';
 
+const flag = (cc) => (cc && cc.length === 2
+  ? String.fromCodePoint(...[...cc.toUpperCase()].map((c) => 127397 + c.charCodeAt(0)))
+  : '');
+
 const Pill = ({ active, onClick, children, testId }) => (
   <button type="button" onClick={onClick} data-testid={testId}
     className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
@@ -9,8 +13,8 @@ const Pill = ({ active, onClick, children, testId }) => (
   </button>
 );
 
-// Filtre enrichi : statut, catégorie, type, provenance, recherche
-export const AuctionFilters = ({ filters, setFilters, categories, types, sources }) => {
+// Filtre enrichi : statut, catégorie, type, provenance, boutique/pays, recherche
+export const AuctionFilters = ({ filters, setFilters, categories, types, sources, shops = [], countries = [] }) => {
   const set = (k, v) => setFilters((f) => ({ ...f, [k]: f[k] === v ? '' : v }));
   return (
     <div className="space-y-2 mb-5" data-testid="auction-filters">
@@ -51,6 +55,19 @@ export const AuctionFilters = ({ filters, setFilters, categories, types, sources
             testId={`auction-source-filter-${s.code}`}>{s.label}</Pill>
         ))}
       </div>
+      {shops.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-shop-filter-row">
+          <span className="text-[11px] font-bold text-white/60 uppercase tracking-wide">Boutiques</span>
+          {shops.map(([name, cc]) => (
+            <Pill key={name} active={filters.shop === name} onClick={() => set('shop', name)}
+              testId={`auction-shop-filter-${name}`}>{flag(cc)} {name}</Pill>
+          ))}
+          {countries.length > 1 && countries.map((cc) => (
+            <Pill key={cc} active={filters.country === cc} onClick={() => set('country', cc)}
+              testId={`auction-country-filter-${cc}`}>{flag(cc)} {cc}</Pill>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

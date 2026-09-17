@@ -132,6 +132,18 @@ const NotificationsDropdown = ({ isAdmin = false }) => {
     }
   };
 
+  const handlePriceDrop = async (e, notification) => {
+    e.stopPropagation();
+    try {
+      const r = await notificationsAPI.auctionPriceDrop(notification.data.auction_id);
+      setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      toast.success(`✓ Prix baissé de 10 % — nouvelle valeur ${r.value_eur.toFixed(2)} €`);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   const formatTime = (dateStr) => {
     const date = new Date(dateStr);
     const now = new Date();
@@ -262,6 +274,15 @@ const NotificationsDropdown = ({ isAdmin = false }) => {
                             data-testid={`sms-followup-done-${notification.data.order_id}`}
                             className="mt-1.5 inline-flex items-center gap-1 px-2 h-6 rounded-full text-[10px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10 hover:bg-emerald-500/20">
                             <PhoneCall className="w-3 h-3" /> Client appelé — clore le suivi
+                          </button>
+                        )}
+                        {notification.type === 'detaillant_dlc_alert' && !notification.is_read && notification.data?.auction_id && (
+                          <button
+                            type="button"
+                            onClick={(e) => handlePriceDrop(e, notification)}
+                            data-testid={`dlc-price-drop-${notification.data.auction_id}`}
+                            className="mt-1.5 inline-flex items-center gap-1 px-2 h-6 rounded-full text-[10px] font-bold text-amber-300 border border-amber-400/40 bg-amber-500/10 hover:bg-amber-500/20">
+                            <AlertTriangle className="w-3 h-3" /> Baisser le prix −10 %
                           </button>
                         )}
                         <p className="text-xs text-white/30 mt-1">

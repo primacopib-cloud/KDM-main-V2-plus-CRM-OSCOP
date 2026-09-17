@@ -112,6 +112,11 @@ export const AuctionCard = ({ auction, canBid, onChanged }) => {
               {countryFlag(a.retailer.country_code)} {a.retailer.company_name}
               {a.retailer.locality ? ` · ${a.retailer.locality}` : ''}
             </span>
+            {a.retailer.rating_avg && (
+              <span className="text-[9px] font-bold text-amber-300 shrink-0" data-testid={`auction-shop-rating-${a.reference}`}>
+                ★ {Number(a.retailer.rating_avg).toFixed(1)} ({a.retailer.rating_count})
+              </span>
+            )}
             {a.retailer.verified && (
               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-400/40 shrink-0"
                 data-testid={`auction-verified-badge-${a.reference}`} title="Boutique abonnée depuis plus de 3 mois">

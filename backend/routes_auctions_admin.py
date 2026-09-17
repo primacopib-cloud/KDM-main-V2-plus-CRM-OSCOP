@@ -228,6 +228,25 @@ async def update_auction(auction_id: str, body: AuctionBody, admin: dict = Depen
     return {"ok": True}
 
 
+@auctions_admin_router.post("/{auction_id}/price-drop")
+async def price_drop(auction_id: str, pct: float = 10, admin: dict = Depends(require_admin)):
+    """Baisse le prix d'un lot en salle en un clic (alerte DLC)."""
+    a = await ah.db.auctions.find_one({"id": auction_id}, {"_id": 0})
+    if not a:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+    if ah.effective_status(a) not in ("SCHEDULED", "LIVE"):
+        raise HTTPException(status_code=409, detail="Seul un lot programmé ou en salle peut être ajusté")
+    if not 0 < pct <= 50:
+        raise HTTPException(status_code=400, detail="Pourcentage entre 1 et 50")
+    floor = a.get("floor_eur") or 0
+    new_value = max(round(a["value_eur"] * (1 - pct / 100), 2), floor if floor > 0 else 0.01)
+    new_current = min(a.get("current_price_eur") or new_value, new_value)
+    await ah.db.auctions.update_one({"id": auction_id}, {"$set": {
+        "value_eur": new_value, "current_price_eur": new_current,
+        "price_dropped_at": ah.now_utc().isoformat(), "price_dropped_by": admin.get("email")}})
+    return {"ok": True, "value_eur": new_value, "current_price_eur": new_current}
+
+
 @auctions_admin_router.post("/{auction_id}/cancel")
 async def cancel_auction(auction_id: str, admin: dict = Depends(require_admin)):
     res = await ah.db.auctions.update_one(

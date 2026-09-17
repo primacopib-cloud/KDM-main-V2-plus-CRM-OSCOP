@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, History, Trophy, Coins, Gavel } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import i18n from '@/i18n';
+import { ShopReviewForm } from './ShopReviewForm';
 
 const fmtDate = (iso) => new Date(iso).toLocaleString(i18n.language, { dateStyle: 'short', timeStyle: 'short' });
 
@@ -51,10 +52,18 @@ export const AuctionHistoryPanel = ({ me }) => {
                     : i18n.t('auction.choose_fulfillment')}
                 </span>
                 {w.pickup_confirmed_at ? (
-                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10"
-                    data-testid={`win-picked-up-${w.id}`}>
-                    Lot récupéré ✓ {fmtDate(w.pickup_confirmed_at)}
-                  </span>
+                  <>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10"
+                      data-testid={`win-picked-up-${w.id}`}>
+                      Lot récupéré ✓ {fmtDate(w.pickup_confirmed_at)}
+                    </span>
+                    {w.retailer && !w.shop_reviewed && <ShopReviewForm win={w} />}
+                    {w.retailer && w.shop_reviewed && (
+                      <span className="block text-[9px] text-amber-300/80 mt-1" data-testid={`shop-reviewed-${w.id}`}>
+                        ★ Boutique notée — merci !
+                      </span>
+                    )}
+                  </>
                 ) : w.pickup_token && (
                   <span className="flex items-center gap-2 mt-1.5" data-testid={`win-qr-${w.id}`}>
                     <span className="p-1.5 rounded-lg bg-white inline-block">

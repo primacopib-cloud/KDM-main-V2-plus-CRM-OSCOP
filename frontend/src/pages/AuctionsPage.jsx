@@ -16,7 +16,7 @@ export default function AuctionsPage() {
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState({ items: [], categories: [], types: [], sources: [] });
   const [me, setMe] = useState(null);
-  const [filters, setFilters] = useState({ status: '', category: '', type_id: '', source: '', q: '' });
+  const [filters, setFilters] = useState({ status: '', category: '', type_id: '', source: '', q: '', shop: '', country: '' });
   const [winnerAuction, setWinnerAuction] = useState(null);
   const isLogged = Boolean(getSessionToken());
 
@@ -83,8 +83,20 @@ export default function AuctionsPage() {
     let items = data.items;
     if (filters.status === 'FINISHED') items = items.filter((a) => a.status === 'WON' || a.status === 'EXPIRED');
     else if (filters.status) items = items.filter((a) => a.status === filters.status);
+    if (filters.shop) items = items.filter((a) => a.retailer?.company_name === filters.shop);
+    if (filters.country) items = items.filter((a) => a.retailer?.country_code === filters.country);
     return items;
-  }, [data.items, filters.status]);
+  }, [data.items, filters.status, filters.shop, filters.country]);
+
+  const shopFacets = useMemo(() => {
+    const shops = new Map();
+    const countries = new Map();
+    data.items.forEach((a) => {
+      if (a.retailer?.company_name) shops.set(a.retailer.company_name, a.retailer.country_code);
+      if (a.retailer?.country_code) countries.set(a.retailer.country_code, true);
+    });
+    return { shops: [...shops.entries()], countries: [...countries.keys()] };
+  }, [data.items]);
 
   const pendingWin = (me?.wins || []).find((w) => !w.fulfillment);
 
@@ -111,7 +123,8 @@ export default function AuctionsPage() {
         )}
 
         <AuctionFilters filters={filters} setFilters={setFilters}
-          categories={data.categories} types={data.types} sources={data.sources} />
+          categories={data.categories} types={data.types} sources={data.sources}
+          shops={shopFacets.shops} countries={shopFacets.countries} />
 
         {visible.length === 0 ? (
           <div className="text-center text-white/40 py-14" data-testid="auctions-empty">

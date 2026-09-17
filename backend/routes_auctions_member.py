@@ -193,6 +193,10 @@ async def my_auction_account(user_id: str = Depends(get_current_user_id)):
         ex = extra_by_id.get(w["id"], {})
         w["pickup_token"] = (ex.get("winner") or {}).get("pickup_token")
         w["pickup_confirmed_at"] = ex.get("pickup_confirmed_at")
+    reviewed = {r["auction_id"] async for r in ah.db.detaillant_shop_reviews.find(
+        {"author_user_id": user_id}, {"_id": 0, "auction_id": 1})}
+    for w in wins:
+        w["shop_reviewed"] = w["id"] in reviewed
     fulfillments = {}
     async for a in ah.db.auctions.find(
             {"status": "WON", "winner.user_id": user_id}, {"_id": 0, "id": 1, "fulfillment": 1}):
@@ -214,6 +218,50 @@ async def my_auction_account(user_id: str = Depends(get_current_user_id)):
         {"user_id": user_id}, {"_id": 0}).sort("created_at", -1).limit(30).to_list(30)
     return {"account": account, "active": ah.account_active(account), "wins": wins,
             "bids": bids, "ledger": ledger}
+
+
+# ---------- Avis boutique (après enlèvement) ----------
+
+class ShopReviewBody(BaseModel):
+    rating: int
+    comment: str = ""
+
+
+@auctions_member_router.post("/{auction_id}/shop-review")
+async def shop_review(auction_id: str, body: ShopReviewBody, user_id: str = Depends(get_current_user_id)):
+    """Le gagnant note la boutique après l'enlèvement de son lot détaillant."""
+    if not 1 <= body.rating <= 5:
+        raise HTTPException(status_code=400, detail="Note entre 1 et 5")
+    a = await ah.db.auctions.find_one({"id": auction_id}, {"_id": 0})
+    if not a or (a.get("winner") or {}).get("user_id") != user_id:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+    if a.get("source") != "DETAILLANT" or not a.get("detaillant_offer_id"):
+        raise HTTPException(status_code=400, detail="Seuls les lots boutique peuvent être notés")
+    if not a.get("pickup_confirmed_at"):
+        raise HTTPException(status_code=409, detail="Notez la boutique après l'enlèvement du lot")
+    if await ah.db.detaillant_shop_reviews.find_one({"auction_id": auction_id}):
+        raise HTTPException(status_code=409, detail="Vous avez déjà noté cette boutique")
+    offer = await ah.db.detaillant_offers.find_one(
+        {"id": a["detaillant_offer_id"]}, {"_id": 0, "user_id": 1, "company_name": 1})
+    if not offer:
+        raise HTTPException(status_code=404, detail="Boutique introuvable")
+    await ah.db.detaillant_shop_reviews.insert_one({
+        "id": str(uuid.uuid4()), "auction_id": auction_id, "auction_reference": a.get("reference"),
+        "detaillant_user_id": offer["user_id"], "company_name": offer.get("company_name"),
+        "author_user_id": user_id, "rating": body.rating, "comment": body.comment.strip()[:500],
+        "created_at": ah.now_utc().isoformat()})
+    agg = await ah.db.detaillant_shop_reviews.aggregate([
+        {"$match": {"detaillant_user_id": offer["user_id"]}},
+        {"$group": {"_id": None, "avg": {"$avg": "$rating"}, "count": {"$sum": 1}}}]).to_list(1)
+    avg, count = round(agg[0]["avg"], 1), agg[0]["count"]
+    await ah.db.detaillant_profiles.update_one(
+        {"user_id": offer["user_id"]}, {"$set": {"rating_avg": avg, "rating_count": count}})
+    offer_ids = [o["id"] async for o in ah.db.detaillant_offers.find(
+        {"user_id": offer["user_id"]}, {"_id": 0, "id": 1})]
+    await ah.db.auctions.update_many(
+        {"detaillant_offer_id": {"$in": offer_ids}},
+        {"$set": {"retailer.rating_avg": avg, "retailer.rating_count": count}})
+    return {"ok": True, "rating_avg": avg, "rating_count": count}
 
 
 # ---------- Mises & victoire ----------

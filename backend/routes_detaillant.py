@@ -559,6 +559,7 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                 pass
         retailer = {"company_name": offer.get("company_name"), "country_code": offer.get("country_code"),
                     "locality": offer.get("locality"), "verified": verified,
+                    "rating_avg": (prof or {}).get("rating_avg"), "rating_count": (prof or {}).get("rating_count", 0),
                     "pickup_slots": (prof or {}).get("pickup_slots", [])}
         starts = _now() + timedelta(days=1)
         if offer.get("scheduled_start"):

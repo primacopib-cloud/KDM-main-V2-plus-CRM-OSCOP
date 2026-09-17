@@ -68,6 +68,16 @@ export default function DetaillantConceptPage() {
             );
           })}
         </div>
+        <div className="mt-14 rounded-2xl overflow-hidden border border-white/10" data-testid="concept-video">
+          <div className="px-5 pt-4 pb-2 bg-white/[0.03]">
+            <p className="text-sm font-bold text-[#E9CF8E]">{t.videoTitle}</p>
+          </div>
+          <video controls playsInline preload="none" className="w-full aspect-video bg-black"
+            poster="https://images.pexels.com/videos/30404053/carrot-free-fair-lettuce-sell-30404053.jpeg?auto=compress&w=1260"
+            data-testid="concept-video-player">
+            <source src="https://videos.pexels.com/video-files/30404053/13030316_1920_1080_60fps.mp4" type="video/mp4" />
+          </video>
+        </div>
         {catalog.length > 0 && (
           <div className="mt-14" data-testid="concept-catalog">
             <h2 className="text-base md:text-lg font-bold text-[#E9CF8E] flex items-center gap-2">
