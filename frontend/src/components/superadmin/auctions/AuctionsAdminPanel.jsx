@@ -10,6 +10,7 @@ import { AuctionSettingsDialog } from './AuctionSettingsDialog';
 import { AuctionStats } from './AuctionStats';
 import { DetaillantOffersPanel } from './DetaillantOffersPanel';
 import { CessionsRegistryCard } from './CessionsRegistryCard';
+import { AdminConventionsCard } from './AdminConventionsCard';
 import { PickupScanCard } from './PickupScanCard';
 
 const STATUS_STYLE = {
@@ -46,6 +47,7 @@ export const AuctionsAdminPanel = () => {
       <PickupScanCard />
       <DetaillantOffersPanel />
       <CessionsRegistryCard />
+      <AdminConventionsCard />
       <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
         <div>
           <h3 className="text-lg font-bold text-white flex items-center gap-2">

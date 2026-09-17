@@ -424,6 +424,36 @@ async def detaillant_credits_activate(body: ActivateBody, user: dict = Depends(g
     return {"ok": True, "credits": topup["credits"]}
 
 
+async def _send_pops_welcome_email(user_id: str):
+    """Email de bienvenue POP'S avec la convention cadre signée jointe en PDF."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "email": 1, "company_name": 1})
+    if not user or not user.get("email"):
+        return
+    prof = await db.detaillant_profiles.find_one({"user_id": user_id}, {"_id": 0, "company_name": 1}) or {}
+    name = prof.get("company_name") or user.get("company_name") or ""
+    pdf, sig = await _convention_pdf_bytes(user_id)
+    attachments = None
+    if pdf:
+        import base64
+        attachments = [{"content": base64.b64encode(pdf).decode(), "name": "convention-pops-coopact.pdf"}]
+    from brevo_service import send_email, _wrap_html
+    subject = "🎉 Bienvenue dans le réseau POP'S — votre abonnement COOP'ACT est actif !"
+    body = (
+        f"<p style='font-size:14px;'>Bonjour {name},</p>"
+        "<p style='font-size:14px;'>Votre abonnement <b>POP'S — Vendeur éphémère en salle COOP'ACT</b> "
+        "(390 €/mois, 3 dépôts d'offres inclus) est désormais <b>actif</b>. Bienvenue !</p>"
+        "<ul style='font-size:13px;'>"
+        "<li>Déposez vos offres depuis votre espace POP'S (remise minimum 15 %).</li>"
+        "<li>Chaque lot fait l'objet d'une fiche de cession à signer avant validation.</li>"
+        "<li>Suivez vos ventes, followers et avis — récap hebdo chaque lundi.</li></ul>"
+        + ("<p style='font-size:13px;'>Vous trouverez ci-joint votre <b>convention cadre de partenariat "
+           f"signée</b> (par {sig['signer_name']}, horodatée).</p>" if pdf else "")
+        + "<p style='font-size:12px;color:#B8A98F;'>KDMARCHÉ × O'SCOP — agir ensemble pour la juste valeur.</p>")
+    await send_email(user["email"], name or None, subject, _wrap_html(subject, body),
+                     text_content="Votre abonnement POP'S COOP'ACT est actif. Convention signée jointe.",
+                     tags=["pops-welcome"], attachments=attachments)
+
+
 @detaillant_router.post("/subscription/activate")
 async def detaillant_activate(body: ActivateBody, user: dict = Depends(get_current_user)):
     from routes_cpc import _stripe_key
@@ -443,6 +473,10 @@ async def detaillant_activate(body: ActivateBody, user: dict = Depends(get_curre
         {"$set": {"status": "ACTIVE", "valid_until": valid_until,
                   "stripe_subscription_id": session.get("subscription"),
                   "activated_at": _now().isoformat()}})
+    try:
+        await _send_pops_welcome_email(user["id"])
+    except Exception as exc:
+        logger.warning("Email bienvenue POP'S %s : %s", user["id"], exc)
     return {"ok": True, "valid_until": valid_until}
 
 
@@ -742,14 +776,12 @@ def _fmt_ts(iso):
     return datetime.fromisoformat(iso).strftime("%d/%m/%Y %H:%M UTC")
 
 
-@detaillant_router.get("/convention/pdf")
-async def convention_pdf(user: dict = Depends(get_current_user)):
-    from fastapi.responses import Response
-    sig = await db.detaillant_conventions.find_one({"user_id": user["id"]}, {"_id": 0})
+async def _convention_pdf_bytes(user_id: str):
+    sig = await db.detaillant_conventions.find_one({"user_id": user_id}, {"_id": 0})
     if not sig:
-        raise HTTPException(status_code=404, detail="Convention non signée")
+        return None, None
     from convention_cession import CONVENTION_ARTICLES, CONVENTION_PARTIES, CONVENTION_VERSION
-    prof = await db.detaillant_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    prof = await db.detaillant_profiles.find_one({"user_id": user_id}, {"_id": 0}) or {}
     blocks = [("Entre les parties", CONVENTION_PARTIES),
               ("Partenaire signataire", f"{prof.get('company_name', '')} — {prof.get('locality', '')} "
                                        f"({prof.get('country_code', '')}) · SIREN/SIRET : {prof.get('siret') or '—'}")]
@@ -757,7 +789,15 @@ async def convention_pdf(user: dict = Depends(get_current_user)):
     blocks.append(("Signature électronique",
                    f"Signée par {sig['signer_name']} le {_fmt_ts(sig['signed_at'])} — version {sig['version']} — "
                    "horodatage plateforme COOP'ACT (art. 18.3 de la convention)."))
-    pdf = _pdf_doc(f"Convention cadre de partenariat POP'S COOP'ACT — v{CONVENTION_VERSION}", blocks)
+    return _pdf_doc(f"Convention cadre de partenariat POP'S COOP'ACT — v{CONVENTION_VERSION}", blocks), sig
+
+
+@detaillant_router.get("/convention/pdf")
+async def convention_pdf(user: dict = Depends(get_current_user)):
+    from fastapi.responses import Response
+    pdf, _sig = await _convention_pdf_bytes(user["id"])
+    if not pdf:
+        raise HTTPException(status_code=404, detail="Convention non signée")
     return Response(pdf, media_type="application/pdf",
                     headers={"Content-Disposition": "attachment; filename=convention-pops-coopact.pdf"})
 
@@ -769,6 +809,12 @@ async def cession_pdf(offer_id: str, user: dict = Depends(get_current_user)):
         {"offer_id": offer_id, "user_id": user["id"]}, {"_id": 0})
     if not c:
         raise HTTPException(status_code=404, detail="Fiche de cession introuvable")
+    pdf = _cession_pdf_bytes(c)
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename={c['reference']}.pdf"})
+
+
+def _cession_pdf_bytes(c: dict) -> bytes:
     v = c["valuation"]
     products = " ; ".join(f"{p['sku']} — {p['name']} ×{p['qty']}"
                           f"{' (DLC ' + p['dlc'] + ')' if p.get('dlc') else ''}" for p in c["products"])
@@ -797,9 +843,32 @@ async def cession_pdf(offer_id: str, user: dict = Depends(get_current_user)):
          (f"Bon pour accord — signée par {c['signer_name']} le {_fmt_ts(c.get('signed_at'))} · "
           f"Statut : {c['status']}") if c.get("signer_name") else "Non signée — statut DRAFT"),
     ]
-    pdf = _pdf_doc(f"Fiche de cession de produits et lots — {c['reference']}", blocks)
+    return _pdf_doc(f"Fiche de cession de produits et lots — {c['reference']}", blocks)
+
+
+@detaillant_admin_router.get("/cessions/{reference}/pdf")
+async def admin_cession_pdf(reference: str, admin: dict = Depends(require_admin)):
+    from fastapi.responses import Response
+    c = await db.detaillant_cessions.find_one({"reference": reference}, {"_id": 0})
+    if not c:
+        raise HTTPException(status_code=404, detail="Fiche de cession introuvable")
+    pdf = _cession_pdf_bytes(c)
     return Response(pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename={c['reference']}.pdf"})
+
+
+@detaillant_admin_router.get("/conventions")
+async def admin_conventions_registry(admin: dict = Depends(require_admin)):
+    """Archive des conventions cadre signées (superadmin)."""
+    convs = await db.detaillant_conventions.find({}, {"_id": 0}).sort("signed_at", -1).limit(200).to_list(200)
+    for cv in convs:
+        prof = await db.detaillant_profiles.find_one(
+            {"user_id": cv["user_id"]}, {"_id": 0, "company_name": 1, "locality": 1, "country_code": 1})
+        u = await db.users.find_one({"id": cv["user_id"]}, {"_id": 0, "email": 1})
+        cv["company_name"] = (prof or {}).get("company_name") or (u or {}).get("email") or cv["user_id"]
+        cv["locality"] = (prof or {}).get("locality")
+        cv["country_code"] = (prof or {}).get("country_code")
+    return {"conventions": convs, "total": len(convs)}
 
 
 @detaillant_admin_router.get("/cessions")

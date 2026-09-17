@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { FileSpreadsheet, Search } from 'lucide-react';
+import { Download, Eye, FileSpreadsheet, Search, X } from 'lucide-react';
 import { API, getAuthHeaders } from '../../../services/http';
+import { downloadAuthedPdf } from '../../detaillant/DetaillantConventionCard';
 
 const STATUSES = [['', 'Toutes'], ['DRAFT', 'À signer'], ['SIGNED', 'Signées'], ['EFFECTIVE', 'En vigueur']];
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
@@ -10,6 +11,7 @@ export const CessionsRegistryCard = () => {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [items, setItems] = useState([]);
+  const [detail, setDetail] = useState(null);
   const load = () => {
     const qs = new URLSearchParams();
     if (q) qs.set('q', q);
@@ -64,7 +66,7 @@ export const CessionsRegistryCard = () => {
           <table className="w-full text-[11px]">
             <thead><tr className="text-white/45 text-left">
               <th className="pr-2 pb-1">Référence</th><th className="pr-2">Boutique</th><th className="pr-2">Lot</th>
-              <th className="pr-2">Statut</th><th className="pr-2">Signataire</th><th className="pr-2">Effet</th><th>Expiration</th>
+              <th className="pr-2">Statut</th><th className="pr-2">Signataire</th><th className="pr-2">Effet</th><th className="pr-2">Expiration</th><th>Actions</th>
             </tr></thead>
             <tbody>
               {items.map((c) => (
@@ -76,11 +78,59 @@ export const CessionsRegistryCard = () => {
                   <td className="pr-2">{c.status}</td>
                   <td className="pr-2">{c.signer_name || '—'}</td>
                   <td className="pr-2">{fmt(c.effective_from)}</td>
-                  <td>{fmt(c.effective_until)}</td>
+                  <td className="pr-2">{fmt(c.effective_until)}</td>
+                  <td className="whitespace-nowrap">
+                    <button type="button" onClick={() => setDetail(c)} title="Voir le détail"
+                      data-testid={`cession-detail-btn-${c.reference}`}
+                      className="inline-flex items-center justify-center w-6 h-6 rounded-md text-white/55 hover:text-white hover:bg-white/10">
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                    <button type="button" title="Télécharger le PDF"
+                      onClick={() => downloadAuthedPdf(`/admin/detaillant/cessions/${c.reference}/pdf`, `${c.reference}.pdf`)}
+                      data-testid={`cession-pdf-btn-${c.reference}`}
+                      className="inline-flex items-center justify-center w-6 h-6 rounded-md text-[#F2D07A] hover:bg-[#D9B35A]/15">
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {detail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setDetail(null)}>
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#241238] p-5"
+            data-testid="cession-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-3">
+              <h4 className="text-sm font-bold text-[#E9CF8E]">Fiche de cession {detail.reference}</h4>
+              <button onClick={() => setDetail(null)} data-testid="cession-detail-close"
+                className="text-white/50 hover:text-white"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="space-y-2 text-[11px] text-white/75">
+              <p><b className="text-white/90">Cédant :</b> {detail.cedant?.company_name} — {detail.cedant?.locality} ({detail.cedant?.country_code})</p>
+              <p><b className="text-white/90">Cessionnaire :</b> {detail.cessionnaire}</p>
+              <p><b className="text-white/90">Lot :</b> {detail.lot_designation} · {detail.qty_lots} lot(s) ×3 · {detail.category} · {detail.condition === 'NEW' ? 'Neuf' : 'Occasion'}</p>
+              <p><b className="text-white/90">Produits :</b> {(detail.products || []).map((p) => `${p.name} ×${p.qty}${p.dlc ? ` (DLC ${p.dlc})` : ''}`).join(' · ')}</p>
+              <p><b className="text-white/90">Valorisation :</b> {detail.valuation?.lot_price} {detail.valuation?.currency} → {detail.valuation?.final_price} {detail.valuation?.currency} (-{Number(detail.valuation?.discount_pct || 0).toFixed(0)} %)</p>
+              <p><b className="text-white/90">Effet :</b> {fmt(detail.effective_from)} · <b className="text-white/90">Expiration :</b> {fmt(detail.effective_until)}</p>
+              <div>
+                <b className="text-white/90">Déclarations :</b>
+                <ul className="mt-1 space-y-0.5">
+                  {(detail.declarations || []).map((d) => (
+                    <li key={d}>{(detail.declarations_checked || []).includes(d) ? '☑' : '☐'} {d}</li>
+                  ))}
+                </ul>
+              </div>
+              <p><b className="text-white/90">Signature :</b> {detail.signer_name
+                ? `${detail.signer_name} le ${fmt(detail.signed_at)} — ${detail.status}` : 'Non signée (DRAFT)'}</p>
+            </div>
+            <button type="button" data-testid="cession-detail-pdf"
+              onClick={() => downloadAuthedPdf(`/admin/detaillant/cessions/${detail.reference}/pdf`, `${detail.reference}.pdf`)}
+              className="mt-4 inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[11px] font-bold bg-[#D9B35A] text-[#2A1045] on-gold">
+              <Download className="w-3.5 h-3.5" /> Télécharger le PDF
+            </button>
+          </div>
         </div>
       )}
     </div>
