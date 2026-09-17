@@ -1,0 +1,19 @@
+{
+  "summary": "Frontend-only E2E validation of the 8-request KDMARCHÉ x O'SCOP POP'S batch. All 6 requested test scenarios pass 100%. Verified topBar POP'S link after LOLODRIVE, /detaillant vitrine FR/EN titles ('Catalogue POP'S LOLODRIVE — en vigueur' / 'LOLODRIVE POP'S Catalog — currently in force'), leaderboard rank-1 navigation to /pops/user-detaillant-da978cfc, public shop page (name Épicerie Ti Kaz, ★4.0, 1 follower, 'Se connecter pour suivre', 2 lots badgés 'POP'S — Vendeur éphémère', avis avec réponse boutique), connected member follow toggle (Suivi ✓ → Suivre ce POP'S → Suivi ✓, left in Suivi state), superadmin Bourse COOP'ACT tab shows dt-admin-top-products (Riz long grain 5kg 4 offres · 5 lots, Huile végétale 1L, Achards de légumes 200g) and dt-admin-top-won ('Aucun lot remporté pour l'instant'), admin catalog card titled 'Catalogue POP'S en vigueur', détaillant space dt-followers-card with total 1 + monthly bar +1 09/26, and salle /encheres lolo-nav-detaillant labeled 'POP'S'. Footer link 'POP'S — Bourse COOP'ACT' also present.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% (6/6 scenarios)"},
+  "test_credentials": "admin@kdmarche-oscop.fr/AdminKDM2025!; test-vendeur-e2e@example.com/TestVendeur2026!; detaillant-test@kdmarche.fr/Detaillant2026!",
+  "seed_data_creation": "None. Member left in 'Suivi ✓' state as requested. No offers approved/created.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 8 POP'S requests validated (backend previously validated by curl per E1). The AuctionsAdminPanel (with DetaillantOffersPanel + CatalogManagerCard) lives under the superadmin tab labeled 'Bourse COOP'ACT' (value=consultations). data-testids used: pops-shop-page, pops-rank-1, pops-leaderboard, concept-lang-en/fr, dt-admin-top-products, dt-admin-top-won, dt-followers-card, dt-followers-total, dt-followers-chart, lolo-nav-detaillant, footer-link-detaillant."
+}

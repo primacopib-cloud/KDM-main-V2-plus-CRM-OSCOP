@@ -3608,3 +3608,11 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Suivi boutique : GET /api/auctions/shops/follows + POST /api/auctions/shops/{id}/follow (toggle) — bouton « Suivre/Suivi ✓ » sur AuctionCard ; à l'approbation d'une offre, cloche pops_new_lot à chaque follower. retailer.detaillant_user_id ajouté (+ backfill).
 - costInfo corrigé (2,5 % de la valeur + 100 cr/lot au-delà de 3 offres) en 4 langues.
 - Test report : iteration_100.json — 5/5 frontend, backend validé par curl (géocodage, follow, reply, notif follower).
+
+## 2026-06 — Lot 73 : Renommages POP'S, page boutique publique, stats produits admin, email followers, communauté (testé 100 %)
+- Renommages : header principal (navItems topBar « POP'S » après LOLODRIVE), footer « POP'S — Bourse COOP'ACT », nav LOLODRIVE « POP'S », panneau admin « Offres de lots POP'S », catalogue « Catalogue POP'S » (vitrine 4 langues + carte admin). Badge salle déjà « POP'S — Vendeur éphémère » (SOURCE_LABELS backend).
+- Stats superadmin enrichies : top_products (offres/lots par produit) + top_won (remportés + CA) dans /api/admin/detaillant/stats, blocs dt-admin-top-products / dt-admin-top-won.
+- Page publique boutique /pops/{userId} (PopsShopPage.jsx, GET /api/detaillant/shops/public/{id}) : profil+note+followers, bouton suivre (login-gated), lots SCHEDULED/LIVE, avis+réponses. Palmarès vitrine → liens /pops/.
+- Email Brevo aux followers (en plus de la cloche) à l'approbation d'un lot — testé 201×2.
+- Carte « Ma communauté » (DetaillantFollowersCard, GET /api/detaillant/followers/stats : total + barres mensuelles).
+- Test report : iteration_101.json — 6/6 frontend, backend validé par curl.
