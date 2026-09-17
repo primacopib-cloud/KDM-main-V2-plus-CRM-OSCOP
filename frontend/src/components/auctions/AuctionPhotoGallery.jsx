@@ -45,7 +45,7 @@ export const AuctionPhotoGallery = ({ photos, title, onClose }) => {
           {photos.length > 1 && (
             <div className="flex gap-2">
               {photos.map((p, i) => (
-                <button key={p} onClick={() => setIdx(i)} data-testid={`gallery-thumb-${i}`}
+                <button key={`${p}-${i}`} onClick={() => setIdx(i)} data-testid={`gallery-thumb-${i}`}
                   className={`w-12 h-12 rounded-lg overflow-hidden border-2 ${i === idx ? 'border-[#D9B35A]' : 'border-white/20 opacity-60'}`}>
                   <img src={imgSrc(p)} alt={`Miniature ${i + 1}`} className="w-full h-full object-cover" />
                 </button>

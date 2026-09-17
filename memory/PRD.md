@@ -3576,3 +3576,15 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Offre détaillant enrichie : photo principale OBLIGATOIRE + 2 facultatives (POST /api/detaillant/photos → object storage), état NEW/USED, garantie, DLC min. 3 mois si produit périssable. Photos + état/garantie/DLC repris dans l'opération COOP'ACT (image_url, photos[], description).
 - Catalogue produit en vigueur géré par superadmin : CRUD /api/admin/detaillant/catalog (+ flags perishable, detaillant_active), carte admin CatalogManagerCard dans le panneau Bourse COOP'ACT. Le catalogue détaillant filtre detaillant_active.
 - Test report : iteration_97.json — frontend 4/4, backend validé par curl (validations 400, relist 409, Brevo 201).
+
+## 2026-06 — Lot 70 : Vitrine marketing, header, catalogue public, FB/Insta, galerie, DLC, bilan, badge (testé 100 %)
+- Onglet « Détaillant » dans le header d'accueil (après Particuliers) → /detaillant.
+- Page /detaillant réécrite ton marketing, 4 langues (conceptI18n.js), + catalogue spécial Détaillant en vigueur affiché publiquement (GET /api/detaillant/catalog/public, sans auth, detaillant_public_router).
+- Partage WhatsApp + Facebook (sharer) + Instagram (copie presse-papier + toast), LinkedIn supprimé.
+- Galerie photos plein écran des lots COOP'ACT (AuctionPhotoGallery.jsx, bouton compteur bas-centre de l'image, navigation/miniatures/Échap). serialize_member expose photos/condition/warranty/dlc.
+- Badge « Boutique vérifiée » (retailer.verified, abonnement ACTIVE > 90 j calculé à l'approbation) sur AuctionCard.
+- Alerte DLC proche : run_detaillant_dlc_alerts (detaillant_reports.py, <30 j, idempotent via dlc_alert_sent) — cloche superadmin, branché au scheduler.
+- Bilan mensuel détaillant : run_detaillant_monthly_reports (1er du mois, email Brevo + CSV joint par détaillant, flag system_flags), testé force=True → 1 envoi.
+- Les auctions issues d'offres portent désormais condition/warranty/dlc + photos[]; relist les recopie.
+- NOTE: abonnement du compte test backdaté au 2026-05-01 (rend verified=true pour futurs lots).
+- Test report : iteration_98.json — 5/5, warning clé dupliquée corrigé (key url-index + dedup en base).
