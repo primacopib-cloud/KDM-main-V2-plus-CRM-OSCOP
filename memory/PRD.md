@@ -3622,3 +3622,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Badge Or : recalc_gold_pops() (top palmarès rating_avg/count) → retailer.gold sur ses lots + profil.gold ; appelé après shop_review et à l'approbation d'offres. Badge « 🏆 POP'S d'Or » sur AuctionCard + page /pops (pops-shop-gold-badge). Épicerie Ti Kaz actuellement gold.
 - Historique ventes : shops/public/{id} renvoie sold[] (8 derniers WON : titre, prix, date, retiré) — section « Derniers lots vendus » sur /pops (masquée si vide).
 - Test report : iteration_102.json — 100 % frontend, backend validé par curl (offre composée créée/nettoyée/remboursée).
+
+## 2026-06 — Lot 75 : Photos par produit (lot composé) + alerte email badge or (testé)
+- OfferPhotoPicker : mode `labels` — en lot composé, 1 slot photo étiqueté par produit sélectionné (produit 1 = principale obligatoire) ; slots vides filtrés à l'envoi. Validé par screenshot (3 slots étiquetés + résumé).
+- Badge Or : recalc_gold_pops détecte le changement de n°1 → cloches pops_gold_won / pops_gold_lost + emails Brevo (félicitations au gagnant, encouragement au perdant). Testé en simulant un 2e POP'S mieux noté : 2 cloches + 2 emails 201, puis restauration (Épicerie Ti Kaz gold, 2 lots).
+- Nettoyage : profils fantômes pops-test-2 supprimés (4), notifs test purgées.

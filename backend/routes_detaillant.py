@@ -137,6 +137,8 @@ async def detaillant_shops_public():
 
 async def recalc_gold_pops():
     """Badge Or : le POP'S n°1 du palmarès voit ses lots marqués retailer.gold en salle."""
+    prev = await db.detaillant_profiles.find_one({"gold": True}, {"_id": 0, "user_id": 1})
+    prev_uid = prev["user_id"] if prev else None
     top = await db.detaillant_profiles.find(
         {"rating_count": {"$gt": 0}}, {"_id": 0, "user_id": 1}
     ).sort([("rating_avg", -1), ("rating_count", -1)]).limit(1).to_list(1)
@@ -150,7 +152,49 @@ async def recalc_gold_pops():
             {"$set": {"retailer.gold": True}})
         await db.detaillant_profiles.update_many({"gold": True, "user_id": {"$ne": gold_uid}}, {"$set": {"gold": False}})
         await db.detaillant_profiles.update_one({"user_id": gold_uid}, {"$set": {"gold": True}})
+    if gold_uid != prev_uid:
+        await _notify_gold_change(prev_uid, gold_uid)
     return gold_uid
+
+
+async def _notify_gold_change(prev_uid, gold_uid):
+    """Email + cloche : félicite le POP'S qui gagne le badge or, prévient celui qui le perd."""
+    from core_deps import create_notification
+    from brevo_service import send_email, _wrap_html
+
+    async def contact(uid):
+        prof = await db.detaillant_profiles.find_one({"user_id": uid}, {"_id": 0, "company_name": 1})
+        u = await db.users.find_one({"id": uid}, {"_id": 0, "email": 1})
+        return (prof or {}).get("company_name") or "", (u or {}).get("email")
+
+    try:
+        if gold_uid:
+            name, email = await contact(gold_uid)
+            msg = (f"Félicitations {name} ! Vous êtes le POP'S n°1 du palmarès : le badge "
+                   "« 🏆 POP'S d'Or » est désormais affiché sur tous vos lots en salle COOP'ACT.")
+            await create_notification(
+                notification_type="pops_gold_won", title="🏆 Vous êtes le POP'S d'Or !",
+                message=msg, target_roles=[], target_user_id=gold_uid,
+                data={"action_url": "/espace-detaillant"})
+            if email:
+                await send_email(email, name or None, "🏆 Félicitations — vous êtes le POP'S d'Or !",
+                                 _wrap_html("POP'S d'Or", f"<p style='font-size:14px;'>{msg}</p>"
+                                            "<p style='font-size:14px;'>Continuez à soigner vos enlèvements : ce badge se gagne avis après avis.</p>"),
+                                 tags=["pops-gold"])
+        if prev_uid:
+            name, email = await contact(prev_uid)
+            msg = (f"{name}, un autre POP'S vient de prendre la tête du palmarès : le badge "
+                   "« 🏆 POP'S d'Or » a changé de boutique. Récoltez de nouveaux avis 5 étoiles pour le reconquérir !")
+            await create_notification(
+                notification_type="pops_gold_lost", title="Le badge POP'S d'Or a changé de main",
+                message=msg, target_roles=[], target_user_id=prev_uid,
+                data={"action_url": "/espace-detaillant"})
+            if email:
+                await send_email(email, name or None, "Le badge POP'S d'Or a changé de main",
+                                 _wrap_html("POP'S d'Or", f"<p style='font-size:14px;'>{msg}</p>"),
+                                 tags=["pops-gold"])
+    except Exception as exc:
+        logger.warning("Notif changement POP'S d'Or : %s", exc)
 
 
 @detaillant_public_router.get("/shops/public/{detaillant_user_id}")

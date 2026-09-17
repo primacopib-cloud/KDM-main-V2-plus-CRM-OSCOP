@@ -40,7 +40,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
         ...f, qty_lots: Number(f.qty_lots), category: product?.category,
         lot_price: price, discount_value: Number(f.discount_value),
         scheduled_start: f.scheduled_start ? new Date(f.scheduled_start).toISOString() : null,
-        photo_main: photos[0] || null, photos: photos.slice(1),
+        photo_main: photos[0] || null, photos: photos.slice(1).filter(Boolean),
         product_skus: f.lot_type === 'COMPOSED' ? extraSkus.filter(Boolean) : [],
         warranty: f.warranty.trim() || null, dlc: f.dlc || null,
       });
@@ -122,7 +122,8 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
             : `Prix final du lot : ${finalPrice.toFixed(2)} ${f.currency} (−${discPct.toFixed(1)} %)`}
         </p>
       )}
-      <OfferPhotoPicker photos={photos} onChange={setPhotos} />
+      <OfferPhotoPicker photos={photos} onChange={setPhotos}
+        labels={f.lot_type === 'COMPOSED' && composedProducts.length > 1 ? composedProducts.map((p) => p.name) : null} />
       <div className="grid sm:grid-cols-3 gap-3">
         <div>
           <label className="text-[10px] text-white/50 block mb-1">État du produit</label>
@@ -187,7 +188,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
           rows={2} className="w-full px-2.5 py-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs"
           data-testid="offer-description" />
       </div>
-      <button onClick={submit} disabled={busy || !f.product_sku || f.description.trim().length < 10 || price <= 0 || discountKo || photos.length === 0 || dlcKo}
+      <button onClick={submit} disabled={busy || !f.product_sku || f.description.trim().length < 10 || price <= 0 || discountKo || !photos[0] || dlcKo}
         data-testid="offer-submit"
         className="h-9 px-5 rounded-full bg-[#D9B35A] text-black text-xs font-bold hover:bg-[#E9CF8E] disabled:opacity-40">
         {t.submit}
