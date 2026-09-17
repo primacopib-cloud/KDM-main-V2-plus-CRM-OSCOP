@@ -885,19 +885,65 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                                      tags=["pops-new-lot"])
         except Exception as exc:
             logger.warning("Notif followers POP'S: %s", exc)
-        # Alerte aux Coop'acteurs qui suivent la marque du produit
+        # Alerte aux Coop'acteurs qui suivent la marque du produit (cloche + email)
         try:
             brand = offer.get("product_brand")
             if brand:
                 from core_deps import create_notification
-                async for bf in db.brand_followers.find({"brand": brand}, {"_id": 0, "member_id": 1}):
+                member_ids = list(dict.fromkeys([bf["member_id"] async for bf in db.brand_followers.find(
+                    {"brand": brand}, {"_id": 0, "member_id": 1})]))
+                for member_id in member_ids:
                     await create_notification(
                         notification_type="brand_new_lot",
                         title=f"⭐ {brand} arrive en salle !",
                         message=(f"Un lot {brand} ({offer['product_name']}) vient d'être programmé "
                                  "en salle COOP'ACT. À vous de coop'acter !"),
-                        target_roles=[], target_user_id=bf["member_id"],
+                        target_roles=[], target_user_id=member_id,
                         data={"action_url": "/encheres"})
+                if member_ids:
+                    import os
+                    from brevo_service import send_email, _wrap_html
+                    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+                    room = f"{base}/encheres" if base else "/encheres"
+                    lot = await db.auctions.find_one(
+                        {"reference": created_refs[0]}, {"_id": 0, "starts_at": 1, "ends_at": 1}) or {}
+                    starts = (lot.get("starts_at") or "")[:16].replace("T", " ")
+                    ends = (lot.get("ends_at") or "")[:16].replace("T", " ")
+                    dates_line = (f"<p style='font-size:13px;color:#6b5e4a;'>En salle du {starts} au {ends} (UTC).</p>"
+                                  if starts and ends else "")
+                    photo = offer.get("photo_main") or ""
+                    if photo and photo.startswith("/") and base:
+                        photo = f"{base}{photo}"
+                    photo_html = (f"<p style='margin:0 0 12px;'><img src='{photo}' alt='{offer['product_name']}' "
+                                  "style='max-width:260px;width:100%;border-radius:10px;'/></p>") if photo else ""
+                    cur = offer.get("currency", "EUR")
+                    price_html = (
+                        f"<p style='font-size:14px;'>Prix boutique : <s>{offer.get('lot_price')} {cur}</s> → "
+                        f"<b>{offer.get('final_price')} {cur}</b> "
+                        f"<span style='color:#1a7f4b;font-weight:bold;'>(-{offer.get('discount_pct', 0):.0f} %)</span></p>")
+                    subject = f"⭐ {brand} arrive en salle COOP'ACT !"
+                    body_html = (
+                        photo_html
+                        + f"<p style='font-size:14px;'>Un lot <b>{brand}</b> — <b>{offer['product_name']}</b> "
+                          f"vient d'être programmé en salle COOP'ACT par le POP'S <b>{offer.get('company_name')}</b>.</p>"
+                        + price_html + dates_line
+                        + f"<p style='font-size:14px;'><a href='{room}' "
+                          "style='background:#D9B35A;color:#2A1045;padding:10px 18px;border-radius:8px;"
+                          "text-decoration:none;font-weight:bold;'>Voir en salle</a></p>"
+                          "<p style='font-size:12px;color:#B8A98F;'>Vous recevez cet email car vous suivez la marque "
+                          f"{brand}. Chaque Coop'Act fait baisser le prix !</p>")
+                    async for m in db.users.find(
+                            {"id": {"$in": member_ids}}, {"_id": 0, "email": 1, "first_name": 1, "company_name": 1}):
+                        if not m.get("email"):
+                            continue
+                        name = m.get("first_name") or m.get("company_name") or ""
+                        greeting = f"<p style='font-size:14px;'>Bonjour {name},</p>" if name else ""
+                        try:
+                            await send_email(m["email"], name or None, subject,
+                                             _wrap_html(subject, greeting + body_html),
+                                             tags=["brand-new-lot"])
+                        except Exception as exc:
+                            logger.warning("Email follower marque %s : %s", m.get("email"), exc)
         except Exception as exc:
             logger.warning("Notif followers marque: %s", exc)
     out = await db.detaillant_offers.find_one({"id": offer_id}, {"_id": 0})

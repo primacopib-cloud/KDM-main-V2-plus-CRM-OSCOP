@@ -3649,3 +3649,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Suivi marque : GET /api/auctions/brands/follows + POST /api/auctions/brands/follow (toggle, collection brand_followers). Cloche à côté de chaque pilule marque (auction-brand-follow-<marque>, visible si connecté).
 - Alerte : à l'approbation d'une offre POP'S avec marque, cloche brand_new_lot « ⭐ <marque> arrive en salle ! » à chaque suiveur — testé E2E (offre Riz Ti Caraïbes approuvée → cloche reçue, puis nettoyée + remboursée).
 - Le membre test suit la marque « Ti Caraïbes » (conservé pour la démo).
+
+## 2026-09 — Lot 80 : Bouton « Réinitialiser les filtres » + email marque suivie (testé E2E)
+- Reset filtres : bouton « Réinitialiser les filtres » (auction-filters-reset-button) à côté de la recherche, visible uniquement si au moins un filtre actif ; efface localStorage coopact_filters_v1 + restaure DEFAULT_FILTERS. Validé : filtre LIVE persiste après reload → clic reset → tout effacé, persiste après 2e reload.
+- Email marque suivie : à l'approbation d'une offre POP'S avec marque, chaque suiveur reçoit la cloche brand_new_lot (existante) + un email Brevo enrichi (tag brand-new-lot) : photo du lot, prix boutique barré → prix final (-%), boutique POP'S, dates en salle, bouton « Voir en salle » (FRONTEND_URL/encheres). Destinataires dédupliqués. Testé E2E (marque « Coop Wayampi » suivie par marie@example.com → offre CACHIRI-1L approuvée → cloche + email vérifiés en base, html complet), puis offre/lot/notif/log nettoyés et 25 crédits remboursés.

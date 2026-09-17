@@ -1,5 +1,5 @@
 import i18n from '@/i18n';
-import { BellRing, Search } from 'lucide-react';
+import { BellRing, RotateCcw, Search } from 'lucide-react';
 import { Flag } from '../Flag';
 import { API } from '../../services/http';
 
@@ -12,15 +12,24 @@ const Pill = ({ active, onClick, children, testId }) => (
 );
 
 // Filtre enrichi : statut, catégorie, type, provenance, boutique/pays, marque, produit, date, recherche
-export const AuctionFilters = ({ filters, setFilters, categories, types, sources, shops = [], countries = [], brands = [], products = [], brandFollows = null, onToggleBrandFollow = () => {} }) => {
+export const AuctionFilters = ({ filters, setFilters, onReset, categories, types, sources, shops = [], countries = [], brands = [], products = [], brandFollows = null, onToggleBrandFollow = () => {} }) => {
   const set = (k, v) => setFilters((f) => ({ ...f, [k]: f[k] === v ? '' : v }));
+  const hasActive = Object.values(filters).some((v) => v);
   return (
     <div className="space-y-2 mb-5" data-testid="auction-filters">
-      <div className="relative max-w-sm">
-        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-white/35" />
-        <input value={filters.q} onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
-          placeholder={i18n.t('auction.search')} data-testid="auction-search-input"
-          className="w-full h-8 pl-8 pr-3 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white placeholder-white/30 outline-none focus:border-[#D9B35A]/60" />
+      <div className="flex items-center gap-2 max-w-sm">
+        <div className="relative flex-1">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-white/35" />
+          <input value={filters.q} onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
+            placeholder={i18n.t('auction.search')} data-testid="auction-search-input"
+            className="w-full h-8 pl-8 pr-3 rounded-lg bg-white/[0.05] border border-white/15 text-xs text-white placeholder-white/30 outline-none focus:border-[#D9B35A]/60" />
+        </div>
+        {hasActive && onReset && (
+          <button type="button" onClick={onReset} data-testid="auction-filters-reset-button"
+            className="inline-flex items-center gap-1 h-8 px-3 rounded-lg border border-white/20 bg-white/[0.06] text-[11px] font-semibold text-white/75 hover:bg-white/15 hover:text-white transition-colors whitespace-nowrap">
+            <RotateCcw className="w-3 h-3" /> Réinitialiser les filtres
+          </button>
+        )}
       </div>
       <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-status-filter-row">
         {[['', 'filter_all'], ['LIVE', 'filter_live'], ['SCHEDULED', 'filter_scheduled'], ['FINISHED', 'filter_finished']].map(([v, k]) => (

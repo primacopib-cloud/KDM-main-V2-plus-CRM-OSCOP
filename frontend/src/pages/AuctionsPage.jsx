@@ -28,6 +28,10 @@ export default function AuctionsPage() {
   useEffect(() => {
     try { localStorage.setItem(FILTERS_KEY, JSON.stringify(filters)); } catch {}
   }, [filters]);
+  const resetFilters = useCallback(() => {
+    try { localStorage.removeItem(FILTERS_KEY); } catch {}
+    setFilters(DEFAULT_FILTERS);
+  }, []);
   const [brandFollows, setBrandFollows] = useState(null);
   const [winnerAuction, setWinnerAuction] = useState(null);
   const isLogged = Boolean(getSessionToken());
@@ -172,7 +176,7 @@ export default function AuctionsPage() {
           </button>
         )}
 
-        <AuctionFilters filters={filters} setFilters={setFilters}
+        <AuctionFilters filters={filters} setFilters={setFilters} onReset={resetFilters}
           categories={data.categories} types={data.types} sources={data.sources}
           shops={shopFacets.shops} countries={shopFacets.countries}
           brands={shopFacets.brands} products={shopFacets.products}
