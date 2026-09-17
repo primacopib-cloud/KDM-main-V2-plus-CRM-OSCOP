@@ -108,7 +108,13 @@ export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onTogg
       <div className="p-3 flex flex-col gap-1.5 flex-1">
         <div className="text-sm font-semibold text-white truncate" title={a.title}>{a.title}</div>
         {a.brand && (
-          <div className="text-[10px] text-white/50 truncate" data-testid={`auction-brand-${a.reference}`}>Marque : {a.brand}</div>
+          <div className="text-[10px] text-white/50 truncate flex items-center gap-1.5" data-testid={`auction-brand-${a.reference}`}>
+            {a.brand_logo && (
+              <img src={cardImg(a.brand_logo)} alt={a.brand} className="h-4 w-auto max-w-[48px] object-contain rounded-[2px] bg-white/90 px-0.5"
+                data-testid={`auction-brand-logo-${a.reference}`} />
+            )}
+            <span>Marque : {a.brand}</span>
+          </div>
         )}
         {a.retailer && (
           <div className="text-[11px] text-[#E9CF8E] truncate flex items-center gap-1" data-testid={`auction-retailer-${a.reference}`}>

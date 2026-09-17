@@ -1,14 +1,34 @@
-import { useEffect, useState } from 'react';
-import { BookOpen, Plus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { BookOpen, ImagePlus, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { detaillantAPI } from '../../../services/api.detaillant';
+import { API, getAuthHeaders } from '../../../services/http';
+
+const logoSrc = (u) => (u?.startsWith('/api/') ? `${API}${u.slice(4)}` : u);
 
 const inputCls = 'h-8 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs';
 
 export const CatalogManagerCard = () => {
   const [products, setProducts] = useState([]);
-  const [f, setF] = useState({ name: '', category: '', brand: '', perishable: false });
+  const [f, setF] = useState({ name: '', category: '', brand: '', brand_logo: null, perishable: false });
   const [busy, setBusy] = useState(false);
+  const logoRef = useRef(null);
+  const uploadLogo = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`${API}/admin/detaillant/catalog/logo`, {
+        method: 'POST', credentials: 'include', headers: getAuthHeaders(), body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Échec du téléversement');
+      setF((p) => ({ ...p, brand_logo: data.url }));
+      toast.success('✓ Logo de marque ajouté');
+    } catch (err) { toast.error(err.message); }
+  };
   const load = () => detaillantAPI.adminCatalog().then((r) => setProducts(r.products || [])).catch(() => {});
   useEffect(() => { load(); }, []);
   const add = async () => {
@@ -16,7 +36,7 @@ export const CatalogManagerCard = () => {
     try {
       await detaillantAPI.adminUpsertProduct(f);
       toast.success('✓ Produit ajouté au catalogue en vigueur');
-      setF({ name: '', category: '', brand: '', perishable: false });
+      setF({ name: '', category: '', brand: '', brand_logo: null, perishable: false });
       load();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -36,6 +56,20 @@ export const CatalogManagerCard = () => {
           placeholder="Nom du produit" className={inputCls + ' w-48'} data-testid="catalog-new-name" />
           <input value={f.brand} onChange={(e) => setF((p) => ({ ...p, brand: e.target.value }))}
             placeholder="Marque (optionnel)" className={inputCls + ' w-36'} data-testid="catalog-new-brand" />
+        {f.brand_logo ? (
+          <span className="inline-flex items-center gap-1">
+            <img src={logoSrc(f.brand_logo)} alt="logo" className="h-6 w-auto max-w-[56px] object-contain rounded bg-white/90 px-0.5" data-testid="catalog-new-logo-preview" />
+            <button onClick={() => setF((p) => ({ ...p, brand_logo: null }))} data-testid="catalog-new-logo-remove"
+              className="w-4 h-4 rounded-full bg-black/50 flex items-center justify-center"><X className="w-2.5 h-2.5 text-white" /></button>
+          </span>
+        ) : (
+          <button onClick={() => logoRef.current?.click()} data-testid="catalog-new-logo-btn"
+            className="inline-flex items-center gap-1 px-2 h-8 rounded-lg border border-dashed border-white/25 text-[10px] text-white/50 hover:text-[#E9CF8E] hover:border-[#D9B35A]/50">
+            <ImagePlus className="w-3 h-3" /> Logo marque
+          </button>
+        )}
+        <input ref={logoRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden"
+          onChange={uploadLogo} data-testid="catalog-new-logo-input" />
         <input value={f.category} onChange={(e) => setF((p) => ({ ...p, category: e.target.value }))}
           placeholder="Catégorie" className={inputCls + ' w-36'} data-testid="catalog-new-category" />
         <label className="flex items-center gap-1.5 text-[10px] text-white/60">
@@ -54,6 +88,7 @@ export const CatalogManagerCard = () => {
             data-testid={`catalog-row-${p.sku}`}>
             <p className="text-[11px] truncate">
               <span className={p.detaillant_active === false ? 'line-through text-white/35' : ''}>
+                {p.brand_logo && <img src={logoSrc(p.brand_logo)} alt={p.brand} className="inline h-4 w-auto max-w-[40px] object-contain rounded bg-white/90 px-0.5 mr-1 align-[-3px]" />}
                 {p.name}{p.brand ? ` · ${p.brand}` : ''}
               </span>
               <span className="text-white/40"> · {p.category || '—'}</span>

@@ -118,7 +118,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
       {price > 0 && (
         <p className={`text-[11px] font-semibold ${discountKo ? 'text-red-400' : 'text-emerald-300'}`} data-testid="offer-final-price">
           {discountKo
-            ? `Réduction insuffisante : ${discPct.toFixed(1)} % (minimum 15 %)`
+            ? `⛔ Réduction insuffisante : ${discPct.toFixed(1)} % — minimum 15 %, l'offre ne peut pas être publiée`
             : `Prix final du lot : ${finalPrice.toFixed(2)} ${f.currency} (−${discPct.toFixed(1)} %)`}
         </p>
       )}

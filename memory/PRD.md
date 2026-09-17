@@ -3637,3 +3637,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Propagation : projections catalogue (public + détaillant) → offre (product_brand) → opération COOP'ACT (brand) → serialize_member.
 - Affichage : « Marque : … » sous le titre de la carte en salle (auction-brand-<ref>) ; marque affichée dans la liste admin catalogue (« nom · marque »).
 - Test E2E : marque « Ti Caraïbes » sur RIZ-LONG-5KG (conservée pour la démo), offre → approbation → « Marque : Ti Caraïbes » vérifié en salle ; lot test nettoyé + remboursé.
+
+## 2026-06 — Lot 78 : Verrou -15 %, logo marque, filtres marque/produit/date en salle (testé)
+- Réduction < 15 % : verrou backend confirmé (modes % et €, HTTP 400) + message UI renforcé « ⛔ … l'offre ne peut pas être publiée » + bouton désactivé.
+- Logo marque : POST /api/admin/detaillant/catalog/logo (PNG/JPEG/WebP/SVG 2 Mo) ; CatalogProductBody.brand_logo ; propagation produit → offre (product_brand_logo) → auction (brand_logo) → serialize_member ; upload + aperçu dans CatalogManagerCard ; logo affiché à côté de « Marque : » sur les cartes en salle et dans les pilules du filtre marques.
+- Filtres salle (côté client AuctionsPage/AuctionFilters) : Marques (avec logo), Produits (12 titres les plus fréquents, dérivés), Date (lots actifs à la date choisie, bouton effacer) — en plus des filtres existants statut (Toutes/En cours/À venir/Terminées), catégorie, type, provenance, boutiques/pays, recherche.
+- Testé : upload logo 201, propagation catalogue public, screenshot filtres (marque 8→2 lots, date 2030→0, logos ×2 sur cartes). Marque démo « Ti Caraïbes » + logo conservés sur RIZ-LONG-5KG et 2 lots Riz en salle.

@@ -134,6 +134,7 @@ def serialize_member(a: dict, labels: dict | None = None) -> dict:
         "photos": a.get("photos") or [],
         "photo_labels": a.get("photo_labels"),
         "brand": a.get("brand"),
+        "brand_logo": a.get("brand_logo"),
         "condition": a.get("condition"), "warranty": a.get("warranty"), "dlc": a.get("dlc"),
     }
     if a.get("retailer") and a.get("source_visible"):

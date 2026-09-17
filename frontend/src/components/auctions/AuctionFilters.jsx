@@ -1,6 +1,7 @@
 import i18n from '@/i18n';
 import { Search } from 'lucide-react';
 import { Flag } from '../Flag';
+import { API } from '../../services/http';
 
 const Pill = ({ active, onClick, children, testId }) => (
   <button type="button" onClick={onClick} data-testid={testId}
@@ -10,8 +11,8 @@ const Pill = ({ active, onClick, children, testId }) => (
   </button>
 );
 
-// Filtre enrichi : statut, catégorie, type, provenance, boutique/pays, recherche
-export const AuctionFilters = ({ filters, setFilters, categories, types, sources, shops = [], countries = [] }) => {
+// Filtre enrichi : statut, catégorie, type, provenance, boutique/pays, marque, produit, date, recherche
+export const AuctionFilters = ({ filters, setFilters, categories, types, sources, shops = [], countries = [], brands = [], products = [] }) => {
   const set = (k, v) => setFilters((f) => ({ ...f, [k]: f[k] === v ? '' : v }));
   return (
     <div className="space-y-2 mb-5" data-testid="auction-filters">
@@ -65,6 +66,37 @@ export const AuctionFilters = ({ filters, setFilters, categories, types, sources
           ))}
         </div>
       )}
+      {brands.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-brand-filter-row">
+          <span className="text-[11px] font-bold text-white/60 uppercase tracking-wide">Marques</span>
+          {brands.map(([b, logo]) => (
+            <Pill key={b} active={filters.brand === b} onClick={() => set('brand', b)}
+              testId={`auction-brand-filter-${b}`}>
+              {logo && <img src={logo.startsWith('/api/') ? `${API}${logo.slice(4)}` : logo} alt="" className="inline h-3.5 w-auto max-w-[36px] object-contain rounded-[2px] bg-white/90 px-0.5 mr-1 align-[-2px]" />}
+              {b}
+            </Pill>
+          ))}
+        </div>
+      )}
+      {products.length > 1 && (
+        <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-product-filter-row">
+          <span className="text-[11px] font-bold text-white/60 uppercase tracking-wide">Produits</span>
+          {products.map((p) => (
+            <Pill key={p} active={filters.product === p} onClick={() => set('product', p)}
+              testId={`auction-product-filter-${p}`}>{p}</Pill>
+          ))}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-1.5 items-center" data-testid="auction-date-filter-row">
+        <span className="text-[11px] font-bold text-white/60 uppercase tracking-wide">Date</span>
+        <input type="date" value={filters.date} data-testid="auction-date-filter"
+          onChange={(e) => setFilters((f) => ({ ...f, date: e.target.value }))}
+          className="h-7 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-[11px] text-white outline-none focus:border-[#D9B35A]/60" />
+        {filters.date && (
+          <button onClick={() => setFilters((f) => ({ ...f, date: '' }))} data-testid="auction-date-clear"
+            className="text-[10px] text-white/45 hover:text-white underline">effacer</button>
+        )}
+      </div>
     </div>
   );
 };

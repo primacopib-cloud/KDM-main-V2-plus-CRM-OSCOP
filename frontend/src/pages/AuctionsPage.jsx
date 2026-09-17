@@ -17,7 +17,7 @@ export default function AuctionsPage() {
   const [data, setData] = useState({ items: [], categories: [], types: [], sources: [] });
   const [me, setMe] = useState(null);
   const [follows, setFollows] = useState(null);
-  const [filters, setFilters] = useState({ status: '', category: '', type_id: '', source: '', q: '', shop: '', country: '' });
+  const [filters, setFilters] = useState({ status: '', category: '', type_id: '', source: '', q: '', shop: '', country: '', brand: '', product: '', date: '' });
   const [winnerAuction, setWinnerAuction] = useState(null);
   const isLogged = Boolean(getSessionToken());
 
@@ -86,17 +86,33 @@ export default function AuctionsPage() {
     else if (filters.status) items = items.filter((a) => a.status === filters.status);
     if (filters.shop) items = items.filter((a) => a.retailer?.company_name === filters.shop);
     if (filters.country) items = items.filter((a) => a.retailer?.country_code === filters.country);
+    if (filters.brand) items = items.filter((a) => a.brand === filters.brand);
+    if (filters.product) items = items.filter((a) => (a.title || '').includes(filters.product));
+    if (filters.date) {
+      items = items.filter((a) => {
+        const d = filters.date;
+        const s = (a.starts_at || '').slice(0, 10);
+        const e = (a.ends_at || '').slice(0, 10);
+        return (!s || s <= d) && (!e || e >= d);
+      });
+    }
     return items;
-  }, [data.items, filters.status, filters.shop, filters.country]);
+  }, [data.items, filters.status, filters.shop, filters.country, filters.brand, filters.product, filters.date]);
 
   const shopFacets = useMemo(() => {
     const shops = new Map();
     const countries = new Map();
+    const brands = new Map();
+    const productCount = new Map();
     data.items.forEach((a) => {
       if (a.retailer?.company_name) shops.set(a.retailer.company_name, a.retailer.country_code);
       if (a.retailer?.country_code) countries.set(a.retailer.country_code, true);
+      if (a.brand) brands.set(a.brand, a.brand_logo || null);
+      const prod = (a.title || '').replace(/^Lot ×\d+ — /, '').replace(/ — lot COOP.*$/i, '').trim();
+      if (prod) productCount.set(prod, (productCount.get(prod) || 0) + 1);
     });
-    return { shops: [...shops.entries()], countries: [...countries.keys()] };
+    const products = [...productCount.entries()].sort((x, y) => y[1] - x[1]).slice(0, 12).map(([p]) => p);
+    return { shops: [...shops.entries()], countries: [...countries.keys()], brands: [...brands.entries()], products };
   }, [data.items]);
 
   const pendingWin = (me?.wins || []).find((w) => !w.fulfillment);
@@ -138,7 +154,8 @@ export default function AuctionsPage() {
 
         <AuctionFilters filters={filters} setFilters={setFilters}
           categories={data.categories} types={data.types} sources={data.sources}
-          shops={shopFacets.shops} countries={shopFacets.countries} />
+          shops={shopFacets.shops} countries={shopFacets.countries}
+          brands={shopFacets.brands} products={shopFacets.products} />
 
         {visible.length === 0 ? (
           <div className="text-center text-white/40 py-14" data-testid="auctions-empty">

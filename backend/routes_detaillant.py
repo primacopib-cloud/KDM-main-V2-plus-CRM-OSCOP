@@ -434,7 +434,7 @@ async def detaillant_upload_photo(file: UploadFile = File(...), user: dict = Dep
 async def detaillant_catalog(user: dict = Depends(get_current_user)):
     products = await db.lolodrive_products.find(
         {"detaillant_active": {"$ne": False}},
-        {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "image_url": 1, "perishable": 1}).sort("name", 1).to_list(300)
+        {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "brand_logo": 1, "image_url": 1, "perishable": 1}).sort("name", 1).to_list(300)
     return {"products": products}
 
 
@@ -443,7 +443,7 @@ async def detaillant_catalog_public():
     """Catalogue spécial Détaillant LOLODRIVE en vigueur — visible sans connexion sur la vitrine."""
     products = await db.lolodrive_products.find(
         {"detaillant_active": {"$ne": False}},
-        {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "image_url": 1, "perishable": 1}).sort("name", 1).to_list(300)
+        {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "brand_logo": 1, "image_url": 1, "perishable": 1}).sort("name", 1).to_list(300)
     return {"products": products}
 
 
@@ -494,7 +494,7 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         except ValueError:
             raise HTTPException(status_code=400, detail="Date de programmation invalide (elle doit être future)")
     product = await db.lolodrive_products.find_one(
-        {"sku": body.product_sku}, {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "perishable": 1})
+        {"sku": body.product_sku}, {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "brand_logo": 1, "perishable": 1})
     if not product:
         raise HTTPException(status_code=404, detail="Produit introuvable dans le catalogue LOLODRIVE en vigueur")
     composed_products = [product]
@@ -504,7 +504,7 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         for sku in skus:
             p = await db.lolodrive_products.find_one(
                 {"sku": sku, "detaillant_active": {"$ne": False}},
-                {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "perishable": 1})
+                {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "brand_logo": 1, "perishable": 1})
             if not p:
                 raise HTTPException(status_code=404, detail=f"Produit {sku} introuvable dans le catalogue en vigueur")
             composed_products.append(p)
@@ -549,7 +549,7 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         "product_name": " + ".join(p["name"] for p in composed_products) if len(composed_products) > 1 else product["name"],
         "product_skus": [p["sku"] for p in composed_products],
         "category": body.category or product.get("category"),
-        "product_brand": product.get("brand"),
+        "product_brand": product.get("brand"), "product_brand_logo": product.get("brand_logo"),
         "lot_type": body.lot_type, "lot_size": 3, "qty_lots": body.qty_lots,
         "description": body.description.strip(),
         "composed_detail": (body.composed_detail or "").strip() or None,
@@ -626,16 +626,31 @@ class CatalogProductBody(BaseModel):
     name: str
     category: str = ""
     brand: str = ""
+    brand_logo: Optional[str] = None
     perishable: bool = False
     detaillant_active: bool = True
     image_url: Optional[str] = None
+
+
+@detaillant_admin_router.post("/catalog/logo")
+async def admin_upload_brand_logo(file: UploadFile = File(...), admin: dict = Depends(require_admin)):
+    """Logo de marque (PNG/JPEG/WebP/SVG, 2 Mo max) pour un rendu premium en salle."""
+    allowed = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/svg+xml": "svg"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Format accepté : PNG, JPEG, WebP ou SVG")
+    content = await file.read()
+    if len(content) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Logo trop lourd (max 2 Mo)")
+    from upload_storage import save_upload
+    url = await save_upload(f"brands/{uuid.uuid4().hex[:12]}.{allowed[file.content_type]}", content, file.content_type)
+    return {"url": url}
 
 
 @detaillant_admin_router.get("/catalog")
 async def admin_detaillant_catalog(admin: dict = Depends(require_admin)):
     """Catalogue produit en vigueur (géré par le superadmin)."""
     products = await db.lolodrive_products.find(
-        {}, {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "image_url": 1,
+        {}, {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "brand_logo": 1, "image_url": 1,
              "perishable": 1, "detaillant_active": 1}).sort("name", 1).to_list(500)
     return {"products": products}
 
@@ -646,7 +661,7 @@ async def admin_upsert_catalog_product(body: CatalogProductBody, admin: dict = D
         raise HTTPException(status_code=400, detail="Nom de produit trop court")
     sku = (body.sku or "").strip() or f"DET-{uuid.uuid4().hex[:8].upper()}"
     doc = {"sku": sku, "name": body.name.strip(), "category": body.category.strip(),
-           "brand": body.brand.strip(),
+           "brand": body.brand.strip(), "brand_logo": body.brand_logo,
            "perishable": body.perishable, "detaillant_active": body.detaillant_active,
            "updated_at": _now().isoformat(), "updated_by": admin.get("email")}
     if body.image_url:
@@ -791,6 +806,7 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                 "title": f"Lot ×3 — {offer['product_name']}" + (f" ({i + 1}/{offer['qty_lots']})" if offer["qty_lots"] > 1 else ""),
                 "image_url": offer.get("photo_main") or (product or {}).get("image_url"),
                 "brand": offer.get("product_brand") or (product or {}).get("brand"),
+                "brand_logo": offer.get("product_brand_logo") or (product or {}).get("brand_logo"),
                 "photos": [p for p in ([offer.get("photo_main")] + (offer.get("photos") or [])) if p],
                 "photo_labels": offer.get("photo_labels"),
                 "condition": offer.get("condition"), "warranty": offer.get("warranty"), "dlc": offer.get("dlc"),
