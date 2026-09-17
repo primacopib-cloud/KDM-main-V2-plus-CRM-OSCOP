@@ -44,6 +44,39 @@ async def run_detaillant_dlc_alerts(db):
     return sent
 
 
+async def run_cession_sign_reminders(db):
+    """Cloche au POP'S dont une offre PENDING attend la signature de sa fiche de cession (max 1/24 h)."""
+    now = _now()
+    limit_created = (now - timedelta(hours=2)).isoformat()
+    limit_remind = (now - timedelta(hours=24)).isoformat()
+    sent = 0
+    cessions = await db.detaillant_cessions.find(
+        {"status": "DRAFT", "created_at": {"$lt": limit_created},
+         "$or": [{"last_sign_reminder_at": {"$exists": False}},
+                 {"last_sign_reminder_at": {"$lt": limit_remind}}]},
+        {"_id": 0, "id": 1, "offer_id": 1, "user_id": 1, "reference": 1}).to_list(100)
+    for c in cessions:
+        offer = await db.detaillant_offers.find_one(
+            {"id": c["offer_id"]}, {"_id": 0, "status": 1, "product_name": 1})
+        await db.detaillant_cessions.update_one(
+            {"id": c["id"]}, {"$set": {"last_sign_reminder_at": now.isoformat()}})
+        if not offer or offer.get("status") != "PENDING":
+            continue
+        try:
+            from core_deps import create_notification
+            await create_notification(
+                "cession_sign_reminder",
+                f"✍️ Fiche de cession à signer — {offer['product_name']}",
+                (f"Votre offre « {offer['product_name']} » ne peut pas être validée tant que la fiche "
+                 f"de cession {c['reference']} n'est pas signée. Ouvrez votre espace POP'S pour la signer."),
+                target_roles=[], target_user_id=c["user_id"],
+                data={"action_url": "/espace-detaillant"})
+            sent += 1
+        except Exception as exc:
+            logger.warning("Rappel signature cession %s : %s", c["reference"], exc)
+    return sent
+
+
 async def run_detaillant_weekly_recaps(db, force: bool = False):
     """Chaque lundi : email récap hebdo à chaque POP'S — ventes, followers et avis de la semaine."""
     now = _now()

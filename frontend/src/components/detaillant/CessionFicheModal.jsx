@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { FileSignature, X } from 'lucide-react';
+import { Download, FileSignature, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { detaillantAPI } from '../../services/api.detaillant';
+import { downloadAuthedPdf } from './DetaillantConventionCard';
 
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
 const STATUS = { DRAFT: ['À signer', 'text-amber-300 border-amber-400/40 bg-amber-500/15'],
@@ -40,6 +41,12 @@ export const CessionFicheModal = ({ offerId, onClose, onSigned = () => {} }) => 
           </div>
           <div className="flex items-center gap-2">
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${stCls}`} data-testid="cession-status">{stLabel}</span>
+            <button type="button" data-testid="cession-pdf-btn"
+              onClick={() => downloadAuthedPdf(`/detaillant/offers/${offerId}/cession/pdf`, `${c.reference}.pdf`)}
+              title="Télécharger la fiche de cession en PDF horodaté"
+              className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[10px] font-bold border border-[#D9B35A]/50 text-[#F2D07A] hover:bg-[#D9B35A]/15">
+              <Download className="w-3 h-3" /> PDF
+            </button>
             <button onClick={onClose} className="text-white/50 hover:text-white" data-testid="cession-close"><X className="w-4 h-4" /></button>
           </div>
         </div>

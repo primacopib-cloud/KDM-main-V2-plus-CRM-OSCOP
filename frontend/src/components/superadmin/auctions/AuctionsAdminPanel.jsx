@@ -9,6 +9,7 @@ import { AuctionFormDialog } from './AuctionFormDialog';
 import { AuctionSettingsDialog } from './AuctionSettingsDialog';
 import { AuctionStats } from './AuctionStats';
 import { DetaillantOffersPanel } from './DetaillantOffersPanel';
+import { CessionsRegistryCard } from './CessionsRegistryCard';
 import { PickupScanCard } from './PickupScanCard';
 
 const STATUS_STYLE = {
@@ -44,6 +45,7 @@ export const AuctionsAdminPanel = () => {
     <div className="glass-panel-soft rounded-[22px] p-5 mt-6" data-testid="auctions-admin-panel">
       <PickupScanCard />
       <DetaillantOffersPanel />
+      <CessionsRegistryCard />
       <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
         <div>
           <h3 className="text-lg font-bold text-white flex items-center gap-2">

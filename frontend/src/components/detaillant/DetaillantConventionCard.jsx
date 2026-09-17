@@ -1,7 +1,17 @@
 import { useEffect, useState } from 'react';
-import { FileSignature, ScrollText } from 'lucide-react';
+import { Download, FileSignature, ScrollText } from 'lucide-react';
 import { toast } from 'sonner';
 import { detaillantAPI } from '../../services/api.detaillant';
+import { API, getAuthHeaders } from '../../services/http';
+
+export const downloadAuthedPdf = async (path, filename) => {
+  const res = await fetch(`${API}${path}`, { headers: getAuthHeaders(), credentials: 'include' });
+  if (!res.ok) { toast.error('PDF indisponible'); return; }
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+};
 
 // Convention cadre de partenariat POP'S COOP'ACT : lecture + signature électronique
 export const DetaillantConventionCard = ({ onSignedChange = () => {} }) => {
@@ -28,9 +38,17 @@ export const DetaillantConventionCard = ({ onSignedChange = () => {} }) => {
           <ScrollText className="w-4 h-4" /> Convention cadre de partenariat POP'S COOP'ACT (v{data.version})
         </h3>
         {data.signed ? (
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-400/40"
-            data-testid="dt-convention-signed-badge">
-            ✓ Signée par {data.signature?.signer_name} le {new Date(data.signature?.signed_at).toLocaleDateString('fr-FR')}
+          <span className="flex items-center gap-2">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-400/40"
+              data-testid="dt-convention-signed-badge">
+              ✓ Signée par {data.signature?.signer_name} le {new Date(data.signature?.signed_at).toLocaleDateString('fr-FR')}
+            </span>
+            <button type="button" data-testid="dt-convention-pdf-btn"
+              onClick={() => downloadAuthedPdf('/detaillant/convention/pdf', 'convention-pops-coopact.pdf')}
+              title="Télécharger la convention signée en PDF horodaté"
+              className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-[10px] font-bold border border-[#D9B35A]/50 text-[#F2D07A] hover:bg-[#D9B35A]/15">
+              <Download className="w-3 h-3" /> PDF
+            </button>
           </span>
         ) : (
           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-400/40"

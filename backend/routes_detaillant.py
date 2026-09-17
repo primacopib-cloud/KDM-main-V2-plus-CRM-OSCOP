@@ -715,6 +715,107 @@ async def sign_cession(offer_id: str, body: CessionSignBody, user: dict = Depend
     return {"ok": True, "status": "SIGNED"}
 
 
+# ---------- PDF convention / cession + registre admin ----------
+
+def _pdf_doc(title: str, blocks: list) -> bytes:
+    from io import BytesIO
+    from xml.sax.saxutils import escape
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, title=title)
+    ss = getSampleStyleSheet()
+    story = [Paragraph(escape(title), ss["Title"]), Spacer(1, 10)]
+    for h, t in blocks:
+        if h:
+            story.append(Paragraph(escape(h), ss["Heading4"]))
+        story.append(Paragraph(escape(t), ss["BodyText"]))
+        story.append(Spacer(1, 4))
+    doc.build(story)
+    return buf.getvalue()
+
+
+def _fmt_ts(iso):
+    if not iso:
+        return "—"
+    return datetime.fromisoformat(iso).strftime("%d/%m/%Y %H:%M UTC")
+
+
+@detaillant_router.get("/convention/pdf")
+async def convention_pdf(user: dict = Depends(get_current_user)):
+    from fastapi.responses import Response
+    sig = await db.detaillant_conventions.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not sig:
+        raise HTTPException(status_code=404, detail="Convention non signée")
+    from convention_cession import CONVENTION_ARTICLES, CONVENTION_PARTIES, CONVENTION_VERSION
+    prof = await db.detaillant_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    blocks = [("Entre les parties", CONVENTION_PARTIES),
+              ("Partenaire signataire", f"{prof.get('company_name', '')} — {prof.get('locality', '')} "
+                                       f"({prof.get('country_code', '')}) · SIREN/SIRET : {prof.get('siret') or '—'}")]
+    blocks += list(CONVENTION_ARTICLES)
+    blocks.append(("Signature électronique",
+                   f"Signée par {sig['signer_name']} le {_fmt_ts(sig['signed_at'])} — version {sig['version']} — "
+                   "horodatage plateforme COOP'ACT (art. 18.3 de la convention)."))
+    pdf = _pdf_doc(f"Convention cadre de partenariat POP'S COOP'ACT — v{CONVENTION_VERSION}", blocks)
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": "attachment; filename=convention-pops-coopact.pdf"})
+
+
+@detaillant_router.get("/offers/{offer_id}/cession/pdf")
+async def cession_pdf(offer_id: str, user: dict = Depends(get_current_user)):
+    from fastapi.responses import Response
+    c = await db.detaillant_cessions.find_one(
+        {"offer_id": offer_id, "user_id": user["id"]}, {"_id": 0})
+    if not c:
+        raise HTTPException(status_code=404, detail="Fiche de cession introuvable")
+    v = c["valuation"]
+    products = " ; ".join(f"{p['sku']} — {p['name']} ×{p['qty']}"
+                          f"{' (DLC ' + p['dlc'] + ')' if p.get('dlc') else ''}" for p in c["products"])
+    blocks = [
+        ("1. Références de l'opération",
+         f"Référence de la cession : {c['reference']} · Établie le {_fmt_ts(c['created_at'])} · "
+         f"Opérations : {', '.join(c.get('auction_refs') or []) or '—'}"),
+        ("2. Parties à la cession",
+         f"Cédant POP'S : {c['cedant']['company_name']} — {c['cedant']['locality']} ({c['cedant']['country_code']}) · "
+         f"SIREN/SIRET : {c['cedant'].get('siret') or '—'}. Cessionnaire : {c['cessionnaire']}."),
+        ("3. Nature du lot",
+         f"{c['lot_designation']} — {c['qty_lots']} lot(s) ×3 {'(composé)' if c['lot_type'] == 'COMPOSED' else ''} · "
+         f"Catégorie : {c.get('category') or '—'} · État : {'Neuf' if c['condition'] == 'NEW' else 'Occasion'}"),
+        ("4. Détail des produits cédés", products),
+        ("5. Valorisation financière",
+         f"Prix boutique : {v['lot_price']} {v['currency']} · Remise : -{v['discount_pct']:.0f} % · "
+         f"Prix final : {v['final_price']} {v['currency']}"
+         + (f" · Garantie : {v['warranty']}" if v.get('warranty') else "")),
+        ("6. Effet et expiration (horodatés)",
+         f"Date d'effet (ouverture en salle) : {_fmt_ts(c.get('effective_from'))} · "
+         f"Expiration (fin de l'offre) : {_fmt_ts(c.get('effective_until'))}"),
+        ("7. Déclarations et contrôles applicables",
+         " ; ".join(f"[x] {d}" if d in (c.get('declarations_checked') or []) else f"[ ] {d}"
+                    for d in c["declarations"])),
+        ("8. Signature",
+         (f"Bon pour accord — signée par {c['signer_name']} le {_fmt_ts(c.get('signed_at'))} · "
+          f"Statut : {c['status']}") if c.get("signer_name") else "Non signée — statut DRAFT"),
+    ]
+    pdf = _pdf_doc(f"Fiche de cession de produits et lots — {c['reference']}", blocks)
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename={c['reference']}.pdf"})
+
+
+@detaillant_admin_router.get("/cessions")
+async def admin_cessions_registry(q: str = "", status: str = "", admin: dict = Depends(require_admin)):
+    """Registre central des fiches de cession (recherche + filtre statut)."""
+    query: dict = {}
+    if status:
+        query["status"] = status.upper()
+    if q.strip():
+        rx = {"$regex": q.strip(), "$options": "i"}
+        query["$or"] = [{"reference": rx}, {"lot_designation": rx},
+                        {"cedant.company_name": rx}, {"signer_name": rx}]
+    items = await db.detaillant_cessions.find(query, {"_id": 0}).sort("created_at", -1).limit(200).to_list(200)
+    return {"cessions": items, "total": len(items)}
+
+
 @detaillant_router.get("/sales")
 async def detaillant_sales(user: dict = Depends(get_current_user)):
     """Résultats des lots du détaillant en salle : mises, gagnants, montants."""
