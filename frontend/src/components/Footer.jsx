@@ -84,7 +84,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/calculateur-fret" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-logiscop-fret">LOGI'SCOP — Calculateur de fret</Link>
-                <Link to="/detaillant" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-detaillant">Détaillants — Bourse COOP'ACT</Link>
+                <Link to="/detaillant" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-detaillant">POP'S — Bourse COOP'ACT</Link>
               </li>
             </ul>
           </div>

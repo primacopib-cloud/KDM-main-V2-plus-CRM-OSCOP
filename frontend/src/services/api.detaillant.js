@@ -21,6 +21,7 @@ export const detaillantAPI = {
     return data;
   },
   detaillantReviews: () => apiCall('/detaillant/reviews'),
+  followersStats: () => apiCall('/detaillant/followers/stats'),
   reviewReply: (reviewId, reply) => apiCall(`/detaillant/reviews/${reviewId}/reply`, { method: 'POST', body: JSON.stringify({ reply }) }),
   shopsPublic: () => apiCall('/detaillant/shops/public'),
   catalogPublic: () => apiCall('/detaillant/catalog/public'),

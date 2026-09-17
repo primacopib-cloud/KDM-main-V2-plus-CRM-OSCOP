@@ -135,6 +135,44 @@ async def detaillant_shops_public():
     return {"shops": shops}
 
 
+@detaillant_public_router.get("/shops/public/{detaillant_user_id}")
+async def pops_shop_page(detaillant_user_id: str):
+    """Mini page publique d'un POP'S : profil, lots en cours, avis."""
+    prof = await db.detaillant_profiles.find_one(
+        {"user_id": detaillant_user_id},
+        {"_id": 0, "user_id": 1, "company_name": 1, "locality": 1, "country_code": 1,
+         "rating_avg": 1, "rating_count": 1, "pickup_slots": 1, "created_at": 1})
+    if not prof or not prof.get("company_name"):
+        raise HTTPException(status_code=404, detail="Boutique POP'S introuvable")
+    import auction_helpers as ah
+    offer_ids = [o["id"] async for o in db.detaillant_offers.find(
+        {"user_id": detaillant_user_id}, {"_id": 0, "id": 1})]
+    lots = []
+    async for a in db.auctions.find(
+            {"detaillant_offer_id": {"$in": offer_ids}}, {"_id": 0}).sort("starts_at", -1).limit(20):
+        if ah.effective_status(a) in ("SCHEDULED", "LIVE"):
+            lots.append(ah.serialize_member(a))
+    reviews = await db.detaillant_shop_reviews.find(
+        {"detaillant_user_id": detaillant_user_id},
+        {"_id": 0, "rating": 1, "comment": 1, "reply": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    followers = await db.detaillant_followers.count_documents({"detaillant_user_id": detaillant_user_id})
+    return {"shop": prof, "lots": lots, "reviews": reviews, "followers": followers}
+
+
+@detaillant_router.get("/followers/stats")
+async def detaillant_followers_stats(user: dict = Depends(get_current_user)):
+    """Communauté du POP'S : total de followers + évolution mensuelle."""
+    total = await db.detaillant_followers.count_documents({"detaillant_user_id": user["id"]})
+    monthly = []
+    async for r in db.detaillant_followers.aggregate([
+        {"$match": {"detaillant_user_id": user["id"]}},
+        {"$group": {"_id": {"$substr": ["$created_at", 0, 7]}, "n": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}, {"$limit": 12}]):
+        monthly.append({"month": r["_id"], "new": r["n"]})
+    return {"total": total, "monthly": monthly}
+
+
 @detaillant_router.get("/reviews")
 async def detaillant_my_reviews(user: dict = Depends(get_current_user)):
     reviews = await db.detaillant_shop_reviews.find(
@@ -564,10 +602,25 @@ async def admin_detaillant_stats(admin: dict = Depends(require_admin)):
         top.append({"company_name": r["_id"], "offers": r["offers"], "lots": r["lots"], "credits": r["credits"]})
     credits_spent = sum(v["credits"] for k, v in by_status.items() if k != "REJECTED")
     revenue_subs_eur = active_subs * SUB_PRICE_CENTS / 100
+    # Photographie produits : les plus proposés et les plus remportés en salle
+    top_products = []
+    async for r in db.detaillant_offers.aggregate([
+        {"$match": {"status": {"$ne": "REJECTED"}}},
+        {"$group": {"_id": "$product_name", "offers": {"$sum": 1}, "lots": {"$sum": "$qty_lots"}}},
+        {"$sort": {"offers": -1}}, {"$limit": 6}]):
+        top_products.append({"product": r["_id"], "offers": r["offers"], "lots": r["lots"]})
+    top_won = []
+    async for r in db.auctions.aggregate([
+        {"$match": {"source": "DETAILLANT", "status": "WON"}},
+        {"$group": {"_id": "$title", "won": {"$sum": 1},
+                    "revenue_eur": {"$sum": "$winner.price_eur"}}},
+        {"$sort": {"won": -1}}, {"$limit": 6}]):
+        top_won.append({"product": r["_id"], "won": r["won"], "revenue_eur": round(r["revenue_eur"] or 0, 2)})
     return {"detaillants": total, "active_subscriptions": active_subs,
             "monthly_sub_revenue_eur": revenue_subs_eur,
             "offers_by_status": by_status, "credits_spent": credits_spent,
-            "lots_in_salle": lots_scheduled, "lots_won": lots_won, "top_retailers": top}
+            "lots_in_salle": lots_scheduled, "lots_won": lots_won, "top_retailers": top,
+            "top_products": top_products, "top_won": top_won}
 
 
 @detaillant_admin_router.get("/offers")
@@ -687,19 +740,36 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
             data={"offer_id": offer_id})
     except Exception as exc:
         logger.warning("Notif offre détaillant: %s", exc)
-    # Alerte aux membres qui suivent ce POP'S : nouveau(x) lot(s) en salle
+    # Alerte aux membres qui suivent ce POP'S : nouveau(x) lot(s) en salle (cloche + email)
     if body.action == "APPROVE" and created_refs:
         try:
             from core_deps import create_notification
-            async for f in db.detaillant_followers.find(
-                    {"detaillant_user_id": offer["user_id"]}, {"_id": 0, "member_id": 1}):
+            follower_ids = [f["member_id"] async for f in db.detaillant_followers.find(
+                {"detaillant_user_id": offer["user_id"]}, {"_id": 0, "member_id": 1})]
+            msg_f = (f"Le POP'S {offer.get('company_name')} vient de déposer "
+                     f"{len(created_refs)} lot(s) en salle COOP'ACT : {offer['product_name']}.")
+            for member_id in follower_ids:
                 await create_notification(
                     notification_type="pops_new_lot",
                     title=f"🛍️ Nouveau lot — {offer.get('company_name')}",
-                    message=(f"Le POP'S {offer.get('company_name')} vient de déposer "
-                             f"{len(created_refs)} lot(s) en salle COOP'ACT : {offer['product_name']}."),
-                    target_roles=[], target_user_id=f["member_id"],
+                    message=msg_f,
+                    target_roles=[], target_user_id=member_id,
                     data={"action_url": "/encheres"})
+            if follower_ids:
+                from brevo_service import send_email, _wrap_html
+                async for m in db.users.find(
+                        {"id": {"$in": follower_ids}}, {"_id": 0, "email": 1, "first_name": 1, "company_name": 1}):
+                    if not m.get("email"):
+                        continue
+                    name = m.get("first_name") or m.get("company_name") or ""
+                    html = _wrap_html(
+                        f"Nouveau lot chez {offer.get('company_name')}",
+                        f"<p style='font-size:14px;'>Bonjour {name},</p>"
+                        f"<p style='font-size:14px;'>{msg_f}</p>"
+                        "<p style='font-size:14px;'>Rendez-vous en salle COOP'ACT pour coop'acter avant les autres !</p>")
+                    await send_email(m["email"], name or None,
+                                     f"🛍️ Nouveau lot — {offer.get('company_name')}", html,
+                                     tags=["pops-new-lot"])
         except Exception as exc:
             logger.warning("Notif followers POP'S: %s", exc)
     out = await db.detaillant_offers.find_one({"id": offer_id}, {"_id": 0})

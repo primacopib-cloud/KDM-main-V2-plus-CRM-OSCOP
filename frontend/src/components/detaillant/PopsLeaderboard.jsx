@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Trophy, BadgeCheck } from 'lucide-react';
 import { Flag } from '../Flag';
 import { detaillantAPI } from '../../services/api.detaillant';
@@ -16,7 +17,7 @@ export const PopsLeaderboard = ({ t }) => {
       <p className="text-xs text-white/50 mt-1">{t.topShopsSub}</p>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
         {shops.slice(0, 6).map((s, i) => (
-          <div key={s.user_id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+          <Link key={s.user_id} to={`/pops/${s.user_id}`} className="block rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-emerald-400/40 transition-colors"
             data-testid={`pops-rank-${i + 1}`}>
             <div className="flex items-center gap-2">
               <span className="text-lg font-black text-[#D9B35A] w-6">{['🥇', '🥈', '🥉'][i] || `#${i + 1}`}</span>
@@ -40,7 +41,7 @@ export const PopsLeaderboard = ({ t }) => {
                 )}
               </div>
             ))}
-          </div>
+          </Link>
         ))}
       </div>
     </div>

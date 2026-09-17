@@ -26,7 +26,7 @@ export const CatalogManagerCard = () => {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" data-testid="admin-catalog-manager">
       <h3 className="text-sm font-bold text-[#E9CF8E] mb-1 flex items-center gap-2">
-        <BookOpen className="w-4 h-4" /> Catalogue produit en vigueur
+        <BookOpen className="w-4 h-4" /> Catalogue POP'S en vigueur
       </h3>
       <p className="text-[10px] text-white/45 mb-3">
         Produits proposables par les détaillants. « Périssable » impose une DLC d'au moins 3 mois au dépôt.

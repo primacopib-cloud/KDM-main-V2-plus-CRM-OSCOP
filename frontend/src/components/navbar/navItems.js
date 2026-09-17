@@ -31,6 +31,7 @@ export const getNavItems = (userRole, isAdmin, pathname = '/') => {
     { href: isPass ? '/catalogue-lolodrive' : '/catalogue', label: 'Catalogue Pro', icon: ShoppingCart, public: true },
     { href: '/territoires', label: 'Territoires', icon: MapPin, public: true },
     { href: '/particuliers', label: 'LOLODRIVE', icon: Users, public: true, accent: '#8CC63E' },
+    { href: '/detaillant', label: "POP'S", icon: Store, public: true, accent: '#10b981' },
   ].filter((it) => !(isPass && it.href === '/tarifs'));
 
   // Member-only shortcuts déplacés en pied de page (demande utilisateur).

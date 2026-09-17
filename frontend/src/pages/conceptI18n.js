@@ -16,7 +16,7 @@ export const CONCEPT_I18N = {
     how: 'Votre première vente en 5 étapes',
     share: 'Faites tourner à une boutique qui mérite de vendre mieux :',
     shareMsg: "Boutique amie 👋 Tes invendus valent de l'or sur la Bourse COOP'ACT de KDMARCHÉ × O'SCOP. Dépose tes lots, la salle vend pour toi !",
-    catalogTitle: 'Catalogue spécial Détaillant LOLODRIVE — en vigueur',
+    catalogTitle: "Catalogue POP'S LOLODRIVE — en vigueur",
     catalogSub: "Les produits que vous pouvez déposer dès aujourd'hui en salle, sélectionnés et mis à jour par notre équipe.",
     perishable: 'Périssable — DLC min. 3 mois',
     features: [
@@ -51,7 +51,7 @@ export const CONCEPT_I18N = {
     how: 'Your first sale in 5 steps',
     share: 'Pass it on to a store that deserves to sell better:',
     shareMsg: "Hey fellow store 👋 Your unsold stock is gold on the KDMARCHÉ × O'SCOP COOP'ACT Exchange. Drop your lots, the room sells for you!",
-    catalogTitle: 'LOLODRIVE Retailer Catalog — currently in force',
+    catalogTitle: "LOLODRIVE POP'S Catalog — currently in force",
     catalogSub: 'The products you can submit to the room today, curated and updated by our team.',
     perishable: 'Perishable — min. 3-month expiry',
     features: [
@@ -86,7 +86,7 @@ export const CONCEPT_I18N = {
     how: 'Su primera venta en 5 pasos',
     share: 'Compártalo con una tienda que merece vender mejor:',
     shareMsg: "Tienda amiga 👋 Tus excedentes valen oro en la Bolsa COOP'ACT de KDMARCHÉ × O'SCOP. ¡Deposita tus lotes, la sala vende por ti!",
-    catalogTitle: 'Catálogo especial Minorista LOLODRIVE — vigente',
+    catalogTitle: "Catálogo POP'S LOLODRIVE — vigente",
     catalogSub: 'Los productos que puede depositar hoy mismo en la sala, seleccionados y actualizados por nuestro equipo.',
     perishable: 'Perecedero — caducidad mín. 3 meses',
     features: [
@@ -121,7 +121,7 @@ export const CONCEPT_I18N = {
     how: 'Prèmyé vant a-w an 5 étap',
     share: "Fè'y touné ba on boutik ki mérité vann pi byen :",
     shareMsg: "Boutik zanmi 👋 Sa ou pa vann ka vo lò asi Bous COOP'ACT a KDMARCHÉ × O'SCOP. Dépozé lo a-w, sal la ka vann ba-w !",
-    catalogTitle: 'Katalog èspésyal Détayan LOLODRIVE — an vigè',
+    catalogTitle: "Katalog POP'S LOLODRIVE — an vigè",
     catalogSub: 'Pwodui ou pé dépozé jòdi-la an sal la, chwazi é mété a jou pa ékip an nou.',
     perishable: 'Périsab — DLC min. 3 mwa',
     features: [

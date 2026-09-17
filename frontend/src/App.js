@@ -84,6 +84,7 @@ import LolodriveAdminDashboardPage from "./pages/LolodriveAdminDashboardPage";
 import PassSpacePage from "./pages/PassSpacePage";
 import DetaillantSpacePage from "./pages/DetaillantSpacePage";
 import DetaillantConceptPage from "./pages/DetaillantConceptPage";
+import PopsShopPage from "./pages/PopsShopPage";
 import PassRegistrationPage from "./pages/PassRegistrationPage";
 import PassLolodrivePage from "./pages/PassLolodrivePage";
 import PosLolodrivePage from "./pages/PosLolodrivePage";
@@ -282,6 +283,7 @@ function App() {
           <Route path="/espace-pass" element={<PassSpacePage />} />
           <Route path="/espace-detaillant" element={<DetaillantSpacePage />} />
           <Route path="/detaillant" element={<DetaillantConceptPage />} />
+          <Route path="/pops/:userId" element={<PopsShopPage />} />
           <Route path="/pos" element={<PosLolodrivePage />} />
           <Route path="/pos-lolodrive" element={<PosLolodrivePage />} />
           <Route path="/admin/lolo-points" element={<LoloPointsAdminPage />} />

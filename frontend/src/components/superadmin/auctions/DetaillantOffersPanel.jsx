@@ -35,11 +35,11 @@ export const DetaillantOffersPanel = () => {
     <CatalogManagerCard />
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4" data-testid="detaillant-offers-panel">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-[#E9CF8E]">Offres de lots Détaillants</h3>
+        <h3 className="text-sm font-bold text-[#E9CF8E]">Offres de lots POP'S</h3>
       </div>
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-3" data-testid="detaillant-stats">
-          {[['Détaillants', stats.detaillants], ['Abonnés actifs', stats.active_subscriptions],
+          {[["POP'S", stats.detaillants], ['Abonnés actifs', stats.active_subscriptions],
             ['CA abonnements/mois', `${stats.monthly_sub_revenue_eur} €`],
             ['Crédits dépensés', stats.credits_spent],
             ['En attente', stats.offers_by_status?.PENDING?.count || 0],
@@ -53,6 +53,30 @@ export const DetaillantOffersPanel = () => {
           {(stats.top_retailers || []).length > 0 && (
             <div className="col-span-full text-[10px] text-white/50">
               Top boutiques : {stats.top_retailers.map((r) => `${r.company_name} (${r.offers} offres · ${r.credits} cr)`).join(' · ')}
+            </div>
+          )}
+          {(stats.top_products || []).length > 0 && (
+            <div className="col-span-full grid sm:grid-cols-2 gap-2" data-testid="dt-admin-top-products">
+              <div className="rounded-lg border border-white/10 bg-white/[0.02] p-2">
+                <p className="text-[9px] font-bold text-[#E9CF8E] uppercase mb-1">📦 Produits les plus proposés</p>
+                {stats.top_products.map((p) => (
+                  <p key={p.product} className="text-[10px] text-white/60 flex justify-between">
+                    <span className="truncate">{p.product}</span>
+                    <span className="text-white/40 shrink-0 ml-2">{p.offers} offres · {p.lots} lots</span>
+                  </p>
+                ))}
+              </div>
+              <div className="rounded-lg border border-white/10 bg-white/[0.02] p-2" data-testid="dt-admin-top-won">
+                <p className="text-[9px] font-bold text-emerald-300 uppercase mb-1">🏆 Produits les plus remportés</p>
+                {(stats.top_won || []).length === 0
+                  ? <p className="text-[10px] text-white/35">Aucun lot remporté pour l'instant</p>
+                  : stats.top_won.map((p) => (
+                    <p key={p.product} className="text-[10px] text-white/60 flex justify-between">
+                      <span className="truncate">{p.product}</span>
+                      <span className="text-white/40 shrink-0 ml-2">{p.won} remporté(s) · {p.revenue_eur} €</span>
+                    </p>
+                  ))}
+              </div>
             </div>
           )}
         </div>
