@@ -12,6 +12,7 @@ import { VitrineReviews } from '../components/pass/VitrineReviews';
 import { RelayOfMonth } from '../components/pass/RelayOfMonth';
 import { authAPI } from '../services/api';
 import { FeaturedAuctionBanner } from '../components/auctions/FeaturedAuctionBanner';
+import { HeaderBackButton } from '../components/HeaderBackButton';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -69,6 +70,8 @@ export default function PassLolodrivePage() {
       <PromoPassBanner />
       <div className="pt-20 -mb-16"><FlashPromoBanner placement="pass" /></div>
       <main className="max-w-3xl mx-auto px-4 pt-28 pb-20" data-testid="pass-lolodrive-page">
+        <HeaderBackButton fallback="/"
+          className="!px-3 !rounded-full border border-white/20 hover:border-white/40 mb-6" />
         <WelcomeBanner space="pass" className="mb-6" />
         {firstName && (
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5 text-sm bg-[#7BC94E]/15 border border-[#7BC94E]/40 text-[#B9E89A]" data-testid="pass-confirmation">
@@ -86,9 +89,11 @@ export default function PassLolodrivePage() {
         </p>
         <FeaturedAuctionBanner className="mb-10" />
         <div className="grid sm:grid-cols-3 gap-4 mb-10">
-          {CARDS.map(({ icon: Icon, key }) => (
-            <div key={key} className="rounded-2xl p-5 bg-white/[0.05] border border-[#D9B35A]/20" data-testid={`pass-${key}`}>
-              <Icon className="w-6 h-6 text-[#D9B35A] mb-3" />
+          {CARDS.map(({ icon: Icon, key }, i) => (
+            <div key={key} style={{ animationDelay: `${i * 90}ms` }}
+              className="group card-in rounded-2xl p-5 bg-white/[0.05] border border-[#D9B35A]/20 transition-[transform,border-color,background-color] duration-300 hover:-translate-y-1.5 hover:border-[#D9B35A]/60 hover:bg-white/[0.08]"
+              data-testid={`pass-${key}`}>
+              <Icon className="w-6 h-6 text-[#D9B35A] mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
               <p className="text-sm font-semibold mb-1.5">{i18n.t(`passPage.${key}_title`)}</p>
               <p className="text-xs text-white/55 leading-relaxed">{i18n.t(`passPage.${key}_desc`)}</p>
             </div>

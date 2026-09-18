@@ -12,6 +12,7 @@ import { WinnerDialog } from '../components/auctions/WinnerDialog';
 import { AuctionHistoryPanel } from '../components/auctions/AuctionHistoryPanel';
 import { AuctionAlertPrefs } from '../components/auctions/AuctionAlertPrefs';
 import { MyPriceAlerts } from '../components/auctions/MyPriceAlerts';
+import { HeaderBackButton } from '../components/HeaderBackButton';
 
 const FILTERS_KEY = 'coopact_filters_v1';
 const SAVED_FILTERS_KEY = 'coopact_saved_filters_v1';
@@ -224,6 +225,8 @@ export default function AuctionsPage() {
     <LolodriveLayout title={i18n.t('auction.title')} subtitle={i18n.t('auction.subtitle')}>
       <div data-testid="auctions-page">
         <div className="mb-4 flex flex-wrap items-center gap-3">
+          <HeaderBackButton fallback="/"
+            className="!px-3 !rounded-full border border-white/20 hover:border-white/40" />
           <Link to="/coopact" data-testid="coopact-brand-link"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border border-[#D9B35A]/50 text-[#F2D07A] hover:bg-[#D9B35A]/15 transition-colors">
             <Sparkles className="w-3.5 h-3.5" /> {i18n.t('auction.brand_link')}
@@ -292,13 +295,15 @@ export default function AuctionsPage() {
         ) : (
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}
             data-testid="auctions-grid">
-            {visible.map((a) => (
-              <AuctionCard key={a.id} auction={a} canBid={Boolean(me?.active)}
-                follows={follows} onToggleFollow={toggleFollow}
-                priceAlerts={priceAlerts} onSetPriceAlert={setPriceAlert}
-                suggested={suggestedIds.has(a.id)}
-                weeklyTop={a.id === data.weekly_top?.id}
-                onChanged={() => { load(); loadMe(); }} />
+            {visible.map((a, i) => (
+              <div key={a.id} className="card-in" style={{ animationDelay: `${Math.min(i * 60, 480)}ms` }}>
+                <AuctionCard auction={a} canBid={Boolean(me?.active)}
+                  follows={follows} onToggleFollow={toggleFollow}
+                  priceAlerts={priceAlerts} onSetPriceAlert={setPriceAlert}
+                  suggested={suggestedIds.has(a.id)}
+                  weeklyTop={a.id === data.weekly_top?.id}
+                  onChanged={() => { load(); loadMe(); }} />
+              </div>
             ))}
           </div>
         )}
