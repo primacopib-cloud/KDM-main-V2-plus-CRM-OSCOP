@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Store, Coins, Package, BadgeCheck } from 'lucide-react';
+import { Store, Coins, Package, BadgeCheck, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { detaillantAPI } from '../services/api.detaillant';
 import { authAPI } from '../services/api';
@@ -123,6 +123,11 @@ export default function DetaillantSpacePage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white px-4 py-8">
       <div className="max-w-4xl mx-auto space-y-5" data-testid="detaillant-space">
+        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/detaillant'))}
+          data-testid="dt-back-btn"
+          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-white/20 text-xs font-semibold text-white/70 hover:text-white hover:bg-white/5 transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5" /> Retour
+        </button>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h1 className="text-2xl font-bold text-[#E9CF8E] flex items-center gap-2">

@@ -3742,3 +3742,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-09 — Lot 99 : Visuel rayon POP'S généré (testé UI)
 - La vidéo /detaillant est remplacée par une IMAGE IA (Gemini image, Emergent key — la génération vidéo fal.ai nécessite une clé utilisateur, proposée et non retenue pour l'instant) : rayon alimentation générale, produits par lots x3, 2 employés de dos avec bulle verte bordure blanche « POP'S ». Affichage avec effet Ken Burns (zoom lent 26 s, keyframes popsKenBurns) — testid concept-video-player conservé. Pour une vraie vidéo IA plus tard : clé fal.ai à fournir.
+
+## 2026-09 — Lot 100 : Bouton retour espace POP'S (testé UI)
+- Espace POP'S (/espace-detaillant) : bouton « ← Retour » (dt-back-btn) en haut de page → page précédente (navigate(-1)), fallback /detaillant si historique vide. Testé UI : vitrine → espace → retour revient sur /detaillant.
