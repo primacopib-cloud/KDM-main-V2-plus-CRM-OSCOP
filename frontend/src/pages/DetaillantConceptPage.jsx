@@ -82,11 +82,15 @@ export default function DetaillantConceptPage() {
           <div className="px-5 pt-4 pb-2 bg-white/[0.03]">
             <p className="text-sm font-bold text-[#E9CF8E]">{t.videoTitle}</p>
           </div>
-          <video controls playsInline preload="none" className="w-full aspect-video bg-black"
-            poster="https://images.pexels.com/videos/39221946/auckland-bags-bottles-bread-39221946.jpeg?auto=compress&w=1260"
-            data-testid="concept-video-player">
-            <source src="https://videos.pexels.com/video-files/39221946/16690560_1920_1080_25fps.mp4" type="video/mp4" />
-          </video>
+          <div className="relative w-full aspect-video bg-black overflow-hidden" data-testid="concept-video-player">
+            <img
+              src="https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/d2654cc9c8482382481b532f0baff06c1e3047fd5e3be7274dff062ebb82d8ee.jpeg"
+              alt="Rayon d'alimentation générale : produits par lots de 3 mis en rayon par des employés POP'S"
+              className="w-full h-full object-cover"
+              style={{ animation: 'popsKenBurns 26s ease-in-out infinite alternate' }}
+            />
+            <style>{`@keyframes popsKenBurns { from { transform: scale(1) translateX(0); } to { transform: scale(1.12) translateX(-1.5%); } }`}</style>
+          </div>
         </div>
         {catalog.length > 0 && (
           <div className="mt-14" data-testid="concept-catalog">

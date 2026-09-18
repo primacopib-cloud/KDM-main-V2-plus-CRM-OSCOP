@@ -3739,3 +3739,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-09 — Lot 98 : Vidéo vitrine sans floutage (testé UI)
 - La vidéo /detaillant remplace le floutage : Pexels 39221946 « Vibrant Supermarket Aisle with Soft Drinks » (rayons boissons/snacks industriels, image nette, Full HD). Astuce : l'URL du fichier pleine résolution s'obtient via la redirection https://www.pexels.com/download/video/{id}/ (curl -L), pas en devinant les noms de variantes HD (403). Source : 16690560_1920_1080_25fps.mp4.
+
+## 2026-09 — Lot 99 : Visuel rayon POP'S généré (testé UI)
+- La vidéo /detaillant est remplacée par une IMAGE IA (Gemini image, Emergent key — la génération vidéo fal.ai nécessite une clé utilisateur, proposée et non retenue pour l'instant) : rayon alimentation générale, produits par lots x3, 2 employés de dos avec bulle verte bordure blanche « POP'S ». Affichage avec effet Ken Burns (zoom lent 26 s, keyframes popsKenBurns) — testid concept-video-player conservé. Pour une vraie vidéo IA plus tard : clé fal.ai à fournir.
