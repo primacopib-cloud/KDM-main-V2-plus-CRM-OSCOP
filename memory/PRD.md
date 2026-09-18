@@ -3772,3 +3772,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-09 — Lot 105 : Carrousel lots live vitrine POP'S (testé E2E)
 - LiveDemoSwitch (DetaillantConceptPage.jsx) devient un carrousel des 3 lots LIVE les plus coop'actés (au lieu d'un seul) : rotation automatique toutes les 6 s, pause au survol, pastilles cliquables (concept-demo-dot-{i}, pastille active élargie dorée), transition card-in à chaque changement, toujours rafraîchi via GET /api/auctions/public?status=LIVE (poll 15 s). 0 lot → démo cliquable ; 1 lot → pas de pastilles ni rotation.
 - Testé E2E : 2 lots LIVE affichés, clic pastille change le lot, rotation auto après 7 s confirmée.
+
+## 2026-09 — Lot 106 : Ticker « Baisses en direct » salle COOP'ACT (testé E2E)
+- Backend : GET /api/auctions/recent-drops (routes_auctions_member.py) — 12 dernières baisses réelles, anonymisées (titre, référence, from_eur → to_eur, date). Les mises enregistrent désormais price_before_eur ; pour l'historique, from = to + price_drop_eur du lot.
+- Frontend : components/auctions/PriceDropTicker.jsx — bandeau pill vert en tête de /encheres (sous le bouton Retour) : label traduit (auction.ticker_label FR/EN/ES/GCF) + défilement continu (keyframes tickerScroll index.css, 45 s, pause au survol, masque fondu aux bords), items doublés pour boucle infinie, rafraîchi toutes les 60 s. Testids : price-drop-ticker, price-drop-ticker-track, ticker-drop-{reference}.
+- Testé E2E : endpoint OK (12 baisses réelles, ex. Rhum AOC 102 € → 100 €), bandeau visible, transform animé confirmé dans le temps.

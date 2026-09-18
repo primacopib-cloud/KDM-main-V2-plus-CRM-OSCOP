@@ -13,6 +13,7 @@ import { AuctionHistoryPanel } from '../components/auctions/AuctionHistoryPanel'
 import { AuctionAlertPrefs } from '../components/auctions/AuctionAlertPrefs';
 import { MyPriceAlerts } from '../components/auctions/MyPriceAlerts';
 import { HeaderBackButton } from '../components/HeaderBackButton';
+import { PriceDropTicker } from '../components/auctions/PriceDropTicker';
 
 const FILTERS_KEY = 'coopact_filters_v1';
 const SAVED_FILTERS_KEY = 'coopact_saved_filters_v1';
@@ -235,6 +236,8 @@ export default function AuctionsPage() {
             ⚠️ {i18n.t('auction.rule_note')}
           </p>
         </div>
+
+        <PriceDropTicker />
 
         <AuctionPlanGate me={me} onRefresh={loadMe} isLogged={isLogged} />
 

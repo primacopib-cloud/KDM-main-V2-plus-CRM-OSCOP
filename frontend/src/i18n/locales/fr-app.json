@@ -532,6 +532,7 @@
     "history_wins": "Lots remportés",
     "savings_total": "💰 Économies cumulées : {{amount}} €",
     "savings_detail": "{{count}} lot(s) remporté(s) · valeur {{value}} € · payé {{paid}} €",
+    "ticker_label": "Baisses en direct",
     "history_ledger": "Relevé de crédits",
     "featured_kicker": "COOP'ACT à la une",
     "featured_cta": "Coop'acter",

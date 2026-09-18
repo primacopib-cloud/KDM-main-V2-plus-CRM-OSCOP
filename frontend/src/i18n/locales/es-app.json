@@ -532,6 +532,7 @@
     "history_wins": "Lotes ganados",
     "savings_total": "💰 Ahorro acumulado: {{amount}} €",
     "savings_detail": "{{count}} lote(s) ganado(s) · valor {{value}} € · pagado {{paid}} €",
+    "ticker_label": "Bajadas en directo",
     "history_ledger": "Extracto de créditos",
     "featured_kicker": "COOP'ACT destacado",
     "featured_cta": "Coop'actuar",

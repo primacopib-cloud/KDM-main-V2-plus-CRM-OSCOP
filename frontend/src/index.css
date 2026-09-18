@@ -652,3 +652,10 @@ body.has-lolo-subnav { padding-top: 32px; --lolo-offset: 66px; }
   to { opacity: 1; transform: none; }
 }
 .card-in { animation: cardIn 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+
+@keyframes tickerScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.ticker-track { animation: tickerScroll 45s linear infinite; }
+.ticker-track:hover { animation-play-state: paused; }

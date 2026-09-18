@@ -532,6 +532,7 @@
     "history_wins": "Lots won",
     "savings_total": "💰 Total savings: €{{amount}}",
     "savings_detail": "{{count}} lot(s) won · value €{{value}} · paid €{{paid}}",
+    "ticker_label": "Live price drops",
     "history_ledger": "Credit statement",
     "featured_kicker": "Featured COOP'ACT",
     "featured_cta": "Coop'act now",

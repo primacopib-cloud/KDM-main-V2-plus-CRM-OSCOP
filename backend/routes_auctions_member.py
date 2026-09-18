@@ -93,6 +93,32 @@ async def public_auctions(status: str = "", category: str = "", type_id: str = "
             "credits_per_eur": ah.CREDITS_PER_EUR}
 
 
+@auctions_member_router.get("/recent-drops")
+async def recent_price_drops(limit: int = 12):
+    """Bandeau public : dernières baisses de prix réelles de la salle (anonymisé)."""
+    bids = await ah.db.auction_bids.find(
+        {}, {"_id": 0, "auction_id": 1, "price_after_eur": 1, "price_before_eur": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    refs = {}
+    if bids:
+        async for a in ah.db.auctions.find(
+                {"id": {"$in": list({b["auction_id"] for b in bids})}},
+                {"_id": 0, "id": 1, "title": 1, "reference": 1, "price_drop_eur": 1}):
+            refs[a["id"]] = a
+    drops = []
+    for b in bids:
+        a = refs.get(b["auction_id"])
+        if not a:
+            continue
+        after = round(float(b.get("price_after_eur") or 0), 2)
+        before = b.get("price_before_eur")
+        before = (round(float(before), 2) if before is not None
+                  else round(after + float(a.get("price_drop_eur") or 0), 2))
+        drops.append({"title": a.get("title"), "reference": a.get("reference"),
+                      "from_eur": before, "to_eur": after, "at": b.get("created_at")})
+    return {"drops": drops}
+
+
 @auctions_member_router.get("/share/{reference}", response_class=HTMLResponse)
 async def share_auction_preview(reference: str):
     """Aperçu riche (Open Graph) pour WhatsApp/Facebook + redirection vers la page du lot."""
@@ -524,7 +550,7 @@ async def place_bid(auction_id: str, user_id: str = Depends(get_current_user_id)
         if res.modified_count:
             await ah.db.auction_bids.insert_one({
                 "id": str(uuid.uuid4()), "auction_id": auction_id, "user_id": user_id,
-                "credits_spent": cost, "price_after_eur": new_price,
+                "credits_spent": cost, "price_after_eur": new_price, "price_before_eur": cur,
                 "created_at": ah.now_utc().isoformat()})
             try:
                 from auction_emails import check_price_alerts
