@@ -359,5 +359,13 @@
   "voir_abonnements": "Gadé abònman-la",
   "visiteur_connexion": "Konèkté'w pou komandé",
   "tarif_adherent": "Tarif rézèvé pou adéran"
+ },
+ "navtab": {
+  "home": "Lakay",
+  "pass": "PASS LOLODRIVE",
+  "catalog": "Katalòg LOLODRIVE",
+  "pops": "POP'S",
+  "network_lolo": "Rézo LOLODRIVE",
+  "network_pops": "Rézo POP'S"
  }
 }

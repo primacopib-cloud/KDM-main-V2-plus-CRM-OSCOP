@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 
 const LOLO_PATHS = ['/particuliers', '/pass-lolodrive', '/catalogue-lolodrive', '/points-relais', '/reseau-pops'];
 const LOLO_NAV = [
-  { to: '/particuliers', label: 'Accueil', icon: Home, testid: 'lolo-subnav-accueil' },
-  { to: '/pass-lolodrive', label: 'PASS LOLODRIVE', icon: Ticket, testid: 'lolo-subnav-pass' },
-  { to: '/catalogue-lolodrive', label: 'Catalogue LOLODRIVE', icon: ShoppingCart, testid: 'lolo-subnav-catalogue' },
-  { to: '/detaillant', label: "POP'S", icon: Store, testid: 'lolo-subnav-pops' },
-  { to: '/points-relais', label: 'Réseau LOLODRIVE', icon: MapPin, testid: 'lolo-subnav-reseau' },
-  { to: '/reseau-pops', label: "Réseau POP'S", icon: Store, testid: 'lolo-subnav-reseau-pops' },
+  { to: '/particuliers', label: 'navtab.home', icon: Home, testid: 'lolo-subnav-accueil' },
+  { to: '/pass-lolodrive', label: 'navtab.pass', icon: Ticket, testid: 'lolo-subnav-pass' },
+  { to: '/catalogue-lolodrive', label: 'navtab.catalog', icon: ShoppingCart, testid: 'lolo-subnav-catalogue' },
+  { to: '/detaillant', label: 'navtab.pops', icon: Store, testid: 'lolo-subnav-pops' },
+  { to: '/points-relais', label: 'navtab.network_lolo', icon: MapPin, testid: 'lolo-subnav-reseau' },
+  { to: '/reseau-pops', label: 'navtab.network_pops', icon: Store, testid: 'lolo-subnav-reseau-pops' },
 ];
 
 export const AudienceSwitcher = () => {
@@ -56,7 +56,7 @@ export const AudienceSwitcher = () => {
                     active ? 'text-[#1F2A12] rounded-md' : 'text-white/75 hover:text-white'}`}
                   style={active ? { background: '#8CC63E' } : {}}>
                   <Icon className="w-3 h-3" />
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                 </Link>
               );
             })}

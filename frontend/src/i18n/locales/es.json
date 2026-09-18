@@ -191,5 +191,13 @@
   "territories": "Territorios",
   "relay_points": "Puntos de recogida",
   "contact": "Contacto"
+ },
+ "navtab": {
+  "home": "Inicio",
+  "pass": "PASS LOLODRIVE",
+  "catalog": "Catálogo LOLODRIVE",
+  "pops": "POP'S",
+  "network_lolo": "Red LOLODRIVE",
+  "network_pops": "Red POP'S"
  }
 }

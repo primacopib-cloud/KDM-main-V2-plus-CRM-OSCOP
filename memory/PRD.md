@@ -3728,3 +3728,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-09 — Lot 95 : Titre Réseau POP'S multilingue (testé UI)
 - Clés auction.popsnet_* (badge, titre 2 parties, intro 4 parties) ajoutées FR/EN/ES/GCF. Leçon : les clés de fr-app.json sont sous le namespace racine "auction" → toujours préfixer i18n.t('auction.xxx'). Page /reseau-pops traduite : FR « Trouvez le POP'S le plus proche », EN « Find the nearest POP'S », ES « Encuentra el POP'S más cercano », GCF « Jwenn POP'S ki pi pré ». Vérifié par captures dans les 4 langues (?lang=xx).
+
+## 2026-09 — Lot 96 : Onglets bandeau vert multilingues (testé UI 4 langues)
+- AudienceSwitcher : LOLO_NAV utilise des clés navtab.* (namespace racine dans fr/en/es/gcf.json, PAS dans "common") rendues via t(label). Traductions : Accueil/Home/Inicio/Lakay, PASS LOLODRIVE (inchangé), Catalogue LOLODRIVE (EN: LOLODRIVE catalogue, ES: Catálogo, GCF: Katalòg), POP'S (inchangé), Réseau LOLODRIVE (EN: network, ES: Red, GCF: Rézo), Réseau POP'S idem. Testé : les 6 onglets corrects dans les 4 langues.
+- Leçon : namespaces racine des locales = objets top-level (common, nav, landing, auction…) ; t('x.y') exige x en clé racine.
