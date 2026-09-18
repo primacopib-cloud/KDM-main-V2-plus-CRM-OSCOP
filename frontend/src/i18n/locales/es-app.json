@@ -549,6 +549,13 @@
     "prefs_val_email": "Email",
     "prefs_val_none": "Ninguna",
     "featured_badge": "Destacado",
+    "popsnet_badge": "Red POP'S",
+    "popsnet_title_a": "Encuentra el",
+    "popsnet_title_b": "POP'S más cercano",
+    "popsnet_intro_bold_a": "POP'S — Vendedores efímeros en la sala COOP'ACT",
+    "popsnet_intro_mid": ": tiendas socias que venden lotes de su stock a precio descendente. ",
+    "popsnet_intro_bold_b": "Haz clic en un POP'S",
+    "popsnet_intro_end": " para ver su escaparate, sus lotes en curso y seguir la tienda.",
     "prefs_auction_plan_expiry": "Recordatorio de expiración",
     "prefs_brand_new_lot": "Marca seguida en sala",
     "prefs_auction_price_target": "Precio objetivo alcanzado"

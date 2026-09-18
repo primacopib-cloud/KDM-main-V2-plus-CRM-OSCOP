@@ -549,6 +549,13 @@
     "prefs_val_email": "Email",
     "prefs_val_none": "None",
     "featured_badge": "Featured",
+    "popsnet_badge": "POP'S network",
+    "popsnet_title_a": "Find the",
+    "popsnet_title_b": "nearest POP'S",
+    "popsnet_intro_bold_a": "POP'S — Pop-up sellers in the COOP'ACT room",
+    "popsnet_intro_mid": ": partner shops releasing their stock in descending-price lots. ",
+    "popsnet_intro_bold_b": "Click a POP'S",
+    "popsnet_intro_end": " to see its storefront, live lots and follow the shop.",
     "prefs_auction_plan_expiry": "Plan expiry reminder",
     "prefs_brand_new_lot": "Followed brand in the room",
     "prefs_auction_price_target": "Target price reached"

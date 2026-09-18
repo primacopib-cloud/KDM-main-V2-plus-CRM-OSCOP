@@ -86,7 +86,7 @@ export const PublicLolodriveMapSection = ({ showRelays = true, showPops = true }
         <div className="text-center mb-5">
           <span className="badge-status mb-3 inline-flex">
             <span className="dot pulse-glow"></span>
-            {showRelays ? i18n.t('landing.reseau_lolodrive') : "Réseau POP'S"}
+            {showRelays ? i18n.t('landing.reseau_lolodrive') : i18n.t('auction.popsnet_badge')}
           </span>
           {showRelays ? (
             <>
@@ -100,12 +100,11 @@ export const PublicLolodriveMapSection = ({ showRelays = true, showPops = true }
           ) : (
             <>
               <h3 className="text-[28px] font-display font-bold tracking-tight mt-2 mb-2" data-testid="pops-network-title">
-                Trouvez le <span className="text-or-metallise">POP'S le plus proche</span>
+                {i18n.t('auction.popsnet_title_a')} <span className="text-or-metallise">{i18n.t('auction.popsnet_title_b')}</span>
               </h3>
               <p className="text-white/70 text-sm max-w-[60ch] mx-auto">
-                <strong>POP'S — Vendeurs éphémères en salle COOP'ACT</strong> : des boutiques partenaires qui cèdent
-                des lots de leurs stocks à prix descendant. <strong>Cliquez sur un POP'S</strong> pour découvrir
-                sa vitrine, ses lots en cours et suivre sa boutique.
+                <strong>{i18n.t('auction.popsnet_intro_bold_a')}</strong>{i18n.t('auction.popsnet_intro_mid')}
+                <strong>{i18n.t('auction.popsnet_intro_bold_b')}</strong>{i18n.t('auction.popsnet_intro_end')}
               </p>
             </>
           )}

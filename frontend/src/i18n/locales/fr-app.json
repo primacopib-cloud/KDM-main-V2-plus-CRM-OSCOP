@@ -549,6 +549,13 @@
     "prefs_val_email": "Email",
     "prefs_val_none": "Aucune",
     "featured_badge": "Vedette",
+    "popsnet_badge": "Réseau POP'S",
+    "popsnet_title_a": "Trouvez le",
+    "popsnet_title_b": "POP'S le plus proche",
+    "popsnet_intro_bold_a": "POP'S — Vendeurs éphémères en salle COOP'ACT",
+    "popsnet_intro_mid": " : des boutiques partenaires qui cèdent des lots de leurs stocks à prix descendant. ",
+    "popsnet_intro_bold_b": "Cliquez sur un POP'S",
+    "popsnet_intro_end": " pour découvrir sa vitrine, ses lots en cours et suivre sa boutique.",
     "prefs_auction_plan_expiry": "Rappel expiration du plan",
     "prefs_brand_new_lot": "Marque suivie en salle",
     "prefs_auction_price_target": "Prix cible atteint"

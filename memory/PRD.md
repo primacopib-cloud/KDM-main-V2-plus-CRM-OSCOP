@@ -3725,3 +3725,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-09 — Lot 94 : Titre page Réseau POP'S (testé UI)
 - /reseau-pops : badge « Réseau POP'S », titre « Trouvez le POP'S le plus proche » (pops-network-title), intro dédiée vendeurs éphémères en salle COOP'ACT (le texte relais LOLODRIVE n'y apparaît plus). La version relais est inchangée sur /points-relais.
+
+## 2026-09 — Lot 95 : Titre Réseau POP'S multilingue (testé UI)
+- Clés auction.popsnet_* (badge, titre 2 parties, intro 4 parties) ajoutées FR/EN/ES/GCF. Leçon : les clés de fr-app.json sont sous le namespace racine "auction" → toujours préfixer i18n.t('auction.xxx'). Page /reseau-pops traduite : FR « Trouvez le POP'S le plus proche », EN « Find the nearest POP'S », ES « Encuentra el POP'S más cercano », GCF « Jwenn POP'S ki pi pré ». Vérifié par captures dans les 4 langues (?lang=xx).
