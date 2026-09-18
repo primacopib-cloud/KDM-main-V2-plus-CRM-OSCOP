@@ -5,12 +5,14 @@ import { toast } from 'sonner';
 import { CONCEPT_I18N } from './conceptI18n';
 import { detaillantAPI } from '../services/api.detaillant';
 import { PopsLeaderboard } from '../components/detaillant/PopsLeaderboard';
-import { API } from '../services/http';
+import { API, apiCall } from '../services/http';
+import { Flag } from '../components/Flag';
 
 const imgSrc = (u) => (u?.startsWith('/api/') ? `${API}${u.slice(4)}` : u);
 
 const ICONS = [Gavel, Coins, BadgePercent, Globe2, CalendarClock, QrCode];
-const LANGS = [['fr', '🇫🇷 FR'], ['en', '🇬🇧 EN'], ['es', '🇪🇸 ES'], ['gcf', '🌺 KR']];
+const LANGS = [['fr', 'fr', 'FR'], ['en', 'gb', 'EN'], ['es', 'es', 'ES'], ['gcf', 'gp', 'KR']];
+const tpl = (s, vars) => Object.entries(vars).reduce((acc, [k, v]) => acc.replace(`{{${k}}}`, v), s);
 
 // Apparition douce au scroll (stagger via delay)
 const Reveal = ({ children, delay = 0, className = '', ...rest }) => {
@@ -36,6 +38,129 @@ const Reveal = ({ children, delay = 0, className = '', ...rest }) => {
 
 const DEMO_START = 24;
 const DEMO_FLOOR = 20.4; // −15 %
+
+const fmtLeft = (ms) => {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const sec = String(s % 60).padStart(2, '0');
+  return h > 0 ? `${h}h ${m}m ${sec}s` : `${m}:${sec}`;
+};
+
+// Démo branchée sur un vrai lot LIVE de la salle : prix réel rafraîchi toutes les 15 s
+const LiveLotDemo = ({ t, lot }) => {
+  const [flash, setFlash] = useState(false);
+  const [lastDrop, setLastDrop] = useState(null);
+  const [now, setNow] = useState(Date.now());
+  const prevPrice = useRef(null);
+
+  useEffect(() => {
+    if (!lot) return undefined;
+    if (prevPrice.current != null && lot.price_eur < prevPrice.current) {
+      setLastDrop(+(prevPrice.current - lot.price_eur).toFixed(2));
+      setFlash(true);
+      const id = setTimeout(() => setFlash(false), 700);
+      prevPrice.current = lot.price_eur;
+      return () => clearTimeout(id);
+    }
+    prevPrice.current = lot.price_eur;
+    return undefined;
+  }, [lot]);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const pct = lot.value_eur ? Math.round((1 - lot.price_eur / lot.value_eur) * 100) : 0;
+  const ends = lot.ends_at ? new Date(lot.ends_at).getTime() : null;
+
+  return (
+    <div className="relative mt-10 rounded-2xl border border-emerald-400/30 bg-emerald-500/[0.04] p-6 sm:p-8 overflow-hidden"
+      data-testid="concept-demo">
+      <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">
+        <span className="relative flex w-2 h-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-400" />
+        </span>
+        {t.demoLiveTag}
+      </div>
+      <h2 className="text-base md:text-lg font-bold mt-2">{t.demoTitle}</h2>
+      <p className="text-xs text-white/55 mt-1">{t.demoSub}</p>
+
+      <div className="grid sm:grid-cols-[auto_1fr_auto] gap-6 items-center mt-6">
+        {lot.image_url && (
+          <img src={imgSrc(lot.image_url)} alt={lot.title} loading="lazy"
+            className="w-20 h-20 rounded-xl object-contain bg-white/[0.06] p-1.5 border border-white/10" />
+        )}
+        <div>
+          <p className="text-xs font-bold text-white/80" data-testid="concept-demo-live-title">{lot.title}</p>
+          <div className="flex items-end gap-3 flex-wrap mt-1">
+            <span data-testid="concept-demo-live-price"
+              className={`text-5xl sm:text-6xl font-black tabular-nums inline-block transition-[transform,color] duration-300 ${
+                flash ? 'scale-110 text-emerald-300' : 'scale-100 text-white'}`}>
+              {Number(lot.price_eur).toFixed(2)} €
+            </span>
+            <span className="text-[11px] text-white/45 pb-1.5">
+              {t.demoValue} <s>{Number(lot.value_eur || 0).toFixed(2)} €</s>
+              {pct > 0 && <span className="text-emerald-300 font-bold"> · {tpl(t.demoLiveOff, { pct })}</span>}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-[#E9CF8E] border border-[#D9B35A]/40 bg-[#D9B35A]/10"
+              data-testid="concept-demo-live-bids">
+              <Gavel className="w-3 h-3 inline mr-1 -mt-0.5" />{tpl(t.demoLiveBids, { count: lot.bids_count || 0 })}
+            </span>
+            {lastDrop != null && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10 animate-pulse"
+                data-testid="concept-demo-live-drop">
+                −{lastDrop.toFixed(2)} €
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-3">
+          {ends != null && (
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-white/50 tabular-nums" data-testid="concept-demo-live-timer">
+              <Timer className="w-3.5 h-3.5 text-[#D9B35A]" /> {t.demoLiveEnd} {fmtLeft(ends - now)}
+            </span>
+          )}
+          <Link to={`/encheres/lot/${lot.reference}`} data-testid="concept-demo-live-cta"
+            className="group inline-flex items-center gap-2 px-7 h-14 rounded-2xl bg-[#D9B35A] text-black font-black text-sm hover:bg-[#E9CF8E] active:scale-95 transition-[transform,background-color] duration-150 shadow-[0_8px_30px_rgba(217,179,90,0.35)]">
+            {t.demoLiveCta}
+            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Vrai lot en cours si disponible, sinon démo cliquable
+const LiveDemoSwitch = ({ t }) => {
+  const [lot, setLot] = useState(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let stop = false;
+    const load = () => apiCall('/auctions/public?status=LIVE')
+      .then((d) => {
+        if (stop) return;
+        const live = (d.items || []).filter((a) => a.status === 'LIVE');
+        live.sort((a, b) => (b.bids_count || 0) - (a.bids_count || 0));
+        setLot(live[0] || null);
+        setLoaded(true);
+      })
+      .catch(() => { if (!stop) setLoaded(true); });
+    load();
+    const id = setInterval(load, 15000);
+    return () => { stop = true; clearInterval(id); };
+  }, []);
+
+  if (!loaded) return null;
+  return lot ? <LiveLotDemo t={t} lot={lot} /> : <DemoLot t={t} />;
+};
 
 // Mini-démo interactive : chaque clic = un Coop'Act qui fait baisser le prix
 const DemoLot = ({ t }) => {
@@ -160,11 +285,11 @@ export default function DetaillantConceptPage() {
               <Store className="w-4 h-4" /> {t.tag}
             </div>
             <div className="flex gap-1" data-testid="concept-lang-switch">
-              {LANGS.map(([code, label]) => (
+              {LANGS.map(([code, flag, label]) => (
                 <button key={code} onClick={() => setLang(code)} data-testid={`concept-lang-${code}`}
-                  className={`px-2.5 h-7 rounded-full text-[11px] font-bold border transition-colors ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full text-[11px] font-bold border transition-colors ${
                     lang === code ? 'bg-[#D9B35A] text-black border-[#D9B35A]' : 'border-white/20 text-white/60 hover:bg-white/5'}`}>
-                  {label}
+                  <Flag code={flag} className="w-3.5 h-auto rounded-[2px] inline-block" /> {label}
                 </button>
               ))}
             </div>
@@ -195,7 +320,7 @@ export default function DetaillantConceptPage() {
           </div>
         </Reveal>
 
-        <Reveal delay={220}><DemoLot t={t} /></Reveal>
+        <Reveal delay={220}><LiveDemoSwitch t={t} /></Reveal>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-14">
           {t.features.map(([title, desc], i) => {

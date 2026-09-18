@@ -3756,3 +3756,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
   - **Reveal au scroll** : composant Reveal (IntersectionObserver, threshold 0.12, stagger 70–220 ms) appliqué au hero, CTA, démo, features, vidéo, catalogue, étapes, palmarès, partage.
   - **Micro-interactions** : cartes features (lift -translate-y-1.5 + bordure dorée + icône scale/rotate), cartes catalogue (lift + zoom image), étapes numérotées (chip doré au survol), CTA avec flèche coulissante, boutons partage en élévation, halo doré derrière le hero.
 - Testé E2E : prix 24,00 € → 22,46 € après 3 clics, drops ×3, état VENDU au plancher, reset 24,00 €, switch EN OK, reveal opacity 1 après scroll.
+
+## 2026-09 — Lot 103 : Drapeaux langue + Démo branchée sur lot réel (testés E2E)
+- Sélecteur de langue vitrine POP'S (/detaillant) : emojis remplacés par de vrais drapeaux via le composant Flag (flagcdn) — FR 🇫🇷, EN→GB, ES, KR→Guadeloupe (gp). 4 images vérifiées.
+- Démo vitrine branchée sur la salle réelle (LiveDemoSwitch + LiveLotDemo dans DetaillantConceptPage.jsx) : fetch + poll 15 s de GET /api/auctions/public?status=LIVE, choix du lot LIVE le plus coop'acté. Affiche photo, titre, prix réel (flash vert + chip de la dernière baisse quand le prix bouge), valeur barrée, % de réduction, compteur de Coop'Act, countdown réel jusqu'à ends_at (hh mm ss), CTA doré « Coop'acter ce lot en salle » → /encheres/lot/{reference}. Badge « En direct » vert pulsé. Si aucun lot LIVE → repli sur la démo cliquable (DemoLot conservé). Traduit FR/EN/ES/GCF (clés demoLive* dans conceptI18n.js, interpolation manuelle via tpl()).
+- Testé E2E : lot réel « Riz long grain 5kg » 50,00 €, timer 1h 10m, CTA → /encheres/lot/AUC-20260917-A66BA8, switch ES OK.
