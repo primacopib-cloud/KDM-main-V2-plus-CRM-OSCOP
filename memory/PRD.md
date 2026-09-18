@@ -3717,3 +3717,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-09 — Lot 92 : Bannière expiration espace POP'S (testé E2E)
 - Bannière orange (dt-expiry-banner) en haut de l'espace POP'S dès J-7 avant expiration : décompte (« expire dans X jours » / demain / aujourd'hui) + date + bouton « Renouveler mon abonnement » (dt-expiry-renew-btn → checkout Stripe existant). Testé UI avec échéance forcée J-5 (bannière visible, texte correct), puis valid_until restauré au 18/10/2026.
+
+## 2026-09 — Lot 93 : Refonte navigation réseaux (testé UI)
+- Bandeau violet (NavBar/navItems.js) : onglets « LOLODRIVE » et « POP'S » SUPPRIMÉS (restent Accueil, Accès Pro, Catalogue Pro, Territoires).
+- Bandeau vert (AudienceSwitcher) : nouvel ordre Accueil, PASS LOLODRIVE, Catalogue LOLODRIVE, POP'S (→/detaillant), Réseau LOLODRIVE (→/points-relais), Réseau POP'S (→/reseau-pops, lolo-subnav-reseau-pops). '/reseau-pops' ajouté à LOLO_PATHS.
+- PublicLolodriveMapSection : props showRelays/showPops (défaut true) ; /points-relais = showPops false (que les relais, badge POP'S masqué) ; nouvelle page /reseau-pops (PopsNetworkPage) = showRelays false (que les POP'S, podium+CTA relais masqués, compteur « 0 relais actif · N POP'S »). Testé UI : 2 captures validées.

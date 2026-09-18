@@ -36,6 +36,7 @@ import ApiCooperativePage from "./pages/ApiCooperativePage";
 import ReceptionProPage from "./pages/ReceptionProPage";
 import TerritoiresPage from "./pages/TerritoiresPage";
 import PointsRelaisPage from "./pages/PointsRelaisPage";
+import PopsNetworkPage from "./pages/PopsNetworkPage";
 import LogiscopSpacePage from "./pages/LogiscopSpacePage";
 import OscopCheckoutReturnPage from "./pages/OscopCheckoutReturnPage";
 import LegalDynamicPage from "./pages/LegalDynamicPage";
@@ -216,6 +217,7 @@ function App() {
           <Route path="/reglement-reception" element={<ReceptionProPage />} />
           <Route path="/territoires" element={<TerritoiresPage />} />
           <Route path="/points-relais" element={<PointsRelaisPage />} />
+          <Route path="/reseau-pops" element={<PopsNetworkPage />} />
           <Route path="/espace-logiscop" element={<LogiscopSpacePage />} />
           <Route path="/espace-fournisseur/commandes-oscop" element={<SupplierOscopOrdersPage />} />
           <Route path="/calculateur-fret" element={<FreightCalculatorPage />} />

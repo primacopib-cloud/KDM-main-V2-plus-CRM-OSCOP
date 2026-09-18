@@ -10,8 +10,9 @@ import { RelayPodium } from '../RelayPodium';
 import { RelayReviewsDialog } from '../pass/RelayReviewsDialog';
 import { detaillantAPI } from '../../services/api.detaillant';
 
-/* Section publique : carte du Reseau LOLODRIVE (acquisition / contact) */
-export const PublicLolodriveMapSection = () => {
+/* Section publique : carte du Reseau LOLODRIVE (acquisition / contact).
+   showRelays/showPops permettent de n'afficher que les relais LOLODRIVE ou que les POP'S. */
+export const PublicLolodriveMapSection = ({ showRelays = true, showPops = true }) => {
   const [points, setPoints] = useState([]);
   const [territories, setTerritories] = useState([]);
   const [territory, setTerritory] = useState(null);
@@ -104,8 +105,8 @@ export const PublicLolodriveMapSection = () => {
           />
           <div className="text-xs text-white/60 inline-flex items-center gap-1.5" data-testid="public-points-count">
             <MapPin className="w-3.5 h-3.5 text-or-metallise" />
-            <strong className="text-white/90">{points.length}</strong> {points.length > 1 ? i18n.t('landing.relay_count_active') : i18n.t('landing.relay_count_active_one')}
-            {pops.filter((s) => s.lat).length > 0 && (
+            <strong className="text-white/90">{showRelays ? points.length : 0}</strong> {(showRelays ? points.length : 0) > 1 ? i18n.t('landing.relay_count_active') : i18n.t('landing.relay_count_active_one')}
+            {showPops && pops.filter((s) => s.lat).length > 0 && (
               <span className="inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10"
                 data-testid="public-pops-count">
                 <strong>{pops.filter((s) => s.lat).length}</strong> POP'S — Vendeurs éphémères
@@ -114,9 +115,10 @@ export const PublicLolodriveMapSection = () => {
           </div>
         </div>
 
-        <LoloPointsMap points={points} pops={pops} territory={territory} focusCode={focusCode} ratings={ratings} height="460px" onSelect={(p) => setSelected(p)} />
-        <RelayPodium onView={viewRelayReviews} />
+        <LoloPointsMap points={showRelays ? points : []} pops={showPops ? pops : []} territory={territory} focusCode={focusCode} ratings={ratings} height="460px" onSelect={(p) => setSelected(p)} />
+        {showRelays && <RelayPodium onView={viewRelayReviews} />}
 
+        {showRelays && (
         <div className="mt-3 text-center">
           <Link to="/adhesion-vendeur?type=acheteur_pro">
             <button className="btn-gold inline-flex items-center justify-center gap-2.5 rounded-[14px] px-5 py-3 text-sm font-semibold" data-testid="join-network-btn" onClick={() => trackCta('devenir_relais')}>
@@ -125,6 +127,7 @@ export const PublicLolodriveMapSection = () => {
             </button>
           </Link>
         </div>
+        )}
 
         {/* Avis publics du relais sélectionné */}
         {selected && (
