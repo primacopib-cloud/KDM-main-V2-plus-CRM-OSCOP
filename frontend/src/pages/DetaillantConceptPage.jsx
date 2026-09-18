@@ -83,9 +83,9 @@ export default function DetaillantConceptPage() {
             <p className="text-sm font-bold text-[#E9CF8E]">{t.videoTitle}</p>
           </div>
           <video controls playsInline preload="none" className="w-full aspect-video bg-black"
-            poster="https://images.pexels.com/videos/853782/free-video-853782.jpg?auto=compress&w=1260"
+            poster="https://images.pexels.com/videos/39221946/auckland-bags-bottles-bread-39221946.jpeg?auto=compress&w=1260"
             data-testid="concept-video-player">
-            <source src="https://videos.pexels.com/video-files/853782/853782-hd_1920_1080_30fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/39221946/16690560_1920_1080_25fps.mp4" type="video/mp4" />
           </video>
         </div>
         {catalog.length > 0 && (

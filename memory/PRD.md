@@ -3736,3 +3736,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-09 — Lot 97 : Vidéo vitrine POP'S + bandeau violet traduit (testé UI)
 - Nouvelle vidéo /detaillant (concept-video) : Pexels 853782 « blurred grocery store » (alimentation générale, marques floutées) en HD 1920×1080 — source videos.pexels.com/video-files/853782/853782-hd_1920_1080_30fps.mp4, poster free-video-853782.jpg (vérifiés par curl).
 - Bandeau violet : labels navItems branchés sur i18n (nav.home/pro_access/catalog_pro/territories) ; clés nav.territories + nav.catalog_pro ajoutées aux 4 locales. Vérifié : FR Accès Pro/Catalogue Pro/Territoires, EN Pro Access/Pro catalogue/Territories, ES Acceso Pro/Catálogo Pro/Territorios, GCF Aksè Pro/Katalòg Pro/Téritwa.
+
+## 2026-09 — Lot 98 : Vidéo vitrine sans floutage (testé UI)
+- La vidéo /detaillant remplace le floutage : Pexels 39221946 « Vibrant Supermarket Aisle with Soft Drinks » (rayons boissons/snacks industriels, image nette, Full HD). Astuce : l'URL du fichier pleine résolution s'obtient via la redirection https://www.pexels.com/download/video/{id}/ (curl -L), pas en devinant les noms de variantes HD (403). Source : 16690560_1920_1080_25fps.mp4.
