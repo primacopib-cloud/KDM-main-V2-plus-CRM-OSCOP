@@ -137,10 +137,12 @@ const LiveLotDemo = ({ t, lot }) => {
   );
 };
 
-// Vrai lot en cours si disponible, sinon démo cliquable
+// Carrousel des 3 vrais lots LIVE de la salle (rotation auto 6 s, pause au survol)
 const LiveDemoSwitch = ({ t }) => {
-  const [lot, setLot] = useState(null);
+  const [lots, setLots] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     let stop = false;
@@ -149,7 +151,7 @@ const LiveDemoSwitch = ({ t }) => {
         if (stop) return;
         const live = (d.items || []).filter((a) => a.status === 'LIVE');
         live.sort((a, b) => (b.bids_count || 0) - (a.bids_count || 0));
-        setLot(live[0] || null);
+        setLots(live.slice(0, 3));
         setLoaded(true);
       })
       .catch(() => { if (!stop) setLoaded(true); });
@@ -158,8 +160,36 @@ const LiveDemoSwitch = ({ t }) => {
     return () => { stop = true; clearInterval(id); };
   }, []);
 
+  useEffect(() => { setIdx((i) => (lots.length ? i % lots.length : 0)); }, [lots.length]);
+
+  useEffect(() => {
+    if (lots.length < 2 || paused) return undefined;
+    const id = setInterval(() => setIdx((i) => (i + 1) % lots.length), 6000);
+    return () => clearInterval(id);
+  }, [lots.length, paused]);
+
   if (!loaded) return null;
-  return lot ? <LiveLotDemo t={t} lot={lot} /> : <DemoLot t={t} />;
+  if (lots.length === 0) return <DemoLot t={t} />;
+  const lot = lots[idx];
+
+  return (
+    <div data-testid="concept-demo-carousel"
+      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <div key={lot.id} className="card-in">
+        <LiveLotDemo t={t} lot={lot} />
+      </div>
+      {lots.length > 1 && (
+        <div className="flex items-center justify-center gap-1.5 mt-3" data-testid="concept-demo-dots">
+          {lots.map((l, i) => (
+            <button key={l.id} type="button" onClick={() => setIdx(i)}
+              data-testid={`concept-demo-dot-${i}`} aria-label={l.title}
+              className={`h-1.5 rounded-full transition-[width,background-color] duration-300 ${
+                i === idx ? 'w-6 bg-[#D9B35A]' : 'w-1.5 bg-white/20 hover:bg-white/40'}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Mini-démo interactive : chaque clic = un Coop'Act qui fait baisser le prix

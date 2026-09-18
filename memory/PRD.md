@@ -3768,3 +3768,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **/encheres** (AuctionsPage.jsx) : entrée en cascade des cartes de lots (classe .card-in ajoutée dans index.css — keyframes cardIn, stagger 60 ms plafonné 480 ms).
 - **/pass** (PassLolodrivePage.jsx) : cartes d'atouts en entrée animée stagger 90 ms + lift/icône au survol.
 - Testé E2E : retour présent sur les 3 pages (coopact→/, encheres→/), stats animées (12 Coop'Act), 8 cartes animées en salle, 3 cartes PASS.
+
+## 2026-09 — Lot 105 : Carrousel lots live vitrine POP'S (testé E2E)
+- LiveDemoSwitch (DetaillantConceptPage.jsx) devient un carrousel des 3 lots LIVE les plus coop'actés (au lieu d'un seul) : rotation automatique toutes les 6 s, pause au survol, pastilles cliquables (concept-demo-dot-{i}, pastille active élargie dorée), transition card-in à chaque changement, toujours rafraîchi via GET /api/auctions/public?status=LIVE (poll 15 s). 0 lot → démo cliquable ; 1 lot → pas de pastilles ni rotation.
+- Testé E2E : 2 lots LIVE affichés, clic pastille change le lot, rotation auto après 7 s confirmée.
