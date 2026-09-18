@@ -27,9 +27,9 @@ export const getNavItems = (userRole, isAdmin, pathname = '/') => {
   const isPass = userRole === 'TITULAIRE_PASS';
   const baseItems = [
     { href: '/', label: 'nav.home', icon: Home, public: true },
-    { href: '/adhesion-vendeur', label: 'Accès Pro', icon: Store, public: true },
-    { href: isPass ? '/catalogue-lolodrive' : '/catalogue', label: 'Catalogue Pro', icon: ShoppingCart, public: true },
-    { href: '/territoires', label: 'Territoires', icon: MapPin, public: true },
+    { href: '/adhesion-vendeur', label: 'nav.pro_access', icon: Store, public: true },
+    { href: isPass ? '/catalogue-lolodrive' : '/catalogue', label: 'nav.catalog_pro', icon: ShoppingCart, public: true },
+    { href: '/territoires', label: 'nav.territories', icon: MapPin, public: true },
   ].filter((it) => !(isPass && it.href === '/tarifs'));
 
   // Member-only shortcuts déplacés en pied de page (demande utilisateur).

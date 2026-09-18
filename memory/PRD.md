@@ -3732,3 +3732,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 ## 2026-09 — Lot 96 : Onglets bandeau vert multilingues (testé UI 4 langues)
 - AudienceSwitcher : LOLO_NAV utilise des clés navtab.* (namespace racine dans fr/en/es/gcf.json, PAS dans "common") rendues via t(label). Traductions : Accueil/Home/Inicio/Lakay, PASS LOLODRIVE (inchangé), Catalogue LOLODRIVE (EN: LOLODRIVE catalogue, ES: Catálogo, GCF: Katalòg), POP'S (inchangé), Réseau LOLODRIVE (EN: network, ES: Red, GCF: Rézo), Réseau POP'S idem. Testé : les 6 onglets corrects dans les 4 langues.
 - Leçon : namespaces racine des locales = objets top-level (common, nav, landing, auction…) ; t('x.y') exige x en clé racine.
+
+## 2026-09 — Lot 97 : Vidéo vitrine POP'S + bandeau violet traduit (testé UI)
+- Nouvelle vidéo /detaillant (concept-video) : Pexels 853782 « blurred grocery store » (alimentation générale, marques floutées) en HD 1920×1080 — source videos.pexels.com/video-files/853782/853782-hd_1920_1080_30fps.mp4, poster free-video-853782.jpg (vérifiés par curl).
+- Bandeau violet : labels navItems branchés sur i18n (nav.home/pro_access/catalog_pro/territories) ; clés nav.territories + nav.catalog_pro ajoutées aux 4 locales. Vérifié : FR Accès Pro/Catalogue Pro/Territoires, EN Pro Access/Pro catalogue/Territories, ES Acceso Pro/Catálogo Pro/Territorios, GCF Aksè Pro/Katalòg Pro/Téritwa.

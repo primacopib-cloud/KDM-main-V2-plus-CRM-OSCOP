@@ -60,7 +60,9 @@
   "vendor": "Vendedor",
   "administration": "Administración",
   "connectors": "Conectores",
-  "favorite_alerts": "Alertas de favoritos"
+  "favorite_alerts": "Alertas de favoritos",
+  "territories": "Territorios",
+  "catalog_pro": "Catálogo Pro"
  },
  "footer": {
   "navigation": "Navegación",
