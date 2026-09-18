@@ -3722,3 +3722,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Bandeau violet (NavBar/navItems.js) : onglets « LOLODRIVE » et « POP'S » SUPPRIMÉS (restent Accueil, Accès Pro, Catalogue Pro, Territoires).
 - Bandeau vert (AudienceSwitcher) : nouvel ordre Accueil, PASS LOLODRIVE, Catalogue LOLODRIVE, POP'S (→/detaillant), Réseau LOLODRIVE (→/points-relais), Réseau POP'S (→/reseau-pops, lolo-subnav-reseau-pops). '/reseau-pops' ajouté à LOLO_PATHS.
 - PublicLolodriveMapSection : props showRelays/showPops (défaut true) ; /points-relais = showPops false (que les relais, badge POP'S masqué) ; nouvelle page /reseau-pops (PopsNetworkPage) = showRelays false (que les POP'S, podium+CTA relais masqués, compteur « 0 relais actif · N POP'S »). Testé UI : 2 captures validées.
+
+## 2026-09 — Lot 94 : Titre page Réseau POP'S (testé UI)
+- /reseau-pops : badge « Réseau POP'S », titre « Trouvez le POP'S le plus proche » (pops-network-title), intro dédiée vendeurs éphémères en salle COOP'ACT (le texte relais LOLODRIVE n'y apparaît plus). La version relais est inchangée sur /points-relais.

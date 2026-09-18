@@ -86,14 +86,29 @@ export const PublicLolodriveMapSection = ({ showRelays = true, showPops = true }
         <div className="text-center mb-5">
           <span className="badge-status mb-3 inline-flex">
             <span className="dot pulse-glow"></span>
-            {i18n.t('landing.reseau_lolodrive')}
+            {showRelays ? i18n.t('landing.reseau_lolodrive') : "Réseau POP'S"}
           </span>
-          <h3 className="text-[28px] font-display font-bold tracking-tight mt-2 mb-2">
-            {i18n.t('landing.find_relay_prefix')} <span className="text-or-metallise">{i18n.t('landing.le_plus_proche')}</span>
-          </h3>
-          <p className="text-white/70 text-sm max-w-[60ch] mx-auto">
-            <strong>{i18n.t('landing.lolodrive_by_o_scop')}</strong>{i18n.t('landing.lolodrive_desc_mid')}<strong>{i18n.t('landing.cliquez_sur_un_relais')}</strong>{i18n.t('landing.lolodrive_desc_suffix')}
-          </p>
+          {showRelays ? (
+            <>
+              <h3 className="text-[28px] font-display font-bold tracking-tight mt-2 mb-2">
+                {i18n.t('landing.find_relay_prefix')} <span className="text-or-metallise">{i18n.t('landing.le_plus_proche')}</span>
+              </h3>
+              <p className="text-white/70 text-sm max-w-[60ch] mx-auto">
+                <strong>{i18n.t('landing.lolodrive_by_o_scop')}</strong>{i18n.t('landing.lolodrive_desc_mid')}<strong>{i18n.t('landing.cliquez_sur_un_relais')}</strong>{i18n.t('landing.lolodrive_desc_suffix')}
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-[28px] font-display font-bold tracking-tight mt-2 mb-2" data-testid="pops-network-title">
+                Trouvez le <span className="text-or-metallise">POP'S le plus proche</span>
+              </h3>
+              <p className="text-white/70 text-sm max-w-[60ch] mx-auto">
+                <strong>POP'S — Vendeurs éphémères en salle COOP'ACT</strong> : des boutiques partenaires qui cèdent
+                des lots de leurs stocks à prix descendant. <strong>Cliquez sur un POP'S</strong> pour découvrir
+                sa vitrine, ses lots en cours et suivre sa boutique.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="glass-panel rounded-[18px] p-4 mb-3 flex flex-wrap items-center justify-between gap-3">
