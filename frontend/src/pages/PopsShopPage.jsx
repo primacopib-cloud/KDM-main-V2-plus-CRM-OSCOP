@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, BellRing, Clock, Share2, Star, Store, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Flag } from '../components/Flag';
@@ -9,6 +9,7 @@ import { apiCall, getSessionToken } from '../services/http';
 // Mini page publique d'un POP'S : lots en cours, avis, bouton suivre
 export default function PopsShopPage() {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [error, setError] = useState(false);
   const [follows, setFollows] = useState(null);
@@ -36,9 +37,10 @@ export default function PopsShopPage() {
   return (
     <div className="min-h-screen bg-[#1F0A33] text-white" data-testid="pops-shop-page">
       <div className="max-w-4xl mx-auto px-5 py-10">
-        <Link to="/detaillant" className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80" data-testid="pops-shop-back">
-          <ArrowLeft className="w-3.5 h-3.5" /> Espace POP'S
-        </Link>
+        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/detaillant'))}
+          className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80" data-testid="pops-shop-back">
+          <ArrowLeft className="w-3.5 h-3.5" /> Retour
+        </button>
         <div className="mt-4 rounded-2xl border border-emerald-400/25 bg-emerald-500/[0.05] p-5">
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black bg-gradient-to-r from-emerald-500 to-emerald-700 text-white tracking-wide">POP'S</span>

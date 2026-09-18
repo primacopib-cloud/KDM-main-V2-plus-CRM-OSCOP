@@ -3745,3 +3745,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 2026-09 — Lot 100 : Bouton retour espace POP'S (testé UI)
 - Espace POP'S (/espace-detaillant) : bouton « ← Retour » (dt-back-btn) en haut de page → page précédente (navigate(-1)), fallback /detaillant si historique vide. Testé UI : vitrine → espace → retour revient sur /detaillant.
+
+## 2026-09 — Lot 101 : Retour vitrine POP'S + Économies membre (testé E2E)
+- Boutique publique /pops/{userId} (PopsShopPage.jsx) : le lien « Espace POP'S » devient un bouton « ← Retour » (pops-shop-back) → page précédente (navigate(-1)), fallback /detaillant. Testé UI : /encheres → /pops/{id} → Retour revient sur /encheres.
+- Économies cumulées membre : GET /api/auctions/me renvoie désormais `savings` {count, value_eur, paid_eur, saved_eur} agrégé sur TOUS les lots WON du membre (valeur − prix payé). Bandeau vert « 💰 Économies cumulées : X € » (member-savings-banner / member-savings-total) en tête du panneau Mon historique COOP'ACT (AuctionHistoryPanel.jsx), masqué si 0 lot remporté. Traduit FR/EN/ES/GCF (auction.savings_total / savings_detail). Testé E2E avec marie@example.com : 1 lot, valeur 50 €, payé 48 €, économie 2.00 €.

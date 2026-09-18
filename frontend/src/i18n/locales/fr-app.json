@@ -530,6 +530,8 @@
     "history_counts": "{{bids}} Coop'Act · {{wins}} lot(s) remporté(s)",
     "history_bids": "Mes Coop'Acts",
     "history_wins": "Lots remportés",
+    "savings_total": "💰 Économies cumulées : {{amount}} €",
+    "savings_detail": "{{count}} lot(s) remporté(s) · valeur {{value}} € · payé {{paid}} €",
     "history_ledger": "Relevé de crédits",
     "featured_kicker": "COOP'ACT à la une",
     "featured_cta": "Coop'acter",

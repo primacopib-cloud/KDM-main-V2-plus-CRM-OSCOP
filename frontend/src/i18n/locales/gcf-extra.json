@@ -245,6 +245,8 @@
     "history_counts": "{{bids}} Coop'Act · {{wins}} lo genyen",
     "history_bids": "Coop'Act an mwen",
     "history_wins": "Lo genyen",
+    "savings_total": "💰 Lajan ou séré an total : {{amount}} €",
+    "savings_detail": "{{count}} lo genyen · valè {{value}} € · péyé {{paid}} €",
     "history_ledger": "Rilivé kredi",
     "featured_kicker": "COOP'ACT a la iné",
     "featured_cta": "Coop'acté",

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, History, Trophy, Coins, Gavel } from 'lucide-react';
+import { ChevronDown, ChevronUp, History, Trophy, Coins, Gavel, PiggyBank } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import i18n from '@/i18n';
 import { ShopReviewForm } from './ShopReviewForm';
@@ -13,9 +13,24 @@ export const AuctionHistoryPanel = ({ me }) => {
   const bids = me.bids || [];
   const wins = me.wins || [];
   const ledger = me.ledger || [];
+  const savings = me.savings;
 
   return (
     <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03]" data-testid="auction-history-panel">
+      {savings?.count > 0 && (
+        <div className="m-3 mb-0 flex flex-wrap items-center gap-2 rounded-xl border border-emerald-400/25 bg-emerald-500/[0.07] px-3 py-2"
+          data-testid="member-savings-banner">
+          <PiggyBank className="w-4 h-4 text-emerald-300 shrink-0" />
+          <span className="text-xs font-bold text-emerald-200" data-testid="member-savings-total">
+            {i18n.t('auction.savings_total', { amount: savings.saved_eur.toFixed(2) })}
+          </span>
+          <span className="text-[10px] text-white/45">
+            {i18n.t('auction.savings_detail', {
+              count: savings.count, value: savings.value_eur.toFixed(2), paid: savings.paid_eur.toFixed(2)
+            })}
+          </span>
+        </div>
+      )}
       <button type="button" onClick={() => setOpen((v) => !v)} data-testid="auction-history-toggle"
         className="w-full flex items-center gap-2 p-3 text-sm font-bold text-white/80 hover:bg-white/[0.04] transition-colors rounded-2xl">
         <History className="w-4 h-4 text-[#D9B35A]" /> {i18n.t('auction.history_title')}

@@ -530,6 +530,8 @@
     "history_counts": "{{bids}} Coop'Act · {{wins}} lote(s) ganado(s)",
     "history_bids": "Mis Coop'Acts",
     "history_wins": "Lotes ganados",
+    "savings_total": "💰 Ahorro acumulado: {{amount}} €",
+    "savings_detail": "{{count}} lote(s) ganado(s) · valor {{value}} € · pagado {{paid}} €",
     "history_ledger": "Extracto de créditos",
     "featured_kicker": "COOP'ACT destacado",
     "featured_cta": "Coop'actuar",

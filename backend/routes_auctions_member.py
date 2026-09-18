@@ -310,8 +310,19 @@ async def my_auction_account(user_id: str = Depends(get_current_user_id)):
             b["auction_title"] = ref.get("title")
     ledger = await ah.db.auction_credit_ledger.find(
         {"user_id": user_id}, {"_id": 0}).sort("created_at", -1).limit(30).to_list(30)
+    # Économies cumulées sur tous les lots remportés (valeur - prix payé)
+    savings = {"count": 0, "value_eur": 0.0, "paid_eur": 0.0}
+    async for a in ah.db.auctions.find(
+            {"status": "WON", "winner.user_id": user_id},
+            {"_id": 0, "value_eur": 1, "winner.price_eur": 1}):
+        savings["count"] += 1
+        savings["value_eur"] += float(a.get("value_eur") or 0)
+        savings["paid_eur"] += float((a.get("winner") or {}).get("price_eur") or 0)
+    savings["value_eur"] = round(savings["value_eur"], 2)
+    savings["paid_eur"] = round(savings["paid_eur"], 2)
+    savings["saved_eur"] = round(savings["value_eur"] - savings["paid_eur"], 2)
     return {"account": account, "active": ah.account_active(account), "wins": wins,
-            "bids": bids, "ledger": ledger}
+            "bids": bids, "ledger": ledger, "savings": savings}
 
 
 @auctions_member_router.get("/brands/follows")
