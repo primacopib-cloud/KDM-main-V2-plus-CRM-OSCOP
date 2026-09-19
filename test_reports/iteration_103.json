@@ -1,0 +1,18 @@
+{
+  "summary": "Full backend + frontend testing of the Investor Privilège (FCRL) feature. All 14 pytest cases passed (public packs, subscribe validation, TRANSFER + STRIPE flows, 409 duplicate, /me credits, admin registry, admin activation + idempotency, user + admin PDF). Frontend: /investisseurs-privilege displays 3 packs with correct amounts (50 000 / 57 500, 150 000 / 180 000, 500 000 / 650 000 - using French narrow no-break space), cycle/guarantees/pass-impact sections and header-back-button all visible. Subscribe dialog flow (signer + company + accept + method=transfer + submit) returns FCRL reference in privilege-transfer-info. /espace-investisseur widget shows the subscription. Superadmin /superadmin -> Achat-Revente tab exposes privilege-registry with stats, filters and activation button; clicking activate transitions status to Actif, updates stats (1 actif, 50 000 € collecté, 57 500 € émis) and shows toast 'Pack activé — crédits bonifiés attribués'. Test data cleaned up post-run (subs deleted, marie.is_investor=false, invest.test.i.is_investor=true).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_iter103_investor_privilege.py", "/app/test_reports/pytest/iter103.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_privilege_packs.py: numeric formatting uses .replace(',', ' ') on strings that already contain commas from Python f-string ':,' — acceptable workaround but brittle if any French label happens to contain commas (currently safe).",
+    "PrivilegePackWidget: PDF download uses fetch with getAuthHeaders + credentials:'include' which is fine; consider handling non-200 with error text from JSON to give clearer feedback."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter103_investor_privilege.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "invest.test.i@test.fr / InvestTest2026! ; marie@example.com / Demo2026! ; admin@kdmarche-oscop.fr / AdminKDM2025! (portal=admin)",
+  "seed_data_creation": "None persisted — all test subs deleted, users reset (invest is_investor=true, marie is_investor=false).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "PrivilegePacksRegistry is mounted inside the 'achat-revente' TabsContent of SuperAdminPage.jsx (line 268). To reach it in the UI, log in via /admin/connexion then click the 'Achat-Revente' tab. Collection: investor_privilege_subs (DB: kdmarche_lolodrive)."
+}
