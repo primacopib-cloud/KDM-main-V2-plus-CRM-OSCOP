@@ -74,6 +74,7 @@ from routes_legal_pages import legal_pages_router, set_legal_pages_database, see
 from routes_fogedom import fogedom_router, set_fogedom_database
 from routes_staff_roles import staff_roles_router, set_staff_roles_database
 from routes_investor_space import investor_router, set_investor_space_database
+from routes_privilege_packs import privilege_router, set_privilege_database
 from auction_helpers import set_auction_database
 from routes_auctions_admin import auctions_admin_router
 from routes_auctions_member import auctions_member_router
@@ -91,6 +92,7 @@ set_legal_pages_database(db)
 set_fogedom_database(db)
 set_staff_roles_database(db)
 set_investor_space_database(db)
+set_privilege_database(db)
 set_auction_database(db)
 set_freight_database(db)
 app.include_router(api_v2_router)
@@ -109,6 +111,7 @@ app.include_router(legal_pages_router)
 app.include_router(fogedom_router)
 app.include_router(staff_roles_router)
 app.include_router(investor_router)
+app.include_router(privilege_router)
 app.include_router(auctions_admin_router)
 app.include_router(auctions_member_router)
 app.include_router(freight_router)

@@ -31,6 +31,7 @@ import OrderPreviewPage from "./pages/OrderPreviewPage";
 import SignatureDemoPage from "./pages/SignatureDemoPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import InvestorSpacePage from "./pages/InvestorSpacePage";
+import InvestorPrivilegePage from "./pages/InvestorPrivilegePage";
 import ParticuliersPage from "./pages/ParticuliersPage";
 import ApiCooperativePage from "./pages/ApiCooperativePage";
 import ReceptionProPage from "./pages/ReceptionProPage";
@@ -212,6 +213,7 @@ function App() {
           <Route path="/super-admin" element={<SuperAdminPage />} />
           <Route path="/superadmin" element={<RequireMember admin><SuperAdminPage /></RequireMember>} />
           <Route path="/espace-investisseur" element={<InvestorSpacePage />} />
+          <Route path="/investisseurs-privilege" element={<InvestorPrivilegePage />} />
           <Route path="/particuliers" element={<ParticuliersPage />} />
           <Route path="/coop-api" element={<ApiCooperativePage />} />
           <Route path="/reglement-reception" element={<ReceptionProPage />} />

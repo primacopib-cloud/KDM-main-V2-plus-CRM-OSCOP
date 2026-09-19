@@ -12,6 +12,7 @@ import { MessagesNavLink } from '../components/MessagesNavLink';
 import { InvestorDataroom } from '../components/investor/InvestorDataroom';
 import { InvestorApplyForm } from '../components/investor/InvestorApplyForm';
 import { InvestCreditsWidget } from '../components/investor/InvestCreditsWidget';
+import { PrivilegePackWidget } from '../components/investor/PrivilegePackWidget';
 import { InvestorBankDetails, InvestorInvoicesArchive } from '../components/investor/InvestorBankAndInvoices';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -84,6 +85,7 @@ export default function InvestorSpacePage() {
           investissements réels et le financement logistique LOGI'SCOP.
         </p>
         <InvestorLiveDashboard />
+        <PrivilegePackWidget />
         <InvestorDataroom />
         <FinancingOpportunities />
         <ProductFinancingBoard />

@@ -43,6 +43,7 @@ import { LegalPagesPanel } from '../components/superadmin/LegalPagesPanel';
 import { FogedomPanelWithOps } from '../components/superadmin/FogedomPanelWithOps';
 import { StaffRolesPanel } from '../components/superadmin/StaffRolesPanel';
 import { InvestorApplicationsPanel } from '../components/superadmin/InvestorApplicationsPanel';
+import { PrivilegePacksRegistry } from '../components/superadmin/PrivilegePacksRegistry';
 import { FinancingInterestsPanel } from '../components/superadmin/FinancingInterestsPanel';
 import { FreightRatesPanel } from '../components/superadmin/FreightRatesPanel';
 import { AirRatesPanel } from '../components/superadmin/AirRatesPanel';
@@ -264,6 +265,7 @@ export default function SuperAdminPage() {
             <DisputedOrdersPanel />
             <FogedomPanelWithOps />
             <InvestorApplicationsPanel />
+            <PrivilegePacksRegistry />
             <FinancingInterestsPanel />
             <AuditRegisterPanel />
           </TabsContent>
