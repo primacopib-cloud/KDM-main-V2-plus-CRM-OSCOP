@@ -128,6 +128,67 @@ async def list_email_previews(request: Request):
     }
 
 
+@email_previews_router.get("/i18n")
+async def list_i18n_email_previews(request: Request):
+    """Aperçu des emails transactionnels multilingues (fr/en/es/gcf/ar)."""
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    from quote_notify import ACK_T, FOLLOWUP_T
+    from partner_ack_email import ACK_I18N, DECISION_I18N
+    langs = ["fr", "en", "es", "gcf", "ar"]
+    sample_q = {"first_name": "Sophie", "last_name": "Martin", "company": "SARL Ti Marché"}
+    sample_p = {"name": "Sophie Martin", "company": "SARL Ti Marché", "type_label": "Transporteur",
+                "legal_status": "SARL", "email": "sophie@timarche.gp", "phone": "+590 690 00 00 00",
+                "message": "Transport frigorifique inter-îles", "id": "a1b2c3d4e5f6"}
+
+    def rtl_wrap(lang, inner):
+        d = "rtl" if lang == "ar" else "ltr"
+        align = "right" if lang == "ar" else "left"
+        return f"<div dir='{d}' style='font-family:Arial,sans-serif;max-width:560px;text-align:{align}'>{inner}</div>"
+
+    out = []
+    ack = {}
+    for lg in langs:
+        t = ACK_T[lg]
+        name = f"{sample_q['first_name']} {sample_q['last_name']}"
+        inner = (f"<h2 style='color:#5B2E8C'>{t['title']}</h2><p style='font-size:14px;color:#333'>{name},</p>"
+                 f"<p style='font-size:14px;color:#333'>{t['body'].format(company=sample_q['company'])}</p>"
+                 f"<p style='color:#999;font-size:11px;margin-top:20px'>{t['footer']}</p>")
+        ack[lg] = {"subject": t["subject"], "html": rtl_wrap(lg, inner)}
+    out.append({"id": "quote-ack", "name": "Accusé de réception devis", "langs": ack})
+
+    fw = {}
+    for lg in langs:
+        subject, body = FOLLOWUP_T[lg]
+        fw[lg] = {"subject": subject, "html": body.replace("{name}", sample_q["first_name"]).replace("{company}", sample_q["company"])}
+    out.append({"id": "quote-followup", "name": "Relance devis J+3", "langs": fw})
+
+    pk = {}
+    for lg in langs:
+        t = ACK_I18N[lg]
+        for_company = t["for_company"].format(company=sample_p["company"])
+        inner = (f"<h2 style='color:#451F6B'>{t['title']}</h2><p>{t['hello'].format(name=sample_p['name'])}</p>"
+                 f"<p>{t['intro'].format(type=sample_p['type_label'], for_company=for_company)}</p>"
+                 f"<p style='color:#777;font-size:12px'>{t['footer'].format(ref='A1B2C3D4')}</p>"
+                 f"<p style='color:#D4AF37'><strong>{t['signature']}</strong></p>")
+        pk[lg] = {"subject": t["subject"].format(type=sample_p["type_label"]), "html": rtl_wrap(lg, inner)}
+    out.append({"id": "partner-ack", "name": "Accusé candidature partenaire", "langs": pk})
+
+    for decision, label in [("accepted", "Candidature partenaire acceptée"), ("rejected", "Candidature partenaire refusée")]:
+        dv = {}
+        for lg in langs:
+            t = DECISION_I18N[lg]
+            d = t[decision]
+            inner = (f"<h2 style='color:#451F6B'>{d['title']}</h2><p>{t['hello'].format(name=sample_p['name'])}</p>"
+                     f"<p>{d['body'].format(type=sample_p['type_label'])}</p>"
+                     f"<p style='color:#777;font-size:12px'>{t['ref'].format(ref='A1B2C3D4')}</p>")
+            dv[lg] = {"subject": d["subject"].format(type=sample_p["type_label"]), "html": rtl_wrap(lg, inner)}
+        out.append({"id": f"partner-{decision}", "name": label, "langs": dv})
+
+    return {"templates": out, "langs": langs}
+
+
 @email_previews_router.get("/{template_id}/logs")
 async def get_template_logs(request: Request, template_id: str, limit: int = 50, q: str = ""):
     admin = await get_current_admin_from_request(request)

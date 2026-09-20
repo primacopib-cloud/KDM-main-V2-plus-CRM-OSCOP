@@ -3,6 +3,7 @@ import { Mail, Loader2, Send, History, RotateCcw, Search, Download, Archive } fr
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 import { EmailArchiveHistory } from './EmailArchiveHistory';
+import { I18nEmailPreviews } from './I18nEmailPreviews';
 
 const EmailLogsList = ({ templateId }) => {
   const [logs, setLogs] = useState(null);
@@ -219,6 +220,7 @@ export const EmailPreviewsTab = () => {
             Archiver GED
           </button>
         </div>
+        <I18nEmailPreviews />
         <EmailArchiveHistory refreshKey={archiveRefresh} title="Journal des emails archivé (GEDESS)" />
         <EmailArchiveHistory
           refreshKey={archiveRefresh}

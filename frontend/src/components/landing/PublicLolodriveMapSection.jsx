@@ -123,7 +123,7 @@ export const PublicLolodriveMapSection = ({ showRelays = true, showPops = true }
             {showPops && pops.filter((s) => s.lat).length > 0 && (
               <span className="inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10"
                 data-testid="public-pops-count">
-                <strong>{pops.filter((s) => s.lat).length}</strong> POP'S — Vendeurs éphémères
+                <strong>{pops.filter((s) => s.lat).length}</strong> {i18n.t('home.map.pops_ephemeral')}
               </span>
             )}
           </div>
@@ -189,7 +189,7 @@ export const PublicLolodriveMapSection = ({ showRelays = true, showPops = true }
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#E9CF8E] px-2.5 py-1.5 rounded-lg border border-[#D9B35A]/35 bg-[#D9B35A]/[0.08] hover:bg-[#D9B35A]/[0.16] transition-colors"
                   >
                     <Star className="w-3.5 h-3.5 fill-[#D9B35A] text-[#D9B35A]" />
-                    {selectedRating.avg} · Voir les {selectedRating.count} avis
+                    {selectedRating.avg} · {i18n.t('home.map.see_reviews', { n: selectedRating.count })}
                   </button>
                 )}
               </div>

@@ -1,4 +1,5 @@
 import { Store, ShoppingBag } from 'lucide-react';
+import i18n from '@/i18n';
 
 const Pillar = ({ icon: Icon, title, items, color, testId }) => (
   <div className="glass-panel-soft rounded-[20px] p-6" data-testid={testId}>
@@ -20,22 +21,12 @@ const Pillar = ({ icon: Icon, title, items, color, testId }) => (
 export const KdmPillarsSection = () => (
   <section className="max-w-[1160px] mx-auto px-5 grid md:grid-cols-2 gap-4 mb-14">
     <Pillar
-      icon={Store} title="Vendeurs référencés" color="#8CC63E" testId="kdm-pillar-vendors"
-      items={[
-        'Soumettez vos fiches produits avec photos et Studio IA intégré',
-        'Accédez à la demande agrégée des acheteurs pro des Outre-mer',
-        'Circuit de validation qualité par la coopérative',
-        'Visibilité multi-territoires : Antilles, Guyane, Réunion, Mayotte',
-      ]}
+      icon={Store} title={i18n.t('home.pillars.vendors_title')} color="#8CC63E" testId="kdm-pillar-vendors"
+      items={['v1', 'v2', 'v3', 'v4'].map((k) => i18n.t(`home.pillars.${k}`))}
     />
     <Pillar
-      icon={ShoppingBag} title="Acheteurs professionnels" color="#5B9BD5" testId="kdm-pillar-buyers"
-      items={[
-        'Prix structurels obtenus par mutualisation des volumes',
-        'Catalogue B2B multi-zones avec tarifs négociés collectivement',
-        'PASS Vie Chère et paiements échelonnés',
-        'Livraison LOLODRIVE et points relais coopératifs',
-      ]}
+      icon={ShoppingBag} title={i18n.t('home.pillars.buyers_title')} color="#5B9BD5" testId="kdm-pillar-buyers"
+      items={['b1', 'b2', 'b3', 'b4'].map((k) => i18n.t(`home.pillars.${k}`))}
     />
   </section>
 );

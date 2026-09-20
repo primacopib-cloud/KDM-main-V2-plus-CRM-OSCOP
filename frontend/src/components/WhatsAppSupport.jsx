@@ -1,21 +1,22 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const HIDDEN_PREFIXES = ['/admin', '/superadmin', '/pos', '/crm', '/reporting'];
 const WA_NUMBER = '590690906429';
-const WA_TEXT = encodeURIComponent("Bonjour, j'ai besoin d'aide (S.A.V / support client) sur la Communityplace KDMARCHÉ × O'SCOP.");
 
 export const WhatsAppSupport = () => {
   const { pathname } = useLocation();
+  const { t } = useTranslation();
   if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
   return (
     <a
-      href={`https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`}
+      href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(t('home.wa.prefill'))}`}
       target="_blank"
       rel="noreferrer"
       data-testid="whatsapp-support-btn"
-      title="Support client S.A.V — WhatsApp"
-      aria-label="Support client WhatsApp"
+      title={t('home.wa.title')}
+      aria-label={t('home.wa.title')}
       className="fixed bottom-5 left-5 z-[60] w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110"
       style={{ background: '#25D366' }}
     >

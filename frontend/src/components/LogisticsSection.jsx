@@ -85,14 +85,14 @@ const LogisticsSection = () => (
       <div className="section-title mb-6">
         <div>
           <h3 className="text-[22px] font-bold tracking-tight m-0">{i18n.t('logistics.title', 'Logistique et facturation')}</h3>
-          <p className="text-white/70 text-sm mt-1 m-0">Deux parcours distincts selon le mode de règlement choisi.</p>
+          <p className="text-white/70 text-sm mt-1 m-0">{i18n.t('home.logistics.subtitle')}</p>
         </div>
       </div>
 
       <JourneyRow
-        title="Parcours 1 — Commande EXW"
-        badge="Règlement à l'enlèvement"
-        steps={exwJourney}
+        title={i18n.t('home.journey.title1')}
+        badge={i18n.t('home.journey.badge1')}
+        steps={exwJourney.map((s, i) => ({ ...s, step: i18n.t(`home.journey.exw${i + 1}`, s.step) }))}
         testId="journey-exw"
         image="https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/b30b2453209512b1e3870b267a5354e954559464eec55fa287521ee93e988956.jpeg"
         imageAlt="Enlèvement EXW à l'entrepôt — acheteur professionnel"
@@ -100,9 +100,9 @@ const LogisticsSection = () => (
         objectPosition="center 30%"
       />
       <JourneyRow
-        title="Parcours 2 — Règlement à Réception Pro"
-        badge="Sans acompte · sous plafond"
-        steps={rarJourney}
+        title={i18n.t('home.journey.title2')}
+        badge={i18n.t('home.journey.badge2')}
+        steps={rarJourney.map((s, i) => ({ ...s, step: i18n.t(`home.journey.rar${i + 1}`, s.step) }))}
         testId="journey-rar"
         image="https://static.prod-images.emergentagent.com/jobs/e00f0d9a-9698-4efd-a047-db50a9deb9d1/images/aa306afb6ddf4a87632637b08bf35bfa740b7d6b7584b52fc09ba53a330b1052.jpeg"
         imageAlt="Validation électronique de la réception — livraison professionnelle"
@@ -122,7 +122,7 @@ const LogisticsSection = () => (
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ background: '#4FD1A5' }}></div>
-          <span className="text-xs text-white/65">LOGI'SCOP — livraison certifiée</span>
+          <span className="text-xs text-white/65">{i18n.t('home.logistics.certified')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ background: '#1F4D87' }}></div>

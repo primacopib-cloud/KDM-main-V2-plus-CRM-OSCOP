@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Handshake, ChevronDown, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
 import { SearchableCountryDropdown } from '../onboarding/CountryPhoneFields';
 import { COUNTRIES } from '../onboarding/countries';
 
@@ -23,7 +24,7 @@ export const CooperSignupAccordion = () => {
       });
       if (!r.ok) throw new Error((await r.json()).detail || 'Erreur');
       setSent(true);
-      toast.success('Candidature COOPER\'S envoyée — un email de confirmation vient de partir');
+      toast.success(i18n.t('home.cooper.toast_ok'));
     } catch (err) { toast.error(err.message); } finally { setBusy(false); }
   };
 
@@ -40,8 +41,8 @@ export const CooperSignupAccordion = () => {
               <Handshake className="w-5 h-5 text-[#D9B35A]" />
             </span>
             <span>
-              <span className="block text-base font-bold text-[#E9CF8E]">Devenir COOPER'S — rejoignez l'équipe coopérative</span>
-              <span className="block text-xs text-white/50">Inscription en tant que COOPER'S · cliquez pour déplier</span>
+              <span className="block text-base font-bold text-[#E9CF8E]">{i18n.t('home.cooper.title')}</span>
+              <span className="block text-xs text-white/50">{i18n.t('home.cooper.subtitle')}</span>
             </span>
           </span>
           <ChevronDown className={`w-5 h-5 text-white/50 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -50,44 +51,44 @@ export const CooperSignupAccordion = () => {
           <div className="px-6 pb-6 border-t border-white/[0.06]" data-testid="cooper-accordion-content">
             <div className="grid md:grid-cols-2 gap-6 pt-5">
               <div className="text-sm text-white/70 space-y-2.5">
-                <h4 className="text-sm font-bold text-white m-0">Le rôle du COOPER'S</h4>
-                <p className="m-0">Le COOPER'S est un membre actif de l'équipe coopérative O'SCOP. Il participe au fonctionnement de la centrale au plus près du terrain :</p>
+                <h4 className="text-sm font-bold text-white m-0">{i18n.t('home.cooper.role_title')}</h4>
+                <p className="m-0">{i18n.t('home.cooper.role_p')}</p>
                 <ul className="m-0 pl-4 space-y-1.5 list-disc marker:text-[#D9B35A]">
-                  <li>Instruire les <b>besoins d'achat</b> qui lui sont assignés par la centrale</li>
-                  <li>Qualifier les fournisseurs et suivre les <b>adhésions</b> en attente</li>
-                  <li>Coordonner les transporteurs <b>LOGI'SCOP</b> sur son territoire</li>
-                  <li>Animer la communauté d'acheteurs et de vendeurs de son pays</li>
+                  <li>{i18n.t('home.cooper.li1')}</li>
+                  <li>{i18n.t('home.cooper.li2')}</li>
+                  <li>{i18n.t('home.cooper.li3')}</li>
+                  <li>{i18n.t('home.cooper.li4')}</li>
                 </ul>
-                <p className="m-0 text-xs text-white/45">Après étude de votre candidature, la centrale ouvre votre espace COOPER'S et vous accompagne à la prise en main.</p>
+                <p className="m-0 text-xs text-white/45">{i18n.t('home.cooper.after_note')}</p>
               </div>
               {sent ? (
                 <div className="flex flex-col items-center justify-center text-center py-8" data-testid="cooper-form-success">
                   <CheckCircle2 className="w-10 h-10 text-emerald-400 mb-3" />
-                  <p className="text-emerald-300 font-semibold m-0">Candidature envoyée !</p>
-                  <p className="text-white/60 text-sm m-0 mt-1">Vérifiez votre boîte mail — la Centrale O'SCOP vous recontacte rapidement.</p>
+                  <p className="text-emerald-300 font-semibold m-0">{i18n.t('home.cooper.sent_title')}</p>
+                  <p className="text-white/60 text-sm m-0 mt-1">{i18n.t('home.cooper.sent_p')}</p>
                 </div>
               ) : (
                 <form onSubmit={submit} className="space-y-2.5" data-testid="cooper-signup-form">
                   <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="Nom complet *" data-testid="cooper-input-name" className={inp} />
+                    placeholder={i18n.t('home.cooper.name_ph')} data-testid="cooper-input-name" className={inp} />
                   <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="Email *" data-testid="cooper-input-email" className={inp} />
+                    placeholder={i18n.t('home.cooper.email_ph')} data-testid="cooper-input-email" className={inp} />
                   <div className="grid grid-cols-2 gap-2.5">
                     <SearchableCountryDropdown
                       value={(COUNTRIES.find((c) => c.name === form.country) || {}).code || 'GP'}
-                      display={form.country || 'Pays'} testId="cooper-input-country"
+                      display={form.country || i18n.t('home.cooper.country_ph')} testId="cooper-input-country"
                       onSelect={(c) => setForm({ ...form, country: c.name })} />
                     <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      placeholder="Téléphone" data-testid="cooper-input-phone" className={inp} />
+                      placeholder={i18n.t('home.cooper.phone_ph')} data-testid="cooper-input-phone" className={inp} />
                   </div>
                   <textarea value={form.motivation} onChange={(e) => setForm({ ...form, motivation: e.target.value })}
-                    placeholder="Votre motivation, votre territoire d'action… (optionnel)" rows={3}
+                    placeholder={i18n.t('home.cooper.motivation_ph')} rows={3}
                     data-testid="cooper-input-motivation"
                     className="w-full px-3 py-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-sm placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-[#D9B35A]/50" />
                   <button type="submit" disabled={busy} data-testid="cooper-form-submit-btn"
                     className="w-full h-11 rounded-xl font-bold text-sm text-[#1F0A33] disabled:opacity-60"
                     style={{ background: 'linear-gradient(135deg, #D9B35A, #b8933e)' }}>
-                    {busy ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Envoyer ma candidature COOPER'S"}
+                    {busy ? <Loader2 className="w-4 h-4 animate-spin inline" /> : i18n.t('home.cooper.submit')}
                   </button>
                 </form>
               )}

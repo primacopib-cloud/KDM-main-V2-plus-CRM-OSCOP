@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, MapPin, ArrowRight, Flame, Share2, ShoppingBag, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
 import { TERRITORIES } from '../../data/territories';
 import { WhatsAppIcon } from '../catalog/ProductShareButtons';
 import { trackCta } from '../../services/ctaTracking';
@@ -12,7 +13,7 @@ const AUTO_SCROLL_MS = 4500;
 const REDUCED_MOTION = typeof window !== 'undefined'
   && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const shareText = (t) => `Découvrez les offres ${t.name} (${t.tagline}) sur KDMARCHÉ, la centrale d'achat coopérative. ${window.location.origin}/catalogue?zone=${t.zoneCode}`;
+const shareText = (t) => i18n.t('home.territory.share_text', { name: t.name, tagline: i18n.t(`home.territory.tag_${t.zoneCode}`, t.tagline), url: `${window.location.origin}/catalogue?zone=${t.zoneCode}` });
 
 // Carrousel des territoires de la coopérative — page /kdmarche (#territoires)
 export const TerritoryCarousel = () => {
@@ -32,14 +33,14 @@ export const TerritoryCarousel = () => {
 
   const share = async (t) => {
     const url = `${window.location.origin}/catalogue?zone=${t.zoneCode}`;
-    const data = { title: `KDMARCHÉ — ${t.name}`, text: `Découvrez les offres ${t.name} (${t.tagline}) sur KDMARCHÉ, la centrale d'achat coopérative.`, url };
+    const data = { title: `KDMARCHÉ — ${t.name}`, text: shareText(t), url };
     if (navigator.share) {
       try { await navigator.share(data); return; } catch { /* partage annulé */ }
     }
     const text = shareText(t);
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`Lien des offres ${t.name} copié — prêt à partager !`);
+      toast.success(i18n.t('home.territory.copied', { name: t.name }));
     } catch {
       const ta = document.createElement('textarea');
       ta.value = text;
@@ -49,8 +50,8 @@ export const TerritoryCarousel = () => {
       ta.select();
       const ok = document.execCommand('copy');
       document.body.removeChild(ta);
-      if (ok) toast.success(`Lien des offres ${t.name} copié — prêt à partager !`);
-      else toast.error('Copie impossible sur ce navigateur');
+      if (ok) toast.success(i18n.t('home.territory.copied', { name: t.name }));
+      else toast.error(i18n.t('home.territory.copy_fail'));
     }
   };
 
@@ -105,11 +106,11 @@ export const TerritoryCarousel = () => {
       <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
           <p className="text-[11px] uppercase tracking-[0.2em] text-[#8CC63E] mb-2 flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5" aria-hidden="true" /> Territoires
+            <MapPin className="w-3.5 h-3.5" aria-hidden="true" /> {i18n.t('home.territory.kicker')}
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl m-0">Disponible sur votre territoire</h2>
+          <h2 className="font-display text-2xl sm:text-3xl m-0">{i18n.t('home.territory.title')}</h2>
           <p className="text-white/60 text-sm mt-2 m-0 max-w-[58ch]">
-            Un aperçu des produits phares déjà référencés dans chaque zone de la coopérative.
+            {i18n.t('home.territory.sub')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -147,13 +148,13 @@ export const TerritoryCarousel = () => {
               <a href={`https://wa.me/?text=${encodeURIComponent(shareText(t))}`}
                 target="_blank" rel="noopener noreferrer" data-testid={`territory-whatsapp-${t.id}`}
                 aria-label={`Partager les offres de la zone ${t.name} sur WhatsApp`}
-                title="Partager sur WhatsApp"
+                title={i18n.t('home.territory.share_wa')}
                 className="absolute top-2.5 right-12 w-8 h-8 rounded-full bg-[#25D366]/85 backdrop-blur border border-white/25 flex items-center justify-center text-white hover:bg-[#25D366] transition-colors">
                 <WhatsAppIcon className="w-4 h-4" aria-hidden="true" />
               </a>
               <button type="button" onClick={() => share(t)} data-testid={`territory-share-${t.id}`}
                 aria-label={`Partager les offres de la zone ${t.name}`}
-                title="Partager cette zone"
+                title={i18n.t('home.territory.share_zone')}
                 className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/45 backdrop-blur border border-white/25 flex items-center justify-center text-white/85 hover:text-white hover:border-white/60 transition-colors">
                 <Share2 className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
@@ -163,16 +164,16 @@ export const TerritoryCarousel = () => {
               </div>
             </div>
             <div className="p-6 pt-4 flex flex-col flex-1">
-            <p className="text-xs text-white/55 mb-3">{t.tagline}</p>
+            <p className="text-xs text-white/55 mb-3">{i18n.t(`home.territory.tag_${t.zoneCode}`, t.tagline)}</p>
             {zoneStats[t.zoneCode]?.orders > 0 && (
               <div className="flex items-center gap-3 mb-3 text-[11px] text-white/70" data-testid={`territory-stats-${t.id}`}>
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
                   <ShoppingBag className="w-3 h-3" style={{ color: t.color }} aria-hidden="true" />
-                  {zoneStats[t.zoneCode].orders} commande{zoneStats[t.zoneCode].orders > 1 ? 's' : ''}
+                  {i18n.t('home.territory.orders_n', { n: zoneStats[t.zoneCode].orders })}
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
                   <Users className="w-3 h-3" style={{ color: t.color }} aria-hidden="true" />
-                  {zoneStats[t.zoneCode].buyers} acheteur{zoneStats[t.zoneCode].buyers > 1 ? 's' : ''}
+                  {i18n.t('home.territory.buyers_n', { n: zoneStats[t.zoneCode].buyers })}
                 </span>
               </div>
             )}
@@ -180,10 +181,10 @@ export const TerritoryCarousel = () => {
               {real && real.length ? (
                 <>
                   <Flame className="w-3 h-3 text-[#E67E22]" aria-hidden="true" />
-                  Les plus commandés de la zone
+                  {i18n.t('home.territory.top_ordered')}
                   <span data-testid={`territory-real-${t.id}`} className="sr-only">classement réel</span>
                 </>
-              ) : 'Produits phares'}
+              ) : i18n.t('home.territory.flagship')}
             </p>
             <ul className="space-y-2 mb-5">
               {products.map((p, rank) => (
@@ -206,7 +207,7 @@ export const TerritoryCarousel = () => {
               className="mt-auto inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
               style={{ color: t.color }}
               aria-label={`Voir les offres de la zone ${t.name}`}>
-              Voir les offres de la zone <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+              {i18n.t('home.territory.see_offers')} <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
             </Link>
             </div>
           </article>
