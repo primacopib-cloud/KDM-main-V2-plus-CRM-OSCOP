@@ -11,6 +11,62 @@ export { COUNTRIES as PHONE_COUNTRIES } from './onboarding/countries';
 
 export const LEGAL_STATUSES = ['SARL', 'SAS', 'SASU', 'EURL', 'SA', 'SCOP', 'SCIC', 'EI / Micro-entreprise', 'Association', 'GIE', 'Coopérative', 'Autre'];
 
+export const LEGAL_STATUS_LABELS = {
+  en: {
+    'SARL': 'SARL — limited liability company',
+    'SAS': 'SAS — simplified joint-stock company',
+    'SASU': 'SASU — single-shareholder SAS',
+    'EURL': 'EURL — single-member limited company',
+    'SA': 'SA — public limited company',
+    'SCOP': 'SCOP — worker cooperative',
+    'SCIC': 'SCIC — collective-interest cooperative',
+    'EI / Micro-entreprise': 'EI — sole trader / micro-business',
+    'Association': 'Association — non-profit',
+    'GIE': 'GIE — economic interest grouping',
+    'Coopérative': 'Cooperative',
+    'Autre': 'Other',
+  },
+  es: {
+    'SARL': 'SARL — sociedad de responsabilidad limitada',
+    'SAS': 'SAS — sociedad por acciones simplificada',
+    'SASU': 'SASU — SAS unipersonal',
+    'EURL': 'EURL — SRL unipersonal',
+    'SA': 'SA — sociedad anónima',
+    'SCOP': 'SCOP — cooperativa de trabajo asociado',
+    'SCIC': 'SCIC — cooperativa de interés colectivo',
+    'EI / Micro-entreprise': 'EI — empresario individual / microempresa',
+    'Association': 'Association — asociación sin ánimo de lucro',
+    'GIE': 'GIE — agrupación de interés económico',
+    'Coopérative': 'Cooperativa',
+    'Autre': 'Otro',
+  },
+  gcf: {
+    'EI / Micro-entreprise': 'EI / Mikwo-antrépriz',
+    'Association': 'Asosyasyon',
+    'Coopérative': 'Koopérativ',
+    'Autre': 'Dòt',
+  },
+  ar: {
+    'SARL': 'SARL — شركة ذات مسؤولية محدودة',
+    'SAS': 'SAS — شركة مساهمة مبسطة',
+    'SASU': 'SASU — شركة مساهمة مبسطة بشريك واحد',
+    'EURL': 'EURL — شركة فردية ذات مسؤولية محدودة',
+    'SA': 'SA — شركة مساهمة',
+    'SCOP': 'SCOP — تعاونية إنتاج عمالية',
+    'SCIC': 'SCIC — تعاونية ذات مصلحة جماعية',
+    'EI / Micro-entreprise': 'EI — مؤسسة فردية / مشروع صغير',
+    'Association': 'Association — جمعية',
+    'GIE': 'GIE — تجمع مصلحة اقتصادية',
+    'Coopérative': 'تعاونية',
+    'Autre': 'أخرى',
+  },
+};
+
+export const legalStatusLabel = (status, lang) => {
+  const key = (lang || 'fr').startsWith('gcf') ? 'gcf' : (lang || 'fr').slice(0, 2);
+  return LEGAL_STATUS_LABELS[key]?.[status] || status;
+};
+
 export const FORM_T = {
   fr: {
     company_label: 'Raison sociale *',

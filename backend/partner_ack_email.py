@@ -56,6 +56,19 @@ ACK_I18N = {
         "footer": "Sonjé référans <strong>{ref}</strong> pou tout échanj èvè ékip patenarya an nou — répons avan 48 tè ouvrab.",
         "signature": "Koopérativ KDMARCHÉ × O'SCOP",
     },
+    "ar": {
+        "subject": "تم استلام ترشحكم — {type} | KDMARCHÉ × O'SCOP",
+        "title": "شكراً على ترشحكم!",
+        "hello": "مرحباً {name}،",
+        "intro": "لقد استلمنا طلبكم « <strong>{type}</strong> »{for_company}. يقوم فريقنا بدراسته وسيعاود التواصل معكم قريباً.",
+        "for_company": " لصالح {company}",
+        "recap_title": "ملخص ترشحكم:",
+        "labels": {"type": "نوع الشراكة", "name": "الاسم", "company": "الاسم القانوني",
+                   "legal": "الشكل القانوني", "email": "البريد الإلكتروني", "phone": "الهاتف",
+                   "project": "مشروعكم", "ref": "المرجع"},
+        "footer": "احتفظوا بالمرجع <strong>{ref}</strong> لأي تواصل مع فريق الشراكات لدينا — الرد خلال 48 ساعة عمل.",
+        "signature": "تعاونية KDMARCHÉ × O'SCOP",
+    },
 }
 
 
@@ -104,6 +117,17 @@ DECISION_I18N = {
                              "pou lè moman. Ou ké pé pozé kandidati a'w ankò pli ta — mèsi pou lentéré "
                              "ou ka pòté ba koopérativ-la."},
     },
+    "ar": {
+        "hello": "مرحباً {name}،", "ref": "المرجع: {ref} — KDMARCHÉ × O'SCOP.",
+        "accepted": {"subject": "🎉 تم قبول ترشحكم — {type}", "title": "مرحباً بكم في التعاونية!",
+                     "body": "خبر سار: تم <strong style='color:#1E8449;'>قبول</strong> ترشحكم "
+                             "« <strong>{type}</strong> ». سيتواصل معكم فريقنا قريباً جداً "
+                             "لاستكمال انضمامكم وتفعيل صلاحيات دخولكم."},
+        "rejected": {"subject": "ترشحكم {type} — الرد", "title": "الرد على ترشحكم",
+                     "body": "بعد الدراسة، لا يمكننا المضي قدماً في ترشحكم "
+                             "« <strong>{type}</strong> » في الوقت الحالي. يمكنكم التقدم مجدداً "
+                             "لاحقاً — شكراً لاهتمامكم بالتعاونية."},
+    },
 }
 
 
@@ -114,8 +138,9 @@ async def send_partner_decision(doc: dict, accepted: bool):
     t = DECISION_I18N.get(lang if lang in DECISION_I18N else "fr")
     d = t["accepted" if accepted else "rejected"]
     type_label = doc.get("type_label") or doc.get("type")
+    is_rtl = (lang or "").startswith("ar")
     html = (
-        "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#2A1045'>"
+        f"<div dir='{'rtl' if is_rtl else 'ltr'}' style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#2A1045;text-align:{'right' if is_rtl else 'left'}'>"
         f"<h2 style='color:#451F6B'>{d['title']}</h2>"
         f"<p>{t['hello'].format(name=doc['name'])}</p>"
         f"<p>{d['body'].format(type=type_label)}</p>"
@@ -150,8 +175,9 @@ async def send_partner_ack(doc: dict):
         + _row(lb["ref"], ref)
         + "</table>")
     for_company = t["for_company"].format(company=doc["company"]) if doc.get("company") else ""
+    is_rtl = (lang or "").startswith("ar")
     html = (
-        f"<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#2A1045'>"
+        f"<div dir='{'rtl' if is_rtl else 'ltr'}' style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#2A1045;text-align:{'right' if is_rtl else 'left'}'>"
         f"<h2 style='color:#451F6B'>{t['title']}</h2>"
         f"<p>{t['hello'].format(name=doc['name'])}</p>"
         f"<p>{t['intro'].format(type=doc.get('type_label') or doc.get('type'), for_company=for_company)}</p>"

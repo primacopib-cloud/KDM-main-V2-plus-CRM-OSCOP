@@ -8,7 +8,7 @@ import { Send, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { quoteAPI } from '../services/api';
 import i18n from '@/i18n';
-import { LANGS, PHONE_COUNTRIES, LEGAL_STATUSES, FORM_T } from './contactFormData';
+import { LANGS, PHONE_COUNTRIES, LEGAL_STATUSES, FORM_T, legalStatusLabel } from './contactFormData';
 import { Flag } from './Flag';
 
 const inputCls = 'h-12 bg-white/[0.04] border-white/10 text-white placeholder:text-white/40 rounded-xl focus:border-[#D9B35A]/50 focus:ring-[#D9B35A]/20';
@@ -99,7 +99,7 @@ const ContactForm = () => {
               </SelectTrigger>
               <SelectContent className="bg-[#0d1117] border-white/10 max-h-64">
                 {LEGAL_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s} className="text-white/80 focus:bg-white/10 focus:text-white">{s}</SelectItem>
+                  <SelectItem key={s} value={s} className="text-white/80 focus:bg-white/10 focus:text-white">{legalStatusLabel(s, lang)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

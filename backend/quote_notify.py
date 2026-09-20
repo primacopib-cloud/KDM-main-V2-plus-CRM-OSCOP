@@ -25,6 +25,16 @@ FOLLOWUP_T = {
            "Un asesor de KDMARCHÉ × O'SCOP le contactará muy pronto.</p>"
            "<p>¿Necesita añadir algo? Responda simplemente a este correo.</p>"
            "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP</p>"),
+    "gcf": ("Dèmand dèvi a'w an bon men",
+            "<p>Bonjou {name},</p><p>Dèmand dèvi a'w pou <b>{company}</b> ka trété pa ekip komèsyal an nou. "
+            "On konséyé KDMARCHÉ × O'SCOP ké viré vin' vè'w byen vit.</p>"
+            "<p>Ou vlé ajouté on présizyon ? Réponn senpleman a imèl-lasa.</p>"
+            "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP — Koopérativ Communityplace</p>"),
+    "ar": ("طلب عرض السعر الخاص بك في أيدٍ أمينة",
+           "<div dir='rtl' style='text-align:right'><p>مرحباً {name}،</p><p>طلب عرض السعر الخاص بكم لصالح <b>{company}</b> قيد المعالجة من قبل فريقنا التجاري. "
+           "سيتواصل معكم مستشار KDMARCHÉ × O'SCOP قريباً جداً.</p>"
+           "<p>هل تودون إضافة توضيح؟ ما عليكم سوى الرد على هذا البريد.</p>"
+           "<p style='color:#999;font-size:10px;margin-top:18px'>KDMARCHÉ × O'SCOP</p></div>"),
 }
 
 
@@ -167,6 +177,14 @@ ACK_T = {
            "title": "¡Gracias por su solicitud!",
            "body": "Hemos recibido su solicitud de presupuesto para <strong>{company}</strong>. Nuestro equipo comercial le responderá en 48 horas laborables.",
            "footer": "Communityplace B2B ESS — KDMARCHÉ × O'SCOP"},
+    "gcf": {"subject": "Nou byen risivwè dèmand dèvi a'w — KDMARCHÉ × O'SCOP",
+            "title": "Mèsi pou dèmand a'w !",
+            "body": "Nou byen risivwè dèmand dèvi a'w pou <strong>{company}</strong>. Ekip komèsyal an nou ké viré vin' vè'w avan 48 tè ouvrab.",
+            "footer": "Communityplace B2B ESS — KDMARCHÉ × O'SCOP"},
+    "ar": {"subject": "تم استلام طلب عرض السعر الخاص بكم — KDMARCHÉ × O'SCOP",
+           "title": "شكراً لطلبكم!",
+           "body": "لقد استلمنا طلب عرض السعر الخاص بكم لصالح <strong>{company}</strong>. سيتواصل معكم فريقنا التجاري خلال 48 ساعة عمل.",
+           "footer": "Communityplace B2B ESS — KDMARCHÉ × O'SCOP"},
 }
 
 
@@ -175,9 +193,10 @@ async def send_quote_ack_email(q: dict) -> None:
     try:
         from brevo_service import send_email
         t = ACK_T.get((q.get("lang") or "fr").lower(), ACK_T["fr"])
+        is_rtl = (q.get("lang") or "").lower().startswith("ar")
         name = f"{q.get('first_name') or ''} {q.get('last_name') or ''}".strip() or q.get("contact_name") or ""
         html = f"""
-        <div style='font-family:Arial,sans-serif;max-width:560px'>
+        <div dir='{"rtl" if is_rtl else "ltr"}' style='font-family:Arial,sans-serif;max-width:560px;text-align:{"right" if is_rtl else "left"}'>
           <h2 style='color:#5B2E8C'>{t['title']}</h2>
           <p style='font-size:14px;color:#333'>{name},</p>
           <p style='font-size:14px;color:#333'>{t['body'].format(company=q.get('company'))}</p>

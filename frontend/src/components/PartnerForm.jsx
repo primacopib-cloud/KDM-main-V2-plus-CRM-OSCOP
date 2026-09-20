@@ -6,7 +6,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { LEGAL_STATUSES, PHONE_COUNTRIES } from './contactFormData';
+import { LEGAL_STATUSES, PHONE_COUNTRIES, legalStatusLabel } from './contactFormData';
 import { Flag } from './Flag';
 import { PARTNER_L10N, partnerLang } from './partnerFormI18n';
 
@@ -94,7 +94,7 @@ export const PartnerForm = () => {
               </SelectTrigger>
               <SelectContent className="bg-[#0d1117] border-white/10 max-h-64">
                 {LEGAL_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s} className="text-white/80 focus:bg-white/10 focus:text-white">{s}</SelectItem>
+                  <SelectItem key={s} value={s} className="text-white/80 focus:bg-white/10 focus:text-white">{legalStatusLabel(s, lang)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
