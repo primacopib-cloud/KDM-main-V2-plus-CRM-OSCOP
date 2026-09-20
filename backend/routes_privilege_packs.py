@@ -195,6 +195,11 @@ async def _activate(sub: dict):
     await db.investor_privilege_subs.update_one(
         {"id": sub["id"]}, {"$set": {"status": "ACTIVE", "activated_at": _now().isoformat()}})
     await db.users.update_one({"id": sub["user_id"]}, {"$set": {"is_investor": True}})
+    await db.privilege_credit_ledger.insert_one({
+        "id": str(uuid.uuid4()), "user_id": sub["user_id"], "sub_id": sub["id"],
+        "sub_reference": sub["reference"], "type": "CREDIT", "amount_eur": sub["credits_eur"],
+        "label": f"Créditation {sub['pack_name']} (+{sub['bonus_pct']} % de bonification)",
+        "created_at": _now().isoformat()})
     try:
         from brevo_service import send_email, _wrap_html
         html = _wrap_html(
@@ -231,10 +236,17 @@ async def activate_stripe(body: ActivateBody, user: dict = Depends(get_current_u
 async def my_privilege(user: dict = Depends(get_current_user)):
     subs = await db.investor_privilege_subs.find(
         {"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(10)
+    consumed = {}
+    async for e in db.privilege_credit_ledger.find(
+            {"user_id": user["id"], "type": "CONSUMPTION"}, {"_id": 0, "sub_id": 1, "amount_eur": 1}):
+        consumed[e["sub_id"]] = consumed.get(e["sub_id"], 0.0) + abs(float(e["amount_eur"]))
     for s in subs:
         s["privileges"] = PACKS.get(s["pack_id"], {}).get("privileges", [])
-    credits = sum(s["credits_eur"] for s in subs if s["status"] == "ACTIVE")
-    return {"subscriptions": subs, "credits_eur": credits}
+        s["consumed_eur"] = round(consumed.get(s["id"], 0.0), 2)
+        s["remaining_eur"] = (round(s["credits_eur"] - s["consumed_eur"], 2)
+                              if s["status"] == "ACTIVE" else 0.0)
+    credits = sum(s["remaining_eur"] for s in subs if s["status"] == "ACTIVE")
+    return {"subscriptions": subs, "credits_eur": round(credits, 2)}
 
 
 def _convention_pdf(sub: dict) -> bytes:
@@ -306,3 +318,82 @@ async def admin_convention_pdf(sub_id: str, admin: dict = Depends(require_admin)
         raise HTTPException(status_code=404, detail="Souscription introuvable")
     return Response(_convention_pdf(sub), media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename=convention-fcrl-{sub['reference']}.pdf"})
+
+
+class ConsumeBody(BaseModel):
+    amount_eur: float
+    label: str
+
+
+async def _ledger_entries(user_id: str):
+    return await db.privilege_credit_ledger.find(
+        {"user_id": user_id}, {"_id": 0}).sort("created_at", 1).to_list(1000)
+
+
+def _monthly_statement(entries: list, month: str):
+    sel = [e for e in entries if str(e["created_at"])[:7] == month]
+    credited = sum(e["amount_eur"] for e in sel if e["amount_eur"] > 0)
+    consumed = sum(-e["amount_eur"] for e in sel if e["amount_eur"] < 0)
+    opening = sum(e["amount_eur"] for e in entries if str(e["created_at"])[:7] < month)
+    return {"month": month, "entries": sel, "credited_eur": round(credited, 2),
+            "consumed_eur": round(consumed, 2), "opening_eur": round(opening, 2),
+            "closing_eur": round(opening + credited - consumed, 2)}
+
+
+@privilege_router.get("/statement")
+async def privilege_statement(month: str = "", user: dict = Depends(get_current_user)):
+    """Relevé mensuel des crédits bonifiés FCRL : chaque créditation et consommation."""
+    entries = await _ledger_entries(user["id"])
+    months = sorted({str(e["created_at"])[:7] for e in entries}, reverse=True)
+    if not month:
+        month = months[0] if months else _now().strftime("%Y-%m")
+    return {**_monthly_statement(entries, month), "months": months}
+
+
+@privilege_router.get("/statement/pdf")
+async def privilege_statement_pdf(month: str, user: dict = Depends(get_current_user)):
+    entries = await _ledger_entries(user["id"])
+    st = _monthly_statement(entries, month)
+    from routes_detaillant import _pdf_doc, _fmt_ts
+    label_month = datetime.strptime(month, "%Y-%m").strftime("%m/%Y")
+    blocks = [("Période", f"Relevé du mois {label_month} — programme FCRL (crédits bonifiés CREDI'SCOP)"),
+              ("Solde d'ouverture", f"{st['opening_eur']:,.2f} €".replace(",", " "))]
+    if not st["entries"]:
+        blocks.append(("Mouvements", "Aucun mouvement sur la période."))
+    for e in st["entries"]:
+        sign = "+" if e["amount_eur"] > 0 else "−"
+        blocks.append((f"{_fmt_ts(e['created_at'])} — {e.get('sub_reference', '')}",
+                       f"{e['label']} : {sign}{abs(e['amount_eur']):,.2f} €".replace(",", " ")))
+    blocks.append(("Totaux du mois",
+                   f"Crédité : +{st['credited_eur']:,.2f} € — Consommé : −{st['consumed_eur']:,.2f} € — "
+                   f"Solde de clôture : {st['closing_eur']:,.2f} €".replace(",", " ")))
+    pdf = _pdf_doc(f"Relevé mensuel des crédits FCRL — {label_month}", blocks)
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=releve-fcrl-{month}.pdf"})
+
+
+@privilege_router.post("/admin/{sub_id}/consume")
+async def admin_consume_credits(sub_id: str, body: ConsumeBody, admin: dict = Depends(require_admin)):
+    """Impute une consommation de crédits bonifiés sur un pack actif (en euros)."""
+    sub = await db.investor_privilege_subs.find_one({"id": sub_id}, {"_id": 0})
+    if not sub:
+        raise HTTPException(status_code=404, detail="Souscription introuvable")
+    if sub["status"] != "ACTIVE":
+        raise HTTPException(status_code=409, detail="Seul un pack actif peut être consommé")
+    amount = round(float(body.amount_eur), 2)
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Montant positif requis")
+    used = 0.0
+    async for e in db.privilege_credit_ledger.find(
+            {"sub_id": sub_id, "type": "CONSUMPTION"}, {"_id": 0, "amount_eur": 1}):
+        used += float(e["amount_eur"])
+    remaining = round(sub["credits_eur"] - used, 2)
+    if amount > remaining:
+        raise HTTPException(status_code=400,
+                            detail=f"Solde insuffisant : {remaining:,.2f} € restants".replace(",", " "))
+    await db.privilege_credit_ledger.insert_one({
+        "id": str(uuid.uuid4()), "user_id": sub["user_id"], "sub_id": sub_id,
+        "sub_reference": sub["reference"], "type": "CONSUMPTION", "amount_eur": -amount,
+        "label": body.label.strip() or "Consommation de crédits bonifiés",
+        "recorded_by": admin.get("email"), "created_at": _now().isoformat()})
+    return {"ok": True, "remaining_eur": round(remaining - amount, 2)}

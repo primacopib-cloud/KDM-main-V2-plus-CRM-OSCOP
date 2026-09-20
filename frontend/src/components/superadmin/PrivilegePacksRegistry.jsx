@@ -1,11 +1,53 @@
 import { useEffect, useState } from 'react';
-import { Crown, FileDown, Search, CheckCircle2 } from 'lucide-react';
+import { Crown, FileDown, Search, CheckCircle2, MinusCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, getAuthHeaders } from '../../services/http';
 
 const fmtEur = (n) => `${Number(n).toLocaleString('fr-FR')} €`;
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
 const STATUSES = [['', 'Tous'], ['ACTIVE', 'Actifs'], ['PENDING_TRANSFER', 'Virements en attente'], ['PENDING', 'Paiements en attente']];
+
+// Formulaire inline : imputer une consommation de crédits sur un pack actif
+const ConsumeForm = ({ sub, onDone }) => {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [label, setLabel] = useState('');
+  const submit = async () => {
+    const r = await fetch(`${API}/investor/privilege/admin/${sub.id}/consume`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      credentials: 'include',
+      body: JSON.stringify({ amount_eur: parseFloat(amount.replace(',', '.')), label }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { toast.error(d.detail || 'Imputation impossible'); return; }
+    toast.success(`Consommation imputée — reste ${fmtEur(d.remaining_eur)}`);
+    setOpen(false); setAmount(''); setLabel('');
+    onDone();
+  };
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} data-testid={`privilege-consume-open-${sub.reference}`}
+        className="inline-flex items-center gap-1 px-3 h-7 rounded-full border border-[#D9B35A]/40 text-[#F2D07A] text-[10px] font-bold hover:bg-[#D9B35A]/10 transition-colors">
+        <MinusCircle className="w-3 h-3" /> Imputer une consommation
+      </button>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5" data-testid={`privilege-consume-form-${sub.reference}`}>
+      <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Montant €"
+        data-testid={`privilege-consume-amount-${sub.reference}`} inputMode="decimal"
+        className="h-7 w-24 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-[11px] outline-none focus:border-[#D9B35A]/60" />
+      <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Motif (commande, conteneur…)"
+        data-testid={`privilege-consume-label-${sub.reference}`}
+        className="h-7 w-44 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-[11px] outline-none focus:border-[#D9B35A]/60" />
+      <button onClick={submit} data-testid={`privilege-consume-submit-${sub.reference}`}
+        className="px-3 h-7 rounded-full bg-[#D9B35A] text-black text-[10px] font-bold hover:bg-[#E9CF8E] transition-colors">
+        Valider
+      </button>
+      <button onClick={() => setOpen(false)} data-testid={`privilege-consume-cancel-${sub.reference}`}
+        className="px-2 h-7 rounded-full border border-white/20 text-[10px] text-white/60 hover:bg-white/5">✕</button>
+    </span>
+  );
+};
 
 // Registre superadmin des abonnements Privilège Investisseur (packs FCRL)
 export const PrivilegePacksRegistry = () => {
@@ -103,6 +145,7 @@ export const PrivilegePacksRegistry = () => {
                 className="inline-flex items-center gap-1 px-3 h-7 rounded-full border border-white/25 text-[10px] font-bold hover:bg-white/10 transition-colors">
                 <FileDown className="w-3 h-3" /> PDF
               </button>
+              {s.status === 'ACTIVE' && <ConsumeForm sub={s} onDone={load} />}
             </div>
           ))}
         </div>
