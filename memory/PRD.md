@@ -3857,3 +3857,7 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - WhatsApp flottant (WhatsAppSupport.jsx) : message prérempli + title localisés via home.wa.* (5 langues).
 - Formatage locale : nouveau helper frontend/src/i18n/fmt.js (fmtMoney/fmtNumber/fmtDate via Intl, chiffres occidentaux gardés en arabe avec ar-u-nu-latn) — appliqué au ticker d'activité, community board et formulaire de dépôt ; helper réutilisable pour extension progressive au reste du site.
 - Testé E2E iteration_106 : ar/fr/en accueil, accordéons, modal demande, superadmin emails (ar + gcf), endpoint 200/403, 0 erreur console. Nit corrigé : testid i18n-lang-tabs → i18n-lang-tabbar.
+
+## 2026-09 — Lot 120 : Bouton d'envoi de test des emails multilingues (superadmin) — auto-testé curl (Brevo 201) + screenshot UI
+- Backend routes_email_previews.py : rendu i18n refactoré en helper _build_i18n_templates() partagé ; nouveau POST /api/admin/email-previews/i18n/test {template_id, lang, email?} — envoie une copie de test (sujet préfixé [TEST]) à l'admin connecté (ou email fournie), tags email-preview-test/i18n-{tpl}/lang-{lang}. Testé : quote-ack en arabe → Brevo 201, message_id renvoyé.
+- Frontend I18nEmailPreviews.jsx : bouton data-testid=i18n-send-test-btn « M'envoyer un test ({LANG}) » qui envoie le template+langue courants, toasts succès/erreur, spinner pendant l'envoi. Vérifié visuellement dans /superadmin?tab=emails.

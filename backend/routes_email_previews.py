@@ -128,12 +128,8 @@ async def list_email_previews(request: Request):
     }
 
 
-@email_previews_router.get("/i18n")
-async def list_i18n_email_previews(request: Request):
-    """Aperçu des emails transactionnels multilingues (fr/en/es/gcf/ar)."""
-    admin = await get_current_admin_from_request(request)
-    if not admin:
-        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+def _build_i18n_templates() -> tuple[list, list]:
+    """Rendu des emails transactionnels multilingues (fr/en/es/gcf/ar) avec données d'exemple."""
     from quote_notify import ACK_T, FOLLOWUP_T
     from partner_ack_email import ACK_I18N, DECISION_I18N
     langs = ["fr", "en", "es", "gcf", "ar"]
@@ -186,7 +182,48 @@ async def list_i18n_email_previews(request: Request):
             dv[lg] = {"subject": d["subject"].format(type=sample_p["type_label"]), "html": rtl_wrap(lg, inner)}
         out.append({"id": f"partner-{decision}", "name": label, "langs": dv})
 
-    return {"templates": out, "langs": langs}
+    return out, langs
+
+
+@email_previews_router.get("/i18n")
+async def list_i18n_email_previews(request: Request):
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    templates, langs = _build_i18n_templates()
+    return {"templates": templates, "langs": langs}
+
+
+@email_previews_router.post("/i18n/test")
+async def send_i18n_test_email(request: Request):
+    """Envoie une copie de test d'un email multilingue à l'admin (ou à l'email fournie)."""
+    admin = await get_current_admin_from_request(request)
+    if not admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    body = await request.json()
+    tpl_id = body.get("template_id", "")
+    lang = (body.get("lang") or "fr").lower()
+    to_email = (body.get("email") or admin.get("email") or "").strip()
+    if not to_email or "@" not in to_email:
+        raise HTTPException(status_code=400, detail="Adresse email invalide")
+    templates, langs = _build_i18n_templates()
+    tpl = next((t for t in templates if t["id"] == tpl_id), None)
+    if not tpl or lang not in langs:
+        raise HTTPException(status_code=404, detail="Modèle ou langue introuvable")
+    entry = tpl["langs"][lang]
+    from brevo_service import is_brevo_configured, send_email
+    if not is_brevo_configured():
+        raise HTTPException(status_code=503, detail="Brevo non configuré")
+    result = await send_email(
+        to_email=to_email,
+        to_name=admin.get("contact_name"),
+        subject=f"[TEST] {entry['subject']}",
+        html_content=entry["html"],
+        tags=["email-preview-test", f"i18n-{tpl_id}", f"lang-{lang}"],
+    )
+    if not result:
+        raise HTTPException(status_code=502, detail="Échec de l'envoi Brevo")
+    return {"sent": True, "to": to_email, "message_id": result.get("messageId")}
 
 
 @email_previews_router.get("/{template_id}/logs")
