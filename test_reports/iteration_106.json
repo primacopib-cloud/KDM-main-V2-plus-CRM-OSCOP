@@ -1,0 +1,21 @@
+{
+  "summary": "Iter106 — Full validation of B2B KDMARCHÉ × O'SCOP i18n home lot + WhatsApp button + superadmin i18n email previews. All checks passed: (a) /?lang=ar page fully Arabic (dir=rtl), 0 residual French markers (Règlement/Livraison/Voir les offres/COOPER etc.), 0 raw home.* keys leaked; expected Arabic markers present (الدفع عند الاستلام، المناطق، مباشر، عروض، طلبات). (b) WhatsApp floating button /ar → wa.me href contains %D9…encoded 'مرحباً، أحتاج إلى مساعدة' + Arabic title; /fr → 'Bonjour, j'ai besoin d'aide…'. (c) Regression FR/EN OK: FR shows 'Règlement à Réception Pro', 'Voir les offres', 'Livraison coordonnée' with 0 raw keys; EN shows 'Payment on Pro Delivery' + 'See the zone offers' with 0 raw keys. (d) Superadmin /superadmin?tab=emails after portal:'admin' login — block data-testid=i18n-email-previews renders 5 templates + 5 lang flags; click i18n-lang-ar on quote-ack → subject 'تم استلام طلب عرض السعر…' with Arabic + iframe srcdoc contains dir='rtl'; click i18n-tpl-partner-accepted + i18n-lang-gcf → subject '🎉 Kandidati a'w aksèpté — Transporteur'. (e) Backend GET /api/admin/email-previews/i18n → 200 with 5 templates × 5 langs, all langs have subject+html, Arabic subjects contain Arabic chars, ar HTML has dir='rtl'; without token → 403. 0 non-WebSocket console errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter106_i18n_email_previews.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Nit: I18nEmailPreviews.jsx uses `i18n-lang-tabs` container testid overlapping the prefix `i18n-lang-` — the query_selector_all('[data-testid^=i18n-lang-]') counts 6 instead of 5. Not a bug, but the container testid could be renamed (e.g. `i18n-lang-tabbar`) to avoid ambiguity in tests.",
+    "routes_email_previews.py duplicates the RTL wrapper logic per template — extractable helper is already present (rtl_wrap) which is good; keep as-is."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter106_i18n_email_previews.py"],
+  "success_rate": {"backend": "100% (3/3)", "frontend": "100% (all functional checks passed)"},
+  "test_credentials": "admin@kdmarche-oscop.fr / AdminKDM2025! via /admin/connexion (portal:'admin' required)",
+  "seed_data_creation": "None. Did not submit COOPER/purchase-need forms (would trigger Brevo emails).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The superadmin emails tab is reached via /superadmin?tab=emails after admin login on /admin/connexion. Direct navigation with networkidle sometimes times out due to WebSocket noise; use domcontentloaded + wait_for_timeout instead. The i18n-lang- prefix has 6 matches because container also uses testid i18n-lang-tabs — filter by exact 5 lang codes when counting.",
+  "rca of the issue": "N/A — no bugs detected in this iteration."
+}

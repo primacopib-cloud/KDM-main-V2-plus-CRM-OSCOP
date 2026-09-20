@@ -36,7 +36,7 @@ export const I18nEmailPreviews = () => {
           </button>
         ))}
       </div>
-      <div className="flex gap-1.5 mb-3" data-testid="i18n-lang-tabs">
+      <div className="flex gap-1.5 mb-3" data-testid="i18n-lang-tabbar">
         {data.langs.map((l) => (
           <button key={l} type="button" onClick={() => setLang(l)} data-testid={`i18n-lang-${l}`}
             className={`px-2.5 py-1.5 rounded-lg text-base leading-none border transition-colors ${lang === l
