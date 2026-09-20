@@ -1,5 +1,6 @@
 import { ArrowLeft, FileText, Scale, Building2, CreditCard, Truck, Shield, Handshake, CheckCircle2, XCircle, Download, ChevronRight, Leaf, Package, FileSignature, Route } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { replaceVariables, auditComplianceTable } from '../../data/legalDocuments';
 
@@ -34,7 +35,9 @@ export const renderContent = (content) => {
 };
 
 // Document Section Component
-export const DocumentSection = ({ number, title, content, highlight, accentColor }) => (
+export const DocumentSection = ({ number, title, content, highlight, accentColor }) => {
+  const { t } = useTranslation();
+  return (
   <div className={`mb-8 last:mb-0 ${highlight ? 'relative' : ''}`}>
     {highlight && (
       <div 
@@ -53,7 +56,7 @@ export const DocumentSection = ({ number, title, content, highlight, accentColor
         {title}
         {highlight && (
           <span className="ml-2 text-xs px-2 py-0.5 rounded-full" style={{ background: `${accentColor}25`, color: accentColor }}>
-            Clause clé
+            {t('legalPage.clause_key')}
           </span>
         )}
       </h3>
@@ -66,10 +69,12 @@ export const DocumentSection = ({ number, title, content, highlight, accentColor
       {renderContent(content)}
     </div>
   </div>
-);
+  );
+};
 
 // Parties Card Component for Convention
 export const PartiesCard = ({ parties }) => {
+  const { t } = useTranslation();
   const kdm = parties.kdmarche;
   const osc = parties.oscop;
   
@@ -81,11 +86,11 @@ export const PartiesCard = ({ parties }) => {
           <h4 className="text-sm font-semibold text-[#D9B35A] uppercase tracking-wider">KDMARCHE</h4>
         </div>
         <div className="space-y-1 text-sm text-white/70">
-          <p><span className="text-white/50">Dénomination :</span> <strong className="text-white/90">{replaceVariables(kdm.name)}</strong></p>
-          <p><span className="text-white/50">Forme :</span> {replaceVariables(kdm.form)}</p>
+          <p><span className="text-white/50">{t('legalPage.denomination')} :</span> <strong className="text-white/90">{replaceVariables(kdm.name)}</strong></p>
+          <p><span className="text-white/50">{t('legalPage.form')} :</span> {replaceVariables(kdm.form)}</p>
           <p><span className="text-white/50">SIRET :</span> {replaceVariables(kdm.siret)}</p>
-          <p><span className="text-white/50">Siège :</span> {replaceVariables(kdm.address)}</p>
-          <p><span className="text-white/50">Représentée par :</span> {replaceVariables(kdm.rep_name)}, {replaceVariables(kdm.rep_title)}</p>
+          <p><span className="text-white/50">{t('legalPage.headquarters')} :</span> {replaceVariables(kdm.address)}</p>
+          <p><span className="text-white/50">{t('legalPage.represented_by')} :</span> {replaceVariables(kdm.rep_name)}, {replaceVariables(kdm.rep_title)}</p>
         </div>
       </div>
       <div className="p-4 rounded-xl bg-[#D4AF37]/5 border border-[#D4AF37]/15">
@@ -94,11 +99,11 @@ export const PartiesCard = ({ parties }) => {
           <h4 className="text-sm font-semibold text-[#D4AF37] uppercase tracking-wider">O&apos;SCOP</h4>
         </div>
         <div className="space-y-1 text-sm text-white/70">
-          <p><span className="text-white/50">Dénomination :</span> <strong className="text-white/90">{replaceVariables(osc.name)}</strong></p>
-          <p><span className="text-white/50">Forme :</span> {replaceVariables(osc.form)}</p>
+          <p><span className="text-white/50">{t('legalPage.denomination')} :</span> <strong className="text-white/90">{replaceVariables(osc.name)}</strong></p>
+          <p><span className="text-white/50">{t('legalPage.form')} :</span> {replaceVariables(osc.form)}</p>
           <p><span className="text-white/50">SIRET :</span> {replaceVariables(osc.siret)}</p>
-          <p><span className="text-white/50">Siège :</span> {replaceVariables(osc.address)}</p>
-          <p><span className="text-white/50">Représentée par :</span> {replaceVariables(osc.rep_name)}, {replaceVariables(osc.rep_title)}</p>
+          <p><span className="text-white/50">{t('legalPage.headquarters')} :</span> {replaceVariables(osc.address)}</p>
+          <p><span className="text-white/50">{t('legalPage.represented_by')} :</span> {replaceVariables(osc.rep_name)}, {replaceVariables(osc.rep_title)}</p>
         </div>
       </div>
     </div>
@@ -106,7 +111,9 @@ export const PartiesCard = ({ parties }) => {
 };
 
 // Audit Compliance Table Component
-export const AuditTable = () => (
+export const AuditTable = () => {
+  const { t } = useTranslation();
+  return (
   <div className="mt-8 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.08]">
     <h3 className="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
       <Shield className="w-5 h-5 text-[#8B5CF6]" />
@@ -147,16 +154,18 @@ export const AuditTable = () => (
     </div>
     
     <div className="mt-4 p-4 rounded-xl bg-[#8B5CF6]/8 border border-[#8B5CF6]/20">
-      <p className="text-xs uppercase tracking-wider text-[#8B5CF6] font-semibold mb-2">Phrase d&apos;audit officielle</p>
+      <p className="text-xs uppercase tracking-wider text-[#8B5CF6] font-semibold mb-2">{t('legalPage.audit_phrase')}</p>
       <p className="text-sm text-white/80 italic leading-relaxed">
         {auditComplianceTable.officialPhrase}
       </p>
     </div>
   </div>
-);
+  );
+};
 
 // Full Document Component
 export const LegalDocument = ({ document }) => {
+  const { t } = useTranslation();
   const processedVersion = replaceVariables(document.version);
   const processedDate = replaceVariables(document.dateEffet);
   const processedRef = replaceVariables(document.reference);
@@ -186,18 +195,18 @@ export const LegalDocument = ({ document }) => {
             onClick={() => window.print()}
           >
             <Download className="w-3.5 h-3.5 mr-1.5" />
-            Télécharger PDF
+            {t('legalPage.download_pdf')}
           </Button>
         </div>
         <div className="flex flex-wrap gap-3 mt-4 text-xs">
           <span className="px-3 py-1.5 rounded-full bg-white/[0.04] text-white/70 border border-white/[0.06]">
-            Version : <span className="text-white/90">{processedVersion}</span>
+            {t('legalPage.version')} : <span className="text-white/90">{processedVersion}</span>
           </span>
           <span className="px-3 py-1.5 rounded-full bg-white/[0.04] text-white/70 border border-white/[0.06]">
-            Date d&apos;effet : <span className="text-white/90">{processedDate}</span>
+            {t('legalPage.date_effet')} : <span className="text-white/90">{processedDate}</span>
           </span>
           <span className="px-3 py-1.5 rounded-full bg-white/[0.04] text-white/70 border border-white/[0.06]">
-            Référence : <span className="text-white/90 font-mono">{processedRef}</span>
+            {t('legalPage.reference')} : <span className="text-white/90 font-mono">{processedRef}</span>
           </span>
         </div>
       </div>
@@ -229,7 +238,7 @@ export const LegalDocument = ({ document }) => {
         <div className="mt-6 p-5 rounded-2xl bg-[#10B981]/8 border border-[#10B981]/20">
           <p className="text-xs uppercase tracking-wider text-[#10B981] font-semibold mb-3 flex items-center gap-2">
             <Leaf className="w-4 h-4" />
-            Clause officielle (affichée dans l&apos;onboarding)
+            {t('legalPage.official_clause_onboarding')}
           </p>
           <p className="text-base text-white/90 italic leading-relaxed font-medium">
             {document.officialClause}

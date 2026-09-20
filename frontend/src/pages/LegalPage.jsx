@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { BackLink } from '../components/BackLink';
 import { ArrowLeft, FileText, Scale, Building2, CreditCard, Truck, Shield, Handshake, CheckCircle2, XCircle, Download, ChevronRight, Leaf, Package, FileSignature, Route } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -30,6 +31,7 @@ import { LegalDocument } from '../components/legal/LegalDocument';
 export default function LegalPage() {
   const { docId } = useParams();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   
   // Determine active tab based on URL parameter
   const getInitialTab = () => {
@@ -87,7 +89,7 @@ export default function LegalPage() {
           <div className="flex items-center gap-4">
             <BackLink fallback="/" data-testid="legal-back-btn" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Retour</span>
+              <span className="text-sm">{t('legalPage.back')}</span>
             </BackLink>
             <div className="flex items-center gap-2">
               <BrandLogos size="sm" />
@@ -96,7 +98,7 @@ export default function LegalPage() {
           
           <div className="flex items-center gap-2">
             <Scale className="w-4 h-4 text-[#D9B35A]" />
-            <span className="text-sm text-white/70">Documents juridiques</span>
+            <span className="text-sm text-white/70">{t('legalPage.docs_badge')}</span>
           </div>
         </div>
       </header>
@@ -109,11 +111,17 @@ export default function LegalPage() {
 
         {/* Page Title */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold mb-2">Conditions Générales & Convention</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('legalPage.title')}</h1>
           <p className="text-white/60">
-            Documents contractuels régissant les relations B2B — Centrale d&apos;achats ESS
+            {t('legalPage.subtitle')}
           </p>
         </div>
+
+        {!(i18n.language || 'fr').startsWith('fr') && (
+          <div className="mb-6 p-3 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/25 text-center" data-testid="legal-fr-authentic-banner">
+            <p className="text-sm text-[#F5C97B]">{t('legalPage.fr_authentic')}</p>
+          </div>
+        )}
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
@@ -124,7 +132,7 @@ export default function LegalPage() {
               data-testid="tab-mentions-legales"
             >
               <Scale className="w-4 h-4" />
-              <span className="hidden lg:inline">Mentions</span><span className="lg:hidden">Ment.</span>
+              <span className="hidden lg:inline">{t('legalPage.tab_mentions')}</span><span className="lg:hidden">{t('legalPage.tab_mentions_short')}</span>
             </TabsTrigger>
             <TabsTrigger 
               value="kdmarche"
@@ -132,7 +140,7 @@ export default function LegalPage() {
               data-testid="tab-cgv-kdmarche"
             >
               <Truck className="w-4 h-4" />
-              <span className="hidden lg:inline">CGV</span> KDM
+              <span className="hidden lg:inline">{t('legalPage.tab_cgv')}</span> KDM
             </TabsTrigger>
             <TabsTrigger 
               value="oscop"
@@ -140,7 +148,7 @@ export default function LegalPage() {
               data-testid="tab-cg-oscop"
             >
               <CreditCard className="w-4 h-4" />
-              <span className="hidden lg:inline">CGU</span> CommunityPlace
+              <span className="hidden lg:inline">{t('legalPage.tab_cgu')}</span> CommunityPlace
             </TabsTrigger>
             <TabsTrigger 
               value="convention"
@@ -148,8 +156,8 @@ export default function LegalPage() {
               data-testid="tab-convention"
             >
               <Handshake className="w-4 h-4" />
-              <span className="hidden lg:inline">Conv.</span>
-              <span className="lg:hidden">Conv</span>
+              <span className="hidden lg:inline">{t('legalPage.tab_convention')}</span>
+              <span className="lg:hidden">{t('legalPage.tab_convention_short')}</span>
             </TabsTrigger>
             <TabsTrigger 
               value="charte-ess"
@@ -157,7 +165,7 @@ export default function LegalPage() {
               data-testid="tab-charte-ess"
             >
               <Leaf className="w-4 h-4" />
-              <span className="hidden lg:inline">Charte</span> ESS
+              <span className="hidden lg:inline">{t('legalPage.tab_charte')}</span> ESS
             </TabsTrigger>
             <TabsTrigger 
               value="logiscop"
@@ -173,7 +181,7 @@ export default function LegalPage() {
               data-testid="tab-contrat-transport"
             >
               <FileSignature className="w-4 h-4" />
-              <span className="hidden lg:inline">Contrat</span> Tr.
+              <span>{t('legalPage.tab_transport')}</span>
             </TabsTrigger>
             <TabsTrigger 
               value="ess-route"
@@ -181,7 +189,7 @@ export default function LegalPage() {
               data-testid="tab-ess-route"
             >
               <Route className="w-4 h-4" />
-              <span className="hidden lg:inline">Tournées</span> ESS
+              <span className="hidden lg:inline">{t('legalPage.tab_tournees')}</span> ESS
             </TabsTrigger>
             <TabsTrigger 
               value="privacy"
@@ -189,7 +197,7 @@ export default function LegalPage() {
               data-testid="tab-privacy"
             >
               <Shield className="w-4 h-4" />
-              <span className="hidden lg:inline">Confidentialité</span><span className="lg:hidden">Confid.</span>
+              <span className="hidden lg:inline">{t('legalPage.tab_privacy')}</span><span className="lg:hidden">{t('legalPage.tab_privacy_short')}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -233,8 +241,8 @@ export default function LegalPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-white/10">
-                        <th className="text-left py-2 px-3 text-white/60 font-medium">Zone</th>
-                        <th className="text-center py-2 px-3 text-white/60 font-medium">Base</th>
+                        <th className="text-left py-2 px-3 text-white/60 font-medium">{t('legalPage.zone')}</th>
+                        <th className="text-center py-2 px-3 text-white/60 font-medium">{t('legalPage.base')}</th>
                         <th className="text-center py-2 px-3 text-white/60 font-medium">€/kg</th>
                         <th className="text-center py-2 px-3 text-white/60 font-medium">€/m³</th>
                       </tr>
@@ -258,7 +266,7 @@ export default function LegalPage() {
                 {/* Supplements */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="p-4 rounded-xl bg-[#8B5CF6]/5 border border-[#8B5CF6]/15">
-                    <h4 className="text-sm font-semibold text-[#8B5CF6] mb-3">Suppléments créneau</h4>
+                    <h4 className="text-sm font-semibold text-[#8B5CF6] mb-3">{t('legalPage.supplements_title')}</h4>
                     <div className="space-y-2">
                       {annexeLogiscopContent.tarification.supplements.map((sup) => (
                         <div key={`supp-${sup.label}`} className="flex justify-between text-sm">
@@ -270,7 +278,7 @@ export default function LegalPage() {
                   </div>
 
                   <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08]">
-                    <h4 className="text-sm font-semibold text-white/80 mb-3">Frais de préparation</h4>
+                    <h4 className="text-sm font-semibold text-white/80 mb-3">{t('legalPage.prep_title')}</h4>
                     <div className="space-y-2">
                       {annexeLogiscopContent.tarification.preparation.map((prep) => (
                         <div key={`prep-${prep.label}`} className="flex justify-between text-sm">
@@ -294,7 +302,7 @@ export default function LegalPage() {
             <div className="mt-6 p-5 rounded-2xl bg-[#F59E0B]/8 border border-[#F59E0B]/20">
               <p className="text-xs uppercase tracking-wider text-[#F59E0B] font-semibold mb-3 flex items-center gap-2">
                 <FileSignature className="w-4 h-4" />
-                Clause affichée au checkout
+                {t('legalPage.checkout_clause')}
               </p>
               <p className="text-base text-white/90 italic leading-relaxed font-medium">
                 {contratTransportLogiscopContent.disclaimer}
@@ -307,7 +315,7 @@ export default function LegalPage() {
                 <div className="p-4 rounded-xl bg-[#8B5CF6]/5 border border-[#8B5CF6]/15">
                   <h4 className="text-sm font-semibold text-[#8B5CF6] mb-3 flex items-center gap-2">
                     <Truck className="w-4 h-4" />
-                    Transporteur
+                    {t('legalPage.carrier')}
                   </h4>
                   <div className="space-y-1.5 text-sm">
                     <p className="text-white/90 font-medium">{contratTransportLogiscopContent.parties.transporteur.name}</p>
@@ -318,12 +326,12 @@ export default function LegalPage() {
                 <div className="p-4 rounded-xl bg-[#F59E0B]/5 border border-[#F59E0B]/15">
                   <h4 className="text-sm font-semibold text-[#F59E0B] mb-3 flex items-center gap-2">
                     <Building2 className="w-4 h-4" />
-                    Client B2B
+                    {t('legalPage.client_b2b')}
                   </h4>
                   <div className="space-y-1.5 text-sm">
                     <p className="text-white/90 font-medium">{replaceVariables(contratTransportLogiscopContent.parties.client.name)}</p>
                     <p className="text-white/60">{contratTransportLogiscopContent.parties.client.role}</p>
-                    <p className="text-white/50 text-xs">Identifié dans la commande</p>
+                    <p className="text-white/50 text-xs">{t('legalPage.identified_order')}</p>
                   </div>
                 </div>
               </div>
@@ -337,7 +345,7 @@ export default function LegalPage() {
             <div className="mt-6 p-5 rounded-2xl bg-[#10B981]/8 border border-[#10B981]/20">
               <p className="text-xs uppercase tracking-wider text-[#10B981] font-semibold mb-3 flex items-center gap-2">
                 <Route className="w-4 h-4" />
-                Clause affichée au checkout (Tournées ESS)
+                {t('legalPage.checkout_clause_ess')}
               </p>
               <p className="text-base text-white/90 italic leading-relaxed font-medium">
                 {annexeTourneesESSContent.officialClause}
@@ -368,8 +376,8 @@ export default function LegalPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-white/10">
-                        <th className="text-left py-2 px-3 text-white/60 font-medium">Zone</th>
-                        <th className="text-center py-2 px-3 text-white/60 font-medium">Base</th>
+                        <th className="text-left py-2 px-3 text-white/60 font-medium">{t('legalPage.zone')}</th>
+                        <th className="text-center py-2 px-3 text-white/60 font-medium">{t('legalPage.base')}</th>
                         <th className="text-center py-2 px-3 text-white/60 font-medium">€/kg</th>
                         <th className="text-center py-2 px-3 text-white/60 font-medium">€/carton</th>
                       </tr>
@@ -399,7 +407,7 @@ export default function LegalPage() {
         {/* Footer Note */}
         <div className="mt-12 p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] text-center">
           <p className="text-xs text-white/50">
-            Ces documents sont fournis à titre informatif. Pour toute question, contactez-nous à{' '}
+            {t('legalPage.footer_note')}{' '}
             <a href="mailto:juridique@objectifscopoutremer.com" className="text-[#D9B35A] hover:underline">
               juridique@objectifscopoutremer.com
             </a>
