@@ -3820,3 +3820,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - Namespace auction : 71/71 clés traduites en arabe dans ar.json (titre/sous-titre salle, filtres, cartes lot, accept/bid, countdowns, plan gate, historique, économies, ticker, vedette, partage, préférences d'alertes, clés popsnet du réseau POP'S).
 - Espace POP'S (detaillantI18n.js) : bloc ar complet ajouté au DT (space, tagline, formulaires, statuts offres…) ; 5e bouton « ع » dans le sélecteur local (dt-lang-ar). Ligne dure « 390 €/mois, 3 offres de lots incluses » de l'écran invité remplacée par t.subNeeded localisé.
 - Testé E2E : /encheres?lang=ar en RTL (titre قاعة COOP'ACT, filtres جارية/قادمة/منتهية, ticker arabe, bandeau vert arabe), /reseau-pops?lang=ar OK, espace POP'S invité en arabe (formulaire + CTA إنشاء حساب متجر التجزئة), retour FR OK.
+
+## 2026-09 — Lot 114 : Traduction complète de TOUTES les pages (testée E2E)
+- Couverture 100 % des 1 597 clés i18n pour les 4 langues non-FR : EN et ES étaient déjà complètes ; **939 clés créole (gcf)** et **1 185 clés arabe (ar)** générées via script batch (Emergent LLM key, gpt-4o-mini, noms de marque et variables {{...}} préservés), écrites dans gcf-extra.json et ar.json sans écraser l'existant. Script supprimé après usage.
+- Étend la couverture arabe/créole au-delà de la navigation : landing complète, PASS, catalogue, checkout, commandes, wallet, onboarding, relais, partenaires, LOGI'SCOP, offres, pricing, admin, auction, etc.
+- Testé E2E : couverture mesurée 1597/1597 pour les 4 langues ; /pass?lang=ar (RTL, héros arabe) et /pass?lang=gcf (page entièrement créole : Bonjou membre, Kòmandé o roulé, Coop'acté) vérifiés visuellement.
