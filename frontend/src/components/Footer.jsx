@@ -83,12 +83,12 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/calculateur-fret" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-logiscop-fret">LOGI'SCOP — Calculateur de fret</Link>
+                <Link to="/calculateur-fret" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-logiscop-fret">{t('footer.fret_calculator')}</Link>
               </li>
               <li>
                 <Link to="/investisseurs-privilege" className="text-white/60 hover:text-white/90 text-sm transition-colors flex items-center gap-2" data-testid="footer-link-packs-privilege">
                   <Crown className="w-3.5 h-3.5 text-[#D9B35A]" />
-                  <span>Packs Privilège Investisseur</span>
+                  <span>{t('footer.packs_privilege')}</span>
                 </Link>
               </li>
             </ul>
@@ -182,7 +182,7 @@ const Footer = () => {
             aria-expanded={quoteOpen}
           >
             <span className="flex items-center gap-2.5 text-sm font-bold text-[#E9CF8E] uppercase tracking-wider">
-              <FileSpreadsheet className="w-4 h-4 text-[#D4AF37]" /> Demande de contact
+              <FileSpreadsheet className="w-4 h-4 text-[#D4AF37]" /> {t('footer.quote_toggle')}
             </span>
             <ChevronDown className={`w-4 h-4 text-[#D4AF37] transition-transform duration-300 ${quoteOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -191,11 +191,11 @@ const Footer = () => {
               <div className="text-center mb-6">
                 <span className="badge-status mb-3 inline-flex">
                   <span className="dot"></span>
-                  Formulaire de contact
+                  {t('footer.quote_badge')}
                 </span>
-                <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2 text-white">Demande de contact</h3>
+                <h3 className="text-[28px] font-bold tracking-tight mt-3 mb-2 text-white">{t('footer.quote_toggle')}</h3>
                 <p className="text-white/70 text-sm">
-                  Contactez-nous pour rejoindre la Communityplace ESS — votre demande est transmise à notre équipe commerciale.
+                  {t('footer.quote_desc')}
                 </p>
               </div>
               <div className="max-w-3xl mx-auto">
@@ -246,7 +246,7 @@ const Footer = () => {
           </div>
           <div className="flex gap-6">
             <Link to="/legal/mentions-legales" className="text-white/50 hover:text-white/80 text-xs transition-colors" data-testid="footer-mentions-legales">{t('footer.legal_notice')}</Link>
-            <Link to="/conditions-vente-oscop" className="text-white/50 hover:text-white/80 text-xs transition-colors" data-testid="footer-cgv-oscop">CGV O'SCOP</Link>
+            <Link to="/conditions-vente-oscop" className="text-white/50 hover:text-white/80 text-xs transition-colors" data-testid="footer-cgv-oscop">{t('footer.cgv_oscop')}</Link>
             <Link to="/legal/politique-confidentialite" className="text-white/50 hover:text-white/80 text-xs transition-colors" data-testid="footer-privacy">{t('footer.privacy')}</Link>
             <Link to="/legal/charte-ess" className="text-white/50 hover:text-white/80 text-xs transition-colors">{t('footer.ess_charter')}</Link>
           </div>

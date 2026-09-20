@@ -274,7 +274,15 @@
     "convention": "اتفاقية الشراكة",
     "charte_mutualisation": "ميثاق الاقتصاد الاجتماعي والتضامن",
     "copyright": "© 2026 Communityplace B2B ESS - KDMARCHÉ & O'SCOP. جميع الحقوق محفوظة.",
-    "hub_short": "Communityplace B2B ESS"
+    "hub_short": "Communityplace B2B ESS",
+    "quote_toggle": "طلب تواصل",
+    "quote_badge": "نموذج التواصل",
+    "quote_desc": "تواصلوا معنا للانضمام إلى Communityplace ESS — يتم تحويل طلبكم إلى فريقنا التجاري.",
+    "fret_calculator": "LOGI'SCOP — حاسبة الشحن",
+    "packs_privilege": "باقات امتياز المستثمر",
+    "cgv_oscop": "الشروط العامة للبيع O'SCOP",
+    "two_circuits": "مساران شفافان: بيع مباشر من الشريك • شراء وإعادة بيع O'SCOP — يتم تحديد البائع المُصدِر للفاتورة في كل عرض.",
+    "legal_fallback": "KDMARCHÉ، خدمة تديرها PRIMACOP INTERNATIONAL BUSINESS — SIRET 433 230 703 00020"
   },
   "auction": {
     "title": "قاعة COOP'ACT LOLODRIVE",

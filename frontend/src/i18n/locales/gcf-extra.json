@@ -12,7 +12,15 @@
     "cgv_kdmarche": "CGV KDMARCHE B2B",
     "cg_oscop": "CG O'SCOP",
     "convention": "Konvansyon patenarya",
-    "charte_mutualisation": "Chart ESS mutualizasyon"
+    "charte_mutualisation": "Chart ESS mutualizasyon",
+    "quote_toggle": "Dèmand kontak",
+    "quote_badge": "Fòmilè kontak",
+    "quote_desc": "Kontakté nou pou antré adan Communityplace ESS-la — dèmand a'w voyé bay ekip komèsyal an nou.",
+    "fret_calculator": "LOGI'SCOP — Kalkilatè frè",
+    "packs_privilege": "Pak Privilèj Envestisè",
+    "cgv_oscop": "CGV O'SCOP",
+    "two_circuits": "De sikwi klè : lavant dirèk patnè • acha-rèvant O'SCOP — vandè-ki-faktiré-a idantifyé asou chak òf.",
+    "legal_fallback": "KDMARCHÉ, sévis ékspwaté pa PRIMACOP INTERNATIONAL BUSINESS — SIRET 433 230 703 00020"
   },
   "landing": {
     "official_statement_title": "Communityplace koopérativ B2B2C"

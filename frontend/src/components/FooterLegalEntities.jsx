@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
 export const FooterLegalEntities = () => {
+  const { t } = useTranslation();
   const [legal, setLegal] = useState(null);
   useEffect(() => {
     fetch(`${BACKEND}/api/public/sale-model/config`)
@@ -24,7 +26,7 @@ export const FooterLegalEntities = () => {
   if (!legal) {
     return (
       <p className="text-white/40 text-[11px] mt-1" data-testid="footer-legal-entity">
-        KDMARCHÉ, service exploité par PRIMACOP INTERNATIONAL BUSINESS — SIRET 433 230 703 00020
+        {t('footer.legal_fallback')}
       </p>
     );
   }
@@ -33,7 +35,7 @@ export const FooterLegalEntities = () => {
       <p className="text-white/40 text-[11px]">{line(legal.partner)}</p>
       <p className="text-white/40 text-[11px]" data-testid="footer-legal-oscop">{line(legal.oscop)}</p>
       <p className="text-white/30 text-[10px]">
-        Deux circuits transparents : vente partenaire directe • achat-revente O'SCOP — le vendeur-facturier est identifié sur chaque offre.
+        {t('footer.two_circuits')}
       </p>
     </div>
   );

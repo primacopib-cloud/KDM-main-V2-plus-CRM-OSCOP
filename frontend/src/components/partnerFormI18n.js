@@ -63,6 +63,22 @@ export const PARTNER_L10N = {
     successText: "Mèsi ! Kandidati a'w byen rivé adan koopérativ-la — on akizé résepsyon détayé voyé ba'w pa imel.",
     toastOk: "Kandidati voyé — nou ké viré vin' vè'w byen vit", toastErr: 'On pwoblenm pandan voyé-la',
   },
+  ar: {
+    toggle: 'كن شريكاً', badge: 'طلب شراكة', heading: 'كن شريكاً',
+    sub: 'مشغلو الخدمات اللوجستية والتعاونيات وفاعلو الاقتصاد الاجتماعي والتضامني — انضموا إلى منظومة KDMARCHÉ × O\u2019SCOP كشريك رسمي.',
+    type: 'نوع الشراكة *', typePh: 'اختر نوع الشراكة',
+    company: 'الاسم القانوني', companyPh: 'الاسم القانوني لشركتك',
+    legal: 'الشكل القانوني', legalPh: 'اختر شكلاً قانونياً',
+    name: 'الاسم الكامل *', namePh: 'محمد أحمد',
+    email: 'البريد الإلكتروني المهني *', emailPh: 'contact@company.com',
+    phone: 'الهاتف', country: 'البلد', project: 'مشروعك',
+    projectPh: 'صف نشاطك والشراكة المنشودة…',
+    submit: 'إرسال طلبي', sending: 'جارٍ الإرسال…',
+    disclaimer: 'تدرس التعاونية طلبك — الرد خلال 48 ساعة عمل.',
+    successTitle: 'تم إرسال الطلب!',
+    successText: 'شكراً! تم إرسال طلبك إلى التعاونية — وقد أُرسل إليك إشعار استلام مفصّل عبر البريد الإلكتروني.',
+    toastOk: 'تم إرسال الطلب — سنعاود الاتصال بك قريباً', toastErr: 'خطأ أثناء الإرسال',
+  },
 };
 
 export const partnerLang = (l) => (l?.startsWith('gcf') ? 'gcf' : (l || 'fr').slice(0, 2));
