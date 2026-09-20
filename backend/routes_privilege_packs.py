@@ -209,7 +209,9 @@ async def _activate(sub: dict):
             f"<b>{sub['credits_eur']:,} €</b> (+{sub['bonus_pct']} %), valables 24 mois.</p>"
             f"<p>Référence : {sub['reference']}. Votre convention signée est téléchargeable depuis votre "
             "espace investisseur.</p>".replace(",", " "))
-        await send_email(sub["email"], "👑 Votre Abonnement Privilège Investisseur est actif", html)
+        await send_email(to_email=sub["email"], to_name=sub["convention"].get("signer_name"),
+                         subject="👑 Votre Abonnement Privilège Investisseur est actif",
+                         html_content=html, tags=["investor-privilege"])
     except Exception as exc:
         logger.warning("Email activation pack privilège : %s", exc)
 
@@ -386,7 +388,7 @@ async def admin_consume_credits(sub_id: str, body: ConsumeBody, admin: dict = De
     used = 0.0
     async for e in db.privilege_credit_ledger.find(
             {"sub_id": sub_id, "type": "CONSUMPTION"}, {"_id": 0, "amount_eur": 1}):
-        used += float(e["amount_eur"])
+        used += abs(float(e["amount_eur"]))
     remaining = round(sub["credits_eur"] - used, 2)
     if amount > remaining:
         raise HTTPException(status_code=400,
@@ -396,4 +398,46 @@ async def admin_consume_credits(sub_id: str, body: ConsumeBody, admin: dict = De
         "sub_reference": sub["reference"], "type": "CONSUMPTION", "amount_eur": -amount,
         "label": body.label.strip() or "Consommation de crédits bonifiés",
         "recorded_by": admin.get("email"), "created_at": _now().isoformat()})
-    return {"ok": True, "remaining_eur": round(remaining - amount, 2)}
+    new_remaining = round(remaining - amount, 2)
+    await _check_low_balance(sub, new_remaining)
+    return {"ok": True, "remaining_eur": new_remaining}
+
+
+LOW_BALANCE_THRESHOLD_PCT = 20  # alerte sous 20 % du pack
+
+
+async def _check_low_balance(sub: dict, remaining: float):
+    """Cloche + email quand le solde bonifié passe sous 20 % du pack (une seule fois)."""
+    threshold = round(sub["credits_eur"] * LOW_BALANCE_THRESHOLD_PCT / 100, 2)
+    if remaining >= threshold:
+        return
+    res = await db.investor_privilege_subs.update_one(
+        {"id": sub["id"], "low_balance_alerted": {"$ne": True}},
+        {"$set": {"low_balance_alerted": True, "low_balance_alerted_at": _now().isoformat()}})
+    if not res.modified_count:
+        return
+    fmt = lambda v: f"{v:,.2f} €".replace(",", " ")
+    msg = (f"Votre solde de crédits bonifiés {sub['pack_name']} ({sub['reference']}) est passé à "
+           f"{fmt(remaining)}, sous le seuil de {LOW_BALANCE_THRESHOLD_PCT} % ({fmt(threshold)}).")
+    try:
+        from core_deps import create_notification
+        await create_notification(
+            notification_type="privilege_low_balance",
+            title=f"⚠️ Solde crédits FCRL bas — {fmt(remaining)} restants",
+            message=msg, target_roles=[], target_user_id=sub["user_id"],
+            data={"sub_id": sub["id"], "reference": sub["reference"], "remaining_eur": remaining})
+    except Exception as exc:
+        logger.warning("Cloche solde bas FCRL : %s", exc)
+    try:
+        from brevo_service import send_email, _wrap_html
+        html = _wrap_html(
+            "Solde de crédits bonifiés bas",
+            f"<p>{msg}</p>"
+            "<p>Pour continuer à préfinancer vos flux sans interruption, vous pouvez souscrire un nouveau "
+            "pack Privilège depuis la page <b>Packs Investisseurs</b> de la plateforme, ou contacter la "
+            "direction financière de la centrale.</p>")
+        await send_email(to_email=sub["email"], to_name=sub["convention"].get("signer_name"),
+                         subject="⚠️ Votre solde de crédits FCRL passe sous le seuil",
+                         html_content=html, tags=["investor-privilege"])
+    except Exception as exc:
+        logger.warning("Email solde bas FCRL : %s", exc)

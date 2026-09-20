@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { partners } from '../data/mock';
-import { Mail, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf, Store, ChevronDown, FileSpreadsheet } from 'lucide-react';
+import { Mail, MapPin, FileText, Scale, Handshake, CreditCard, Truck, Leaf, Store, ChevronDown, FileSpreadsheet, Crown } from 'lucide-react';
 import ContactForm from './ContactForm';
 import { PartnerForm } from './PartnerForm';
 import { PARTNER_L10N, partnerLang } from './partnerFormI18n';
@@ -84,6 +84,12 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/calculateur-fret" className="text-white/60 hover:text-white/90 text-sm transition-colors" data-testid="footer-link-logiscop-fret">LOGI'SCOP — Calculateur de fret</Link>
+              </li>
+              <li>
+                <Link to="/investisseurs-privilege" className="text-white/60 hover:text-white/90 text-sm transition-colors flex items-center gap-2" data-testid="footer-link-packs-privilege">
+                  <Crown className="w-3.5 h-3.5 text-[#D9B35A]" />
+                  <span>Packs Privilège Investisseur</span>
+                </Link>
               </li>
             </ul>
           </div>
