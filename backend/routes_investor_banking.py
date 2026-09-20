@@ -106,7 +106,10 @@ async def _notify_repayment(user: dict, bank: dict, doc: dict):
             subject=f"💶 Remboursement de {doc['amount_eur']:,.2f} € versé".replace(",", " "),
             html_content=_wrap_html("Remboursement versé", (
                 f"<p style='font-size:14px;'>Un remboursement de <b>{doc['amount_eur']:,.2f} €</b> "
-                f"a été versé sur votre IBAN se terminant par <b>…{bank['iban'][-4:]}</b>.<br/>"
+                f"a été versé sur votre compte se terminant par "
+                f"<b>…{(bank.get('iban') or bank.get('account_number') or '')[-4:]}</b>"
+                + (f" (SWIFT {bank.get('bic')})" if bank.get('account_type') == 'SWIFT' else "")
+                + f".<br/>"
                 f"Référence de virement : <b>{doc['reference']}</b>"
                 + (f"<br/>Opération : {doc['operation_ref']}" if doc.get("operation_ref") else "") +
                 "</p>").replace(",", " ")),
@@ -219,7 +222,7 @@ async def admin_create_repayment(body: RepaymentCreate, admin: dict = Depends(_a
     doc = {
         "id": str(uuid.uuid4()), "user_id": body.user_id, "amount_eur": body.amount_eur,
         "reference": body.reference.strip(), "operation_ref": body.operation_ref,
-        "iban": bank["iban"], "paid_at": body.paid_at or _now().isoformat(),
+        "iban": bank.get("iban") or bank.get("account_number", ""), "paid_at": body.paid_at or _now().isoformat(),
         "status": "PENDING_SECOND_APPROVAL" if needs_second else "CONFIRMED",
         "created_by": admin.get("email"), "created_at": _now().isoformat(),
     }

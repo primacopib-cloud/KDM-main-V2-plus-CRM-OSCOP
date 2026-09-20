@@ -17,7 +17,7 @@ const downloadBlob = async (url, filename) => {
 
 // Coordonnées bancaires (IBAN/BIC + RIB PDF/PNG) de l'investisseur
 export const InvestorBankDetails = () => {
-  const [form, setForm] = useState({ holder: '', iban: '', bic: '' });
+  const [form, setForm] = useState({ holder: '', iban: '', bic: '', account_type: 'IBAN', account_number: '', bank_name: '', bank_country: '' });
   const [hasRib, setHasRib] = useState(false);
   const [ribStatus, setRibStatus] = useState(null);
   const [saved, setSaved] = useState(false);
@@ -28,7 +28,14 @@ export const InvestorBankDetails = () => {
     fetch(`${API_URL}/api/investor-plans/bank-details`, { headers: getAuthHeaders() })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        if (d.bank_details) { setForm({ holder: d.bank_details.holder || '', iban: d.bank_details.iban || '', bic: d.bank_details.bic || '' }); setSaved(!!d.bank_details.iban); setRibStatus(d.bank_details.rib_status || null); }
+        if (d.bank_details) {
+          const b = d.bank_details;
+          setForm({ holder: b.holder || '', iban: b.iban || '', bic: b.bic || '',
+                    account_type: b.account_type || 'IBAN', account_number: b.account_number || '',
+                    bank_name: b.bank_name || '', bank_country: b.bank_country || '' });
+          setSaved(!!(b.iban || b.account_number));
+          setRibStatus(b.rib_status || null);
+        }
         setHasRib(d.has_rib);
         setLoaded(true);
       }).catch(() => setLoaded(true));
@@ -93,16 +100,45 @@ export const InvestorBankDetails = () => {
           indispensables au versement de vos remboursements d'investissement.
         </p>
       )}
+      <div className="flex gap-1.5 mb-2" data-testid="bank-account-type-switch">
+        {[['IBAN', 'Compte IBAN (SEPA)'], ['SWIFT', 'Compte SWIFT (international)']].map(([t, label]) => (
+          <button key={t} type="button" onClick={() => setForm({ ...form, account_type: t })}
+            data-testid={`bank-type-${t.toLowerCase()}`}
+            className={`px-3 h-7 rounded-full text-[11px] font-bold border transition-colors ${
+              form.account_type === t ? 'bg-[#D9B35A] text-black border-[#D9B35A]' : 'border-white/20 text-white/60 hover:bg-white/5'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
       <div className="grid gap-2 sm:grid-cols-3 mb-2">
         <input value={form.holder} onChange={(e) => setForm({ ...form, holder: e.target.value })}
           placeholder="Titulaire du compte" data-testid="bank-holder-input"
           className="h-9 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs" />
-        <input value={form.iban} onChange={(e) => setForm({ ...form, iban: e.target.value })}
-          placeholder="IBAN" data-testid="bank-iban-input"
-          className="h-9 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs font-mono" />
-        <input value={form.bic} onChange={(e) => setForm({ ...form, bic: e.target.value })}
-          placeholder="BIC / SWIFT" data-testid="bank-bic-input"
-          className="h-9 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs font-mono" />
+        {form.account_type === 'IBAN' ? (
+          <>
+            <input value={form.iban} onChange={(e) => setForm({ ...form, iban: e.target.value })}
+              placeholder="IBAN" data-testid="bank-iban-input"
+              className="h-9 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs font-mono" />
+            <input value={form.bic} onChange={(e) => setForm({ ...form, bic: e.target.value })}
+              placeholder="BIC / SWIFT" data-testid="bank-bic-input"
+              className="h-9 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs font-mono" />
+          </>
+        ) : (
+          <>
+            <input value={form.account_number} onChange={(e) => setForm({ ...form, account_number: e.target.value })}
+              placeholder="N° de compte" data-testid="bank-account-number-input"
+              className="h-9 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs font-mono" />
+            <input value={form.bic} onChange={(e) => setForm({ ...form, bic: e.target.value })}
+              placeholder="Code SWIFT (8 ou 11 caractères)" data-testid="bank-swift-input"
+              className="h-9 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs font-mono" />
+            <input value={form.bank_name} onChange={(e) => setForm({ ...form, bank_name: e.target.value })}
+              placeholder="Nom de la banque" data-testid="bank-name-input"
+              className="h-9 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs" />
+            <input value={form.bank_country} onChange={(e) => setForm({ ...form, bank_country: e.target.value })}
+              placeholder="Pays banque (ex : US, CA, MU)" data-testid="bank-country-input" maxLength={2}
+              className="h-9 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs uppercase" />
+          </>
+        )}
       </div>
       <div className="flex items-center gap-2 flex-wrap">
         <button type="button" onClick={save} data-testid="bank-details-save"

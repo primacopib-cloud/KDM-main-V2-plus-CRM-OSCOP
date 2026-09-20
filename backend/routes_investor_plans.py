@@ -359,8 +359,12 @@ async def my_invoice_pdf(invoice_id: str, user: dict = Depends(_current_user)):
 
 class BankDetails(BaseModel):
     holder: str
-    iban: str
-    bic: str
+    iban: str = ""
+    bic: str = ""
+    account_type: str = "IBAN"  # IBAN (SEPA) | SWIFT (international)
+    account_number: str = ""
+    bank_name: str = ""
+    bank_country: str = ""
 
 
 @investor_plans_router.get("/bank-details")
@@ -371,13 +375,37 @@ async def get_bank_details(user: dict = Depends(_current_user)):
 
 @investor_plans_router.put("/bank-details")
 async def save_bank_details(body: BankDetails, user: dict = Depends(_current_user)):
-    iban = body.iban.replace(" ", "").upper()
-    if len(iban) < 15 or len(iban) > 34:
-        raise HTTPException(status_code=400, detail="IBAN invalide")
+    account_type = body.account_type.upper()
+    if account_type not in ("IBAN", "SWIFT"):
+        raise HTTPException(status_code=400, detail="Type de compte invalide")
+    data: dict = {"holder": body.holder.strip(), "account_type": account_type,
+                  "bic": body.bic.strip().upper(), "updated_at": _now().isoformat()}
+    if account_type == "IBAN":
+        iban = body.iban.replace(" ", "").upper()
+        if len(iban) < 15 or len(iban) > 34:
+            raise HTTPException(status_code=400, detail="IBAN invalide")
+        data["iban"] = iban
+        data["account_number"] = ""
+        data["bank_name"] = ""
+        data["bank_country"] = ""
+    else:
+        num = body.account_number.replace(" ", "").upper()
+        swift = body.bic.replace(" ", "").upper()
+        if len(num) < 8 or len(num) > 34 or not num.isalnum():
+            raise HTTPException(status_code=400, detail="Numéro de compte invalide (8 à 34 caractères alphanumériques)")
+        if len(swift) not in (8, 11) or not swift.isalnum():
+            raise HTTPException(status_code=400, detail="Code SWIFT/BIC invalide (8 ou 11 caractères)")
+        if len(body.bank_country.strip()) != 2:
+            raise HTTPException(status_code=400, detail="Pays de la banque requis (code ISO à 2 lettres, ex : US, CA, MU)")
+        data["iban"] = ""
+        data["account_number"] = num
+        data["bank_name"] = body.bank_name.strip()
+        data["bank_country"] = body.bank_country.strip().upper()
+    if not data["holder"]:
+        raise HTTPException(status_code=400, detail="Titulaire du compte requis")
     await db.investor_bank_details.update_one(
         {"user_id": user["id"]},
-        {"$set": {"holder": body.holder.strip(), "iban": iban, "bic": body.bic.strip().upper(),
-                  "updated_at": _now().isoformat()},
+        {"$set": data,
          "$setOnInsert": {"id": str(uuid.uuid4()), "user_id": user["id"], "created_at": _now().isoformat()}},
         upsert=True)
     return {"saved": True}
