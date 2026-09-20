@@ -1,0 +1,75 @@
+{
+  "summary": "Frontend-only regression testing for i18n phone country dropdown (Intl.DisplayNames) + legal pages i18n in AR/FR/EN. All 11 scenarios pass with 0 JS console errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "detailed_results": {
+    "dropdown_ar_home": {
+      "footer_quote_toggle_opens": true,
+      "quote-phone-country-select_opens": true,
+      "arabic_country_names_found": ["غوادلوب", "أفغانستان", "مصر", "ألمانيا", "فرنسا"],
+      "arabic_search_placeholder": "رمز الاتصال أو البلد… (مثال 590)",
+      "search_by_arabic_name_مصر_works": true,
+      "search_by_dial_code_590_finds_guadeloupe": true,
+      "html_dir_rtl": "rtl"
+    },
+    "dropdown_fr_regression": {
+      "french_names_present": ["Guadeloupe", "France métropolitaine", "Afghanistan"],
+      "fr_placeholder": "Indicatif ou pays… (ex. 590)"
+    },
+    "dropdown_en": {
+      "english_names_present": ["Guadeloupe", "Germany", "Afghanistan"],
+      "en_placeholder": "Dial code or country… (e.g. 590)"
+    },
+    "legal_cgv_kdmarche_ar": {
+      "header_terms_ok": ["رجوع","مستندات قانونية","الشروط العامة","شروط البيع","شروط الاستخدام","اتفاقية","عقد النقل","الخصوصية","إشعارات"],
+      "badges_ok": ["الإصدار","تاريخ السريان","المرجع"],
+      "download_pdf_ar": "تحميل PDF present",
+      "legal-fr-authentic-banner_visible": true,
+      "banner_text_ar": "النسخة الفرنسية من هذه المستندات هي وحدها المعتمدة قانونياً.",
+      "note": "Tabs ميثاق ESS and جولات ESS present visually (visible in screenshot as 'ESS ميثاق' / 'ESS جولات' due to RTL word order); substring match failed due to inline mixed-direction — visual verification confirms rendering."
+    },
+    "legal_convention_ar": {
+      "party_labels_ok": ["التسمية","الشكل القانوني","المقر","يمثلها"],
+      "audit_label_ok": "بيان التدقيق present"
+    },
+    "legal_annexe_logiscop_ar": {
+      "table_headers_ok": ["المنطقة","أساسي"],
+      "section_titles_ok": ["رسوم إضافية","رسوم التحضير"]
+    },
+    "legal_fr_regression": {
+      "cgv_kdmarche_fr_terms_ok": ["Retour","Documents juridiques","Conditions Générales","Télécharger PDF","Version","Date d'effet","Référence"],
+      "banner_absent_on_fr_cgv": true,
+      "banner_absent_on_fr_convention": true
+    },
+    "tab_navigation_ar": {
+      "tab-convention": "url ok /legal/convention",
+      "tab-charte-ess": "url ok",
+      "tab-privacy": "url = /legal/politique-confidentialite (expected, not 'privacy' string)",
+      "tab-logiscop": "url ok /legal/annexe-logiscop",
+      "js_errors_on_tab_switch": 0
+    },
+    "inscription_fr": {
+      "loads": true,
+      "country_select_found": true,
+      "phone_prefix_+590_visible": true
+    },
+    "console_errors_across_pages": 0
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "LegalPage.jsx uses hardcoded fallback strings mixed with t('legalPage.*') — consistent pattern OK; no issues found.",
+    "CountryPhoneFields uses Intl.DisplayNames with per-language cache — fallback for 'gcf' correctly retains FR names (product decision, not a bug)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "i18n legal pages + AR phone-country dropdown fully validated at iteration_105. Public preview URL used. All data-testids resolved: footer-quote-toggle, quote-phone-country-select, legal-fr-authentic-banner, tab-cgv-kdmarche, tab-convention, tab-charte-ess, tab-logiscop, tab-privacy. Note tab id is 'tab-logiscop' (not 'tab-annexe-logiscop') — the URL slug however is /legal/annexe-logiscop.",
+  "rca of the issue": "n/a - no bugs"
+}
