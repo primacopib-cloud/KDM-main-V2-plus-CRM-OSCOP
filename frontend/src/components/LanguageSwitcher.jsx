@@ -16,6 +16,7 @@ const LANGS = [
   { code: 'en', label: 'English', flag: 'gb' },
   { code: 'es', label: 'Español', flag: 'es' },
   { code: 'gcf', label: 'Kréyòl', flag: 'gp' },
+  { code: 'ar', label: 'العربية', flag: 'sa' },
 ];
 
 /**

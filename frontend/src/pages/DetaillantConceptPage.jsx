@@ -11,7 +11,7 @@ import { Flag } from '../components/Flag';
 const imgSrc = (u) => (u?.startsWith('/api/') ? `${API}${u.slice(4)}` : u);
 
 const ICONS = [Gavel, Coins, BadgePercent, Globe2, CalendarClock, QrCode];
-const LANGS = [['fr', 'fr', 'FR'], ['en', 'gb', 'EN'], ['es', 'es', 'ES'], ['gcf', 'gp', 'KR']];
+const LANGS = [['fr', 'fr', 'FR'], ['en', 'gb', 'EN'], ['es', 'es', 'ES'], ['gcf', 'gp', 'KR'], ['ar', 'sa', 'ع']];
 const tpl = (s, vars) => Object.entries(vars).reduce((acc, [k, v]) => acc.replace(`{{${k}}}`, v), s);
 
 // Apparition douce au scroll (stagger via delay)

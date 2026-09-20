@@ -3802,3 +3802,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - 2 bugs corrigés : (1) même bug de signe dans admin_consume_credits (consommations négatives → abs()), le reste augmentait au lieu de baisser ; (2) appels send_email Brevo avec mauvaise signature (to_name positionnel requis) dans l'email d'activation ET l'email solde bas — les deux passaient silencieusement en warning depuis le lot 107.
 - Footer (Footer.jsx) : lien « Packs Privilège Investisseur » (footer-link-packs-privilege, icône Crown) dans la colonne Navigation → /investisseurs-privilege.
 - Testé E2E : conso 40 000 (pas d'alerte, reste 17 500) → conso 8 000 (reste 9 500 < 11 500 : cloche 1 + email Brevo 201) → conso 500 (pas de doublon) ; emails activation + alerte confirmés 201 dans les logs ; lien footer cliqué ouvre la page. Données QA nettoyées.
+
+## 2026-09 — Lot 111 : Traduction Arabe (Moyen-Orient) + RTL (testée E2E)
+- Locale ar créée (frontend/src/i18n/locales/ar.json) : common, nav, navtab (bandeau vert), audience (bandeau violet), auth complet, landing hero, footer, clés auction vedette/ticker. Enregistrée dans i18n/index.js (resources + supportedLngs fr/en/es/gcf/ar) ; fallbackLng fr → le reste de l'app reste en français tant que non traduit.
+- RTL : i18n/index.js pose document.documentElement.dir = rtl/ltr + lang à l'init et à chaque changement (languageChanged) — header et mise en page entièrement en miroir en arabe.
+- LanguageSwitcher (header global) : 5e drapeau « العربية » (flagcdn sa) testid language-ar. Whitelist backend routes_profile_prefs LANGS += ar (POST /profile/language accepte ar).
+- Page vitrine /detaillant : bloc ar complet ajouté dans conceptI18n.js (toutes clés, features ×6, steps ×5, clés demo live) + 5e drapeau (concept-lang-ar, flag sa, label ع).
+- Testé E2E : 5 drapeaux header, clic AR → dir=rtl + nav en arabe (تسجيل الدخول), vitrine h1 en arabe, 5 drapeaux vitrine. Navigateur de test remis en FR.

@@ -7,7 +7,7 @@ from db import get_database
 
 profile_prefs_router = APIRouter(prefix="/api/profile", tags=["profile"])
 
-LANGS = ["fr", "en", "es", "gcf"]
+LANGS = ["fr", "en", "es", "gcf", "ar"]
 
 
 class LanguageBody(BaseModel):

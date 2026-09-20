@@ -19,6 +19,7 @@ import esAdmin from './locales/es-admin.json';
 import frData from './locales/fr-data.json';
 import enData from './locales/en-data.json';
 import esData from './locales/es-data.json';
+import ar from './locales/ar.json';
 
 /**
  * KDMARCHÉ × O'SCOP — i18n scaffolding.
@@ -45,9 +46,10 @@ i18n
       en: { translation: { ...en, ...enSite, ...enApp, ...enAdmin, ...enData } },
       es: { translation: { ...es, ...esSite, ...esApp, ...esAdmin, ...esData } },
       gcf: { translation: mergeNs(gcf, gcfExtra, gcfSite) },
+      ar: { translation: ar },
     },
     fallbackLng: 'fr',
-    supportedLngs: ['fr', 'en', 'es', 'gcf'],
+    supportedLngs: ['fr', 'en', 'es', 'gcf', 'ar'],
     interpolation: { escapeValue: false },
     detection: {
       order: ['querystring', 'localStorage', 'htmlTag'],
@@ -55,5 +57,15 @@ i18n
       caches: ['localStorage'],
     },
   });
+
+// RTL pour l'arabe (Moyen-Orient)
+const applyDir = (lng) => {
+  if (typeof document !== 'undefined') {
+    document.documentElement.dir = (lng || '').startsWith('ar') ? 'rtl' : 'ltr';
+    document.documentElement.lang = lng || 'fr';
+  }
+};
+applyDir(i18n.language);
+i18n.on('languageChanged', applyDir);
 
 export default i18n;
