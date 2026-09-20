@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only i18n regression testing for Arabic (RTL) plus FR/EN regressions. All translation work validated: Header desktop+mobile in AR RTL, Footer fully AR (Navigation / Documents / Contact / legal fallback / copyright), quote & partner accordions fully AR with correct submit buttons, quote lang switcher shows 5 flags including SA, and FR/EN footers preserve expected wording. Zero raw i18n keys visible, zero JS console errors on /?lang=ar and /?lang=fr.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Header (mobile burger)", "issue": "The mobile burger toggle button has no data-testid and no aria-label (2 last buttons in header have testid=null, aria=null). Menu works but is hard to target for automated tests.", "selector": "header button (last visible, no attrs)", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Footer PartnerForm (all locales incl. ar)", "issues": ["Country dial-code selector list still hardcoded in French (e.g. 'Luxembourg', 'Macédoine du Nord', 'Madagascar', 'Maroc'...). Not part of this iteration's scope but visible after opening 'كن شريكاً' in AR — country names remain latin/French while the form UI is Arabic."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Optional) Add data-testid=\"mobile-menu-toggle\" and aria-label to the mobile burger button in Header.jsx for future automation.",
+    "(Optional, out of current scope) Translate PartnerForm country dial-code list — currently only French labels are shown regardless of language."
+  ],
+  "critical_code_review_comments": [
+    "AR translations are complete for header/footer/quote/partner as required; RTL (dir=rtl) applied on <html> correctly.",
+    "Brand names correctly preserved as latin per product decision (COMMUNITYPLACE, KDMARCHÉ, O'SCOP, LOGI'SCOP), with translated descriptor (« LOGI'SCOP — حاسبة الشحن »).",
+    "Legal fallback FooterLegalEntities renders «مساران شفافان…» in AR as expected.",
+    "FR and EN regressions clean — 'DEMANDE DE CONTACT'/'CONTACT REQUEST' appear uppercase due to CSS text-transform (matches originals).",
+    "Only 1 auth button visible in header (تسجيل الدخول). If both 'Connexion' AND 'Espace client' are expected for logged-out visitors, verify — currently only Login shows (likely intentional: Espace client shown only when authenticated)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Full AR/FR/EN header+footer i18n validated on preview URL. Testids for language switcher: data-testid=language-{fr|en|es|gcf|ar}. Footer testids: footer-quote-toggle, footer-partner-toggle, quote-lang-switcher. Mobile burger button lacks testid but is the last visible button in <header>. No console errors detected."
+}

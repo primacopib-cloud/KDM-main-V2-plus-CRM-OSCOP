@@ -91,6 +91,8 @@ const Header = () => {
           <button
             className="md:hidden p-2 text-white/80"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            data-testid="mobile-menu-toggle"
+            aria-label="Menu"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
