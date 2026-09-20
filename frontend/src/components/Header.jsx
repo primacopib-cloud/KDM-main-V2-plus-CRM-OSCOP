@@ -22,11 +22,11 @@ const Header = () => {
 
   const navLinks = [
     { href: '/', label: i18n.t('nav.home') },
-    { href: '/#pros', label: 'Professionnels' },
-    { href: '/#particuliers', label: 'Particuliers' },
-    { href: '/detaillant', label: 'Détaillant' },
+    { href: '/#pros', label: i18n.t('audience.pro') },
+    { href: '/#particuliers', label: i18n.t('audience.consumers') },
+    { href: '/detaillant', label: i18n.t('navtab.pops') },
     { href: '/offres', label: i18n.t('footer.our_offers') },
-    { href: '/#territoires', label: 'Territoires' },
+    { href: '/#territoires', label: i18n.t('nav.territories') },
     { href: '/#contact', label: i18n.t('footer.contact') },
   ];
 

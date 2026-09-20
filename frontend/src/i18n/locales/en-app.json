@@ -562,5 +562,16 @@
     "prefs_auction_plan_expiry": "Plan expiry reminder",
     "prefs_brand_new_lot": "Followed brand in the room",
     "prefs_auction_price_target": "Target price reached"
+  },
+  "freightGate": {
+    "title": "Restricted access",
+    "subtitle": "The LOGI'SCOP sea freight calculator is exclusively available to professional buyers and the O'SCOP administration.",
+    "presTitle": "LOGI'SCOP, multi-territory cooperative logistics",
+    "li1": "Pickup and consolidation of your goods in mainland France and in the zone",
+    "li2": "Sea or air freight to the French Antilles, French Guiana, Réunion and Mayotte",
+    "li3": "Customs clearance, storage and last-mile delivery",
+    "li4": "Freight calculator: estimate your costs per container, pallet or m³",
+    "joinNote": "Join the O'SCOP central to unlock the calculator and organise your flows at the cooperative rate.",
+    "join": "Join the central"
   }
 }

@@ -562,5 +562,16 @@
     "prefs_auction_plan_expiry": "Recordatorio de expiración",
     "prefs_brand_new_lot": "Marca seguida en sala",
     "prefs_auction_price_target": "Precio objetivo alcanzado"
+  },
+  "freightGate": {
+    "title": "Acceso reservado",
+    "subtitle": "La calculadora de flete marítimo LOGI'SCOP está disponible exclusivamente para compradores profesionales y la administración O'SCOP.",
+    "presTitle": "LOGI'SCOP, la logística cooperativa multiterritorial",
+    "li1": "Recogida y agrupación de sus mercancías en la metrópoli y en la zona",
+    "li2": "Flete marítimo o aéreo hacia las Antillas, Guayana, La Reunión y Mayotte",
+    "li3": "Despacho aduanero, almacenamiento y entrega de último kilómetro",
+    "li4": "Calculadora de flete: estime sus costes por contenedor, palé o m³",
+    "joinNote": "Adhiérase a la central O'SCOP para desbloquear la calculadora y organizar sus flujos a tarifa cooperativa.",
+    "join": "Adherirse a la central"
   }
 }

@@ -5,6 +5,11 @@ import { toast } from 'sonner';
 import { apiCall, getSessionToken } from '../services/http';
 import { HeaderBackButton } from '../components/HeaderBackButton';
 import { Reveal } from '../components/Reveal';
+import i18n from '@/i18n';
+import INV_T from '../i18n/invPrivPage.json';
+
+const L = (i18n.language || 'fr').split('-')[0];
+const T = INV_T[L] || INV_T.fr;
 
 const fmtEur = (n) => `${Number(n).toLocaleString('fr-FR')} €`;
 
@@ -15,22 +20,22 @@ const TIER_STYLE = {
 };
 
 const CYCLE = [
-  ['1 · La Collecte', "L'investisseur achète le pack via la passerelle de paiement sécurisée de la centrale ou par virement direct."],
-  ['2 · Le Cloisonnement Logistique', 'Les capitaux servent de fonds de roulement exclusif pour réserver les volumes auprès des fabricants et régler les acomptes des transporteurs maritimes.'],
-  ['3 · La Distribution Spécifique', 'Les acheteurs professionnels adossés au pack retirent leurs marchandises en flux tendu sans bloquer leur propre trésorerie courante.'],
-  ['4 · La Rémunération', "L'investisseur consomme ses crédits bonifiés ou perçoit le retour prévu par les statuts coopératifs de la SCIC."],
+  [T.cyc1_t, T.cyc1_d],
+  [T.cyc2_t, T.cyc2_d],
+  [T.cyc3_t, T.cyc3_d],
+  [T.cyc4_t, T.cyc4_d],
 ];
 
 const GARANTIES = [
-  [ShieldCheck, 'Garantie collatérale', "Les fonds ne sont jamais placés sur des marchés spéculatifs : ils sont adossés à 100 % à de la marchandise physique réelle, stockée ou en transit (valeur refuge)."],
-  [RefreshCcw, 'Chambre de compensation interne', "La gestion des comptes crédits s'appuie sur l'outil financier existant de la centrale (CREDI'SCOP) — aucun développement technique lourd supplémentaire."],
-  [Scale, 'Conformité coopérative', "Les bonifications respectent les principes de l'ESS en limitant la lucrativité financière au profit de l'utilité collective : fluidification du marché local et baisse du coût de revient."],
+  [ShieldCheck, T.g1_t, T.g1_d],
+  [RefreshCcw, T.g2_t, T.g2_d],
+  [Scale, T.g3_t, T.g3_d],
 ];
 
 const ARGUMENTS = [
-  [PiggyBank, 'Bouclier anti-inflation et anti-fret', 'Un véhicule de financement participatif interne (crowdfunding de supply chain) qui réduit la dépendance de la coopérative aux banques traditionnelles.'],
-  [ShieldCheck, 'Zéro risque de contrepartie', 'Le crédit est adossé à de la marchandise physique réelle stockée ou en transit.'],
-  [TrendingUp, 'Augmentation du panier moyen B2B', 'Les acheteurs pro commandent des volumes plus importants sur KDMARCHÉ quand la logistique amont est déjà sécurisée financièrement.'],
+  [PiggyBank, T.a1_t, T.a1_d],
+  [ShieldCheck, T.a2_t, T.a2_d],
+  [TrendingUp, T.a3_t, T.a3_d],
 ];
 
 // Formulaire de souscription : signature convention puis choix du paiement
@@ -172,19 +177,14 @@ export default function InvestorPrivilegePage() {
         <HeaderBackButton fallback="/" className="!px-3 !rounded-full border border-white/20 hover:border-white/40 mb-8" />
         <Reveal>
           <div className="flex items-center gap-2 text-[#D9B35A] text-xs font-bold uppercase tracking-[0.2em]">
-            <Crown className="w-4 h-4" /> Abonnement Privilège — Spécial Investisseur B2B
+            <Crown className="w-4 h-4" /> {T.kicker}
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mt-4 leading-tight">
-            Votre trésorerie finance les flux.
-            <span className="block text-[#F2D07A]">Le réseau vous le rend, bonifié.</span>
+            {T.h1a}
+            <span className="block text-[#F2D07A]">{T.h1b}</span>
           </h1>
           <p className="text-base text-white/65 mt-5 max-w-2xl">
-            <b className="text-white/85">Yield Logistics & Supply</b> — Les flux internationaux et inter-îles
-            d'Outre-mer souffrent de tensions de trésorerie (délais de mer, fournisseurs au comptant, taxes
-            douanières à l'arrivée). Vous apportez de la liquidité immédiate : elle est convertie en crédits
-            professionnels bonifiés CREDI'SCOP, avec effet de levier sur la valeur des marchandises et priorité
-            absolue sur les espaces de fret LOGI'SCOP. Programme <b className="text-[#E9CF8E]">FCRL</b> — Fonds
-            Coopératif de Roulement Logistique.
+            {T.intro}
           </p>
         </Reveal>
 
@@ -203,8 +203,8 @@ export default function InvestorPrivilegePage() {
                   <p className="text-sm font-bold text-[#F2D07A] mt-1" data-testid={`privilege-pack-${p.id}-credits`}>
                     → {fmtEur(p.credits_eur)} de crédits <span className="text-emerald-300">(+{p.bonus_pct} %)</span>
                   </p>
-                  <p className="text-[11px] text-white/50 mt-3 leading-relaxed"><b className="text-white/70">Cible :</b> {p.cible}</p>
-                  <p className="text-[11px] text-white/50 mt-1.5 leading-relaxed"><b className="text-white/70">Destination des fonds :</b> {p.destination}</p>
+                  <p className="text-[11px] text-white/50 mt-3 leading-relaxed"><b className="text-white/70">{T.target}</b> {p.cible}</p>
+                  <p className="text-[11px] text-white/50 mt-1.5 leading-relaxed"><b className="text-white/70">{T.dest}</b> {p.destination}</p>
                   <ul className="mt-4 space-y-1.5">
                     {p.privileges.map((pr) => (
                       <li key={pr} className="flex items-start gap-1.5 text-[11px] text-white/65">
@@ -214,7 +214,7 @@ export default function InvestorPrivilegePage() {
                   </ul>
                   <button onClick={() => setSelected(p)} data-testid={`privilege-subscribe-${p.id}`}
                     className="w-full mt-5 inline-flex items-center justify-center gap-2 h-11 rounded-full bg-[#D9B35A] text-black text-sm font-bold hover:bg-[#E9CF8E] active:scale-95 transition-[background-color,transform] on-gold">
-                    Souscrire ce pack <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    {T.subscribe} <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </button>
                 </div>
               </Reveal>
@@ -225,7 +225,7 @@ export default function InvestorPrivilegePage() {
         <Reveal>
           <section className="mt-16" data-testid="privilege-cycle">
             <h2 className="text-base md:text-lg font-bold text-[#E9CF8E] flex items-center gap-2">
-              <RefreshCcw className="w-4 h-4" /> Le cycle de trésorerie circulaire
+              <RefreshCcw className="w-4 h-4" /> {T.cycle_title}
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
               {CYCLE.map(([t, d], i) => (
@@ -248,7 +248,7 @@ export default function InvestorPrivilegePage() {
         <Reveal>
           <section className="mt-14" data-testid="privilege-guarantees">
             <h2 className="text-base md:text-lg font-bold text-[#E9CF8E] flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4" /> Les trois verrous de sécurité du programme FCRL
+              <ShieldCheck className="w-4 h-4" /> {T.guar_title}
             </h2>
             <div className="grid sm:grid-cols-3 gap-4 mt-5">
               {GARANTIES.map(([Icon, t, d], i) => (
@@ -267,7 +267,7 @@ export default function InvestorPrivilegePage() {
         <Reveal>
           <section className="mt-14" data-testid="privilege-arguments">
             <h2 className="text-base md:text-lg font-bold text-[#E9CF8E] flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" /> L'argumentaire financier et structurel
+              <TrendingUp className="w-4 h-4" /> {T.args_title}
             </h2>
             <div className="grid sm:grid-cols-3 gap-4 mt-5">
               {ARGUMENTS.map(([Icon, t, d]) => (
@@ -284,12 +284,12 @@ export default function InvestorPrivilegePage() {
         <Reveal>
           <section className="mt-14 rounded-2xl border border-[#7BC94E]/30 bg-[#7BC94E]/[0.05] p-6" data-testid="privilege-pass-impact">
             <h2 className="text-base md:text-lg font-bold text-[#B9E89A] flex items-center gap-2">
-              <Ship className="w-4 h-4" /> Et le consommateur final ? L'effet PASS LOLODRIVE
+              <Ship className="w-4 h-4" /> {T.pass_title}
             </h2>
             <div className="grid sm:grid-cols-3 gap-4 mt-4 text-[11px] text-white/65 leading-relaxed">
-              <p><b className="text-white/85">Baisse mécanique des prix :</b> les économies de fret (−20 %) et l'absence de frais financiers se répercutent en rayon — produits essentiels des relais LOLODRIVE estimés −10 à −15 %.</p>
-              <p><b className="text-white/85">Zéro rupture de stock :</b> les conteneurs sont libérés immédiatement en douane grâce au préfinancement. Le consommateur trouve ses produits en continu dans son relais local.</p>
-              <p><b className="text-white/85">Paniers solidaires :</b> une fraction de la valeur logistique optimisée (ex. 1 % des conteneurs Pack Or) dote des points bonus aux usagers du PASS LOLODRIVE les plus modestes.</p>
+              <p>{T.p1}</p>
+              <p>{T.p2}</p>
+              <p>{T.p3}</p>
             </div>
           </section>
         </Reveal>
@@ -298,10 +298,7 @@ export default function InvestorPrivilegePage() {
           <div className="mt-12 flex flex-wrap items-center gap-3">
             <Coins className="w-4 h-4 text-[#D9B35A]" />
             <p className="text-[11px] text-white/45 max-w-3xl leading-relaxed">
-              Les crédits CREDI'SCOP sont des unités internes de services valables 24 mois : ils ne constituent
-              ni un solde financier, ni un moyen de paiement. Chaque souscription fait l'objet d'une convention
-              de préfinancement signée électroniquement (articles 1 à 7), conforme aux statuts coopératifs de la
-              SCIC OBJECTIF SCOP OUTREMER.
+              {T.disclaimer}
             </p>
           </div>
         </Reveal>

@@ -531,7 +531,7 @@ async def guide_tts(body: TtsBody, current_user: dict = Depends(get_current_user
     from fastapi.responses import Response
     try:
         tts = OpenAITextToSpeech(api_key=os.environ.get("EMERGENT_LLM_KEY"))
-        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice=voice)
+        audio = await tts.generate_speech(text=text, model="tts-1-hd", voice=voice, speed=0.92)
     except Exception as exc:
         logger.warning("Oracle TTS erreur : %s", exc)
         raise HTTPException(status_code=502, detail="Synthèse vocale momentanément indisponible")

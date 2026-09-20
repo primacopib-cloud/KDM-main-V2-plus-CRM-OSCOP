@@ -562,5 +562,16 @@
     "prefs_auction_plan_expiry": "Rappel expiration du plan",
     "prefs_brand_new_lot": "Marque suivie en salle",
     "prefs_auction_price_target": "Prix cible atteint"
+  },
+  "freightGate": {
+    "title": "Accès réservé",
+    "subtitle": "Le calculateur de fret maritime LOGI'SCOP est accessible exclusivement aux acheteurs professionnels et à l'administration O'SCOP.",
+    "presTitle": "LOGI'SCOP, la logistique coopérative multi-territoires",
+    "li1": "Enlèvement et groupage de vos marchandises en métropole et en zone",
+    "li2": "Fret maritime ou aérien vers les Antilles, la Guyane, La Réunion et Mayotte",
+    "li3": "Dédouanement, stockage et livraison du dernier kilomètre",
+    "li4": "Calculateur de fret : estimez vos coûts au conteneur, à la palette ou au m³",
+    "joinNote": "Adhérez à la centrale O'SCOP pour débloquer le calculateur et organiser vos flux au tarif coopératif.",
+    "join": "Adhérer à la centrale"
   }
 }

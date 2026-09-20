@@ -122,7 +122,8 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'fr-FR';
-      u.rate = 1.05;
+      u.rate = 0.95;
+      u.pitch = 0.95;
       window.speechSynthesis.speak(u);
     }
   };

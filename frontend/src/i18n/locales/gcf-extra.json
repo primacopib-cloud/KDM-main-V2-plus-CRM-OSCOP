@@ -1316,5 +1316,16 @@
     "appui_structuration_cooperative": "Apui struktirasyon koperativ",
     "acces_fournisseurs_strategiques": "Aksè founisè stratejik",
     "produit": "Pwodui"
+  },
+  "freightGate": {
+    "title": "Aksè rézèvé",
+    "subtitle": "Kalkilatè fret maritim LOGI'SCOP la sé pou achtè pwofésyonèl é ladministrasyon O'SCOP sèlman.",
+    "presTitle": "LOGI'SCOP, lojistik koopérativ multi-téritwa",
+    "li1": "Ranmasé é goupé machandiz aw an métwopol é an zòn",
+    "li2": "Fret maritim oben aéryen pou Zantiy, Giyàn, La Rényon é Mayot",
+    "li3": "Dédwannaj, stokaj é livrézon dènyé kilomèt",
+    "li4": "Kalkilatè fret : kalkilé pri aw pa kontenè, pa palet oben pa m³",
+    "joinNote": "Adéré a santral O'SCOP la pou ouvè kalkilatè-la é òwganizé flo aw a tarif koopératif.",
+    "join": "Adéré a santral-la"
   }
 }

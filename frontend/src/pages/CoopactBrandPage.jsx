@@ -2,6 +2,11 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Gavel, Handshake, Scale, Coins, ShieldCheck, ArrowRight, Sparkles, Users } from 'lucide-react';
 import { API } from '../services/http';
+import i18n from '@/i18n';
+import COOPACT_T from '../i18n/coopactPage.json';
+
+const L = (i18n.language || 'fr').split('-')[0];
+const T = COOPACT_T[L] || COOPACT_T.fr;
 import { HeaderBackButton } from '../components/HeaderBackButton';
 import { Reveal } from '../components/Reveal';
 
@@ -35,7 +40,7 @@ const WeeklyStarsSection = () => {
   return (
     <div className="mb-10 text-left" data-testid="weekly-stars-section">
       <h2 className="text-base md:text-lg font-black text-[#F2D07A] mb-3 flex items-center gap-2">
-        🏆 Lots vedettes des semaines passées
+        {T.stars_title}
       </h2>
       <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
         {stars.map((s) => (
@@ -46,7 +51,7 @@ const WeeklyStarsSection = () => {
                 alt={s.title} className="w-11 h-11 rounded-lg object-cover bg-white/90 shrink-0" />
             )}
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-wide text-[#D9B35A]">Semaine {s.week_key}</p>
+              <p className="text-[10px] font-black uppercase tracking-wide text-[#D9B35A]">{T.stars_week} {s.week_key}</p>
               <p className="text-[11px] font-bold text-white/85 truncate" title={s.title}>{s.title}</p>
               <p className="text-[10px] text-white/50">{s.week_bids} Coop'Act · {Number(s.price_eur).toFixed(2)} €</p>
             </div>
@@ -58,23 +63,23 @@ const WeeklyStarsSection = () => {
 };
 
 const LEXIQUE = [
-  { term: "Coop'acter", def: "L'action : déposer ou améliorer une offre responsable au sein de la Bourse Coopérative." },
-  { term: "Coop'Act", def: 'La proposition déposée par un participant.' },
-  { term: "Coop'acteur", def: 'Le participant qui agit au sein de la Bourse Coopérative.' },
-  { term: "Améliorer mon Coop'Act", def: 'Déposer une nouvelle proposition plus juste que la précédente.' },
-  { term: "Coop'actez votre offre", def: "L'instruction : engagez votre proposition pour la juste valeur." },
+  { term: "Coop'acter", def: T.lex1_d },
+  { term: "Coop'Act", def: T.lex2_d },
+  { term: "Coop'acteur", def: T.lex3_d },
+  { term: "Améliorer mon Coop'Act", def: T.lex4_d },
+  { term: "Coop'actez votre offre", def: T.lex5_d },
 ];
 
 const STEPS = [
-  { icon: ShieldCheck, title: '1 · Je rejoins', text: "J'active mon plan CREDI'SCOP-COOP'ACT : il ouvre l'accès à la salle et alimente mes crédits d'action." },
-  { icon: Gavel, title: "2 · Je coop'acte", text: 'Chaque Coop\'Act engage mes crédits et fait évoluer le prix vers sa juste valeur, en toute transparence.' },
-  { icon: Handshake, title: '3 · La juste valeur', text: 'Le premier qui accepte le prix affiché remporte le lot. Ni spéculation, ni surenchère : une valeur juste, décidée ensemble.' },
+  { icon: ShieldCheck, title: T.step1_t, text: T.step1_d },
+  { icon: Gavel, title: T.step2_t, text: T.step2_d },
+  { icon: Handshake, title: T.step3_t, text: T.step3_d },
 ];
 
 const VALEURS = [
-  { icon: Users, title: 'Coopération', text: "Chaque Coop'acteur participe à la formation du prix : la valeur naît de l'action collective, pas de la rareté artificielle." },
-  { icon: Scale, title: 'Juste valeur', text: 'Le prix descend vers son point d\'équilibre. Les documents contractuels conservent la formulation juridique claire : « soumettre ou améliorer une offre », dénommé commercialement "Coop\'acter".' },
-  { icon: Coins, title: 'Engagement', text: "Les crédits coop'actés sont définitivement engagés — ils ne sont pas remboursés si vous ne remportez pas le lot. C'est cet engagement qui donne sa valeur à chaque action." },
+  { icon: Users, title: T.val1_t, text: T.val1_d },
+  { icon: Scale, title: T.val2_t, text: T.val2_d },
+  { icon: Coins, title: T.val3_t, text: T.val3_d },
 ];
 
 export default function CoopactBrandPage() {
@@ -101,9 +106,7 @@ export default function CoopactBrandPage() {
             Agir ensemble pour la juste valeur.
           </p>
           <p className="text-sm text-white/65 mt-3 max-w-2xl">
-            COOP'ACT est un nom court, moderne et dynamique qui associe coopération, action et engagement.
-            Un COOP'ACT, c'est l'action par laquelle un participant dépose ou améliore une offre responsable
-            au sein de la Bourse Coopérative.
+            {T.intro}
           </p>
         </Reveal>
         <Reveal delay={120}>
@@ -111,12 +114,12 @@ export default function CoopactBrandPage() {
             <Link to="/encheres" data-testid="coopact-cta-room"
               className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-[#2A1045] on-gold transition-transform hover:scale-[1.03] active:scale-95"
               style={{ background: 'linear-gradient(135deg, #D9B35A, #F2D07A)' }}>
-              Entrer dans la salle COOP'ACT
+              {T.cta_room}
               <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <Link to="/pass-lolodrive" data-testid="coopact-cta-pass"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border border-white/25 text-white/85 hover:bg-white/10 hover:border-white/50 transition-colors">
-              Découvrir LOLODRIVE
+              {T.cta_pass}
             </Link>
           </div>
         </Reveal>
@@ -124,9 +127,9 @@ export default function CoopactBrandPage() {
           <Reveal delay={200}>
             <div className="flex flex-wrap gap-6 mt-8" data-testid="coopact-community-stats">
               {[
-                [stats.coopacteurs, "Coop'acteur(s) actif(s)", 'stat-coopacteurs'],
-                [stats.lots_won, 'lot(s) remporté(s)', 'stat-lots-won'],
-                [stats.total_bids, "Coop'Act(s) déposés", 'stat-total-coopacts'],
+                [stats.coopacteurs, T.stat_coopacteurs, 'stat-coopacteurs'],
+                [stats.lots_won, T.stat_lots, 'stat-lots-won'],
+                [stats.total_bids, T.stat_bids, 'stat-total-coopacts'],
               ].map(([v, label, tid]) => (
                 <div key={tid} data-testid={tid}
                   className="transition-transform duration-300 hover:scale-105 cursor-default">
@@ -142,7 +145,7 @@ export default function CoopactBrandPage() {
       <Reveal>
         <section className="max-w-5xl mx-auto px-5 py-8" data-testid="coopact-steps">
           <h2 className="text-lg font-bold text-[#E9CF8E] mb-5 flex items-center gap-2">
-            <Sparkles className="w-4 h-4" /> Comment ça marche ?
+            <Sparkles className="w-4 h-4" /> {T.steps_title}
           </h2>
           <div className="grid gap-4 sm:grid-cols-3">
             {STEPS.map((s, i) => (
@@ -161,7 +164,7 @@ export default function CoopactBrandPage() {
       <Reveal>
         <section className="max-w-5xl mx-auto px-5 py-8" data-testid="coopact-values">
           <h2 className="text-lg font-bold text-[#E9CF8E] mb-5 flex items-center gap-2">
-            <Handshake className="w-4 h-4" /> Nos trois engagements
+            <Handshake className="w-4 h-4" /> {T.values_title}
           </h2>
           <div className="grid gap-4 sm:grid-cols-3">
             {VALEURS.map((v, i) => (
@@ -180,7 +183,7 @@ export default function CoopactBrandPage() {
       <Reveal>
         <section className="max-w-5xl mx-auto px-5 py-8" data-testid="coopact-lexique">
           <h2 className="text-lg font-bold text-[#E9CF8E] mb-5 flex items-center gap-2">
-            <Scale className="w-4 h-4" /> Le langage COOP'ACT
+            <Scale className="w-4 h-4" /> {T.lex_title}
           </h2>
           <div className="rounded-2xl bg-white/[0.04] border border-white/10 divide-y divide-white/10">
             {LEXIQUE.map((l) => (
@@ -197,29 +200,25 @@ export default function CoopactBrandPage() {
       <Reveal>
         <section className="max-w-5xl mx-auto px-5 py-8" data-testid="coopact-universes">
           <h2 className="text-lg font-bold text-[#E9CF8E] mb-5 flex items-center gap-2">
-            <Users className="w-4 h-4" /> Deux univers, une même philosophie
+            <Users className="w-4 h-4" /> {T.uni_title}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-2xl bg-white/[0.05] border border-white/10 p-5 transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-[#D9B35A]/50">
-              <h3 className="text-sm font-bold text-white mb-1.5">Professionnels — Bourse COOP'ACT</h3>
+              <h3 className="text-sm font-bold text-white mb-1.5">{T.uni1_t}</h3>
               <p className="text-xs text-white/70 leading-relaxed">
-                Consultations compétitives entre acheteurs et fournisseurs : chaque vendeur coop'acte son offre,
-                à rang anonyme, jusqu'à la juste valeur. Offres scellées lorsque la loi l'exige (art. L.442-8).
+                {T.uni1_d}
               </p>
             </div>
             <div className="rounded-2xl bg-white/[0.05] border border-white/10 p-5 transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-[#D9B35A]/50">
-              <h3 className="text-sm font-bold text-white mb-1.5">Particuliers — Salle COOP'ACT LOLODRIVE</h3>
+              <h3 className="text-sm font-bold text-white mb-1.5">{T.uni2_t}</h3>
               <p className="text-xs text-white/70 leading-relaxed">
-                Des lots du quotidien à prix descendant : chaque Coop'Act fait baisser le prix,
-                le premier qui accepte remporte le lot. Retrait en relais LOLODRIVE ou livraison.
+                {T.uni2_d}
               </p>
             </div>
           </div>
           <div className="mt-6 rounded-2xl border border-amber-300/30 bg-amber-400/[0.07] p-4" data-testid="coopact-rule">
             <p className="text-xs text-amber-100/90 leading-relaxed">
-              <b>Règle d'engagement :</b> les crédits coop'actés sont définitivement engagés, que vous remportiez
-              le lot ou non. Les crédits CREDI'SCOP-COOP'ACT sont des unités internes de services : ils ne
-              constituent ni un solde financier, ni un moyen de paiement.
+              <b>{T.rule_t}</b> {T.rule_d}
             </p>
           </div>
         </section>
@@ -228,7 +227,7 @@ export default function CoopactBrandPage() {
       <footer className="max-w-5xl mx-auto px-5 py-10 text-center text-[11px] text-white/45">
         <WeeklyStarsSection />
         <p className="font-bold text-[#D9B35A]">BOURSE COOPÉRATIVE — COOP'ACT</p>
-        <p>Agir ensemble pour la juste valeur.</p>
+        <p>{T.signature}</p>
         <p className="mt-2">O'SCOP × KDMARCHÉ — CommunityPlace</p>
       </footer>
     </div>
