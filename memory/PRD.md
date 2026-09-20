@@ -3809,3 +3809,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - LanguageSwitcher (header global) : 5e drapeau « العربية » (flagcdn sa) testid language-ar. Whitelist backend routes_profile_prefs LANGS += ar (POST /profile/language accepte ar).
 - Page vitrine /detaillant : bloc ar complet ajouté dans conceptI18n.js (toutes clés, features ×6, steps ×5, clés demo live) + 5e drapeau (concept-lang-ar, flag sa, label ع).
 - Testé E2E : 5 drapeaux header, clic AR → dir=rtl + nav en arabe (تسجيل الدخول), vitrine h1 en arabe, 5 drapeaux vitrine. Navigateur de test remis en FR.
+
+## 2026-09 — Lot 112 : Seuil d'alerte personnalisable + Arabe étendu (testé)
+- Seuil perso (routes_privilege_packs.py) : collection investor_privilege_prefs {user_id, alert_threshold_eur}. PUT /api/investor/privilege/alert-threshold {threshold_eur|null} (null = retour au défaut 20 %) — rejet montant ≤ 0 ; à chaque changement, ré-armement des flags low_balance_alerted des packs actifs dont le reste repasse au-dessus du nouveau seuil. _check_low_balance utilise le seuil perso si défini (message adapté « votre seuil personnalisé »). /me expose alert_threshold_eur + default_threshold_pct.
+- UI : ThresholdSetting dans PrivilegePackWidget (visible si pack ACTIF) — input €, Enregistrer, « Revenir au défaut » (testids privilege-threshold-setting/input/save/reset).
+- Arabe étendu (ar.json) : namespaces catalog, buyer (espace acheteur), orders, checkout (dont signature eIDAS/paiement), wallet CREDI'SCOP, breadcrumb (~215 clés). Vérifié : /catalogue?lang=ar en RTL avec titre/bandeau adhérents arabes ; le non-traduit retombe en FR (fallback).
+- Testé backend E2E : seuil 30 000 → conso (reste 27 500) → alerte déclenchée au seuil perso, rejet -5, reset ré-arme le flag. Données QA nettoyées. UI seuil non testée visuellement avec pack actif (backend + rendu sans erreur validés).

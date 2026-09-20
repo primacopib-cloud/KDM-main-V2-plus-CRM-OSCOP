@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Crown, FileDown, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Crown, FileDown, ArrowRight, CheckCircle2, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, apiCall, getAuthHeaders } from '../../services/http';
 
@@ -10,6 +10,45 @@ const STATUS_LABEL = {
   ACTIVE: ['Actif', 'text-emerald-300 border-emerald-400/40 bg-emerald-500/10'],
   PENDING_TRANSFER: ['Virement en attente', 'text-amber-300 border-amber-400/40 bg-amber-500/10'],
   PENDING: ['Paiement en attente', 'text-white/50 border-white/20 bg-white/5'],
+};
+
+// Seuil d'alerte de solde personnalisable
+const ThresholdSetting = ({ me, onSaved }) => {
+  const [value, setValue] = useState(me.alert_threshold_eur ?? '');
+  useEffect(() => { setValue(me.alert_threshold_eur ?? ''); }, [me.alert_threshold_eur]);
+  const save = async (reset = false) => {
+    const v = reset ? null : parseFloat(String(value).replace(',', '.'));
+    if (!reset && (!v || v <= 0)) { toast.error('Indiquez un montant positif'); return; }
+    try {
+      await apiCall('/investor/privilege/alert-threshold', {
+        method: 'PUT', body: JSON.stringify({ threshold_eur: v }) });
+      toast.success(reset ? `Seuil remis au défaut (${me.default_threshold_pct} % du pack)` : `Seuil d'alerte fixé à ${fmtEur(v)}`);
+      onSaved();
+    } catch (e) { toast.error(e.message); }
+  };
+  return (
+    <div className="mt-3 flex items-center gap-2 flex-wrap rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5"
+      data-testid="privilege-threshold-setting">
+      <BellRing className="w-3.5 h-3.5 text-[#D9B35A] shrink-0" />
+      <span className="text-[10.5px] text-white/60">
+        M'alerter (cloche + email) quand mon solde passe sous
+      </span>
+      <input value={value} onChange={(e) => setValue(e.target.value)} inputMode="decimal"
+        placeholder={`défaut : ${me.default_threshold_pct} % du pack`} data-testid="privilege-threshold-input"
+        className="h-7 w-36 px-2 rounded-lg bg-white/[0.06] border border-white/15 text-[11px] outline-none focus:border-[#D9B35A]/60" />
+      <span className="text-[10.5px] text-white/60">€</span>
+      <button onClick={() => save(false)} data-testid="privilege-threshold-save"
+        className="px-3 h-7 rounded-full bg-[#D9B35A] text-black text-[10px] font-bold hover:bg-[#E9CF8E] transition-colors">
+        Enregistrer
+      </button>
+      {me.alert_threshold_eur != null && (
+        <button onClick={() => save(true)} data-testid="privilege-threshold-reset"
+          className="px-2.5 h-7 rounded-full border border-white/20 text-[10px] text-white/60 hover:bg-white/5 transition-colors">
+          Revenir au défaut
+        </button>
+      )}
+    </div>
+  );
 };
 
 // Relevé mensuel des crédits bonifiés (créditations + consommations)
@@ -158,6 +197,7 @@ export const PrivilegePackWidget = () => {
             className="inline-flex items-center gap-2 px-4 h-9 rounded-full border border-white/25 text-xs font-bold hover:bg-white/10 transition-colors">
             <FileDown className="w-3.5 h-3.5" /> Télécharger ma convention signée (PDF)
           </button>
+          {subs.some((s) => s.status === 'ACTIVE') && <ThresholdSetting me={data} onSaved={load} />}
           <StatementBlock />
         </div>
       )}

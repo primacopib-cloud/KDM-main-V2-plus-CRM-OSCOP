@@ -248,7 +248,9 @@ async def my_privilege(user: dict = Depends(get_current_user)):
         s["remaining_eur"] = (round(s["credits_eur"] - s["consumed_eur"], 2)
                               if s["status"] == "ACTIVE" else 0.0)
     credits = sum(s["remaining_eur"] for s in subs if s["status"] == "ACTIVE")
-    return {"subscriptions": subs, "credits_eur": round(credits, 2)}
+    return {"subscriptions": subs, "credits_eur": round(credits, 2),
+            "alert_threshold_eur": await _custom_threshold(user["id"]),
+            "default_threshold_pct": LOW_BALANCE_THRESHOLD_PCT}
 
 
 def _convention_pdf(sub: dict) -> bytes:
@@ -403,12 +405,19 @@ async def admin_consume_credits(sub_id: str, body: ConsumeBody, admin: dict = De
     return {"ok": True, "remaining_eur": new_remaining}
 
 
-LOW_BALANCE_THRESHOLD_PCT = 20  # alerte sous 20 % du pack
+LOW_BALANCE_THRESHOLD_PCT = 20  # défaut : alerte sous 20 % du pack
+
+
+async def _custom_threshold(user_id: str):
+    pref = await db.investor_privilege_prefs.find_one({"user_id": user_id}, {"_id": 0, "alert_threshold_eur": 1})
+    return pref.get("alert_threshold_eur") if pref else None
 
 
 async def _check_low_balance(sub: dict, remaining: float):
-    """Cloche + email quand le solde bonifié passe sous 20 % du pack (une seule fois)."""
-    threshold = round(sub["credits_eur"] * LOW_BALANCE_THRESHOLD_PCT / 100, 2)
+    """Cloche + email quand le solde bonifié passe sous le seuil (perso ou 20 % du pack)."""
+    custom = await _custom_threshold(sub["user_id"])
+    threshold = (round(float(custom), 2) if custom
+                 else round(sub["credits_eur"] * LOW_BALANCE_THRESHOLD_PCT / 100, 2))
     if remaining >= threshold:
         return
     res = await db.investor_privilege_subs.update_one(
@@ -417,8 +426,10 @@ async def _check_low_balance(sub: dict, remaining: float):
     if not res.modified_count:
         return
     fmt = lambda v: f"{v:,.2f} €".replace(",", " ")
+    seuil_label = (f"votre seuil personnalisé ({fmt(threshold)})" if custom
+                   else f"le seuil de {LOW_BALANCE_THRESHOLD_PCT} % ({fmt(threshold)})")
     msg = (f"Votre solde de crédits bonifiés {sub['pack_name']} ({sub['reference']}) est passé à "
-           f"{fmt(remaining)}, sous le seuil de {LOW_BALANCE_THRESHOLD_PCT} % ({fmt(threshold)}).")
+           f"{fmt(remaining)}, sous {seuil_label}.")
     try:
         from core_deps import create_notification
         await create_notification(
@@ -441,3 +452,37 @@ async def _check_low_balance(sub: dict, remaining: float):
                          html_content=html, tags=["investor-privilege"])
     except Exception as exc:
         logger.warning("Email solde bas FCRL : %s", exc)
+
+
+class ThresholdBody(BaseModel):
+    threshold_eur: float | None = None  # None = revenir au défaut (20 % du pack)
+
+
+@privilege_router.put("/alert-threshold")
+async def set_alert_threshold(body: ThresholdBody, user: dict = Depends(get_current_user)):
+    """Seuil d'alerte de solde personnalisé (en €). None → retour au défaut 20 %."""
+    if body.threshold_eur is not None and body.threshold_eur <= 0:
+        raise HTTPException(status_code=400, detail="Le seuil doit être un montant positif")
+    if body.threshold_eur is None:
+        await db.investor_privilege_prefs.delete_one({"user_id": user["id"]})
+    else:
+        await db.investor_privilege_prefs.update_one(
+            {"user_id": user["id"]},
+            {"$set": {"alert_threshold_eur": round(float(body.threshold_eur), 2),
+                      "updated_at": _now().isoformat()},
+             "$setOnInsert": {"user_id": user["id"]}}, upsert=True)
+    # ré-armer l'alerte : les packs dont le reste est au-dessus du nouveau seuil pourront ré-alerter
+    custom = await _custom_threshold(user["id"])
+    async for sub in db.investor_privilege_subs.find(
+            {"user_id": user["id"], "status": "ACTIVE", "low_balance_alerted": True}, {"_id": 0}):
+        used = 0.0
+        async for e in db.privilege_credit_ledger.find(
+                {"sub_id": sub["id"], "type": "CONSUMPTION"}, {"_id": 0, "amount_eur": 1}):
+            used += abs(float(e["amount_eur"]))
+        remaining = round(sub["credits_eur"] - used, 2)
+        threshold = (round(float(custom), 2) if custom
+                     else round(sub["credits_eur"] * LOW_BALANCE_THRESHOLD_PCT / 100, 2))
+        if remaining >= threshold:
+            await db.investor_privilege_subs.update_one(
+                {"id": sub["id"]}, {"$unset": {"low_balance_alerted": "", "low_balance_alerted_at": ""}})
+    return {"ok": True, "threshold_eur": custom}
