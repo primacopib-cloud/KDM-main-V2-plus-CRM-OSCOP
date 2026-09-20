@@ -1,4 +1,4 @@
-// i18n local espace Détaillant — FR / EN / ES / Créole (GCF)
+// i18n local espace Détaillant — FR / EN / ES / Créole (GCF) / Arabe
 export const COUNTRIES = [
   { code: 'GP', flag: '🇬🇵', name: 'Guadeloupe' },
   { code: 'MQ', flag: '🇲🇶', name: 'Martinique' },
@@ -15,6 +15,20 @@ export const COUNTRIES = [
 ];
 
 export const DT = {
+  ar: {
+    space: "مساحة POP'S — متجر التجزئة", tagline: "POP'S: شريك عروض المنتجات التضامنية — بائع مؤقت في قاعة COOP'ACT",
+    company: 'الاسم التجاري', locality: 'المدينة', country: 'البلد', phone: 'الهاتف', prefix: 'الرمز الدولي',
+    email: 'البريد الإلكتروني', address: 'بيانات المتجر', slots: 'فترات الاستلام',
+    save: 'حفظ', subscribe: 'اشترك — 390 €/شهر', subActive: 'الاشتراك نشط',
+    subNeeded: 'الاشتراك مطلوب لإيداع العروض (3 عروض مجانية/شهر).',
+    newOffer: 'إيداع عرض', product: 'منتج من كتالوج LOLODRIVE', lotType: 'نوع العرض',
+    same: 'عرض ×3 — نفس المنتج', composed: 'عرض ×3 — مركّب', qty: 'عدد العروض',
+    desc: 'الوصف', composedDetail: 'تركيبة العرض', submit: 'إيداع العرض',
+    myOffers: 'عروضي', credits: "نقاط COOP'ACT", offersUsed: 'عروض هذا الشهر',
+    costInfo: 'الإيداع: 2,5 % من قيمة العرض بالنقاط. بعد 3 عروض/شهر: ‎+100 نقطة لكل عرض.',
+    register: 'إنشاء حساب متجر التجزئة', login: 'تسجيل الدخول', password: 'كلمة المرور',
+    pending: 'قيد الانتظار', approved: 'معتمد', rejected: 'مرفوض',
+  },
   fr: {
     space: "Espace POP'S — Détaillant", tagline: "POP'S : Partenaire d'Offres de Produits Solidaires — vendeur éphémère en salle COOP'ACT",
     company: 'Raison sociale', locality: 'Localité', country: 'Pays', phone: 'Téléphone', prefix: 'Indicatif',

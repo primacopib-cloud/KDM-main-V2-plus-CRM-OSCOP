@@ -79,10 +79,10 @@ export default function DetaillantSpacePage() {
 
   const langBtns = (
     <div className="flex gap-1" data-testid="dt-lang-switch">
-      {['fr', 'en', 'es', 'gcf'].map((l) => (
+      {['fr', 'en', 'es', 'gcf', 'ar'].map((l) => (
         <button key={l} onClick={() => setLang(l)} data-testid={`dt-lang-${l}`}
           className={`px-2 h-7 rounded-full text-[10px] font-bold border ${lang === l ? 'bg-[#D9B35A] text-black border-[#D9B35A]' : 'text-white/60 border-white/15 hover:border-[#D9B35A]/50'}`}>
-          {l.toUpperCase()}
+          {l === 'ar' ? 'ع' : l.toUpperCase()}
         </button>
       ))}
     </div>
@@ -96,7 +96,7 @@ export default function DetaillantSpacePage() {
             <h1 className="text-2xl font-bold text-[#E9CF8E]">{t.space}</h1>
             {langBtns}
           </div>
-          <p className="text-sm text-white/60">{t.tagline} — 390 €/mois, 3 offres de lots incluses.</p>
+          <p className="text-sm text-white/60">{t.tagline}. {t.subNeeded}</p>
           <input placeholder={t.company} value={reg.company_name}
             onChange={(e) => setReg((p) => ({ ...p, company_name: e.target.value }))}
             className="w-full h-10 px-3 rounded-lg bg-white/[0.05] border border-white/15 text-sm" data-testid="reg-company" />
