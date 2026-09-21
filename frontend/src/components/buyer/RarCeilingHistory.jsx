@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { History, ChevronDown, ChevronUp, Loader2, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
+import { fmtMoney, fmtDate as fmtLocaleDate } from '../../i18n/fmt';
 
-const fmt = (c) => `${(Math.abs(c || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
-const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
+const fmt = (c) => fmtMoney(Math.abs(c || 0) / 100);
+const fmtDate = (d) => (d ? fmtLocaleDate(d, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
 
 const TYPE_STYLE = {
   GRANT: 'text-[#D9B35A]',

@@ -6,6 +6,7 @@ import { API, getAuthHeaders, getSessionToken } from '../../../services/http';
 import { LogiscopSubscribeCard, downloadTransportPdf } from './LogiscopSubscribeCard';
 import { TransportOrderForm } from './TransportOrderForm';
 import { TransportOrdersList } from './TransportOrdersList';
+import { fmtDate } from '../../../i18n/fmt';
 import { BuyerDisputesCard } from './BuyerDisputesCard';
 import { TransportQualityBadge } from './TransportQualityBadge';
 
@@ -82,7 +83,7 @@ export const BuyerTransportTab = () => {
           data-testid="logiscop-active-banner">
           <p className="flex items-center gap-2 text-xs text-emerald-300">
             <CheckCircle2 size={14} />
-            Convention <b>{conv.ref}</b> signée le {new Date(conv.signed_at).toLocaleDateString('fr-FR')} —
+            Convention <b>{conv.ref}</b> signée le {fmtDate(conv.signed_at, { day: '2-digit', month: '2-digit', year: 'numeric' })} —
             zones : {conv.zones.join(', ')}
           </p>
           <button type="button" data-testid="logiscop-signed-pdf-btn"

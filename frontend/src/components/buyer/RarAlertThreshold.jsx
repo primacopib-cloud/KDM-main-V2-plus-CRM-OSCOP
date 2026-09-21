@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Bell, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { rarAPI } from '../../services/api.rar';
+import { fmtMoney, fmtDate as fmtLocaleDate } from '../../i18n/fmt';
 
-const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
-const fmtEur = (c) => `${((c || 0) / 100).toLocaleString('fr-FR')} €`;
+const fmtDate = (d) => (d ? fmtLocaleDate(d, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
+const fmtEur = (c) => fmtMoney((c || 0) / 100, { maximumFractionDigits: 0 });
 
 // Seuil d'alerte email — plafond RàR disponible
 export const RarAlertThreshold = () => {
@@ -28,7 +29,7 @@ export const RarAlertThreshold = () => {
       await rarAPI.setAlertThreshold(cents);
       setSaved(cents);
       setActive(false);
-      toast.success(cents > 0 ? `Alerte activée sous ${(cents / 100).toLocaleString('fr-FR')} €` : 'Alerte désactivée');
+      toast.success(cents > 0 ? `Alerte activée sous ${fmtMoney(cents / 100, { maximumFractionDigits: 0 })}` : 'Alerte désactivée');
     } catch (e) { toast.error(e.message); }
   };
 

@@ -6,8 +6,9 @@ import { rarAPI } from '../../services/api.rar';
 import { RarDeliveryConfirmDialog } from './RarDeliveryConfirmDialog';
 import { RarCeilingHistory } from './RarCeilingHistory';
 import { RarAlertThreshold } from './RarAlertThreshold';
+import { fmtMoney } from '../../i18n/fmt';
 
-const fmt = (c) => `${((c || 0) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
+const fmt = (c) => fmtMoney((c || 0) / 100);
 
 // Bloc « Mon plafond à réception » — espace acheteur
 export const RarCeilingBlock = () => {

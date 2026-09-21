@@ -11,6 +11,7 @@ import { WeeklyReportWidget } from './WeeklyReportWidget';
 import { RcrStatsWidget } from './RcrStatsWidget';
 import { ReferralStatsWidget } from './ReferralStatsWidget';
 import { QuoteConversionWidget } from './QuoteConversionWidget';
+import { LangUsagePanel } from './LangUsagePanel';
 
 const downloadComplianceReport = async () => {
   const month = new Date().toISOString().slice(0, 7);
@@ -238,6 +239,7 @@ export const DashboardTab = ({ kpis, alerts, activities, period, setActiveTab })
 
       {/* Right Column - Alerts & Activity */}
       <div className="space-y-6">
+        <LangUsagePanel />
         {/* Alerts */}
         <div className="rounded-2xl bg-white border border-[#E9DCC0] shadow-[0_4px_16px_rgba(76,42,110,0.06)] overflow-hidden">
           <div className="px-5 py-3 flex items-center justify-between bg-red-500/5 border-b border-red-500/10">

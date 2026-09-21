@@ -3,9 +3,10 @@ import { HandCoins, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
+import { fmtMoney, fmtDate } from '../../i18n/fmt';
 
 const API = process.env.REACT_APP_BACKEND_URL;
-const eur = (c) => `${((c || 0) / 100).toFixed(2)} €`;
+const eur = (c) => fmtMoney((c || 0) / 100);
 
 export const CodReceiptsSection = () => {
   const [items, setItems] = useState([]);
@@ -47,7 +48,7 @@ export const CodReceiptsSection = () => {
               <span className="text-white font-medium">{r.receipt_number || r.order_number}</span>
               <span className="text-white/50">Commande {r.order_number}</span>
               <span className="text-[#E9CF8E] font-semibold">{eur(r.amount_paid_cents)}</span>
-              {r.paid_at && <span className="text-white/40">{new Date(r.paid_at).toLocaleDateString('fr-FR')}</span>}
+              {r.paid_at && <span className="text-white/40">{fmtDate(r.paid_at, { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>}
               <Button variant="outline" size="sm" onClick={() => download(r)} data-testid={`cod-receipt-dl-${r.id}`}
                 className="ml-auto h-7 px-2 text-xs border-white/15 text-white/80">
                 <Download className="w-3 h-3 mr-1" /> Reçu PDF

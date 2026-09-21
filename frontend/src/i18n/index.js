@@ -68,4 +68,20 @@ const applyDir = (lng) => {
 applyDir(i18n.language);
 i18n.on('languageChanged', applyDir);
 
+// Ping anonyme d'usage de langue (1 fois par langue et par session)
+const pingLangUsage = (lng) => {
+  try {
+    const key = `lang_pinged_${lng}`;
+    if (!lng || sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/lang-usage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lang: lng }),
+    }).catch(() => {});
+  } catch { /* stockage indisponible */ }
+};
+pingLangUsage(i18n.language);
+i18n.on('languageChanged', pingLangUsage);
+
 export default i18n;
