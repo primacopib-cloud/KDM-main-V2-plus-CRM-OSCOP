@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { getAuthHeaders, getSessionToken } from '../../services/http';
 import { tData } from '@/i18n/tData';
 import i18n from '@/i18n';
+import { langKey } from '@/i18n/fmt';
 import { DELIVERY_TYPES } from '../catalog-manager/SpecializedTabs';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -175,7 +176,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
   }, [initialSheetProduct]);
   const [oscopBuyProduct, setOscopBuyProduct] = useState(null);
   const promos = useCatalogPromos();
-  const lang = (i18n.language || 'fr').slice(0, 2);
+  const lang = langKey();
   const tr = (p) => (lang !== 'fr' && p.translations?.[lang]) || {};
   return (
   <>

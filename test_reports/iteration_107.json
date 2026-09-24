@@ -1,0 +1,37 @@
+{
+  "summary": "Iter107 — Full 5-language regression (fr/ar/en/es/gcf) on catalogue, cart, checkout dialog, product reviews, LOLODRIVE, plus superadmin lang trend chart + backend translate-all/lang-usage APIs. Catalog banner + filters + badges translated with 0 raw keys leaked in the 5 langs; AR page has dir=rtl; product names correctly rendered in Arabic (أرز طويل الحبة), English and Spanish. Cart drawer + CheckoutDialog EXW open correctly for AR & FR with translated headings (تقديم الطلب (EXW) / Passer commande (EXW), Total HT / الإجمالي دون ضريبة). Product reviews modal opens in FR and AR with translated 'Aucun avis' state and no raw keys. LOLODRIVE /catalogue-lolodrive FR + AR: PASS/CTA/favoris/spot markers present, dir=rtl on AR, 0 raw keys. Home /?lang=ar: 0 FR residues, 0 raw home.* keys. Superadmin: lang-usage-panel + lang-trend-toggle + lang-trend-chart (10 recharts <path>) render without console errors. Backend: POST /api/catalog/admin/translate-all → 200 {translated:0, remaining:0, message contains 'déjà'} with admin token, 401 without. GET /api/admin/lang-usage/stats → 200 with daily list, 403 without. 4/4 backend tests PASSED.",
+  "backend_issues": {"critical": [], "minor": [
+    {"endpoint": "/api/catalog/admin/translate-all", "issue": "The 'remaining' count query at line 364-365 of routes_product_ai.py only checks translations.ar existence, not gcf. If all products have translations.ar but some are missing translations.gcf, remaining will falsely report 0 while the todo query on lines 328-332 would still find work. Currently benign because both are populated, but the count is inconsistent with the todo filter."}
+  ]},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ProductsGrid (catalog card) + ProductSheetModal", "issue": "Product NAMES are not translated when lang=gcf (Créole guadeloupéen). Cards render French names (\"Riz long grain 5kg\", \"Huile de tournesol 5L\") on /catalogue?lang=gcf even though DB has translations.gcf.name=\"Diri long grenn 5kg\" for all 17 products. Root cause: line 178 of ProductsGrid.jsx uses `(i18n.language || 'fr').slice(0, 2)` which turns 'gcf' → 'gc' → `p.translations['gc']` is undefined, so tr(p) returns {} and falls back to `product.name` (French). Same bug in ProductSheetModal.jsx line 40. Fix: do not slice(0,2), or handle the 3-char 'gcf' code explicitly, e.g. `const raw=(i18n.language||'fr'); const lang = raw==='gcf' ? 'gcf' : raw.slice(0,2);`", "selector": "[data-testid^='product-card-']", "priority": "HIGH"},
+      {"component": "CatalogHeader Cart drawer (Sheet)", "issue": "Several strings inside the cart drawer stay in French on /catalogue?lang=ar (visible next to Arabic labels): 'Quantités réservées pour vous pendant 30 minutes' (CartReservationCountdown), 'Souvent commandés ensemble' (CartSuggestions header), 'de retour (ex: RETOUR-A1B2C3)' + 'Appliquer' (return-code box). Cart item titles also stay in French because item.name is stored from product.name at add-time rather than resolving translations at render.", "selector": "[data-testid='cart-button'] (open drawer)", "priority": "MEDIUM"},
+      {"component": "LolodriveCatalogPage filters bar", "issue": "On /catalogue-lolodrive?lang=ar the filter labels 'Tous', 'Territoire' remain in French (the rest of the page is Arabic). Marginal — brands stay latin as expected.", "selector": ".catalog-filters-bar", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter107_i18n_regression.py",
+    "/app/test_reports/pytest/iter107_backend.xml"
+  ],
+  "action_items": [
+    "HIGH: Fix GCF product-name resolution. In frontend/src/components/catalog/ProductsGrid.jsx line 178 and ProductSheetModal.jsx line 40, replace `(i18n.language || 'fr').slice(0, 2)` with logic that preserves the 3-char 'gcf' key (e.g. keep raw for known codes ['en','es','ar','gcf']). Same helper should be applied everywhere `p.translations?.[lang]` is read.",
+    "MEDIUM: Translate remaining hard-coded FR strings in cart drawer: CartReservationCountdown ('Quantités réservées…'), CartSuggestions header ('Souvent commandés ensemble'), ReturnCodeBox ('de retour (ex: …)', 'Appliquer'). Also decide whether cart line-item names should re-resolve translations from the product doc rather than storing product.name at add-time.",
+    "LOW: In routes_product_ai.py line 365, extend the 'remaining' filter to include `{'translations.gcf': {'$exists': False}}` so the count matches the todo filter."
+  ],
+  "critical_code_review_comments": [
+    "ProductsGrid.jsx: language slicing to 2 chars silently drops 3-letter locale codes ('gcf' → 'gc'). Introduce a shared util `resolveLang(i18nLang)` returning the canonical translation key so this bug can't reappear in other components (ProductSheetModal already replicates the same pattern).",
+    "routes_product_ai.py translate_catalog: the todo query filters on ar OR gcf missing, but the remaining recount only checks ar. If any future product doc has ar but not gcf, translate-all will loop reporting 'remaining=0' while never having translated gcf.",
+    "Cart items store `name` at insertion time; consider persisting only product_id and deriving display name from live product+translations on render, otherwise language switch after add doesn't affect existing cart entries."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter107_i18n_regression.py"],
+  "success_rate": {"backend": "100% (4/4)", "frontend": "~85% (catalogue banner/filters/badges/reviews/checkout/LOLODRIVE/superadmin chart pass in all 5 langs; GCF product names + AR cart drawer strings fail)"},
+  "test_credentials": "buyer acheteur-pro@kdmarche.fr / Demo2026! and admin admin@kdmarche-oscop.fr / AdminKDM2025! (via /admin/connexion)",
+  "seed_data_creation": "None. Products were added to buyer cart during test — cart persists server-side for that account (62 items shown). Recommend manually clearing acheteur-pro cart before next iteration if it interferes.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "GCF locale is 3 chars; frontend has multiple `(i18n.language||'fr').slice(0,2)` occurrences (ProductsGrid line 178, ProductSheetModal line 40). Search for that pattern to find all locations before re-testing. DB `db.products.translations.gcf.name` is populated for all 17 products so the fix is purely frontend. To reach cart drawer you must be logged in as buyer (acheteur-pro@kdmarche.fr) — anonymous catalog visitors don't get the CatalogHeader cart-button. Cart of acheteur-pro currently contains 62 items after this test.",
+  "rca of the issue": "GCF names not shown: (1) UI reads `translations[lang]` where `lang = i18n.language.slice(0,2)`. For French 'fr'->'fr' (skipped by `lang !== 'fr'` gate anyway), English 'en'->'en' OK, Spanish 'es'->'es' OK, Arabic 'ar'->'ar' OK, but Guadeloupean Creole 'gcf'->'gc' — no such key in DB → fallback to French `product.name`. (2) Cart drawer FR-leak strings: they live in components (CartReservationCountdown/CartSuggestions/ReturnCodeBox) that still hard-code French text instead of calling i18n.t()."
+}

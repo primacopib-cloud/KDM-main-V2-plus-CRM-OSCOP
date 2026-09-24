@@ -1,4 +1,5 @@
 import React from 'react';
+import i18n from '@/i18n';
 import { Globe2 } from 'lucide-react';
 
 /**
@@ -27,7 +28,7 @@ export default function TerritorySelector({
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`} data-testid={testId}>
       <span className="text-xs text-white/40 inline-flex items-center gap-1.5 mr-1">
-        <Globe2 className="w-3.5 h-3.5" /> Territoire
+        <Globe2 className="w-3.5 h-3.5" /> {i18n.t('lolo.territoire')}
       </span>
       {showAll && (
         <button
@@ -39,7 +40,7 @@ export default function TerritorySelector({
               : 'bg-white/[0.04] text-white/70 border-white/10 hover:bg-white/[0.08]'
           }`}
         >
-          Tous
+          {i18n.t('lolo.tous')}
         </button>
       )}
       {territories.map((t) => (

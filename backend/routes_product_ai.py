@@ -362,7 +362,9 @@ async def translate_catalog(admin: dict = Depends(require_admin)):
             translated += 1
     await log_ai_usage(db, "product_scan", f"traduction catalogue ×{translated}")
     remaining = await db.products.count_documents(
-        {"$or": [{"translations": {"$exists": False}}, {"translations.ar": {"$exists": False}}]})
+        {"$or": [{"translations": {"$exists": False}},
+                 {"translations.ar": {"$exists": False}},
+                 {"translations.gcf": {"$exists": False}}]})
     return {"translated": translated, "remaining": remaining}
 @pricing_settings_router.get("/pricing-margins")
 async def get_pricing_margins(admin: dict = Depends(require_admin)):

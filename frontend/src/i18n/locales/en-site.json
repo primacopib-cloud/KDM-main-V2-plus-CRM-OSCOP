@@ -435,7 +435,12 @@
     "pay_4x_min": "4× payment available from €5,500 excl. VAT",
     "exw_point": "Pickup point (EXW) *",
     "select_point": "Select a point",
-    "instructions_ph": "Special instructions..."
+    "instructions_ph": "Special instructions...",
+    "reserved_30": "Quantities reserved for you for 30 minutes",
+    "reserved_still": "Quantities still reserved for",
+    "often_together": "Often ordered together",
+    "return_code_ph": "Return voucher (e.g. RETOUR-A1B2C3)",
+    "apply": "Apply"
   },
   "seo": {
     "landing_title": "KDMARCHÉ — The cooperative ecosystem of the overseas territories",
@@ -650,6 +655,8 @@
     "achetez_pass": "Buy your PASS LOLODRIVE and create your space to access the full catalogue and prices.",
     "rechercher_produit": "Search a product…",
     "toutes_categories": "All categories",
-    "voir_spot": "Watch the LOLODRIVE spot"
+    "voir_spot": "Watch the LOLODRIVE spot",
+    "territoire": "Territory",
+    "tous": "All"
   }
 }

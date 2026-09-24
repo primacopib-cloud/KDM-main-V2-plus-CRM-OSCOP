@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import i18n from '@/i18n';
 import { Plus, Loader2, Sparkles } from 'lucide-react';
 import { catalogAPI } from '../../services/api';
 import { formatPrice } from './catalogUtils';
@@ -29,7 +30,7 @@ export const CartSuggestions = ({ cart, cartLoading, onAddProduct }) => {
     <div className="mt-4 pt-3 border-t border-white/[0.08]" data-testid="cart-suggestions">
       <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#D9B35A] mb-2">
         <Sparkles className="w-3.5 h-3.5" />
-        Souvent commandés ensemble
+        {i18n.t('catalog.often_together')}
       </p>
       {loading ? (
         <div className="flex justify-center py-3">

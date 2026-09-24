@@ -166,7 +166,12 @@
     "pay_4x_min": "Péman an 4× disponib apati 5 500€ HT",
     "exw_point": "Pwen pou chèché (EXW) *",
     "select_point": "Chwazi on pwen",
-    "instructions_ph": "Enstriksyon èspésyal..."
+    "instructions_ph": "Enstriksyon èspésyal...",
+    "reserved_30": "Kantité rézèvé ba’w pannan 30 minit",
+    "reserved_still": "Kantité rézèvé toujou",
+    "often_together": "Souvan konmandé ansanm",
+    "return_code_ph": "Bon rétou (èg: RETOUR-A1B2C3)",
+    "apply": "Apliké"
   },
   "seo": {
     "landing_title": "KDMARCHÉ — Ékosistèm koopératif Karayib é Réinyon",
@@ -1720,6 +1725,8 @@
     "achetez_pass": "Achté PASS LOLODRIVE a’w é kréyé èspas a’w pou rivé asi tout katalòg-la é pri-la.",
     "rechercher_produit": "Chèché on pwodui…",
     "toutes_categories": "Tout katégori",
-    "voir_spot": "Gadé spot LOLODRIVE-la"
+    "voir_spot": "Gadé spot LOLODRIVE-la",
+    "territoire": "Téritwa",
+    "tous": "Tout"
   }
 }

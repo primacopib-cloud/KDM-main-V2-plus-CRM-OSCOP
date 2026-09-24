@@ -9,6 +9,11 @@ export const uiLocale = () => {
 };
 
 // Montants : chiffres occidentaux (latn) conservés en arabe
+export const langKey = () => {
+  const l = i18n.language || 'fr';
+  return l.startsWith('gcf') ? 'gcf' : l.slice(0, 2);
+};
+
 export const fmtMoney = (eur, opts = {}) =>
   new Intl.NumberFormat(uiLocale() === 'ar' ? 'ar-u-nu-latn' : uiLocale(), {
     style: 'currency', currency: 'EUR', ...opts,

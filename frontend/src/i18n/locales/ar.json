@@ -463,7 +463,12 @@
     "pay_4x_min": "الدفع على 4 دفعات متاح ابتداءً من 5500€ دون ضريبة",
     "exw_point": "نقطة السحب (EXW) *",
     "select_point": "اختر نقطة",
-    "instructions_ph": "تعليمات خاصة..."
+    "instructions_ph": "تعليمات خاصة...",
+    "reserved_30": "الكميات محجوزة لكم لمدة 30 دقيقة",
+    "reserved_still": "الكميات لا تزال محجوزة",
+    "often_together": "غالباً ما تُطلب معاً",
+    "return_code_ph": "قسيمة إرجاع (مثال: RETOUR-A1B2C3)",
+    "apply": "تطبيق"
   },
   "buyer": {
     "accueil": "الرئيسية",
@@ -2213,6 +2218,8 @@
     "achetez_pass": "اشترِ بطاقة PASS LOLODRIVE وأنشئ مساحتك للوصول إلى الكتالوج الكامل والأسعار.",
     "rechercher_produit": "ابحث عن منتج…",
     "toutes_categories": "كل الفئات",
-    "voir_spot": "مشاهدة إعلان LOLODRIVE"
+    "voir_spot": "مشاهدة إعلان LOLODRIVE",
+    "territoire": "المنطقة",
+    "tous": "الكل"
   }
 }

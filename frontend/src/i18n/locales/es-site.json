@@ -435,7 +435,12 @@
     "pay_4x_min": "Pago en 4× disponible a partir de 5 500€ sin IVA",
     "exw_point": "Punto de retirada (EXW) *",
     "select_point": "Seleccionar un punto",
-    "instructions_ph": "Instrucciones particulares..."
+    "instructions_ph": "Instrucciones particulares...",
+    "reserved_30": "Cantidades reservadas para usted durante 30 minutos",
+    "reserved_still": "Cantidades aún reservadas",
+    "often_together": "Pedidos juntos con frecuencia",
+    "return_code_ph": "Vale de devolución (ej: RETOUR-A1B2C3)",
+    "apply": "Aplicar"
   },
   "seo": {
     "landing_title": "KDMARCHÉ — El ecosistema cooperativo de ultramar",
@@ -650,6 +655,8 @@
     "achetez_pass": "Compre su PASS LOLODRIVE y cree su espacio para acceder a todo el catálogo y los precios.",
     "rechercher_produit": "Buscar un producto…",
     "toutes_categories": "Todas las categorías",
-    "voir_spot": "Ver el spot LOLODRIVE"
+    "voir_spot": "Ver el spot LOLODRIVE",
+    "territoire": "Territorio",
+    "tous": "Todos"
   }
 }

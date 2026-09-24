@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import i18n from '@/i18n';
 import { TimerReset, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthHeaders } from '../../services/http';
@@ -71,7 +72,7 @@ export const CartReservationCountdown = ({ reservedUntil, zone }) => {
     return (
       <p className="mb-2 text-[11px] text-[#8CC63E] flex items-center gap-1.5" data-testid="cart-reservation-note">
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#8CC63E]"></span>
-        Quantités réservées pour vous pendant 30 minutes
+        {i18n.t('catalog.reserved_30')}
       </p>
     );
   }
@@ -93,7 +94,7 @@ export const CartReservationCountdown = ({ reservedUntil, zone }) => {
     <p className={`mb-2 text-[11px] flex items-center gap-1.5 flex-wrap ${warning ? 'text-amber-400' : 'text-[#8CC63E]'}`}
       data-testid="cart-reservation-countdown">
       <TimerReset className="w-3.5 h-3.5" />
-      Quantités réservées encore <strong className="font-mono" data-testid="cart-reservation-timer">{mm}:{ss}</strong>
+      {i18n.t('catalog.reserved_still')} <strong className="font-mono" data-testid="cart-reservation-timer">{mm}:{ss}</strong>
       {warning && <ExtendButton />}
     </p>
   );

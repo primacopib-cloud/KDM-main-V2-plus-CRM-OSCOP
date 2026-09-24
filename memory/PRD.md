@@ -3878,3 +3878,12 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - CheckoutDialog : 9 chaînes converties en catalog.* (titre EXW, récapitulatif, paiement 4× + frais 20% + minimum 5 500€, point d'enlèvement, placeholders). Clés dans fr/en/es-site.json + gcf-extra + ar.json (respect du piège de merge du lot 122).
 - ProductReviewsModal : les 7 clés catalog.avis_* (déjà référencées avec fallback) ajoutées dans les 5 langues.
 - Noms de produits traduits : mécanisme backend product.translations[lang] déjà en place (en/es) — translations.ar (nom + description courte) ajoutées en base pour les 15 produits du catalogue (ex. « أرز طويل الحبة 5 كغ »). ProductSheetModal branché sur translations en plus de tData. Les nouveaux produits sans traduction retombent sur le nom FR.
+
+## 2026-09 — Lot 124 : Traduction IA produits 4 langues + régression complète 5 langues + courbe de tendance (testing_agent iteration_107 puis correctifs auto-testés)
+- Bouton IA « Traduire catalogue » (superadmin/vendeur, ProductCatalogManager) étendu de EN/ES à EN/ES/GCF/AR : routes_product_ai.py translate_catalog — requête $or sur translations manquantes (ar/gcf inclus), lots de 10, gpt-5.4, $set par langue. Exécuté en réel : 17/17 produits traduits 4 langues (remaining 0), ex. gcf « Diri long grenn 5kg ».
+- Courbe de tendance langues : LangUsagePanel — bouton lang-trend-toggle + graphique recharts LineChart jour par jour (lang-trend-chart) alimenté par le champ daily du endpoint stats. Testé par agent : 10 paths recharts rendus, 0 erreur console.
+- Régression 5 langues (iteration_107) : catalogue/panier/checkout/avis/LOLODRIVE/accueil OK dans les 5 langues, backend 4/4. 3 bugs trouvés et CORRIGÉS après le rapport :
+  1. HIGH — noms produits gcf : slice(0,2) tronquait 'gcf'→'gc'. Nouveau helper langKey() dans i18n/fmt.js utilisé par ProductsGrid + ProductSheetModal. Vérifié : /catalogue?lang=gcf affiche « Diri long grenn », plus aucun nom FR.
+  2. MEDIUM — drawer panier : CartReservationCountdown, CartSuggestions, ReturnCodeBox convertis en clés catalog.* (5 clés × 5 langues). (Limitation connue : le nom d'article du panier est figé à l'ajout — re-résolution live = backlog.)
+  3. LOW — remaining de translate-all inclut désormais gcf ; TerritorySelector (LOLODRIVE) : « Tous »/« Territoire » → lolo.tous/lolo.territoire (vérifié en ar : الكل/المنطقة).
+- Nettoyage données de test : panier serveur vérifié (aucun panier >20 articles ; les 62 articles étaient côté navigateur de test).

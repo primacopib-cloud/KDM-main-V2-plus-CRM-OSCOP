@@ -435,7 +435,12 @@
     "pay_4x_min": "Paiement en 4× disponible à partir de 5 500€ HT",
     "exw_point": "Point d'enlèvement (EXW) *",
     "select_point": "Sélectionner un point",
-    "instructions_ph": "Instructions particulières..."
+    "instructions_ph": "Instructions particulières...",
+    "reserved_30": "Quantités réservées pour vous pendant 30 minutes",
+    "reserved_still": "Quantités réservées encore",
+    "often_together": "Souvent commandés ensemble",
+    "return_code_ph": "Bon de retour (ex: RETOUR-A1B2C3)",
+    "apply": "Appliquer"
   },
   "seo": {
     "landing_title": "KDMARCHÉ — L'écosystème coopératif des Outre-mer",
@@ -650,6 +655,8 @@
     "achetez_pass": "Achetez votre PASS LOLODRIVE et créez votre espace pour accéder à tout le catalogue et aux prix.",
     "rechercher_produit": "Rechercher un produit…",
     "toutes_categories": "Toutes catégories",
-    "voir_spot": "Voir le spot LOLODRIVE"
+    "voir_spot": "Voir le spot LOLODRIVE",
+    "territoire": "Territoire",
+    "tous": "Tous"
   }
 }
