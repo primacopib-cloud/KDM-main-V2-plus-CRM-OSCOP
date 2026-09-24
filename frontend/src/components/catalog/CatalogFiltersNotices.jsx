@@ -19,7 +19,7 @@ export const CatalogFiltersNotices = ({
     {/* Filtre circuit de vente */}
     {setSaleFilter && (
       <div className="flex gap-2 mb-3 flex-wrap" data-testid="sale-model-filter">
-        {[['all', 'Tous les circuits'], ['OSCOP_DIRECT_RESALE', "Vendu par O'SCOP"], ['PARTNER_DIRECT_SALE', 'Vendu par les partenaires']].map(([v, label]) => (
+        {[['all', i18n.t('catalog.all_circuits')], ['OSCOP_DIRECT_RESALE', i18n.t('catalog.oscop_resale')], ['PARTNER_DIRECT_SALE', i18n.t('catalog.partner_sale')]].map(([v, label]) => (
           <button
             key={v}
             onClick={() => setSaleFilter(v)}
@@ -115,7 +115,7 @@ export const CatalogFiltersNotices = ({
         >
           {i18n.t('lolodrive.tous')}
         </button>
-        {DELIVERY_TYPES.map((dt) => (
+        {DELIVERY_TYPES.map((dt, di) => (
           <button
             key={dt}
             onClick={() => setSelectedDeliveryType(selectedDeliveryType === dt ? 'all' : dt)}
@@ -126,7 +126,7 @@ export const CatalogFiltersNotices = ({
                 : 'bg-white/[0.04] text-white/60 hover:text-white border border-white/[0.08]'
             }`}
           >
-            {dt}
+            {i18n.t(`catalog.dt_${di}`, dt)}
           </button>
         ))}
       </div>
@@ -203,13 +203,11 @@ export const CatalogFiltersNotices = ({
     {/* Règlement à Réception Pro — carte commerciale (version courte) */}
     <div className="mb-6 p-4 rounded-xl border border-[#D9B35A]/30" style={{ background: 'linear-gradient(90deg, rgba(217,179,90,0.16), rgba(217,179,90,0.03))' }} data-testid="cod-banner">
       <p className="text-sm text-white">
-        <strong className="text-[#D9B35A]">🛡️ Commandez maintenant. Réglez à réception.</strong> —
-        Aucun acompte sur les marchandises éligibles. Le règlement est déclenché après confirmation
-        électronique de la livraison.
+        <strong className="text-[#D9B35A]">🛡️ {i18n.t('catalog.cod_banner_title')}</strong> —
+        {' '}{i18n.t('catalog.cod_banner_p')}
       </p>
       <p className="text-[11px] text-white/45 mt-1.5">
-        Accès sous réserve d'éligibilité et de plafond disponible. Les commandes EXW restent payables
-        à la mise à disposition ou à l'enlèvement.
+        {i18n.t('catalog.cod_banner_note')}
       </p>
     </div>
 

@@ -104,7 +104,7 @@ const CatalogDrillDown = ({ pool, category, setCategory, subcategory, setSubcate
     return (
       <>
         <Crumb parts={[
-          { label: 'Catégories', onClick: () => setCategory('') },
+          { label: i18n.t('lolo.categories'), onClick: () => setCategory('') },
           { label: 'Promos & Soldes' },
         ]} />
         {renderGrid(promos, 'catalog-promos-grid')}
@@ -148,7 +148,7 @@ const CatalogDrillDown = ({ pool, category, setCategory, subcategory, setSubcate
     return (
       <>
         <Crumb parts={[
-          { label: 'Catégories', onClick: () => { setCategory(''); setSubcategory(''); } },
+          { label: i18n.t('lolo.categories'), onClick: () => { setCategory(''); setSubcategory(''); } },
           { label: effCategory },
         ]} />
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }} data-testid="catalog-subcategories">
@@ -166,7 +166,7 @@ const CatalogDrillDown = ({ pool, category, setCategory, subcategory, setSubcate
   return (
     <>
       <Crumb parts={[
-        { label: 'Catégories', onClick: () => { setCategory(''); setSubcategory(''); } },
+        { label: i18n.t('lolo.categories'), onClick: () => { setCategory(''); setSubcategory(''); } },
         { label: effCategory, onClick: () => setSubcategory('') },
         { label: subGroup.name },
       ]} />
@@ -335,7 +335,7 @@ export default function LolodriveCatalogPage() {
 
   const checkout = async (payInUC) => {
     if (cartItems.length === 0) return toast.error('Panier vide');
-    if (fulfillment === 'LOLO_POINT' && !selectedPoint) return toast.error('Choisir un relais LOLODRIVE');
+    if (fulfillment === 'LOLO_POINT' && !selectedPoint) return toast.error(i18n.t('lolo.choisir_relais'));
     try {
       const order = await lolodriveAPI.createOrder({
         fulfillment_type: fulfillment,
@@ -350,7 +350,7 @@ export default function LolodriveCatalogPage() {
       setCart({});
       if (payInUC) {
         await lolodriveAPI.payOrderUC(order.id);
-        toast.success('Payée en UC ✅');
+        toast.success(i18n.t('lolo.payee_uc'));
         navigate('/pass');
       } else {
         // Stripe Checkout hosted (real test flow)
@@ -370,16 +370,16 @@ export default function LolodriveCatalogPage() {
     <LolodriveLayout
       title={i18n.t('lolodrive.catalogue_lolodrive')}
       subtitle={isVisitor
-        ? 'Aperçu visiteur — prix réservés aux titulaires du PASS LOLODRIVE.'
+        ? i18n.t('lolo.apercu_visiteur')
         : passActive
-          ? "PASS actif — prix PASS visibles sur les ESSENTIELS, paiement en UC autorisé."
-          : "PASS inactif — activez votre PASS pour bénéficier des prix réduits."}
+          ? i18n.t('lolo.pass_actif')
+          : i18n.t('lolo.pass_inactif')}
       actions={isVisitor ? (
         <>
         <LolodriveSpotButton />
         <Button onClick={() => navigate('/pass-lolodrive')} data-testid="visitor-pass-cta"
           style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
-          <Star className="w-4 h-4 mr-2" /> Acheter le PASS & créer mon espace
+          <Star className="w-4 h-4 mr-2" /> {i18n.t('lolo.acheter_pass')}
         </Button>
         </>
       ) : (
@@ -462,7 +462,7 @@ export default function LolodriveCatalogPage() {
               <div className="mt-4 space-y-3">
                 {cartPromoDiscount > 0 && (
                   <div className="flex justify-between text-xs font-semibold text-[#FF9E7A]" data-testid="cart-promo-discount-line">
-                    <span>⚡ Remise promo appliquée</span>
+                    <span>{i18n.t('lolo.remise_promo')}</span>
                     <span>−{fmtEUR(cartPromoDiscount)}</span>
                   </div>
                 )}
@@ -503,7 +503,7 @@ export default function LolodriveCatalogPage() {
                     </Select>
                     {!refCode && (
                       <p className="text-[10px] text-amber-300 mt-1" data-testid="cart-relay-hint">
-                        Choisissez votre relais pour voir son calendrier et ses créneaux disponibles.
+                        {i18n.t('lolo.choisir_relais_cal')}
                       </p>
                     )}
                   </div>
@@ -569,7 +569,7 @@ export default function LolodriveCatalogPage() {
           <TabsTrigger value="ESSENTIAL" data-testid="tab-essential">{i18n.t('lolodrive.essentiels_25')}</TabsTrigger>
           <TabsTrigger value="NORMAL" data-testid="tab-normal">{i18n.t('lolodrive.hors25')}</TabsTrigger>
           <TabsTrigger value="FAVS" data-testid="tab-favs">
-            <Star className="w-3.5 h-3.5 mr-1 fill-[#D9B35A] text-[#D9B35A]" /> Mes favoris{favs.length > 0 ? ` (${favs.length})` : ''}
+            <Star className="w-3.5 h-3.5 mr-1 fill-[#D9B35A] text-[#D9B35A]" /> {i18n.t('lolo.mes_favoris')}{favs.length > 0 ? ` (${favs.length})` : ''}
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -589,7 +589,7 @@ export default function LolodriveCatalogPage() {
       {!loading && filter === 'FAVS' && favs.length === 0 && (
         <div className="text-center text-white/40 py-12" data-testid="favs-empty">
           <Star className="w-8 h-8 mx-auto mb-2 opacity-40" />
-          Aucun favori pour le moment — cliquez sur l'étoile d'un produit pour l'épingler ici.
+          {i18n.t('lolo.aucun_favori')}
         </div>
       )}
 
@@ -607,7 +607,7 @@ export default function LolodriveCatalogPage() {
             <div className="p-3">
               <div className="text-sm font-semibold text-white truncate">{p.name}</div>
               <div className="text-[10px] text-white/40">{p.category || ''}</div>
-              <div className="mt-1.5 text-[11px] font-semibold text-[#E9CF8E]">🔒 Prix réservé aux titulaires PASS</div>
+              <div className="mt-1.5 text-[11px] font-semibold text-[#E9CF8E]">{i18n.t('lolo.prix_pass')}</div>
             </div>
           </div>
         );
@@ -630,7 +630,7 @@ export default function LolodriveCatalogPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold text-white truncate">{p.name}</div>
-                  <div className="text-[10px]"><span className="text-red-300 font-bold">⏱ {promoCountdown([p])}</span> <span className="text-[#E9CF8E]">· Prix réservé aux titulaires PASS</span></div>
+                  <div className="text-[10px]"><span className="text-red-300 font-bold">⏱ {promoCountdown([p])}</span> <span className="text-[#E9CF8E]">{i18n.t('lolo.prix_pass_short')}</span></div>
                 </div>
               </div>
             ))}
@@ -639,7 +639,7 @@ export default function LolodriveCatalogPage() {
         return (
         <>
           {products.length === 0 && (
-            <p className="text-white/40 text-sm py-8 text-center">Vitrine en cours de préparation — revenez bientôt !</p>
+            <p className="text-white/40 text-sm py-8 text-center">{i18n.t('lolo.vitrine_prep')}</p>
           )}
           {products.length > 0 && (search.trim() ? (
             visitorGrid(applyCatalogFilters(products, { search, category, subcategory }), 'visitor-catalog-grid')
@@ -648,11 +648,11 @@ export default function LolodriveCatalogPage() {
               subcategory={subcategory} setSubcategory={setSubcategory} renderGrid={visitorGrid} renderLastChance={visitorLastChance} />
           ))}
           <div className="rounded-2xl p-5 text-center border border-[#D9B35A]/40 bg-[#D9B35A]/[0.07]" data-testid="visitor-pass-invite">
-            <p className="text-white font-semibold m-0 mb-1">Envie de commander par lots de 3 aux prix mutualisés ?</p>
-            <p className="text-white/60 text-sm m-0 mb-3">Achetez votre PASS LOLODRIVE et créez votre espace pour accéder à tout le catalogue et aux prix.</p>
+            <p className="text-white font-semibold m-0 mb-1">{i18n.t('lolo.envie_lots')}</p>
+            <p className="text-white/60 text-sm m-0 mb-3">{i18n.t('lolo.achetez_pass')}</p>
             <Button onClick={() => navigate('/pass-lolodrive')} data-testid="visitor-pass-invite-btn"
               style={{ background: 'linear-gradient(135deg, #D9B35A, #7c3aed)' }}>
-              <Star className="w-4 h-4 mr-2" /> Acheter le PASS & créer mon espace
+              <Star className="w-4 h-4 mr-2" /> {i18n.t('lolo.acheter_pass')}
             </Button>
           </div>
         </>

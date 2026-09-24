@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import i18n from '@/i18n';
 import { X, Play, Pause, RotateCcw, Ticket, Share2, Link as LinkIcon, Volume2, VolumeX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -324,7 +325,7 @@ export const LolodriveSpotButton = ({ className = '', autoPlay = false }) => {
     <>
       <button type="button" data-testid="open-lolodrive-spot" onClick={() => setOpen(true)}
         className={`inline-flex items-center gap-2 px-4 h-10 rounded-full text-xs sm:text-sm font-bold text-white border border-[#8CC63E]/50 bg-[#8CC63E]/15 hover:bg-[#8CC63E]/30 transition-colors ${className}`}>
-        <Play className="w-4 h-4 fill-current" /> Voir le spot LOLODRIVE
+        <Play className="w-4 h-4 fill-current" /> {i18n.t('lolo.voir_spot')}
       </button>
       {open && <LolodriveSpot onClose={() => setOpen(false)} />}
     </>

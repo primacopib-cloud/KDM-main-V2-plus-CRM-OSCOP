@@ -62,7 +62,8 @@
     "connectors": "Conectores",
     "favorite_alerts": "Alertas de favoritos",
     "territories": "Territorios",
-    "catalog_pro": "Catálogo Pro"
+    "catalog_pro": "Catálogo Pro",
+    "back": "Volver"
   },
   "footer": {
     "navigation": "Navegación",
@@ -485,5 +486,9 @@
       "s4_tag": "Un equipo a su lado",
       "s4_desc": "La cooperativa le acompaña en sus pedidos, litigios y suministros — respuesta rápida garantizada."
     }
+  },
+  "data": {
+    "btp_materiaux": "Construcción y Materiales",
+    "agriculture_vegetal": "Agricultura y Vegetal"
   }
 }

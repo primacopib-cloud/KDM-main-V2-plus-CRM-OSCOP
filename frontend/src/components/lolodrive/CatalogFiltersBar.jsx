@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import i18n from '@/i18n';
 import { Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { lolodriveAPI } from '../../services/api';
@@ -17,7 +18,7 @@ export const CatalogFiltersBar = ({ search, setSearch, category, setCategory, su
         <Search className="w-3.5 h-3.5 text-white/40 shrink-0" />
         <input value={search} data-testid="catalog-search-text"
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher un produit…"
+          placeholder={i18n.t('lolo.rechercher_produit')}
           className="w-full bg-transparent py-2 text-sm text-white outline-none placeholder:text-white/30" />
       </div>
       <Select value={category || 'ALL'} onValueChange={(v) => { setCategory(v === 'ALL' ? '' : v); setSubcategory(''); }}>
@@ -25,7 +26,7 @@ export const CatalogFiltersBar = ({ search, setSearch, category, setCategory, su
           <SelectValue placeholder="Catégorie" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="ALL">Toutes catégories</SelectItem>
+          <SelectItem value="ALL">{i18n.t('lolo.toutes_categories')}</SelectItem>
           {cats.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
         </SelectContent>
       </Select>

@@ -175,7 +175,7 @@ export default function CatalogPage() {
         const [productsData, locationsData] = await Promise.all([
           catalogAPI.getProducts({ zoneCode: defaultZone }).catch((error) => {
             console.error('Products loading error:', error);
-            setCatalogError('Le catalogue est momentanément indisponible. Réessayez dans quelques instants.');
+            setCatalogError(i18n.t('catalog.unavailable_msg'));
             return [];
           }),
           catalogAPI.getPickupLocations().catch(() => []),
@@ -214,7 +214,7 @@ export default function CatalogPage() {
 
       } catch (error) {
         console.error('Init error:', error);
-        setCatalogError('Le catalogue est momentanément indisponible. Réessayez dans quelques instants.');
+        setCatalogError(i18n.t('catalog.unavailable_msg'));
         toast.error('Erreur de chargement');
       } finally {
         setLoading(false);
@@ -248,7 +248,7 @@ export default function CatalogPage() {
       poll();
     } else if (params.get('zone_payment') === 'cancelled') {
       window.history.replaceState({}, '', '/catalogue');
-      toast.info('Paiement de la zone annulé');
+      toast.info(i18n.t('catalog.zone_payment_cancelled'));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -297,7 +297,7 @@ export default function CatalogPage() {
       setProducts(data);
     } catch (error) {
       console.error('Error loading products:', error);
-      setCatalogError('Impossible d’actualiser le catalogue. Vérifiez votre connexion puis réessayez.');
+      setCatalogError(i18n.t('catalog.refresh_failed'));
     }
   }, [selectedZone, selectedCategory, searchTerm, selectedIncoterm, selectedDeliveryType, selectedAvailZone, minRating, sortByRating]);
 
@@ -316,7 +316,7 @@ export default function CatalogPage() {
   // Add to cart
   const handleAddToCart = async (product) => {
     if (!user) {
-      toast.info(i18n.t('catalog.visiteur_connexion', 'Créez votre espace pro pour commander'), {
+      toast.info(i18n.t('catalog.visiteur_connexion'), {
         action: { label: 'Adhérer', onClick: () => navigate('/tarifs') },
       });
       return;
@@ -497,7 +497,7 @@ export default function CatalogPage() {
             <p className="text-white/60 text-sm">
               {products.length > 0
                 ? i18n.t('catalog.disponibles', { count: products.length })
-                : (catalogError || 'Catalogue en cours de mise à jour')}
+                : (catalogError || i18n.t('catalog.error_title'))}
             </p>
           </div>
           
@@ -508,7 +508,7 @@ export default function CatalogPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">
-                  <span className="inline-flex items-center gap-2">🌍 Tous les pays</span>
+                  <span className="inline-flex items-center gap-2">{i18n.t('catalog.all_countries')}</span>
                 </SelectItem>
                 {WORLD_COUNTRIES.map(([code, flag, label]) => (
                   <SelectItem key={code} value={code}>
@@ -556,7 +556,7 @@ export default function CatalogPage() {
           setMinRating={setMinRating}
           sortByRating={sortByRating}
           setSortByRating={setSortByRating}
-          zoneName={selectedZone === 'ALL' ? 'Tous les territoires' : (zones.find((z) => z.code === selectedZone)?.name || selectedZone)}
+          zoneName={selectedZone === 'ALL' ? i18n.t('catalog.all_territories') : (zones.find((z) => z.code === selectedZone)?.name || selectedZone)}
           saleFilter={saleFilter}
           setSaleFilter={setSaleFilter}
           financingOnly={financingOnly}
@@ -570,7 +570,7 @@ export default function CatalogPage() {
           <div role="alert" className="mb-5 flex flex-col gap-3 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-5 text-amber-50 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm">{catalogError}</p>
             <Button variant="outline" onClick={loadProducts} className="border-amber-200/30 text-amber-50 hover:bg-amber-200/10">
-              Réessayer
+              {i18n.t('catalog.retry')}
             </Button>
           </div>
         )}

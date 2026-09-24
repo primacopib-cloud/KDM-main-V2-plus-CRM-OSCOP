@@ -26,14 +26,14 @@ export const CheckoutDialog = ({
           <DialogHeader>
             <DialogTitle>Finaliser la commande</DialogTitle>
             <DialogDescription className="text-white/60">
-              Commande EXW - Enlèvement à votre charge
+              {i18n.t('catalog.exw_pickup_title')}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             {/* Order summary */}
             <div className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.08]">
-              <p className="text-sm text-white/60 mb-2">Récapitulatif</p>
+              <p className="text-sm text-white/60 mb-2">{i18n.t('catalog.recap')}</p>
               {(cart?.items || []).length > 0 && (
                 <div className="space-y-1.5 mb-3" data-testid="checkout-items-recap">
                   {cart.items.map((it) => (
@@ -82,7 +82,7 @@ export const CheckoutDialog = ({
                   <div className="flex-1">
                     <Label htmlFor="installment" className="font-medium cursor-pointer flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-purple-400" />
-                      Paiement en 4× sans frais cachés
+                      {i18n.t('catalog.pay_4x')}
                     </Label>
                     <p className="text-xs text-white/50 mt-1">
                       À partir de 5 500€ HT. Frais: 20% HT + TVA 8,50%
@@ -107,7 +107,7 @@ export const CheckoutDialog = ({
                             <p className="font-medium">{installmentPlan.product_tva_eur?.toFixed(2)}€</p>
                           </div>
                           <div>
-                            <span className="text-white/50">Frais échelonnement (20%)</span>
+                            <span className="text-white/50">{i18n.t('catalog.frais_echelonnement')}</span>
                             <p className="font-medium">{installmentPlan.fees_ht_eur?.toFixed(2)}€</p>
                           </div>
                           <div>
@@ -118,7 +118,7 @@ export const CheckoutDialog = ({
                         
                         <div className="pt-2 border-t border-white/[0.08]">
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium text-purple-400">Total à payer en 4×</span>
+                            <span className="text-sm font-medium text-purple-400">{i18n.t('catalog.total_4x')}</span>
                             <span className="text-lg font-bold text-purple-400">
                               {installmentPlan.total_with_fees_eur?.toFixed(2)}€
                             </span>
@@ -148,7 +148,7 @@ export const CheckoutDialog = ({
               <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.08]">
                 <p className="text-xs text-white/50">
                   <Calendar className="w-3 h-3 inline mr-1" />
-                  Paiement en 4× disponible à partir de 5 500€ HT 
+                  {i18n.t('catalog.pay_4x_min')} 
                   <span className="text-white/30 ml-1">
                     (il vous manque {formatPrice(MIN_INSTALLMENT_CENTS - cartTotal)})
                   </span>
@@ -158,10 +158,10 @@ export const CheckoutDialog = ({
             
             {/* Pickup location selector */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Point d'enlèvement (EXW) *</label>
+              <label className="text-sm font-medium">{i18n.t('catalog.exw_point')}</label>
               <Select value={selectedPickup} onValueChange={setSelectedPickup}>
                 <SelectTrigger className="w-full bg-white/[0.04] border-white/10">
-                  <SelectValue placeholder="Sélectionner un point" />
+                  <SelectValue placeholder={i18n.t('catalog.select_point')} />
                 </SelectTrigger>
                 <SelectContent>
                   {pickupLocations.map(loc => (
@@ -185,7 +185,7 @@ export const CheckoutDialog = ({
             <div className="space-y-2">
               <label className="text-sm font-medium">Notes (optionnel)</label>
               <Input
-                placeholder="Instructions particulières..."
+                placeholder={i18n.t('catalog.instructions_ph')}
                 value={orderNotes}
                 onChange={(e) => setOrderNotes(e.target.value)}
                 className="bg-white/[0.04] border-white/10"

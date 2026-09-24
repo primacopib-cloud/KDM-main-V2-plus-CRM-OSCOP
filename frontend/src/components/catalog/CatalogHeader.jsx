@@ -21,6 +21,7 @@ import { CartSuggestions } from './CartSuggestions';
 import { BrandLogos } from '../BrandLogos';
 import { HeaderBackButton } from '../HeaderBackButton';
 import LanguageSwitcher from '../LanguageSwitcher';
+import i18n from '@/i18n';
 import { authAPI } from '../../services/api';
 import { getMySpace, isAdminUser } from '../navbar/navItems';
 
@@ -55,7 +56,7 @@ export const CatalogHeader = ({
           {/* Quick Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
             <Link to="/" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              Accueil
+              {i18n.t('nav.home')}
             </Link>
             {!connected && (
               <>
@@ -63,27 +64,27 @@ export const CatalogHeader = ({
                   KDMARCHÉ
                 </Link>
                 <Link to="/tarifs" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors" data-testid="catalog-nav-acces-pro">
-                  Accès Pro
+                  {i18n.t('catalog.acces_pro')}
                 </Link>
                 <Link to="/contact" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors" data-testid="catalog-nav-contact">
-                  Contact
+                  {i18n.t('footer.contact')}
                 </Link>
               </>
             )}
             {connected && (
               <>
             <Link to={mySpace} className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors" data-testid="catalog-nav-my-space">
-              Mon Espace
+              {i18n.t('catalog.mon_espace')}
             </Link>
             <Link to="/commandes" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-              Commandes
+              {i18n.t('catalog.commandes')}
             </Link>
             <Link to="/wallet" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
               CREDI&rsquo;SCOP
             </Link>
             {(me?.role === 'vendor' || admin) && (
               <Link to="/espace-vendeur" className="px-3 py-1.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-                Vendeur
+                {i18n.t('catalog.vendeur')}
               </Link>
             )}
             {admin && (
@@ -109,7 +110,7 @@ export const CatalogHeader = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL" data-testid="zone-option-ALL">
-                  <span className="inline-flex items-center gap-1.5">🌍 Tous les territoires</span>
+                  <span className="inline-flex items-center gap-1.5">{i18n.t('catalog.all_territories')}</span>
                 </SelectItem>
                 {zones.map(zone => {
                   const locked = Array.isArray(entitledZones) && !entitledZones.includes(zone.code);
@@ -118,7 +119,7 @@ export const CatalogHeader = ({
                       data-testid={`zone-option-${zone.code}`}>
                       <span className="inline-flex items-center gap-1.5">
                         {locked && <Lock className="w-3 h-3 text-[#D9B35A]" />}
-                        {zone.name}{locked ? ' — ajouter' : ''}
+                        {zone.name}{locked ? ` ${i18n.t('catalog.add_zone')}` : ''}
                       </span>
                     </SelectItem>
                   );
@@ -147,10 +148,10 @@ export const CatalogHeader = ({
                 <SheetHeader>
                   <SheetTitle className="text-white flex items-center gap-2">
                     <ShoppingCart className="w-5 h-5 text-[#D9B35A]" />
-                    Panier ({cartItemCount} article{cartItemCount > 1 ? 's' : ''})
+                    {i18n.t('catalog.cart_title', { n: cartItemCount })}
                   </SheetTitle>
                   <SheetDescription className="text-white/60">
-                    Zone: {selectedZone === 'ALL' ? 'Tous les territoires' : (zones.find(z => z.code === selectedZone)?.name || selectedZone)}
+                    {i18n.t('catalog.cart_zone')} {selectedZone === 'ALL' ? i18n.t('catalog.all_territories') : (zones.find(z => z.code === selectedZone)?.name || selectedZone)}
                   </SheetDescription>
                 </SheetHeader>
 
@@ -165,9 +166,9 @@ export const CatalogHeader = ({
                     <div className="mb-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1" data-testid="cart-alerts-banner">
                       {cart.alerts.map((a) => (
                         <p key={`${a.type}-${a.item_id}`} className={`text-xs ${a.type === 'UNAVAILABLE' ? 'text-red-400' : 'text-amber-400'}`}>
-                          {a.type === 'PRICE_CHANGED' && `⚠ Prix modifié : ${a.product_name} — ${formatPrice(a.old_price_ht_cents)} → ${formatPrice(a.new_price_ht_cents)} HT`}
-                          {a.type === 'UNAVAILABLE' && `✕ Indisponible : ${a.product_name}`}
-                          {a.type === 'AVAILABLE_AGAIN' && `✓ De nouveau disponible : ${a.product_name}`}
+                          {a.type === 'PRICE_CHANGED' && i18n.t('catalog.price_changed', { p: a.product_name, a: formatPrice(a.old_price_ht_cents), b: formatPrice(a.new_price_ht_cents) })}
+                          {a.type === 'UNAVAILABLE' && i18n.t('catalog.unavailable_alert', { p: a.product_name })}
+                          {a.type === 'AVAILABLE_AGAIN' && i18n.t('catalog.available_again', { p: a.product_name })}
                         </p>
                       ))}
                     </div>
@@ -176,7 +177,7 @@ export const CatalogHeader = ({
                     <div className="flex-1 flex items-center justify-center text-white/50">
                       <div className="text-center">
                         <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>Votre panier est vide</p>
+                        <p>{i18n.t('catalog.cart_empty')}</p>
                       </div>
                     </div>
                   ) : (
@@ -193,7 +194,7 @@ export const CatalogHeader = ({
                                 <p className="text-xs text-white/50">{item.product_sku}</p>
                                 {item.unavailable && (
                                   <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400" data-testid={`cart-item-unavailable-${item.id}`}>
-                                    INDISPONIBLE
+                                    {i18n.t('catalog.unavailable')}
                                   </span>
                                 )}
                               </div>
@@ -238,7 +239,7 @@ export const CatalogHeader = ({
 
                       <div className="pt-4 border-t border-white/[0.08] space-y-4">
                         <div className="flex justify-between items-center">
-                          <span className="text-white/70">Total HT</span>
+                          <span className="text-white/70">{i18n.t('catalog.total_ht')}</span>
                           <span className="text-xl font-bold text-[#D9B35A]">{formatPrice(cartTotal)}</span>
                         </div>
                         <Button 
@@ -247,10 +248,10 @@ export const CatalogHeader = ({
                           disabled={cart.items?.length === 0 || cart.items?.some(i => i.unavailable)}
                           data-testid="checkout-button"
                         >
-                          Passer commande (EXW)
+                          {i18n.t('catalog.order_exw')}
                         </Button>
                         <p className="text-xs text-white/40 text-center">
-                          Bon de commande dynamique + Signature électronique
+                          {i18n.t('catalog.order_note')}
                         </p>
                       </div>
                     </>
@@ -262,11 +263,11 @@ export const CatalogHeader = ({
               <span className="flex items-center gap-2">
                 <Link to="/connexion" data-testid="catalog-login-btn"
                   className="px-3 py-2 rounded-lg text-xs font-semibold text-white/80 border border-white/20 hover:bg-white/10 transition-colors">
-                  Connexion
+                  {i18n.t('nav.login')}
                 </Link>
                 <Link to="/adhesion" data-testid="catalog-join-btn"
                   className="px-3 py-2 rounded-lg text-xs font-bold text-black bg-[#D9B35A] hover:bg-[#c9a34a] transition-colors">
-                  Adhérer
+                  {i18n.t('catalog.adherer')}
                 </Link>
               </span>
             )}

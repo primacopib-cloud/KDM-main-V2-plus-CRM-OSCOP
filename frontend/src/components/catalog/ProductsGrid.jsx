@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { getAuthHeaders, getSessionToken } from '../../services/http';
 import { tData } from '@/i18n/tData';
 import i18n from '@/i18n';
+import { DELIVERY_TYPES } from '../catalog-manager/SpecializedTabs';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { FavoriteButton } from '../FavoriteButton';
@@ -199,7 +200,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
                     style={{ background: 'linear-gradient(90deg, #C0392B, #E74C3C)' }}
                   >
                     <Heart size={11} fill="currentColor" />
-                    {i18n.t('catalog.coup_de_coeur', 'Coup de cœur des adhérents')}
+                    {i18n.t('catalog.coup_de_coeur')}
                   </span>
                 )}
                 {/* Favorite button - positioned top right */}
@@ -270,14 +271,14 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
                       data-testid={`seller-logo-${product.sku}`} />
                   </span>
                   <span>
-                    Vendeur juridique : <b className="text-white/90">
-                      {product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP — SCIC SAS OBJECTIF SCOP OUTREMER" : (product.seller_name || 'Partenaire vendeur référencé')}
+                    {i18n.t('catalog.legal_seller')} <b className="text-white/90">
+                      {product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP — SCIC SAS OBJECTIF SCOP OUTREMER" : (product.seller_name || i18n.t('catalog.partner_default'))}
                     </b>
                   </span>
                 </div>
                 <div className="text-white/60">
-                  Facture émise par : <b className="text-white/90">
-                    {product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP" : (product.seller_name || 'le partenaire vendeur')}
+                  {i18n.t('catalog.invoice_by')} <b className="text-white/90">
+                    {product.sale_model === 'OSCOP_DIRECT_RESALE' ? "O'SCOP" : (product.seller_name || i18n.t('catalog.the_partner').toLowerCase())}
                   </b>
                 </div>
               </div>
@@ -317,7 +318,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
                   ) : (
                     <>
                       <MessageSquarePlus className="w-3.5 h-3.5" />
-                      {i18n.t('catalog.donner_avis', 'Donner un avis')}
+                      {i18n.t('catalog.donner_avis')}
                     </>
                   )}
                 </button>
@@ -342,7 +343,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
                   {product.delivery_type && (
                     <span data-testid={`delivery-type-badge-${product.sku}`}
                       className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30">
-                      🚚 {product.delivery_type}
+                      🚚 {i18n.t(`catalog.dt_${DELIVERY_TYPES.indexOf(product.delivery_type)}`, product.delivery_type)}
                     </span>
                   )}
                 </div>
@@ -353,12 +354,12 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
                 {product.rar_eligible ? (
                   <span data-testid={`rar-badge-${product.sku}`}
                     className="px-1.5 py-0.5 rounded text-[9px] font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/30">
-                    ✓ Éligible au règlement à réception
+                    {i18n.t('catalog.badge_rar')}
                   </span>
                 ) : (
                   <span data-testid={`exw-badge-${product.sku}`}
                     className="px-1.5 py-0.5 rounded text-[9px] font-bold text-sky-300 bg-sky-400/10 border border-sky-400/30">
-                    Règlement à l'enlèvement — produit EXW
+                    {i18n.t('catalog.badge_exw')}
                   </span>
                 )}
               </div>
@@ -375,7 +376,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
                       </p>
                       <p className="flex items-center gap-1 text-[10px] text-[#D9B35A]/90 mt-0.5">
                         <Lock className="w-3 h-3" />
-                        {i18n.t('catalog.tarif_adherent', 'Tarif réservé aux adhérents')}
+                        {i18n.t('catalog.tarif_adherent')}
                       </p>
                     </div>
                   )}
@@ -415,7 +416,7 @@ export const ProductsGrid = ({ products, cart, cartLoading, handleAddToCart, ini
         {products.length === 0 && (
           <div className="text-center py-20 text-white/50">
             <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p className="text-lg">Aucun produit trouvé</p>
+            <p className="text-lg">{i18n.t('catalog.no_products')}</p>
             <p className="text-sm">Essayez de modifier vos filtres</p>
           </div>
         )}

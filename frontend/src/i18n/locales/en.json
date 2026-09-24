@@ -62,7 +62,8 @@
     "connectors": "Connectors",
     "favorite_alerts": "Favorite alerts",
     "territories": "Territories",
-    "catalog_pro": "Pro catalogue"
+    "catalog_pro": "Pro catalogue",
+    "back": "Back"
   },
   "footer": {
     "navigation": "Navigation",
@@ -485,5 +486,9 @@
       "s4_tag": "A team by your side",
       "s4_desc": "The cooperative supports you with orders, disputes and supplies — fast response guaranteed."
     }
+  },
+  "data": {
+    "btp_materiaux": "Construction & Materials",
+    "agriculture_vegetal": "Agriculture & Plants"
   }
 }

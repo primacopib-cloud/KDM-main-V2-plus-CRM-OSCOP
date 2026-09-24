@@ -62,7 +62,8 @@
     "connectors": "Connecteurs",
     "favorite_alerts": "Alertes favoris",
     "territories": "Territoires",
-    "catalog_pro": "Catalogue Pro"
+    "catalog_pro": "Catalogue Pro",
+    "back": "Retour"
   },
   "footer": {
     "navigation": "Navigation",
@@ -485,5 +486,9 @@
       "s4_tag": "Une équipe à vos côtés",
       "s4_desc": "La coopérative vous accompagne sur vos commandes, litiges et approvisionnements — réponse rapide garantie."
     }
+  },
+  "data": {
+    "btp_materiaux": "BTP & Matériaux",
+    "agriculture_vegetal": "Agriculture & Végétal"
   }
 }

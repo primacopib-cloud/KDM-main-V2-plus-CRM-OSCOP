@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { tData } from '@/i18n/tData';
+import i18n from '@/i18n';
 import { useCatalogPromos, bestPromos } from './ProductPromoBadges';
 
 const eur = (cents) => `${((cents || 0) / 100).toFixed(2).replace('.', ',')} €`;
@@ -36,7 +37,7 @@ export const ProductSheetModal = ({ product, onClose, onAddToCart, cartLoading }
       <DialogContent className="max-w-2xl bg-[#2c1247] border-white/15 text-white max-h-[85vh] overflow-y-auto" data-testid="product-sheet-modal">
         <DialogHeader>
           <DialogTitle className="text-xl text-white pr-8" data-testid="product-sheet-title">
-            {tData(product.name) || product.name}
+            {product.translations?.[(i18n.language || 'fr').slice(0, 2)]?.name || tData(product.name) || product.name}
           </DialogTitle>
         </DialogHeader>
         {showUrgency && (
