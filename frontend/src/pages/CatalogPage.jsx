@@ -467,6 +467,7 @@ export default function CatalogPage() {
       <PromoPassBanner />
       <CatalogHeader
         zones={zones}
+        products={products}
         entitledZones={entitledZones}
         selectedZone={selectedZone}
         setSelectedZone={handleZoneChange}

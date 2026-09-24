@@ -1,4 +1,5 @@
 """Assistant IA fiche produit : scan photo/EAN → autoremplissage, image retrouvée (OpenFoodFacts) ou générée."""
+import asyncio
 import json
 import logging
 import os
@@ -173,6 +174,7 @@ async def _create_draft_from_fields(ean: str, fields: dict, off: dict) -> dict:
         "created_at": now, "updated_at": now,
     }
     await db.catalog_products.insert_one(doc)
+    schedule_auto_translate("catalog_products", doc["id"])
     return {"ean": ean, "status": "cree", "name": doc["name"], "id": doc["id"], "image": bool(image_url)}
 
 
@@ -320,6 +322,43 @@ async def _ai_price_product(p: dict) -> dict:
 
 
 DEFAULT_MARGIN = 25
+
+
+async def auto_translate_doc(collection: str, product_id: str):
+    """Traduction IA d'arrière-plan (EN/ES/GCF/AR) d'une fiche produit fraîchement créée."""
+    try:
+        coll = db[collection]
+        p = await coll.find_one({"id": product_id}, {"_id": 0, "id": 1, "name": 1, "description": 1, "translations": 1})
+        if not p or all((p.get("translations") or {}).get(lg) for lg in ("en", "es", "gcf", "ar")):
+            return
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        chat = LlmChat(
+            api_key=os.environ["EMERGENT_LLM_KEY"], session_id=f"auto-tr-{uuid.uuid4()}",
+            system_message="Tu es traducteur e-commerce professionnel. Réponds UNIQUEMENT en JSON valide, sans markdown.",
+        ).with_model("openai", "gpt-5.4")
+        prompt = (
+            "Traduis le nom et la description de ce produit en anglais (en), espagnol (es), créole guadeloupéen (gcf) "
+            "et arabe standard moderne (ar). Description vide : rédige 1 phrase commerciale B2B par langue.\n"
+            f"Produit : {json.dumps({'name': p['name'], 'description': p.get('description') or ''}, ensure_ascii=False)}\n"
+            'JSON attendu : {"en": {"name", "short_description"}, "es": {...}, "gcf": {...}, "ar": {...}}')
+        raw = str(await chat.send_message(UserMessage(text=prompt))).strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1].lstrip("json").strip()
+        data = json.loads(raw)
+        sets = {f"translations.{lg}": v for lg, v in data.items()
+                if lg in ("en", "es", "gcf", "ar") and isinstance(v, dict) and v.get("name")}
+        if sets:
+            await coll.update_one({"id": product_id}, {"$set": sets})
+            logger.info("Auto-traduction %s/%s : %s langues", collection, product_id, len(sets))
+    except Exception as exc:
+        logger.warning("Auto-traduction %s/%s échouée : %s", collection, product_id, exc)
+
+
+def schedule_auto_translate(collection: str, product_id: str):
+    try:
+        asyncio.get_event_loop().create_task(auto_translate_doc(collection, product_id))
+    except Exception as exc:
+        logger.warning("Planification auto-traduction impossible : %s", exc)
 
 
 @pricing_settings_router.post("/translate-all")

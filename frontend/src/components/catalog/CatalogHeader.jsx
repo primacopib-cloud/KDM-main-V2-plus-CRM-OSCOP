@@ -22,19 +22,24 @@ import { BrandLogos } from '../BrandLogos';
 import { HeaderBackButton } from '../HeaderBackButton';
 import LanguageSwitcher from '../LanguageSwitcher';
 import i18n from '@/i18n';
+import { langKey } from '@/i18n/fmt';
 import { authAPI } from '../../services/api';
 import { getMySpace, isAdminUser } from '../navbar/navItems';
 
 export const CatalogHeader = ({
   zones, entitledZones, selectedZone, setSelectedZone, cart, cartOpen, setCartOpen,
   cartLoading, cartItemCount, cartTotal, handleUpdateQuantity,
-  handleRemoveFromCart, handleAddToCart, navigate,
+  handleRemoveFromCart, handleAddToCart, navigate, products = [],
 }) => {
   const connected = authAPI.isAuthenticated();
   const [me, setMe] = useState(null);
   useEffect(() => { if (connected) authAPI.getMe().then(setMe).catch(() => {}); }, [connected]);
   const mySpace = getMySpace(me);
   const admin = isAdminUser(me);
+  const cartItemName = (item) => {
+    const p = products.find((x) => x.sku === item.product_sku);
+    return p?.translations?.[langKey()]?.name || item.product_name;
+  };
   return (
       <header 
         className="sticky top-0 z-50"
@@ -190,7 +195,7 @@ export const CatalogHeader = ({
                           >
                             <div className="flex justify-between items-start mb-2">
                               <div className="flex-1">
-                                <p className="font-medium text-white/90 text-sm">{item.product_name}</p>
+                                <p className="font-medium text-white/90 text-sm">{cartItemName(item)}</p>
                                 <p className="text-xs text-white/50">{item.product_sku}</p>
                                 {item.unavailable && (
                                   <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400" data-testid={`cart-item-unavailable-${item.id}`}>

@@ -407,6 +407,51 @@ async def admin_consume_credits(sub_id: str, body: ConsumeBody, admin: dict = De
 
 LOW_BALANCE_THRESHOLD_PCT = 20  # défaut : alerte sous 20 % du pack
 
+ALERT_I18N = {
+    "fr": {"subject": "⚠️ Votre solde de crédits FCRL passe sous le seuil",
+           "title": "⚠️ Solde crédits FCRL bas — {remaining} restants",
+           "custom": "votre seuil personnalisé ({thr})", "default": "le seuil de {pct} % ({thr})",
+           "msg": "Votre solde de crédits bonifiés {pack} ({ref}) est passé à {remaining}, sous {seuil}.",
+           "body2": "Pour continuer à préfinancer vos flux sans interruption, vous pouvez souscrire un nouveau "
+                    "pack Privilège depuis la page <b>Packs Investisseurs</b> de la plateforme, ou contacter la "
+                    "direction financière de la centrale.",
+           "head": "Solde de crédits bonifiés bas"},
+    "en": {"subject": "⚠️ Your FCRL credit balance has dropped below the threshold",
+           "title": "⚠️ Low FCRL credit balance — {remaining} left",
+           "custom": "your custom threshold ({thr})", "default": "the {pct}% threshold ({thr})",
+           "msg": "Your bonus credit balance {pack} ({ref}) has dropped to {remaining}, below {seuil}.",
+           "body2": "To keep pre-financing your flows without interruption, you can subscribe to a new "
+                    "Privilege pack from the <b>Investor Packs</b> page, or contact the hub's finance department.",
+           "head": "Low bonus credit balance"},
+    "es": {"subject": "⚠️ Su saldo de créditos FCRL ha bajado del umbral",
+           "title": "⚠️ Saldo de créditos FCRL bajo — quedan {remaining}",
+           "custom": "su umbral personalizado ({thr})", "default": "el umbral del {pct} % ({thr})",
+           "msg": "Su saldo de créditos bonificados {pack} ({ref}) ha bajado a {remaining}, por debajo de {seuil}.",
+           "body2": "Para seguir prefinanciando sus flujos sin interrupción, puede suscribir un nuevo pack "
+                    "Privilegio desde la página <b>Packs Inversores</b>, o contactar con la dirección financiera.",
+           "head": "Saldo de créditos bonificados bajo"},
+    "gcf": {"subject": "⚠️ Sòl a kredi FCRL a'w pasé anba sèy-la",
+            "title": "⚠️ Sòl kredi FCRL ba — {remaining} ka rété",
+            "custom": "sèy pèsonalizé a'w ({thr})", "default": "sèy a {pct} % ({thr})",
+            "msg": "Sòl a kredi bonifyé {pack} ({ref}) a'w pasé a {remaining}, anba {seuil}.",
+            "body2": "Pou kontinyé préfinansé flo a'w san koupi, ou pé pran on nouvo pack Privilèj asi paj "
+                     "<b>Packs Envestisè</b> la, oben kontakté dirèksyon finansyè a santral-la.",
+            "head": "Sòl kredi bonifyé ba"},
+    "ar": {"subject": "⚠️ رصيد أرصدة FCRL الخاص بكم انخفض دون العتبة",
+           "title": "⚠️ رصيد FCRL منخفض — المتبقي {remaining}",
+           "custom": "عتبتكم المخصصة ({thr})", "default": "عتبة {pct}٪ ({thr})",
+           "msg": "انخفض رصيد أرصدتكم المعزَّزة {pack} ({ref}) إلى {remaining}، دون {seuil}.",
+           "body2": "لمواصلة التمويل المسبق لتدفقاتكم دون انقطاع، يمكنكم الاشتراك في باقة امتياز جديدة من صفحة "
+                    "<b>باقات المستثمرين</b> في المنصة، أو التواصل مع الإدارة المالية للمركز.",
+           "head": "رصيد الأرصدة المعزَّزة منخفض"},
+}
+
+
+async def _investor_lang(user_id: str) -> str:
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "preferred_language": 1})
+    lang = (u or {}).get("preferred_language") or "fr"
+    return lang if lang in ALERT_I18N else "fr"
+
 
 async def _custom_threshold(user_id: str):
     pref = await db.investor_privilege_prefs.find_one({"user_id": user_id}, {"_id": 0, "alert_threshold_eur": 1})
@@ -425,31 +470,30 @@ async def _check_low_balance(sub: dict, remaining: float):
         {"$set": {"low_balance_alerted": True, "low_balance_alerted_at": _now().isoformat()}})
     if not res.modified_count:
         return
+    lang = await _investor_lang(sub["user_id"])
+    t = ALERT_I18N[lang]
     fmt = lambda v: f"{v:,.2f} €".replace(",", " ")
-    seuil_label = (f"votre seuil personnalisé ({fmt(threshold)})" if custom
-                   else f"le seuil de {LOW_BALANCE_THRESHOLD_PCT} % ({fmt(threshold)})")
-    msg = (f"Votre solde de crédits bonifiés {sub['pack_name']} ({sub['reference']}) est passé à "
-           f"{fmt(remaining)}, sous {seuil_label}.")
+    seuil_label = (t["custom"].format(thr=fmt(threshold)) if custom
+                   else t["default"].format(pct=LOW_BALANCE_THRESHOLD_PCT, thr=fmt(threshold)))
+    msg = t["msg"].format(pack=sub["pack_name"], ref=sub["reference"], remaining=fmt(remaining), seuil=seuil_label)
     try:
         from core_deps import create_notification
         await create_notification(
             notification_type="privilege_low_balance",
-            title=f"⚠️ Solde crédits FCRL bas — {fmt(remaining)} restants",
+            title=t["title"].format(remaining=fmt(remaining)),
             message=msg, target_roles=[], target_user_id=sub["user_id"],
             data={"sub_id": sub["id"], "reference": sub["reference"], "remaining_eur": remaining})
     except Exception as exc:
         logger.warning("Cloche solde bas FCRL : %s", exc)
     try:
         from brevo_service import send_email, _wrap_html
+        rtl = " dir='rtl' style='text-align:right'" if lang == "ar" else ""
         html = _wrap_html(
-            "Solde de crédits bonifiés bas",
-            f"<p>{msg}</p>"
-            "<p>Pour continuer à préfinancer vos flux sans interruption, vous pouvez souscrire un nouveau "
-            "pack Privilège depuis la page <b>Packs Investisseurs</b> de la plateforme, ou contacter la "
-            "direction financière de la centrale.</p>")
+            t["head"],
+            f"<div{rtl}><p>{msg}</p><p>{t['body2']}</p></div>")
         await send_email(to_email=sub["email"], to_name=sub["convention"].get("signer_name"),
-                         subject="⚠️ Votre solde de crédits FCRL passe sous le seuil",
-                         html_content=html, tags=["investor-privilege"])
+                         subject=t["subject"],
+                         html_content=html, tags=["investor-privilege", f"lang-{lang}"])
     except Exception as exc:
         logger.warning("Email solde bas FCRL : %s", exc)
 

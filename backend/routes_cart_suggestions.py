@@ -27,6 +27,7 @@ async def _product_payload(product: dict, zone_code: str, reason: str):
     return {
         "id": product["id"],
         "name": product["name"],
+        "translations": product.get("translations"),
         "sku": product["sku"],
         "image_url": product.get("image_url"),
         "unit": product["unit"],

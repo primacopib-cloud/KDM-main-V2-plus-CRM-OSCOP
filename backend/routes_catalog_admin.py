@@ -248,6 +248,11 @@ async def create_catalog_product(product: ProductCreate):
         }
         
         await db.catalog_products.insert_one(product_doc)
+        try:
+            from routes_product_ai import schedule_auto_translate
+            schedule_auto_translate("catalog_products", product_doc["id"])
+        except Exception:
+            pass
         
         # Return without _id
         product_doc.pop("_id", None)
@@ -424,6 +429,11 @@ async def bulk_import_products(products: List[ProductCreate]):
                 
                 await db.catalog_products.insert_one(product_doc)
                 created += 1
+                try:
+                    from routes_product_ai import schedule_auto_translate
+                    schedule_auto_translate("catalog_products", product_doc["id"])
+                except Exception:
+                    pass
                 
             except Exception as e:
                 errors.append(f"Erreur pour {product.sku}: {str(e)}")

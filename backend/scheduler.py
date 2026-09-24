@@ -22,6 +22,7 @@ _iabois_task: asyncio.Task | None = None
 _health_task: asyncio.Task | None = None
 _slot_task: asyncio.Task | None = None
 _db = None
+_lang_digest_task: asyncio.Task | None = None
 
 
 def set_scheduler_database(database):
@@ -500,6 +501,12 @@ def start_scheduler():
         from connectors.health_watch import health_watch_loop
         _health_task = asyncio.get_event_loop().create_task(health_watch_loop())
         logger.info("Ecosystem health watch started (every 10 min)")
+    global _lang_digest_task
+    if _lang_digest_task is None or _lang_digest_task.done():
+        from lang_digest import lang_digest_loop, set_lang_digest_database
+        set_lang_digest_database(_db)
+        _lang_digest_task = asyncio.get_event_loop().create_task(lang_digest_loop())
+        logger.info("Weekly language digest loop started (check every 6h)")
 
 
 def stop_scheduler():

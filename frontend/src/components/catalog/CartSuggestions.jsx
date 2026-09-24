@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import i18n from '@/i18n';
+import { langKey } from '@/i18n/fmt';
 import { Plus, Loader2, Sparkles } from 'lucide-react';
 import { catalogAPI } from '../../services/api';
 import { formatPrice } from './catalogUtils';
@@ -45,7 +46,7 @@ export const CartSuggestions = ({ cart, cartLoading, onAddProduct }) => {
               data-testid={`cart-suggestion-${p.id}`}
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-white/90 truncate">{p.name}</p>
+                <p className="text-sm font-medium text-white/90 truncate">{p.translations?.[langKey()]?.name || p.name}</p>
                 <p className="text-xs text-white/50">
                   {formatPrice(p.price_ht_cents)} HT · {p.unit}
                 </p>
