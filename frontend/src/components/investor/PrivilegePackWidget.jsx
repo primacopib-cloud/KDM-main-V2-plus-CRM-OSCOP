@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Crown, FileDown, ArrowRight, CheckCircle2, BellRing } from 'lucide-react';
+import { Crown, FileDown, ArrowRight, CheckCircle2, BellRing, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { API, apiCall, getAuthHeaders } from '../../services/http';
 
@@ -47,6 +47,46 @@ const ThresholdSetting = ({ me, onSaved }) => {
           Revenir au défaut
         </button>
       )}
+    </div>
+  );
+};
+
+// Langue des alertes de l'investisseur (cloche + emails)
+const ALERT_LANGS = [
+  { code: 'fr', flag: '🇫🇷' }, { code: 'en', flag: '🇬🇧' }, { code: 'es', flag: '🇪🇸' },
+  { code: 'gcf', flag: '🇬🇵' }, { code: 'ar', flag: '🇸🇦' },
+];
+const AlertLanguagePicker = () => {
+  const [cur, setCur] = useState('fr');
+  useEffect(() => {
+    fetch(`${API}/profile/language`, { headers: getAuthHeaders(), credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null)).then((d) => d?.language && setCur(d.language)).catch(() => {});
+  }, []);
+  const save = async (code) => {
+    try {
+      const r = await fetch(`${API}/profile/language`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ language: code }),
+      });
+      if (!r.ok) throw new Error('Sauvegarde impossible');
+      setCur(code);
+      toast.success(`Langue des alertes : ${code.toUpperCase()}`);
+    } catch (e) { toast.error(e.message); }
+  };
+  return (
+    <div className="mt-2 flex items-center gap-2 flex-wrap rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2"
+      data-testid="privilege-alert-language">
+      <Globe className="w-3.5 h-3.5 text-[#D9B35A] shrink-0" />
+      <span className="text-[10.5px] text-white/60">Langue de mes alertes et emails</span>
+      {ALERT_LANGS.map((l) => (
+        <button key={l.code} onClick={() => save(l.code)} data-testid={`alert-lang-${l.code}`}
+          className={`px-1.5 py-0.5 rounded-lg text-sm leading-none border transition-colors ${cur === l.code
+            ? 'bg-[#D9B35A]/25 border-[#D9B35A]/60'
+            : 'bg-white/[0.04] border-white/15 opacity-60 hover:opacity-100'}`}>
+          {l.flag}
+        </button>
+      ))}
     </div>
   );
 };
@@ -201,6 +241,7 @@ export const PrivilegePackWidget = () => {
           <StatementBlock />
         </div>
       )}
+      <AlertLanguagePicker />
     </div>
   );
 };

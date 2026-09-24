@@ -227,7 +227,7 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
         try:
             order = await db.lolodrive_orders.find_one({"id": order_id}, {"_id": 0})
             if order:
-                user_doc = await db.users.find_one({"id": order.get("user_id")}, {"_id": 0, "email": 1, "contact_name": 1, "first_name": 1, "phone": 1})
+                user_doc = await db.users.find_one({"id": order.get("user_id")}, {"_id": 0, "email": 1, "contact_name": 1, "first_name": 1, "phone": 1, "preferred_language": 1})
                 pickup = "Point de retrait LOLODRIVE"
                 pt = None
                 if order.get("lolo_point_id") or order.get("reference_point_id"):
@@ -250,6 +250,7 @@ async def pos_update_order_status(order_id: str, request: StatusUpdate, user: di
                         order_number=str(order.get("order_number") or order.get("id", ""))[:32],
                         pickup_point=pickup,
                         slot_label=slot_label,
+                        lang=(user_doc.get("preferred_language") or "fr"),
                     )
                     # Accusé d'envoi : canaux réellement confirmés par Brevo (acceptés par l'opérateur)
                     await db.lolodrive_orders.update_one(

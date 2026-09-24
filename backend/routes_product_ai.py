@@ -361,6 +361,19 @@ def schedule_auto_translate(collection: str, product_id: str):
         logger.warning("Planification auto-traduction impossible : %s", exc)
 
 
+@pricing_settings_router.get("/translation-health")
+async def translation_health(admin: dict = Depends(require_admin)):
+    """Indicateur superadmin : produits sans traductions complètes (4 langues)."""
+    q = {"$or": [{"translations": {"$exists": False}},
+                 {"translations.ar": {"$exists": False}},
+                 {"translations.gcf": {"$exists": False}}]}
+    missing_products = await db.products.count_documents(q)
+    missing_drafts = await db.catalog_products.count_documents(q)
+    total = await db.products.count_documents({})
+    return {"missing": missing_products, "missing_drafts": missing_drafts,
+            "total": total, "ok": missing_products == 0}
+
+
 @pricing_settings_router.post("/translate-all")
 async def translate_catalog(admin: dict = Depends(require_admin)):
     """Traduit par IA (EN/ES/GCF/AR) tous les produits du catalogue acheteur sans traduction complète (lot de 10)."""

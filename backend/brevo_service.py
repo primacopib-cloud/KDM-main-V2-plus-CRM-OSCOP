@@ -279,19 +279,22 @@ async def notify_order_ready(
     order_number: str,
     pickup_point: str,
     slot_label: Optional[str] = None,
+    lang: str = "fr",
 ) -> Dict[str, Any]:
+    from order_email_i18n import ORDER_T, rtl_wrap
+    t = ORDER_T.get(lang) or ORDER_T["fr"]
     first = (to_name or "").split()[0] if to_name else ""
-    subject = f"Commande {order_number} prête au retrait"
-    body = f"""
-      <p>Bonjour {first or 'cher coopérateur'},</p>
-      <p>Bonne nouvelle ! Votre commande <strong>#{order_number}</strong> est <span style=\"color:#57D19A;font-weight:600;\">prête</span> au point de retrait :</p>
+    subject = t["r_subject"].format(num=order_number)
+    body = rtl_wrap(lang, f"""
+      <p>{t['r_hello'].format(first=first or t['r_default_name'])}</p>
+      <p>{t['r_good_news'].format(num=order_number)}</p>
       <div style=\"background:rgba(87,209,154,0.08);border:1px solid rgba(87,209,154,0.2);border-radius:12px;padding:16px;margin:16px 0;\">
-        <p style=\"margin:0;color:#57D19A;font-size:12px;text-transform:uppercase;letter-spacing:1px;\">Point de retrait</p>
+        <p style=\"margin:0;color:#57D19A;font-size:12px;text-transform:uppercase;letter-spacing:1px;\">{t['r_point']}</p>
         <p style=\"margin:6px 0 0;font-size:18px;font-weight:600;\">{pickup_point}</p>
-        {f'<p style="margin:6px 0 0;font-size:13px;">🕐 Votre créneau : <strong>{slot_label}</strong></p>' if slot_label else ''}
+        {f'<p style="margin:6px 0 0;font-size:13px;">{t["r_slot"].format(slot=slot_label)}</p>' if slot_label else ''}
       </div>
-      <p>Présentez-vous avec votre QR-code de commande pour le retrait.</p>
-    """
+      <p>{t['r_qr']}</p>
+    """)
     email_res = await send_email(
         to_email=to_email,
         to_name=to_name,
