@@ -23,6 +23,7 @@ _health_task: asyncio.Task | None = None
 _slot_task: asyncio.Task | None = None
 _db = None
 _lang_digest_task: asyncio.Task | None = None
+_investor_statement_task: asyncio.Task | None = None
 
 
 def set_scheduler_database(database):
@@ -507,6 +508,12 @@ def start_scheduler():
         set_lang_digest_database(_db)
         _lang_digest_task = asyncio.get_event_loop().create_task(lang_digest_loop())
         logger.info("Weekly language digest loop started (check every 6h)")
+    global _investor_statement_task
+    if _investor_statement_task is None or _investor_statement_task.done():
+        from investor_statement_digest import investor_statement_loop, set_investor_statement_database
+        set_investor_statement_database(_db)
+        _investor_statement_task = asyncio.get_event_loop().create_task(investor_statement_loop())
+        logger.info("Monthly investor statement loop started (check every 6h)")
 
 
 def stop_scheduler():

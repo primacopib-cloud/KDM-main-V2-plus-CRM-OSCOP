@@ -29,15 +29,22 @@ export const TranslateCatalogButton = () => {
 
   return (
     <span className="inline-flex items-center gap-2">
-      {health && (
-        <span data-testid="translation-health-badge"
-          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold border ${health.ok
-            ? 'text-emerald-300 bg-emerald-400/10 border-emerald-400/30'
-            : 'text-amber-300 bg-amber-400/10 border-amber-400/30'}`}>
-          {health.ok ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-          {health.ok ? 'Traductions 100 %' : `${health.missing} produit(s) sans traduction`}
-        </span>
-      )}
+      {health && (() => {
+        const allDone = health.ok && !health.missing_drafts;
+        const label = allDone ? 'Traductions 100 %'
+          : !health.ok
+            ? `${health.missing} produit(s) sans traduction${health.missing_drafts ? ` + ${health.missing_drafts} brouillon(s)` : ''}`
+            : `${health.missing_drafts} brouillon(s) à traduire avant publication`;
+        return (
+          <span data-testid="translation-health-badge"
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold border ${allDone
+              ? 'text-emerald-300 bg-emerald-400/10 border-emerald-400/30'
+              : 'text-amber-300 bg-amber-400/10 border-amber-400/30'}`}>
+            {allDone ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+            {label}
+          </span>
+        );
+      })()}
       <Button variant="outline" onClick={run} disabled={loading} data-testid="translate-catalog-btn"
         className="border-white/15 text-white/70 hover:text-white hover:bg-white/10">
         {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Languages className="w-4 h-4 mr-2" />}

@@ -304,10 +304,9 @@ async def notify_order_ready(
                      + (f" Creneau : {slot_label}." if slot_label else ""),
         tags=["order_ready"],
     )
-    sms_text = (
-        f"KDMARCHE x O'SCOP : votre commande #{order_number} est prete au retrait "
-        f"({pickup_point}{f', creneau {slot_label}' if slot_label else ''}). Munissez-vous de votre QR-code."
-    )
+    sms_text = t["r_sms"].format(
+        num=order_number, point=pickup_point,
+        slot=(t["r_sms_slot"].format(slot=slot_label) if slot_label else ""))
     sms_res = await send_sms(to_phone, sms_text, tag="order_ready") if to_phone else None
     return {"email": email_res, "sms": sms_res}
 

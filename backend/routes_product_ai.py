@@ -377,13 +377,21 @@ async def translation_health(admin: dict = Depends(require_admin)):
 @pricing_settings_router.post("/translate-all")
 async def translate_catalog(admin: dict = Depends(require_admin)):
     """Traduit par IA (EN/ES/GCF/AR) tous les produits du catalogue acheteur sans traduction complète (lot de 10)."""
-    todo = await db.products.find(
-        {"$or": [{"translations": {"$exists": False}},
+    q = {"$or": [{"translations": {"$exists": False}},
                  {"translations.ar": {"$exists": False}},
-                 {"translations.gcf": {"$exists": False}}]},
-        {"_id": 0, "id": 1, "name": 1, "description": 1}).to_list(10)
+                 {"translations.gcf": {"$exists": False}}]}
+    proj = {"_id": 0, "id": 1, "name": 1, "description": 1}
+    todo = await db.products.find(q, proj).to_list(10)
+    for p in todo:
+        p["_col"] = "products"
+    if len(todo) < 10:
+        drafts = await db.catalog_products.find(q, proj).to_list(10 - len(todo))
+        for p in drafts:
+            p["_col"] = "catalog_products"
+        todo += drafts
     if not todo:
-        return {"translated": 0, "remaining": 0, "message": "Tout le catalogue est déjà traduit ✓"}
+        return {"translated": 0, "remaining": 0, "remaining_drafts": 0,
+                "message": "Tout le catalogue (produits + brouillons) est déjà traduit ✓"}
     from emergentintegrations.llm.chat import LlmChat, UserMessage
     chat = LlmChat(
         api_key=os.environ["EMERGENT_LLM_KEY"], session_id=f"translate-cat-{uuid.uuid4()}",
@@ -410,14 +418,12 @@ async def translate_catalog(admin: dict = Depends(require_admin)):
         tr = data.get(p["id"])
         if isinstance(tr, dict) and tr.get("en"):
             sets = {f"translations.{lg}": v for lg, v in tr.items() if lg in ("en", "es", "gcf", "ar") and isinstance(v, dict)}
-            await db.products.update_one({"id": p["id"]}, {"$set": sets})
+            await db[p.get("_col", "products")].update_one({"id": p["id"]}, {"$set": sets})
             translated += 1
     await log_ai_usage(db, "product_scan", f"traduction catalogue ×{translated}")
-    remaining = await db.products.count_documents(
-        {"$or": [{"translations": {"$exists": False}},
-                 {"translations.ar": {"$exists": False}},
-                 {"translations.gcf": {"$exists": False}}]})
-    return {"translated": translated, "remaining": remaining}
+    remaining = await db.products.count_documents(q)
+    remaining_drafts = await db.catalog_products.count_documents(q)
+    return {"translated": translated, "remaining": remaining, "remaining_drafts": remaining_drafts}
 @pricing_settings_router.get("/pricing-margins")
 async def get_pricing_margins(admin: dict = Depends(require_admin)):
     doc = await db.pricing_margins.find_one({"id": "default"}, {"_id": 0}) or {}
