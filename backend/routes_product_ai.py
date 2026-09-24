@@ -324,10 +324,12 @@ DEFAULT_MARGIN = 25
 
 @pricing_settings_router.post("/translate-all")
 async def translate_catalog(admin: dict = Depends(require_admin)):
-    """Traduit par IA (EN/ES) tous les produits du catalogue acheteur sans traduction (lot de 15)."""
+    """Traduit par IA (EN/ES/GCF/AR) tous les produits du catalogue acheteur sans traduction complète (lot de 10)."""
     todo = await db.products.find(
-        {"translations": {"$exists": False}},
-        {"_id": 0, "id": 1, "name": 1, "description": 1}).to_list(15)
+        {"$or": [{"translations": {"$exists": False}},
+                 {"translations.ar": {"$exists": False}},
+                 {"translations.gcf": {"$exists": False}}]},
+        {"_id": 0, "id": 1, "name": 1, "description": 1}).to_list(10)
     if not todo:
         return {"translated": 0, "remaining": 0, "message": "Tout le catalogue est déjà traduit ✓"}
     from emergentintegrations.llm.chat import LlmChat, UserMessage
@@ -338,10 +340,11 @@ async def translate_catalog(admin: dict = Depends(require_admin)):
     ).with_model("openai", "gpt-5.4")
     items = [{"id": p["id"], "name": p["name"], "description": p.get("description") or ""} for p in todo]
     prompt = (
-        "Traduis en anglais et en espagnol le nom et la description de ces produits (descriptions vides : rédige une "
-        "courte description commerciale B2B de 1 phrase dans chaque langue à partir du nom).\n"
+        "Traduis le nom et la description de ces produits en 4 langues : anglais (en), espagnol (es), "
+        "créole guadeloupéen (gcf) et arabe standard moderne (ar). Descriptions vides : rédige une courte "
+        "description commerciale B2B de 1 phrase dans chaque langue à partir du nom.\n"
         f"Produits : {json.dumps(items, ensure_ascii=False)}\n"
-        'JSON attendu : {"<id>": {"en": {"name", "short_description"}, "es": {"name", "short_description"}}, ...}')
+        'JSON attendu : {"<id>": {"en": {"name", "short_description"}, "es": {...}, "gcf": {...}, "ar": {...}}, ...}')
     try:
         raw = str(await chat.send_message(UserMessage(text=prompt))).strip()
         if raw.startswith("```"):
@@ -354,10 +357,12 @@ async def translate_catalog(admin: dict = Depends(require_admin)):
     for p in todo:
         tr = data.get(p["id"])
         if isinstance(tr, dict) and tr.get("en"):
-            await db.products.update_one({"id": p["id"]}, {"$set": {"translations": tr}})
+            sets = {f"translations.{lg}": v for lg, v in tr.items() if lg in ("en", "es", "gcf", "ar") and isinstance(v, dict)}
+            await db.products.update_one({"id": p["id"]}, {"$set": sets})
             translated += 1
     await log_ai_usage(db, "product_scan", f"traduction catalogue ×{translated}")
-    remaining = await db.products.count_documents({"translations": {"$exists": False}})
+    remaining = await db.products.count_documents(
+        {"$or": [{"translations": {"$exists": False}}, {"translations.ar": {"$exists": False}}]})
     return {"translated": translated, "remaining": remaining}
 @pricing_settings_router.get("/pricing-margins")
 async def get_pricing_margins(admin: dict = Depends(require_admin)):

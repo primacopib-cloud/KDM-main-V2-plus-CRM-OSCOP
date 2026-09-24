@@ -9,13 +9,13 @@ export const TranslateCatalogButton = () => {
   const [loading, setLoading] = useState(false);
 
   const run = async () => {
-    if (!window.confirm("L'IA va traduire en anglais et espagnol tous les produits du catalogue acheteur sans traduction (par lots de 15). Continuer ?")) return;
+    if (!window.confirm("L'IA va traduire en anglais, espagnol, créole et arabe tous les produits du catalogue acheteur sans traduction complète (par lots de 10). Continuer ?")) return;
     setLoading(true);
     try {
       const r = await fetch(`${API}/api/catalog/admin/translate-all`, { method: 'POST', credentials: 'include' });
       const d = await r.json();
       if (!r.ok) return toast.error(d.detail || 'Traduction échouée');
-      toast.success(d.message || `${d.translated} produit(s) traduits EN + ES${d.remaining ? ` — ${d.remaining} restant(s), relancez pour continuer` : ' — catalogue 100% traduit ✓'}`, { duration: 8000 });
+      toast.success(d.message || `${d.translated} produit(s) traduits EN + ES + GCF + AR${d.remaining ? ` — ${d.remaining} restant(s), relancez pour continuer` : ' — catalogue 100% traduit ✓'}`, { duration: 8000 });
     } catch { toast.error('Erreur de connexion'); } finally { setLoading(false); }
   };
 

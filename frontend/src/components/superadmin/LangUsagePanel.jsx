@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Languages } from 'lucide-react';
+import { Languages, TrendingUp } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { API, getAuthHeaders } from '../../services/http';
 
 const LANGS = [
@@ -13,6 +14,7 @@ const LANGS = [
 // Répartition des langues réellement utilisées par les visiteurs (30 derniers jours)
 export const LangUsagePanel = () => {
   const [stats, setStats] = useState(null);
+  const [showTrend, setShowTrend] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/admin/lang-usage/stats?days=30`, { headers: getAuthHeaders(), credentials: 'include' })
@@ -47,6 +49,32 @@ export const LangUsagePanel = () => {
           </div>
         ))}
       </div>
+      <button type="button" onClick={() => setShowTrend((v) => !v)} data-testid="lang-trend-toggle"
+        className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#8A5A18] hover:text-[#5B2E8C] transition-colors">
+        <TrendingUp className="w-3.5 h-3.5" />
+        {showTrend ? 'Masquer la tendance' : 'Voir la tendance jour par jour'}
+      </button>
+      {showTrend && (
+        <div className="mt-2 h-44" data-testid="lang-trend-chart">
+          {(stats.daily || []).length ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.daily} margin={{ top: 5, right: 8, left: -22, bottom: 0 }}>
+                <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#8A785F' }}
+                  tickFormatter={(d) => d.slice(5)} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 9, fill: '#8A785F' }} />
+                <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                {LANGS.map((l) => (
+                  <Line key={l.code} type="monotone" dataKey={l.code} name={`${l.flag} ${l.label}`}
+                    stroke={l.color} strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-[11px] text-[#8A785F]">Pas encore de données journalières.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 };
