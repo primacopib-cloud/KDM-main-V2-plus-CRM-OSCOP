@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Clock, X } from 'lucide-react';
 import i18n from '@/i18n';
+import { langKey } from '@/i18n/fmt';
 import { catalogAPI } from '../../services/api';
 
 const RECENT_KEY = 'kdm_recent_searches';
@@ -26,7 +27,7 @@ export const SearchSuggest = ({ term, onPick, focused }) => {
     const q = (term || '').trim();
     if (q.length < 2 || q === picked.current) { setItems([]); return undefined; }
     const t = setTimeout(() => {
-      catalogAPI.suggest(q, (i18n.language || 'fr').slice(0, 2))
+      catalogAPI.suggest(q, langKey())
         .then((d) => setItems(d.suggestions || []))
         .catch(() => setItems([]));
     }, 250);

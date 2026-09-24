@@ -1,0 +1,29 @@
+{
+  "summary": "Iter108 — full lockdown of the multilingual order journey (5 langs fr/en/es/gcf/ar) + backend i18n regressions for order SMS/emails, translation-health, investor language selector. Backend: 6/6 pytest passing — ORDER_T contains all 5 langs with r_sms and r_sms_slot (no KeyError formatting {num,point,slot}), order_lang() fallback OK, investor_statement_digest module exposes ST_T (5 langs) + send_investor_statements, scheduler logs 'Monthly investor statement loop started (check every 6h)'. Admin auth via portal:admin OK: GET /api/catalog/admin/translation-health returned {missing:0, missing_drafts:0, total:17, ok:true}; POST /api/catalog/admin/translate-all returned {translated:0, remaining:0, remaining_drafts:0, message contains 'déjà'}. Investor profile language round-trip fr→ar→fr persisted correctly via POST+GET /api/profile/language. Frontend Playwright: catalogue?lang={fr,en,es,ar,gcf} — first product name is correctly translated in EACH language (fr='Huile de tournesol 5L', en='Sunflower oil 5L', es='Aceite de girasol 5 L', ar='زيت دوار الشمس 5 لتر', gcf='Lwil tounesòl 5L'), html[lang]=lang and html[dir]='rtl' only for AR. GCF regression (iter107 HIGH) is FIXED — no more slice(0,2) fallback. Buyer login (acheteur-pro@kdmarche.fr) → add to cart in FR → switch to AR: cart drawer instantly re-renders in Arabic (item name سماد عضوي 20 كغ, reservation banner 'الكميات محجوزة لكم لمدة 30 دقيقة', suggestions 'غالباً ما تُطلب معًا', return-code apply 'تطبيق', CTA 'تقديم الطلب (EXW)', total 'الإجمالي دون ضريبة'). No FR residues visible in the AR drawer. Cart cleaned up after test (item retiré, panier vide). Superadmin UI: /superadmin → onglet Catalogue → badge data-testid='translation-health-badge' displays 'Traductions 100 %' next to data-testid='translate-catalog-btn'. Investor UI: /espace-investisseur privilege pack shows data-testid='privilege-alert-language' with 5 flag buttons alert-lang-{fr,en,es,gcf,ar} — clicking alert-lang-ar triggers 'Langue des alertes : AR' toast + persists, then restored to FR. No real emails/SMS sent.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter108_i18n_order_sms.py",
+    "/app/test_reports/pytest/iter108_backend.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Optional: still have `(i18n.language || 'fr').slice(0, 2)` in /app/frontend/src/components/catalog/ProductVideoModal.jsx:10 and SearchSuggest.jsx:29. Not directly on the order path (VideoModal only reads uiLang for player UI, SearchSuggest passes to backend suggest which likely accepts 2-char codes), but replacing with the shared langKey() util from src/i18n/fmt.js would eliminate any risk of the same GCF fallback regression re-appearing.",
+    "Cart drawer trash button has no data-testid attribute (only lucide-trash-2 svg class was used to find it). Adding `data-testid={`cart-item-remove-${item.id}`}` would improve testability for future regressions."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter108_i18n_order_sms.py"],
+  "success_rate": {"backend": "100% (6/6 pytest)", "frontend": "100% on P1/P2/P3 (5-lang catalog+cart live rename, AR RTL, badge 100%, investor alert-lang selector persist)"},
+  "test_credentials": "acheteur-pro@kdmarche.fr / Demo2026! (buyer, cart cleaned after test), invest.test.i@test.fr / InvestTest2026! (language restored to fr), admin@kdmarche-oscop.fr / AdminKDM2025! via /admin/connexion (portal:admin required)",
+  "seed_data_creation": "None. Added one product to buyer cart during test then removed it (verified 'Votre panier est vide').",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter108 locks the 5-language order journey end-to-end. Iter107 HIGH bug (GCF product names) is fixed via new langKey() util in src/i18n/fmt.js. Iter107 MEDIUM (cart drawer FR leaks in AR) is also fixed — reservation banner, suggestions header, return-code Apply button now translate. The trash/delete button in the cart drawer still has no data-testid — tests must use `button:has(svg.lucide-trash-2)` as fallback. Admin login MUST include portal:'admin' in POST body else 403. Note two remaining slice(0,2) references (ProductVideoModal, SearchSuggest) are not on the order path but flagged for cleanup.",
+  "rca of the issue": "N/A — no bugs found this iteration. All previously-reported blockers from iteration_107 are verified fixed."
+}

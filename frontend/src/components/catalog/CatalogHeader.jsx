@@ -205,6 +205,7 @@ export const CatalogHeader = ({
                               </div>
                               <button 
                                 onClick={() => handleRemoveFromCart(item.id)}
+                                data-testid={`cart-item-remove-${item.id}`}
                                 className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400"
                               >
                                 <Trash2 className="w-4 h-4" />
