@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { ArrowRight, FileSearch, Info } from 'lucide-react';
+import { ArrowRight, ArrowLeft, FileSearch, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { trackCta } from '../../services/ctaTracking';
 import { PurchaseNeedForm } from './PurchaseNeedForm';
@@ -13,6 +13,13 @@ export const ProHero = () => {
   <section className="pt-20 pb-8 px-5" data-testid="pro-hero">
     {showNeedForm && <PurchaseNeedForm onClose={() => setShowNeedForm(false)} />}
     <div className="max-w-[1160px] mx-auto">
+      <a href="https://objectifscopoutremer.com" data-testid="hero-back-objectifscop"
+        className="inline-flex items-center gap-2.5 mb-4 group text-white/70 hover:text-white transition-colors">
+        <span className="w-8 h-8 rounded-full border border-[#D9B35A]/60 bg-[#D9B35A]/10 flex items-center justify-center group-hover:bg-[#D9B35A]/25 transition-colors">
+          <ArrowLeft className="w-4 h-4 text-[#F2D07A] rtl:-scale-x-100" />
+        </span>
+        <span className="text-xs font-bold tracking-[0.14em] uppercase">OBJECTIFSCOPOUTREMER.COM</span>
+      </a>
       <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 items-stretch">
         <div className="glass-panel card-glow rounded-[26px] p-7">
           <div className="badge-status mb-3.5">

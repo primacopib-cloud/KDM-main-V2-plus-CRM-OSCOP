@@ -696,7 +696,7 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         "cedant": {"company_name": offer["company_name"], "locality": offer["locality"],
                    "country_code": offer["country_code"],
                    "siret": (prof or {}).get("siret", ""), "phone": (prof or {}).get("phone", "")},
-        "cessionnaire": "OBJECTIF SCOP OUTREMER — SCIC SAS au capital de 10 500 €, "
+        "cessionnaire": "OBJECTIF SCOP OUTREMER — SCIC SAS au capital social de 1 500 € (capital variable minimum de 1 500 €), "
                         "13 rue Rodrigue Youyoute, 97139 Les Abymes, représentée par Mme Félixia PIPEROL",
         "category": offer["category"], "condition": offer["condition"],
         "lot_designation": offer["product_name"], "lot_type": offer["lot_type"],

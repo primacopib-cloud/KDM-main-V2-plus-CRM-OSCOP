@@ -3,7 +3,7 @@
 CONVENTION_VERSION = "2026-09"
 
 CONVENTION_PARTIES = (
-    "Entre OBJECTIF SCOP OUTREMER (O'SCOP), SCIC SAS au capital de 10 500 €, 13 rue Rodrigue Youyoute, "
+    "Entre OBJECTIF SCOP OUTREMER (O'SCOP), SCIC SAS au capital social de 1 500 € (capital variable minimum de 1 500 €), 13 rue Rodrigue Youyoute, "
     "97139 Les Abymes, représentée par Mme Félixia PIPEROL, d'une part, et le Partenaire POP'S signataire "
     "identifié par son profil boutique (raison sociale, SIREN, adresse), d'autre part.")
 

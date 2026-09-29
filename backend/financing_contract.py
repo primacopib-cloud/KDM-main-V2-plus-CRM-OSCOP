@@ -99,7 +99,7 @@ TEXTS = {
         "funder_end": "Ci-après dénommé le « Financeur ».",
         "debtor_h": "Le Débiteur",
         "debtor": ("SCIC SAS OBJECTIF SCOP OUTREMER (O'SCOP), société coopérative d'intérêt collectif constituée sous forme de "
-                   "société par actions simplifiée, au capital de 10 500 euros, SIRET 903 459 139 00015, dont le siège social est situé "
+                   "société par actions simplifiée, au capital social de 1 500 euros (capital variable minimum de 1 500 euros), SIRET 903 459 139 00015, dont le siège social est situé "
                    "13 rue Rodrigue YOUYOUTE, 97139 LES ABYMES, représentée par Monsieur Olivier NUDOL, dûment habilité aux fins des présentes."),
         "debtor_end": "Ci-après dénommée « O'SCOP » ou le « Débiteur ».",
         "parties_end": "Le Financeur et le Débiteur sont ci-après désignés individuellement une « Partie » et ensemble les « Parties ».",

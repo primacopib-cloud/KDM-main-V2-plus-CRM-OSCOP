@@ -3904,3 +3904,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **Brouillons à traduire** : translate-all couvre aussi db.catalog_products (champ _col) ; translation-health + badge affichent les brouillons (« X brouillon(s) à traduire avant publication »). Les 3 brouillons ont été traduits (état : missing=0, missing_drafts=0, total=17).
 - **Récap mensuel investisseur** : investor_statement_digest.py (ST_T 5 langues, envoi le 1er du mois pour le mois précédent, flag digest_flags idempotent, langue = preferred_language) ; boucle démarrée dans scheduler.py (check 6h). Testé forcé : envoi arabe réel Brevo (données QA nettoyées).
 - **Régression testing agent iteration_108** : 100 % backend (6/6 pytest) et 100 % frontend — parcours commande 5 langues verrouillé (noms produits fr/en/es/gcf/ar, RTL arabe, panier retraduit en direct, badge santé, sélecteur langue investisseur). Correctifs review appliqués : langKey() dans ProductVideoModal + SearchSuggest, data-testid cart-item-remove-{id}.
+
+## 29 septembre 2026 — Lien retour site vitrine
+- Lien « ← OBJECTIFSCOPOUTREMER.COM » (pastille ronde dorée + flèche, flèche inversée en RTL) en haut à gauche du hero public (ProHero.jsx, data-testid hero-back-objectifscop) → https://objectifscopoutremer.com. Vérifié par screenshot.

@@ -20,7 +20,7 @@ SCIC = "SCIC SAS OBJECTIF SCOP OUTREMER"
 
 DEFAULT_PAGES = [
     ("conditions-vente-oscop", "Conditions Générales de Vente O'SCOP",
-     f"""Les présentes CGV régissent exclusivement les ventes directes conclues entre professionnels par la {SCIC} (« O'SCOP »), SCIC SAS à capital variable, capital souscrit déclaré de 10 500 €, SIREN 903 459 139, SIRET 903 459 139 00015, RCS Pointe-à-Pitre, siège social : 13 rue Rodrigue Youyoute, 97139 Les Abymes, téléphone : 0590 46 34 09. Elles ne s'appliquent pas aux offres vendues par un partenaire référencé, régies par les CGV de ce partenaire.
+     f"""Les présentes CGV régissent exclusivement les ventes directes conclues entre professionnels par la {SCIC} (« O'SCOP »), SCIC SAS à capital variable, capital social de 1 500 € et capital variable minimum de 1 500 €, SIREN 903 459 139, SIRET 903 459 139 00015, RCS Pointe-à-Pitre, siège social : 13 rue Rodrigue Youyoute, 97139 Les Abymes, téléphone : 05 90 46 05 21. Elles ne s'appliquent pas aux offres vendues par un partenaire référencé, régies par les CGV de ce partenaire.
 
 1. Formation de la vente — La commande devient ferme après validation par O'SCOP et émission de la confirmation correspondante. O'SCOP est le vendeur juridique, l'émetteur de la facture et le bénéficiaire du paiement. Le paiement intervient selon l'échéance indiquée sur l'offre ou la facture, y compris, lorsque l'offre le prévoit, à réception de la marchandise.
 

@@ -122,7 +122,7 @@ export const mentionsLegalesContent = {
       title: "Éditeur du site",
       content: `Le présent site internet est édité par la société :
 - **Dénomination sociale** : OBJECTIF SCOP OUTREMER (Enseigne : O'SCOP)
-- **Forme juridique** : SCIC SAS (Société Coopérative d'Intérêt Collectif sous forme de Société par Actions Simplifiée) à capital variable — capital souscrit déclaré : 10 500 €
+- **Forme juridique** : SCIC SAS (Société Coopérative d'Intérêt Collectif sous forme de Société par Actions Simplifiée) à capital variable — capital social : 1 500 € ; capital variable minimum : 1 500 €
 - **Adresse du siège social et de l'établissement éditeur** : 13 rue Rodrigue YOUYOUTE, 97139 Les Abymes, Guadeloupe (France)
 - **Numéro SIREN** : 903 459 139
 - **Numéro SIRET (siège)** : 903 459 139 00015
