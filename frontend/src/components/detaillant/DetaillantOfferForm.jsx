@@ -80,34 +80,63 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
     || composedProducts.some((p) => !confirmedItems[p.sku]);
   const confirmedCount = composedProducts.filter((p) => confirmedItems[p.sku]).length;
 
-  // Brouillon : sauvegarde auto et reprise du dépôt en cours
+  // Brouillon : sauvegarde auto (localStorage + serveur) et reprise multi-appareils
   const DRAFT_KEY = 'pops_offer_draft';
+  const applyDraft = (d) => {
+    if (!d?.f?.product_sku) return false;
+    setF((p) => ({ ...p, ...d.f }));
+    setItems(d.items || {});
+    setExtraSkus(d.extraSkus || ['', '']);
+    setConfirmedItems(d.confirmedItems || {});
+    setPhotos(d.photos || []);
+    return true;
+  };
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (raw) {
-        const d = JSON.parse(raw);
-        if (d.f?.product_sku) {
-          setF((p) => ({ ...p, ...d.f }));
-          setItems(d.items || {});
-          setExtraSkus(d.extraSkus || ['', '']);
-          setConfirmedItems(d.confirmedItems || {});
-          setPhotos(d.photos || []);
-          toast.info('Brouillon d\'offre restauré — reprenez où vous en étiez.');
-        }
+    (async () => {
+      let local = null;
+      try { local = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch { /* noop */ }
+      let server = null;
+      try { server = await detaillantAPI.getDraft(); } catch { /* noop */ }
+      const sv = server?.draft;
+      const pick = sv && (!local || (server.updated_at || '') > (local.saved_at || '')) ? sv : local;
+      if (applyDraft(pick)) {
+        toast.info(pick === sv ? 'Brouillon restauré depuis le serveur — reprenez où vous en étiez.'
+          : 'Brouillon d\'offre restauré — reprenez où vous en étiez.');
       }
-    } catch { /* noop */ }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!f.product_sku) return;
-      try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({ f, items, extraSkus, confirmedItems, photos }));
-      } catch { /* noop */ }
-    }, 500);
+      const payload = { f, items, extraSkus, confirmedItems, photos, saved_at: new Date().toISOString() };
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(payload)); } catch { /* noop */ }
+      detaillantAPI.putDraft(payload).catch(() => {});
+    }, 800);
     return () => clearTimeout(timer);
   }, [f, items, extraSkus, confirmedItems, photos]);
+
+  // Modèles réutilisables (combos validés)
+  const [templates, setTemplates] = useState([]);
+  useEffect(() => {
+    detaillantAPI.listTemplates().then((d) => setTemplates(d.templates || [])).catch(() => {});
+  }, []);
+  const applyTemplate = (tpl) => {
+    const p = tpl.payload || {};
+    setF((prev) => ({ ...prev,
+      product_sku: p.product_sku || '', lot_type: p.lot_type || 'SAME', qty_lots: p.qty_lots || 1,
+      description: p.description || '', lot_price: p.lot_price ?? '', currency: p.currency || 'EUR',
+      discount_mode: p.discount_mode || 'PERCENT', discount_value: p.discount_value ?? 15,
+      condition: p.condition || 'NEW', warranty: p.warranty || '' }));
+    setExtraSkus([(p.product_skus || [])[0] || '', (p.product_skus || [])[1] || '']);
+    const its = {};
+    const conf = {};
+    (p.items_detail || []).forEach((d) => { its[d.sku] = { ...d }; conf[d.sku] = true; });
+    setItems(its);
+    setConfirmedItems(conf);
+    setPhotos([p.photo_main, ...(p.photos || [])].filter(Boolean));
+    toast.success(`Modèle « ${tpl.name} » chargé — vérifiez puis déposez.`);
+  };
 
   const submit = async () => {
     setBusy(true);
@@ -131,6 +160,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
       });
       toast.success(`✓ Offre déposée — ${cost} crédits`);
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* noop */ }
+      detaillantAPI.deleteDraft().catch(() => {});
       setShowSummary(false);
       setF({ product_sku: '', lot_type: 'SAME', qty_lots: 1, description: '', composed_detail: '',
         lot_price: '', currency: 'EUR', discount_mode: 'PERCENT', discount_value: 15, scheduled_start: '',
@@ -161,6 +191,28 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
               <div key={p.sku} data-testid={`offer-progress-seg-${p.sku}`}
                 className={`h-1.5 flex-1 rounded-full transition-colors ${confirmedItems[p.sku] ? 'bg-emerald-400' : 'bg-white/15'}`}
                 title={p.name} />
+            ))}
+          </div>
+        </div>
+      )}
+      {templates.length > 0 && (
+        <div data-testid="offer-templates">
+          <p className="text-[10px] font-bold text-white/50 uppercase tracking-wide mb-1">
+            Mes modèles — combos validés, redépôt en 1 clic
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {templates.map((tpl) => (
+              <span key={tpl.id} className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/10 overflow-hidden">
+                <button type="button" onClick={() => applyTemplate(tpl)}
+                  data-testid={`offer-template-${tpl.id}`}
+                  className="px-2.5 py-1 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-500/20">
+                  {tpl.name}
+                </button>
+                <button type="button" aria-label="Supprimer le modèle"
+                  data-testid={`offer-template-delete-${tpl.id}`}
+                  onClick={() => detaillantAPI.deleteTemplate(tpl.id).then(() => setTemplates((ts) => ts.filter((x) => x.id !== tpl.id)))}
+                  className="px-1.5 py-1 text-[10px] text-emerald-300/60 hover:text-red-300 border-l border-emerald-400/20">×</button>
+              </span>
             ))}
           </div>
         </div>

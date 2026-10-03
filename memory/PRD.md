@@ -3965,3 +3965,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **Récapitulatif avant dépôt** : modale offer-summary-modal (photos, type, quantité, composition par article avec prix TTC, prix lot/remise/final TTC, coût crédits, DLC, descriptif) + boutons Modifier / Confirmer le dépôt. Vérifié UI.
 - **Indicateur de progression** : offer-progress avec segments par article (vert = confirmé) + pourcentage. Vérifié (1/1 100 %).
 - **Brouillon automatique** : sauvegarde localStorage pops_offer_draft (debounce 500 ms, f + items + extraSkus + confirmations + photos), restauration au retour avec toast, purge après dépôt réussi. Vérifié (rechargement → tout restauré).
+
+## 3 octobre 2026 (suite 8) — Annulation J+30, modèles, photo IA, brouillon serveur
+- **Annulation offre PENDING** : POST /detaillant/offers/{id}/cancel — refusée avant J+30 (409 avec date de déblocage), autorisée après (CANCELLED + remboursement cost_credits) ; bouton UI grisé avec compte à rebours « Annulable à J+30 (X j restants) ». Testé (409 à J0, OK à J+31, re-cancel 409, +3 cr remboursés).
+- **Modèles réutilisables** : save-template (APPROVED only, max 10, upsert par nom), GET/DELETE /templates ; section « Mes modèles » dans le formulaire → 1 clic recharge tout (produits, items confirmés, photos, prix). Testé UI (chip → formulaire rempli, article pré-confirmé).
+- **Contrôle photo IA** : _check_photo_ai (pattern LlmChat gpt-5.4 + ImageContent existant) à la création d'offre — rejette photo floue/hors sujet (400 avec raison), tolérant, fail-open si l'analyse est indisponible. Testé : photo café acceptée, bannière O'SCOP refusée (« pas un paquet de café »).
+- **Brouillon multi-appareils** : GET/PUT/DELETE /detaillant/offer-draft (collection detaillant_offer_drafts) ; le front restaure le plus récent (serveur vs localStorage, champ saved_at), push debounce 800 ms, purge au dépôt. Testé curl + restauration UI.

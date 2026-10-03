@@ -573,6 +573,97 @@ async def detaillant_catalog_public():
     return {"products": products}
 
 
+@detaillant_router.post("/offers/{offer_id}/cancel")
+async def detaillant_cancel_offer(offer_id: str, user: dict = Depends(get_current_user)):
+    """Annulation d'une offre PENDING : autorisée uniquement après 30 jours d'attente (règle J+30)."""
+    offer = await db.detaillant_offers.find_one({"id": offer_id, "user_id": user["id"]}, {"_id": 0})
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offre introuvable")
+    if offer.get("status") != "PENDING":
+        raise HTTPException(status_code=409, detail="Seule une offre en attente de validation peut être annulée")
+    created = datetime.fromisoformat(offer["created_at"])
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    age_days = (_now() - created).days
+    if age_days < 30:
+        unlock = (created + timedelta(days=30)).strftime("%d/%m/%Y")
+        raise HTTPException(status_code=409, detail=(
+            f"Une offre en attente ne peut pas être annulée avant J+30 : annulation possible à partir du {unlock} "
+            f"(déposée il y a {age_days} jour(s))."))
+    await db.detaillant_offers.update_one(
+        {"id": offer_id},
+        {"$set": {"status": "CANCELLED", "cancelled_at": _now().isoformat(),
+                  "cancel_reason": "Annulée par le POP'S après 30 jours d'attente de validation"}})
+    refund = int(offer.get("cost_credits") or 0)
+    if refund > 0:
+        await db.auction_accounts.update_one(
+            {"user_id": user["id"]}, {"$inc": {"credits": refund}}, upsert=True)
+    return {"ok": True, "refunded_credits": refund}
+
+
+@detaillant_router.post("/offers/{offer_id}/save-template")
+async def detaillant_save_template(offer_id: str, user: dict = Depends(get_current_user)):
+    """Enregistre un combo validé comme modèle réutilisable (redépôt en 1 clic)."""
+    offer = await db.detaillant_offers.find_one({"id": offer_id, "user_id": user["id"]}, {"_id": 0})
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offre introuvable")
+    if offer.get("status") != "APPROVED":
+        raise HTTPException(status_code=409, detail="Seule une offre validée par O'SCOP peut devenir un modèle")
+    existing = await db.detaillant_offer_templates.count_documents({"user_id": user["id"]})
+    if existing >= 10:
+        raise HTTPException(status_code=409, detail="Maximum 10 modèles — supprimez-en un d'abord")
+    tpl = {"id": str(uuid.uuid4()), "user_id": user["id"],
+           "name": offer.get("product_name"),
+           "payload": {k: offer.get(k) for k in (
+               "product_sku", "product_skus", "lot_type", "qty_lots", "description",
+               "lot_price", "currency", "discount_mode", "discount_value",
+               "condition", "warranty", "items_detail", "photo_main", "photos")},
+           "created_at": _now().isoformat()}
+    await db.detaillant_offer_templates.update_one(
+        {"user_id": user["id"], "name": tpl["name"]}, {"$set": tpl}, upsert=True)
+    return {"ok": True, "template_id": tpl["id"]}
+
+
+@detaillant_router.get("/templates")
+async def detaillant_templates(user: dict = Depends(get_current_user)):
+    items = await db.detaillant_offer_templates.find(
+        {"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(10)
+    return {"templates": items}
+
+
+@detaillant_router.delete("/templates/{template_id}")
+async def detaillant_delete_template(template_id: str, user: dict = Depends(get_current_user)):
+    r = await db.detaillant_offer_templates.delete_one({"id": template_id, "user_id": user["id"]})
+    if not r.deleted_count:
+        raise HTTPException(status_code=404, detail="Modèle introuvable")
+    return {"ok": True}
+
+
+class DraftBody(BaseModel):
+    draft: dict
+
+
+@detaillant_router.get("/offer-draft")
+async def detaillant_get_draft(user: dict = Depends(get_current_user)):
+    d = await db.detaillant_offer_drafts.find_one({"user_id": user["id"]}, {"_id": 0})
+    return d or {"draft": None, "updated_at": None}
+
+
+@detaillant_router.put("/offer-draft")
+async def detaillant_put_draft(body: DraftBody, user: dict = Depends(get_current_user)):
+    now = _now().isoformat()
+    await db.detaillant_offer_drafts.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"user_id": user["id"], "draft": body.draft, "updated_at": now}}, upsert=True)
+    return {"ok": True, "updated_at": now}
+
+
+@detaillant_router.delete("/offer-draft")
+async def detaillant_delete_draft(user: dict = Depends(get_current_user)):
+    await db.detaillant_offer_drafts.delete_many({"user_id": user["id"]})
+    return {"ok": True}
+
+
 @detaillant_router.get("/offers")
 async def detaillant_my_offers(user: dict = Depends(get_current_user)):
     offers = await db.detaillant_offers.find(
@@ -677,6 +768,44 @@ def _validate_items_detail(body: OfferBody, composed_products: list, final_price
     return details
 
 
+async def _check_photo_ai(photo_url: str, product_names: list) -> dict:
+    """Contrôle IA de la photo principale : netteté + correspondance avec le(s) produit(s) annoncé(s)."""
+    import base64
+
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            r = await client.get(photo_url)
+            r.raise_for_status()
+            if len(r.content) > 6_000_000:
+                return {"ok": True, "skipped": "image trop lourde pour l'analyse"}
+            b64 = base64.b64encode(r.content).decode()
+        from emergentintegrations.llm.chat import ImageContent, LlmChat, UserMessage
+        chat = LlmChat(
+            api_key=os.environ["EMERGENT_LLM_KEY"],
+            session_id=f"offer-photo-{uuid.uuid4()}",
+            system_message="Tu contrôles des photos produit pour une place de marché alimentaire. Réponds UNIQUEMENT en JSON valide, sans markdown.",
+        ).with_model("openai", "gpt-5.4")
+        prompt = (
+            "Analyse cette photo de lot mis en vente.\n"
+            f"Produit(s) annoncé(s) : {', '.join(product_names)}.\n"
+            'JSON attendu : {"sharp": true/false (photo nette et exploitable, pas floue/noire/illisible), '
+            '"matches": true/false (on voit bien le ou les produits annoncés ou leur emballage), '
+            '"reason": "explication courte en français"}.\n'
+            "Sois tolérant : matches=true si l'image montre plausiblement le produit, même partiellement."
+        )
+        import json as _json
+        raw = str(await chat.send_message(UserMessage(text=prompt, file_contents=[ImageContent(b64)]))).strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1].lstrip("json").strip()
+        verdict = _json.loads(raw)
+        verdict["ok"] = bool(verdict.get("sharp")) and bool(verdict.get("matches"))
+        return verdict
+    except Exception as exc:
+        logger.warning("Contrôle photo IA indisponible (%s) — dépôt accepté", exc)
+        return {"ok": True, "skipped": str(exc)}
+
+
 @detaillant_router.post("/offers")
 async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_current_user)):
     await _require_active_sub(user["id"])
@@ -741,6 +870,12 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
     items_detail = _validate_items_detail(body, composed_products, final_price)
     if not (body.photo_main or "").strip():
         raise HTTPException(status_code=400, detail="Une photo principale du lot est obligatoire")
+    photo_check = await _check_photo_ai(body.photo_main.strip(), [p["name"] for p in composed_products])
+    if not photo_check.get("ok"):
+        raise HTTPException(status_code=400, detail=(
+            "Photo refusée par le contrôle qualité IA : "
+            + (photo_check.get("reason") or "photo floue ou sans rapport avec le produit annoncé")
+            + " — reprenez une photo nette du produit."))
     if body.condition not in ("NEW", "USED"):
         raise HTTPException(status_code=400, detail="État du produit invalide (neuf ou occasion)")
     dlc_iso = None

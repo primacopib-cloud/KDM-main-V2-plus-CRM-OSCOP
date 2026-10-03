@@ -255,6 +255,31 @@ export default function DetaillantSpacePage() {
                       Étiquette PDF
                     </button>
                   )}
+                  {o.status === 'APPROVED' && (
+                    <button type="button"
+                      onClick={() => detaillantAPI.saveTemplate(o.id)
+                        .then(() => toast.success('Modèle enregistré ✓ — disponible dans « Mes modèles »'))
+                        .catch((e) => toast.error(String(e.message || e)))}
+                      data-testid={`dt-offer-template-btn-${o.id}`}
+                      className="block mt-0.5 text-[10px] font-semibold text-emerald-300 hover:underline">
+                      Enregistrer comme modèle
+                    </button>
+                  )}
+                  {o.status === 'PENDING' && (() => {
+                    const ageDays = Math.floor((Date.now() - new Date(o.created_at)) / 86400000);
+                    const allowed = ageDays >= 30;
+                    return (
+                      <button type="button" disabled={!allowed}
+                        title={allowed ? undefined : `Annulation possible à J+30 (déposée il y a ${ageDays} j)`}
+                        onClick={() => detaillantAPI.cancelOffer(o.id)
+                          .then((r) => { toast.success(`Offre annulée ✓ — ${r.refunded_credits} crédits remboursés`); load(); })
+                          .catch((e) => toast.error(String(e.message || e)))}
+                        data-testid={`dt-offer-cancel-btn-${o.id}`}
+                        className="block mt-0.5 text-[10px] font-semibold text-red-300 hover:underline disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline">
+                        {allowed ? 'Annuler (J+30 dépassé)' : `Annulable à J+30 (${30 - ageDays} j restants)`}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             ))}
