@@ -82,6 +82,7 @@ async def pickup_scan(body: PickupScanBody, admin: dict = Depends(require_admin)
                 raise HTTPException(status_code=400, detail="Tous les articles manquants : annulez la remise plutôt qu'un avoir total")
             paid = float(w.get("price_eur") or 0)
             lot_ttc = float(a.get("lot_price_ttc") or 0)
+            # Avoir = prorata du PRIX PAYÉ par le gagnant (part de valeur TTC des articles manquants)
             if lot_ttc > 0 and all(by_sku[s].get("unit_price_ttc") for s in body.missing_skus):
                 share = sum(float(by_sku[s]["unit_price_ttc"]) for s in body.missing_skus) / lot_ttc
             else:

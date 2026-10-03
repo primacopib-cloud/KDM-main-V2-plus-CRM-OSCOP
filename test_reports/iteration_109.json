@@ -1,0 +1,32 @@
+{
+  "summary": "Iter109 — Catalogue combo food_info + dépôt combo POP'S + cession → validation admin → fiche lot publique + retrait avec indisponibilité + étiquette PDF. Pytest : 15/15 PASS en 4 s (/app/backend/tests/test_iter109_combo_pickup.py). P1 : GET /api/detaillant/catalog expose les 15 produits de base avec food_info conformes (CAFE-250G '250 g' / 'Aucun', LAIT-1L / 'Lait', THON-160G / 'Poisson' etc.) ; POST /api/detaillant/offers (lot_type=COMPOSED, CAFE-250G+CONFITURE+LAIT-1L) crée l'offre quand somme unit_price_ttc = final_price (±0,02) et renvoie price_per_unit calculé serveur (5 € / 0,25 kg = 20 €/kg) ; 400 si somme ≠ final, 400 si allergens vide, 409 si SKU déjà réservé (re-dépôt bloqué). GET /offers/{id}/cession → declarations ; POST /cession/sign (toutes déclarations cochées) → status SIGNED ; POST /api/admin/detaillant/offers/{id}/review APPROVE crée une entrée db.auctions avec lot_type/lot_price_ttc/combo_items copiés depuis l'offre. GET /api/auctions/public/lot/{ref} expose combo_items (unit_price_ttc, ingredients, allergens, price_per_unit), lot_type COMPOSED, lot_price_ttc=9.60. Pickup-scan : preview combo_items OK, 400 si missing_skus hors lot, 400 si TOUS les articles manquants, confirm+missing=['LAIT-1L'] → pickup_incident avec credit_eur=3,12 (2,50/9,60×12,0 au prorata) + notification AUCTION_PICKUP_INCIDENT créée + pickup_confirmed_at set + 409 au re-confirm. P2 : GET /offers/{id}/label.pdf (owner POP'S) → 200 application/pdf 2+ Ko ; même URL en session investisseur → 404. UI frontend (Playwright) : /espace-detaillant (POPS detaillant-test) affiche data-testid='detaillant-offer-form' ; sélection offer-lot-type=COMPOSED + offer-product=CAFE-250G révèle offer-items-detail avec offer-item-format-CAFE-250G pré-rempli à '250 g' + ingrédients 'Café moulu' + allergène 'Aucun' depuis food_info. /superadmin (onglet Bourse COOP'ACT) affiche data-testid='pickup-scan-card'. NETTOYAGE EFFECTUÉ : toutes offres QA + cessions + enchères QA supprimées, 2 notifications AUCTION_PICKUP_INCIDENT du gagnant fictif supprimées, 3 crédits consommés remboursés sur auction_accounts user-detaillant-da978cfc (solde final 77 crédits).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter109_combo_pickup.py",
+    "/app/test_reports/pytest/iter109.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_detaillant.py dépasse largement 700 lignes (~1417 lignes) : la logique de dépôt d'offres, convention, cession, catalogue, PDF, admin review et stats sont toutes dans le même fichier. Un split par domaine (offers, cession/convention, admin, stats) améliorerait la maintenabilité.",
+    "pickup_scan dans routes_auctions_admin.py : la règle « share = sum(unit_price_ttc missing) / lot_price_ttc » fonctionne, mais si lot_price_ttc == 0 ou si un unit_price_ttc est None, on bascule silencieusement vers la règle linéaire « missing_count / total_items » ; un log explicite aiderait à auditer les avoirs.",
+    "Le fallback de calcul d'avoir (prorata linéaire) utilise paid × share mais lot_price_ttc=9.60 est différent de paid=12.00 → le crédit (3,12 €) est en réalité un prorata du PRIX PAYÉ par le gagnant, pas du prix lot_price_ttc. C'est intentionnel (on rembourse ce que le gagnant a payé), mais la constante `share` est calculée sur lot_price_ttc. Comportement attendu, mais commenter la formule clarifierait."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter109_combo_pickup.py"
+  ],
+  "success_rate": {"backend": "100% (15/15 pytest)", "frontend": "100% des éléments testés P2 (detaillant-offer-form, offer-items-detail pré-rempli depuis food_info, pickup-scan-card admin)"},
+  "test_credentials": "detaillant-test@kdmarche.fr / Detaillant2026! (POPS, convention déjà signée, abonnement actif, 77 crédits restants) ; admin@kdmarche-oscop.fr / AdminKDM2025! portal:admin ; invest.test.i@test.fr / InvestTest2026! (pour test 404 PDF stranger).",
+  "seed_data_creation": "Aucune donnée séminale laissée : 1 offre COOP'ACT créée + 1 cession signée + 1 enchère programmée + 1 incident de retrait créés pendant le test puis entièrement supprimés en teardown ; crédits consommés (3) remboursés sur auction_accounts user-detaillant-da978cfc ; 2 notifications QA supprimées.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_iter109_combo_pickup.py est réutilisable comme régression P1/P2 COOP'ACT combo. ATTENTION : les tests dépendent du state POPS (user-detaillant-da978cfc) et des 15 SKU de base food_info ; si un SKU est réservé par un lot historique, modifier les paires SKUs utilisées dans _combo_offer_body/skus_meta (HUILE-1L, RIZ-5KG, ACHARDS-LEGUMES-200G étaient réservés au moment du test). Pytest nettoie automatiquement toutes les offres QA via fixture 'tracked'. DB_NAME=kdmarche_lolodrive (pas test_database). Les tests utilisent requests + MongoClient direct pour le forçage status=WON/pickup_token.",
+  "rca of the issue": "N/A — aucun bug trouvé. Tous les critères P1/P2 du review_request sont satisfaits."
+}
