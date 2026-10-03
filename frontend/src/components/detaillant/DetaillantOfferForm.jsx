@@ -18,6 +18,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
   const [photos, setPhotos] = useState([]);
   const [extraSkus, setExtraSkus] = useState(['', '']);
   const [items, setItems] = useState({});
+  const [confirmedItems, setConfirmedItems] = useState({});
   const [busy, setBusy] = useState(false);
   useEffect(() => { detaillantAPI.catalog().then((r) => setProducts(r.products || [])).catch(() => {}); }, []);
   const product = products.find((p) => p.sku === f.product_sku);
@@ -34,8 +35,29 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
     : (product ? [product] : []);
   const anyPerishable = composedProducts.some((p) => p.perishable);
   const dlcKo = anyPerishable && (!f.dlc || new Date(f.dlc) < new Date(Date.now() + 90 * 86400000));
-  const setItem = (sku, patch) => setItems((m) => ({ ...m, [sku]: { ...(m[sku] || {}) , ...patch } }));
+  const setItem = (sku, patch) => {
+    setItems((m) => ({ ...m, [sku]: { ...(m[sku] || {}) , ...patch } }));
+    setConfirmedItems((m) => { const n = { ...m }; delete n[sku]; return n; });
+  };
   const itemOf = (sku) => items[sku] || {};
+  // Le POP'S confirme quantité + infos d'un lot avant de sélectionner un autre produit
+  const confirmItem = (sku) => {
+    const p = composedProducts.find((x) => x.sku === sku);
+    const d = itemOf(sku);
+    if (!p) return;
+    if (!(f.qty_lots >= 1)) { toast.warning("Indiquez d'abord la quantité de lots."); return; }
+    if (itemKo(p, d)) { toast.error(`Complétez ${p.name} : quantité/format, ingrédients, allergènes${f.lot_type === 'COMPOSED' ? ', prix TTC' : ''}.`); return; }
+    setConfirmedItems((m) => ({ ...m, [sku]: true }));
+    toast.success(`Lot « ${p.name} » confirmé ✓`);
+  };
+  // Bloque le changement/sélection d'un autre produit tant que le lot courant n'est pas confirmé
+  const gateChange = () => {
+    if (f.product_sku && !confirmedItems[f.product_sku]) {
+      toast.warning("Confirmez d'abord ce lot (quantité de lots + informations de l'article) avant de sélectionner un autre produit.");
+      return false;
+    }
+    return true;
+  };
   useEffect(() => {
     composedProducts.forEach((p) => {
       if (p.food_info && !items[p.sku]) {
@@ -53,7 +75,8 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
   const itemKo = (p, d) => !(d.format_label || '').trim() || (d.ingredients || '').trim().length < 2
     || (d.allergens || '').trim().length < 2
     || (f.lot_type === 'COMPOSED' && !(Number(d.unit_price_ttc) > 0));
-  const itemsKo = composedProducts.length === 0 || composedProducts.some((p) => itemKo(p, itemOf(p.sku))) || sumKo;
+  const itemsKo = composedProducts.length === 0 || composedProducts.some((p) => itemKo(p, itemOf(p.sku))) || sumKo
+    || composedProducts.some((p) => !confirmedItems[p.sku]);
   const submit = async () => {
     setBusy(true);
     try {
@@ -81,6 +104,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
       setPhotos([]);
       setExtraSkus(['', '']);
       setItems({});
+      setConfirmedItems({});
       onCreated?.();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -97,6 +121,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
             {products.filter((p) => p.food_info).map((p) => (
               <button key={p.sku} type="button"
                 onClick={() => {
+                  if (!gateChange()) return;
                   setF((prev) => ({ ...prev, lot_type: 'SAME', product_sku: p.sku,
                     description: `Lot ×3 — ${p.name}. Composition : ${p.food_info.lot_composition}. Même marque, même produit, même format pour les 3 unités.` }));
                   setExtraSkus(['', '']);
@@ -114,7 +139,10 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <label className="text-[10px] text-white/50 block mb-1">{t.product}</label>
-          <select value={f.product_sku} onChange={(e) => setF((p) => ({ ...p, product_sku: e.target.value }))}
+          <select value={f.product_sku} onChange={(e) => {
+              if (!gateChange()) { e.target.value = f.product_sku; return; }
+              setF((p) => ({ ...p, product_sku: e.target.value }));
+            }}
             className={inputCls} data-testid="offer-product">
             <option value="">—</option>
             {products.map((p) => <option key={p.sku} value={p.sku}>{p.name} · {p.category}</option>)}
@@ -122,7 +150,10 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
         </div>
         <div>
           <label className="text-[10px] text-white/50 block mb-1">{t.lotType}</label>
-          <select value={f.lot_type} onChange={(e) => setF((p) => ({ ...p, lot_type: e.target.value }))}
+          <select value={f.lot_type} onChange={(e) => {
+              if (!gateChange()) { e.target.value = f.lot_type; return; }
+              setF((p) => ({ ...p, lot_type: e.target.value }));
+            }}
             className={inputCls} data-testid="offer-lot-type">
             <option value="SAME">{t.same}</option>
             <option value="COMPOSED">{t.composed}</option>
@@ -131,7 +162,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
         <div>
           <label className="text-[10px] text-white/50 block mb-1">{t.qty}</label>
           <input type="number" min="1" max="50" value={f.qty_lots}
-            onChange={(e) => setF((p) => ({ ...p, qty_lots: e.target.value }))}
+            onChange={(e) => { setConfirmedItems({}); setF((p) => ({ ...p, qty_lots: e.target.value })); }}
             className={inputCls} data-testid="offer-qty" />
         </div>
         <div className="flex items-end">
@@ -210,18 +241,29 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
       </div>
       {f.lot_type === 'COMPOSED' && (
         <div className="grid sm:grid-cols-2 gap-3" data-testid="offer-composed-products">
-          {[0, 1].map((i) => (
+          {f.product_sku && !confirmedItems[f.product_sku] && (
+            <p className="col-span-full text-[10px] text-amber-300" data-testid="offer-gate-hint">
+              Confirmez d'abord le 1er produit (quantité de lots + informations ci-dessous) pour ajouter le suivant.
+            </p>
+          )}
+          {[0, 1].map((i) => {
+            const prevSku = i === 0 ? f.product_sku : extraSkus[0];
+            const locked = !prevSku || !confirmedItems[prevSku];
+            return (
             <div key={i}>
               <label className="text-[10px] text-white/50 block mb-1">Produit {i + 2} du lot composé {i === 0 ? '' : '(optionnel)'}</label>
               <select value={extraSkus[i]} data-testid={`offer-product-${i + 2}`}
+                disabled={locked}
+                title={locked ? "Confirmez le produit précédent pour continuer" : undefined}
                 onChange={(e) => setExtraSkus((s) => s.map((v, j) => (j === i ? e.target.value : v)))}
-                className={inputCls}>
-                <option value="">—</option>
+                className={inputCls + ' disabled:opacity-40 disabled:cursor-not-allowed'}>
+                <option value="">{locked ? '— confirmez le produit précédent —' : '—'}</option>
                 {products.filter((p) => p.sku !== f.product_sku && p.sku !== extraSkus[1 - i])
                   .map((p) => <option key={p.sku} value={p.sku}>{p.name} · {p.category}</option>)}
               </select>
             </div>
-          ))}
+            );
+          })}
           {composedProducts.length > 1 && (
             <p className="col-span-full text-[10px] text-emerald-300/80" data-testid="offer-composed-summary">
               Lot composé : {composedProducts.map((p) => p.name).join(' + ')}
@@ -285,6 +327,20 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
                     placeholder="Allergènes (« Aucun » si sans)" className={inputCls} data-testid={`offer-item-allergens-${p.sku}`} />
                 </div>
                 {itemKo(p, d) && <p className="text-[9px] text-red-400">Quantité, ingrédients et allergènes obligatoires{f.lot_type === 'COMPOSED' ? ' + prix TTC' : ''}.</p>}
+                <div className="flex items-center gap-2">
+                  {confirmedItems[p.sku] ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-400/40"
+                      data-testid={`offer-item-confirmed-${p.sku}`}>
+                      ✓ Lot confirmé — {f.qty_lots} lot(s)
+                    </span>
+                  ) : (
+                    <button type="button" onClick={() => confirmItem(p.sku)}
+                      data-testid={`offer-item-confirm-${p.sku}`}
+                      className="px-2.5 py-1 rounded-full text-[10px] font-bold text-[#1F0A33] bg-[#E9CF8E] hover:bg-[#F2D07A] transition-colors">
+                      Confirmer ce lot (quantité + informations)
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}

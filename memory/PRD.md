@@ -3955,3 +3955,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **Décision admin** : GET /api/admin/auctions/abandoned + POST /{id}/resolve {action RELIST|DON} ; RELIST clone le lot en SCHEDULED (combo_items conservés, flags nettoyés), DON enregistre la note (association) ; 409 si déjà tranché.
 - **UI** : AbandonedLotsCard (panneau Bourse COOP'ACT) avec boutons « Remettre en salle » / « Don solidaire » et statut de résolution.
 - **Tests** : 2 lots J+30 marqués (email Brevo réel + notif), RELIST → nouvelle référence AUC-20261003-FB26CD, DON avec note, 409 double décision, carte UI vérifiée. Données QA nettoyées.
+
+## 3 octobre 2026 (suite 6) — Confirmation obligatoire par lot au dépôt POP'S
+- DetaillantOfferForm : état confirmedItems par SKU ; bouton « Confirmer ce lot (quantité + informations) » par article (valide qty_lots ≥1, format, ingrédients, allergènes, prix TTC si composé) → badge vert « ✓ Lot confirmé — N lot(s) ».
+- Verrous : changement de produit / type de lot / chip bloqué tant que le lot courant n'est pas confirmé (toast d'avertissement) ; en lot composé, produits 2 et 3 désactivés tant que le précédent n'est pas confirmé (hint ambre) ; toute édition d'un champ article ou de la quantité de lots réinitialise la confirmation ; dépôt exige que tous les articles soient confirmés.
+- Tests UI (playwright) : blocage du changement de chip avant confirmation, toast de confirmation, déblocage après, verrou produit 2 sans prix TTC, déverrouillage après confirmation complète.
