@@ -1042,6 +1042,37 @@ async def detaillant_sales(user: dict = Depends(get_current_user)):
     return {"sales": sales, "totals": totals}
 
 
+@detaillant_router.get("/settlements/statement.pdf")
+async def detaillant_settlement_statement(month: str, user: dict = Depends(get_current_user)):
+    """Relevé mensuel PDF des règlements O'SCOP → POP'S (month=YYYY-MM)."""
+    if len(month) != 7 or month[4] != "-":
+        raise HTTPException(status_code=400, detail="Format attendu : YYYY-MM")
+    offer_ids = [o["id"] async for o in db.detaillant_offers.find({"user_id": user["id"]}, {"_id": 0, "id": 1})]
+    rows = []
+    async for a in db.auctions.find(
+            {"detaillant_offer_id": {"$in": offer_ids}, "status": "WON",
+             "winner.won_at": {"$gte": f"{month}-01", "$lt": f"{month}-32"}},
+            {"_id": 0, "reference": 1, "title": 1, "winner": 1, "lot_price_ttc": 1, "pickup_incident": 1}).sort("winner.won_at", 1):
+        inc = a.get("pickup_incident") or {}
+        cession = float(a.get("lot_price_ttc") or 0)
+        deduction = float(inc.get("pops_deduction_eur") or 0)
+        rows.append({"reference": a.get("reference"), "title": a.get("title"),
+                     "won_at": (a.get("winner") or {}).get("won_at"),
+                     "winner": (a.get("winner") or {}).get("name"),
+                     "cession": cession, "deduction": deduction,
+                     "missing": ", ".join(inc.get("missing_names") or []),
+                     "net": round(cession - deduction, 2)})
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"Aucun lot remporté sur {month}")
+    from fastapi.responses import Response
+    from pops_settlement_pdf import build_settlement_statement_pdf
+    pops = await db.detaillant_profiles.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    pops.setdefault("company_name", user.get("company_name"))
+    pdf = build_settlement_statement_pdf(pops, month, rows)
+    return Response(content=pdf, media_type="application/pdf", headers={
+        "Content-Disposition": f'inline; filename="releve-reglements-{month}.pdf"'})
+
+
 @detaillant_router.post("/sales/{reference}/relist")
 async def detaillant_relist(reference: str, user: dict = Depends(get_current_user)):
     """Reprogramme en un clic un lot expiré, sans nouveau dépôt de crédits."""

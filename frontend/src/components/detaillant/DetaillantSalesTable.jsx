@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Download, RotateCcw, TrendingUp } from 'lucide-react';
+import { Download, FileText, RotateCcw, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { detaillantAPI } from '../../services/api.detaillant';
+import { downloadAuthedPdf } from './DetaillantConventionCard';
 
 const ST = { LIVE: '#4ade80', SCHEDULED: '#fbbf24', WON: '#D9B35A', EXPIRED: '#94a3b8', CANCELLED: '#f87171' };
 const ST_FR = { LIVE: 'En salle', SCHEDULED: 'Programmé', WON: 'Remporté', EXPIRED: 'Expiré', CANCELLED: 'Annulé' };
@@ -9,6 +10,7 @@ const ST_FR = { LIVE: 'En salle', SCHEDULED: 'Programmé', WON: 'Remporté', EXP
 export const DetaillantSalesTable = () => {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState('');
+  const [stMonth, setStMonth] = useState(new Date().toISOString().slice(0, 7));
   const load = () => detaillantAPI.sales().then(setData).catch(() => setData({ sales: [], totals: {} }));
   useEffect(() => { load(); }, []);
   if (!data) return null;
@@ -42,10 +44,21 @@ export const DetaillantSalesTable = () => {
           <TrendingUp className="w-4 h-4" /> Mes ventes en salle
         </h3>
         {sales.length > 0 && (
+          <span className="inline-flex items-center gap-1.5">
+            <input type="month" value={stMonth} onChange={(e) => setStMonth(e.target.value)}
+              data-testid="dt-settlement-month"
+              className="h-7 px-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-[10px]" />
+            <button
+              onClick={() => downloadAuthedPdf(`/detaillant/settlements/statement.pdf?month=${stMonth}`, `releve-reglements-${stMonth}.pdf`)}
+              data-testid="dt-settlement-pdf"
+              className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-[10px] font-bold text-emerald-300 border border-emerald-400/40 hover:bg-emerald-500/15">
+              <FileText className="w-3 h-3" /> Relevé règlements PDF
+            </button>
           <button onClick={exportCsv} data-testid="dt-sales-export-csv"
             className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-[10px] font-bold text-[#E9CF8E] border border-[#D9B35A]/40 hover:bg-[#D9B35A]/15">
             <Download className="w-3 h-3" /> Exporter CSV
           </button>
+          </span>
         )}
       </div>
       <div className="grid grid-cols-4 gap-2 mb-3 text-center">

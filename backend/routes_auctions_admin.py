@@ -104,6 +104,8 @@ async def pickup_scan(body: PickupScanBody, admin: dict = Depends(require_admin)
             }
             sets["pickup_incident"] = incident
             out["pickup_incident"] = incident
+            from incident_emails import send_incident_email
+            await send_incident_email(ah.db, a, incident, "recorded")
             from core_deps import create_notification
             await create_notification(
                 "AUCTION_PICKUP_INCIDENT",
@@ -146,18 +148,36 @@ async def pickup_incidents(admin: dict = Depends(require_admin)):
 
 @auctions_admin_router.post("/pickup-incidents/{auction_id}/settle")
 async def settle_pickup_incident(auction_id: str, admin: dict = Depends(require_admin)):
-    """Marque l'avoir comme réglé au gagnant (et la déduction POP'S appliquée)."""
-    a = await ah.db.auctions.find_one({"id": auction_id, "pickup_incident": {"$exists": True}}, {"_id": 0, "pickup_incident": 1})
+    """Règle l'avoir : crédite automatiquement le gagnant en crédits COOP'ACT (10 crédits = 1 €) + email."""
+    a = await ah.db.auctions.find_one(
+        {"id": auction_id, "pickup_incident": {"$exists": True}},
+        {"_id": 0, "id": 1, "reference": 1, "title": 1, "winner": 1, "pickup_incident": 1})
     if not a:
         raise HTTPException(status_code=404, detail="Incident introuvable")
-    if a["pickup_incident"].get("settled"):
+    inc = a["pickup_incident"]
+    if inc.get("settled"):
         raise HTTPException(status_code=409, detail="Avoir déjà réglé")
     now = ah.now_utc().isoformat()
+    winner_id = (a.get("winner") or {}).get("user_id")
+    credits = ah.eur_to_credits(float(inc.get("credit_eur") or 0))
+    if winner_id and credits > 0:
+        await ah.db.auction_accounts.update_one(
+            {"user_id": winner_id},
+            {"$inc": {"credits": credits}, "$set": {"updated_at": now},
+             "$setOnInsert": {"created_at": now}}, upsert=True)
+        await ah.db.auction_credit_ledger.insert_one({
+            "id": str(uuid.uuid4()), "user_id": winner_id, "type": "INCIDENT_REFUND",
+            "amount": credits,
+            "label": f"Avoir lot {a.get('reference')} — {inc['credit_eur']:.2f} € ({', '.join(inc.get('missing_names') or [])})",
+            "created_at": now})
     await ah.db.auctions.update_one(
         {"id": auction_id},
         {"$set": {"pickup_incident.settled": True, "pickup_incident.settled_at": now,
-                  "pickup_incident.settled_by": admin.get("email")}})
-    return {"ok": True, "settled_at": now}
+                  "pickup_incident.settled_by": admin.get("email"),
+                  "pickup_incident.credits_granted": credits}})
+    from incident_emails import send_incident_email
+    await send_incident_email(ah.db, a, inc, "settled", credits=credits)
+    return {"ok": True, "settled_at": now, "credits_granted": credits}
 
 
 @auctions_admin_router.get("/stats")
