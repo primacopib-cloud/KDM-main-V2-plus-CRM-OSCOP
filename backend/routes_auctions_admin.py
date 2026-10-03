@@ -1,7 +1,7 @@
 """Administration des enchères produits à prix descendant (superadmin)."""
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -221,6 +221,74 @@ async def settlements_export_csv(month: str, admin: dict = Depends(require_admin
     csv = "\ufeff" + "\n".join(lines)
     return Response(content=csv, media_type="text/csv; charset=utf-8", headers={
         "Content-Disposition": f'attachment; filename="reglements-pops-{month}.csv"'})
+
+
+@auctions_admin_router.get("/abandoned")
+async def abandoned_lots_list(admin: dict = Depends(require_admin)):
+    """Lots remportés jamais retirés (règle J+30) : remise en salle ou don à trancher."""
+    items = []
+    async for a in ah.db.auctions.find(
+            {"abandoned_at": {"$exists": True}},
+            {"_id": 0, "id": 1, "reference": 1, "title": 1, "winner": 1,
+             "abandoned_at": 1, "abandoned_action": 1, "abandoned_resolution": 1,
+             "lot_price_ttc": 1, "detaillant_offer_id": 1}).sort("abandoned_at", -1).limit(50):
+        offer = await ah.db.detaillant_offers.find_one(
+            {"id": a.get("detaillant_offer_id")}, {"_id": 0, "company_name": 1}) or {}
+        w = a.get("winner") or {}
+        items.append({"id": a["id"], "reference": a.get("reference"), "title": a.get("title"),
+                      "winner_name": w.get("name"), "paid_eur": w.get("price_eur"),
+                      "pops_name": offer.get("company_name"),
+                      "lot_price_ttc": a.get("lot_price_ttc"),
+                      "abandoned_at": a.get("abandoned_at"),
+                      "action": a.get("abandoned_action"),
+                      "resolution": a.get("abandoned_resolution")})
+    return {"abandoned": items,
+            "pending_count": sum(1 for i in items if i["action"] == "PENDING")}
+
+
+class AbandonedResolveBody(BaseModel):
+    action: str  # RELIST | DON
+    note: Optional[str] = None
+
+
+@auctions_admin_router.post("/abandoned/{auction_id}/resolve")
+async def resolve_abandoned_lot(auction_id: str, body: AbandonedResolveBody, admin: dict = Depends(require_admin)):
+    """Tranche un lot abandonné : remise en salle (RELIST) ou don solidaire (DON)."""
+    a = await ah.db.auctions.find_one({"id": auction_id, "abandoned_at": {"$exists": True}}, {"_id": 0})
+    if not a:
+        raise HTTPException(status_code=404, detail="Lot abandonné introuvable")
+    if a.get("abandoned_action") != "PENDING":
+        raise HTTPException(status_code=409, detail="Décision déjà prise pour ce lot")
+    now = ah.now_utc().isoformat()
+    if body.action == "RELIST":
+        if a.get("relisted"):
+            raise HTTPException(status_code=409, detail="Ce lot a déjà été relancé")
+        starts = ah.now_utc() + timedelta(hours=1)
+        new_ref = f"AUC-{ah.now_utc().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+        doc = {k: v for k, v in a.items() if k not in (
+            "id", "reference", "status", "winner", "bids_count", "current_price_eur",
+            "starts_at", "ends_at", "live_alert_sent", "ending_alert_sent", "ending_alert_at",
+            "pickup_confirmed_at", "relisted", "created_at", "abandoned_at", "abandoned_action",
+            "abandon_reason", "abandoned_resolution", "pickup_incident", "pickup_reminder_sent_at",
+            "pickup_reminder_email_ok")}
+        doc.update({"id": str(uuid.uuid4()), "reference": new_ref, "status": "SCHEDULED",
+                    "current_price_eur": a.get("value_eur"), "bids_count": 0,
+                    "starts_at": starts.isoformat(), "ends_at": (starts + timedelta(days=7)).isoformat(),
+                    "relisted_from": a.get("reference"), "created_at": now})
+        await ah.db.auctions.insert_one(doc)
+        resolution = {"action": "RELIST", "new_reference": new_ref, "by": admin.get("email"), "at": now}
+        out = {"ok": True, "new_reference": new_ref}
+    elif body.action == "DON":
+        resolution = {"action": "DON", "note": (body.note or "").strip() or "Don solidaire (association locale)",
+                      "by": admin.get("email"), "at": now}
+        out = {"ok": True, "don": resolution["note"]}
+    else:
+        raise HTTPException(status_code=400, detail="Action attendue : RELIST ou DON")
+    await ah.db.auctions.update_one(
+        {"id": auction_id},
+        {"$set": {"abandoned_action": body.action, "abandoned_resolution": resolution,
+                  "relisted": body.action == "RELIST"}})
+    return out
 
 
 @auctions_admin_router.get("/stats")

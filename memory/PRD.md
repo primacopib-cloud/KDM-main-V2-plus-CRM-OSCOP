@@ -3949,3 +3949,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **Export comptable admin** : GET /api/admin/auctions/settlements/export.csv?month=YYYY-MM (BOM UTF-8, ; et décimales FR : cession/déduction/net/avoir/crédits/réglé) + SettlementsExportCard dans le panneau Bourse COOP'ACT. Testé (ligne complète, 404 mois vide, 400 format).
 - **Rappel retrait 7 j** : incident_emails.run_pickup_reminders (WON non retiré ≥7 j, 1 seul rappel : flag pickup_reminder_sent_at) + PICKUP_REMINDER_T 5 langues ; boucle scheduler 6 h démarrée. Testé : 1 envoi Brevo, 2e passe = 0 (idempotent).
 - Données QA nettoyées (offre, enchère, ledger, compte QA).
+
+## 3 octobre 2026 (suite 5) — Règle J+30 lots abandonnés
+- **Détection auto** : abandoned_lots.py — WON non retiré ≥30 j → statut EXPIRED + abandoned_action=PENDING, email multilingue au gagnant (crédits définitivement engagés), notification superadmin ; boucle scheduler 6 h (idempotent).
+- **Décision admin** : GET /api/admin/auctions/abandoned + POST /{id}/resolve {action RELIST|DON} ; RELIST clone le lot en SCHEDULED (combo_items conservés, flags nettoyés), DON enregistre la note (association) ; 409 si déjà tranché.
+- **UI** : AbandonedLotsCard (panneau Bourse COOP'ACT) avec boutons « Remettre en salle » / « Don solidaire » et statut de résolution.
+- **Tests** : 2 lots J+30 marqués (email Brevo réel + notif), RELIST → nouvelle référence AUC-20261003-FB26CD, DON avec note, 409 double décision, carte UI vérifiée. Données QA nettoyées.

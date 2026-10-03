@@ -7,6 +7,7 @@ import { Badge } from '../../ui/badge';
 import { Countdown } from '../../auctions/AuctionCard';
 import { AuctionFormDialog } from './AuctionFormDialog';
 import { SettlementsExportCard } from './SettlementsExportCard';
+import { AbandonedLotsCard } from './AbandonedLotsCard';
 import { AuctionSettingsDialog } from './AuctionSettingsDialog';
 import { AuctionStats } from './AuctionStats';
 import { DetaillantOffersPanel } from './DetaillantOffersPanel';
@@ -48,6 +49,7 @@ export const AuctionsAdminPanel = () => {
     <div className="glass-panel-soft rounded-[22px] p-5 mt-6" data-testid="auctions-admin-panel">
       <PickupScanCard />
       <PickupIncidentsCard />
+      <AbandonedLotsCard />
       <SettlementsExportCard />
       <DetaillantOffersPanel />
       <CessionsRegistryCard />

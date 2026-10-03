@@ -25,6 +25,7 @@ _db = None
 _lang_digest_task: asyncio.Task | None = None
 _investor_statement_task: asyncio.Task | None = None
 _pickup_reminder_task: asyncio.Task | None = None
+_abandoned_task: asyncio.Task | None = None
 
 
 def set_scheduler_database(database):
@@ -520,6 +521,11 @@ def start_scheduler():
         from incident_emails import pickup_reminder_loop
         _pickup_reminder_task = asyncio.get_event_loop().create_task(pickup_reminder_loop(_db))
         logger.info("Auction pickup reminder loop started (check every 6h)")
+    global _abandoned_task
+    if _abandoned_task is None or _abandoned_task.done():
+        from abandoned_lots import abandoned_lots_loop
+        _abandoned_task = asyncio.get_event_loop().create_task(abandoned_lots_loop(_db))
+        logger.info("Abandoned lots J+30 loop started (check every 6h)")
 
 
 def stop_scheduler():
