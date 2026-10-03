@@ -13,6 +13,7 @@ const spaceFromPath = (p) => {
   if (p.startsWith('/logicoop')) return 'operator';
   if (p.startsWith('/pos')) return 'pos';
   if (p.startsWith('/lolo-point')) return 'lolo_point';
+  if (p.startsWith('/espace-detaillant')) return 'detaillant';
   if (p.startsWith('/pass') || p.startsWith('/catalogue-lolodrive') || p.startsWith('/commandes')
     || p.startsWith('/wallet') || p.startsWith('/catalogue')) return 'member';
   return 'general';

@@ -29,6 +29,14 @@ export const TOUR_STEPS = {
     { selector: '[data-testid="ai-guide-fab"]', title: "Oracle",
       text: 'Je vous guide : PASS Vie Chère, wallet UC, retraits en Lolo Point… posez-moi vos questions !' },
   ],
+  detaillant: [
+    { selector: '[data-testid="offer-quick-lots"]', title: 'Lots prêts à déposer',
+      text: 'Cliquez un produit du catalogue de base : lot ×3 pré-rempli. Re-cliquez pour retirer la sélection, cliquez un autre pour la remplacer.' },
+    { selector: '[data-testid="detaillant-offer-form"]', title: "Dépôt d'offre",
+      text: 'Confirmez chaque article (quantité + infos), vérifiez le récapitulatif puis déposez : votre brouillon est sauvegardé automatiquement.' },
+    { selector: '[data-testid="ai-guide-fab"]', title: 'Oracle',
+      text: 'Crédits COOP\'ACT, annulation J+30, modèles de combos… posez-moi vos questions POP\'S à tout moment !' },
+  ],
   operator: [
     { selector: '[data-testid="logicoop-dashboard"]', title: 'Tableau de bord LOGICOOP',
       text: 'Vos indicateurs : missions en cours, livraisons du jour et rémunération cumulée.' },

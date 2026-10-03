@@ -32,6 +32,12 @@ FACT_TEMPLATES = {
         "es": "{pending} producto(s) pendiente(s) de validación",
         "gcf": "{pending} pwodui ka atann validasyon",
     },
+    "detaillant": {
+        "fr": "{credits} crédits COOP'ACT, {pending} offre(s) en attente de validation O'SCOP",
+        "en": "{credits} COOP'ACT credits, {pending} offer(s) awaiting O'SCOP validation",
+        "es": "{credits} créditos COOP'ACT, {pending} oferta(s) pendiente(s) de validación O'SCOP",
+        "gcf": "{credits} krédi COOP'ACT, {pending} òf ka atann validasyon O'SCOP",
+    },
 }
 
 SUGGESTIONS_I18N = {
@@ -45,6 +51,9 @@ SUGGESTIONS_I18N = {
                   "What to do about a 45-day unpaid transport invoice?"],
         "member": ["How does the PASS Vie Chère work?", "How do I top up my UC?",
                    "How do I pick up my order at a Lolo Point?"],
+        "detaillant": ["How do I deposit a ×3 lot from the base catalog?",
+                       "How do I change or reset my product selection?",
+                       "When can I cancel a pending offer?"],
         "general": ["What can I do on Communityplace?", "How do I join the cooperative?"],
     },
     "es": {
@@ -57,6 +66,9 @@ SUGGESTIONS_I18N = {
                   "¿Qué hacer con una factura de transporte impagada a 45 días?"],
         "member": ["¿Cómo funciona el PASS Vie Chère?", "¿Cómo recargo mis UC?",
                    "¿Cómo retiro mi pedido en un Lolo Point?"],
+        "detaillant": ["¿Cómo deposito un lote ×3 del catálogo base?",
+                       "¿Cómo modifico o reinicio mi selección de productos?",
+                       "¿Cuándo puedo anular una oferta pendiente?"],
         "general": ["¿Qué puedo hacer en Communityplace?", "¿Cómo me adhiero a la cooperativa?"],
     },
     "gcf": {
@@ -69,6 +81,9 @@ SUGGESTIONS_I18N = {
                   "Ka pou fè èvè on fakti transpò poko péyé a 45 jou ?"],
         "member": ["Ki jan PASS Vie Chère-la ka maché ?", "Ki jan pou richajé UC an mwen ?",
                    "Ki jan pou pran komann an mwen adan on Lolo Point ?"],
+        "detaillant": ["Ki jan pou dépozé on lo ×3 dépi katalòg-baz la ?",
+                       "Ki jan pou chanjé oben rékoumansé séleksyon pwodui an mwen ?",
+                       "Kitan an pé anilé on òf ka atann ?"],
         "general": ["Ka an pé fè asi Communityplace ?", "Ki jan pou antré adan koopérativ-la ?"],
     },
 }

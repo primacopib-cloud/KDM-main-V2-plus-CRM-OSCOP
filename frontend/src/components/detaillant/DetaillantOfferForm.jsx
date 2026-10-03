@@ -51,13 +51,21 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
     setConfirmedItems((m) => ({ ...m, [sku]: true }));
     toast.success(`Lot « ${p.name} » confirmé ✓`);
   };
-  // Bloque le changement/sélection d'un autre produit tant que le lot courant n'est pas confirmé
-  const gateChange = () => {
-    if (f.product_sku && !confirmedItems[f.product_sku]) {
-      toast.warning("Confirmez d'abord ce lot (quantité de lots + informations de l'article) avant de sélectionner un autre produit.");
-      return false;
-    }
-    return true;
+  // Sélection modifiable : retirer / remplacer / réinitialiser les produits du lot
+  const clearSelection = () => {
+    setF((p) => ({ ...p, product_sku: '', description: '', composed_detail: '' }));
+    setExtraSkus(['', '']);
+    setItems({});
+    setConfirmedItems({});
+  };
+  const unconfirmItem = (sku) => {
+    setConfirmedItems((m) => { const n = { ...m }; delete n[sku]; return n; });
+  };
+  const removeExtra = (sku) => {
+    setExtraSkus((s) => { const kept = s.filter((v) => v && v !== sku); return [kept[0] || '', kept[1] || '']; });
+    unconfirmItem(sku);
+    setItems((m) => { const n = { ...m }; delete n[sku]; return n; });
+    toast.info('Produit retiré du lot.');
   };
   useEffect(() => {
     composedProducts.forEach((p) => {
@@ -182,8 +190,15 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
             <span className="text-[10px] font-bold text-white/60 uppercase tracking-wide">
               Lots confirmés : {confirmedCount}/{composedProducts.length}
             </span>
-            <span className="text-[10px] font-bold text-[#E9CF8E]">
-              {composedProducts.length ? Math.round((confirmedCount / composedProducts.length) * 100) : 0} %
+            <span className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-[#E9CF8E]">
+                {composedProducts.length ? Math.round((confirmedCount / composedProducts.length) * 100) : 0} %
+              </span>
+              <button type="button" data-testid="offer-reset-selection"
+                onClick={() => { clearSelection(); toast.info('Sélection réinitialisée — composez un nouveau lot.'); }}
+                className="px-2 py-0.5 rounded-full text-[9px] font-bold text-white/55 border border-white/20 hover:text-red-300 hover:border-red-400/50 transition-colors">
+                Réinitialiser la sélection
+              </button>
             </span>
           </div>
           <div className="flex gap-1">
@@ -223,29 +238,44 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
             Lots prêts à déposer — catalogue de base (lot ×3, infos pré-remplies)
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {products.filter((p) => p.food_info).map((p) => (
+            {products.filter((p) => p.food_info).map((p) => {
+              const selected = f.product_sku === p.sku && f.lot_type === 'SAME';
+              return (
               <button key={p.sku} type="button"
                 onClick={() => {
-                  if (!gateChange()) return;
+                  if (selected) {
+                    clearSelection();
+                    toast.info(`Sélection « ${p.name} » retirée — choisissez un autre produit.`);
+                    return;
+                  }
+                  if (f.lot_type === 'COMPOSED' && confirmedCount > 0
+                    && !window.confirm('Remplacer la sélection de produits en cours par ce lot ×3 ?')) return;
+                  setConfirmedItems({});
+                  setExtraSkus(['', '']);
                   setF((prev) => ({ ...prev, lot_type: 'SAME', product_sku: p.sku,
                     description: `Lot ×3 — ${p.name}. Composition : ${p.food_info.lot_composition}. Même marque, même produit, même format pour les 3 unités.` }));
-                  setExtraSkus(['', '']);
+                  toast.success(`Lot ×3 « ${p.name} » sélectionné — re-cliquez pour retirer, ou cliquez un autre produit pour remplacer.`);
                 }}
                 data-testid={`quick-lot-${p.sku}`}
-                className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-colors ${f.product_sku === p.sku && f.lot_type === 'SAME'
+                title={selected ? 'Re-cliquer pour retirer ce produit de la sélection' : undefined}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-colors ${selected
                   ? 'text-[#1F0A33] bg-[#E9CF8E] border-[#E9CF8E]'
                   : 'text-white/70 border-white/15 hover:border-[#D9B35A]/50 hover:text-[#E9CF8E]'}`}>
-                {p.name}
+                {selected ? '✕ ' : ''}{p.name}
               </button>
-            ))}
+              );
+            })}
           </div>
+          <p className="text-[9px] text-white/35 mt-1">
+            Sélection modifiable : re-cliquez un produit pour le retirer, cliquez un autre pour le remplacer.
+          </p>
         </div>
       )}
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <label className="text-[10px] text-white/50 block mb-1">{t.product}</label>
           <select value={f.product_sku} onChange={(e) => {
-              if (!gateChange()) { e.target.value = f.product_sku; return; }
+              unconfirmItem(f.product_sku);
               setF((p) => ({ ...p, product_sku: e.target.value }));
             }}
             className={inputCls} data-testid="offer-product">
@@ -256,8 +286,9 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
         <div>
           <label className="text-[10px] text-white/50 block mb-1">{t.lotType}</label>
           <select value={f.lot_type} onChange={(e) => {
-              if (!gateChange()) { e.target.value = f.lot_type; return; }
-              setF((p) => ({ ...p, lot_type: e.target.value }));
+              const v = e.target.value;
+              if (v === 'SAME') { setExtraSkus(['', '']); }
+              setF((p) => ({ ...p, lot_type: v }));
             }}
             className={inputCls} data-testid="offer-lot-type">
             <option value="SAME">{t.same}</option>
@@ -360,7 +391,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
               <select value={extraSkus[i]} data-testid={`offer-product-${i + 2}`}
                 disabled={locked}
                 title={locked ? "Confirmez le produit précédent pour continuer" : undefined}
-                onChange={(e) => setExtraSkus((s) => s.map((v, j) => (j === i ? e.target.value : v)))}
+                onChange={(e) => { unconfirmItem(extraSkus[i]); setExtraSkus((s) => s.map((v, j) => (j === i ? e.target.value : v))); }}
                 className={inputCls + ' disabled:opacity-40 disabled:cursor-not-allowed'}>
                 <option value="">{locked ? '— confirmez le produit précédent —' : '—'}</option>
                 {products.filter((p) => p.sku !== f.product_sku && p.sku !== extraSkus[1 - i])
@@ -432,17 +463,31 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
                     placeholder="Allergènes (« Aucun » si sans)" className={inputCls} data-testid={`offer-item-allergens-${p.sku}`} />
                 </div>
                 {itemKo(p, d) && <p className="text-[9px] text-red-400">Quantité, ingrédients et allergènes obligatoires{f.lot_type === 'COMPOSED' ? ' + prix TTC' : ''}.</p>}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {confirmedItems[p.sku] ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-400/40"
-                      data-testid={`offer-item-confirmed-${p.sku}`}>
-                      ✓ Lot confirmé — {f.qty_lots} lot(s)
-                    </span>
+                    <>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-400/40"
+                        data-testid={`offer-item-confirmed-${p.sku}`}>
+                        ✓ Lot confirmé — {f.qty_lots} lot(s)
+                      </span>
+                      <button type="button" onClick={() => { unconfirmItem(p.sku); toast.info(`« ${p.name} » repassé en modification — reconfirmez après vos changements.`); }}
+                        data-testid={`offer-item-edit-${p.sku}`}
+                        className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white/60 border border-white/20 hover:text-[#E9CF8E] hover:border-[#D9B35A]/50 transition-colors">
+                        Modifier
+                      </button>
+                    </>
                   ) : (
                     <button type="button" onClick={() => confirmItem(p.sku)}
                       data-testid={`offer-item-confirm-${p.sku}`}
                       className="px-2.5 py-1 rounded-full text-[10px] font-bold text-[#1F0A33] bg-[#E9CF8E] hover:bg-[#F2D07A] transition-colors">
                       Confirmer ce lot (quantité + informations)
+                    </button>
+                  )}
+                  {f.lot_type === 'COMPOSED' && p.sku !== f.product_sku && (
+                    <button type="button" onClick={() => removeExtra(p.sku)}
+                      data-testid={`offer-item-remove-${p.sku}`}
+                      className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white/45 border border-white/15 hover:text-red-300 hover:border-red-400/50 transition-colors">
+                      Retirer du lot
                     </button>
                   )}
                 </div>

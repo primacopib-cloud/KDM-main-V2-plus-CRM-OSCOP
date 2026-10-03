@@ -23,6 +23,10 @@ SPACE_LABELS = {
     "pos": "Espace Opérateur POS (encaissement et retraits LOLODRIVE)",
     "lolo_point": "Espace Gérant Lolo Point (réassorts B2B, réception clients, statistiques)",
     "member": "Espace Membre (PASS Vie Chère, catalogue LOLODRIVE, commandes, wallet UC)",
+    "detaillant": "Espace POP'S — Détaillant (dépôt d'offres de lots COOP'ACT : lots ×3 du catalogue de base, "
+                  "lots composés avec confirmation article par article, récapitulatif avant dépôt, brouillon "
+                  "multi-appareils, modèles de combos validés, annulation à J+30, crédits COOP'ACT, convention "
+                  "cadre, abonnement 390 €/mois)",
     "general": "Plateforme Communityplace KDMARCHÉ × O'SCOP",
 }
 
@@ -46,6 +50,10 @@ BASE_SUGGESTIONS = {
     "lolo_point": ["Comment passer une commande de réassort B2B ?", "Où voir mes statistiques de point ?"],
     "member": ["Comment fonctionne le PASS Vie Chère ?", "Comment recharger mes UC ?",
                "Comment retirer ma commande en Lolo Point ?"],
+    "detaillant": ["Comment déposer un lot ×3 depuis le catalogue de base ?",
+                   "Comment modifier ou réinitialiser ma sélection de produits ?",
+                   "Quand puis-je annuler une offre en attente ?",
+                   "Comment redéposer un combo validé en 1 clic ?"],
     "general": ["Que puis-je faire sur Communityplace ?", "Comment adhérer à la coopérative ?"],
 }
 
@@ -73,6 +81,8 @@ ACTIONS = {
     "member_pass": ("Mon PASS Vie Chère", "/pass"),
     "member_catalog": ("Catalogue LOLODRIVE", "/catalogue-lolodrive"),
     "operator_missions": ("Mes missions transport", "/logicoop"),
+    "detaillant_space": ("Mon espace POP'S", "/espace-detaillant"),
+    "detaillant_coopact": ("Voir la salle COOP'ACT", "/coopact"),
 }
 SPACE_ACTIONS = {
     "buyer": ["buyer_orders", "buyer_invoices", "buyer_transport", "buyer_consultations",
@@ -83,6 +93,7 @@ SPACE_ACTIONS = {
               "admin_registres", "admin_stats"],
     "operator": ["operator_missions", "my_notifications"],
     "member": ["member_pass", "member_catalog", "my_notifications", "my_statement"],
+    "detaillant": ["detaillant_space", "detaillant_coopact", "my_notifications"],
     "pos": [], "lolo_point": [], "general": ["member_pass", "member_catalog"],
 }
 
@@ -123,6 +134,22 @@ SYSTEM_PROMPT = (
     "fiches à compléter (bouton « Compléter ») — sans ces données, la garantie 45 % ne s'applique pas.\n"
     "Signature électronique des commandes : le code de vérification est envoyé par SMS réel (Brevo) au "
     "téléphone du signataire, avec repli par email.\n"
+    "Espace POP'S (Détaillant) : les POP'S (Partenaires d'Offres de Produits Solidaires) déposent des offres de "
+    "lots en salle COOP'ACT depuis « Espace POP'S — Détaillant » (convention cadre signée + abonnement "
+    "390 €/mois requis, 3 offres incluses/mois). Dépôt : 2,5 % de la valeur du lot en crédits COOP'ACT "
+    "(au-delà de 3 offres/mois : +100 crédits par lot), réduction minimale de 15 %, DLC d'au moins 3 mois pour "
+    "les périssables, 1 photo principale obligatoire contrôlée par IA (netteté et correspondance avec le "
+    "produit). Deux types de lots : « Lot ×3 — même produit » via les chips « Lots prêts à déposer » du "
+    "catalogue de base (infos alimentaires pré-remplies ; sélection modifiable : re-cliquer la chip retire la "
+    "sélection, cliquer une autre la remplace, bouton « Réinitialiser la sélection » pour repartir de zéro) et "
+    "« Lot composé » (3 produits différents : chaque article doit être confirmé — quantité de lots, marque, "
+    "format, prix TTC, ingrédients, allergènes — avant de sélectionner le suivant ; bouton « Modifier » sur un "
+    "article confirmé pour le corriger, « Retirer du lot » pour l'enlever ; la somme des prix TTC des articles "
+    "doit égaler le prix final du lot). Un récapitulatif complet s'affiche avant le dépôt ; le brouillon est "
+    "sauvegardé automatiquement (navigateur + serveur, reprise multi-appareils) ; un combo validé par O'SCOP "
+    "peut être enregistré comme modèle pour un redépôt en 1 clic ; une offre en attente ne peut être annulée "
+    "qu'à partir de J+30 (crédits remboursés). Après dépôt : validation O'SCOP puis mise en salle COOP'ACT ; "
+    "les règlements O'SCOP au POP'S déduisent les articles manquants constatés au retrait.\n"
     "Règles : réponds dans la langue de l'utilisateur (français par défaut), en 2 à 6 phrases claires, "
     "orientées action (indique les onglets/boutons à utiliser). N'utilise JAMAIS de Markdown ni "
     "d'astérisques : texte brut uniquement, avec les noms d'onglets entre guillemets « ». "
@@ -163,6 +190,11 @@ async def _facts(db, user: dict, space: str, lang: str = "fr") -> str:
             if vid:
                 pending = await db.products.count_documents({"vendor_id": vid, "status": "pending"})
                 return FACT_TEMPLATES["vendor"][lang].format(pending=pending)
+        elif space == "detaillant":
+            acc = await db.auction_accounts.find_one({"user_id": user["id"]}, {"_id": 0, "credits": 1})
+            pending = await db.detaillant_offers.count_documents({"user_id": user["id"], "status": "PENDING"})
+            return FACT_TEMPLATES["detaillant"][lang].format(
+                credits=(acc or {}).get("credits", 0), pending=pending)
     except Exception as exc:
         logger.debug("Oracle facts: %s", exc)
     return ""
@@ -215,6 +247,26 @@ async def _data_pack(db, user: dict, space: str) -> str:
                 f"dont échu {_eur(t['transport']['overdue_cents'])}) ; adhésions/mois "
                 f"{_eur(t['memberships']['mrr_cents'])} ({t['memberships']['active_count']} actifs) ; "
                 f"net projeté 90 j {_eur(t['projected_net_90d_cents'])}.")
+        elif space == "detaillant":
+            acc = await db.auction_accounts.find_one({"user_id": user["id"]}, {"_id": 0, "credits": 1})
+            lines.append(f"Crédits COOP'ACT : {(acc or {}).get('credits', 0)}.")
+            month_key = datetime.now(timezone.utc).strftime("%Y-%m")
+            used = await db.detaillant_offers.count_documents(
+                {"user_id": user["id"], "month_key": month_key, "status": {"$ne": "REJECTED"}})
+            lines.append(f"Offres déposées ce mois-ci : {used}/3 incluses (+100 crédits par lot au-delà).")
+            now = datetime.now(timezone.utc)
+            async for o in db.detaillant_offers.find(
+                    {"user_id": user["id"], "status": "PENDING"},
+                    {"_id": 0, "product_name": 1, "created_at": 1}).limit(5):
+                age = (now - datetime.fromisoformat(o["created_at"])).days
+                lines.append(f"Offre en attente « {(o.get('product_name') or '')[:45]} » déposée il y a {age} j — "
+                             + ("annulable dès maintenant (J+30 atteint)" if age >= 30
+                                else f"annulable dans {30 - age} j (règle J+30)"))
+            tpl = await db.detaillant_offer_templates.count_documents({"user_id": user["id"]})
+            if tpl:
+                lines.append(f"Modèles de combos validés réutilisables en 1 clic : {tpl}.")
+            if await db.detaillant_offer_drafts.find_one({"user_id": user["id"]}, {"_id": 0, "user_id": 1}):
+                lines.append("Un brouillon d'offre est en cours — reprenable depuis n'importe quel poste.")
         elif space in ("member", "general"):
             w = await db.lolodrive_wallets.find_one({"user_id": user["id"]}, {"_id": 0, "balance_uc": 1})
             if w:
