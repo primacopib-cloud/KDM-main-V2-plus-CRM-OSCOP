@@ -3943,3 +3943,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **Emails multilingues avoirs** : incident_emails.py (INCIDENT_T 5 langues, rtl_wrap) envoyé à l'enregistrement (pickup-scan) et au règlement — vérifié ar/fr, Brevo OK.
 - **Relevé mensuel PDF POP'S** : pops_settlement_pdf.py + GET /api/detaillant/settlements/statement.pdf?month=YYYY-MM (cession/déduction/net + totaux, 400 format, 404 vide/étranger) ; UI : sélecteur de mois + bouton PDF dans DetaillantSalesTable.
 - **Testing agent iteration_110** : 12/12 backend, 6/6 UI (POP'S, membre, admin). Données QA nettoyées, langue restaurée. Régression : /app/backend/tests/test_iter110_credit_cycle_pdf.py.
+
+## 3 octobre 2026 (suite 4) — Animation crédits, export comptable, rappel retrait
+- **Animation +crédits** : AuctionPlanGate détecte les ledger INCIDENT_REFUND non vus (localStorage coopact_seen_refunds) → badge animé « +X crédits — avoir réglé ✓ » (data-testid credit-gain-badge, 8 s). Testé UI (+38 affiché).
+- **Export comptable admin** : GET /api/admin/auctions/settlements/export.csv?month=YYYY-MM (BOM UTF-8, ; et décimales FR : cession/déduction/net/avoir/crédits/réglé) + SettlementsExportCard dans le panneau Bourse COOP'ACT. Testé (ligne complète, 404 mois vide, 400 format).
+- **Rappel retrait 7 j** : incident_emails.run_pickup_reminders (WON non retiré ≥7 j, 1 seul rappel : flag pickup_reminder_sent_at) + PICKUP_REMINDER_T 5 langues ; boucle scheduler 6 h démarrée. Testé : 1 envoi Brevo, 2e passe = 0 (idempotent).
+- Données QA nettoyées (offre, enchère, ledger, compte QA).

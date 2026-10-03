@@ -180,6 +180,49 @@ async def settle_pickup_incident(auction_id: str, admin: dict = Depends(require_
     return {"ok": True, "settled_at": now, "credits_granted": credits}
 
 
+@auctions_admin_router.get("/settlements/export.csv")
+async def settlements_export_csv(month: str, admin: dict = Depends(require_admin)):
+    """Export comptable mensuel : règlements POP'S et avoirs gagnants (CSV Excel FR)."""
+    if len(month) != 7 or month[4] != "-":
+        raise HTTPException(status_code=400, detail="Format attendu : YYYY-MM")
+    offers = {o["id"]: o async for o in ah.db.detaillant_offers.find(
+        {}, {"_id": 0, "id": 1, "company_name": 1, "locality": 1})}
+    lines = ["Référence;Lot;POP'S;Localité;Gagnant;Remporté le;Cession TTC (€);"
+             "Déduction manquants (€);Règlement net POP'S (€);Avoir gagnant (€);"
+             "Crédits accordés;Avoir réglé;Réglé le"]
+
+    def esc(v):
+        return '"' + str(v if v is not None else "").replace('"', '""') + '"'
+
+    count = 0
+    async for a in ah.db.auctions.find(
+            {"detaillant_offer_id": {"$ne": None}, "status": "WON",
+             "winner.won_at": {"$gte": f"{month}-01", "$lt": f"{month}-32"}},
+            {"_id": 0, "reference": 1, "title": 1, "winner": 1, "lot_price_ttc": 1,
+             "pickup_incident": 1, "detaillant_offer_id": 1}).sort("winner.won_at", 1):
+        o = offers.get(a.get("detaillant_offer_id"), {})
+        inc = a.get("pickup_incident") or {}
+        cession = float(a.get("lot_price_ttc") or 0)
+        ded = float(inc.get("pops_deduction_eur") or 0)
+        w = a.get("winner") or {}
+        lines.append(";".join(esc(v) for v in [
+            a.get("reference"), a.get("title"), o.get("company_name"), o.get("locality"),
+            w.get("name"), (w.get("won_at") or "")[:10],
+            f"{cession:.2f}".replace(".", ","), f"{ded:.2f}".replace(".", ","),
+            f"{cession - ded:.2f}".replace(".", ","),
+            f"{float(inc.get('credit_eur') or 0):.2f}".replace(".", ",") if inc else "",
+            inc.get("credits_granted", "") if inc else "",
+            ("oui" if inc.get("settled") else "non") if inc else "",
+            (inc.get("settled_at") or "")[:10] if inc else ""]))
+        count += 1
+    if count == 0:
+        raise HTTPException(status_code=404, detail=f"Aucun règlement sur {month}")
+    from fastapi.responses import Response
+    csv = "\ufeff" + "\n".join(lines)
+    return Response(content=csv, media_type="text/csv; charset=utf-8", headers={
+        "Content-Disposition": f'attachment; filename="reglements-pops-{month}.csv"'})
+
+
 @auctions_admin_router.get("/stats")
 async def auction_stats(admin: dict = Depends(require_admin)):
     now = ah.now_utc()

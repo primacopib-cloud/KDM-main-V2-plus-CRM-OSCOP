@@ -7,10 +7,26 @@ import { API, getAuthHeaders } from '../../services/http';
 // Plan CREDI'SCOP-Enchères obligatoire pour enchérir : solde + achat Stripe
 export const AuctionPlanGate = ({ me, onRefresh, isLogged }) => {
   const [plans, setPlans] = useState([]);
+  const [gain, setGain] = useState(null);
 
   useEffect(() => {
     fetch(`${API}/auctions/plans`).then((r) => r.json()).then((d) => setPlans(d.items || [])).catch(() => {});
   }, []);
+
+  // Animation « +X crédits » quand un avoir vient d'être réglé (ledger INCIDENT_REFUND non vu)
+  useEffect(() => {
+    const refunds = (me?.ledger || []).filter((l) => l.type === 'INCIDENT_REFUND');
+    if (!refunds.length) return;
+    let seen = [];
+    try { seen = JSON.parse(localStorage.getItem('coopact_seen_refunds') || '[]'); } catch { /* noop */ }
+    const fresh = refunds.filter((l) => !seen.includes(l.id));
+    if (fresh.length) {
+      setGain(fresh.reduce((s, l) => s + (l.amount || 0), 0));
+      localStorage.setItem('coopact_seen_refunds',
+        JSON.stringify([...seen, ...fresh.map((l) => l.id)].slice(-50)));
+      setTimeout(() => setGain(null), 8000);
+    }
+  }, [me?.ledger]);
 
   const buy = async (planId) => {
     if (!isLogged) {
@@ -39,6 +55,13 @@ export const AuctionPlanGate = ({ me, onRefresh, isLogged }) => {
         <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#E9CF8E]">
           <Coins className="w-4 h-4" /> {i18n.t('auction.my_credits')} : {acc.credits ?? 0}
         </span>
+        {gain != null && (
+          <span data-testid="credit-gain-badge"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-emerald-200 bg-emerald-500/20 border border-emerald-400/50 animate-bounce"
+            style={{ animationIterationCount: 6 }}>
+            +{gain} {i18n.t('auction.credits')} — avoir réglé ✓
+          </span>
+        )}
         <span className="text-[11px] text-white/55">
           {acc.plan_label} · {i18n.t('auction.valid_until')} {acc.valid_until ? new Date(acc.valid_until).toLocaleDateString(i18n.language) : '—'}
         </span>

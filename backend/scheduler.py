@@ -24,6 +24,7 @@ _slot_task: asyncio.Task | None = None
 _db = None
 _lang_digest_task: asyncio.Task | None = None
 _investor_statement_task: asyncio.Task | None = None
+_pickup_reminder_task: asyncio.Task | None = None
 
 
 def set_scheduler_database(database):
@@ -514,6 +515,11 @@ def start_scheduler():
         set_investor_statement_database(_db)
         _investor_statement_task = asyncio.get_event_loop().create_task(investor_statement_loop())
         logger.info("Monthly investor statement loop started (check every 6h)")
+    global _pickup_reminder_task
+    if _pickup_reminder_task is None or _pickup_reminder_task.done():
+        from incident_emails import pickup_reminder_loop
+        _pickup_reminder_task = asyncio.get_event_loop().create_task(pickup_reminder_loop(_db))
+        logger.info("Auction pickup reminder loop started (check every 6h)")
 
 
 def stop_scheduler():
