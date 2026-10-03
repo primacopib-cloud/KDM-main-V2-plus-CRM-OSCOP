@@ -3907,3 +3907,6 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 29 septembre 2026 — Lien retour site vitrine
 - Lien « ← OBJECTIFSCOPOUTREMER.COM » (pastille ronde dorée + flèche, flèche inversée en RTL) en haut à gauche du hero public (ProHero.jsx, data-testid hero-back-objectifscop) → https://objectifscopoutremer.com. Vérifié par screenshot.
+
+## 29 septembre 2026 — Mention « Emergent | Fullstack App »
+- Vérifié : le titre générique du scaffold a été remplacé depuis longtemps par « KDMARCHÉ × O'SCOP — Communityplace coopérative B2B2C » (curl preview + domaine custom OK, git -S confirme la suppression). Aucun badge/service worker/manifest générique. L'onglet générique vu par l'utilisateur était un onglet navigateur obsolète en cache — rien à corriger côté code.
