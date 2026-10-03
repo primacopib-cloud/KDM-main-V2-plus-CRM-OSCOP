@@ -307,12 +307,15 @@ async def my_auction_account(user_id: str = Depends(get_current_user_id)):
     extra_by_id = {}
     async for a in ah.db.auctions.find(
             {"status": "WON", "winner.user_id": user_id},
-            {"_id": 0, "id": 1, "winner.pickup_token": 1, "pickup_confirmed_at": 1}):
+            {"_id": 0, "id": 1, "winner.pickup_token": 1, "pickup_confirmed_at": 1, "pickup_incident": 1}):
         extra_by_id[a["id"]] = a
     for w in wins:
         ex = extra_by_id.get(w["id"], {})
         w["pickup_token"] = (ex.get("winner") or {}).get("pickup_token")
         w["pickup_confirmed_at"] = ex.get("pickup_confirmed_at")
+        inc = ex.get("pickup_incident")
+        w["pickup_incident"] = ({k: inc.get(k) for k in ("missing_names", "credit_eur", "settled", "settled_at", "recorded_at")}
+                                if inc else None)
     reviewed = {r["auction_id"] async for r in ah.db.detaillant_shop_reviews.find(
         {"author_user_id": user_id}, {"_id": 0, "auction_id": 1})}
     for w in wins:

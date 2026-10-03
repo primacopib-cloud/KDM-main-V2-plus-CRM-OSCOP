@@ -3930,3 +3930,10 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **Procédure indisponibilité** : pickup-scan admin avec missing_skus → avoir partiel au prorata du prix payé (pickup_incident sur l'enchère + notification AUCTION_PICKUP_INCIDENT au gagnant), jamais de remplacement ; garde-fous 400 (SKU hors lot, tous manquants) et 409 (déjà récupéré). Checklist UI dans PickupScanCard.
 - **Étiquette PDF** : combo_label_pdf.py (reportlab A5 : composition, marques, prix TTC/article, €/kg, allergènes, prix lot, règles DDM/non-remplacement) ; GET /api/detaillant/offers/{id}/label.pdf (propriétaire ou admin, 404 sinon) ; bouton « Étiquette PDF » dans l'espace POP'S.
 - **Testing agent iteration_109** : backend 15/15 pytest, frontend 100 % — parcours combo complet verrouillé (dépôt → cession signée → validation → fiche publique → retrait avec avoir 3,12 € au prorata). Données QA nettoyées, crédits remboursés. Régression réutilisable : /app/backend/tests/test_iter109_combo_pickup.py.
+
+## 3 octobre 2026 (suite 2) — Avoirs, règlement POP'S ajusté, QR étiquette, lots rapides
+- **Suivi des avoirs** : /me expose pickup_incident sur les wins (badge ambre/vert dans AuctionHistoryPanel) ; admin GET /api/admin/auctions/pickup-incidents (+ totaux en attente) et POST /{auction_id}/settle (409 si déjà réglé) ; carte PickupIncidentsCard dans le panneau Bourse COOP'ACT.
+- **Règlement POP'S ajusté** : pickup_incident.pops_deduction_eur (valeur TTC des manquants) ; /detaillant/sales expose pops_settlement_eur = lot_price_ttc − déduction (affiché dans DetaillantSalesTable + totaux settlement/deductions).
+- **QR étiquette** : combo_label_pdf accepte lot_url (QrCodeWidget reportlab) → lien /encheres/lot/{reference} de l'enchère liée (FRONTEND_URL).
+- **Lots prêts à déposer** : chips des 15 produits food_info dans le formulaire POP'S → 1 clic = lot ×3 SAME + description auto + infos pré-remplies.
+- **Tests** : E2E curl (incident 3,83 € avoir / 4,60 € déduction / règlement 5,00 €, settle + 409, PDF QR 5,4 Ko) + screenshots carte incidents admin et 15 chips fonctionnels. Données QA nettoyées.

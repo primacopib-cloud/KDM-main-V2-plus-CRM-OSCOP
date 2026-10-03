@@ -1,5 +1,6 @@
 """Espace Détaillant : abonnement 390 €/mois, accès salle COOP'ACT, dépôt d'offres de lots."""
 import logging
+import os
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
@@ -554,7 +555,11 @@ async def detaillant_offer_label(offer_id: str, user: dict = Depends(get_current
         raise HTTPException(status_code=404, detail="Offre introuvable")
     from fastapi.responses import Response
     from combo_label_pdf import build_combo_label_pdf
-    pdf = build_combo_label_pdf(offer)
+    auction = await db.auctions.find_one(
+        {"detaillant_offer_id": offer_id}, {"_id": 0, "reference": 1}, sort=[("starts_at", -1)])
+    base = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    lot_url = f"{base}/encheres/lot/{auction['reference']}" if (auction and base) else None
+    pdf = build_combo_label_pdf(offer, lot_url=lot_url)
     return Response(content=pdf, media_type="application/pdf", headers={
         "Content-Disposition": f'inline; filename="etiquette-lot-{offer_id[:8]}.pdf"'})
 
@@ -1016,16 +1021,24 @@ async def detaillant_sales(user: dict = Depends(get_current_user)):
     sales = []
     async for a in db.auctions.find({"detaillant_offer_id": {"$in": offer_ids}}, {"_id": 0}).sort("starts_at", -1).limit(100):
         w = a.get("winner") or {}
+        inc = a.get("pickup_incident")
+        lot_ttc = float(a.get("lot_price_ttc") or 0)
+        deduction = float((inc or {}).get("pops_deduction_eur") or 0)
         sales.append({
             "reference": a.get("reference"), "title": a.get("title"),
             "status": a.get("status"), "starts_at": a.get("starts_at"), "ends_at": a.get("ends_at"),
             "value_eur": a.get("value_eur"), "current_price_eur": a.get("current_price_eur"),
             "bids_count": a.get("bids_count", 0),
             "winner_name": w.get("name"), "won_price_eur": w.get("price_eur"), "won_at": w.get("won_at"),
-            "picked_up": bool(a.get("pickup_confirmed_at")), "relisted": bool(a.get("relisted"))})
+            "picked_up": bool(a.get("pickup_confirmed_at")), "relisted": bool(a.get("relisted")),
+            "pickup_incident": ({"missing_names": inc.get("missing_names"),
+                                 "pops_deduction_eur": deduction, "settled": inc.get("settled")} if inc else None),
+            "pops_settlement_eur": round(lot_ttc - deduction, 2) if (a.get("status") == "WON" and lot_ttc > 0) else None})
     totals = {"lots": len(sales), "bids": sum(s["bids_count"] for s in sales),
               "won": sum(1 for s in sales if s["status"] == "WON"),
-              "revenue_eur": round(sum(s["won_price_eur"] or 0 for s in sales if s["status"] == "WON"), 2)}
+              "revenue_eur": round(sum(s["won_price_eur"] or 0 for s in sales if s["status"] == "WON"), 2),
+              "settlement_eur": round(sum(s["pops_settlement_eur"] or 0 for s in sales), 2),
+              "deductions_eur": round(sum((s["pickup_incident"] or {}).get("pops_deduction_eur", 0) for s in sales), 2)}
     return {"sales": sales, "totals": totals}
 
 

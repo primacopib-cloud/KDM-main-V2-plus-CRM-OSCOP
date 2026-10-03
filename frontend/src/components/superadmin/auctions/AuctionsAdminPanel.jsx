@@ -12,6 +12,7 @@ import { DetaillantOffersPanel } from './DetaillantOffersPanel';
 import { CessionsRegistryCard } from './CessionsRegistryCard';
 import { AdminConventionsCard } from './AdminConventionsCard';
 import { PickupScanCard } from './PickupScanCard';
+import { PickupIncidentsCard } from './PickupIncidentsCard';
 
 const STATUS_STYLE = {
   SCHEDULED: 'bg-sky-500/20 text-sky-300', LIVE: 'bg-emerald-500/20 text-emerald-300',
@@ -45,6 +46,7 @@ export const AuctionsAdminPanel = () => {
   return (
     <div className="glass-panel-soft rounded-[22px] p-5 mt-6" data-testid="auctions-admin-panel">
       <PickupScanCard />
+      <PickupIncidentsCard />
       <DetaillantOffersPanel />
       <CessionsRegistryCard />
       <AdminConventionsCard />

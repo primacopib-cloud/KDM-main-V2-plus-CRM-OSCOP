@@ -88,10 +88,17 @@ async def pickup_scan(body: PickupScanBody, admin: dict = Depends(require_admin)
             else:
                 share = len(body.missing_skus) / len(items)
             credit_eur = round(paid * share, 2)
+            # Déduction sur le règlement O'SCOP → POP'S : valeur TTC des articles non remis
+            if lot_ttc > 0 and all(by_sku[s].get("unit_price_ttc") for s in body.missing_skus):
+                pops_deduction = round(sum(float(by_sku[s]["unit_price_ttc"]) for s in body.missing_skus), 2)
+            else:
+                pops_deduction = round(lot_ttc * share, 2) if lot_ttc > 0 else 0.0
             incident = {
                 "missing_skus": body.missing_skus,
                 "missing_names": [by_sku[s].get("name") for s in body.missing_skus],
                 "credit_eur": credit_eur, "paid_eur": paid,
+                "pops_deduction_eur": pops_deduction,
+                "settled": False,
                 "rule": "Avoir partiel au prorata — remplacement par un autre produit ou une autre marque interdit",
                 "recorded_at": now, "recorded_by": admin.get("email"),
             }
@@ -109,6 +116,48 @@ async def pickup_scan(body: PickupScanBody, admin: dict = Depends(require_admin)
         out["pickup_confirmed_at"] = now
         out["confirmed"] = True
     return out
+
+
+@auctions_admin_router.get("/pickup-incidents")
+async def pickup_incidents(admin: dict = Depends(require_admin)):
+    """Incidents de retrait (articles manquants) : avoirs gagnants à régler et déductions POP'S."""
+    items = []
+    async for a in ah.db.auctions.find(
+            {"pickup_incident": {"$exists": True}},
+            {"_id": 0, "id": 1, "reference": 1, "title": 1, "winner": 1,
+             "pickup_incident": 1, "detaillant_offer_id": 1, "lot_price_ttc": 1}).sort("pickup_incident.recorded_at", -1).limit(100):
+        inc = a["pickup_incident"]
+        offer = await ah.db.detaillant_offers.find_one(
+            {"id": a.get("detaillant_offer_id")}, {"_id": 0, "company_name": 1, "locality": 1}) or {}
+        items.append({
+            "auction_id": a["id"], "reference": a.get("reference"), "title": a.get("title"),
+            "winner_name": (a.get("winner") or {}).get("name"),
+            "winner_email": (a.get("winner") or {}).get("email"),
+            "pops_name": offer.get("company_name"), "pops_locality": offer.get("locality"),
+            "lot_price_ttc": a.get("lot_price_ttc"),
+            **{k: inc.get(k) for k in ("missing_names", "credit_eur", "pops_deduction_eur",
+                                       "settled", "settled_at", "recorded_at")}})
+    pending = [i for i in items if not i["settled"]]
+    return {"incidents": items,
+            "pending_count": len(pending),
+            "pending_credit_eur": round(sum(i["credit_eur"] or 0 for i in pending), 2),
+            "pending_deduction_eur": round(sum(i["pops_deduction_eur"] or 0 for i in pending), 2)}
+
+
+@auctions_admin_router.post("/pickup-incidents/{auction_id}/settle")
+async def settle_pickup_incident(auction_id: str, admin: dict = Depends(require_admin)):
+    """Marque l'avoir comme réglé au gagnant (et la déduction POP'S appliquée)."""
+    a = await ah.db.auctions.find_one({"id": auction_id, "pickup_incident": {"$exists": True}}, {"_id": 0, "pickup_incident": 1})
+    if not a:
+        raise HTTPException(status_code=404, detail="Incident introuvable")
+    if a["pickup_incident"].get("settled"):
+        raise HTTPException(status_code=409, detail="Avoir déjà réglé")
+    now = ah.now_utc().isoformat()
+    await ah.db.auctions.update_one(
+        {"id": auction_id},
+        {"$set": {"pickup_incident.settled": True, "pickup_incident.settled_at": now,
+                  "pickup_incident.settled_by": admin.get("email")}})
+    return {"ok": True, "settled_at": now}
 
 
 @auctions_admin_router.get("/stats")

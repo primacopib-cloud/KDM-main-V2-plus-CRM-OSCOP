@@ -90,6 +90,14 @@ export const DetaillantSalesTable = () => {
                   <td className="py-1.5 pr-2 truncate max-w-[120px]">{s.winner_name || '—'}</td>
                   <td className="py-1.5 text-right font-bold text-[#E9CF8E]">
                     {s.won_price_eur != null ? `${Number(s.won_price_eur).toFixed(2)} €` : '—'}
+                    {s.pops_settlement_eur != null && (
+                      <span className="block text-[9px] font-semibold text-emerald-300/90" data-testid={`sale-settlement-${s.reference}`}>
+                        Règlement O'SCOP : {Number(s.pops_settlement_eur).toFixed(2)} €
+                        {s.pickup_incident && Number(s.pickup_incident.pops_deduction_eur) > 0 && (
+                          <span className="text-amber-300"> (−{Number(s.pickup_incident.pops_deduction_eur).toFixed(2)} € manquants)</span>
+                        )}
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}

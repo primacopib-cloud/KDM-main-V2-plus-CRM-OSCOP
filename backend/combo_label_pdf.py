@@ -1,6 +1,8 @@
 """Étiquette PDF d'un lot COOP'ACT (composition, allergènes, prix) à afficher en magasin POP'S."""
 from io import BytesIO
 
+from reportlab.graphics.barcode import qr
+from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A5
 from reportlab.lib.styles import ParagraphStyle
@@ -16,7 +18,7 @@ def _cur(c):
     return "€" if (c or "EUR") == "EUR" else c
 
 
-def build_combo_label_pdf(offer: dict) -> bytes:
+def build_combo_label_pdf(offer: dict, lot_url: str | None = None) -> bytes:
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A5, leftMargin=10 * mm, rightMargin=10 * mm,
                             topMargin=10 * mm, bottomMargin=10 * mm)
@@ -68,5 +70,16 @@ def build_combo_label_pdf(offer: dict) -> bytes:
         "Prix exprimés en euros TTC. La DDM/DLC exacte est communiquée au plus tard à la remise du lot. "
         "Tout article indisponible suit la procédure prévue (avoir partiel) — aucun remplacement par un autre "
         "produit ou une autre marque n'est autorisé.", small))
+    if lot_url:
+        widget = qr.QrCodeWidget(lot_url, barLevel="M")
+        b = widget.getBounds()
+        size = 24 * mm
+        d = Drawing(size, size, transform=[size / (b[2] - b[0]), 0, 0, size / (b[3] - b[1]), 0, 0])
+        d.add(widget)
+        qr_tbl = Table([[d, Paragraph(f"<b>Scannez pour voir la fiche du lot en ligne</b><br/>{lot_url}", small)]],
+                       colWidths=[28 * mm, 100 * mm])
+        qr_tbl.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (0, 0), 0)]))
+        story.append(Spacer(1, 3 * mm))
+        story.append(qr_tbl)
     doc.build(story)
     return buf.getvalue()

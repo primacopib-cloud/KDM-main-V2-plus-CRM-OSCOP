@@ -66,6 +66,16 @@ export const AuctionHistoryPanel = ({ me }) => {
                     ? (w.fulfillment.mode === 'PICKUP' ? `📍 ${w.fulfillment.point_name}` : `🚚 ${i18n.t('auction.delivery')}`)
                     : i18n.t('auction.choose_fulfillment')}
                 </span>
+                {w.pickup_incident && (
+                  <span className={`inline-block mt-1 mr-1 px-2 py-0.5 rounded-full text-[9px] font-bold border ${w.pickup_incident.settled
+                    ? 'text-emerald-300 border-emerald-400/40 bg-emerald-500/10'
+                    : 'text-amber-300 border-amber-400/40 bg-amber-500/10'}`}
+                    data-testid={`win-incident-${w.id}`}>
+                    {w.pickup_incident.settled
+                      ? `Avoir de ${Number(w.pickup_incident.credit_eur).toFixed(2)} € réglé ✓`
+                      : `Avoir de ${Number(w.pickup_incident.credit_eur).toFixed(2)} € en attente — ${(w.pickup_incident.missing_names || []).join(', ')} manquant(s)`}
+                  </span>
+                )}
                 {w.pickup_confirmed_at ? (
                   <>
                     <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold text-emerald-300 border border-emerald-400/40 bg-emerald-500/10"

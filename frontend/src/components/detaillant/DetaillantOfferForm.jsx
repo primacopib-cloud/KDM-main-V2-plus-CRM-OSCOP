@@ -88,6 +88,29 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
     <div className="rounded-2xl border border-[#D9B35A]/30 bg-[#D9B35A]/[0.04] p-4 space-y-3" data-testid="detaillant-offer-form">
       <h3 className="text-sm font-bold text-[#E9CF8E]">{t.newOffer}</h3>
       <p className="text-[10px] text-white/45">{t.costInfo}</p>
+      {products.some((p) => p.food_info) && (
+        <div data-testid="offer-quick-lots">
+          <p className="text-[10px] font-bold text-white/50 uppercase tracking-wide mb-1">
+            Lots prêts à déposer — catalogue de base (lot ×3, infos pré-remplies)
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {products.filter((p) => p.food_info).map((p) => (
+              <button key={p.sku} type="button"
+                onClick={() => {
+                  setF((prev) => ({ ...prev, lot_type: 'SAME', product_sku: p.sku,
+                    description: `Lot ×3 — ${p.name}. Composition : ${p.food_info.lot_composition}. Même marque, même produit, même format pour les 3 unités.` }));
+                  setExtraSkus(['', '']);
+                }}
+                data-testid={`quick-lot-${p.sku}`}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-colors ${f.product_sku === p.sku && f.lot_type === 'SAME'
+                  ? 'text-[#1F0A33] bg-[#E9CF8E] border-[#E9CF8E]'
+                  : 'text-white/70 border-white/15 hover:border-[#D9B35A]/50 hover:text-[#E9CF8E]'}`}>
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <label className="text-[10px] text-white/50 block mb-1">{t.product}</label>
