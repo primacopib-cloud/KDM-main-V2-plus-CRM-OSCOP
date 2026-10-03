@@ -1,0 +1,27 @@
+{
+  "summary": "Régression complète du TUNNEL DE DÉPÔT POP'S (COOP'ACT). Backend (12/12) : cancel J+30 (409 avant, OK+3 crédits après, re-409), modèles save/list/delete (409 sur PENDING), brouillon serveur PUT/GET/DELETE, contrôle photo IA négatif (ok=False, reason non vide). UI (12/12 scénarios) : chip + pré-remplissage food_info, confirmation obligatoire par lot (toast de blocage), barre offer-progress 1/1 100% + segment vert, réinitialisation à la modification d'un champ, cascade COMPOSED (p2/p3 DISABLED → p2 débloqué après prix+confirm, p3 encore verrouillé), restauration brouillon localStorage + modale récapitulatif (photo, type, qty=2, composition, prix final 8.50 EUR, coût 6 crédits, bouton Modifier referme sans dépôt), bouton dt-offer-cancel-btn-qa-off-tun2 disabled avec libellé 'Annulable à J+30 (30 j restants)'. Nettoyage final OK : offres QA, templates, drafts supprimés ; crédits = 11 (état initial restauré, teardown -3 appliqué). Note info main agent: le compteur de crédits POP'S en DB vaut 11, pas 17 comme indiqué dans la demande.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter111_pops_tunnel.py",
+    "/app/test_reports/pytest/iter111.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Clic sur chip quick-lot force lot_type='SAME' (DetaillantOfferForm.jsx:230) — surprenant quand l'utilisateur est déjà en COMPOSED : il perd son choix. Envisager de ne pas écraser lot_type si l'utilisateur l'a explicitement mis à COMPOSED.",
+    "_check_photo_ai (routes_detaillant.py:785) utilise os.environ['EMERGENT_LLM_KEY'] qui lève KeyError si manquant — le fail-open le rattrape bien, mais tests unitaires isolés doivent charger .env manuellement.",
+    "cancel J+30 : la règle est stricte (age_days < 30) mais le message mentionne 'Une offre en attente ne peut pas être annulée avant J+30' — texte conforme attendu."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter111_pops_tunnel.py"],
+  "success_rate": {"backend": "100% (12/12)", "frontend": "100% (tous scénarios UI validés)"},
+  "test_credentials": "POP'S detaillant-test@kdmarche.fr / Detaillant2026! (user_id=user-detaillant-da978cfc)",
+  "seed_data_creation": "Offres QA seedées en DB puis supprimées (qa-off-tun1 cancel, qa-off-tun2 UI, qa-off-tun3 templates). Pas de dépôt via POST /api/detaillant/offers (pas de LLM photo payant). Crédits remboursés (+3) décrémentés dans la teardown.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Les tests UI nécessitent de re-seeder qa-off-tun2 (PENDING fresh) juste avant la vérif du bouton cancel désactivé, car la cleanup pytest wipe. Le switch COMPOSED doit se faire AVANT la sélection d'un product (gateChange() bloque le changement si product_sku présent + non confirmé). Les chips quick-lot RÉINITIALISENT lot_type à SAME (voir DetaillantOfferForm.jsx:230). Compteur crédits POP'S actuel = 11.",
+  "rca of the issue": "N/A — aucun bug trouvé. Toutes les features du tunnel fonctionnent comme spécifié."
+}

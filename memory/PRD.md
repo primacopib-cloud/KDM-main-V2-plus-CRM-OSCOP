@@ -3971,3 +3971,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **Modèles réutilisables** : save-template (APPROVED only, max 10, upsert par nom), GET/DELETE /templates ; section « Mes modèles » dans le formulaire → 1 clic recharge tout (produits, items confirmés, photos, prix). Testé UI (chip → formulaire rempli, article pré-confirmé).
 - **Contrôle photo IA** : _check_photo_ai (pattern LlmChat gpt-5.4 + ImageContent existant) à la création d'offre — rejette photo floue/hors sujet (400 avec raison), tolérant, fail-open si l'analyse est indisponible. Testé : photo café acceptée, bannière O'SCOP refusée (« pas un paquet de café »).
 - **Brouillon multi-appareils** : GET/PUT/DELETE /detaillant/offer-draft (collection detaillant_offer_drafts) ; le front restaure le plus récent (serveur vs localStorage, champ saved_at), push debounce 800 ms, purge au dépôt. Testé curl + restauration UI.
+
+## 3 octobre 2026 (suite 9) — Régression tunnel dépôt POP'S — testing agent iteration_111 : 100 %
+- Backend 12/12 : cancel J+30 (409/OK+remboursement/re-409), modèles (save/list/delete, 409 PENDING), brouillon serveur, photo IA (rejet hors sujet).
+- UI 100 % : chips + pré-remplissage, confirmation obligatoire (blocage/toast), progression, réinitialisation à l'édition, cascade COMPOSED, restauration brouillon, modale récap (Modifier sans dépôt), bouton annuler grisé <30 j.
+- Aucun bug ; données QA nettoyées, crédits restaurés (solde POP'S réel : 11). Régression : /app/backend/tests/test_iter111_pops_tunnel.py.
