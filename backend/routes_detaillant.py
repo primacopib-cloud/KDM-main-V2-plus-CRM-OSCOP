@@ -488,6 +488,18 @@ async def _require_active_sub(user_id: str):
         raise HTTPException(status_code=403, detail="Abonnement Détaillant (390 €/mois) requis pour déposer des offres")
 
 
+class OfferItemDetail(BaseModel):
+    sku: str
+    brand: Optional[str] = None          # marque exacte de l'article (combos multi-marques)
+    format_label: str = ""               # ex. « 1 kg », « 3 × 500 g » — quantité affichée
+    unit_price_ttc: Optional[float] = None  # prix TTC de l'article dans le lot (obligatoire si lot composé)
+    net_qty_value: Optional[float] = None   # quantité nette chiffrée (pour le prix au kg/L)
+    net_qty_unit: Optional[str] = None      # g | kg | ml | cl | L
+    ingredients: str = ""
+    allergens: str = ""                   # « Aucun » accepté
+    ddm_dlc: Optional[str] = None         # ISO — peut être communiquée à la livraison
+
+
 class OfferBody(BaseModel):
     product_sku: str
     lot_type: str = "SAME"      # SAME = lot x3 même produit, COMPOSED = lot composé
@@ -496,6 +508,7 @@ class OfferBody(BaseModel):
     description: str
     category: Optional[str] = None
     composed_detail: Optional[str] = None
+    items_detail: List[OfferItemDetail] = []  # détail prix + infos alimentaires par article
     lot_price: float = 0            # prix de référence du lot (devise ci-dessous)
     currency: str = "EUR"           # code ISO 4217 (monde entier)
     discount_mode: str = "PERCENT"  # PERCENT | AMOUNT
@@ -577,6 +590,72 @@ async def sign_convention(body: ConventionSignBody, user: dict = Depends(get_cur
     return {"ok": True, "signed": True}
 
 
+_QTY_TO_BASE = {"g": ("kg", 0.001), "kg": ("kg", 1.0), "ml": ("L", 0.001), "cl": ("L", 0.01), "l": ("L", 1.0)}
+
+
+def _price_per_unit(item: OfferItemDetail):
+    """Prix au kilogramme ou au litre (obligatoire pour les produits concernés)."""
+    if not item.unit_price_ttc or not item.net_qty_value or not item.net_qty_unit:
+        return None
+    conv = _QTY_TO_BASE.get(item.net_qty_unit.strip().lower())
+    if not conv or item.net_qty_value <= 0:
+        return None
+    base_unit, factor = conv
+    return {"value": round(item.unit_price_ttc / (item.net_qty_value * factor), 2), "unit": base_unit}
+
+
+async def _reserved_skus() -> set:
+    """Références déjà promises dans un lot actif (offre en attente ou enchère programmée/en salle)."""
+    import auction_helpers as ah
+    await ah.sync_auction_statuses()
+    active_offer_ids = await db.auctions.distinct(
+        "detaillant_offer_id", {"status": {"$in": ["SCHEDULED", "LIVE"]}, "detaillant_offer_id": {"$ne": None}})
+    q = {"$or": [{"status": "PENDING"}, {"status": "APPROVED", "id": {"$in": active_offer_ids}}]}
+    skus = set()
+    async for o in db.detaillant_offers.find(q, {"_id": 0, "product_sku": 1, "product_skus": 1}):
+        if o.get("product_sku"):
+            skus.add(o["product_sku"])
+        skus.update(o.get("product_skus") or [])
+    return skus
+
+
+def _validate_items_detail(body: OfferBody, composed_products: list, final_price: float):
+    """Règles d'affichage des lots : prix par élément (sauf unités identiques), infos alimentaires obligatoires."""
+    by_sku = {d.sku: d for d in body.items_detail}
+    missing = [p["sku"] for p in composed_products if p["sku"] not in by_sku]
+    if missing:
+        raise HTTPException(status_code=400, detail=(
+            "Informations obligatoires manquantes pour : " + ", ".join(missing)
+            + " (format/quantité, ingrédients, allergènes, prix par article si lot composé)"))
+    details = []
+    for p in composed_products:
+        d = by_sku[p["sku"]]
+        if not d.format_label.strip():
+            raise HTTPException(status_code=400, detail=f"Quantité/format obligatoire pour {p['name']} (ex. « 1 kg »)")
+        if len(d.ingredients.strip()) < 2 or len(d.allergens.strip()) < 2:
+            raise HTTPException(status_code=400, detail=(
+                f"Informations alimentaires obligatoires pour {p['name']} : ingrédients et allergènes (indiquez « Aucun » le cas échéant)"))
+        item = {"sku": p["sku"], "name": p["name"], "brand": (d.brand or p.get("brand") or "").strip() or None,
+                "format_label": d.format_label.strip(),
+                "unit_price_ttc": None, "price_per_unit": None,
+                "ingredients": d.ingredients.strip(), "allergens": d.allergens.strip(),
+                "ddm_dlc": d.ddm_dlc}
+        if body.lot_type == "COMPOSED":
+            if not d.unit_price_ttc or d.unit_price_ttc <= 0:
+                raise HTTPException(status_code=400, detail=f"Prix TTC obligatoire pour l'article {p['name']} (lot composé)")
+            item["unit_price_ttc"] = round(d.unit_price_ttc, 2)
+        elif d.unit_price_ttc and d.unit_price_ttc > 0:
+            item["unit_price_ttc"] = round(d.unit_price_ttc, 2)
+        item["price_per_unit"] = _price_per_unit(d)
+        details.append(item)
+    if body.lot_type == "COMPOSED":
+        total = round(sum(i["unit_price_ttc"] for i in details), 2)
+        if abs(total - final_price) > 0.02:
+            raise HTTPException(status_code=400, detail=(
+                f"La somme des prix par article ({total:.2f}) doit être égale au prix final du lot ({final_price:.2f})"))
+    return details
+
+
 @detaillant_router.post("/offers")
 async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_current_user)):
     await _require_active_sub(user["id"])
@@ -631,6 +710,14 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
             if not p:
                 raise HTTPException(status_code=404, detail=f"Produit {sku} introuvable dans le catalogue en vigueur")
             composed_products.append(p)
+    # Réservation de stock dès le dépôt : une référence ne peut pas être promise dans deux lots actifs
+    offer_skus = {p["sku"] for p in composed_products}
+    conflicts = offer_skus & (await _reserved_skus())
+    if conflicts:
+        raise HTTPException(status_code=409, detail=(
+            "Référence(s) déjà réservée(s) dans un autre lot actif : " + ", ".join(sorted(conflicts))
+            + " — attendez la fin de ce lot ou retirez-le"))
+    items_detail = _validate_items_detail(body, composed_products, final_price)
     if not (body.photo_main or "").strip():
         raise HTTPException(status_code=400, detail="Une photo principale du lot est obligatoire")
     if body.condition not in ("NEW", "USED"):
@@ -684,6 +771,7 @@ async def detaillant_create_offer(body: OfferBody, user: dict = Depends(get_curr
         "photo_main": body.photo_main.strip(), "photos": [p for p in body.photos if p][:2],
         "photo_labels": [p["name"] for p in composed_products] if len(composed_products) > 1 else None,
         "condition": body.condition, "warranty": (body.warranty or "").strip() or None, "dlc": dlc_iso,
+        "items_detail": items_detail,
         "status": "PENDING", "month_key": month_key,
         "created_at": _now().isoformat()}
     await db.detaillant_offers.insert_one({**offer})
@@ -1154,6 +1242,10 @@ async def admin_review_offer(offer_id: str, body: ReviewBody, admin: dict = Depe
                 "photos": [p for p in ([offer.get("photo_main")] + (offer.get("photos") or [])) if p],
                 "photo_labels": offer.get("photo_labels"),
                 "condition": offer.get("condition"), "warranty": offer.get("warranty"), "dlc": offer.get("dlc"),
+                "lot_type": offer.get("lot_type", "SAME"),
+                "lot_price_ttc": offer.get("final_price"),
+                "currency": offer.get("currency", "EUR"),
+                "combo_items": offer.get("items_detail") or [],
                 "description": desc,
                 "source": "DETAILLANT", "source_visible": True,
                 "retailer": retailer,

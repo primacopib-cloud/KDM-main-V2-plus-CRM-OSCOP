@@ -17,6 +17,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
     condition: 'NEW', warranty: '', dlc: '' });
   const [photos, setPhotos] = useState([]);
   const [extraSkus, setExtraSkus] = useState(['', '']);
+  const [items, setItems] = useState({});
   const [busy, setBusy] = useState(false);
   useEffect(() => { detaillantAPI.catalog().then((r) => setProducts(r.products || [])).catch(() => {}); }, []);
   const product = products.find((p) => p.sku === f.product_sku);
@@ -33,6 +34,16 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
     : (product ? [product] : []);
   const anyPerishable = composedProducts.some((p) => p.perishable);
   const dlcKo = anyPerishable && (!f.dlc || new Date(f.dlc) < new Date(Date.now() + 90 * 86400000));
+  const setItem = (sku, patch) => setItems((m) => ({ ...m, [sku]: { ...(m[sku] || {}) , ...patch } }));
+  const itemOf = (sku) => items[sku] || {};
+  const itemsDetail = composedProducts.map((p) => ({ sku: p.sku, ...itemOf(p.sku) }));
+  const itemsSum = f.lot_type === 'COMPOSED'
+    ? Math.round(itemsDetail.reduce((s, d) => s + (Number(d.unit_price_ttc) || 0), 0) * 100) / 100 : 0;
+  const sumKo = f.lot_type === 'COMPOSED' && finalPrice > 0 && Math.abs(itemsSum - finalPrice) > 0.02;
+  const itemKo = (p, d) => !(d.format_label || '').trim() || (d.ingredients || '').trim().length < 2
+    || (d.allergens || '').trim().length < 2
+    || (f.lot_type === 'COMPOSED' && !(Number(d.unit_price_ttc) > 0));
+  const itemsKo = composedProducts.length === 0 || composedProducts.some((p) => itemKo(p, itemOf(p.sku))) || sumKo;
   const submit = async () => {
     setBusy(true);
     try {
@@ -42,6 +53,15 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
         scheduled_start: f.scheduled_start ? new Date(f.scheduled_start).toISOString() : null,
         photo_main: photos[0] || null, photos: photos.slice(1).filter(Boolean),
         product_skus: f.lot_type === 'COMPOSED' ? extraSkus.filter(Boolean) : [],
+        items_detail: itemsDetail.map((d) => ({
+          sku: d.sku, brand: (d.brand || '').trim() || null,
+          format_label: (d.format_label || '').trim(),
+          unit_price_ttc: Number(d.unit_price_ttc) > 0 ? Number(d.unit_price_ttc) : null,
+          net_qty_value: Number(d.net_qty_value) > 0 ? Number(d.net_qty_value) : null,
+          net_qty_unit: d.net_qty_unit || null,
+          ingredients: (d.ingredients || '').trim(), allergens: (d.allergens || '').trim(),
+          ddm_dlc: d.ddm_dlc || null,
+        })),
         warranty: f.warranty.trim() || null, dlc: f.dlc || null,
       });
       toast.success(`✓ Offre déposée — ${cost} crédits`);
@@ -50,6 +70,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
         condition: 'NEW', warranty: '', dlc: '' });
       setPhotos([]);
       setExtraSkus(['', '']);
+      setItems({});
       onCreated?.();
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -182,13 +203,73 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
             className={inputCls} data-testid="offer-composed" />
         </div>
       )}
+      {composedProducts.length > 0 && (
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3" data-testid="offer-items-detail">
+          <p className="text-[10px] font-bold text-white/60 uppercase tracking-wide">
+            Détail des articles — prix TTC{f.lot_type === 'COMPOSED' ? ' de chaque élément' : ''}, prix au kg/L, infos alimentaires (obligatoire)
+          </p>
+          {f.lot_type === 'SAME' && (
+            <p className="text-[9px] text-white/40">Lot à unités identiques : un seul descriptif suffit (exception d'affichage du prix par élément).</p>
+          )}
+          {composedProducts.map((p) => {
+            const d = itemOf(p.sku);
+            const qtyBase = { g: ['kg', 0.001], kg: ['kg', 1], ml: ['L', 0.001], cl: ['L', 0.01], L: ['L', 1] }[d.net_qty_unit];
+            const perUnit = Number(d.unit_price_ttc) > 0 && Number(d.net_qty_value) > 0 && qtyBase
+              ? (Number(d.unit_price_ttc) / (Number(d.net_qty_value) * qtyBase[1])).toFixed(2) : null;
+            return (
+              <div key={p.sku} className="rounded-lg border border-white/[0.07] p-2.5 space-y-2" data-testid={`offer-item-${p.sku}`}>
+                <p className="text-[11px] font-semibold text-[#E9CF8E]">{p.name}</p>
+                <div className="grid sm:grid-cols-4 gap-2">
+                  <input value={d.brand || p.brand || ''} onChange={(e) => setItem(p.sku, { brand: e.target.value })}
+                    placeholder="Marque exacte" className={inputCls} data-testid={`offer-item-brand-${p.sku}`} />
+                  <input value={d.format_label || ''} onChange={(e) => setItem(p.sku, { format_label: e.target.value })}
+                    placeholder="Quantité (ex. 1 kg)" className={inputCls} data-testid={`offer-item-format-${p.sku}`} />
+                  {f.lot_type === 'COMPOSED' && (
+                    <input type="number" min="0" step="0.01" value={d.unit_price_ttc || ''}
+                      onChange={(e) => setItem(p.sku, { unit_price_ttc: e.target.value })}
+                      placeholder={`Prix article TTC (${f.currency})`} className={inputCls} data-testid={`offer-item-price-${p.sku}`} />
+                  )}
+                  <span className="flex gap-1">
+                    <input type="number" min="0" step="any" value={d.net_qty_value || ''}
+                      onChange={(e) => setItem(p.sku, { net_qty_value: e.target.value })}
+                      placeholder="Qté nette" className={inputCls} data-testid={`offer-item-qty-${p.sku}`} />
+                    <select value={d.net_qty_unit || ''} onChange={(e) => setItem(p.sku, { net_qty_unit: e.target.value })}
+                      className={inputCls + ' !w-16'} data-testid={`offer-item-qty-unit-${p.sku}`}>
+                      <option value="">—</option>
+                      {['g', 'kg', 'ml', 'cl', 'L'].map((u) => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  </span>
+                </div>
+                {perUnit && (
+                  <p className="text-[10px] text-emerald-300/90" data-testid={`offer-item-per-unit-${p.sku}`}>
+                    soit {perUnit} {f.currency}/{qtyBase[0]}
+                  </p>
+                )}
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <input value={d.ingredients || ''} onChange={(e) => setItem(p.sku, { ingredients: e.target.value })}
+                    placeholder="Ingrédients (obligatoire)" className={inputCls} data-testid={`offer-item-ingredients-${p.sku}`} />
+                  <input value={d.allergens || ''} onChange={(e) => setItem(p.sku, { allergens: e.target.value })}
+                    placeholder="Allergènes (« Aucun » si sans)" className={inputCls} data-testid={`offer-item-allergens-${p.sku}`} />
+                </div>
+                {itemKo(p, d) && <p className="text-[9px] text-red-400">Quantité, ingrédients et allergènes obligatoires{f.lot_type === 'COMPOSED' ? ' + prix TTC' : ''}.</p>}
+              </div>
+            );
+          })}
+          {f.lot_type === 'COMPOSED' && finalPrice > 0 && (
+            <p className={`text-[10px] font-semibold ${sumKo ? 'text-red-400' : 'text-emerald-300'}`} data-testid="offer-items-sum">
+              Somme des articles : {itemsSum.toFixed(2)} {f.currency} / prix du lot : {finalPrice.toFixed(2)} {f.currency}
+              {sumKo ? ' — doit être égale' : ' ✓'}
+            </p>
+          )}
+        </div>
+      )}
       <div>
         <label className="text-[10px] text-white/50 block mb-1">{t.desc}</label>
         <textarea value={f.description} onChange={(e) => setF((p) => ({ ...p, description: e.target.value }))}
           rows={2} className="w-full px-2.5 py-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs"
           data-testid="offer-description" />
       </div>
-      <button onClick={submit} disabled={busy || !f.product_sku || f.description.trim().length < 10 || price <= 0 || discountKo || !photos[0] || dlcKo}
+      <button onClick={submit} disabled={busy || !f.product_sku || f.description.trim().length < 10 || price <= 0 || discountKo || !photos[0] || dlcKo || itemsKo}
         data-testid="offer-submit"
         className="h-9 px-5 rounded-full bg-[#D9B35A] text-black text-xs font-bold hover:bg-[#E9CF8E] disabled:opacity-40">
         {t.submit}

@@ -104,6 +104,27 @@ export const DetaillantOffersPanel = () => {
                 </p>
                 <p className="text-[10px] text-white/45 mt-1">{o.description}</p>
                 {o.composed_detail && <p className="text-[10px] text-white/45">Composition : {o.composed_detail}</p>}
+                {(o.items_detail || []).length > 0 && (
+                  <div className="mt-1.5 rounded-lg border border-white/[0.08] bg-white/[0.02] p-2 space-y-1"
+                    data-testid={`dt-admin-items-${o.id}`}>
+                    {o.items_detail.map((it) => (
+                      <p key={it.sku} className="text-[9.5px] text-white/60">
+                        <b className="text-white/80">{it.name}</b>{it.brand ? ` — ${it.brand}` : ''} · {it.format_label}
+                        {it.unit_price_ttc != null && o.lot_type === 'COMPOSED' && (
+                          <b className="text-[#E9CF8E]"> · {Number(it.unit_price_ttc).toFixed(2)} {o.currency || 'EUR'} TTC</b>)}
+                        {it.price_per_unit && (
+                          <span className="text-emerald-300/80"> ({Number(it.price_per_unit.value).toFixed(2)} {o.currency || 'EUR'}/{it.price_per_unit.unit})</span>)}
+                        <span className="text-white/40"> · Allergènes : {it.allergens}</span>
+                      </p>
+                    ))}
+                    {o.lot_type === 'COMPOSED' && o.final_price != null && (
+                      <p className="text-[9.5px] font-bold text-[#E9CF8E]">
+                        Total lot : {Number(o.final_price).toFixed(2)} {o.currency || 'EUR'} TTC
+                        {' '}= {o.items_detail.reduce((s, it) => s + (it.unit_price_ttc || 0), 0).toFixed(2)} (somme articles) ✓
+                      </p>
+                    )}
+                  </div>
+                )}
                 <p className="text-[10px] text-white/50 mt-0.5">
                   {o.condition && <span>État : <b>{o.condition === 'NEW' ? 'neuf' : 'occasion'}</b></span>}
                   {o.warranty && <span> · Garantie : {o.warranty}</span>}

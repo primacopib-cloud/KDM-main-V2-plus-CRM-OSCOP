@@ -221,8 +221,47 @@ export const AuctionCard = ({ auction, canBid, onChanged, follows = null, onTogg
           </span>
         </div>
         <div className="text-[11px] text-white/55">
-          {i18n.t('auction.value')} : {Number(a.value_eur).toFixed(2)} € · {i18n.t('auction.bids_count', { count: a.bids_count })}
+          {i18n.t('auction.value')} : {Number(a.value_eur).toFixed(2)} €{a.currency && a.currency !== 'EUR' ? ` (${a.currency})` : ' TTC'} · {i18n.t('auction.bids_count', { count: a.bids_count })}
         </div>
+        {(a.combo_items || []).length > 0 && (
+          <details className="rounded-lg border border-white/[0.08] bg-white/[0.02] px-2.5 py-1.5 group"
+            data-testid={`auction-combo-${a.reference}`}>
+            <summary className="cursor-pointer text-[10px] font-bold text-[#E9CF8E] uppercase tracking-wide list-none inline-flex items-center gap-1"
+              data-testid={`auction-combo-toggle-${a.reference}`}>
+              <Images className="w-3 h-3" /> Composition du lot ({a.combo_items.length} article{a.combo_items.length > 1 ? 's' : ''})
+              {a.lot_type === 'SAME' && <span className="text-white/40 normal-case font-normal">· unités identiques</span>}
+            </summary>
+            <ul className="mt-1.5 space-y-1.5">
+              {a.combo_items.map((it) => (
+                <li key={it.sku} className="rounded-md bg-white/[0.03] p-2 text-[10px]" data-testid={`auction-combo-item-${a.reference}-${it.sku}`}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-semibold text-white/90">{it.name}{it.brand ? ` — ${it.brand}` : ''}</span>
+                    {a.lot_type === 'COMPOSED' && it.unit_price_ttc != null && (
+                      <span className="font-bold text-[#E9CF8E] shrink-0" data-testid={`auction-combo-price-${a.reference}-${it.sku}`}>
+                        {Number(it.unit_price_ttc).toFixed(2)} {(a.currency || 'EUR') === 'EUR' ? '€' : a.currency} TTC
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-white/55 mt-0.5">
+                    Quantité : {it.format_label}
+                    {it.price_per_unit && (
+                      <span className="text-emerald-300/90 font-semibold" data-testid={`auction-combo-per-unit-${a.reference}-${it.sku}`}>
+                        {' '}· soit {Number(it.price_per_unit.value).toFixed(2)} {(a.currency || 'EUR') === 'EUR' ? '€' : a.currency}/{it.price_per_unit.unit}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-white/45 mt-0.5">Ingrédients : {it.ingredients}</div>
+                  <div className="text-amber-300/80 mt-0.5" data-testid={`auction-combo-allergens-${a.reference}-${it.sku}`}>
+                    Allergènes : {it.allergens}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[9px] text-white/40 italic mt-1.5">
+              Prix du lot affiché TTC. La DDM/DLC exacte est communiquée au moment du retrait chez le POP'S.
+            </p>
+          </details>
+        )}
         <div className="text-[11px] font-semibold text-red-300 inline-flex items-center gap-1" data-testid={`auction-countdown-${a.reference}`}>
           <Timer className="w-3 h-3" />
           {a.status === 'SCHEDULED' && <Countdown target={a.starts_at} prefix={i18n.t('auction.starts_in')} />}

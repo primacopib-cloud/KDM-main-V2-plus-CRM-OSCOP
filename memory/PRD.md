@@ -3916,3 +3916,11 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **Liens retour vitrine** : composant partagé BackToShowcase.jsx (pastille + flèche, RTL ok) sur accueil (ProHero), /pass, /coopact, /investisseurs-privilege — vérifié screenshot/playwright sur les 3 pages.
 - **Tracking clics retour** : trackCta back_showcase_{home,pass,coopact,investors} ajoutés à CTA_LABELS (routes_cta_stats.py), visibles dans /api/admin/cta-stats (panneau CTA superadmin). Testé : 1 clic enregistré.
 - **Favicons** : favicon.ico (64), favicon-32/64.png, apple-touch-icon.png (180) tous servis en 200 et déclarés — onglet 100 % brandé.
+
+## 3 octobre 2026 — Lots POP'S COOP'ACT : prix détaillés, infos alimentaires, réservation de stock
+- **Détail des prix** : OfferItemDetail (marque, format/quantité, prix TTC par article, qté nette + unité → prix au kg/L calculé serveur). Obligatoire par article pour les lots COMPOSÉS avec contrôle somme des articles = prix final du lot (±0,02). Exception lots SAME (unités identiques).
+- **Infos alimentaires obligatoires** : ingrédients, allergènes, quantité requis à l'envoi (400 sinon, « Aucun » accepté) ; affichés sur la fiche lot avant la vente ; note « DDM/DLC communiquée au retrait ».
+- **Réservation de stock** : _reserved_skus() — une référence ne peut pas figurer dans 2 lots actifs (PENDING ou enchères SCHEDULED/LIVE) → 409 au dépôt ; libération auto au rejet/fin de lot.
+- **Propagation** : items_detail de l'offre → combo_items sur chaque enchère créée à la validation ; serialize_member expose lot_type/lot_price_ttc/combo_items.
+- **UI** : bloc « Détail des articles » dans DetaillantOfferForm (calcul €/kg en direct, contrôle somme), section « Composition du lot » sur AuctionCard (prix TTC/article, €/kg, ingrédients, allergènes), détail visible dans le panneau de validation admin.
+- **Tests** : E2E API (offre composée 3 articles créée → somme validée → 409 doublon SKU → 400 infos manquantes → signature cession → validation admin → enchère publique avec combo_items et €/kg corrects) + screenshots fiche lot et formulaire. Données QA supprimées, 4 crédits remboursés.

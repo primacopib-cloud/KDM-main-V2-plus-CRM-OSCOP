@@ -136,6 +136,10 @@ def serialize_member(a: dict, labels: dict | None = None) -> dict:
         "brand": a.get("brand"),
         "brand_logo": a.get("brand_logo"),
         "condition": a.get("condition"), "warranty": a.get("warranty"), "dlc": a.get("dlc"),
+        "lot_type": a.get("lot_type"),
+        "lot_price_ttc": a.get("lot_price_ttc"),
+        "currency": a.get("currency", "EUR"),
+        "combo_items": a.get("combo_items") or [],
     }
     if a.get("retailer") and a.get("source_visible"):
         out["retailer"] = a["retailer"]
