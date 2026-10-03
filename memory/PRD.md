@@ -3937,3 +3937,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - **QR étiquette** : combo_label_pdf accepte lot_url (QrCodeWidget reportlab) → lien /encheres/lot/{reference} de l'enchère liée (FRONTEND_URL).
 - **Lots prêts à déposer** : chips des 15 produits food_info dans le formulaire POP'S → 1 clic = lot ×3 SAME + description auto + infos pré-remplies.
 - **Tests** : E2E curl (incident 3,83 € avoir / 4,60 € déduction / règlement 5,00 €, settle + 409, PDF QR 5,4 Ko) + screenshots carte incidents admin et 15 chips fonctionnels. Données QA nettoyées.
+
+## 3 octobre 2026 (suite 3) — Cycle avoirs complet — testing agent iteration_110 : 100 %
+- **Crédit auto au règlement** : settle → eur_to_credits(credit_eur) sur auction_accounts (+38 cr pour 3,83 €), ledger INCIDENT_REFUND, pickup_incident.credits_granted, 409 re-settle.
+- **Emails multilingues avoirs** : incident_emails.py (INCIDENT_T 5 langues, rtl_wrap) envoyé à l'enregistrement (pickup-scan) et au règlement — vérifié ar/fr, Brevo OK.
+- **Relevé mensuel PDF POP'S** : pops_settlement_pdf.py + GET /api/detaillant/settlements/statement.pdf?month=YYYY-MM (cession/déduction/net + totaux, 400 format, 404 vide/étranger) ; UI : sélecteur de mois + bouton PDF dans DetaillantSalesTable.
+- **Testing agent iteration_110** : 12/12 backend, 6/6 UI (POP'S, membre, admin). Données QA nettoyées, langue restaurée. Régression : /app/backend/tests/test_iter110_credit_cycle_pdf.py.

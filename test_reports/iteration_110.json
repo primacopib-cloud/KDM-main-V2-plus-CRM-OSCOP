@@ -1,0 +1,33 @@
+{
+  "summary": "Iter110 — Cycle complet AVOIRS + RÈGLEMENTS COOP'ACT verrouillé. Pytest 12/12 PASS en 3,2 s (/app/backend/tests/test_iter110_credit_cycle_pdf.py). P1 OK : (a) pickup-scan avec missing_skus=['QA-ART-B'] crée un pickup_incident {credit_eur=3.83, pops_deduction_eur=4.60, settled:false} ; share=4.6/9.6=0.4792 × paid 8.0€ → 3.83€ ; email 'recorded' envoyé (pas de warning backend). (b) settle crédite auto le gagnant : credits_granted=38 (int(round(3.83×10))), auction_accounts.credits +38, auction_credit_ledger INCIDENT_REFUND amount=38 label='Avoir lot AUC-QA-CYCLE…', pickup_incident.settled=true + credits_granted=38 persistés. (c) Re-settle → 409. (d) GET /pickup-incidents affiche l'incident settled=true. (e) i18n : preferred_language='ar' avant scan n'émet aucun warning backend ; send_incident_email testé directement en ar+fr → sujets différents et localisés (ar: 'تمت تسوية رصيد 3.83 € ✓', fr: 'Avoir de 3.83 € réglé ✓'), html contient '38 crédits/نقطة'. (f) PDF relevé mensuel POP'S : GET /api/detaillant/settlements/statement.pdf?month=2026-10 → 200 application/pdf 3+ Ko (>1.5 Ko) ; month=2025-01 (sans lot) → 404 ; month='oct-2026' (format invalide) → 400 ; même route avec session invest.test.i (sans offre détaillant) → 404. P2 OK : /api/detaillant/sales expose pops_settlement_eur=5.00 (9.60−4.60) et pickup_incident.pops_deduction_eur=4.60 ; totals.settlement_eur + totals.deductions_eur présents. UI (Playwright) : POPS /espace-detaillant affiche data-testid='dt-settlement-month', 'dt-settlement-pdf', 'dt-sales-export-csv' côte à côte ; sale-settlement-AUC-QA-CYCLE affiche \"Règlement O'SCOP : 5.00 € (−4.60 € manquants)\". Membre invest.test.i /encheres : AuctionHistoryPanel rend 'win-incident-qa-auc-cycle' en vert (color rgb(110,231,183)) : 'Avoir de 3.83 € réglé ✓'. Admin /superadmin onglet Bourse COOP'ACT : 'pickup-incidents-card' + 'pickup-incident-qa-auc-cycle' + 'incident-settled-qa-auc-cycle' ('✓ Réglé le 03/10/2026'). NETTOYAGE EFFECTUÉ : qa-off-cycle + qa-auc-cycle supprimés, auction_credit_ledger INCIDENT_REFUND du test supprimé (1 doc), auction_accounts du gagnant supprimé (recréé par la settle, baseline était NONE), notification AUCTION_PICKUP_INCIDENT supprimée (1 doc), preferred_language='fr' restaurée.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter110_credit_cycle_pdf.py",
+    "/app/test_reports/pytest/iter110.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes_detaillant.py dépasse 1460 lignes : la route /settlements/statement.pdf cohabite avec dépôt d'offres, cession, catalogue, stats. Un split par domaine (settlements/, offers/, cession/) améliorerait la maintenabilité (déjà signalé en iter109).",
+    "pops_settlement_pdf.build_settlement_statement_pdf : filtrage par préfixe '{month}-01' à '{month}-32' fonctionne mais est fragile ; préférer un range datetime(year, month, 1) → datetime(year, month+1, 1) pour éviter les 'YYYY-MM-30'/'YYYY-MM-31' edge cases cross-fuseau. Impact actuel = aucun (ISO strings bien formatées).",
+    "settle_pickup_incident : eur_to_credits(0) retourne 0 et le crédit n'est pas inséré au ledger si credit_eur=0, mais pickup_incident.credits_granted=0 est tout de même persisté — cohérent, mais un commentaire sur ce chemin ('avoir à 0 € = rien à régler mais statut settled') clarifierait l'intention.",
+    "incident_emails.send_incident_email : exceptions Brevo sont loggées en warning sans surface vers l'admin (pas de ré-enqueue). Pour un flux financier (avoir), un retry+alerte admin serait plus robuste. Non-bloquant car Brevo 201 observé."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter110_credit_cycle_pdf.py"
+  ],
+  "success_rate": {"backend": "100% (12/12 pytest)", "frontend": "100% (6/6 testids P2 UI validés : dt-settlement-month, dt-settlement-pdf, dt-sales-export-csv, sale-settlement-AUC-QA-CYCLE, win-incident-qa-auc-cycle, pickup-incidents-card+incident-settled)"},
+  "test_credentials": "detaillant-test@kdmarche.fr / Detaillant2026! (POPS Épicerie Ti Kaz, convention signée) ; admin@kdmarche-oscop.fr / AdminKDM2025! portal:admin ; invest.test.i@test.fr / InvestTest2026! (gagnant QA, préférence langue restaurée à 'fr').",
+  "seed_data_creation": "Seed temporaire créé puis entièrement nettoyé : 1 detaillant_offer (qa-off-cycle), 1 auction WON (qa-auc-cycle / AUC-QA-CYCLE), 1 pickup_incident (via scan admin), 1 auction_credit_ledger INCIDENT_REFUND +38 cr, 1 auction_account créé pour invest.test.i (baseline était inexistant → supprimé après test), 1 notification AUCTION_PICKUP_INCIDENT ; preferred_language='ar' pendant le test puis restaurée à 'fr'. 2 emails Brevo réels envoyés vers invest.test.i@test.fr (adresse de test interne, 1 'recorded' + 1 'settled' = conforme à la consigne).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_iter110_credit_cycle_pdf.py est une régression P1+P2 réutilisable : il seed en direct via MongoClient (bypass dépôt POPS/validation admin pour isoler le cycle avoir), scan+settle via admin JWT, PDF checks (POPS JWT), i18n via patch de brevo_service.send_email. Les 12 tests doivent être exécutés en ordre (fixture 'seed' module-scoped). Le fixture decrement maintenant proprement les crédits et supprime le compte auction_account si créé par le test — baseline initiale de invest.test.i = pas de compte COOP'ACT. DB_NAME=kdmarche_lolodrive. Attention : les emails Brevo partent réellement, ne pas réexécuter en boucle.",
+  "rca of the issue": "N/A — tous les critères P1/P2 verrouillés sans régression. Zero warning 'Email avoir non envoyé' observé dans backend.err.log. Formules verifiées : credit_eur = round(paid × sum(unit_price_ttc missing)/lot_price_ttc, 2) = round(8.0×4.6/9.6, 2) = 3.83€ ; pops_deduction_eur = round(sum(unit_price_ttc missing), 2) = 4.60€ ; net POP'S = 9.60−4.60 = 5.00€ ; credits_granted = int(round(3.83×10)) = 38."
+}
