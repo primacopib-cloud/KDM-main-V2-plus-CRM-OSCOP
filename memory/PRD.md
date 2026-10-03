@@ -3910,3 +3910,9 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 
 ## 29 septembre 2026 — Mention « Emergent | Fullstack App »
 - Vérifié : le titre générique du scaffold a été remplacé depuis longtemps par « KDMARCHÉ × O'SCOP — Communityplace coopérative B2B2C » (curl preview + domaine custom OK, git -S confirme la suppression). Aucun badge/service worker/manifest générique. L'onglet générique vu par l'utilisateur était un onglet navigateur obsolète en cache — rien à corriger côté code.
+
+## 3 octobre 2026 — Rebranding onglet/métadonnées + liens retour + tracking
+- **Rebranding** : title, meta description, og:title/site_name/image:alt, twitter:title → « O'SCOP — Objectif SCOP Outremer » (public/index.html) ; Seo.jsx suffixe « | O'SCOP — Objectif SCOP Outremer ». Vérifié curl après restart. Production : nécessite un redéploiement pour être visible.
+- **Liens retour vitrine** : composant partagé BackToShowcase.jsx (pastille + flèche, RTL ok) sur accueil (ProHero), /pass, /coopact, /investisseurs-privilege — vérifié screenshot/playwright sur les 3 pages.
+- **Tracking clics retour** : trackCta back_showcase_{home,pass,coopact,investors} ajoutés à CTA_LABELS (routes_cta_stats.py), visibles dans /api/admin/cta-stats (panneau CTA superadmin). Testé : 1 clic enregistré.
+- **Favicons** : favicon.ico (64), favicon-32/64.png, apple-touch-icon.png (180) tous servis en 200 et déclarés — onglet 100 % brandé.

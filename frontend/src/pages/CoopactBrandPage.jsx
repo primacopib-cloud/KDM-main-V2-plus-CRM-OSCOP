@@ -8,6 +8,7 @@ import COOPACT_T from '../i18n/coopactPage.json';
 const L = (i18n.language || 'fr').split('-')[0];
 const T = COOPACT_T[L] || COOPACT_T.fr;
 import { HeaderBackButton } from '../components/HeaderBackButton';
+import { BackToShowcase } from '../components/BackToShowcase';
 import { Reveal } from '../components/Reveal';
 
 // Compteur animé (montée douce au chargement)
@@ -93,7 +94,8 @@ export default function CoopactBrandPage() {
       <div className="absolute top-0 left-1/4 w-[26rem] h-[26rem] rounded-full bg-[#D9B35A]/[0.05] blur-3xl pointer-events-none" />
       <header className="max-w-5xl mx-auto px-5 pt-8 pb-10 relative">
         <HeaderBackButton fallback="/"
-          className="!px-3 !rounded-full border border-white/20 hover:border-white/40 mb-8" />
+          className="!px-3 !rounded-full border border-white/20 hover:border-white/40 mb-3" />
+        <div className="mb-8"><BackToShowcase page="coopact" /></div>
         <Reveal>
           <p className="text-[11px] font-bold tracking-[0.25em] text-[#D9B35A] uppercase mb-4" data-testid="coopact-kicker">
             O'SCOP × KDMARCHÉ · LOLODRIVE

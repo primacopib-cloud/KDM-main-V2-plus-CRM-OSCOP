@@ -9,7 +9,7 @@ export default function Seo({ titleKey, descKey }) {
 
   useEffect(() => {
     const title = i18n.t(titleKey);
-    document.title = title.includes('KDMARCH') ? title : `${title} | KDMARCHÉ`;
+    document.title = title.includes("O'SCOP") ? title : `${title} | O'SCOP — Objectif SCOP Outremer`;
     document.documentElement.lang = i18n.language.split('-')[0];
 
     if (descKey) {

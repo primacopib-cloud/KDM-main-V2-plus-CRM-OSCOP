@@ -22,6 +22,10 @@ def set_cta_stats_database(database):
 
 
 CTA_LABELS = {
+    "back_showcase_home": "Retour vitrine objectifscopoutremer.com (accueil)",
+    "back_showcase_pass": "Retour vitrine objectifscopoutremer.com (page PASS)",
+    "back_showcase_coopact": "Retour vitrine objectifscopoutremer.com (page COOP'ACT)",
+    "back_showcase_investors": "Retour vitrine objectifscopoutremer.com (page investisseurs)",
     "hero_besoin_achat": "Déposer un besoin d'achat (hero pro accueil)",
     "hero_catalogue_pro": "Explorer le catalogue Pro (hero pro accueil)",
     "hero_financer": "Financer une opération (hero pro accueil)",

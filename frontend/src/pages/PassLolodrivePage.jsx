@@ -13,6 +13,7 @@ import { RelayOfMonth } from '../components/pass/RelayOfMonth';
 import { authAPI } from '../services/api';
 import { FeaturedAuctionBanner } from '../components/auctions/FeaturedAuctionBanner';
 import { HeaderBackButton } from '../components/HeaderBackButton';
+import { BackToShowcase } from '../components/BackToShowcase';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -71,7 +72,8 @@ export default function PassLolodrivePage() {
       <div className="pt-20 -mb-16"><FlashPromoBanner placement="pass" /></div>
       <main className="max-w-3xl mx-auto px-4 pt-28 pb-20" data-testid="pass-lolodrive-page">
         <HeaderBackButton fallback="/"
-          className="!px-3 !rounded-full border border-white/20 hover:border-white/40 mb-6" />
+          className="!px-3 !rounded-full border border-white/20 hover:border-white/40 mb-3" />
+        <div className="mb-6"><BackToShowcase page="pass" /></div>
         <WelcomeBanner space="pass" className="mb-6" />
         {firstName && (
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-5 text-sm bg-[#7BC94E]/15 border border-[#7BC94E]/40 text-[#B9E89A]" data-testid="pass-confirmation">

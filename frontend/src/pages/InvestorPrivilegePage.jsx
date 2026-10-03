@@ -4,6 +4,7 @@ import { Crown, TrendingUp, Ship, ShieldCheck, Landmark, ArrowRight, Coins, Refr
 import { toast } from 'sonner';
 import { apiCall, getSessionToken } from '../services/http';
 import { HeaderBackButton } from '../components/HeaderBackButton';
+import { BackToShowcase } from '../components/BackToShowcase';
 import { Reveal } from '../components/Reveal';
 import i18n from '@/i18n';
 import INV_T from '../i18n/invPrivPage.json';
@@ -174,7 +175,8 @@ export default function InvestorPrivilegePage() {
       style={{ background: 'linear-gradient(180deg, #12081f 0%, #2A1045 55%, #1a0b2c 100%)' }}>
       <div className="absolute top-0 left-1/3 w-[30rem] h-[30rem] rounded-full bg-[#D9B35A]/[0.06] blur-3xl pointer-events-none" />
       <div className="max-w-5xl mx-auto px-6 py-10 relative">
-        <HeaderBackButton fallback="/" className="!px-3 !rounded-full border border-white/20 hover:border-white/40 mb-8" />
+        <HeaderBackButton fallback="/" className="!px-3 !rounded-full border border-white/20 hover:border-white/40 mb-3" />
+        <div className="mb-8"><BackToShowcase page="investors" /></div>
         <Reveal>
           <div className="flex items-center gap-2 text-[#D9B35A] text-xs font-bold uppercase tracking-[0.2em]">
             <Crown className="w-4 h-4" /> {T.kicker}
