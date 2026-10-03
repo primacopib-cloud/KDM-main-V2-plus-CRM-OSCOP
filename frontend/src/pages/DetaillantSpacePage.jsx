@@ -10,7 +10,7 @@ import { DetaillantSalesTable } from '../components/detaillant/DetaillantSalesTa
 import { DetaillantReviewsCard } from '../components/detaillant/DetaillantReviewsCard';
 import { DetaillantFollowersCard } from '../components/detaillant/DetaillantFollowersCard';
 import { DetaillantWeeklyRecapsCard } from '../components/detaillant/DetaillantWeeklyRecapsCard';
-import { DetaillantConventionCard } from '../components/detaillant/DetaillantConventionCard';
+import { DetaillantConventionCard, downloadAuthedPdf } from '../components/detaillant/DetaillantConventionCard';
 import { CessionFicheModal } from '../components/detaillant/CessionFicheModal';
 import { DT } from '../components/detaillant/detaillantI18n';
 
@@ -247,6 +247,14 @@ export default function DetaillantSpacePage() {
                     className="mt-1 text-[10px] font-semibold text-[#F2D07A] hover:underline">
                     Fiche de cession
                   </button>
+                  {(o.items_detail || []).length > 0 && (
+                    <button type="button"
+                      onClick={() => downloadAuthedPdf(`/detaillant/offers/${o.id}/label.pdf`, `etiquette-lot-${o.id.slice(0, 8)}.pdf`)}
+                      data-testid={`dt-offer-label-btn-${o.id}`}
+                      className="block mt-0.5 text-[10px] font-semibold text-emerald-300 hover:underline">
+                      Étiquette PDF
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

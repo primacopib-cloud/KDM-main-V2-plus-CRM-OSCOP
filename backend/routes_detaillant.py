@@ -539,8 +539,24 @@ async def detaillant_upload_photo(file: UploadFile = File(...), user: dict = Dep
 async def detaillant_catalog(user: dict = Depends(get_current_user)):
     products = await db.lolodrive_products.find(
         {"detaillant_active": {"$ne": False}},
-        {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "brand_logo": 1, "image_url": 1, "perishable": 1}).sort("name", 1).to_list(300)
+        {"_id": 0, "sku": 1, "name": 1, "category": 1, "brand": 1, "brand_logo": 1, "image_url": 1, "perishable": 1, "food_info": 1}).sort("name", 1).to_list(300)
     return {"products": products}
+
+
+@detaillant_router.get("/offers/{offer_id}/label.pdf")
+async def detaillant_offer_label(offer_id: str, user: dict = Depends(get_current_user)):
+    """Étiquette PDF du lot (composition, allergènes, prix) à afficher en magasin POP'S."""
+    q = {"id": offer_id}
+    if user.get("role") not in ("ADMIN", "SUPER_ADMIN") and not user.get("is_admin"):
+        q["user_id"] = user["id"]
+    offer = await db.detaillant_offers.find_one(q, {"_id": 0})
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offre introuvable")
+    from fastapi.responses import Response
+    from combo_label_pdf import build_combo_label_pdf
+    pdf = build_combo_label_pdf(offer)
+    return Response(content=pdf, media_type="application/pdf", headers={
+        "Content-Disposition": f'inline; filename="etiquette-lot-{offer_id[:8]}.pdf"'})
 
 
 @detaillant_public_router.get("/catalog/public")

@@ -910,6 +910,8 @@ async def startup_db_client():
     await seed_legal_pages(db)
     await seed_freight_rates(db)
     await seed_air_rates(db)
+    from seed_food_catalog import seed_food_catalog
+    await seed_food_catalog(db)
     # Create unique index on email
     await db.users.create_index("email", unique=True)
     await db.users.create_index("id", unique=True)

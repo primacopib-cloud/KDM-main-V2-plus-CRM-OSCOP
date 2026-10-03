@@ -36,6 +36,16 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
   const dlcKo = anyPerishable && (!f.dlc || new Date(f.dlc) < new Date(Date.now() + 90 * 86400000));
   const setItem = (sku, patch) => setItems((m) => ({ ...m, [sku]: { ...(m[sku] || {}) , ...patch } }));
   const itemOf = (sku) => items[sku] || {};
+  useEffect(() => {
+    composedProducts.forEach((p) => {
+      if (p.food_info && !items[p.sku]) {
+        const fi = p.food_info;
+        setItem(p.sku, { format_label: fi.format_label || '', net_qty_value: fi.net_qty_value || '',
+          net_qty_unit: fi.net_qty_unit || '', ingredients: fi.ingredients || '', allergens: fi.allergens || '' });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [composedProducts.map((p) => p.sku).join(',')]);
   const itemsDetail = composedProducts.map((p) => ({ sku: p.sku, ...itemOf(p.sku) }));
   const itemsSum = f.lot_type === 'COMPOSED'
     ? Math.round(itemsDetail.reduce((s, d) => s + (Number(d.unit_price_ttc) || 0), 0) * 100) / 100 : 0;

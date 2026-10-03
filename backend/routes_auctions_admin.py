@@ -43,6 +43,7 @@ async def ensure_auction_defaults():
 class PickupScanBody(BaseModel):
     code: str
     confirm: bool = False
+    missing_skus: list[str] = []  # articles indisponibles au retrait → avoir partiel, jamais de remplacement
 
 
 @auctions_admin_router.post("/pickup-scan")
@@ -60,13 +61,50 @@ async def pickup_scan(body: PickupScanBody, admin: dict = Depends(require_admin)
            "winner_name": w.get("name"), "winner_email": w.get("email"),
            "winner_phone": (member or {}).get("phone"),
            "price_eur": w.get("price_eur"), "won_at": w.get("won_at"),
+           "lot_type": a.get("lot_type"),
+           "combo_items": [{"sku": i.get("sku"), "name": i.get("name"), "brand": i.get("brand"),
+                            "format_label": i.get("format_label"), "unit_price_ttc": i.get("unit_price_ttc")}
+                           for i in (a.get("combo_items") or [])],
+           "pickup_incident": a.get("pickup_incident"),
            "already_picked_up": bool(a.get("pickup_confirmed_at")),
            "pickup_confirmed_at": a.get("pickup_confirmed_at")}
     if body.confirm and not a.get("pickup_confirmed_at"):
         now = ah.now_utc().isoformat()
-        await ah.db.auctions.update_one(
-            {"id": a["id"]},
-            {"$set": {"pickup_confirmed_at": now, "pickup_confirmed_by": admin.get("email")}})
+        sets = {"pickup_confirmed_at": now, "pickup_confirmed_by": admin.get("email")}
+        # Article(s) manquant(s) : avoir partiel au prorata — jamais de remplacement silencieux
+        if body.missing_skus:
+            items = a.get("combo_items") or []
+            by_sku = {i["sku"]: i for i in items}
+            unknown = [s for s in body.missing_skus if s not in by_sku]
+            if unknown:
+                raise HTTPException(status_code=400, detail=f"Référence(s) hors lot : {', '.join(unknown)}")
+            if len(body.missing_skus) >= len(items):
+                raise HTTPException(status_code=400, detail="Tous les articles manquants : annulez la remise plutôt qu'un avoir total")
+            paid = float(w.get("price_eur") or 0)
+            lot_ttc = float(a.get("lot_price_ttc") or 0)
+            if lot_ttc > 0 and all(by_sku[s].get("unit_price_ttc") for s in body.missing_skus):
+                share = sum(float(by_sku[s]["unit_price_ttc"]) for s in body.missing_skus) / lot_ttc
+            else:
+                share = len(body.missing_skus) / len(items)
+            credit_eur = round(paid * share, 2)
+            incident = {
+                "missing_skus": body.missing_skus,
+                "missing_names": [by_sku[s].get("name") for s in body.missing_skus],
+                "credit_eur": credit_eur, "paid_eur": paid,
+                "rule": "Avoir partiel au prorata — remplacement par un autre produit ou une autre marque interdit",
+                "recorded_at": now, "recorded_by": admin.get("email"),
+            }
+            sets["pickup_incident"] = incident
+            out["pickup_incident"] = incident
+            from core_deps import create_notification
+            await create_notification(
+                "AUCTION_PICKUP_INCIDENT",
+                f"Article indisponible — lot {a.get('reference')}",
+                f"Article(s) indisponible(s) au retrait : {', '.join(incident['missing_names'])}. "
+                f"Un avoir de {credit_eur:.2f} € est dû au gagnant (aucun remplacement autorisé).",
+                target_user_id=w.get("user_id"),
+                data={"reference": a.get("reference"), "credit_eur": credit_eur})
+        await ah.db.auctions.update_one({"id": a["id"]}, {"$set": sets})
         out["pickup_confirmed_at"] = now
         out["confirmed"] = True
     return out
