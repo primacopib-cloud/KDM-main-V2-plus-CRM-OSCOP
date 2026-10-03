@@ -3960,3 +3960,8 @@ Nouveau module **`/app/backend/routes_rar.py`** (~380 l., préfixe /api/rar, set
 - DetaillantOfferForm : état confirmedItems par SKU ; bouton « Confirmer ce lot (quantité + informations) » par article (valide qty_lots ≥1, format, ingrédients, allergènes, prix TTC si composé) → badge vert « ✓ Lot confirmé — N lot(s) ».
 - Verrous : changement de produit / type de lot / chip bloqué tant que le lot courant n'est pas confirmé (toast d'avertissement) ; en lot composé, produits 2 et 3 désactivés tant que le précédent n'est pas confirmé (hint ambre) ; toute édition d'un champ article ou de la quantité de lots réinitialise la confirmation ; dépôt exige que tous les articles soient confirmés.
 - Tests UI (playwright) : blocage du changement de chip avant confirmation, toast de confirmation, déblocage après, verrou produit 2 sans prix TTC, déverrouillage après confirmation complète.
+
+## 3 octobre 2026 (suite 7) — UX dépôt POP'S : récap, progression, brouillon
+- **Récapitulatif avant dépôt** : modale offer-summary-modal (photos, type, quantité, composition par article avec prix TTC, prix lot/remise/final TTC, coût crédits, DLC, descriptif) + boutons Modifier / Confirmer le dépôt. Vérifié UI.
+- **Indicateur de progression** : offer-progress avec segments par article (vert = confirmé) + pourcentage. Vérifié (1/1 100 %).
+- **Brouillon automatique** : sauvegarde localStorage pops_offer_draft (debounce 500 ms, f + items + extraSkus + confirmations + photos), restauration au retour avec toast, purge après dépôt réussi. Vérifié (rechargement → tout restauré).

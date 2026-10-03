@@ -19,6 +19,7 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
   const [extraSkus, setExtraSkus] = useState(['', '']);
   const [items, setItems] = useState({});
   const [confirmedItems, setConfirmedItems] = useState({});
+  const [showSummary, setShowSummary] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => { detaillantAPI.catalog().then((r) => setProducts(r.products || [])).catch(() => {}); }, []);
   const product = products.find((p) => p.sku === f.product_sku);
@@ -77,6 +78,37 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
     || (f.lot_type === 'COMPOSED' && !(Number(d.unit_price_ttc) > 0));
   const itemsKo = composedProducts.length === 0 || composedProducts.some((p) => itemKo(p, itemOf(p.sku))) || sumKo
     || composedProducts.some((p) => !confirmedItems[p.sku]);
+  const confirmedCount = composedProducts.filter((p) => confirmedItems[p.sku]).length;
+
+  // Brouillon : sauvegarde auto et reprise du dépôt en cours
+  const DRAFT_KEY = 'pops_offer_draft';
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.f?.product_sku) {
+          setF((p) => ({ ...p, ...d.f }));
+          setItems(d.items || {});
+          setExtraSkus(d.extraSkus || ['', '']);
+          setConfirmedItems(d.confirmedItems || {});
+          setPhotos(d.photos || []);
+          toast.info('Brouillon d\'offre restauré — reprenez où vous en étiez.');
+        }
+      }
+    } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!f.product_sku) return;
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ f, items, extraSkus, confirmedItems, photos }));
+      } catch { /* noop */ }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [f, items, extraSkus, confirmedItems, photos]);
+
   const submit = async () => {
     setBusy(true);
     try {
@@ -98,6 +130,8 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
         warranty: f.warranty.trim() || null, dlc: f.dlc || null,
       });
       toast.success(`✓ Offre déposée — ${cost} crédits`);
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* noop */ }
+      setShowSummary(false);
       setF({ product_sku: '', lot_type: 'SAME', qty_lots: 1, description: '', composed_detail: '',
         lot_price: '', currency: 'EUR', discount_mode: 'PERCENT', discount_value: 15, scheduled_start: '',
         condition: 'NEW', warranty: '', dlc: '' });
@@ -112,6 +146,25 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
     <div className="rounded-2xl border border-[#D9B35A]/30 bg-[#D9B35A]/[0.04] p-4 space-y-3" data-testid="detaillant-offer-form">
       <h3 className="text-sm font-bold text-[#E9CF8E]">{t.newOffer}</h3>
       <p className="text-[10px] text-white/45">{t.costInfo}</p>
+      {composedProducts.length > 0 && (
+        <div data-testid="offer-progress" className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-bold text-white/60 uppercase tracking-wide">
+              Lots confirmés : {confirmedCount}/{composedProducts.length}
+            </span>
+            <span className="text-[10px] font-bold text-[#E9CF8E]">
+              {composedProducts.length ? Math.round((confirmedCount / composedProducts.length) * 100) : 0} %
+            </span>
+          </div>
+          <div className="flex gap-1">
+            {composedProducts.map((p) => (
+              <div key={p.sku} data-testid={`offer-progress-seg-${p.sku}`}
+                className={`h-1.5 flex-1 rounded-full transition-colors ${confirmedItems[p.sku] ? 'bg-emerald-400' : 'bg-white/15'}`}
+                title={p.name} />
+            ))}
+          </div>
+        </div>
+      )}
       {products.some((p) => p.food_info) && (
         <div data-testid="offer-quick-lots">
           <p className="text-[10px] font-bold text-white/50 uppercase tracking-wide mb-1">
@@ -358,11 +411,63 @@ export const DetaillantOfferForm = ({ t, info, onCreated }) => {
           rows={2} className="w-full px-2.5 py-2 rounded-lg bg-white/[0.05] border border-white/15 text-white text-xs"
           data-testid="offer-description" />
       </div>
-      <button onClick={submit} disabled={busy || !f.product_sku || f.description.trim().length < 10 || price <= 0 || discountKo || !photos[0] || dlcKo || itemsKo}
+      <button onClick={() => setShowSummary(true)} disabled={busy || !f.product_sku || f.description.trim().length < 10 || price <= 0 || discountKo || !photos[0] || dlcKo || itemsKo}
         data-testid="offer-submit"
         className="h-9 px-5 rounded-full bg-[#D9B35A] text-black text-xs font-bold hover:bg-[#E9CF8E] disabled:opacity-40">
         {t.submit}
       </button>
+      {showSummary && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          data-testid="offer-summary-modal">
+          <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-[#D9B35A]/40 bg-[#1F0A33] p-5 space-y-3">
+            <h3 className="text-sm font-bold text-[#E9CF8E]">Récapitulatif de l'offre — vérifiez avant dépôt</h3>
+            {photos.length > 0 && (
+              <div className="flex gap-2">
+                {photos.filter(Boolean).map((u, i) => (
+                  <img key={i} src={u} alt="" className="w-16 h-16 rounded-lg object-cover border border-white/10"
+                    data-testid={`offer-summary-photo-${i}`} />
+                ))}
+              </div>
+            )}
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 space-y-1 text-[11px] text-white/80">
+              <p><b className="text-white/50">Type :</b> {f.lot_type === 'COMPOSED' ? 'Lot composé (3 produits)' : 'Lot ×3 — même produit'} · <b className="text-white/50">Quantité de lots :</b> {f.qty_lots}</p>
+              <p><b className="text-white/50">Composition :</b> {composedProducts.map((p) => p.name).join(' + ')}</p>
+              {itemsDetail.map((d) => {
+                const p = composedProducts.find((x) => x.sku === d.sku) || {};
+                return (
+                  <p key={d.sku} className="pl-3 border-l-2 border-[#D9B35A]/40" data-testid={`offer-summary-item-${d.sku}`}>
+                    {p.name}{(d.brand || p.brand) ? ` — ${d.brand || p.brand}` : ''} · {d.format_label}
+                    {f.lot_type === 'COMPOSED' && Number(d.unit_price_ttc) > 0 && (
+                      <b className="text-[#E9CF8E]"> · {Number(d.unit_price_ttc).toFixed(2)} {f.currency} TTC</b>
+                    )}
+                  </p>
+                );
+              })}
+              <p><b className="text-white/50">Prix du lot :</b> {price.toFixed(2)} {f.currency} ·
+                <b className="text-white/50"> remise :</b> −{f.discount_mode === 'PERCENT' ? `${f.discount_value} %` : `${f.discount_value} ${f.currency}`} ·
+                <b className="text-[#E9CF8E]"> prix final : {finalPrice.toFixed(2)} {f.currency} TTC</b></p>
+              {f.lot_type === 'COMPOSED' && (
+                <p className="text-emerald-300/90">Somme des articles : {itemsSum.toFixed(2)} {f.currency} = prix final ✓</p>)}
+              <p><b className="text-white/50">Coût du dépôt :</b> {cost} crédits COOP'ACT</p>
+              {f.dlc && <p><b className="text-amber-300">DLC :</b> {new Date(f.dlc).toLocaleDateString('fr-FR')}</p>}
+              <p className="text-white/45 italic">« {f.description} »</p>
+            </div>
+            <p className="text-[10px] text-white/45">
+              En confirmant, l'offre part en validation O'SCOP ; les références du lot sont alors réservées jusqu'à la fin de la vente.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setShowSummary(false)} data-testid="offer-summary-edit"
+                className="h-8 px-4 rounded-full border border-white/20 text-white/70 text-xs font-bold hover:bg-white/10">
+                Modifier
+              </button>
+              <button type="button" onClick={submit} disabled={busy} data-testid="offer-summary-confirm"
+                className="h-8 px-4 rounded-full bg-[#D9B35A] text-black text-xs font-bold hover:bg-[#E9CF8E] disabled:opacity-50">
+                {busy ? 'Envoi…' : `Confirmer le dépôt (${cost} crédits)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
