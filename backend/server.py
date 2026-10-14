@@ -741,6 +741,7 @@ from rcr_annual_archive import rcr_annual_archive_router
 from rcr_treasury import rcr_treasury_router
 from routes_treasury_consolidated import treasury_consolidated_router
 from routes_ai_guide import ai_guide_router
+from routes_oracle_admin import oracle_admin_router
 from routes_profile_prefs import profile_prefs_router
 from routes_logiscop_transport import logiscop_transport_router
 from routes_logiscop_analytics import logiscop_analytics_router
@@ -757,6 +758,7 @@ app.include_router(rcr_annual_archive_router)
 app.include_router(rcr_treasury_router)
 app.include_router(treasury_consolidated_router)
 app.include_router(ai_guide_router)
+app.include_router(oracle_admin_router)
 app.include_router(profile_prefs_router)
 app.include_router(logiscop_transport_router)
 app.include_router(logiscop_analytics_router)

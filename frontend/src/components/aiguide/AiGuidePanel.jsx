@@ -33,6 +33,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   const [speak, setSpeak] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [sessionId, setSessionId] = useState(sessionStorage.getItem(`guidia_session_${space}`) || null);
+  const [proposal, setProposal] = useState(null);
   const [voice, setVoice] = useState(null);
   const [voices, setVoices] = useState([]);
   const [showVoices, setShowVoices] = useState(false);
@@ -153,10 +154,12 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
     setInput('');
     setSuggestions([]);
     setActions([]);
+    setProposal(null);
     setMessages((m) => [...m, { role: 'user', content: message }]);
     setBusy(true);
     try {
-      const r = await fetch(`${API}/ai-guide/chat`, {
+      const endpoint = space === 'admin' ? 'oracle-admin/command' : 'ai-guide/chat';
+      const r = await fetch(`${API}/${endpoint}`, {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ message, session_id: sessionId, space, lang }),
@@ -169,11 +172,43 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       setMessages((m) => [...m, { role: 'assistant', content: answer }]);
       setSuggestions(d.suggestions || []);
       setActions(d.actions || []);
+      if (d.proposal) setProposal(d.proposal);
       if (speak) readAloud(answer);
     } catch (e) {
       setMessages((m) => [...m, { role: 'assistant', content: `⚠ ${e.message}` }]);
     }
     setBusy(false);
+  };
+
+  const executeProposal = async () => {
+    if (!proposal || busy) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`${API}/oracle-admin/execute`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ proposal_id: proposal.id }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Exécution impossible');
+      setMessages((m) => [...m, { role: 'assistant', content: `✅ ${d.message}` }]);
+      if (speak) readAloud(d.message);
+    } catch (e) {
+      setMessages((m) => [...m, { role: 'assistant', content: `⚠ ${e.message}` }]);
+    }
+    setProposal(null);
+    setBusy(false);
+  };
+
+  const cancelProposal = () => {
+    if (!proposal) return;
+    fetch(`${API}/oracle-admin/cancel`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ proposal_id: proposal.id }),
+    }).catch(() => {});
+    setMessages((m) => [...m, { role: 'assistant', content: 'Action annulée — rien n\'a été exécuté.' }]);
+    setProposal(null);
   };
 
   const resumeSession = (session, msgs) => {
@@ -202,8 +237,10 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
           <Sparkles size={15} className="text-[#E9CF8E]" />
         </span>
         <span>
-          <p className="text-[13px] font-bold text-[#E9CF8E] leading-tight">Oracle</p>
-          <p className="text-[9.5px] text-white/45 leading-tight">Votre copilote Communityplace — gratuit</p>
+          <p className="text-[13px] font-bold text-[#E9CF8E] leading-tight">Oracle{space === 'admin' ? ' Admin' : ''}</p>
+          <p className="text-[9.5px] text-white/45 leading-tight">
+            {space === 'admin' ? 'Copilote exécutif — dictez vos commandes d\'administration' : 'Votre copilote Communityplace — gratuit'}
+          </p>
         </span>
         <span className="ml-auto flex items-center gap-1">
           <button type="button" data-testid="ai-guide-history-btn" title="Conversations passées"
@@ -287,6 +324,26 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                 {weeklyBusy ? <Loader2 size={15} className="animate-spin" /> : <AudioLines size={15} />}
                 {WEEKLY_BTN[lang] || WEEKLY_BTN.fr}
               </button>
+            )}
+            {!busy && proposal && (
+              <div className="rounded-xl p-3 space-y-2" data-testid="oracle-admin-proposal"
+                style={{ background: 'rgba(217,179,90,0.1)', border: '1.5px solid rgba(217,179,90,0.55)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#E9CF8E]">
+                  {proposal.destructive ? '⚠ Action sensible — confirmation requise' : 'Confirmation requise'}
+                </p>
+                <p className="text-[12px] text-white/85 leading-relaxed">{proposal.summary}</p>
+                <div className="flex gap-2 pt-1">
+                  <button type="button" onClick={executeProposal} data-testid="oracle-admin-execute"
+                    className="on-light flex-1 h-8 rounded-full text-[11px] font-bold text-[#2A1045] transition-transform hover:scale-[1.02]"
+                    style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
+                    Exécuter
+                  </button>
+                  <button type="button" onClick={cancelProposal} data-testid="oracle-admin-cancel"
+                    className="flex-1 h-8 rounded-full text-[11px] font-bold text-white/70 border border-white/25 hover:bg-white/10 transition-colors">
+                    Annuler
+                  </button>
+                </div>
+              </div>
             )}
             {!busy && actions.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-0.5" data-testid="ai-guide-actions">
