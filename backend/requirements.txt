@@ -20,6 +20,7 @@ cffi==2.0.0
 charset-normalizer==3.4.7
 click==8.4.0
 cryptography==48.0.0
+ddgs==9.16.0
 distro==1.9.0
 dnspython==2.8.0
 ecdsa==0.19.2
@@ -90,6 +91,7 @@ pathspec==1.1.1
 pillow==12.2.0
 platformdirs==4.9.6
 pluggy==1.6.0
+primp==2.0.1
 propcache==0.5.2
 proto-plus==1.28.0
 protobuf==5.29.6

@@ -190,6 +190,10 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       if (d.proposal) {
         setProposal(d.proposal);
         readAloud(`${d.proposal.summary} Dites « exécuter » pour confirmer, ou « annuler ».`);
+      } else if (d.task) {
+        const final = await pollTask(d.task.id);
+        setMessages((m) => [...m, { role: 'assistant', content: final }]);
+        if (speak) readAloud(final);
       } else if (speak) {
         readAloud(answer);
       }
@@ -197,6 +201,20 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       setMessages((m) => [...m, { role: 'assistant', content: `⚠ ${e.message}` }]);
     }
     setBusy(false);
+  };
+
+  const pollTask = async (taskId) => {
+    for (let i = 0; i < 70; i += 1) {
+      await new Promise((res) => setTimeout(res, 3000));
+      const r = await fetch(`${API}/oracle-admin/task/${taskId}`, {
+        credentials: 'include', headers: getAuthHeaders(),
+      });
+      if (!r.ok) throw new Error('Suivi de la tâche impossible');
+      const t = await r.json();
+      if (t.status === 'DONE') return t.answer;
+      if (t.status === 'FAILED') throw new Error(t.error || 'Analyse échouée — réessayez');
+    }
+    throw new Error('Analyse trop longue — réessayez');
   };
 
   const executeProposal = async () => {

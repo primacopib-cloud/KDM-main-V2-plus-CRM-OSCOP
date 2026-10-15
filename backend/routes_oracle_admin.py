@@ -1,5 +1,6 @@
 """Oracle Admin Exécutif — exécute les tâches d'administration en langage naturel (dictée vocale côté UI).
 Flux : /command (compréhension + proposition) → confirmation admin → /execute (whitelist + journal d'audit)."""
+import asyncio
 import json
 import logging
 import os
@@ -47,8 +48,13 @@ SYSTEM_PROMPT = (
     "\"suggestions\":[\"q1\",\"q2\",\"q3\"]}\n"
     "2) Commande d'administration → {\"mode\":\"propose\",\"action\":\"<id>\",\"params\":{...},"
     "\"summary\":\"phrase décrivant précisément ce qui sera exécuté\"}\n"
-    "3) Recherche externe / veille / analyse marché → {\"mode\":\"research\",\"query\":\"requête de recherche "
-    "optimisée en anglais ou français\"}\n"
+    "3) Recherche externe / analyse marché → {\"mode\":\"research\",\"query\":\"requête de recherche optimisée\"}\n"
+    "4) Veille réglementaire (lois, décrets, conformité, bouclier qualité-prix, octroi de mer, ESS, coopératives, "
+    "Outre-mer) → {\"mode\":\"veille\",\"query\":\"sujet de veille précis\"}\n"
+    "5) Stratégie commerciale (croissance, pricing, campagnes, partenariats, fidélisation) → "
+    "{\"mode\":\"strategy\",\"query\":\"objectif stratégique reformulé\"}\n"
+    "6) Rédaction ou assistance de contrat commercial (convention POP'S, partenariat fournisseur, prestation, "
+    "distribution…) → {\"mode\":\"contract\",\"query\":\"objet du contrat + parties + points clés dictés par l'admin\"}\n"
     "Actions disponibles (id → paramètres requis) :\n"
     + "\n".join(f"- {aid} ({meta['label']}) : {', '.join(meta['params'])}" for aid, meta in ACTIONS_CATALOG.items())
     + "\nRègles params : offer_id / auction_id / product_id doivent venir des listes du contexte (jamais inventés) ; "
@@ -96,7 +102,7 @@ async def _context_pack(db) -> str:
     from whatsapp_service import is_whatsapp_configured
     lines.append(f"WhatsApp société : {'via Brevo (clé présente — nécessite compte WhatsApp Business connecté à Brevo)' if is_whatsapp_configured() else 'NON configuré'}.")
     exa = bool(os.environ.get("EXA_API_KEY"))
-    lines.append(f"Recherche web temps réel : {'active (Exa)' if exa else 'clé EXA_API_KEY absente — analyses sur base de connaissances'}.")
+    lines.append(f"Recherche web temps réel : active ({'Exa' if exa else 'DuckDuckGo — EXA_API_KEY optionnelle pour du premium'}).")
     return "\n".join(lines)[:3500]
 
 
@@ -111,11 +117,19 @@ async def _find_users(db, q: str) -> list:
     ).limit(5).to_list(5)
 
 
-async def _llm_json(session_id: str, prompt: str) -> dict:
+def _llm_sync(system: str, session_id: str, prompt: str) -> str:
+    """Appel LLM dans un thread dédié (litellm bloque l'event loop sinon)."""
     from emergentintegrations.llm.chat import LlmChat, UserMessage
-    chat = LlmChat(api_key=os.environ.get("EMERGENT_LLM_KEY"), session_id=session_id,
-                   system_message=SYSTEM_PROMPT).with_model("openai", "gpt-5.4")
-    raw = await chat.send_message(UserMessage(text=prompt)) or ""
+
+    async def _go():
+        chat = LlmChat(api_key=os.environ.get("EMERGENT_LLM_KEY"), session_id=session_id,
+                       system_message=system).with_model("openai", "gpt-5.4")
+        return await chat.send_message(UserMessage(text=prompt)) or ""
+    return asyncio.run(_go())
+
+
+async def _llm_json(session_id: str, prompt: str) -> dict:
+    raw = await run_in_threadpool(_llm_sync, SYSTEM_PROMPT, session_id, prompt)
     raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.MULTILINE).strip()
     try:
         return json.loads(raw)
@@ -126,41 +140,106 @@ async def _llm_json(session_id: str, prompt: str) -> dict:
         return {"mode": "answer", "text": raw[:800], "suggestions": []}
 
 
-async def _research(query: str, lang: str) -> str:
-    sources = []
+async def _web_search(query: str, max_results: int = 6) -> list:
+    """Recherche web : Exa si clé présente, sinon DuckDuckGo (sans clé)."""
     if os.environ.get("EXA_API_KEY"):
         try:
             from exa_py import Exa
             exa = Exa(os.environ["EXA_API_KEY"])
             resp = await run_in_threadpool(
-                lambda: exa.search(query, type="auto", num_results=5, contents={"highlights": True}))
-            sources = [{"title": getattr(r, "title", None) or r.url, "url": r.url,
-                        "highlights": getattr(r, "highlights", None) or []} for r in resp.results]
+                lambda: exa.search(query, type="auto", num_results=max_results, contents={"highlights": True}))
+            return [{"title": getattr(r, "title", None) or r.url, "url": r.url,
+                     "snippet": " ".join((getattr(r, "highlights", None) or [])[:3])} for r in resp.results]
         except Exception as exc:
-            logger.warning("Recherche Exa échouée : %s", exc)
+            logger.warning("Exa indisponible (%s) — bascule DuckDuckGo", exc)
+    try:
+        from ddgs import DDGS
+        rows = await run_in_threadpool(
+            lambda: list(DDGS().text(query, region="fr-fr", max_results=max_results)))
+        return [{"title": r.get("title") or "", "url": r.get("href") or r.get("url") or "",
+                 "snippet": r.get("body") or ""} for r in rows if r.get("href") or r.get("url")]
+    except Exception as exc:
+        logger.warning("Recherche web indisponible : %s", exc)
+        return []
+
+
+EXPERT_MODES = {
+    "research": {
+        "system": "Tu es un analyste senior, rigoureux et professionnel, au service de la direction d'une coopérative ESS des Outre-mer.",
+        "searches": lambda q: [q],
+        "instructions": ("Rédige une analyse structurée, factuelle et actionnable (8-14 phrases) : contexte, "
+                         "chiffres clés, implications pour la coopérative, recommandations. Cite les sources [1], [2]…"),
+    },
+    "veille": {
+        "system": ("Tu es un juriste-veilleur réglementaire senior spécialisé en droit commercial, ESS, coopératives "
+                   "et Outre-mer français (bouclier qualité-prix, octroi de mer, loi Lurel, LME, Egalim)."),
+        "searches": lambda q: [f"{q} réglementation 2026 Outre-mer", f"{q} site:legifrance.gouv.fr OR site:economie.gouv.fr"],
+        "instructions": ("Produis une note de veille réglementaire structurée : 1) TEXTES ET ÉVOLUTIONS RÉCENTES "
+                         "(avec dates et références), 2) IMPACT POUR LA COOPÉRATIVE ET LES POP'S, 3) ACTIONS DE MISE "
+                         "EN CONFORMITÉ RECOMMANDÉES (priorisées). Cite les sources [1], [2]… Signale toute incertitude."),
+    },
+    "strategy": {
+        "system": ("Tu es un directeur de la stratégie commerciale senior, expert de la grande distribution, du "
+                   "e-commerce coopératif et des marchés ultramarins (vie chère, circuits courts, fidélisation)."),
+        "searches": lambda q: [f"{q} tendances marché Outre-mer 2026"],
+        "instructions": ("Produis une recommandation stratégique structurée : 1) CONSTATS (données internes de la "
+                         "plateforme + marché), 2) OPPORTUNITÉS, 3) RECOMMANDATIONS PRIORISÉES (3-5, avec premiers "
+                         "pas concrets), 4) KPIs DE SUIVI. Reste réaliste pour une coopérative ESS. Cite les sources si présentes."),
+    },
+    "contract": {
+        "system": ("Tu es un juriste d'affaires senior, expert en rédaction de contrats commerciaux français "
+                   "(conventions de partenariat, distribution, prestation, dépôt-vente, ESS/coopératives)."),
+        "searches": lambda q: [],
+        "instructions": ("Rédige un PROJET de contrat commercial complet et professionnel en articles numérotés "
+                         "(Parties, Préambule, Objet, Durée, Obligations réciproques, Conditions financières, "
+                         "Confidentialité, RGPD, Responsabilité, Résiliation, Droit applicable et juridiction, "
+                         "Signatures) adapté au contexte dicté. Utilise [À COMPLÉTER] pour les informations "
+                         "manquantes. Termine OBLIGATOIREMENT par : « Projet généré par Oracle — à faire relire et "
+                         "valider par un conseil juridique avant signature. »"),
+    },
+}
+
+
+async def _expert(kind: str, query: str, lang: str, internal_context: str = "") -> str:
+    cfg = EXPERT_MODES[kind]
+    sources = []
+    for sq in cfg["searches"](query):
+        for s in await _web_search(sq, max_results=4):
+            if s["url"] not in [x["url"] for x in sources]:
+                sources.append(s)
+        if len(sources) >= 6:
+            break
+    sources = sources[:6]
     from ai_guide_i18n import LANG_NAMES
+    parts = [f"Demande de l'admin : {query}"]
+    if internal_context:
+        parts.append(f"Données internes de la plateforme :\n{internal_context}")
     if sources:
-        evidence = "\n\n".join(f"[{i + 1}] {s['title']}\n{s['url']}\n" + "\n".join(s["highlights"][:3])
-                               for i, s in enumerate(sources))
-        prompt = (f"Analyse professionnelle pour la direction de la coopérative KDMARCHÉ × O'SCOP (Outre-mer, ESS). "
-                  f"Question : {query}\nSources web :\n{evidence}\n"
-                  f"Rédige une analyse structurée, factuelle et actionnable (5-10 phrases), cite les sources [1], [2]… "
-                  f"Réponds en {LANG_NAMES.get(lang, 'français')}. Texte brut, pas de Markdown.")
-    else:
-        prompt = (f"Analyse professionnelle pour la direction de la coopérative KDMARCHÉ × O'SCOP (Outre-mer, ESS). "
-                  f"Question : {query}\nAucune source web en direct disponible : fonde-toi sur tes connaissances, "
-                  f"précise les limites temporelles de l'analyse. 5-10 phrases structurées et actionnables, "
-                  f"en {LANG_NAMES.get(lang, 'français')}. Texte brut, pas de Markdown.")
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
-    chat = LlmChat(api_key=os.environ.get("EMERGENT_LLM_KEY"),
-                   session_id=f"research_{uuid.uuid4().hex[:10]}",
-                   system_message="Tu es un analyste senior, rigoureux et professionnel.").with_model("openai", "gpt-5.4")
-    analysis = await chat.send_message(UserMessage(text=prompt)) or ""
+        parts.append("Sources web (recherche en direct) :\n" + "\n\n".join(
+            f"[{i + 1}] {s['title']}\n{s['url']}\n{s['snippet'][:400]}" for i, s in enumerate(sources)))
+    elif kind != "contract":
+        parts.append("Aucune source web disponible à l'instant : fonde-toi sur tes connaissances et précise leurs limites temporelles.")
+    parts.append(cfg["instructions"])
+    parts.append(f"Réponds en {LANG_NAMES.get(lang, 'français')}. Texte brut structuré, pas de Markdown.")
+    analysis = await run_in_threadpool(
+        _llm_sync, cfg["system"], f"{kind}_{uuid.uuid4().hex[:10]}", "\n\n".join(parts))
     if sources:
         analysis += "\n\nSources :\n" + "\n".join(f"[{i + 1}] {s['title']} — {s['url']}" for i, s in enumerate(sources))
-    else:
-        analysis += "\n\n(Analyse sur base de connaissances — ajoutez la clé EXA_API_KEY pour la recherche web en temps réel.)"
     return analysis
+
+
+async def _business_snapshot(db) -> str:
+    try:
+        since = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        users = await db.users.count_documents({})
+        pops = await db.users.count_documents({"role": "DETAILLANT"})
+        offers30 = await db.detaillant_offers.count_documents({"created_at": {"$gte": since}})
+        auctions_active = await db.auctions.count_documents({"status": "ACTIVE"})
+        orders30 = await db.orders.count_documents({"created_at": {"$gte": since}})
+        return (f"Comptes : {users} (dont {pops} POP'S). Offres POP'S 30 j : {offers30}. "
+                f"Enchères COOP'ACT actives : {auctions_active}. Commandes 30 j : {orders30}.")
+    except Exception:
+        return ""
 
 
 class CommandBody(BaseModel):
@@ -189,6 +268,55 @@ async def _store_exchange(db, session_id: str, user_id: str, question: str, answ
          "$inc": {"messages": 2}}, upsert=True)
 
 
+EXPERT_LABELS = {"research": "Recherche et analyse", "veille": "Veille réglementaire",
+                 "strategy": "Stratégie commerciale", "contract": "Rédaction du contrat"}
+
+_VERB = r"(r[ée]dige\w*|[ée]cris|pr[ée]pare\w*|g[ée]n[èe]re\w*|propose\w*|[ée]labore\w*|sugg[èe]re\w*|d[ée]finis\w*|construis\w*|fais|assiste\w*|aide)"
+EXPERT_HINTS = [
+    ("contract", re.compile(_VERB + r"[\s\S]{0,80}\b(contrat|avenant)\b|\b(contrat|avenant)\b[\s\S]{0,40}" + _VERB, re.I)),
+    ("veille", re.compile(r"\bveille\b", re.I)),
+    ("strategy", re.compile(_VERB + r"[\s\S]{0,80}strat[ée]gie|strat[ée]gie commerciale", re.I)),
+    ("research", re.compile(r"fais (une |la )?recherche|recherche (sur|externe)|benchmark|[ée]tude de march[ée]|analyse de march[ée]", re.I)),
+]
+
+
+def _quick_mode(message: str):
+    for kind, rx in EXPERT_HINTS:
+        if rx.search(message):
+            return kind
+    return None
+
+
+async def _launch_expert(db, mode: str, query: str, lang: str, session_id: str, admin: dict, message: str) -> dict:
+    internal = await _business_snapshot(db) if mode == "strategy" else ""
+    task_id = str(uuid.uuid4())
+    await db.oracle_admin_tasks.insert_one(
+        {"id": task_id, "admin_id": admin["id"], "kind": mode, "query": query,
+         "status": "RUNNING", "created_at": datetime.now(timezone.utc).isoformat()})
+    asyncio.create_task(_run_expert_task(task_id, mode, query, lang, internal,
+                                         session_id, admin["id"], message))
+    return {"answer": f"⏳ {EXPERT_LABELS[mode]} en cours — je consulte les sources externes, "
+                      "le résultat arrive dans quelques instants…",
+            "suggestions": [], "proposal": None,
+            "task": {"id": task_id, "kind": mode}, "session_id": session_id}
+
+
+async def _run_expert_task(task_id: str, kind: str, query: str, lang: str, internal: str,
+                           session_id: str, admin_id: str, message: str):
+    db = get_database()
+    try:
+        answer = await _expert(kind, query, lang, internal)
+        await db.oracle_admin_tasks.update_one(
+            {"id": task_id},
+            {"$set": {"status": "DONE", "answer": answer,
+                      "finished_at": datetime.now(timezone.utc).isoformat()}})
+        await _store_exchange(db, session_id, admin_id, message, answer)
+    except Exception as exc:
+        logger.exception("Tâche experte %s échouée", kind)
+        await db.oracle_admin_tasks.update_one(
+            {"id": task_id}, {"$set": {"status": "FAILED", "error": str(exc)[:300]}})
+
+
 @oracle_admin_router.post("/command")
 async def oracle_admin_command(body: CommandBody, admin: dict = Depends(require_admin)):
     db = get_database()
@@ -196,14 +324,17 @@ async def oracle_admin_command(body: CommandBody, admin: dict = Depends(require_
     if not message:
         raise HTTPException(status_code=400, detail="Commande vide")
     session_id = body.session_id or f"oadmin_{uuid.uuid4().hex[:16]}"
+    from ai_guide_i18n import LANG_NAMES, norm_lang
+    lang = norm_lang(body.lang)
+    quick = _quick_mode(message)
+    if quick:
+        return await _launch_expert(db, quick, message, lang, session_id, admin, message)
     history = await db.ai_guide_messages.find(
         {"session_id": session_id}, {"_id": 0, "role": 1, "content": 1}
     ).sort("created_at", -1).limit(8).to_list(8)
     history_txt = "\n".join(
         f"{'Admin' if m['role'] == 'user' else 'Oracle'}: {m['content'][:400]}" for m in reversed(history))
     context = await _context_pack(db)
-    from ai_guide_i18n import LANG_NAMES, norm_lang
-    lang = norm_lang(body.lang)
     prompt = (f"Contexte plateforme en direct :\n{context}\n"
               f"Langue de l'admin : {LANG_NAMES[lang]}.\n"
               + (f"Historique :\n{history_txt}\n" if history_txt else "")
@@ -215,10 +346,8 @@ async def oracle_admin_command(body: CommandBody, admin: dict = Depends(require_
         raise HTTPException(status_code=502, detail="Oracle Admin momentanément indisponible — réessayez.")
 
     mode = parsed.get("mode")
-    if mode == "research":
-        answer = await _research(parsed.get("query") or message, lang)
-        await _store_exchange(db, session_id, admin["id"], message, answer)
-        return {"answer": answer, "suggestions": [], "proposal": None, "session_id": session_id}
+    if mode in EXPERT_MODES:
+        return await _launch_expert(db, mode, parsed.get("query") or message, lang, session_id, admin, message)
 
     if mode == "propose":
         action = parsed.get("action")
@@ -408,6 +537,15 @@ async def oracle_admin_cancel(body: ExecuteBody, admin: dict = Depends(require_a
         {"id": body.proposal_id, "admin_id": admin["id"], "status": "PROPOSED"},
         {"$set": {"status": "CANCELLED"}})
     return {"ok": True}
+
+
+@oracle_admin_router.get("/task/{task_id}")
+async def oracle_admin_task(task_id: str, admin: dict = Depends(require_admin)):
+    db = get_database()
+    t = await db.oracle_admin_tasks.find_one({"id": task_id, "admin_id": admin["id"]}, {"_id": 0})
+    if not t:
+        raise HTTPException(status_code=404, detail="Tâche introuvable")
+    return t
 
 
 @oracle_admin_router.get("/audit")
