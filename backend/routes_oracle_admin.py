@@ -11,6 +11,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from db import get_database
@@ -546,6 +547,19 @@ async def oracle_admin_task(task_id: str, admin: dict = Depends(require_admin)):
     if not t:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
     return t
+
+
+@oracle_admin_router.get("/contract-pdf/{task_id}")
+async def oracle_admin_contract_pdf(task_id: str, admin: dict = Depends(require_admin)):
+    db = get_database()
+    t = await db.oracle_admin_tasks.find_one(
+        {"id": task_id, "admin_id": admin["id"], "kind": "contract", "status": "DONE"}, {"_id": 0})
+    if not t:
+        raise HTTPException(status_code=404, detail="Contrat introuvable ou non terminé")
+    from oracle_contract_pdf import build_contract_pdf
+    pdf = await run_in_threadpool(build_contract_pdf, t.get("answer", ""), t.get("query", ""))
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": 'attachment; filename="contrat-oscop-oracle.pdf"'})
 
 
 @oracle_admin_router.get("/audit")

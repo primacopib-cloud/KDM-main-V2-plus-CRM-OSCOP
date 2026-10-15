@@ -34,6 +34,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   const [showHistory, setShowHistory] = useState(false);
   const [sessionId, setSessionId] = useState(sessionStorage.getItem(`guidia_session_${space}`) || null);
   const [proposal, setProposal] = useState(null);
+  const [contractTaskId, setContractTaskId] = useState(null);
   const [voice, setVoice] = useState(null);
   const [voices, setVoices] = useState([]);
   const [showVoices, setShowVoices] = useState(false);
@@ -170,6 +171,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
     setSuggestions([]);
     setActions([]);
     setProposal(null);
+    setContractTaskId(null);
     setMessages((m) => [...m, { role: 'user', content: message }]);
     setBusy(true);
     try {
@@ -193,6 +195,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       } else if (d.task) {
         const final = await pollTask(d.task.id);
         setMessages((m) => [...m, { role: 'assistant', content: final }]);
+        if (d.task.kind === 'contract') setContractTaskId(d.task.id);
         if (speak) readAloud(final);
       } else if (speak) {
         readAloud(answer);
@@ -201,6 +204,24 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       setMessages((m) => [...m, { role: 'assistant', content: `⚠ ${e.message}` }]);
     }
     setBusy(false);
+  };
+
+  const downloadContractPdf = async () => {
+    if (!contractTaskId) return;
+    try {
+      const r = await fetch(`${API}/oracle-admin/contract-pdf/${contractTaskId}`, {
+        credentials: 'include', headers: getAuthHeaders(),
+      });
+      if (!r.ok) throw new Error('export');
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'contrat-oscop-oracle.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setMessages((m) => [...m, { role: 'assistant', content: '⚠ Export PDF impossible — réessayez.' }]);
+    }
   };
 
   const pollTask = async (taskId) => {
@@ -361,6 +382,13 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                 style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
                 {weeklyBusy ? <Loader2 size={15} className="animate-spin" /> : <AudioLines size={15} />}
                 {WEEKLY_BTN[lang] || WEEKLY_BTN.fr}
+              </button>
+            )}
+            {!busy && contractTaskId && (
+              <button type="button" onClick={downloadContractPdf} data-testid="oracle-contract-pdf-btn"
+                className="w-full rounded-xl px-3 py-2 text-[11.5px] font-bold text-[#2A1045] transition-transform hover:scale-[1.01]"
+                style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
+                Télécharger le contrat en PDF (en-tête O'SCOP)
               </button>
             )}
             {!busy && proposal && (
