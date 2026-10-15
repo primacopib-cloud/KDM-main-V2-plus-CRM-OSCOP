@@ -37,6 +37,8 @@ ACTIONS_CATALOG = {
     "reject_product": {"label": "Rejeter un produit vendeur", "params": ["product_id", "note"], "destructive": True},
     "hide_product": {"label": "Masquer un produit du catalogue", "params": ["product_id"], "destructive": True},
     "whatsapp_campaign": {"label": "Envoyer une campagne WhatsApp", "params": ["audience", "message"], "destructive": True},
+    "whatsapp_template_campaign": {"label": "Envoyer une campagne WhatsApp avec un modèle prêt",
+                                   "params": ["template_id", "audience", "variables"], "destructive": True},
 }
 
 SYSTEM_PROMPT = (
@@ -61,7 +63,9 @@ SYSTEM_PROMPT = (
     + "\nRègles params : offer_id / auction_id / product_id doivent venir des listes du contexte (jamais inventés) ; "
     "user_query = email exact si connu, sinon nom/société tels que dictés ; delta = entier relatif (ex. +100, -50) ; "
     "resolution = RELIST ou DON ; role parmi " + ", ".join(VALID_ROLES) + " ; "
-    "audience = pops (tous les détaillants POP'S) ou phones:+590...,+596... (liste E.164).\n"
+    "audience = pops (tous les détaillants POP'S) ou phones:+590...,+596... (liste E.164) ; "
+    "template_id parmi les modèles listés dans le contexte ; variables = objet {\"1\":\"valeur\", ...} "
+    "remplaçant les {{1}} du modèle.\n"
     "Si la commande est ambiguë ou l'entité introuvable dans le contexte, réponds en mode answer en demandant la "
     "précision manquante (propose les candidats du contexte). Ne propose JAMAIS une action hors catalogue. "
     "Réponds dans la langue de l'admin (français par défaut), ton professionnel."
@@ -102,6 +106,13 @@ async def _context_pack(db) -> str:
         logger.debug("Oracle admin context: %s", exc)
     from whatsapp_service import is_whatsapp_configured
     lines.append(f"WhatsApp société : {'via Brevo (clé présente — nécessite compte WhatsApp Business connecté à Brevo)' if is_whatsapp_configured() else 'NON configuré'}.")
+    try:
+        tpls = await db.whatsapp_templates.find({}, {"_id": 0, "id": 1, "title": 1, "body": 1}).to_list(10)
+        if tpls:
+            lines.append("Modèles WhatsApp prêts (utiliser whatsapp_template_campaign) :")
+            lines += [f"  template_id={t['id']} | {t['title']} | « {t['body'][:70]}… »" for t in tpls]
+    except Exception:
+        pass
     exa = bool(os.environ.get("EXA_API_KEY"))
     lines.append(f"Recherche web temps réel : active ({'Exa' if exa else 'DuckDuckGo — EXA_API_KEY optionnelle pour du premium'}).")
     return "\n".join(lines)[:3500]
@@ -483,6 +494,36 @@ async def _execute_action(db, action: str, params: dict, admin: dict) -> str:
         if not r.matched_count:
             raise HTTPException(status_code=404, detail="Produit introuvable")
         return f"Produit {params['product_id'][:8]}… masqué du catalogue."
+    if action == "whatsapp_template_campaign":
+        from whatsapp_service import whatsapp_status, send_whatsapp_batch
+        st = await whatsapp_status()
+        if not st["configured"]:
+            raise HTTPException(status_code=503, detail=f"WhatsApp (Brevo) non prêt — {st['reason']}")
+        tpl = await db.whatsapp_templates.find_one({"id": params.get("template_id")}, {"_id": 0})
+        if not tpl:
+            raise HTTPException(status_code=404, detail="Modèle WhatsApp introuvable")
+        message = tpl["body"]
+        for k, v in (params.get("variables") or {}).items():
+            message = message.replace("{{%s}}" % k, str(v))
+        audience = str(params.get("audience") or "")
+        phones = []
+        if audience.startswith("phones:"):
+            phones = [p.strip() for p in audience[7:].split(",") if re.fullmatch(r"\+?[1-9]\d{7,14}", p.strip())]
+        elif audience == "pops":
+            async for p in db.detaillant_profiles.find({"phone": {"$nin": ["", None]}}, {"_id": 0, "phone": 1}):
+                ph = re.sub(r"[\s.-]", "", p["phone"])
+                if re.fullmatch(r"\+?[1-9]\d{7,14}", ph):
+                    phones.append(ph)
+        if not phones:
+            raise HTTPException(status_code=400, detail="Aucun numéro E.164 valide dans l'audience.")
+        phones = list(dict.fromkeys(phones))[:100]
+        try:
+            res = await send_whatsapp_batch(phones, message, st["sender"])
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Échec envoi WhatsApp via Brevo : {exc}")
+        ref = res.get("messageId") or res.get("id") or ""
+        return (f"Campagne WhatsApp « {tpl['title']} » envoyée via Brevo à {len(phones)} destinataire(s)"
+                + (f" — réf. {ref}" if ref else "") + ".")
     if action == "whatsapp_campaign":
         from whatsapp_service import whatsapp_status, send_whatsapp_batch
         st = await whatsapp_status()
