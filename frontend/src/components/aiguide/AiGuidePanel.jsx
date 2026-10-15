@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass, AudioLines, Play } from 'lucide-react';
+import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass, AudioLines, Play, Paperclip } from 'lucide-react';
 import { API, getAuthHeaders } from '../../services/http';
 import { AiGuideHistory } from './AiGuideHistory';
 
@@ -104,6 +104,37 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   }, [bootTip?.at]);
 
   const audioRef = useRef(null);
+  const fileRef = useRef(null);
+
+  const uploadContract = async (file) => {
+    if (busy) return;
+    setProposal(null);
+    setContractTaskId(null);
+    setSuggestions([]);
+    setActions([]);
+    setMessages((m) => [...m, { role: 'user', content: `📄 Analyse du contrat : ${file.name}` }]);
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      if (sessionId) fd.append('session_id', sessionId);
+      fd.append('lang', lang);
+      const r = await fetch(`${API}/oracle-admin/analyze-contract`, {
+        method: 'POST', credentials: 'include', headers: getAuthHeaders(), body: fd,
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Analyse impossible');
+      setSessionId(d.session_id);
+      sessionStorage.setItem(`guidia_session_${space}`, d.session_id);
+      setMessages((m) => [...m, { role: 'assistant', content: d.answer }]);
+      const final = await pollTask(d.task.id);
+      setMessages((m) => [...m, { role: 'assistant', content: final }]);
+      if (speak) readAloud(final);
+    } catch (e) {
+      setMessages((m) => [...m, { role: 'assistant', content: `⚠ ${e.message}` }]);
+    }
+    setBusy(false);
+  };
 
   const readAloud = async (text) => {
     try {
@@ -371,14 +402,14 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
             )}
             {!busy && tourAvailable && (
               <button type="button" onClick={onStartTour} data-testid="ai-guide-start-tour"
-                className="on-light w-full rounded-xl px-3 py-2.5 text-left text-[12px] font-bold text-[#2A1045] flex items-center gap-2 transition-transform hover:scale-[1.01]"
+                className="on-light gold-chip w-full rounded-xl px-3 py-2.5 text-left text-[12px] font-bold text-[#2A1045] flex items-center gap-2 transition-transform hover:scale-[1.01]"
                 style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
                 <Compass size={15} /> Nouveau ici ? Lancez la visite guidée de votre espace
               </button>
             )}
             {!busy && space === 'admin' && (
               <button type="button" onClick={playWeekly} disabled={weeklyBusy} data-testid="ai-guide-weekly-summary"
-                className="on-light w-full rounded-xl px-3 py-2.5 text-left text-[12px] font-bold text-[#2A1045] flex items-center gap-2 transition-transform hover:scale-[1.01] disabled:opacity-60"
+                className="on-light gold-chip w-full rounded-xl px-3 py-2.5 text-left text-[12px] font-bold text-[#2A1045] flex items-center gap-2 transition-transform hover:scale-[1.01] disabled:opacity-60"
                 style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
                 {weeklyBusy ? <Loader2 size={15} className="animate-spin" /> : <AudioLines size={15} />}
                 {WEEKLY_BTN[lang] || WEEKLY_BTN.fr}
@@ -386,7 +417,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
             )}
             {!busy && contractTaskId && (
               <button type="button" onClick={downloadContractPdf} data-testid="oracle-contract-pdf-btn"
-                className="w-full rounded-xl px-3 py-2 text-[11.5px] font-bold text-[#2A1045] transition-transform hover:scale-[1.01]"
+                className="gold-chip w-full rounded-xl px-3 py-2 text-[11.5px] font-bold text-[#2A1045] transition-transform hover:scale-[1.01]"
                 style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
                 Télécharger le contrat en PDF (en-tête O'SCOP)
               </button>
@@ -401,7 +432,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                 <p className="text-[9px] text-white/40">Mains libres : dites « exécuter » ou « annuler » au micro.</p>
                 <div className="flex gap-2 pt-1">
                   <button type="button" onClick={executeProposal} data-testid="oracle-admin-execute"
-                    className="on-light flex-1 h-8 rounded-full text-[11px] font-bold text-[#2A1045] transition-transform hover:scale-[1.02]"
+                    className="on-light gold-chip flex-1 h-8 rounded-full text-[11px] font-bold text-[#2A1045] transition-transform hover:scale-[1.02]"
                     style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
                     Exécuter
                   </button>
@@ -417,7 +448,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                 {actions.map((a) => (
                   <button key={a.id} type="button" data-testid={`ai-guide-action-${a.id}`}
                     onClick={() => navigate(`${a.path}${a.path.includes('?') ? '&' : '?'}t=${Date.now()}`)}
-                    className="on-light px-3 py-1.5 rounded-full text-[10.5px] font-bold inline-flex items-center gap-1.5 text-[#2A1045] transition-transform hover:scale-[1.03]"
+                    className="on-light gold-chip px-3 py-1.5 rounded-full text-[10.5px] font-bold inline-flex items-center gap-1.5 text-[#2A1045] transition-transform hover:scale-[1.03]"
                     style={{ background: 'linear-gradient(90deg, #E9CF8E, #D9B35A)' }}>
                     {a.label} <ArrowRight size={11} />
                   </button>
@@ -438,6 +469,18 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
           </div>
 
           <div className="p-2.5 flex items-center gap-1.5" style={{ borderTop: '1px solid rgba(217,179,90,0.25)' }}>
+            {space === 'admin' && (
+              <>
+                <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
+                  data-testid="oracle-contract-file"
+                  onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadContract(f); }} />
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={busy}
+                  data-testid="oracle-contract-upload" title="Analyser un contrat PDF (clauses à risque)"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center border bg-white/[0.06] border-white/15 text-white/50 hover:text-[#E9CF8E] disabled:opacity-40 transition-colors">
+                  <Paperclip size={14} />
+                </button>
+              </>
+            )}
             {SR && (
               <button type="button" onClick={dictate} data-testid="ai-guide-mic" title="Dicter ma question"
                 className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-colors ${

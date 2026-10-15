@@ -1,0 +1,8 @@
+crons:
+  - name: weekly-veille
+    description: "Envoie chaque lundi 7h UTC la note de veille reglementaire Outre-mer d'Oracle aux superadmins"
+    cron: "0 7 * * 1"
+    endpoint: "{{BASE_URL}}/api/cron/weekly-veille"
+    method: POST
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    enabled: true

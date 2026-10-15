@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import BaseModel
@@ -198,6 +198,17 @@ EXPERT_MODES = {
                          "manquantes. Termine OBLIGATOIREMENT par : « Projet généré par Oracle — à faire relire et "
                          "valider par un conseil juridique avant signature. »"),
     },
+    "contract_review": {
+        "system": ("Tu es un juriste d'affaires senior spécialisé en revue de contrats commerciaux français, "
+                   "au service d'une coopérative ESS des Outre-mer."),
+        "searches": lambda q: [],
+        "instructions": ("Analyse le contrat fourni et produis une revue structurée : 1) SYNTHÈSE (objet, parties, "
+                         "durée, montants clés), 2) CLAUSES À RISQUE (chaque clause citée avec sa référence "
+                         "d'article, le risque expliqué et sa gravité FAIBLE/MOYENNE/ÉLEVÉE), 3) DÉSÉQUILIBRES ET "
+                         "CLAUSES MANQUANTES attendues dans ce type de contrat, 4) RECOMMANDATIONS DE NÉGOCIATION "
+                         "priorisées. Termine OBLIGATOIREMENT par : « Analyse générée par Oracle — à faire valider "
+                         "par un conseil juridique avant toute décision. »"),
+    },
 }
 
 
@@ -270,7 +281,8 @@ async def _store_exchange(db, session_id: str, user_id: str, question: str, answ
 
 
 EXPERT_LABELS = {"research": "Recherche et analyse", "veille": "Veille réglementaire",
-                 "strategy": "Stratégie commerciale", "contract": "Rédaction du contrat"}
+                 "strategy": "Stratégie commerciale", "contract": "Rédaction du contrat",
+                 "contract_review": "Analyse du contrat"}
 
 _VERB = r"(r[ée]dige\w*|[ée]cris|pr[ée]pare\w*|g[ée]n[èe]re\w*|propose\w*|[ée]labore\w*|sugg[èe]re\w*|d[ée]finis\w*|construis\w*|fais|assiste\w*|aide)"
 EXPERT_HINTS = [
@@ -549,6 +561,47 @@ async def oracle_admin_task(task_id: str, admin: dict = Depends(require_admin)):
     return t
 
 
+@oracle_admin_router.post("/analyze-contract")
+async def oracle_admin_analyze_contract(file: UploadFile = File(...),
+                                        session_id: Optional[str] = Form(None),
+                                        lang: str = Form("fr"),
+                                        admin: dict = Depends(require_admin)):
+    if not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Déposez un fichier PDF.")
+    data = await file.read()
+    if len(data) > 15 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="PDF trop volumineux (max 15 Mo).")
+
+    def _extract(b: bytes) -> str:
+        from io import BytesIO
+        from pypdf import PdfReader
+        reader = PdfReader(BytesIO(b))
+        return "\n".join((p.extract_text() or "") for p in reader.pages[:40])
+
+    try:
+        text = await run_in_threadpool(_extract, data)
+    except Exception:
+        raise HTTPException(status_code=400, detail="PDF illisible — vérifiez le fichier.")
+    text = re.sub(r"\n{3,}", "\n\n", text or "").strip()
+    if len(text) < 200:
+        raise HTTPException(status_code=400, detail="Texte introuvable dans ce PDF (scan sans OCR ?).")
+    db = get_database()
+    from ai_guide_i18n import norm_lang
+    sid = session_id or f"oadmin_{uuid.uuid4().hex[:16]}"
+    message = f"Analyse du contrat déposé : {file.filename}"
+    query = f"Contrat « {file.filename} » à analyser :\n{text[:24000]}"
+    task_id = str(uuid.uuid4())
+    await db.oracle_admin_tasks.insert_one(
+        {"id": task_id, "admin_id": admin["id"], "kind": "contract_review", "query": message,
+         "status": "RUNNING", "created_at": datetime.now(timezone.utc).isoformat()})
+    asyncio.create_task(_run_expert_task(task_id, "contract_review", query, norm_lang(lang),
+                                         "", sid, admin["id"], message))
+    return {"answer": "⏳ Analyse du contrat en cours — clauses à risque, déséquilibres et recommandations "
+                      "arrivent dans quelques instants…",
+            "suggestions": [], "proposal": None,
+            "task": {"id": task_id, "kind": "contract_review"}, "session_id": sid}
+
+
 @oracle_admin_router.get("/contract-pdf/{task_id}")
 async def oracle_admin_contract_pdf(task_id: str, admin: dict = Depends(require_admin)):
     db = get_database()
@@ -568,3 +621,67 @@ async def oracle_admin_audit(admin: dict = Depends(require_admin)):
     items = await db.oracle_admin_audit.find(
         {}, {"_id": 0}).sort("created_at", -1).limit(50).to_list(50)
     return {"audit": items}
+
+cron_router = APIRouter(prefix="/api/cron", tags=["cron"])
+
+
+def _check_cron_auth(authorization):
+    import hmac
+    secret = os.environ.get("WEBHOOK_CRON_SECRET", "")
+    token = (authorization or "").removeprefix("Bearer ").strip()
+    if not secret or not token or not hmac.compare_digest(token, secret):
+        raise HTTPException(status_code=401, detail="unauthorized")
+
+
+async def _weekly_veille_job():
+    db = get_database()
+    try:
+        note = await _expert(
+            "veille",
+            "évolutions réglementaires récentes pour le commerce coopératif, la vie chère, le bouclier "
+            "qualité-prix, l'octroi de mer et l'ESS en Outre-mer français", "fr")
+        from brevo_service import send_email
+        admins = await db.users.find(
+            {"role": {"$in": ["SUPER_ADMIN", "oscop_super_admin", "ADMIN"]}, "email": {"$nin": ["", None]}},
+            {"_id": 0, "email": 1, "name": 1}).to_list(20)
+        week = datetime.now(timezone.utc).strftime("Semaine du %d/%m/%Y")
+        safe = note.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        html = ("<div style='font-family:Helvetica,Arial,sans-serif;max-width:640px;margin:auto'>"
+                "<p style='color:#B8860B;font-weight:bold;font-size:13px'>O'SCOP × ORACLE — VEILLE "
+                "RÉGLEMENTAIRE HEBDOMADAIRE</p>"
+                f"<p style='color:#555;font-size:12px'>{week} — note générée automatiquement par Oracle "
+                "(sources externes consultées). À faire valider par un conseil juridique.</p>"
+                f"<pre style='white-space:pre-wrap;font-family:inherit;font-size:13px;color:#1F2A3A;"
+                f"line-height:1.5'>{safe}</pre></div>")
+        sent = 0
+        for a in admins:
+            try:
+                await send_email(a["email"], a.get("name"),
+                                 f"Veille réglementaire Outre-mer — {week}", html, tags=["veille-hebdo"])
+                sent += 1
+            except Exception:
+                logger.warning("Veille hebdo : envoi échoué pour %s", a.get("email"))
+        await db.oracle_veille_digests.insert_one(
+            {"id": str(uuid.uuid4()), "week": week, "note": note, "sent": sent,
+             "created_at": datetime.now(timezone.utc).isoformat()})
+        logger.info("Veille hebdo envoyée à %s admin(s)", sent)
+    except Exception:
+        logger.exception("Veille hebdo échouée")
+
+
+@cron_router.post("/weekly-veille")
+async def cron_weekly_veille(request: Request):
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    _check_cron_auth(request.headers.get("authorization"))
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    run_id = request.headers.get("x-webhook-id") or body.get("run_id") or str(uuid.uuid4())
+    db = get_database()
+    if await db.cron_runs.find_one({"run_id": run_id, "job": "weekly-veille"}):
+        return {"ok": True, "duplicate": True}
+    await db.cron_runs.insert_one({"run_id": run_id, "job": "weekly-veille",
+                                   "created_at": datetime.now(timezone.utc).isoformat()})
+    asyncio.create_task(_weekly_veille_job())
+    return {"ok": True}

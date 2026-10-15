@@ -659,3 +659,6 @@ body.has-lolo-subnav { padding-top: 32px; --lolo-offset: 66px; }
 }
 .ticker-track { animation: tickerScroll 45s linear infinite; }
 .ticker-track:hover { animation-play-state: paused; }
+
+/* Badges/boutons dorés Oracle : texte sombre lisible (prime sur la règle text-[#2A1045] -> lavande) */
+.gold-chip, .gold-chip svg, .gold-chip * { color: #2A1045 !important; }
