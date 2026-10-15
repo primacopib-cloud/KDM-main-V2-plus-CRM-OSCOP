@@ -151,6 +151,21 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   const send = async (text) => {
     const message = (text || input).trim();
     if (!message || busy) return;
+    if (proposal && space === 'admin') {
+      const low = message.toLowerCase();
+      if (/^(ex[eé]cute|confirme|oui|vas[- ]y|go\b|valide)/.test(low)) {
+        setInput('');
+        setMessages((m) => [...m, { role: 'user', content: message }]);
+        executeProposal();
+        return;
+      }
+      if (/^(annule|non\b|stop\b|abandonne)/.test(low)) {
+        setInput('');
+        setMessages((m) => [...m, { role: 'user', content: message }]);
+        cancelProposal();
+        return;
+      }
+    }
     setInput('');
     setSuggestions([]);
     setActions([]);
@@ -172,8 +187,12 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       setMessages((m) => [...m, { role: 'assistant', content: answer }]);
       setSuggestions(d.suggestions || []);
       setActions(d.actions || []);
-      if (d.proposal) setProposal(d.proposal);
-      if (speak) readAloud(answer);
+      if (d.proposal) {
+        setProposal(d.proposal);
+        readAloud(`${d.proposal.summary} Dites « exécuter » pour confirmer, ou « annuler ».`);
+      } else if (speak) {
+        readAloud(answer);
+      }
     } catch (e) {
       setMessages((m) => [...m, { role: 'assistant', content: `⚠ ${e.message}` }]);
     }
@@ -192,7 +211,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Exécution impossible');
       setMessages((m) => [...m, { role: 'assistant', content: `✅ ${d.message}` }]);
-      if (speak) readAloud(d.message);
+      readAloud(d.message);
     } catch (e) {
       setMessages((m) => [...m, { role: 'assistant', content: `⚠ ${e.message}` }]);
     }
@@ -208,6 +227,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       body: JSON.stringify({ proposal_id: proposal.id }),
     }).catch(() => {});
     setMessages((m) => [...m, { role: 'assistant', content: 'Action annulée — rien n\'a été exécuté.' }]);
+    readAloud('Action annulée.');
     setProposal(null);
   };
 
@@ -332,6 +352,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                   {proposal.destructive ? '⚠ Action sensible — confirmation requise' : 'Confirmation requise'}
                 </p>
                 <p className="text-[12px] text-white/85 leading-relaxed">{proposal.summary}</p>
+                <p className="text-[9px] text-white/40">Mains libres : dites « exécuter » ou « annuler » au micro.</p>
                 <div className="flex gap-2 pt-1">
                   <button type="button" onClick={executeProposal} data-testid="oracle-admin-execute"
                     className="on-light flex-1 h-8 rounded-full text-[11px] font-bold text-[#2A1045] transition-transform hover:scale-[1.02]"

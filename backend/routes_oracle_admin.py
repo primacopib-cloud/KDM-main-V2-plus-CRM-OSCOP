@@ -94,7 +94,7 @@ async def _context_pack(db) -> str:
     except Exception as exc:
         logger.debug("Oracle admin context: %s", exc)
     from whatsapp_service import is_whatsapp_configured
-    lines.append(f"WhatsApp société : {'configuré' if is_whatsapp_configured() else 'NON configuré (clés Twilio manquantes)'}.")
+    lines.append(f"WhatsApp société : {'via Brevo (clé présente — nécessite compte WhatsApp Business connecté à Brevo)' if is_whatsapp_configured() else 'NON configuré'}.")
     exa = bool(os.environ.get("EXA_API_KEY"))
     lines.append(f"Recherche web temps réel : {'active (Exa)' if exa else 'clé EXA_API_KEY absente — analyses sur base de connaissances'}.")
     return "\n".join(lines)[:3500]
@@ -342,32 +342,29 @@ async def _execute_action(db, action: str, params: dict, admin: dict) -> str:
             raise HTTPException(status_code=404, detail="Produit introuvable")
         return f"Produit {params['product_id'][:8]}… masqué du catalogue."
     if action == "whatsapp_campaign":
-        from whatsapp_service import is_whatsapp_configured, send_whatsapp
-        if not is_whatsapp_configured():
-            raise HTTPException(status_code=503, detail=(
-                "WhatsApp non configuré — fournissez TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN et "
-                "TWILIO_WHATSAPP_FROM pour connecter le WhatsApp de la société."))
+        from whatsapp_service import whatsapp_status, send_whatsapp_batch
+        st = await whatsapp_status()
+        if not st["configured"]:
+            raise HTTPException(status_code=503, detail=f"WhatsApp (Brevo) non prêt — {st['reason']}")
         audience = str(params.get("audience") or "")
         phones = []
         if audience.startswith("phones:"):
-            phones = [p.strip() for p in audience[7:].split(",") if re.fullmatch(r"\+[1-9]\d{7,14}", p.strip())]
+            phones = [p.strip() for p in audience[7:].split(",") if re.fullmatch(r"\+?[1-9]\d{7,14}", p.strip())]
         elif audience == "pops":
             async for p in db.detaillant_profiles.find({"phone": {"$nin": ["", None]}}, {"_id": 0, "phone": 1}):
                 ph = re.sub(r"[\s.-]", "", p["phone"])
-                if re.fullmatch(r"\+[1-9]\d{7,14}", ph):
+                if re.fullmatch(r"\+?[1-9]\d{7,14}", ph):
                     phones.append(ph)
         if not phones:
             raise HTTPException(status_code=400, detail="Aucun numéro E.164 valide dans l'audience.")
-        phones = list(dict.fromkeys(phones))[:50]
-        sent, failed = 0, 0
-        for ph in phones:
-            try:
-                await run_in_threadpool(send_whatsapp, ph, params["message"])
-                sent += 1
-            except Exception as exc:
-                failed += 1
-                logger.warning("WhatsApp échec %s : %s", ph[-4:], exc)
-        return f"Campagne WhatsApp envoyée : {sent} message(s) sur {len(phones)} ({failed} échec(s))."
+        phones = list(dict.fromkeys(phones))[:100]
+        try:
+            res = await send_whatsapp_batch(phones, params["message"], st["sender"])
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Échec envoi WhatsApp via Brevo : {exc}")
+        ref = res.get("messageId") or res.get("id") or ""
+        return (f"Campagne WhatsApp envoyée via Brevo à {len(phones)} destinataire(s)"
+                + (f" — réf. {ref}" if ref else "") + ".")
     raise HTTPException(status_code=400, detail="Action inconnue")
 
 
