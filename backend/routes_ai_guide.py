@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from core_deps import get_current_user
@@ -636,3 +636,121 @@ async def guide_admin_stats(current_user: dict = Depends(get_current_user)):
     ).sort("created_at", -1).limit(10).to_list(10)
     return {"total_questions": total, "unique_users": len(users),
             "by_space": by_space, "top_questions": top, "recent": recent}
+
+
+def _file_llm_sync(system: str, prompt: str, image_b64: str | None = None) -> str:
+    """Appel LLM (texte ou vision) dans un thread dédié pour ne pas bloquer l'event loop."""
+    import asyncio as _asyncio
+
+    from emergentintegrations.llm.chat import ImageContent, LlmChat, UserMessage
+
+    async def _go():
+        chat = LlmChat(api_key=os.environ.get("EMERGENT_LLM_KEY"),
+                       session_id=f"file_{uuid.uuid4().hex[:10]}",
+                       system_message=system).with_model("openai", "gpt-5.4")
+        msg = (UserMessage(text=prompt, file_contents=[ImageContent(image_b64)])
+               if image_b64 else UserMessage(text=prompt))
+        return await chat.send_message(msg) or ""
+    return _asyncio.run(_go())
+
+
+def _extract_file_text(filename: str, data: bytes) -> str:
+    from io import BytesIO
+    low = filename.lower()
+    if low.endswith(".pdf"):
+        from pypdf import PdfReader
+        reader = PdfReader(BytesIO(data))
+        return "\n".join((p.extract_text() or "") for p in reader.pages[:30])
+    if low.endswith(".csv"):
+        txt = data.decode("utf-8", errors="replace")
+        return "\n".join(txt.splitlines()[:300])
+    if low.endswith(".txt"):
+        return data.decode("utf-8", errors="replace")[:15000]
+    if low.endswith(".xlsx"):
+        import openpyxl
+        wb = openpyxl.load_workbook(BytesIO(data), read_only=True, data_only=True)
+        out = []
+        for ws in wb.worksheets[:3]:
+            out.append(f"=== Feuille : {ws.title} ===")
+            for i, row in enumerate(ws.iter_rows(values_only=True)):
+                if i >= 200:
+                    out.append("… (lignes suivantes tronquées)")
+                    break
+                out.append("\t".join("" if c is None else str(c) for c in row))
+        return "\n".join(out)
+    if low.endswith(".docx"):
+        import docx
+        d = docx.Document(BytesIO(data))
+        parts = [p.text for p in d.paragraphs if p.text.strip()]
+        for t in d.tables[:10]:
+            for row in t.rows:
+                parts.append("\t".join(c.text.strip() for c in row.cells))
+        return "\n".join(parts)
+    raise ValueError("format non géré")
+
+
+@ai_guide_router.post("/analyze-file")
+async def guide_analyze_file(file: UploadFile = File(...),
+                             question: str = Form(""),
+                             space: str = Form("general"),
+                             lang: str = Form("fr"),
+                             session_id: Optional[str] = Form(None),
+                             current_user: dict = Depends(get_current_user)):
+    """Analyse un fichier joint au prompt Oracle : document, image, photo ou tableau."""
+    from fastapi.concurrency import run_in_threadpool
+
+    from ai_guide_i18n import LANG_NAMES, norm_lang
+    name = file.filename or "fichier"
+    low = name.lower()
+    img = low.endswith((".png", ".jpg", ".jpeg", ".webp"))
+    doc = low.endswith((".pdf", ".csv", ".txt", ".xlsx", ".docx"))
+    if not img and not doc:
+        raise HTTPException(status_code=400, detail=(
+            "Format non pris en charge — joignez un PDF, une image (PNG/JPG/WebP), "
+            "un tableau (CSV/XLSX), un texte (TXT) ou un document Word (DOCX)."))
+    data = await file.read()
+    if len(data) > (6 if img else 12) * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Fichier trop volumineux (6 Mo image / 12 Mo document).")
+    lang = norm_lang(lang)
+    q = (question or "").strip()
+    system = ("Tu es Oracle, copilote IA professionnel de la coopérative KDMARCHÉ × O'SCOP (Outre-mer, ESS). "
+              "Tu analyses les fichiers joints par l'utilisateur avec rigueur : réponds de façon structurée, "
+              "factuelle et actionnable, en citant les éléments du fichier. Texte brut, pas de Markdown.")
+    ask = q if q else "Décris ce fichier et résume les informations importantes qu'il contient."
+    try:
+        if img:
+            import base64
+            b64 = base64.b64encode(data).decode()
+            prompt = (f"Image jointe : « {name} ».\nDemande : {ask}\n"
+                      f"Réponds en {LANG_NAMES.get(lang, 'français')} (8 phrases max).")
+            answer = await run_in_threadpool(_file_llm_sync, system, prompt, b64)
+        else:
+            text = await run_in_threadpool(_extract_file_text, name, data)
+            text = re.sub(r"\n{3,}", "\n\n", text or "").strip()
+            if len(text) < 20:
+                raise HTTPException(status_code=400, detail="Contenu illisible dans ce fichier (scan sans OCR ?).")
+            prompt = (f"Fichier joint : « {name} ».\nContenu extrait :\n{text[:14000]}\n\nDemande : {ask}\n"
+                      f"Réponds en {LANG_NAMES.get(lang, 'français')} (12 phrases max, listes autorisées en texte brut).")
+            answer = await run_in_threadpool(_file_llm_sync, system, prompt, None)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("Analyse fichier échouée (%s) : %s", name, exc)
+        raise HTTPException(status_code=502, detail="Analyse du fichier impossible — réessayez.")
+    db = get_database()
+    sid = session_id or f"guide_{uuid.uuid4().hex[:16]}"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    user_line = f"📎 {name}" + (f" — {q}" if q else "")
+    await db.ai_guide_messages.insert_many([
+        {"id": str(uuid.uuid4()), "session_id": sid, "user_id": current_user["id"],
+         "role": "user", "content": user_line, "space": space, "created_at": now_iso},
+        {"id": str(uuid.uuid4()), "session_id": sid, "user_id": current_user["id"],
+         "role": "assistant", "content": answer, "space": space,
+         "created_at": datetime.now(timezone.utc).isoformat()}])
+    await db.ai_guide_sessions.update_one(
+        {"id": sid},
+        {"$set": {"user_id": current_user["id"], "space": space, "last_message_at": now_iso},
+         "$setOnInsert": {"created_at": now_iso, "title": user_line[:70]},
+         "$inc": {"messages": 2}},
+        upsert=True)
+    return {"answer": answer, "session_id": sid}

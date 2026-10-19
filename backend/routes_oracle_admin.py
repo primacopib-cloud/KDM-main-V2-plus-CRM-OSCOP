@@ -758,21 +758,41 @@ async def _weekly_veille_job():
         from brevo_service import send_email
         admins = await db.users.find(
             {"role": {"$in": ["SUPER_ADMIN", "oscop_super_admin", "ADMIN"]}, "email": {"$nin": ["", None]}},
-            {"_id": 0, "email": 1, "name": 1}).to_list(20)
+            {"_id": 0, "email": 1, "name": 1, "preferred_language": 1, "lang": 1}).to_list(20)
         week = datetime.now(timezone.utc).strftime("Semaine du %d/%m/%Y")
-        safe = note.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        html = ("<div style='font-family:Helvetica,Arial,sans-serif;max-width:640px;margin:auto'>"
-                "<p style='color:#B8860B;font-weight:bold;font-size:13px'>O'SCOP × ORACLE — VEILLE "
-                "RÉGLEMENTAIRE HEBDOMADAIRE</p>"
-                f"<p style='color:#555;font-size:12px'>{week} — note générée automatiquement par Oracle "
-                "(sources externes consultées). À faire valider par un conseil juridique.</p>"
-                f"<pre style='white-space:pre-wrap;font-family:inherit;font-size:13px;color:#1F2A3A;"
-                f"line-height:1.5'>{safe}</pre></div>")
+        from ai_guide_i18n import LANG_NAMES, norm_lang
+        subjects = {"fr": "Veille réglementaire Outre-mer", "en": "Overseas regulatory watch",
+                    "es": "Vigilancia regulatoria de Ultramar", "gcf": "Vey réglemantè Outre-mer",
+                    "ar": "الرصد التنظيمي لما وراء البحار"}
+        notes_by_lang = {"fr": note}
+
+        def _build_html(text):
+            safe_t = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            return ("<div style='font-family:Helvetica,Arial,sans-serif;max-width:640px;margin:auto'>"
+                    "<p style='color:#B8860B;font-weight:bold;font-size:13px'>O'SCOP × ORACLE — VEILLE "
+                    "RÉGLEMENTAIRE HEBDOMADAIRE</p>"
+                    f"<p style='color:#555;font-size:12px'>{week} — note générée automatiquement par Oracle "
+                    "(sources externes consultées). À faire valider par un conseil juridique.</p>"
+                    f"<pre style='white-space:pre-wrap;font-family:inherit;font-size:13px;color:#1F2A3A;"
+                    f"line-height:1.5'>{safe_t}</pre></div>")
+
         sent = 0
         for a in admins:
+            alang = norm_lang(a.get("preferred_language") or a.get("lang") or "fr")
+            if alang not in notes_by_lang:
+                try:
+                    notes_by_lang[alang] = await run_in_threadpool(
+                        _llm_sync,
+                        "Tu es un traducteur professionnel de notes réglementaires. Préserve la structure, "
+                        "les références de textes et les URLs telles quelles.",
+                        f"veille_tr_{alang}",
+                        f"Traduis intégralement cette note de veille en {LANG_NAMES.get(alang, alang)} :\n\n{note}")
+                except Exception:
+                    notes_by_lang[alang] = note
             try:
                 await send_email(a["email"], a.get("name"),
-                                 f"Veille réglementaire Outre-mer — {week}", html, tags=["veille-hebdo"])
+                                 f"{subjects.get(alang, subjects['fr'])} — {week}",
+                                 _build_html(notes_by_lang[alang]), tags=["veille-hebdo"])
                 sent += 1
             except Exception:
                 logger.warning("Veille hebdo : envoi échoué pour %s", a.get("email"))

@@ -130,6 +130,40 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   const cancelEdit = () => { setEditingIdx(null); setInput(''); };
   const retryMsg = (content) => { if (!busy) send(content); };
 
+  const uploadFile = async (file) => {
+    if (busy) return;
+    const isPdf = file.name.toLowerCase().endsWith('.pdf');
+    const question = input.trim();
+    if (space === 'admin' && isPdf && !question) { uploadContract(file); return; }
+    setProposal(null);
+    setContractTaskId(null);
+    setSuggestions([]);
+    setActions([]);
+    setInput('');
+    setMessages((m) => [...m, { role: 'user', content: `📎 ${file.name}${question ? ` — ${question}` : ''}` }]);
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('question', question);
+      fd.append('space', space);
+      fd.append('lang', lang);
+      if (sessionId) fd.append('session_id', sessionId);
+      const r = await fetch(`${API}/ai-guide/analyze-file`, {
+        method: 'POST', credentials: 'include', headers: getAuthHeaders(), body: fd,
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Analyse impossible');
+      setSessionId(d.session_id);
+      sessionStorage.setItem(`guidia_session_${space}`, d.session_id);
+      setMessages((m) => [...m, { role: 'assistant', content: d.answer }]);
+      if (speak) readAloud(d.answer);
+    } catch (e) {
+      setMessages((m) => [...m, { role: 'assistant', content: `⚠ ${e.message}` }]);
+    }
+    setBusy(false);
+  };
+
   const uploadContract = async (file) => {
     if (busy) return;
     setProposal(null);
@@ -424,7 +458,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                       className="flex items-center gap-1 text-[9px] font-semibold text-white/40 hover:text-[#E9CF8E] transition-colors">
                       <Copy size={10} /> {copiedIdx === i ? 'Copié !' : 'Copier'}
                     </button>
-                    {m.role === 'user' && !m.content.startsWith('📄') && (
+                    {m.role === 'user' && !m.content.startsWith('📄') && !m.content.startsWith('📎') && (
                       <>
                         <button type="button" data-testid={`oracle-msg-edit-${i}`} title="Corriger ce message dans la zone de texte, puis le renvoyer manuellement"
                           onClick={() => editMsg(i, m.content)}
@@ -524,18 +558,15 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
             </div>
           )}
           <div className="p-2.5 flex items-center gap-1.5" style={{ borderTop: '1px solid rgba(217,179,90,0.25)' }}>
-            {space === 'admin' && (
-              <>
-                <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
-                  data-testid="oracle-contract-file"
-                  onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadContract(f); }} />
-                <button type="button" onClick={() => fileRef.current?.click()} disabled={busy}
-                  data-testid="oracle-contract-upload" title="Analyser un contrat PDF (clauses à risque)"
-                  className="w-9 h-9 rounded-xl flex items-center justify-center border bg-white/[0.06] border-white/15 text-white/50 hover:text-[#E9CF8E] disabled:opacity-40 transition-colors">
-                  <Paperclip size={14} />
-                </button>
-              </>
-            )}
+            <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.csv,.txt,.xlsx,.docx" className="hidden"
+              data-testid="oracle-contract-file"
+              onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadFile(f); }} />
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={busy}
+              data-testid="oracle-contract-upload"
+              title="Joindre un document, une photo, une image ou un tableau — Oracle le lit et répond à votre question (tapez-la avant de joindre)"
+              className="w-9 h-9 rounded-xl flex items-center justify-center border bg-white/[0.06] border-white/15 text-white/50 hover:text-[#E9CF8E] disabled:opacity-40 transition-colors">
+              <Paperclip size={14} />
+            </button>
             {SR && (
               <button type="button" onClick={dictate} data-testid="ai-guide-mic" title="Dicter ma question"
                 className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-colors ${
@@ -550,7 +581,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                 if (e.key === 'Enter') { e.preventDefault(); send(); }
                 else if (e.key === 'Escape') { e.preventDefault(); onClose?.(); }
                 else if (e.key === 'ArrowUp' && !input) {
-                  const lastUser = [...messages].reverse().find((m) => m.role === 'user' && !m.content.startsWith('📄'));
+                  const lastUser = [...messages].reverse().find((m) => m.role === 'user' && !m.content.startsWith('📄') && !m.content.startsWith('📎'));
                   if (lastUser) { e.preventDefault(); editMsg(messages.lastIndexOf(lastUser), lastUser.content); }
                 }
               }}
