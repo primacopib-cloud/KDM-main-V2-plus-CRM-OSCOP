@@ -107,6 +107,26 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   const fileRef = useRef(null);
   const [attachOpen, setAttachOpen] = useState(false);
   const [accept, setAccept] = useState('.pdf,.docx,.txt,.png,.jpg,.jpeg,.webp,.csv,.xlsx');
+  const [attachments, setAttachments] = useState([]);
+
+  const loadAttachments = (sid) => {
+    const s = sid || sessionId;
+    if (!s) { setAttachments([]); return; }
+    fetch(`${API}/ai-guide/attachments?session_id=${encodeURIComponent(s)}`, {
+      credentials: 'include', headers: getAuthHeaders(),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setAttachments(d?.attachments || []))
+      .catch(() => {});
+  };
+  const deleteAttachment = async (id) => {
+    try {
+      await fetch(`${API}/ai-guide/attachments/${id}`, {
+        method: 'DELETE', credentials: 'include', headers: getAuthHeaders(),
+      });
+      setAttachments((a) => a.filter((x) => x.id !== id));
+    } catch { /* noop */ }
+  };
 
   const pickFile = (kindAccept) => {
     setAccept(kindAccept);
@@ -591,12 +611,31 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                   className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#E9CF8E] hover:underline">
                   <Download size={11} /> Télécharger un fichier d'exemple (CSV)
                 </a>
+                {attachments.length > 0 && (
+                  <div className="pt-1.5 border-t border-white/10 space-y-1" data-testid="oracle-attach-gallery">
+                    <p className="text-[9.5px] font-bold uppercase tracking-wider text-[#E9CF8E]/60">
+                      Pièces de la discussion ({attachments.length})
+                    </p>
+                    {attachments.map((a) => (
+                      <div key={a.id} className="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/10"
+                        data-testid={`oracle-attachment-${a.id}`}>
+                        <span className="flex items-center gap-1.5 text-[10px] text-white/75 truncate">
+                          {a.kind === 'image' ? <ImageIcon size={11} /> : a.kind === 'tableau' ? <Table size={11} /> : <FileText size={11} />}
+                          <span className="truncate">{a.filename}</span>
+                        </span>
+                        <button type="button" onClick={() => deleteAttachment(a.id)}
+                          data-testid={`oracle-attachment-delete-${a.id}`} title="Supprimer cette pièce jointe de la discussion"
+                          className="text-white/35 hover:text-red-300 text-[12px] font-bold leading-none transition-colors">×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             <input ref={fileRef} type="file" accept={accept} className="hidden"
               data-testid="oracle-contract-file"
               onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadFile(f); }} />
-            <button type="button" onClick={() => setAttachOpen((v) => !v)} disabled={busy}
+            <button type="button" onClick={() => { const n = !attachOpen; setAttachOpen(n); if (n) loadAttachments(); }} disabled={busy}
               data-testid="oracle-attach-btn"
               title="Joindre un fichier — documents (PDF, Word, TXT), photos (JPG, PNG, WEBP), tableaux (Excel, CSV)"
               className={`h-9 px-2 rounded-xl flex items-center gap-1 border text-[10px] font-bold disabled:opacity-40 transition-colors ${attachOpen

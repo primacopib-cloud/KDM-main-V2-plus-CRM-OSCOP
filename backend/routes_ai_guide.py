@@ -799,3 +799,22 @@ async def guide_sample_file():
            "Lait UHT 1L;1.35;48;2026-11-30\n")
     return Response(content=csv, media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": 'attachment; filename="exemple-tableau-oracle.csv"'})
+
+
+@ai_guide_router.get("/attachments")
+async def guide_list_attachments(session_id: str, current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    items = await db.ai_guide_attachments.find(
+        {"session_id": session_id, "user_id": current_user["id"]},
+        {"_id": 0, "id": 1, "filename": 1, "kind": 1, "created_at": 1},
+    ).sort("created_at", -1).limit(20).to_list(20)
+    return {"attachments": items}
+
+
+@ai_guide_router.delete("/attachments/{attachment_id}")
+async def guide_delete_attachment(attachment_id: str, current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    res = await db.ai_guide_attachments.delete_one({"id": attachment_id, "user_id": current_user["id"]})
+    if not res.deleted_count:
+        raise HTTPException(status_code=404, detail="Pièce jointe introuvable")
+    return {"ok": True}
