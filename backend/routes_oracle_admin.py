@@ -2,6 +2,8 @@
 Flux : /command (compréhension + proposition) → confirmation admin → /execute (whitelist + journal d'audit)."""
 import asyncio
 import json
+
+import httpx
 import logging
 import os
 import re
@@ -654,6 +656,44 @@ async def oracle_admin_contract_pdf(task_id: str, admin: dict = Depends(require_
     pdf = await run_in_threadpool(build_contract_pdf, t.get("answer", ""), t.get("query", ""))
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": 'attachment; filename="contrat-oscop-oracle.pdf"'})
+
+
+@oracle_admin_router.get("/whatsapp-campaigns")
+async def oracle_admin_whatsapp_campaigns(admin: dict = Depends(require_admin)):
+    from whatsapp_service import BREVO, _headers, is_whatsapp_configured
+    if not is_whatsapp_configured():
+        return {"campaigns": [], "configured": False}
+    async with httpx.AsyncClient(timeout=20) as c:
+        r = await c.get(f"{BREVO}/whatsappCampaigns?limit=50", headers=_headers())
+    if r.status_code == 204 or not (r.text or "").strip():
+        return {"campaigns": [], "configured": True}
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail="Brevo injoignable pour les campagnes WhatsApp")
+    out = []
+    for camp in (r.json().get("campaigns") or []):
+        stats = camp.get("stats") or {}
+        sent = stats.get("sent") or 0
+        delivered = stats.get("delivered") or 0
+        read = stats.get("read") or 0
+        out.append({
+            "id": camp.get("id"), "name": camp.get("campaignName") or camp.get("name") or "",
+            "status": camp.get("campaignStatus") or camp.get("status") or "",
+            "scheduled_at": camp.get("scheduledAt") or camp.get("createdAt") or "",
+            "template_id": camp.get("templateId"),
+            "sent": sent, "delivered": delivered, "read": read,
+            "errors": stats.get("error") or stats.get("errors") or 0,
+            "delivery_rate": round(delivered / sent * 100, 1) if sent else 0,
+            "read_rate": round(read / sent * 100, 1) if sent else 0,
+        })
+    return {"campaigns": out, "configured": True}
+
+
+@oracle_admin_router.get("/veille-digests")
+async def oracle_admin_veille_digests(q: Optional[str] = None, admin: dict = Depends(require_admin)):
+    db = get_database()
+    flt = {"note": {"$regex": re.escape(q.strip()), "$options": "i"}} if q and q.strip() else {}
+    items = await db.oracle_veille_digests.find(flt, {"_id": 0}).sort("created_at", -1).limit(30).to_list(30)
+    return {"digests": items}
 
 
 @oracle_admin_router.get("/audit")

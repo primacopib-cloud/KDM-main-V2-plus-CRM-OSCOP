@@ -61,6 +61,8 @@ import { EcosystemHealthTab } from '../components/superadmin/EcosystemHealthTab'
 import { AiChatAdminTab } from '../components/superadmin/AiChatAdminTab';
 import { GuidiaStatsPanel } from '../components/superadmin/GuidiaStatsPanel';
 import { OracleAuditCard } from '../components/superadmin/OracleAuditCard';
+import { WhatsAppCampaignsCard } from '../components/superadmin/WhatsAppCampaignsCard';
+import { VeilleArchiveCard } from '../components/superadmin/VeilleArchiveCard';
 import { DemandesAdminTab } from '../components/superadmin/DemandesAdminTab';
 import { ShowcasePartnersPanel } from '../components/superadmin/ShowcasePartnersPanel';
 import { SharePreviewTester } from '../components/superadmin/SharePreviewTester';
@@ -329,6 +331,8 @@ export default function SuperAdminPage() {
           <TabsContent value="ai-chat">
             <AiChatAdminTab />
             <OracleAuditCard />
+            <WhatsAppCampaignsCard />
+            <VeilleArchiveCard />
             <GuidiaStatsPanel />
           </TabsContent>
 
