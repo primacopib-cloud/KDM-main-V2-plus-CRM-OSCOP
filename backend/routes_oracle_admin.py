@@ -714,13 +714,47 @@ def _check_cron_auth(authorization):
         raise HTTPException(status_code=401, detail="unauthorized")
 
 
+DEFAULT_VEILLE_THEMES = ["bouclier qualité-prix", "octroi de mer", "vie chère",
+                         "ESS et coopératives", "commerce coopératif"]
+
+
+async def _get_veille_themes(db) -> list:
+    doc = await db.veille_settings.find_one({"id": "veille"}, {"_id": 0})
+    themes = (doc or {}).get("themes") or []
+    return themes if themes else DEFAULT_VEILLE_THEMES
+
+
+@oracle_admin_router.get("/veille-themes")
+async def oracle_admin_get_veille_themes(admin: dict = Depends(require_admin)):
+    db = get_database()
+    return {"themes": await _get_veille_themes(db), "defaults": DEFAULT_VEILLE_THEMES}
+
+
+class VeilleThemesBody(BaseModel):
+    themes: list
+
+
+@oracle_admin_router.put("/veille-themes")
+async def oracle_admin_put_veille_themes(body: VeilleThemesBody, admin: dict = Depends(require_admin)):
+    themes = [str(t).strip()[:60] for t in (body.themes or []) if str(t).strip()][:10]
+    if not themes:
+        raise HTTPException(status_code=400, detail="Indiquez au moins un thème de veille.")
+    db = get_database()
+    await db.veille_settings.update_one(
+        {"id": "veille"},
+        {"$set": {"themes": themes, "updated_by": admin.get("email"),
+                  "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+    return {"ok": True, "themes": themes}
+
+
 async def _weekly_veille_job():
     db = get_database()
     try:
+        themes = await _get_veille_themes(db)
         note = await _expert(
             "veille",
-            "évolutions réglementaires récentes pour le commerce coopératif, la vie chère, le bouclier "
-            "qualité-prix, l'octroi de mer et l'ESS en Outre-mer français", "fr")
+            "évolutions réglementaires récentes en Outre-mer français sur les thèmes suivis par la "
+            "coopérative : " + ", ".join(themes), "fr")
         from brevo_service import send_email
         admins = await db.users.find(
             {"role": {"$in": ["SUPER_ADMIN", "oscop_super_admin", "ADMIN"]}, "email": {"$nin": ["", None]}},
