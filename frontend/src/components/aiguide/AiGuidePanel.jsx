@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass, AudioLines, Play, Paperclip, Copy, Pencil, RotateCcw } from 'lucide-react';
+import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass, AudioLines, Play, Paperclip, Copy, Pencil, RotateCcw, FileText, Image as ImageIcon, Table, Download } from 'lucide-react';
 import { API, getAuthHeaders } from '../../services/http';
 import { AiGuideHistory } from './AiGuideHistory';
 
@@ -105,6 +105,14 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
 
   const audioRef = useRef(null);
   const fileRef = useRef(null);
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [accept, setAccept] = useState('.pdf,.docx,.txt,.png,.jpg,.jpeg,.webp,.csv,.xlsx');
+
+  const pickFile = (kindAccept) => {
+    setAccept(kindAccept);
+    setAttachOpen(false);
+    setTimeout(() => fileRef.current?.click(), 60);
+  };
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [editingIdx, setEditingIdx] = useState(null);
 
@@ -557,15 +565,44 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                 className="font-bold hover:text-white transition-colors">Annuler</button>
             </div>
           )}
-          <div className="p-2.5 flex items-center gap-1.5" style={{ borderTop: '1px solid rgba(217,179,90,0.25)' }}>
-            <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.csv,.txt,.xlsx,.docx" className="hidden"
+          <div className="p-2.5 flex items-center gap-1.5 relative" style={{ borderTop: '1px solid rgba(217,179,90,0.25)' }}>
+            {attachOpen && (
+              <div className="absolute bottom-12 left-2 right-2 z-20 rounded-xl p-2.5 space-y-1 border border-[#D9B35A]/40 shadow-2xl"
+                style={{ background: '#2A1045' }} data-testid="oracle-attach-menu">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#E9CF8E]/80 mb-1">Joindre un fichier</p>
+                <button type="button" onClick={() => pickFile('.pdf,.docx,.txt')} data-testid="oracle-attach-doc"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-white/80 hover:bg-white/10 hover:text-[#E9CF8E] transition-colors text-left">
+                  <FileText size={13} /> Documents — PDF, Word, TXT
+                </button>
+                <button type="button" onClick={() => pickFile('.png,.jpg,.jpeg,.webp')} data-testid="oracle-attach-img"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-white/80 hover:bg-white/10 hover:text-[#E9CF8E] transition-colors text-left">
+                  <ImageIcon size={13} /> Photos / images — JPG, PNG, WEBP
+                </button>
+                <button type="button" onClick={() => pickFile('.xlsx,.csv')} data-testid="oracle-attach-table"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-white/80 hover:bg-white/10 hover:text-[#E9CF8E] transition-colors text-left">
+                  <Table size={13} /> Tableaux — Excel, CSV
+                </button>
+                <p className="text-[9px] text-white/40 leading-snug pt-1 border-t border-white/10">
+                  Oracle lit le fichier pour répondre à votre demande (tapez-la avant de joindre) ou préparer une action —
+                  toute modification reste soumise à votre confirmation. Pièces privées, liées à cette discussion et
+                  réutilisables dans les échanges suivants.
+                </p>
+                <a href={`${API}/ai-guide/sample-file`} download data-testid="oracle-attach-sample"
+                  className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#E9CF8E] hover:underline">
+                  <Download size={11} /> Télécharger un fichier d'exemple (CSV)
+                </a>
+              </div>
+            )}
+            <input ref={fileRef} type="file" accept={accept} className="hidden"
               data-testid="oracle-contract-file"
               onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadFile(f); }} />
-            <button type="button" onClick={() => fileRef.current?.click()} disabled={busy}
-              data-testid="oracle-contract-upload"
-              title="Joindre un document, une photo, une image ou un tableau — Oracle le lit et répond à votre question (tapez-la avant de joindre)"
-              className="w-9 h-9 rounded-xl flex items-center justify-center border bg-white/[0.06] border-white/15 text-white/50 hover:text-[#E9CF8E] disabled:opacity-40 transition-colors">
-              <Paperclip size={14} />
+            <button type="button" onClick={() => setAttachOpen((v) => !v)} disabled={busy}
+              data-testid="oracle-attach-btn"
+              title="Joindre un fichier — documents (PDF, Word, TXT), photos (JPG, PNG, WEBP), tableaux (Excel, CSV)"
+              className={`h-9 px-2 rounded-xl flex items-center gap-1 border text-[10px] font-bold disabled:opacity-40 transition-colors ${attachOpen
+                ? 'bg-[#D9B35A]/20 border-[#D9B35A]/50 text-[#E9CF8E]'
+                : 'bg-white/[0.06] border-white/15 text-white/60 hover:text-[#E9CF8E]'}`}>
+              <Paperclip size={13} /> Joindre
             </button>
             {SR && (
               <button type="button" onClick={dictate} data-testid="ai-guide-mic" title="Dicter ma question"

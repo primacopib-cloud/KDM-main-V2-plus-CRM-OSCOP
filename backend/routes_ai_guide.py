@@ -354,6 +354,9 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
         + (f"\nDonnées chiffrées exactes du membre (utilise-les pour répondre avec des montants précis) :\n{data_pack}"
            if data_pack else ""))
     prompt = f"{context}\n"
+    attachments_txt = await _session_attachments_text(db, session_id, current_user["id"])
+    if attachments_txt:
+        prompt += f"{attachments_txt}\n"
     if history_txt:
         prompt += f"Historique :\n{history_txt}\n"
     prompt += f"Message de l'utilisateur : {message}"
@@ -741,6 +744,13 @@ async def guide_analyze_file(file: UploadFile = File(...),
     sid = session_id or f"guide_{uuid.uuid4().hex[:16]}"
     now_iso = datetime.now(timezone.utc).isoformat()
     user_line = f"📎 {name}" + (f" — {q}" if q else "")
+    await db.ai_guide_attachments.insert_one({
+        "id": str(uuid.uuid4()), "session_id": sid, "user_id": current_user["id"],
+        "space": space, "filename": name,
+        "kind": "image" if img else ("tableau" if low.endswith((".csv", ".xlsx")) else "document"),
+        "content": None if img else text[:14000],
+        "summary": answer[:2000] if img else None,
+        "created_at": now_iso})
     await db.ai_guide_messages.insert_many([
         {"id": str(uuid.uuid4()), "session_id": sid, "user_id": current_user["id"],
          "role": "user", "content": user_line, "space": space, "created_at": now_iso},
@@ -754,3 +764,38 @@ async def guide_analyze_file(file: UploadFile = File(...),
          "$inc": {"messages": 2}},
         upsert=True)
     return {"answer": answer, "session_id": sid}
+
+
+async def _session_attachments_text(db, session_id: str, user_id: str) -> str:
+    """Pièces jointes privées de la discussion, réinjectées dans les échanges suivants."""
+    if not session_id:
+        return ""
+    docs = await db.ai_guide_attachments.find(
+        {"session_id": session_id, "user_id": user_id},
+        {"_id": 0, "filename": 1, "kind": 1, "content": 1, "summary": 1},
+    ).sort("created_at", -1).limit(3).to_list(3)
+    if not docs:
+        return ""
+    parts = []
+    for d in reversed(docs):
+        body = (d.get("content") or d.get("summary") or "").strip()
+        if body:
+            parts.append(f"— Pièce jointe « {d['filename']} » ({d['kind']}) :\n{body[:4000]}")
+    if not parts:
+        return ""
+    return ("Pièces jointes de la discussion (privées, réutilisables — appuie-toi dessus si pertinent) :\n"
+            + "\n\n".join(parts))
+
+
+@ai_guide_router.get("/sample-file")
+async def guide_sample_file():
+    """Fichier d'exemple pris en charge par l'analyse de pièces jointes."""
+    from fastapi.responses import Response
+    csv = ("produit;prix_unitaire_eur;stock;dlc\n"
+           "Café moulu 250g;8.90;12;2027-03-01\n"
+           "Farine de blé 1kg;2.40;30;2027-06-15\n"
+           "Huile végétale 1L;5.10;8;2026-12-20\n"
+           "Riz parfumé 5kg;12.50;6;2028-01-10\n"
+           "Lait UHT 1L;1.35;48;2026-11-30\n")
+    return Response(content=csv, media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="exemple-tableau-oracle.csv"'})

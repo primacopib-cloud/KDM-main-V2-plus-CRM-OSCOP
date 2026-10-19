@@ -361,8 +361,11 @@ async def oracle_admin_command(body: CommandBody, admin: dict = Depends(require_
     history_txt = "\n".join(
         f"{'Admin' if m['role'] == 'user' else 'Oracle'}: {m['content'][:400]}" for m in reversed(history))
     context = await _context_pack(db)
+    from routes_ai_guide import _session_attachments_text
+    attachments_txt = await _session_attachments_text(db, session_id, admin["id"])
     prompt = (f"Contexte plateforme en direct :\n{context}\n"
               f"Langue de l'admin : {LANG_NAMES[lang]}.\n"
+              + (f"{attachments_txt}\n" if attachments_txt else "")
               + (f"Historique :\n{history_txt}\n" if history_txt else "")
               + f"Commande de l'admin : {message}")
     try:
