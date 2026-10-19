@@ -26,6 +26,7 @@ _lang_digest_task: asyncio.Task | None = None
 _investor_statement_task: asyncio.Task | None = None
 _pickup_reminder_task: asyncio.Task | None = None
 _abandoned_task: asyncio.Task | None = None
+_wa_approval_task: asyncio.Task | None = None
 
 
 def set_scheduler_database(database):
@@ -526,6 +527,11 @@ def start_scheduler():
         from abandoned_lots import abandoned_lots_loop
         _abandoned_task = asyncio.get_event_loop().create_task(abandoned_lots_loop(_db))
         logger.info("Abandoned lots J+30 loop started (check every 6h)")
+    global _wa_approval_task
+    if _wa_approval_task is None or _wa_approval_task.done():
+        from whatsapp_service import whatsapp_approval_loop
+        _wa_approval_task = asyncio.get_event_loop().create_task(whatsapp_approval_loop(_db))
+        logger.info("WhatsApp template approval watcher started (every 10 min)")
 
 
 def stop_scheduler():

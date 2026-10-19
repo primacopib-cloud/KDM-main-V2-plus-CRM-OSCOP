@@ -338,6 +338,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   return (
     <div className="fixed bottom-24 right-6 z-[70] w-[370px] max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden flex flex-col transition-opacity duration-300 opacity-60 hover:opacity-100 focus-within:opacity-100"
       data-testid="ai-guide-panel"
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose?.(); }}
       style={{
         height: 'min(540px, calc(100vh - 8rem))',
         background: 'linear-gradient(180deg, rgba(42,16,69,0.82) 0%, rgba(30,12,52,0.88) 100%)',
@@ -545,7 +546,14 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
               </button>
             )}
             <input value={input} onChange={(e) => setInput(e.target.value)} data-testid="ai-guide-input"
-              onKeyDown={(e) => e.key === 'Enter' && send()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); send(); }
+                else if (e.key === 'Escape') { e.preventDefault(); onClose?.(); }
+                else if (e.key === 'ArrowUp' && !input) {
+                  const lastUser = [...messages].reverse().find((m) => m.role === 'user' && !m.content.startsWith('📄'));
+                  if (lastUser) { e.preventDefault(); editMsg(messages.lastIndexOf(lastUser), lastUser.content); }
+                }
+              }}
               placeholder={listening ? 'Je vous écoute…' : 'Posez votre question…'} maxLength={800}
               className="flex-1 h-9 px-3 rounded-xl bg-white/[0.06] border border-white/15 text-[12px] text-white placeholder:text-white/30 outline-none focus:border-[#D9B35A]/50" />
             <button type="button" onClick={() => send()} disabled={busy || !input.trim()} data-testid="ai-guide-send"
