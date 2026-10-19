@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass, AudioLines, Play, Paperclip } from 'lucide-react';
+import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass, AudioLines, Play, Paperclip, Copy, Pencil, RotateCcw } from 'lucide-react';
 import { API, getAuthHeaders } from '../../services/http';
 import { AiGuideHistory } from './AiGuideHistory';
 
@@ -105,6 +105,30 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
 
   const audioRef = useRef(null);
   const fileRef = useRef(null);
+  const [copiedIdx, setCopiedIdx] = useState(null);
+  const [editingIdx, setEditingIdx] = useState(null);
+
+  const copyMsg = async (i, content) => {
+    try {
+      await navigator.clipboard.writeText(content);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = content;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    setCopiedIdx(i);
+    setTimeout(() => setCopiedIdx(null), 1500);
+  };
+  const editMsg = (i, content) => {
+    setEditingIdx(i);
+    setInput(content);
+    document.querySelector('[data-testid="ai-guide-input"]')?.focus();
+  };
+  const cancelEdit = () => { setEditingIdx(null); setInput(''); };
+  const retryMsg = (content) => { if (!busy) send(content); };
 
   const uploadContract = async (file) => {
     if (busy) return;
@@ -199,6 +223,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       }
     }
     setInput('');
+    setEditingIdx(null);
     setSuggestions([]);
     setActions([]);
     setProposal(null);
@@ -392,6 +417,27 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                     ? 'bg-[#D9B35A]/20 text-[#F3EDE4] border border-[#D9B35A]/30 rounded-br-sm'
                     : 'bg-white/[0.06] text-white/85 border border-white/10 rounded-bl-sm'}`}>
                   {m.content}
+                  <div className={`mt-1.5 pt-1 flex items-center gap-2.5 border-t ${m.role === 'user' ? 'border-[#D9B35A]/20 justify-end' : 'border-white/10'}`}>
+                    <button type="button" data-testid={`oracle-msg-copy-${i}`} title="Copier le texte dans le presse-papiers"
+                      onClick={() => copyMsg(i, m.content)}
+                      className="flex items-center gap-1 text-[9px] font-semibold text-white/40 hover:text-[#E9CF8E] transition-colors">
+                      <Copy size={10} /> {copiedIdx === i ? 'Copié !' : 'Copier'}
+                    </button>
+                    {m.role === 'user' && !m.content.startsWith('📄') && (
+                      <>
+                        <button type="button" data-testid={`oracle-msg-edit-${i}`} title="Corriger ce message dans la zone de texte, puis le renvoyer manuellement"
+                          onClick={() => editMsg(i, m.content)}
+                          className="flex items-center gap-1 text-[9px] font-semibold text-white/40 hover:text-[#E9CF8E] transition-colors">
+                          <Pencil size={10} /> Modifier
+                        </button>
+                        <button type="button" data-testid={`oracle-msg-retry-${i}`} title="Relancer la réponse d'Oracle — historique conservé, aucune action confirmée n'est rejouée"
+                          onClick={() => retryMsg(m.content)} disabled={busy}
+                          className="flex items-center gap-1 text-[9px] font-semibold text-white/40 hover:text-[#E9CF8E] disabled:opacity-40 transition-colors">
+                          <RotateCcw size={10} /> Relancer
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -468,6 +514,14 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
             <div ref={endRef} />
           </div>
 
+          {editingIdx !== null && (
+            <div className="px-3 py-1.5 flex items-center justify-between text-[10px] text-[#E9CF8E] bg-[#D9B35A]/10 border-t border-[#D9B35A]/25"
+              data-testid="oracle-editing-banner">
+              <span>Modification en cours — corrigez le texte puis renvoyez (l'historique est conservé)</span>
+              <button type="button" onClick={cancelEdit} data-testid="oracle-editing-cancel"
+                className="font-bold hover:text-white transition-colors">Annuler</button>
+            </div>
+          )}
           <div className="p-2.5 flex items-center gap-1.5" style={{ borderTop: '1px solid rgba(217,179,90,0.25)' }}>
             {space === 'admin' && (
               <>
