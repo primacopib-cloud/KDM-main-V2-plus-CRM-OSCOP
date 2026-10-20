@@ -38,7 +38,14 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   const [proposal, setProposal] = useState(null);
   const [proposals, setProposals] = useState([]);
   const [showMemory, setShowMemory] = useState(false);
+  const [memNotice, setMemNotice] = useState(() => !localStorage.getItem('oracle_memory_notice_v1'));
   const [contractTaskId, setContractTaskId] = useState(null);
+
+  const dismissMemNotice = (openMenu) => {
+    localStorage.setItem('oracle_memory_notice_v1', '1');
+    setMemNotice(false);
+    if (openMenu) setShowMemory(true);
+  };
   const [voice, setVoice] = useState(null);
   const [voices, setVoices] = useState([]);
   const [showVoices, setShowVoices] = useState(false);
@@ -494,6 +501,22 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       ) : (
         <>
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5" data-testid="ai-guide-messages">
+            {memNotice && (
+              <div className="rounded-xl px-3 py-2 flex items-start gap-2" data-testid="oracle-memory-notice"
+                style={{ background: 'rgba(217,179,90,0.12)', border: '1px solid rgba(217,179,90,0.4)' }}>
+                <Brain size={14} className="text-[#E9CF8E] shrink-0 mt-0.5" />
+                <span className="flex-1 text-[10.5px] text-white/80 leading-snug">
+                  Oracle mémorise vos préférences et consignes pour mieux vous servir.
+                  Consultez, exportez ou effacez cette mémoire à tout moment.
+                  <button type="button" onClick={() => dismissMemNotice(true)} data-testid="oracle-memory-notice-open"
+                    className="block mt-1 text-[10px] font-bold text-[#E9CF8E] hover:underline">
+                    Voir ma mémoire →
+                  </button>
+                </span>
+                <button type="button" onClick={() => dismissMemNotice(false)} data-testid="oracle-memory-notice-dismiss"
+                  title="J'ai compris" className="text-white/40 hover:text-white text-sm leading-none">×</button>
+              </div>
+            )}
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-[12px] leading-relaxed whitespace-pre-wrap ${

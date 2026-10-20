@@ -355,10 +355,12 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
         + (f"\nDonnées chiffrées exactes du membre (utilise-les pour répondre avec des montants précis) :\n{data_pack}"
            if data_pack else ""))
     prompt = f"{context}\n"
-    from oracle_memory import learn_correction, learn_from_exchange, memories_text, should_learn
+    from oracle_memory import learn_correction, learn_from_exchange, memories_text, should_learn, team_scope_of
     if body.corrected_from:
         await learn_correction(db, current_user["id"], body.corrected_from, message)
-    mem_txt = await memories_text(db, current_user["id"])
+    team = team_scope_of(current_user)
+    mem_txt = await memories_text(db, current_user["id"], include_shared=bool(team),
+                                  team_scope=team)
     if mem_txt:
         prompt += f"{mem_txt}\n"
     attachments_txt = await _session_attachments_text(db, session_id, current_user["id"])
@@ -408,7 +410,8 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
         upsert=True)
     if should_learn(message):
         import asyncio as _asyncio
-        _asyncio.create_task(learn_from_exchange(current_user["id"], message, answer))
+        _asyncio.create_task(learn_from_exchange(current_user["id"], message, answer,
+                                                 by=current_user.get("email") or "", team_scope=team))
     return {"answer": answer, "suggestions": suggestions, "actions": actions, "session_id": session_id}
 
 

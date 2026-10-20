@@ -439,10 +439,10 @@ async def oracle_admin_command(body: CommandBody, admin: dict = Depends(require_
 
     answer = parsed.get("text") or "Je n'ai pas compris — reformulez votre commande."
     await _store_exchange(db, session_id, admin["id"], message, answer)
-    from oracle_memory import learn_from_exchange, should_learn
+    from oracle_memory import SHARED_SCOPE, learn_from_exchange, should_learn
     if should_learn(message):
         asyncio.create_task(learn_from_exchange(admin["id"], message, answer,
-                                                is_admin=True, by=admin.get("email") or ""))
+                                                by=admin.get("email") or "", team_scope=SHARED_SCOPE))
     return {"answer": answer, "suggestions": (parsed.get("suggestions") or [])[:3],
             "proposal": None, "session_id": session_id}
 

@@ -37,13 +37,19 @@ const MemoryRow = ({ m, onDelete, onShare, shared }) => (
 export const OracleMemoryMenu = () => {
   const [items, setItems] = useState(null);
   const [shared, setShared] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [team, setTeam] = useState(null);
+  const [teamLabel, setTeamLabel] = useState('');
   const [confirmAll, setConfirmAll] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/oracle-memory`, { credentials: 'include', headers: getAuthHeaders() })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { setItems(d?.memories || []); setShared(d?.shared || []); setIsAdmin(Boolean(d?.is_admin)); })
+      .then((d) => {
+        setItems(d?.memories || []);
+        setShared(d?.shared || []);
+        setTeam(d?.team || null);
+        setTeamLabel(d?.team_label || '');
+      })
       .catch(() => setItems([]));
   }, []);
 
@@ -98,7 +104,7 @@ export const OracleMemoryMenu = () => {
         </span>
       )}
       {(items || []).map((m) => (
-        <MemoryRow key={m.id} m={m} onDelete={remove} onShare={isAdmin ? share : null} />
+        <MemoryRow key={m.id} m={m} onDelete={remove} onShare={team ? share : null} />
       ))}
       {items !== null && items.length > 0 && (
         <>
@@ -117,11 +123,11 @@ export const OracleMemoryMenu = () => {
           </button>
         </>
       )}
-      {isAdmin && (
+      {team && (
         <>
           <span className="px-1 pt-1.5 text-[9.5px] uppercase tracking-wider text-[#E9CF8E]/70 font-bold border-t border-white/10"
             data-testid="oracle-memory-shared-title">
-            <Users size={10} className="inline mr-1 -mt-0.5" />Consignes partagées — équipe admin
+            <Users size={10} className="inline mr-1 -mt-0.5" />Consignes partagées — {teamLabel}
           </span>
           {shared.length === 0 && (
             <span className="px-1 py-1 text-[9.5px] text-white/40 leading-snug" data-testid="oracle-memory-shared-empty">
@@ -135,7 +141,7 @@ export const OracleMemoryMenu = () => {
         </>
       )}
       <span className="px-1 pt-1 text-[8.5px] text-white/35 leading-snug border-t border-white/10">
-        Mémoire privée réutilisée dans toutes vos discussions ; les consignes partagées s'appliquent à tous les admins.
+        Mémoire privée réutilisée dans toutes vos discussions{team ? ` ; les consignes partagées s'appliquent à tous les membres de votre équipe (${teamLabel})` : ''}.
         Exportez votre mémoire en PDF avant « Tout oublier » (conformité RGPD).
       </span>
     </span>
