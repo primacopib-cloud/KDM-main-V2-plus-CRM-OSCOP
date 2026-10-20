@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Trash2, Users, Eraser } from 'lucide-react';
+import { Loader2, Trash2, Users, Eraser, FileDown } from 'lucide-react';
 import { API, getAuthHeaders } from '../../services/http';
 
 const KIND_LABELS = { fact: 'Fait', preference: 'Préférence', rule: 'Consigne', correction: 'Correction' };
@@ -101,14 +101,21 @@ export const OracleMemoryMenu = () => {
         <MemoryRow key={m.id} m={m} onDelete={remove} onShare={isAdmin ? share : null} />
       ))}
       {items !== null && items.length > 0 && (
-        <button type="button" onClick={forgetAll} data-testid="oracle-memory-forget-all"
-          className={`mt-0.5 flex items-center justify-center gap-1.5 h-7 rounded-lg text-[10px] font-bold border transition-colors ${
-            confirmAll
-              ? 'bg-red-500/25 border-red-400/60 text-red-200'
-              : 'bg-white/[0.04] border-white/15 text-white/55 hover:text-red-300 hover:border-red-400/40'}`}>
-          <Eraser size={11} />
-          {confirmAll ? 'Confirmer l\'oubli total ? (irréversible)' : 'Tout oublier (RGPD)'}
-        </button>
+        <>
+          <a href={`${API}/oracle-memory/export.pdf`} target="_blank" rel="noreferrer"
+            data-testid="oracle-memory-export-pdf"
+            className="mt-0.5 flex items-center justify-center gap-1.5 h-7 rounded-lg text-[10px] font-bold border bg-white/[0.04] border-white/15 text-white/55 hover:text-[#E9CF8E] hover:border-[#D9B35A]/40 transition-colors">
+            <FileDown size={11} /> Exporter ma mémoire en PDF (RGPD)
+          </a>
+          <button type="button" onClick={forgetAll} data-testid="oracle-memory-forget-all"
+            className={`flex items-center justify-center gap-1.5 h-7 rounded-lg text-[10px] font-bold border transition-colors ${
+              confirmAll
+                ? 'bg-red-500/25 border-red-400/60 text-red-200'
+                : 'bg-white/[0.04] border-white/15 text-white/55 hover:text-red-300 hover:border-red-400/40'}`}>
+            <Eraser size={11} />
+            {confirmAll ? 'Confirmer l\'oubli total ? (irréversible)' : 'Tout oublier (RGPD)'}
+          </button>
+        </>
       )}
       {isAdmin && (
         <>
@@ -129,7 +136,7 @@ export const OracleMemoryMenu = () => {
       )}
       <span className="px-1 pt-1 text-[8.5px] text-white/35 leading-snug border-t border-white/10">
         Mémoire privée réutilisée dans toutes vos discussions ; les consignes partagées s'appliquent à tous les admins.
-        « Tout oublier » efface votre mémoire personnelle (conformité RGPD).
+        Exportez votre mémoire en PDF avant « Tout oublier » (conformité RGPD).
       </span>
     </span>
   );

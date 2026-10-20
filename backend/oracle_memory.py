@@ -156,6 +156,72 @@ async def list_memories(current_user: dict = Depends(get_current_user)):
     return {"memories": items, "shared": shared, "is_admin": _is_admin(current_user)}
 
 
+@oracle_memory_router.get("/export.pdf")
+async def export_memories_pdf(current_user: dict = Depends(get_current_user)):
+    """Export PDF de la mémoire d'Oracle (traçabilité RGPD avant oubli total)."""
+    db = get_database()
+    items = await db.oracle_memory.find(
+        {"user_id": current_user["id"], "scope": {"$ne": SHARED_SCOPE}},
+        {"_id": 0, "kind": 1, "text": 1, "source": 1, "created_at": 1}
+    ).sort("created_at", 1).limit(MAX_MEMORIES).to_list(MAX_MEMORIES)
+    pdf = _build_memory_pdf(current_user, items)
+    from fastapi.responses import Response
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": 'attachment; filename="memoire-oracle.pdf"'})
+
+
+def _build_memory_pdf(user: dict, items: list) -> bytes:
+    from io import BytesIO
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.units import mm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    gold, dark, grey = colors.HexColor("#B8860B"), colors.HexColor("#1F2A3A"), colors.HexColor("#555555")
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=16 * mm, rightMargin=16 * mm,
+                            topMargin=14 * mm, bottomMargin=14 * mm,
+                            title="Mémoire Oracle — export RGPD")
+    h1 = ParagraphStyle("h1", fontName="Helvetica-Bold", fontSize=16, textColor=gold, spaceAfter=2 * mm)
+    sub = ParagraphStyle("sub", fontName="Helvetica", fontSize=9, textColor=grey, spaceAfter=6 * mm)
+    cell = ParagraphStyle("cell", fontName="Helvetica", fontSize=9, textColor=dark, leading=12)
+    foot = ParagraphStyle("foot", fontName="Helvetica-Oblique", fontSize=8, textColor=grey, spaceBefore=6 * mm)
+    name = user.get("contact_name") or user.get("name") or ""
+    story = [
+        Paragraph("O'SCOP × ORACLE — MÉMOIRE DE L'ASSISTANT", h1),
+        Paragraph(
+            f"Export personnel RGPD (art. 20 — portabilité) de {name} &lt;{user.get('email', '')}&gt; "
+            f"— généré le {datetime.now(timezone.utc).strftime('%d/%m/%Y à %H:%M UTC')} — "
+            f"{len(items)} souvenir(s)", sub)]
+    if not items:
+        story.append(Paragraph("Aucun souvenir enregistré : la mémoire d'Oracle est vide pour ce compte.", cell))
+    else:
+        rows = [[Paragraph("<b>Type</b>", cell), Paragraph("<b>Souvenir</b>", cell),
+                 Paragraph("<b>Origine</b>", cell), Paragraph("<b>Date</b>", cell)]]
+        for m in items:
+            rows.append([
+                Paragraph(KIND_LABELS.get(m["kind"], m["kind"]), cell),
+                Paragraph(m["text"].replace("&", "&amp;").replace("<", "&lt;"), cell),
+                Paragraph(m.get("source") or "—", cell),
+                Paragraph((m.get("created_at") or "")[:16].replace("T", " "), cell)])
+        t = Table(rows, colWidths=[24 * mm, 104 * mm, 22 * mm, 28 * mm], repeatRows=1)
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F3E9D2")),
+            ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#D8CFBF")),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#FBF6EE")]),
+        ]))
+        story.append(t)
+    story.append(Spacer(1, 4 * mm))
+    story.append(Paragraph(
+        "Ces souvenirs sont des informations durables qu'Oracle a retenues de vos discussions pour personnaliser "
+        "ses réponses. Vous pouvez en supprimer chacun individuellement depuis le menu mémoire (icône cerveau) ou "
+        "tout effacer d'un coup via « Tout oublier ». Document généré automatiquement — Communityplace, "
+        "KDMARCHÉ × O'SCOP.", foot))
+    doc.build(story)
+    return buf.getvalue()
+
+
 @oracle_memory_router.delete("/all")
 async def forget_all(current_user: dict = Depends(get_current_user)):
     """Oubli total RGPD : purge toute la mémoire personnelle d'Oracle pour cet utilisateur."""
