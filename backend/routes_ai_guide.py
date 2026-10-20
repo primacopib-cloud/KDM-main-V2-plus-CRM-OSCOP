@@ -320,6 +320,7 @@ class GuideChatBody(BaseModel):
     session_id: Optional[str] = None
     space: str = "general"
     lang: str = "fr"
+    corrected_from: Optional[str] = None
 
 
 @ai_guide_router.post("/chat")
@@ -354,6 +355,12 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
         + (f"\nDonnées chiffrées exactes du membre (utilise-les pour répondre avec des montants précis) :\n{data_pack}"
            if data_pack else ""))
     prompt = f"{context}\n"
+    from oracle_memory import learn_correction, learn_from_exchange, memories_text, should_learn
+    if body.corrected_from:
+        await learn_correction(db, current_user["id"], body.corrected_from, message)
+    mem_txt = await memories_text(db, current_user["id"])
+    if mem_txt:
+        prompt += f"{mem_txt}\n"
     attachments_txt = await _session_attachments_text(db, session_id, current_user["id"])
     if attachments_txt:
         prompt += f"{attachments_txt}\n"
@@ -399,6 +406,9 @@ async def guide_chat(body: GuideChatBody, current_user: dict = Depends(get_curre
          "$setOnInsert": {"created_at": now_iso, "title": message[:70]},
          "$inc": {"messages": 2}},
         upsert=True)
+    if should_learn(message):
+        import asyncio as _asyncio
+        _asyncio.create_task(learn_from_exchange(current_user["id"], message, answer))
     return {"answer": answer, "suggestions": suggestions, "actions": actions, "session_id": session_id}
 
 
@@ -692,6 +702,43 @@ def _extract_file_text(filename: str, data: bytes) -> str:
     raise ValueError("format non géré")
 
 
+def _extract_zip_text(data: bytes) -> str:
+    """Dossier ZIP : lit chaque fichier pris en charge et concatène les contenus."""
+    import zipfile
+    from io import BytesIO
+    try:
+        zf = zipfile.ZipFile(BytesIO(data))
+    except zipfile.BadZipFile:
+        raise ValueError("archive ZIP illisible")
+    out, read = [], 0
+    for info in zf.infolist():
+        if info.is_dir() or info.file_size > 10 * 1024 * 1024:
+            continue
+        name = info.filename
+        low = name.lower()
+        base = low.rsplit("/", 1)[-1]
+        if base.startswith(".") or "__macosx" in low:
+            continue
+        if low.endswith((".png", ".jpg", ".jpeg", ".webp")):
+            out.append(f"=== {name} === (image incluse dans le dossier — joignez-la seule pour une analyse visuelle)")
+            continue
+        if not low.endswith((".pdf", ".csv", ".txt", ".xlsx", ".docx")):
+            continue
+        try:
+            txt = _extract_file_text(base, zf.read(info))
+        except Exception:
+            out.append(f"=== {name} === (fichier illisible)")
+            continue
+        out.append(f"=== Fichier du dossier : {name} ===\n{(txt or '').strip()[:3500]}")
+        read += 1
+        if read >= 12:
+            out.append("… (autres fichiers du dossier non lus — limite de 12 fichiers par ZIP)")
+            break
+    if not read:
+        raise ValueError("aucun fichier lisible (PDF, Word, TXT, CSV, Excel) dans ce ZIP")
+    return "\n\n".join(out)
+
+
 @ai_guide_router.post("/analyze-file")
 async def guide_analyze_file(file: UploadFile = File(...),
                              question: str = Form(""),
@@ -707,13 +754,15 @@ async def guide_analyze_file(file: UploadFile = File(...),
     low = name.lower()
     img = low.endswith((".png", ".jpg", ".jpeg", ".webp"))
     doc = low.endswith((".pdf", ".csv", ".txt", ".xlsx", ".docx"))
-    if not img and not doc:
+    zipf = low.endswith(".zip")
+    if not img and not doc and not zipf:
         raise HTTPException(status_code=400, detail=(
             "Format non pris en charge — joignez un PDF, une image (PNG/JPG/WebP), "
-            "un tableau (CSV/XLSX), un texte (TXT) ou un document Word (DOCX)."))
+            "un tableau (CSV/XLSX), un texte (TXT), un document Word (DOCX) ou un dossier ZIP."))
     data = await file.read()
-    if len(data) > (6 if img else 12) * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="Fichier trop volumineux (6 Mo image / 12 Mo document).")
+    max_mb = 6 if img else (25 if zipf else 12)
+    if len(data) > max_mb * 1024 * 1024:
+        raise HTTPException(status_code=413, detail=f"Fichier trop volumineux (max {max_mb} Mo pour ce format).")
     lang = norm_lang(lang)
     q = (question or "").strip()
     system = ("Tu es Oracle, copilote IA professionnel de la coopérative KDMARCHÉ × O'SCOP (Outre-mer, ESS). "
@@ -727,6 +776,13 @@ async def guide_analyze_file(file: UploadFile = File(...),
             prompt = (f"Image jointe : « {name} ».\nDemande : {ask}\n"
                       f"Réponds en {LANG_NAMES.get(lang, 'français')} (8 phrases max).")
             answer = await run_in_threadpool(_file_llm_sync, system, prompt, b64)
+        elif zipf:
+            text = await run_in_threadpool(_extract_zip_text, data)
+            text = re.sub(r"\n{3,}", "\n\n", text or "").strip()
+            prompt = (f"Dossier ZIP joint : « {name} » — contenu des fichiers extraits :\n{text[:14000]}\n\n"
+                      f"Demande : {ask}\nCommence par lister les fichiers lus, puis réponds en "
+                      f"{LANG_NAMES.get(lang, 'français')} (14 phrases max, listes autorisées en texte brut).")
+            answer = await run_in_threadpool(_file_llm_sync, system, prompt, None)
         else:
             text = await run_in_threadpool(_extract_file_text, name, data)
             text = re.sub(r"\n{3,}", "\n\n", text or "").strip()
@@ -747,7 +803,7 @@ async def guide_analyze_file(file: UploadFile = File(...),
     await db.ai_guide_attachments.insert_one({
         "id": str(uuid.uuid4()), "session_id": sid, "user_id": current_user["id"],
         "space": space, "filename": name,
-        "kind": "image" if img else ("tableau" if low.endswith((".csv", ".xlsx")) else "document"),
+        "kind": "image" if img else ("dossier" if zipf else ("tableau" if low.endswith((".csv", ".xlsx")) else "document")),
         "content": None if img else text[:14000],
         "summary": answer[:2000] if img else None,
         "created_at": now_iso})

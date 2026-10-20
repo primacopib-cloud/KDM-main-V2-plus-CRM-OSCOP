@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass, AudioLines, Play, Paperclip, Copy, Pencil, RotateCcw, FileText, Image as ImageIcon, Table, Download } from 'lucide-react';
+import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, History, ArrowRight, ArrowLeft, Compass, AudioLines, Play, Paperclip, Copy, Pencil, RotateCcw, FileText, Image as ImageIcon, Table, Download, Brain, FolderArchive } from 'lucide-react';
 import { API, getAuthHeaders } from '../../services/http';
 import { AiGuideHistory } from './AiGuideHistory';
+import { OracleMemoryMenu } from './OracleMemoryMenu';
+import { OracleBulkProposals } from './OracleBulkProposals';
 
 const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
@@ -34,6 +36,8 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   const [showHistory, setShowHistory] = useState(false);
   const [sessionId, setSessionId] = useState(sessionStorage.getItem(`guidia_session_${space}`) || null);
   const [proposal, setProposal] = useState(null);
+  const [proposals, setProposals] = useState([]);
+  const [showMemory, setShowMemory] = useState(false);
   const [contractTaskId, setContractTaskId] = useState(null);
   const [voice, setVoice] = useState(null);
   const [voices, setVoices] = useState([]);
@@ -164,6 +168,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
     const question = input.trim();
     if (space === 'admin' && isPdf && !question) { uploadContract(file); return; }
     setProposal(null);
+    setProposals([]);
     setContractTaskId(null);
     setSuggestions([]);
     setActions([]);
@@ -269,6 +274,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
   const send = async (text) => {
     const message = (text || input).trim();
     if (!message || busy) return;
+    const correctedFrom = editingIdx !== null ? messages[editingIdx]?.content : null;
     if (proposal && space === 'admin') {
       const low = message.toLowerCase();
       if (/^(ex[eé]cute|confirme|oui|vas[- ]y|go\b|valide)/.test(low)) {
@@ -289,6 +295,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
     setSuggestions([]);
     setActions([]);
     setProposal(null);
+    setProposals([]);
     setContractTaskId(null);
     setMessages((m) => [...m, { role: 'user', content: message }]);
     setBusy(true);
@@ -297,7 +304,10 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       const r = await fetch(`${API}/${endpoint}`, {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ message, session_id: sessionId, space, lang }),
+        body: JSON.stringify({
+          message, session_id: sessionId, space, lang,
+          ...(correctedFrom && correctedFrom !== message ? { corrected_from: correctedFrom } : {}),
+        }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail || 'Réponse indisponible');
@@ -310,6 +320,9 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
       if (d.proposal) {
         setProposal(d.proposal);
         readAloud(`${d.proposal.summary} Dites « exécuter » pour confirmer, ou « annuler ».`);
+      } else if (d.proposals?.length) {
+        setProposals(d.proposals);
+        readAloud(`${d.proposals.length} ajustements proposés depuis le tableau — confirmez chaque ligne.`);
       } else if (d.task) {
         const final = await pollTask(d.task.id);
         setMessages((m) => [...m, { role: 'assistant', content: final }]);
@@ -431,6 +444,14 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
             className={`p-1.5 rounded-lg transition-colors ${speak ? 'text-[#E9CF8E] bg-[#D9B35A]/15' : 'text-white/40 hover:text-white'}`}>
             {speak ? <Volume2 size={14} /> : <VolumeX size={14} />}
           </button>
+          <span className="relative">
+            <button type="button" data-testid="oracle-memory-btn" title="Mémoire d'Oracle — ce qu'il a appris de vous"
+              onClick={() => setShowMemory(!showMemory)}
+              className={`p-1.5 rounded-lg transition-colors ${showMemory ? 'text-[#E9CF8E] bg-[#D9B35A]/15' : 'text-white/40 hover:text-white'}`}>
+              <Brain size={14} />
+            </button>
+            {showMemory && <OracleMemoryMenu />}
+          </span>
           {voices.length > 0 && (
             <span className="relative">
               <button type="button" data-testid="ai-guide-voice-btn" title="Choisir ma voix Oracle"
@@ -552,6 +573,11 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                 </div>
               </div>
             )}
+            {!busy && proposals.length > 0 && (
+              <OracleBulkProposals proposals={proposals}
+                onRemove={(id) => setProposals((ps) => ps.filter((p) => p.id !== id))}
+                onResult={(msg) => setMessages((m) => [...m, { role: 'assistant', content: msg }])} />
+            )}
             {!busy && actions.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-0.5" data-testid="ai-guide-actions">
                 {actions.map((a) => (
@@ -602,10 +628,14 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                   className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-white/80 hover:bg-white/10 hover:text-[#E9CF8E] transition-colors text-left">
                   <Table size={13} /> Tableaux — Excel, CSV
                 </button>
+                <button type="button" onClick={() => pickFile('.zip')} data-testid="oracle-attach-zip"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-white/80 hover:bg-white/10 hover:text-[#E9CF8E] transition-colors text-left">
+                  <FolderArchive size={13} /> Dossier complet — ZIP (PDF, Word, Excel…)
+                </button>
                 <p className="text-[9px] text-white/40 leading-snug pt-1 border-t border-white/10">
-                  Oracle lit le fichier pour répondre à votre demande (tapez-la avant de joindre) ou préparer une action —
-                  toute modification reste soumise à votre confirmation. Pièces privées, liées à cette discussion et
-                  réutilisables dans les échanges suivants.
+                  Oracle lit le fichier (ou chaque fichier du dossier ZIP) pour répondre à votre demande ou préparer
+                  une action — toute modification reste soumise à votre confirmation. Pièces privées, liées à cette
+                  discussion et réutilisables dans les échanges suivants.
                 </p>
                 <a href={`${API}/ai-guide/sample-file`} download data-testid="oracle-attach-sample"
                   className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#E9CF8E] hover:underline">
@@ -620,7 +650,7 @@ export const AiGuidePanel = ({ welcome, space, lang = 'fr', bootTip = null,
                       <div key={a.id} className="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/10"
                         data-testid={`oracle-attachment-${a.id}`}>
                         <span className="flex items-center gap-1.5 text-[10px] text-white/75 truncate">
-                          {a.kind === 'image' ? <ImageIcon size={11} /> : a.kind === 'tableau' ? <Table size={11} /> : <FileText size={11} />}
+                          {a.kind === 'image' ? <ImageIcon size={11} /> : a.kind === 'dossier' ? <FolderArchive size={11} /> : a.kind === 'tableau' ? <Table size={11} /> : <FileText size={11} />}
                           <span className="truncate">{a.filename}</span>
                         </span>
                         <button type="button" onClick={() => deleteAttachment(a.id)}

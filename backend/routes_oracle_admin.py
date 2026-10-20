@@ -60,6 +60,10 @@ SYSTEM_PROMPT = (
     "{\"mode\":\"strategy\",\"query\":\"objectif stratégique reformulé\"}\n"
     "6) Rédaction ou assistance de contrat commercial (convention POP'S, partenariat fournisseur, prestation, "
     "distribution…) → {\"mode\":\"contract\",\"query\":\"objet du contrat + parties + points clés dictés par l'admin\"}\n"
+    "7) Tableau joint contenant PLUSIEURS lignes membre + crédits (ajustements en masse) → "
+    "{\"mode\":\"propose_bulk\",\"rows\":[{\"user_query\":\"email ou nom\",\"delta\":entier relatif,"
+    "\"reason\":\"motif tiré du tableau\"}, …],\"summary\":\"phrase récapitulative\"} — une proposition par ligne "
+    "du tableau, chacune sera confirmée individuellement par l'admin.\n"
     "Actions disponibles (id → paramètres requis) :\n"
     + "\n".join(f"- {aid} ({meta['label']}) : {', '.join(meta['params'])}" for aid, meta in ACTIONS_CATALOG.items())
     + "\nRègles params : offer_id / auction_id / product_id doivent venir des listes du contexte (jamais inventés) ; "
@@ -276,6 +280,7 @@ class CommandBody(BaseModel):
     message: str
     session_id: Optional[str] = None
     lang: str = "fr"
+    corrected_from: Optional[str] = None
 
 
 class ExecuteBody(BaseModel):
@@ -367,9 +372,14 @@ async def oracle_admin_command(body: CommandBody, admin: dict = Depends(require_
         f"{'Admin' if m['role'] == 'user' else 'Oracle'}: {m['content'][:400]}" for m in reversed(history))
     context = await _context_pack(db)
     from routes_ai_guide import _session_attachments_text
+    from oracle_memory import learn_correction, memories_text
+    if body.corrected_from:
+        await learn_correction(db, admin["id"], body.corrected_from, message)
+    mem_txt = await memories_text(db, admin["id"])
     attachments_txt = await _session_attachments_text(db, session_id, admin["id"])
     prompt = (f"Contexte plateforme en direct :\n{context}\n"
               f"Langue de l'admin : {LANG_NAMES[lang]}.\n"
+              + (f"{mem_txt}\n" if mem_txt else "")
               + (f"{attachments_txt}\n" if attachments_txt else "")
               + (f"Historique :\n{history_txt}\n" if history_txt else "")
               + f"Commande de l'admin : {message}")
@@ -424,10 +434,62 @@ async def oracle_admin_command(body: CommandBody, admin: dict = Depends(require_
         proposal.pop("admin_id")
         return {"answer": answer, "suggestions": [], "proposal": proposal, "session_id": session_id}
 
+    if mode == "propose_bulk":
+        return await _propose_bulk(db, parsed, admin, session_id, message)
+
     answer = parsed.get("text") or "Je n'ai pas compris — reformulez votre commande."
     await _store_exchange(db, session_id, admin["id"], message, answer)
+    from oracle_memory import learn_from_exchange, should_learn
+    if should_learn(message):
+        asyncio.create_task(learn_from_exchange(admin["id"], message, answer))
     return {"answer": answer, "suggestions": (parsed.get("suggestions") or [])[:3],
             "proposal": None, "session_id": session_id}
+
+
+async def _propose_bulk(db, parsed: dict, admin: dict, session_id: str, message: str) -> dict:
+    """Ajustements de crédits en masse depuis un tableau — une proposition confirmable par ligne."""
+    rows = parsed.get("rows") or []
+    proposals, skipped = [], []
+    now = datetime.now(timezone.utc)
+    for row in rows[:30]:
+        if not isinstance(row, dict):
+            continue
+        q = str(row.get("user_query") or "").strip()
+        matches = await _find_users(db, q)
+        if len(matches) != 1:
+            skipped.append(q or "(membre vide)")
+            continue
+        u = matches[0]
+        try:
+            delta = int(row.get("delta"))
+        except (TypeError, ValueError):
+            skipped.append(f"{q} (montant invalide)")
+            continue
+        reason = str(row.get("reason") or "").strip()[:150]
+        name = u.get("contact_name") or u.get("name") or ""
+        params = {"user_query": q, "delta": delta, "reason": reason,
+                  "user_id": u["id"], "user_email": u["email"]}
+        summary = (f"Ajuster les crédits COOP'ACT de {name + ' ' if name else ''}<{u['email']}> de {delta:+d}"
+                   + (f" — motif : {reason}" if reason else ""))
+        prop = {"id": str(uuid.uuid4()), "admin_id": admin["id"], "action": "adjust_coopact_credits",
+                "label": ACTIONS_CATALOG["adjust_coopact_credits"]["label"], "params": params,
+                "summary": summary, "destructive": True, "status": "PROPOSED", "session_id": session_id,
+                "expires_at": (now + timedelta(minutes=30)).isoformat(), "created_at": now.isoformat()}
+        await db.oracle_admin_proposals.insert_one({**prop})
+        prop.pop("admin_id")
+        proposals.append(prop)
+    if not proposals:
+        answer = ("Aucune ligne exploitable dans le tableau (membre introuvable ou montant invalide)"
+                  + (f" : {', '.join(skipped[:10])}" if skipped else "") + ". Vérifiez les emails et montants.")
+        await _store_exchange(db, session_id, admin["id"], message, answer)
+        return {"answer": answer, "suggestions": [], "proposal": None, "session_id": session_id}
+    answer = (f"{len(proposals)} ajustement(s) de crédits prêts depuis le tableau — "
+              "confirmez chaque ligne individuellement (Exécuter / Annuler).")
+    if skipped:
+        answer += f"\nLignes ignorées ({len(skipped)}) : " + ", ".join(skipped[:10])
+    await _store_exchange(db, session_id, admin["id"], message, answer)
+    return {"answer": answer, "suggestions": [], "proposal": None,
+            "proposals": proposals, "session_id": session_id}
 
 
 async def _execute_action(db, action: str, params: dict, admin: dict) -> str:
@@ -597,9 +659,16 @@ async def oracle_admin_execute(body: ExecuteBody, admin: dict = Depends(require_
 @oracle_admin_router.post("/cancel")
 async def oracle_admin_cancel(body: ExecuteBody, admin: dict = Depends(require_admin)):
     db = get_database()
+    prop = await db.oracle_admin_proposals.find_one(
+        {"id": body.proposal_id, "admin_id": admin["id"], "status": "PROPOSED"}, {"_id": 0, "summary": 1})
     await db.oracle_admin_proposals.update_one(
         {"id": body.proposal_id, "admin_id": admin["id"], "status": "PROPOSED"},
         {"$set": {"status": "CANCELLED"}})
+    if prop:
+        from oracle_memory import add_memory
+        await add_memory(db, admin["id"], "correction",
+                         f"L'admin a annulé l'action proposée : « {prop['summary'][:200]} » — "
+                         "ne pas la reproposer spontanément sans demande explicite.", source="annulation")
     return {"ok": True}
 
 
