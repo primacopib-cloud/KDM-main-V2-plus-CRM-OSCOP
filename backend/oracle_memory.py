@@ -16,7 +16,15 @@ logger = logging.getLogger(__name__)
 oracle_memory_router = APIRouter(prefix="/api/oracle-memory", tags=["oracle-memory"])
 
 MAX_MEMORIES = 60
+SHARED_SCOPE = "admin_team"
+ADMIN_ROLES = ["oscop_super_admin", "kdm_b2b_admin", "admin", "SUPER_ADMIN", "ADMIN"]
 KIND_LABELS = {"fact": "Fait", "preference": "Préférence", "rule": "Consigne", "correction": "Correction"}
+
+
+def _is_admin(user: dict) -> bool:
+    role = user.get("role") or user.get("user_role") or user.get("role_v2")
+    return user.get("is_admin", False) or role in ADMIN_ROLES
+
 
 EXTRACT_SYSTEM = (
     "Tu gères la mémoire longue durée de l'assistant Oracle (plateforme coopérative KDMARCHÉ × O'SCOP). "
@@ -26,7 +34,10 @@ EXTRACT_SYSTEM = (
     "JAMAIS d'informations transitoires (soldes, dates du jour, états momentanés), JAMAIS de mots de passe ou "
     "secrets, JAMAIS de reformulation de la question. "
     "Réponds EXCLUSIVEMENT avec un JSON valide : {\"memories\":[{\"kind\":\"fact|preference|rule\","
-    "\"text\":\"phrase courte à la 3e personne\"}]} (0 à 3 éléments, souvent 0). "
+    "\"text\":\"phrase courte à la 3e personne\",\"shared\":false}]} (0 à 3 éléments, souvent 0). "
+    "\"shared\": true UNIQUEMENT si l'utilisateur est un administrateur ET que la consigne est une règle "
+    "collective valable pour toute l'équipe d'administration (règle de campagne, politique de crédits, "
+    "procédure de validation) ; false pour tout ce qui est personnel. "
     "Si rien ne mérite d'être retenu : {\"memories\":[]}."
 )
 
@@ -35,32 +46,46 @@ def _norm(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").strip().lower())[:300]
 
 
-async def add_memory(db, user_id: str, kind: str, text: str, source: str = "") -> bool:
+async def add_memory(db, user_id: str, kind: str, text: str, source: str = "",
+                     shared: bool = False, by: str = "") -> bool:
     text = (text or "").strip()[:400]
     if len(text) < 8 or kind not in KIND_LABELS:
         return False
     key = _norm(text)
-    if await db.oracle_memory.find_one({"user_id": user_id, "key": key}):
+    flt = {"scope": SHARED_SCOPE, "key": key} if shared else {"user_id": user_id, "key": key, "scope": {"$ne": SHARED_SCOPE}}
+    if await db.oracle_memory.find_one(flt):
         return False
     await db.oracle_memory.insert_one({
-        "id": str(uuid.uuid4()), "user_id": user_id, "kind": kind, "key": key,
-        "text": text, "source": source, "created_at": datetime.now(timezone.utc).isoformat()})
-    if await db.oracle_memory.count_documents({"user_id": user_id}) > MAX_MEMORIES:
-        old = await db.oracle_memory.find({"user_id": user_id}, {"_id": 0, "id": 1}).sort(
+        "id": str(uuid.uuid4()), "user_id": None if shared else user_id,
+        "scope": SHARED_SCOPE if shared else "personal", "kind": kind, "key": key,
+        "text": text, "source": source, "created_by": by,
+        "created_at": datetime.now(timezone.utc).isoformat()})
+    cap_flt = {"scope": SHARED_SCOPE} if shared else {"user_id": user_id, "scope": {"$ne": SHARED_SCOPE}}
+    if await db.oracle_memory.count_documents(cap_flt) > MAX_MEMORIES:
+        old = await db.oracle_memory.find(cap_flt, {"_id": 0, "id": 1}).sort(
             "created_at", 1).limit(5).to_list(5)
         await db.oracle_memory.delete_many({"id": {"$in": [o["id"] for o in old]}})
     return True
 
 
-async def memories_text(db, user_id: str, limit: int = 12) -> str:
+async def memories_text(db, user_id: str, limit: int = 12, include_shared: bool = False) -> str:
     docs = await db.oracle_memory.find(
-        {"user_id": user_id}, {"_id": 0, "kind": 1, "text": 1}
+        {"user_id": user_id, "scope": {"$ne": SHARED_SCOPE}}, {"_id": 0, "kind": 1, "text": 1}
     ).sort("created_at", -1).limit(limit).to_list(limit)
-    if not docs:
-        return ""
-    lines = [f"- [{KIND_LABELS.get(d['kind'], d['kind'])}] {d['text']}" for d in reversed(docs)]
-    return ("Mémoire longue durée d'Oracle (apprise au fil des discussions avec cet utilisateur — "
-            "respecte ces faits, préférences et consignes dans ta réponse) :\n" + "\n".join(lines))
+    blocks = []
+    if docs:
+        lines = [f"- [{KIND_LABELS.get(d['kind'], d['kind'])}] {d['text']}" for d in reversed(docs)]
+        blocks.append("Mémoire longue durée d'Oracle (apprise au fil des discussions avec cet utilisateur — "
+                      "respecte ces faits, préférences et consignes dans ta réponse) :\n" + "\n".join(lines))
+    if include_shared:
+        shared = await db.oracle_memory.find(
+            {"scope": SHARED_SCOPE}, {"_id": 0, "kind": 1, "text": 1}
+        ).sort("created_at", -1).limit(limit).to_list(limit)
+        if shared:
+            lines = [f"- [{KIND_LABELS.get(d['kind'], d['kind'])}] {d['text']}" for d in reversed(shared)]
+            blocks.append("Consignes collectives de l'équipe d'administration (partagées entre tous les admins — "
+                          "applique-les systématiquement) :\n" + "\n".join(lines))
+    return "\n".join(blocks)
 
 
 def should_learn(message: str) -> bool:
@@ -68,10 +93,11 @@ def should_learn(message: str) -> bool:
     return len(m) >= 25 and not re.match(r"^(ex[ée]cute|oui|non|annule|ok|merci|stop)\b", m, re.I)
 
 
-def _extract_sync(question: str, answer: str) -> list:
+def _extract_sync(question: str, answer: str, is_admin: bool = False) -> list:
     from emergentintegrations.llm.chat import LlmChat, UserMessage
 
-    prompt = (f"Message de l'utilisateur :\n{question[:800]}\n\nRéponse d'Oracle :\n{answer[:800]}\n\n"
+    prompt = (f"Utilisateur administrateur : {'oui' if is_admin else 'non'}.\n"
+              f"Message de l'utilisateur :\n{question[:800]}\n\nRéponse d'Oracle :\n{answer[:800]}\n\n"
               "Extrais les éléments durables à mémoriser (JSON uniquement).")
 
     async def _go():
@@ -89,14 +115,17 @@ def _extract_sync(question: str, answer: str) -> list:
     return [it for it in (data.get("memories") or []) if isinstance(it, dict)]
 
 
-async def learn_from_exchange(user_id: str, question: str, answer: str):
+async def learn_from_exchange(user_id: str, question: str, answer: str,
+                              is_admin: bool = False, by: str = ""):
     """Fire-and-forget : extrait les éléments durables de l'échange et les mémorise."""
     try:
         from fastapi.concurrency import run_in_threadpool
-        items = await run_in_threadpool(_extract_sync, question, answer)
+        items = await run_in_threadpool(_extract_sync, question, answer, is_admin)
         db = get_database()
         for it in items[:3]:
-            await add_memory(db, user_id, str(it.get("kind") or "fact"), str(it.get("text") or ""), source="echange")
+            shared = bool(is_admin and it.get("shared"))
+            await add_memory(db, user_id, str(it.get("kind") or "fact"), str(it.get("text") or ""),
+                             source="echange", shared=shared, by=by)
     except Exception as exc:
         logger.debug("Oracle memory learn: %s", exc)
 
@@ -115,15 +144,48 @@ async def learn_correction(db, user_id: str, old: str, new: str):
 async def list_memories(current_user: dict = Depends(get_current_user)):
     db = get_database()
     items = await db.oracle_memory.find(
-        {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "kind": 1, "text": 1, "created_at": 1}
+        {"user_id": current_user["id"], "scope": {"$ne": SHARED_SCOPE}},
+        {"_id": 0, "id": 1, "kind": 1, "text": 1, "created_at": 1}
     ).sort("created_at", -1).limit(MAX_MEMORIES).to_list(MAX_MEMORIES)
-    return {"memories": items}
+    shared = []
+    if _is_admin(current_user):
+        shared = await db.oracle_memory.find(
+            {"scope": SHARED_SCOPE},
+            {"_id": 0, "id": 1, "kind": 1, "text": 1, "created_by": 1, "created_at": 1}
+        ).sort("created_at", -1).limit(MAX_MEMORIES).to_list(MAX_MEMORIES)
+    return {"memories": items, "shared": shared, "is_admin": _is_admin(current_user)}
+
+
+@oracle_memory_router.delete("/all")
+async def forget_all(current_user: dict = Depends(get_current_user)):
+    """Oubli total RGPD : purge toute la mémoire personnelle d'Oracle pour cet utilisateur."""
+    db = get_database()
+    res = await db.oracle_memory.delete_many({"user_id": current_user["id"], "scope": {"$ne": SHARED_SCOPE}})
+    return {"ok": True, "deleted": res.deleted_count}
+
+
+@oracle_memory_router.post("/{memory_id}/share")
+async def share_memory(memory_id: str, current_user: dict = Depends(get_current_user)):
+    """Promeut un souvenir personnel en consigne collective de l'équipe admin."""
+    if not _is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Accès admin requis")
+    db = get_database()
+    res = await db.oracle_memory.update_one(
+        {"id": memory_id, "user_id": current_user["id"], "scope": {"$ne": SHARED_SCOPE}},
+        {"$set": {"scope": SHARED_SCOPE, "user_id": None,
+                  "created_by": current_user.get("email") or ""}})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Souvenir introuvable")
+    return {"ok": True}
 
 
 @oracle_memory_router.delete("/{memory_id}")
 async def delete_memory(memory_id: str, current_user: dict = Depends(get_current_user)):
     db = get_database()
-    res = await db.oracle_memory.delete_one({"id": memory_id, "user_id": current_user["id"]})
+    flt = {"id": memory_id, "$or": [{"user_id": current_user["id"]}]}
+    if _is_admin(current_user):
+        flt["$or"].append({"scope": SHARED_SCOPE})
+    res = await db.oracle_memory.delete_one(flt)
     if not res.deleted_count:
         raise HTTPException(status_code=404, detail="Souvenir introuvable")
     return {"ok": True}

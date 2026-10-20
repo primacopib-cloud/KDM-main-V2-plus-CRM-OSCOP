@@ -375,7 +375,7 @@ async def oracle_admin_command(body: CommandBody, admin: dict = Depends(require_
     from oracle_memory import learn_correction, memories_text
     if body.corrected_from:
         await learn_correction(db, admin["id"], body.corrected_from, message)
-    mem_txt = await memories_text(db, admin["id"])
+    mem_txt = await memories_text(db, admin["id"], include_shared=True)
     attachments_txt = await _session_attachments_text(db, session_id, admin["id"])
     prompt = (f"Contexte plateforme en direct :\n{context}\n"
               f"Langue de l'admin : {LANG_NAMES[lang]}.\n"
@@ -441,7 +441,8 @@ async def oracle_admin_command(body: CommandBody, admin: dict = Depends(require_
     await _store_exchange(db, session_id, admin["id"], message, answer)
     from oracle_memory import learn_from_exchange, should_learn
     if should_learn(message):
-        asyncio.create_task(learn_from_exchange(admin["id"], message, answer))
+        asyncio.create_task(learn_from_exchange(admin["id"], message, answer,
+                                                is_admin=True, by=admin.get("email") or ""))
     return {"answer": answer, "suggestions": (parsed.get("suggestions") or [])[:3],
             "proposal": None, "session_id": session_id}
 
