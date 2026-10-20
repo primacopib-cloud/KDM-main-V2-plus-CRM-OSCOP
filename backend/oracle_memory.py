@@ -18,12 +18,16 @@ oracle_memory_router = APIRouter(prefix="/api/oracle-memory", tags=["oracle-memo
 MAX_MEMORIES = 60
 SHARED_SCOPE = "admin_team"
 POPS_SCOPE = "pops_team"
-TEAM_LABELS = {SHARED_SCOPE: "équipe admin", POPS_SCOPE: "détaillants POP'S"}
+LOLO_SCOPE = "lolo_team"
+TEAM_LABELS = {SHARED_SCOPE: "équipe admin", POPS_SCOPE: "détaillants POP'S",
+               LOLO_SCOPE: "gérants Lolo Point"}
 TEAM_PROMPT_LABELS = {
     SHARED_SCOPE: "Consignes collectives de l'équipe d'administration (partagées entre tous les admins — "
                   "applique-les systématiquement)",
     POPS_SCOPE: "Consignes collectives des détaillants POP'S (partagées entre tous les POP'S — "
                 "applique-les systématiquement)",
+    LOLO_SCOPE: "Consignes collectives des gérants Lolo Point (partagées entre tous les relais — "
+                "règles de retrait, horaires, réception : applique-les systématiquement)",
 }
 ADMIN_ROLES = ["oscop_super_admin", "kdm_b2b_admin", "admin", "SUPER_ADMIN", "ADMIN"]
 KIND_LABELS = {"fact": "Fait", "preference": "Préférence", "rule": "Consigne", "correction": "Correction"}
@@ -37,8 +41,11 @@ def _is_admin(user: dict) -> bool:
 def team_scope_of(user: dict):
     if _is_admin(user):
         return SHARED_SCOPE
-    if (user.get("role") or "") == "DETAILLANT":
+    role = user.get("role") or ""
+    if role == "DETAILLANT":
         return POPS_SCOPE
+    if role == "GERANT_LOLO_POINT":
+        return LOLO_SCOPE
     return None
 
 
